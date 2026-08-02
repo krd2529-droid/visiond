@@ -1,16 +1,5 @@
 # VisionD MVP
 
-## Deploy ครั้งแรกบน Cloudflare Pages
-
-ใช้ค่าที่ตั้งไว้ดังนี้:
-
-- Root directory: `visiond-mvp`
-- Build output directory: `public`
-- Build command: เว้นว่าง
-
-ชุดนี้ไม่มี `wrangler.toml` ที่ทำงานทันที แต่มี `wrangler.toml.example` เพื่อป้องกัน Placeholder ของ D1/R2 ทำให้การ Deploy แรก失败 หลังสร้าง D1 และ R2 พร้อมแล้ว จึงค่อยใส่ ID จริงและเปลี่ยนชื่อกลับเป็น `wrangler.toml`
-
-
 เว็บเริ่มขายสินทรัพย์ดิจิทัลแบบโอนเงินและตรวจสลิปเอง สร้างบน Cloudflare Pages + Functions + D1 + R2
 
 ## ฟังก์ชันที่มี

@@ -1,19 +1,8 @@
-VISIOND — ชุดแก้ใหม่สำหรับ Cloudflare Pages
+VISIOND - วางทับแล้ว Deploy
 
-โครงสร้างนี้ทำมาให้ตรงกับค่าบน Cloudflare ที่ตั้งไว้แล้ว:
+โครงสร้าง Cloudflare Pages:
 Root directory: visiond-mvp
-Build output directory: public
 Build command: เว้นว่าง
+Build output directory: public
 
-วิธีวางไฟล์:
-1. ใน D:\GitHub\visiond ลบโฟลเดอร์ visiond-mvp เดิมทั้งโฟลเดอร์
-2. แตก ZIP นี้
-3. นำโฟลเดอร์ visiond-mvp จาก ZIP ไปวางใน D:\GitHub\visiond
-4. GitHub Desktop: Commit แล้ว Push origin
-5. Cloudflare จะ Deploy อัตโนมัติ
-
-สำคัญ:
-- ไม่ต้องแก้ Cloudflare เพิ่ม
-- ไม่ต้องแก้ไฟล์ใดก่อน Deploy
-- ไฟล์ wrangler.toml ถูกเปลี่ยนเป็น wrangler.toml.example เพื่อไม่ให้ placeholder D1/R2 ทำให้ Deploy แรกพัง
-- หลังเว็บขึ้นแล้ว ค่อยสร้าง D1/R2 และเปลี่ยนชื่อกลับเป็น wrangler.toml เมื่อตั้งค่า ID จริงครบ
+ไฟล์นี้ตั้งใจไม่มี wrangler.toml เพื่อไม่ให้ค่าฐานข้อมูลตัวอย่างขัดขวางการ Deploy หน้าเว็บ
