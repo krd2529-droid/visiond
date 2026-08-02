@@ -2,7 +2,8 @@ const state={products:[],category:'all'};const money=n=>new Intl.NumberFormat('t
 const products=[
  {id:1,slug:'dinosaur-coloring-200-set-1',title:'ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 1',category:'dinosaur',label:'ชุดระบายสีไดโนเสาร์',pages:200,price:19900,cover_url:'/assets/dinosaur-set-1.jpeg'},
  {id:2,slug:'dinosaur-coloring-200-set-2',title:'ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 2',category:'dinosaur',label:'ชุดระบายสีไดโนเสาร์',pages:200,price:19900,cover_url:'/assets/dinosaur-set-2.jpeg'},
- {id:3,slug:'dinosaur-coloring-200-set-3',title:'ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 3',category:'dinosaur',label:'ชุดระบายสีไดโนเสาร์',pages:200,price:19900,cover_url:'/assets/dinosaur-set-3.jpeg'}
+ {id:3,slug:'dinosaur-coloring-200-set-3',title:'ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 3',category:'dinosaur',label:'ชุดระบายสีไดโนเสาร์',pages:200,price:19900,cover_url:'/assets/dinosaur-set-3.jpeg'},
+ {id:4,slug:'dinosaur-coloring-200-set-4',title:'ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 4',category:'dinosaur',label:'ชุดระบายสีไดโนเสาร์',pages:200,price:19900,cover_url:'/assets/dinosaur-set-4.jpeg'}
 ];
 const searchInput=document.querySelector('#searchInput');
 const productGrid=document.querySelector('#productGrid');
