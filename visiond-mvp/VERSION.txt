@@ -1,10 +1,7 @@
-VisionD v0.5
-Public Front-End Complete
-- Digital products page
-- Online courses page
-- AI bots page
-- Blog page
-- About page
-- Contact page
-- Shared navigation and footer
-- Domain metadata updated to visiondonline.com
+VisionD v0.6 Member Front-End
+- Separate Login page
+- Separate Registration page
+- Forgot password UI
+- Member Dashboard
+- Boss / Admin / User role-aware navigation
+- Responsive Tiffany member interface
