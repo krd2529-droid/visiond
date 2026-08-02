@@ -1,4 +1,10 @@
-VisionD v0.4 — Role System
-- Boss: เจ้าของระบบและจัดการระดับสมาชิก
-- Admin: จัดการออเดอร์และตรวจสลิป
-- User: ซื้อสินค้าและดาวน์โหลดไฟล์ที่อนุมัติ
+VisionD v0.5
+Public Front-End Complete
+- Digital products page
+- Online courses page
+- AI bots page
+- Blog page
+- About page
+- Contact page
+- Shared navigation and footer
+- Domain metadata updated to visiondonline.com
