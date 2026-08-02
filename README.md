@@ -1,2 +1,77 @@
-# visiond
-VisionD Digital Platform
+# VisionD MVP
+
+เว็บเริ่มขายสินทรัพย์ดิจิทัลแบบโอนเงินและตรวจสลิปเอง สร้างบน Cloudflare Pages + Functions + D1 + R2
+
+## ฟังก์ชันที่มี
+
+### หน้าบ้าน
+- หน้าแรกและรายการสินค้า
+- ค้นหาสินค้า
+- หน้ารายละเอียดสินค้า
+- ตะกร้าสินค้า
+- สมัครสมาชิก / เข้าสู่ระบบ
+- สร้างออเดอร์
+- แสดงเลขบัญชีบริษัท
+- อัปโหลดสลิป
+- ดูสถานะออเดอร์
+- หลังอนุมัติ ปุ่มดาวน์โหลดจะแสดงในหน้าสินค้าที่ซื้อ
+
+### หลังบ้าน
+- แสดงออเดอร์รอตรวจ
+- ดูสลิปออนไลน์
+- อนุมัติการชำระเงิน
+- ปฏิเสธสลิปพร้อมหมายเหตุ
+- อนุมัติแล้วระบบสร้างสิทธิ์ดาวน์โหลดแยกตามลูกค้าและสินค้า
+
+### ความปลอดภัยพื้นฐาน
+- Session cookie แบบ HttpOnly
+- รหัสผ่าน hash พร้อม salt
+- ตรวจสิทธิ์ลูกค้าก่อนดาวน์โหลดทุกครั้ง
+- ไฟล์จริงอยู่ใน R2 ไม่เปิดลิงก์สาธารณะ
+- บันทึกประวัติการดาวน์โหลด
+
+## โครงสร้างที่เผื่อ Vision 1
+- products.source รองรับ manual / jarvis ในอนาคต
+- แยก product_files รองรับ PDF, ZIP, PNG หลายไฟล์ต่อสินค้า
+- ต่อ Jarvis, Factory, Queue และ AI generation ได้โดยไม่รื้อระบบขาย
+
+## เริ่มใช้งาน
+1. ติดตั้ง Node.js
+2. `npm install`
+3. ล็อกอิน Cloudflare: `npx wrangler login`
+4. สร้าง D1: `npx wrangler d1 create visiond-db`
+5. นำ database_id ใส่ใน `wrangler.toml`
+6. สร้าง R2 bucket ชื่อ `visiond-files`
+7. รัน migration: `npm run db:init`
+8. รันในเครื่อง: `npm run dev`
+
+## ตั้งค่าบัญชีบริษัท
+ตั้งค่า Variables ใน Cloudflare Pages:
+- BANK_NAME
+- BANK_ACCOUNT_NAME
+- BANK_ACCOUNT_NUMBER
+- ADMIN_EMAIL
+
+## ตั้งบัญชีแอดมิน
+หลังสมัครสมาชิกแล้ว รัน SQL:
+```sql
+UPDATE users SET role='admin' WHERE email='อีเมลของคุณ';
+```
+
+## เพิ่มไฟล์ขาย
+1. อัปโหลด PDF/ZIP เข้า R2
+2. เพิ่มข้อมูลใน product_files เช่น:
+```sql
+INSERT INTO product_files(product_id,label,object_key,mime_type,version)
+VALUES(1,'ไฟล์ PDF หลัก','products/paper-doll-cat/product.pdf','application/pdf','1.0');
+```
+
+## สิ่งที่ยังไม่รวมใน MVP
+- Payment Gateway
+- อีเมลแจ้งเตือน
+- ระบบคูปอง
+- ระบบรีวิว
+- Jarvis AI / Factory
+- หน้าเพิ่มสินค้าแบบแอดมินเต็มรูปแบบ
+
+โครงนี้ตั้งใจให้เริ่มขายด้วยการอัปโหลดสินค้าเองก่อน แล้วค่อยเพิ่มระบบอัตโนมัติภายหลัง

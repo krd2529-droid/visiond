@@ -1,0 +1,1 @@
+import {json} from '../../_lib.js';export async function onRequestGet(ctx){const item=await ctx.env.DB.prepare("SELECT * FROM products WHERE slug=? AND status='published'").bind(ctx.params.slug).first();return item?json({item}):json({error:'ไม่พบสินค้า'},404)}

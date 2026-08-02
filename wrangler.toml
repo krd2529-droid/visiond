@@ -1,0 +1,19 @@
+name = "visiond"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "visiond-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "visiond-files"
+
+[vars]
+COMPANY_NAME = "VisionD Online"
+BANK_NAME = "ตั้งค่าใน Cloudflare"
+BANK_ACCOUNT_NAME = "ตั้งค่าใน Cloudflare"
+BANK_ACCOUNT_NUMBER = "ตั้งค่าใน Cloudflare"
+ADMIN_EMAIL = "admin@example.com"

@@ -1,0 +1,13 @@
+{
+  "name": "visiond-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB --r2=FILES",
+    "deploy": "wrangler pages deploy public",
+    "db:init": "wrangler d1 execute visiond-db --file=./migrations/0001_init.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.28.0"
+  }
+}
