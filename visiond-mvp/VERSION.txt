@@ -1,2 +1,2 @@
-VisionD MVP v0.7.5
-Smaller Catalog Cards + Homepage Catalog
+VisionD MVP v0.7.6
+Homepage Catalog Moved Near Top
