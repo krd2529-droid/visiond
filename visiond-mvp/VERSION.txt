@@ -1,0 +1,5 @@
+VisionD v0.2 Tiffany Clean
+Cloudflare Pages settings:
+Root directory: visiond-mvp
+Build command: (blank)
+Build output directory: public
