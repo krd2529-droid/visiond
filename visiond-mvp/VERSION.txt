@@ -1,1 +1,1 @@
-VisionD v0.2.3 — Member Login & Registration
+VisionD v0.3 Front-End Categories
