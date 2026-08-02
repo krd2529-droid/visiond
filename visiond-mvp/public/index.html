@@ -1,6 +1,105 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VisionD — Digital Products</title><meta name="description" content="สินทรัพย์ดิจิทัล สื่อการตลาด และเครื่องมือออนไลน์"><link rel="stylesheet" href="/style.css"></head>
-<body><header class="topbar"><a class="brand" href="/">VISIOND <small>ONLINE</small></a><nav><a href="#products">สินค้า</a><a href="/account.html">บัญชีของฉัน</a><a href="/admin.html">หลังบ้าน</a><button id="cartBtn">ตะกร้า <span id="cartCount">0</span></button></nav></header>
-<main><section class="hero"><div><p class="eyebrow">DIGITAL ASSET MARKETPLACE</p><h1>สื่อดิจิทัลพร้อมใช้<br>ซื้อแล้วดาวน์โหลดจากหน้าสินค้า</h1><p>สมัครสมาชิก เลือกสินค้า โอนเข้าบัญชีบริษัท ส่งสลิป และรออนุมัติการดาวน์โหลด</p><a class="primary" href="#products">เลือกดูสินค้า</a></div><div class="hero-card"><b>ขั้นตอนสั่งซื้อ</b><ol><li>สมัครและเข้าสู่ระบบ</li><li>เพิ่มสินค้าลงตะกร้า</li><li>โอนเงินและส่งสลิป</li><li>แอดมินตรวจและอนุมัติ</li><li>กลับมาดาวน์โหลดที่หน้าสินค้า</li></ol></div></section>
-<section id="products" class="section"><div class="section-head"><div><p class="eyebrow">SHOP</p><h2>สินค้าดิจิทัล</h2></div><input id="searchInput" placeholder="ค้นหาสินค้า"></div><div id="productGrid" class="grid"></div></section></main>
-<dialog id="cartDialog"><div class="dialog-head"><h3>ตะกร้าสินค้า</h3><button onclick="cartDialog.close()">×</button></div><div id="cartItems"></div><div class="cart-total">รวม <b id="cartTotal">0 บาท</b></div><button id="checkoutBtn" class="primary wide">สร้างออเดอร์</button></dialog>
-<script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VisionD — Digital Products, Courses & Bots</title>
+  <meta name="description" content="สินทรัพย์ดิจิทัล คอร์สเรียนออนไลน์ โปรแกรมบอท และเครื่องมือออนไลน์จาก VisionD">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
+  <nav>
+    <a href="#products">สินค้า</a>
+    <a href="#courses">คอร์สเรียนออนไลน์</a>
+    <a href="#bots">โปรแกรมบอท</a>
+    <a href="/account.html">บัญชีของฉัน</a>
+    <a href="/admin.html">หลังบ้าน</a>
+    <button id="cartBtn">ตะกร้า <span id="cartCount">0</span></button>
+    <a class="line-link" href="https://lin.ee/rU7lTLb6" target="_blank" rel="noopener">ติดต่อ LINE</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <p class="eyebrow">DIGITAL ASSET MARKETPLACE</p>
+      <h1>สื่อดิจิทัลพร้อมใช้<br>ซื้อแล้วดาวน์โหลดจากหน้าสินค้า</h1>
+      <p>สมัครสมาชิก เลือกสินค้า โอนเข้าบัญชีบริษัท ส่งสลิป และรออนุมัติการดาวน์โหลด</p>
+      <a class="primary" href="#products">เลือกดูสินค้า</a>
+    </div>
+    <div class="hero-card">
+      <b>ขั้นตอนสั่งซื้อ</b>
+      <ol>
+        <li>สมัครและเข้าสู่ระบบ</li>
+        <li>เพิ่มสินค้าลงตะกร้า</li>
+        <li>โอนเงินและส่งสลิป</li>
+        <li>แอดมินตรวจและอนุมัติ</li>
+        <li>กลับมาดาวน์โหลดที่หน้าสินค้า</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="category-strip" aria-label="หมวดบริการ VisionD">
+    <a href="#products" class="category-card">
+      <span class="category-number">01</span>
+      <strong>สินค้าดิจิทัล</strong>
+      <small>PDF, Template และไฟล์พร้อมใช้</small>
+    </a>
+    <a href="#courses" class="category-card">
+      <span class="category-number">02</span>
+      <strong>คอร์สเรียนออนไลน์</strong>
+      <small>เรียน AI การตลาด และการสร้างรายได้</small>
+    </a>
+    <a href="#bots" class="category-card">
+      <span class="category-number">03</span>
+      <strong>โปรแกรมบอท</strong>
+      <small>เครื่องมือช่วยทำงานและระบบอัตโนมัติ</small>
+    </a>
+  </section>
+
+  <section id="products" class="section">
+    <div class="section-head">
+      <div><p class="eyebrow">SHOP</p><h2>สินค้าดิจิทัล</h2></div>
+      <input id="searchInput" placeholder="ค้นหาสินค้า">
+    </div>
+    <div id="productGrid" class="grid"></div>
+  </section>
+
+  <section id="courses" class="showcase-section">
+    <div class="showcase-copy">
+      <p class="eyebrow">ONLINE COURSES</p>
+      <h2>คอร์สเรียนออนไลน์</h2>
+      <p>รวมบทเรียนด้าน AI การสร้างคอนเทนต์ การตลาดออนไลน์ และการพัฒนาระบบดิจิทัล เรียนตามเวลาได้จากบัญชีสมาชิก</p>
+      <span class="coming-badge">กำลังเพิ่มคอร์ส</span>
+    </div>
+    <div class="showcase-panel">
+      <strong>เรียนได้ทุกที่</strong>
+      <span>บทเรียน วิดีโอ เอกสาร และไฟล์ประกอบการเรียนจะรวมอยู่ในบัญชีของลูกค้า</span>
+    </div>
+  </section>
+
+  <section id="bots" class="showcase-section reverse">
+    <div class="showcase-copy">
+      <p class="eyebrow">VISIOND TOOLS</p>
+      <h2>โปรแกรมบอท</h2>
+      <p>โปรแกรมและเครื่องมือช่วยทำงาน เช่น ระบบสร้างไฟล์ดิจิทัล ระบบจัดคิวงาน และบอทอัตโนมัติสำหรับธุรกิจออนไลน์</p>
+      <span class="coming-badge">กำลังพัฒนา</span>
+    </div>
+    <div class="showcase-panel">
+      <strong>License ของ VisionD</strong>
+      <span>ลูกค้าจะดูสิทธิ์ใช้งาน ดาวน์โหลดโปรแกรม และรับเวอร์ชันอัปเดตผ่านบัญชีของตนเอง</span>
+    </div>
+  </section>
+</main>
+
+<dialog id="cartDialog">
+  <div class="dialog-head"><h3>ตะกร้าสินค้า</h3><button onclick="cartDialog.close()">×</button></div>
+  <div id="cartItems"></div>
+  <div class="cart-total">รวม <b id="cartTotal">0 บาท</b></div>
+  <button id="checkoutBtn" class="primary wide">สร้างออเดอร์</button>
+</dialog>
+<script src="/app.js"></script>
+</body>
+</html>

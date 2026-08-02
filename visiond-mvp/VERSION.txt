@@ -1,5 +1,4 @@
-VisionD v0.2 Tiffany Clean
-Cloudflare Pages settings:
-Root directory: visiond-mvp
-Build command: (blank)
-Build output directory: public
+VisionD v0.2.2
+- Added Online Courses navigation and section
+- Added Bot Programs navigation and section
+- Added LINE contact as final navigation item
