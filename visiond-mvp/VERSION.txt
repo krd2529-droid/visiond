@@ -1,2 +1,2 @@
-VisionD MVP v0.7.3
-Fixed Cloudflare Catalog Rendering
+VisionD MVP v0.7.4
+Static Catalog Cards — No JavaScript Rendering Dependency
