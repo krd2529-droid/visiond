@@ -1,2 +1,2 @@
-VisionD MVP v0.8.0
-Admin Product Manager and File Upload
+VisionD MVP v0.8.2
+Admin Payment Settings and QR Upload
