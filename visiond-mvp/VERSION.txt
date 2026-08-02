@@ -1,1 +1,4 @@
-VisionD v0.3.1 — SEO & GEO Positioning
+VisionD v0.4 — Role System
+- Boss: เจ้าของระบบและจัดการระดับสมาชิก
+- Admin: จัดการออเดอร์และตรวจสลิป
+- User: ซื้อสินค้าและดาวน์โหลดไฟล์ที่อนุมัติ
