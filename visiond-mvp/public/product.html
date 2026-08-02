@@ -1,1 +1,45 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>สินค้า — VisionD</title><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/">VISIOND <small>ONLINE</small></a><nav><a href="/">หน้าร้าน</a><a href="/account.html">บัญชีของฉัน</a></nav></header><main id="productPage" class="product-page"></main><script src="/product.js"></script></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>รายละเอียดสินค้า | VisionD Online</title>
+  <meta name="description" content="ดูรายละเอียด ภาพตัวอย่าง ราคา และซื้อสินค้าดิจิทัลจาก VisionD Online เมื่อชำระเงินและได้รับอนุมัติ สินค้าจะถูกปลดล็อกในสินค้าของฉัน">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
+  <nav>
+    <a href="/digital-products.html">สินค้า</a>
+    <a href="/courses.html">คอร์สเรียน</a>
+    <a href="/bots.html">โปรแกรมบอท</a>
+    <a href="/dashboard.html#my-products">สินค้าของฉัน</a>
+    <a href="/login.html">บัญชีของฉัน</a>
+    <a href="https://lin.ee/rU7lTLb6" target="_blank" rel="noopener">ติดต่อ LINE</a>
+  </nav>
+</header>
+<main id="productPage" class="product-page"><div class="product-loading">กำลังโหลดรายละเอียดสินค้า…</div></main>
+
+<dialog id="paymentDialog" class="payment-dialog">
+  <div class="dialog-head"><div><p class="eyebrow dark">PAYMENT</p><h2>ชำระเงินเพื่อปลดล็อกสินค้า</h2></div><button type="button" id="closePayment" aria-label="ปิด">×</button></div>
+  <div class="payment-grid">
+    <section class="qr-panel">
+      <div class="qr-placeholder" aria-label="พื้นที่ QR Code"><span>QR</span><small>พร้อมเพย์บริษัท</small></div>
+      <p class="payment-note">QR Code จริงจะตั้งค่าจากหลังบ้านก่อนเปิดขาย</p>
+    </section>
+    <section class="bank-panel">
+      <p>สินค้า</p><h3 id="paymentProduct">สินค้า VisionD</h3>
+      <p>ยอดชำระ</p><strong id="paymentAmount" class="payment-amount">0 บาท</strong>
+      <div class="bank-detail"><span>ธนาคาร</span><b>ตั้งค่าบัญชีบริษัท VisionD</b></div>
+      <div class="bank-detail"><span>ชื่อบัญชี</span><b>VisionD Online</b></div>
+      <div class="bank-detail"><span>เลขบัญชี</span><b>ตั้งค่าก่อนเปิดขาย</b></div>
+      <p id="paymentOrder" class="order-reference"></p>
+      <a id="lineSlipButton" class="line-button" href="https://lin.ee/rU7lTLb6" target="_blank" rel="noopener">ติดต่อ LINE เพื่อแจ้งสลิป</a>
+      <button id="paidButton" class="secondary-button wide" type="button">ฉันชำระเงินแล้ว</button>
+    </section>
+  </div>
+  <p class="payment-help">หลังตรวจสอบสลิปแล้ว สินค้าจะปรากฏใน <b>สินค้าของฉัน</b> และปุ่มซื้อจะเปลี่ยนเป็นเปิดใช้งานหรือดาวน์โหลด</p>
+</dialog>
+<script src="/product.js"></script>
+</body></html>

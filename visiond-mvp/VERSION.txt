@@ -1,7 +1,1 @@
-VisionD v0.6 Member Front-End
-- Separate Login page
-- Separate Registration page
-- Forgot password UI
-- Member Dashboard
-- Boss / Admin / User role-aware navigation
-- Responsive Tiffany member interface
+VisionD v0.6.1 — Direct Buy + My Products + Auth Switch

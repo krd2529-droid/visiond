@@ -1,52 +1,9 @@
-const state={products:[],cart:JSON.parse(localStorage.getItem('vd_cart')||'[]'),category:'all'};
-const money=n=>new Intl.NumberFormat('th-TH').format(n/100)+' บาท';
-async function load(){const r=await fetch('/api/products');const d=await r.json();state.products=d.items||[];render();syncCart();}
-function render(q=''){const grid=document.querySelector('#productGrid');grid.innerHTML=state.products.filter(p=>{const hay=(p.title+' '+(p.short_description||'')+' '+(p.category||'')).toLowerCase();const matchSearch=hay.includes(q.toLowerCase());const matchCategory=state.category==='all'||String(p.category||p.category_slug||'').toLowerCase()===state.category;return matchSearch&&matchCategory;}).map(p=>`<article class="product-card"><img src="${p.cover_url||'/assets/product-placeholder.svg'}"><div class="product-card-body"><h3>${p.title}</h3><p>${p.short_description||''}</p><div class="price">${money(p.price)}</div><div class="card-actions"><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a><button data-add="${p.id}">ใส่ตะกร้า</button></div></div></article>`).join('');grid.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(Number(b.dataset.add)));}
-function add(id){if(!state.cart.includes(id))state.cart.push(id);save();}
-function save(){localStorage.setItem('vd_cart',JSON.stringify(state.cart));syncCart();}
-function syncCart(){document.querySelector('#cartCount').textContent=state.cart.length;const items=state.products.filter(p=>state.cart.includes(p.id));document.querySelector('#cartItems').innerHTML=items.map(p=>`<div class="cart-row"><span>${p.title}</span><b>${money(p.price)}</b><button data-remove="${p.id}">ลบ</button></div>`).join('')||'<p>ยังไม่มีสินค้า</p>';document.querySelector('#cartTotal').textContent=money(items.reduce((s,p)=>s+p.price,0));document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x!==Number(b.dataset.remove));save()});}
-document.querySelector('#searchInput').oninput=e=>render(e.target.value);document.querySelector('#cartBtn').onclick=()=>cartDialog.showModal();document.querySelector('#checkoutBtn').onclick=async()=>{if(!state.cart.length)return alert('ยังไม่มีสินค้า');const r=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({productIds:state.cart})});if(r.status===401){location.href='/account.html';return}const d=await r.json();if(!r.ok)return alert(d.error||'สร้างออเดอร์ไม่สำเร็จ');state.cart=[];save();location.href='/account.html?order='+d.orderNo};load();
-
-
-const homeLoginForm=document.querySelector('#homeLoginForm');
-if(homeLoginForm){
-  homeLoginForm.addEventListener('submit',async(event)=>{
-    event.preventDefault();
-    const button=homeLoginForm.querySelector('button[type="submit"]');
-    const message=document.querySelector('#homeLoginMsg');
-    button.disabled=true;
-    button.textContent='กำลังเข้าสู่ระบบ…';
-    message.textContent='';
-    try{
-      const response=await fetch('/api/auth/login',{
-        method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify(Object.fromEntries(new FormData(homeLoginForm)))
-      });
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(data.error||'เข้าสู่ระบบไม่สำเร็จ');
-      location.href='/account.html';
-    }catch(error){message.textContent=error.message;}
-    finally{button.disabled=false;button.textContent='เข้าสู่ระบบ';}
-  });
-}
-
-
-const categoryFilter=document.querySelector('#categoryFilter');
-if(categoryFilter){
-  categoryFilter.querySelectorAll('[data-category]').forEach(button=>{
-    button.addEventListener('click',()=>{
-      categoryFilter.querySelectorAll('[data-category]').forEach(item=>item.classList.remove('active'));
-      button.classList.add('active');
-      state.category=button.dataset.category;
-      render(document.querySelector('#searchInput')?.value||'');
-      document.querySelector('#products')?.scrollIntoView({behavior:'smooth'});
-    });
-  });
-}
-document.querySelectorAll('[data-pick-category]').forEach(card=>{
-  card.addEventListener('click',()=>{
-    state.category=card.dataset.pickCategory;
-    categoryFilter?.querySelectorAll('[data-category]').forEach(item=>item.classList.toggle('active',item.dataset.category===state.category));
-    render(document.querySelector('#searchInput')?.value||'');
-  });
-});
+const state={products:[],category:'all'};
+const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
+const demoProducts=[{id:1,slug:'paper-doll-sample',title:'ชุดตุ๊กตากระดาษพร้อมพิมพ์',short_description:'กิจกรรมสร้างสรรค์สำหรับพิมพ์ ตัด และเล่น',category:'kids',price:19900,cover_url:'/assets/product-placeholder.svg'}];
+async function load(){try{const response=await fetch('/api/products');const data=await response.json();state.products=data.items?.length?data.items:demoProducts;}catch(error){state.products=demoProducts;}render();}
+function render(q=''){const grid=document.querySelector('#productGrid');if(!grid)return;const items=state.products.filter(product=>{const hay=(product.title+' '+(product.short_description||'')+' '+(product.category||'')).toLowerCase();return hay.includes(q.toLowerCase())&&(state.category==='all'||String(product.category||product.category_slug||'').toLowerCase()===state.category);});grid.innerHTML=items.map(product=>`<article class="product-card"><img src="${product.cover_url||'/assets/product-placeholder.svg'}" alt="${product.title}"><div class="product-card-body"><h3>${product.title}</h3><p>${product.short_description||''}</p><div class="price">${money(product.price)}</div><div class="card-actions"><a class="primary" href="/product.html?slug=${encodeURIComponent(product.slug)}">ดูรายละเอียดและซื้อ</a></div></div></article>`).join('')||'<div class="empty-state">ยังไม่มีสินค้าในหมวดนี้</div>';}
+const searchInput=document.querySelector('#searchInput');if(searchInput)searchInput.oninput=event=>render(event.target.value);
+const categoryFilter=document.querySelector('#categoryFilter');if(categoryFilter){categoryFilter.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{categoryFilter.querySelectorAll('[data-category]').forEach(item=>item.classList.remove('active'));button.classList.add('active');state.category=button.dataset.category;render(searchInput?.value||'');document.querySelector('#products')?.scrollIntoView({behavior:'smooth'});}));}
+document.querySelectorAll('[data-pick-category]').forEach(card=>card.addEventListener('click',()=>{state.category=card.dataset.pickCategory;categoryFilter?.querySelectorAll('[data-category]').forEach(item=>item.classList.toggle('active',item.dataset.category===state.category));render(searchInput?.value||'');}));
+load();
