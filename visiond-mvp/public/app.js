@@ -6,3 +6,26 @@ function add(id){if(!state.cart.includes(id))state.cart.push(id);save();}
 function save(){localStorage.setItem('vd_cart',JSON.stringify(state.cart));syncCart();}
 function syncCart(){document.querySelector('#cartCount').textContent=state.cart.length;const items=state.products.filter(p=>state.cart.includes(p.id));document.querySelector('#cartItems').innerHTML=items.map(p=>`<div class="cart-row"><span>${p.title}</span><b>${money(p.price)}</b><button data-remove="${p.id}">ลบ</button></div>`).join('')||'<p>ยังไม่มีสินค้า</p>';document.querySelector('#cartTotal').textContent=money(items.reduce((s,p)=>s+p.price,0));document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x!==Number(b.dataset.remove));save()});}
 document.querySelector('#searchInput').oninput=e=>render(e.target.value);document.querySelector('#cartBtn').onclick=()=>cartDialog.showModal();document.querySelector('#checkoutBtn').onclick=async()=>{if(!state.cart.length)return alert('ยังไม่มีสินค้า');const r=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({productIds:state.cart})});if(r.status===401){location.href='/account.html';return}const d=await r.json();if(!r.ok)return alert(d.error||'สร้างออเดอร์ไม่สำเร็จ');state.cart=[];save();location.href='/account.html?order='+d.orderNo};load();
+
+
+const homeLoginForm=document.querySelector('#homeLoginForm');
+if(homeLoginForm){
+  homeLoginForm.addEventListener('submit',async(event)=>{
+    event.preventDefault();
+    const button=homeLoginForm.querySelector('button[type="submit"]');
+    const message=document.querySelector('#homeLoginMsg');
+    button.disabled=true;
+    button.textContent='กำลังเข้าสู่ระบบ…';
+    message.textContent='';
+    try{
+      const response=await fetch('/api/auth/login',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify(Object.fromEntries(new FormData(homeLoginForm)))
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.error||'เข้าสู่ระบบไม่สำเร็จ');
+      location.href='/account.html';
+    }catch(error){message.textContent=error.message;}
+    finally{button.disabled=false;button.textContent='เข้าสู่ระบบ';}
+  });
+}

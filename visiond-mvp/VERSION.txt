@@ -1,4 +1,1 @@
-VisionD v0.2.2
-- Added Online Courses navigation and section
-- Added Bot Programs navigation and section
-- Added LINE contact as final navigation item
+VisionD v0.2.3 — Member Login & Registration

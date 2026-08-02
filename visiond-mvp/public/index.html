@@ -14,7 +14,8 @@
     <a href="#products">สินค้า</a>
     <a href="#courses">คอร์สเรียนออนไลน์</a>
     <a href="#bots">โปรแกรมบอท</a>
-    <a href="/account.html">บัญชีของฉัน</a>
+    <a href="/account.html">เข้าสู่ระบบ</a>
+    <a class="signup-link" href="/account.html?tab=register">สมัครสมาชิก</a>
     <a href="/admin.html">หลังบ้าน</a>
     <button id="cartBtn">ตะกร้า <span id="cartCount">0</span></button>
     <a class="line-link" href="https://lin.ee/rU7lTLb6" target="_blank" rel="noopener">ติดต่อ LINE</a>
@@ -29,15 +30,27 @@
       <p>สมัครสมาชิก เลือกสินค้า โอนเข้าบัญชีบริษัท ส่งสลิป และรออนุมัติการดาวน์โหลด</p>
       <a class="primary" href="#products">เลือกดูสินค้า</a>
     </div>
-    <div class="hero-card">
-      <b>ขั้นตอนสั่งซื้อ</b>
-      <ol>
-        <li>สมัครและเข้าสู่ระบบ</li>
-        <li>เพิ่มสินค้าลงตะกร้า</li>
-        <li>โอนเงินและส่งสลิป</li>
-        <li>แอดมินตรวจและอนุมัติ</li>
-        <li>กลับมาดาวน์โหลดที่หน้าสินค้า</li>
-      </ol>
+    <div class="hero-login-card">
+      <p class="login-kicker">MEMBER LOGIN</p>
+      <h2>เข้าสู่ระบบสมาชิก</h2>
+      <form id="homeLoginForm" class="home-login-form">
+        <label>ไอดีสมาชิก
+          <input name="login" autocomplete="username" placeholder="กรอกไอดีหรืออีเมล" required>
+        </label>
+        <label>รหัสผ่าน
+          <input name="password" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required>
+        </label>
+        <button class="primary wide" type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <p id="homeLoginMsg" class="auth-message" aria-live="polite"></p>
+      <div class="register-cta">
+        <span>ยังไม่มีบัญชี?</span>
+        <a href="/account.html?tab=register">สมัครสมาชิก</a>
+      </div>
+      <div class="purchase-steps">
+        <b>ซื้อแล้วดาวน์โหลดจากหน้าสินค้า</b>
+        <span>สมัคร → สั่งซื้อ → ส่งสลิป → รออนุมัติ</span>
+      </div>
     </div>
   </section>
 
