@@ -1,2 +1,2 @@
-VisionD v0.6.3
-Dedicated Login and Direct VisionD Registration
+VisionD MVP v0.7.1
+Coloring Marketplace + Toyskub-style Catalog + Cart
