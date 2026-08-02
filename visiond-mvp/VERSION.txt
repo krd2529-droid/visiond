@@ -1,2 +1,2 @@
-VisionD MVP v0.8.3
-Registration Database Auto Repair
+VisionD MVP v0.8.4
+Payment Account Copy and Slip Upload UI
