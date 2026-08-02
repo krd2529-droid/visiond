@@ -226,3 +226,10 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
 .collection-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:24px;padding:18px;border-radius:17px;background:linear-gradient(135deg,var(--tiffany-deep),var(--tiffany));color:#fff}.collection-row strong{margin-right:8px}.collection-row span{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.17);font-size:12px;font-weight:800}
 @media(max-width:1000px){.digital-category-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.digital-categories-section{margin:18px 14px;padding:34px 18px}.digital-category-grid{grid-template-columns:1fr}.digital-category-card{min-height:190px}}
+
+
+/* VisionD v0.3.1 — SEO/GEO hero and semantic positioning */
+.hero-description{max-width:760px;font-size:18px!important;line-height:1.8!important;color:rgba(255,255,255,.94)!important}
+.hero-keywords{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0 28px}
+.hero-keywords span{padding:8px 12px;border:1px solid rgba(255,255,255,.44);border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:900;letter-spacing:.2px;backdrop-filter:blur(4px)}
+@media(max-width:760px){.hero-description{font-size:16px!important}.hero-keywords{margin-top:16px}.hero-keywords span{font-size:11px}}
