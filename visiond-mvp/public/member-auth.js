@@ -1,6 +1,48 @@
 const authMessage=document.querySelector('#pageAuthMsg');
 const returnTo=()=>sessionStorage.getItem('vd_return_to')||'/dashboard.html';
-document.querySelectorAll('[data-auth-tab]').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('[data-auth-tab]').forEach(item=>item.classList.toggle('active',item===tab));document.querySelectorAll('[data-auth-panel]').forEach(panel=>panel.hidden=panel.dataset.authPanel!==tab.dataset.authTab);authMessage.textContent='';}));
-async function submitAuth(form,endpoint,loadingText){const button=form.querySelector('button[type="submit"]');const original=button.textContent;button.disabled=true;button.textContent=loadingText;authMessage.textContent='';try{const response=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ดำเนินการไม่สำเร็จ');sessionStorage.removeItem('vd_return_to');location.href=returnTo();}catch(error){authMessage.textContent=error.message;}finally{button.disabled=false;button.textContent=original;}}
-loginPageForm?.addEventListener('submit',event=>{event.preventDefault();submitAuth(loginPageForm,'/api/auth/login','กำลังเข้าสู่ระบบ…');});
-registerPageForm?.addEventListener('submit',event=>{event.preventDefault();submitAuth(registerPageForm,'/api/auth/register','กำลังสมัครสมาชิก…');});
+
+async function submitAuth(form,endpoint,loadingText){
+  const button=form.querySelector('button[type="submit"]');
+  const original=button.textContent;
+  button.disabled=true;
+  button.textContent=loadingText;
+  if(authMessage) authMessage.textContent='';
+  try{
+    const payload=Object.fromEntries(new FormData(form));
+    if(form.id==='registerPageForm'){
+      if(payload.password!==payload.confirmPassword) throw new Error('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
+      payload.name=`${payload.firstName||''} ${payload.lastName||''}`.trim();
+      delete payload.confirmPassword;
+      payload.termsAccepted=payload.termsAccepted==='true';
+    }
+    const response=await fetch(endpoint,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error||'ดำเนินการไม่สำเร็จ');
+    sessionStorage.removeItem('vd_return_to');
+    location.href=returnTo();
+  }catch(error){
+    if(authMessage) authMessage.textContent=error.message;
+  }finally{
+    button.disabled=false;
+    button.textContent=original;
+  }
+}
+
+document.querySelector('#loginPageForm')?.addEventListener('submit',event=>{
+  event.preventDefault();
+  submitAuth(event.currentTarget,'/api/auth/login','กำลังเข้าสู่ระบบ…');
+});
+
+document.querySelector('#registerPageForm')?.addEventListener('submit',event=>{
+  event.preventDefault();
+  submitAuth(event.currentTarget,'/api/auth/register','กำลังสมัครสมาชิก…');
+});
+
+document.querySelector('#forgotForm')?.addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(authMessage) authMessage.textContent='ระบบตั้งรหัสผ่านใหม่จะเปิดใช้งานเมื่อเชื่อมอีเมลของ VisionD';
+});

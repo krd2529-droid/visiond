@@ -1,1 +1,2 @@
-VisionD v0.6.1 — Direct Buy + My Products + Auth Switch
+VisionD v0.6.3
+Dedicated Login and Direct VisionD Registration
