@@ -24,7 +24,9 @@ export async function onRequestPost(ctx){
     deploymentNeedsRefresh:true
   },503);
   const body=await ctx.request.json().catch(()=>({}));
-  if(body.provider!=='google-imagen')return json({error:'API นี้ยังไม่ได้เชื่อม กรุณาเลือก Google Imagen API',code:'provider_not_connected'},400);
+  // v0.11.2 and older saved several provider aliases in local jobs.
+  // Gemini is the only connected image provider for now, so old jobs safely use it too.
+  const provider='google-imagen';
   const prompt=String(body.prompt||'').trim().slice(0,12000);
   if(!prompt)return json({error:'ไม่พบ Prompt สำหรับสร้างภาพ',code:'invalid_prompt'},400);
   const aspectRatio=allowedRatios.has(body.aspect_ratio)?body.aspect_ratio:'3:4';
