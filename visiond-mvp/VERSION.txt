@@ -1,2 +1,2 @@
-VisionD MVP v0.9.5
-Unified Vision 2 Form Typography and Orientation Buttons
+VisionD MVP v0.9.6
+Seven-Step Vision 2 Production Workflow
