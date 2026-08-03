@@ -1,2 +1,2 @@
-VisionD MVP v0.8.11
-Product Category and File Type
+VisionD MVP v0.8.12
+Full Portrait Product Thumbnails
