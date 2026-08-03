@@ -1,2 +1,2 @@
-VisionD MVP v0.8.19
-Front-end Member Login Status Navigation
+VisionD MVP v0.8.20
+Purchased Product Status and Duplicate Purchase Protection
