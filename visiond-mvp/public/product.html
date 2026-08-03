@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>รายละเอียดสินค้า | VisionD Online</title>
   <meta name="description" content="ดูรายละเอียด ภาพตัวอย่าง ราคา และซื้อสินค้าดิจิทัลจาก VisionD Online เมื่อชำระเงินและได้รับอนุมัติ สินค้าจะถูกปลดล็อกในสินค้าของฉัน">
-  <link rel="stylesheet" href="/style.css?v=0812">
+  <link rel="stylesheet" href="/style.css?v=0816">
 </head>
 <body>
 <header class="topbar">
@@ -23,12 +23,8 @@
 
 <dialog id="paymentDialog" class="payment-dialog">
   <div class="dialog-head"><div><p class="eyebrow dark">PAYMENT</p><h2>ชำระเงินเพื่อปลดล็อกสินค้า</h2></div><button type="button" id="closePayment" aria-label="ปิด">×</button></div>
-  <div class="payment-grid">
-    <section class="qr-panel">
-      <div id="productQr" class="qr-placeholder" aria-label="พื้นที่ QR Code"><span>QR</span><small>ชำระเงินบริษัท</small></div>
-      <p id="productQrNote" class="payment-note">สามารถโอนผ่านเลขบัญชีด้านข้างได้</p>
-    </section>
-    <section class="bank-panel">
+  <div class="payment-grid payment-grid-no-qr">
+    <section class="bank-panel bank-panel-featured">
       <p>สินค้า</p><h3 id="paymentProduct">สินค้า VisionD</h3>
       <p>ยอดชำระ</p><strong id="paymentAmount" class="payment-amount">0 บาท</strong>
       <div class="bank-detail"><span>ธนาคาร</span><b id="productBankName">-</b></div>
@@ -46,5 +42,5 @@
   </div>
   <p class="payment-help">หลังตรวจสอบสลิปแล้ว สินค้าจะปรากฏใน <b>สินค้าของฉัน</b> และปุ่มซื้อจะเปลี่ยนเป็นเปิดใช้งานหรือดาวน์โหลด</p>
 </dialog>
-<script src="/product.js?v=0813"></script>
+<script src="/product.js?v=0816"></script>
 </body></html>

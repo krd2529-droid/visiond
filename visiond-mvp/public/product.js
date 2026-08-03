@@ -42,7 +42,6 @@ async function beginPurchase(){
     productBankName.textContent=bank.bank_name||'-';
     productAccountName.textContent=bank.account_name||'-';
     productAccountNumber.textContent=bank.account_number||'-';
-    if(bank.qr_url){productQr.style.backgroundImage=`url("${String(bank.qr_url).replace(/["\\]/g,'')}")`;productQr.style.backgroundSize='cover';productQrNote.textContent='สแกน QR เพื่อชำระเงิน';}
     paymentProduct.textContent=currentProduct.title;paymentAmount.textContent=money(data.total||currentProduct.price);paymentOrder.textContent='เลขออเดอร์: '+currentOrderNo;paymentDialog.showModal();
   }catch(error){alert(error.message);}
   finally{button.disabled=false;button.textContent='ซื้อสินค้านี้';}
