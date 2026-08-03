@@ -9,9 +9,8 @@ const closePayment=document.querySelector('#closePayment');
 
 function galleryMarkup(product){
   const cover=product.cover_url||'/assets/product-placeholder.svg';
-  const previews=[cover,product.preview_url,product.preview_url_2].filter(Boolean);
-  while(previews.length<3)previews.push('/assets/product-placeholder.svg');
-  return `<div class="product-gallery"><img class="product-main-image" id="mainProductImage" src="${escapeHtml(previews[0])}" alt="${escapeHtml(product.title)}"><div class="product-thumbs">${previews.slice(0,3).map((src,index)=>`<button type="button" class="product-thumb ${index===0?'active':''}" data-preview="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="ภาพตัวอย่าง ${index+1}"></button>`).join('')}</div></div>`;
+  const previews=[...new Set([cover,product.preview_url,product.preview_url_2].filter(Boolean))];
+  return `<div class="product-gallery"><img class="product-main-image" id="mainProductImage" src="${escapeHtml(previews[0])}" alt="${escapeHtml(product.title)}"><div class="product-thumbs ${previews.length===1?'single-thumb':''}">${previews.slice(0,3).map((src,index)=>`<button type="button" class="product-thumb ${index===0?'active':''}" data-preview="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="ภาพตัวอย่าง ${index+1}"></button>`).join('')}</div></div>`;
 }
 function renderProduct(product){
   currentProduct=product;
