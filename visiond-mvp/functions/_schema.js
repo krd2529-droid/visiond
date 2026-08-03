@@ -30,6 +30,8 @@ export async function ensureDatabase(env) {
   if (!orderItemColumns.includes('product_title')) await env.DB.prepare('ALTER TABLE order_items ADD COLUMN product_title TEXT').run();
   await env.DB.prepare('UPDATE order_items SET product_title=(SELECT title FROM products WHERE products.id=order_items.product_id) WHERE product_title IS NULL').run();
   await env.DB.prepare(`CREATE TRIGGER IF NOT EXISTS trg_order_item_product_title AFTER INSERT ON order_items WHEN NEW.product_title IS NULL BEGIN UPDATE order_items SET product_title=(SELECT title FROM products WHERE id=NEW.product_id) WHERE id=NEW.id; END`).run();
+  const orderColumns = (await env.DB.prepare('PRAGMA table_info(orders)').all()).results.map(column => column.name);
+  if (!orderColumns.includes('sale_price_recorded')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN sale_price_recorded INTEGER NOT NULL DEFAULT 1').run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('coloring','ภาพระบายสี',NULL,'PDF',1,10)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('dinosaur','ไดโนเสาร์','coloring','PDF',1,11)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('paper-doll','ตุ๊กตากระดาษ',NULL,'PDF',1,20)").run();

@@ -1,2 +1,2 @@
-VisionD MVP v0.8.24
-Sales Report with Slip Archive and Price Snapshot
+VisionD MVP v0.8.25
+Manual Sales Ledger with Price and Slip Archive
