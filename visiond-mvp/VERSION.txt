@@ -1,2 +1,2 @@
-VisionD MVP v0.9.8
-Separated Image Generation and SAMPLE Selection Stages
+VisionD MVP v0.9.9
+Required Orientation and Image Border Options
