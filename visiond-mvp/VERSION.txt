@@ -1,2 +1,2 @@
-VisionD MVP v0.9.1
-Daily ROAS and Flexible Date Range Totals
+VisionD MVP v0.9.2
+Vision 2 Preset or Custom Size Selector
