@@ -14,7 +14,15 @@ const safeSlug=value=>String(value||'vision2').toLowerCase().normalize('NFKD').r
 export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   if(!ctx.env.FILES)return json({error:'ยังไม่ได้เชื่อม R2 binding ชื่อ FILES',code:'storage_missing'},500);
-  if(!ctx.env.GEMINI_API_KEY)return json({error:'ยังไม่ได้ตั้ง Cloudflare Secret ชื่อ GEMINI_API_KEY',code:'api_key_missing'},503);
+  // Pages Functions exposes encrypted secrets through the runtime env binding.
+  // Normalising the value also protects against an accidentally pasted space.
+  const apiKey=String(ctx.env?.GEMINI_API_KEY||'').trim();
+  if(!apiKey)return json({
+    error:'Deployment นี้ยังไม่ได้รับ Secret ชื่อ GEMINI_API_KEY กรุณา Deploy ใหม่หลังบันทึก Secret',
+    code:'api_key_missing',
+    secretName:'GEMINI_API_KEY',
+    deploymentNeedsRefresh:true
+  },503);
   const body=await ctx.request.json().catch(()=>({}));
   if(body.provider!=='google-imagen')return json({error:'API นี้ยังไม่ได้เชื่อม กรุณาเลือก Google Imagen API',code:'provider_not_connected'},400);
   const prompt=String(body.prompt||'').trim().slice(0,12000);
@@ -25,7 +33,7 @@ export async function onRequestPost(ctx){
   try{
     response=await fetch(`https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent`,{
       method:'POST',signal:controller.signal,
-      headers:{'content-type':'application/json','x-goog-api-key':ctx.env.GEMINI_API_KEY},
+      headers:{'content-type':'application/json','x-goog-api-key':apiKey},
       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE'],responseFormat:{image:{aspectRatio,imageSize:'1K'}},thinkingConfig:{thinkingLevel:'minimal'}}})
     });
   }catch(error){
