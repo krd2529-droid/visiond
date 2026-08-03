@@ -1,2 +1,2 @@
-VisionD MVP v0.8.8
-Full Portrait Product Thumbnails
+VisionD MVP v0.8.9
+Unlocked PDF Preview and Download
