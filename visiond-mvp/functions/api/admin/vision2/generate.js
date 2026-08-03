@@ -36,7 +36,7 @@ export async function onRequestPost(ctx){
     response=await fetch(`https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent`,{
       method:'POST',signal:controller.signal,
       headers:{'content-type':'application/json','x-goog-api-key':apiKey},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE'],imageConfig:{aspectRatio,imageSize:'1K'},thinkingConfig:{thinkingLevel:'minimal'}}})
+      body:JSON.stringify({contents:[{parts:[...(body.reference_image?.data?[{inlineData:{mimeType:String(body.reference_image.mime_type||'image/png'),data:String(body.reference_image.data)}}]:[]),{text:body.reference_image?.data?`ใช้ตัวละครในรูปอ้างอิงเป็นต้นแบบหลักของภาพ รักษารูปร่าง ใบหน้า สี เครื่องแต่งกาย และลักษณะสำคัญให้สม่ำเสมอในทุกภาพ\n${prompt}`:prompt}]}],generationConfig:{responseModalities:['IMAGE'],imageConfig:{aspectRatio,imageSize:'1K'},thinkingConfig:{thinkingLevel:'minimal'}}})
     });
   }catch(error){
     clearTimeout(timeout);
