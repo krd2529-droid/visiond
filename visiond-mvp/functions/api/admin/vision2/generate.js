@@ -36,7 +36,7 @@ export async function onRequestPost(ctx){
     response=await fetch(`https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent`,{
       method:'POST',signal:controller.signal,
       headers:{'content-type':'application/json','x-goog-api-key':apiKey},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE'],responseFormat:{image:{aspectRatio,imageSize:'1K'}},thinkingConfig:{thinkingLevel:'minimal'}}})
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE'],imageConfig:{aspectRatio,imageSize:'1K'},thinkingConfig:{thinkingLevel:'minimal'}}})
     });
   }catch(error){
     clearTimeout(timeout);
