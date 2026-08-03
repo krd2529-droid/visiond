@@ -1,2 +1,2 @@
-VisionD MVP v0.8.18
-Role-aware Boss and Admin Order Dashboard
+VisionD MVP v0.8.19
+Front-end Member Login Status Navigation
