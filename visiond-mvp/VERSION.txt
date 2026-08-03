@@ -1,2 +1,2 @@
-VisionD MVP v0.8.9
-Unlocked PDF Preview and Download
+VisionD MVP v0.8.10
+Admin Catalog Auto Sync
