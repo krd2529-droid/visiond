@@ -1,2 +1,2 @@
-VisionD MVP v0.8.4
-Payment Account Copy and Slip Upload UI
+VisionD MVP v0.8.5
+Product Payment Details and Direct Slip Upload

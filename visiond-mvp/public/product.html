@@ -25,21 +25,26 @@
   <div class="dialog-head"><div><p class="eyebrow dark">PAYMENT</p><h2>ชำระเงินเพื่อปลดล็อกสินค้า</h2></div><button type="button" id="closePayment" aria-label="ปิด">×</button></div>
   <div class="payment-grid">
     <section class="qr-panel">
-      <div class="qr-placeholder" aria-label="พื้นที่ QR Code"><span>QR</span><small>พร้อมเพย์บริษัท</small></div>
-      <p class="payment-note">QR Code จริงจะตั้งค่าจากหลังบ้านก่อนเปิดขาย</p>
+      <div id="productQr" class="qr-placeholder" aria-label="พื้นที่ QR Code"><span>QR</span><small>ชำระเงินบริษัท</small></div>
+      <p id="productQrNote" class="payment-note">สามารถโอนผ่านเลขบัญชีด้านข้างได้</p>
     </section>
     <section class="bank-panel">
       <p>สินค้า</p><h3 id="paymentProduct">สินค้า VisionD</h3>
       <p>ยอดชำระ</p><strong id="paymentAmount" class="payment-amount">0 บาท</strong>
-      <div class="bank-detail"><span>ธนาคาร</span><b>ตั้งค่าบัญชีบริษัท VisionD</b></div>
-      <div class="bank-detail"><span>ชื่อบัญชี</span><b>VisionD Online</b></div>
-      <div class="bank-detail"><span>เลขบัญชี</span><b>ตั้งค่าก่อนเปิดขาย</b></div>
+      <div class="bank-detail"><span>ธนาคาร</span><b id="productBankName">-</b></div>
+      <div class="bank-detail"><span>ชื่อบัญชี</span><b id="productAccountName">-</b></div>
+      <div class="bank-detail account-copy-row"><span>เลขบัญชี</span><b id="productAccountNumber">-</b></div>
+      <button id="productCopyAccount" class="secondary-button wide" type="button">คัดลอกเลขบัญชี</button>
       <p id="paymentOrder" class="order-reference"></p>
-      <a id="lineSlipButton" class="line-button" href="https://lin.ee/rU7lTLb6" target="_blank" rel="noopener">ติดต่อ LINE เพื่อแจ้งสลิป</a>
-      <button id="paidButton" class="secondary-button wide" type="button">ฉันชำระเงินแล้ว</button>
+      <form id="productSlipForm" class="product-slip-form">
+        <label>อัปโหลดสลิป<input id="productSlipInput" name="slip" type="file" accept="image/jpeg,image/png,image/webp" required></label>
+        <label>หมายเหตุ<input name="note" placeholder="ชื่อผู้โอนหรือเวลาโอน (ไม่บังคับ)"></label>
+        <p id="productSlipMessage"></p>
+        <button class="primary wide" type="submit">อัปโหลดและส่งสลิปให้แอดมิน</button>
+      </form>
     </section>
   </div>
   <p class="payment-help">หลังตรวจสอบสลิปแล้ว สินค้าจะปรากฏใน <b>สินค้าของฉัน</b> และปุ่มซื้อจะเปลี่ยนเป็นเปิดใช้งานหรือดาวน์โหลด</p>
 </dialog>
-<script src="/product.js"></script>
+<script src="/product.js?v=085"></script>
 </body></html>

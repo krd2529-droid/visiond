@@ -3,9 +3,9 @@ const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;'
 const demoProduct={id:1,slug:'paper-doll-sample',title:'ชุดตุ๊กตากระดาษพร้อมพิมพ์',category:'สินค้าดิจิทัล',description:'ไฟล์ตัวอย่างสำหรับแสดงหน้าสินค้า ประกอบด้วยภาพปก ภาพตัวอย่าง รายละเอียดไฟล์ และสิทธิ์การใช้งาน',short_description:'ชุดกิจกรรมตุ๊กตากระดาษสำหรับพิมพ์ ตัด และเล่น',price:19900,cover_url:'/assets/product-placeholder.svg'};
 let currentProduct=demoProduct;
 let currentOrderNo='';
+let activeOrder=null;
 const paymentDialog=document.querySelector('#paymentDialog');
 const closePayment=document.querySelector('#closePayment');
-const paidButton=document.querySelector('#paidButton');
 
 function galleryMarkup(product){
   const cover=product.cover_url||'/assets/product-placeholder.svg';
@@ -31,16 +31,22 @@ async function checkEntitlement(productId){
 async function beginPurchase(){
   const button=document.querySelector('#buyNowButton');button.disabled=true;button.textContent='กำลังสร้างคำสั่งซื้อ…';
   try{
-    const response=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({productIds:[currentProduct.id]})});
+    const response=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({productSlugs:[currentProduct.slug]})});
     if(response.status===401){sessionStorage.setItem('vd_return_to',location.href);location.href='/login.html';return;}
     const data=await response.json().catch(()=>({}));
-    if(response.ok)currentOrderNo=data.orderNo||data.order_no||'';
-    else if(response.status!==404)throw new Error(data.error||'สร้างคำสั่งซื้อไม่สำเร็จ');
-  }catch(error){console.warn(error);}
+    if(!response.ok)throw new Error(data.error||'สร้างคำสั่งซื้อไม่สำเร็จ');
+    activeOrder=data;currentOrderNo=data.orderNo||data.order_no||'';
+    const bank=data.bank||{};
+    productBankName.textContent=bank.bank_name||'-';
+    productAccountName.textContent=bank.account_name||'-';
+    productAccountNumber.textContent=bank.account_number||'-';
+    if(bank.qr_url){productQr.style.backgroundImage=`url("${String(bank.qr_url).replace(/["\\]/g,'')}")`;productQr.style.backgroundSize='cover';productQrNote.textContent='สแกน QR เพื่อชำระเงิน';}
+    paymentProduct.textContent=currentProduct.title;paymentAmount.textContent=money(data.total||currentProduct.price);paymentOrder.textContent='เลขออเดอร์: '+currentOrderNo;paymentDialog.showModal();
+  }catch(error){alert(error.message);}
   finally{button.disabled=false;button.textContent='ซื้อสินค้านี้';}
-  paymentProduct.textContent=currentProduct.title;paymentAmount.textContent=money(currentProduct.price);paymentOrder.textContent=currentOrderNo?'เลขออเดอร์: '+currentOrderNo:'ระบบจะสร้างเลขออเดอร์เมื่อเชื่อมฐานข้อมูลเรียบร้อย';paymentDialog.showModal();
 }
 closePayment.addEventListener('click',()=>paymentDialog.close());
 paymentDialog.addEventListener('click',event=>{if(event.target===paymentDialog)paymentDialog.close();});
-paidButton.addEventListener('click',()=>{paidButton.textContent='รอตรวจสอบสลิป';paidButton.disabled=true;setTimeout(()=>{paymentDialog.close();location.href='/dashboard.html#my-products';},700);});
+productCopyAccount.addEventListener('click',async()=>{const number=productAccountNumber.textContent.trim();if(!number||number==='-')return;await navigator.clipboard.writeText(number);productCopyAccount.textContent='คัดลอกแล้ว ✓';setTimeout(()=>productCopyAccount.textContent='คัดลอกเลขบัญชี',1600)});
+productSlipForm.addEventListener('submit',async event=>{event.preventDefault();if(!activeOrder?.id)return;const button=productSlipForm.querySelector('button');button.disabled=true;productSlipMessage.textContent='กำลังอัปโหลดสลิป…';try{const response=await fetch(`/api/orders/${activeOrder.id}/slip`,{method:'POST',body:new FormData(productSlipForm)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ส่งสลิปไม่สำเร็จ');productSlipMessage.textContent=activeOrder.bank?.payment_message||'ส่งสลิปเรียบร้อย กรุณารอแอดมินตรวจสอบ';setTimeout(()=>location.href='/dashboard.html#orders',900)}catch(error){productSlipMessage.textContent=error.message;button.disabled=false;}});
 loadProduct();
