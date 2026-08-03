@@ -11,8 +11,8 @@ export async function onRequestGet(ctx){
   const sales=(await ctx.env.DB.prepare(`SELECT date(updated_at,'+7 hours') day,SUM(total) sales,COUNT(*) orders FROM orders WHERE status='paid' AND sale_price_recorded=1 AND date(updated_at,'+7 hours') BETWEEN ? AND ? GROUP BY day`).bind(from,to).all()).results;
   const ads=(await ctx.env.DB.prepare(`SELECT spend_date day,facebook_cost,note,updated_at FROM ad_costs WHERE spend_date BETWEEN ? AND ?`).bind(from,to).all()).results;
   const map=new Map();for(const row of sales)map.set(row.day,{day:row.day,sales:Number(row.sales)||0,orders:Number(row.orders)||0,facebook_cost:0,note:''});for(const row of ads){const item=map.get(row.day)||{day:row.day,sales:0,orders:0,facebook_cost:0,note:''};item.facebook_cost=Number(row.facebook_cost)||0;item.note=row.note||'';map.set(row.day,item)}
-  const items=[...map.values()].sort((a,b)=>b.day.localeCompare(a.day)).map(item=>({...item,profit:item.sales-item.facebook_cost}));
-  const summary=items.reduce((sum,item)=>({sales:sum.sales+item.sales,facebook_cost:sum.facebook_cost+item.facebook_cost,profit:sum.profit+item.profit,orders:sum.orders+item.orders}),{sales:0,facebook_cost:0,profit:0,orders:0});
+  const items=[...map.values()].sort((a,b)=>b.day.localeCompare(a.day)).map(item=>({...item,profit:item.sales-item.facebook_cost,roas:item.facebook_cost>0?item.sales/item.facebook_cost:null}));
+  const summary=items.reduce((sum,item)=>({sales:sum.sales+item.sales,facebook_cost:sum.facebook_cost+item.facebook_cost,profit:sum.profit+item.profit,orders:sum.orders+item.orders}),{sales:0,facebook_cost:0,profit:0,orders:0});summary.roas=summary.facebook_cost>0?summary.sales/summary.facebook_cost:null;
   return json({from,to,summary,items});
 }
 
