@@ -1,2 +1,2 @@
-VisionD MVP v0.9.6
-Seven-Step Vision 2 Production Workflow
+VisionD MVP v0.9.8
+Separated Image Generation and SAMPLE Selection Stages

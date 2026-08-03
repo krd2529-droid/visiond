@@ -13,7 +13,8 @@ export async function ensureDatabase(env) {
     `CREATE TABLE IF NOT EXISTS unlock_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,actor_user_id INTEGER NOT NULL,actor_name TEXT NOT NULL,actor_role TEXT NOT NULL,target_user_id INTEGER NOT NULL,target_name TEXT NOT NULL,product_id INTEGER NOT NULL,product_title TEXT NOT NULL,order_id INTEGER NOT NULL,order_no TEXT NOT NULL,method TEXT NOT NULL DEFAULT 'manual',note TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS ad_costs (spend_date TEXT PRIMARY KEY,facebook_cost INTEGER NOT NULL DEFAULT 0,note TEXT,updated_by INTEGER,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS downloads (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,product_file_id INTEGER NOT NULL,downloaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,ip TEXT,FOREIGN KEY(user_id) REFERENCES users(id),FOREIGN KEY(product_file_id) REFERENCES product_files(id))`,
-    `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
+    `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS prompt_usage_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,user_name TEXT NOT NULL,user_role TEXT NOT NULL,project_name TEXT NOT NULL DEFAULT '',topic TEXT NOT NULL DEFAULT '',image_count INTEGER NOT NULL DEFAULT 0,prompt_count INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id))`
   ];
 
   for (const statement of statements) await env.DB.prepare(statement).run();
@@ -26,6 +27,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_unlock_logs_created ON unlock_logs(created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_unlock_logs_target ON unlock_logs(target_user_id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ad_costs_date ON ad_costs(spend_date DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prompt_usage_created ON prompt_usage_logs(created_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prompt_usage_user ON prompt_usage_logs(user_id)').run();
   const productColumns = (await env.DB.prepare('PRAGMA table_info(products)').all()).results.map(column => column.name);
   if (!productColumns.includes('file_type')) await env.DB.prepare("ALTER TABLE products ADD COLUMN file_type TEXT DEFAULT 'PDF'").run();
   const orderItemColumns = (await env.DB.prepare('PRAGMA table_info(order_items)').all()).results.map(column => column.name);
