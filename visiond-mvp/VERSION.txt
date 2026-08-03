@@ -1,2 +1,2 @@
-VisionD MVP v0.8.16
-QR-free Payment Experience and Refined Layout
+VisionD MVP v0.8.17
+Correct Order Review Status and Slip Approval Controls
