@@ -1,2 +1,2 @@
-VisionD MVP v0.8.17
-Correct Order Review Status and Slip Approval Controls
+VisionD MVP v0.8.18
+Role-aware Boss and Admin Order Dashboard
