@@ -47,10 +47,11 @@
     <a href="/bots.html">โปรแกรมบอท</a>
     <a href="/blog.html">บทความ</a>
     <a href="/about.html">เกี่ยวกับเรา</a>
-    <a href="/login.html">เข้าสู่ระบบ</a>
-    <a class="signup-link" href="/register.html">สมัครสมาชิก</a>
-    <a href="/admin.html">หลังบ้าน</a>
-    <a href="/dashboard.html#my-products">สินค้าของฉัน</a>
+    <a id="navLogin" href="/login.html">เข้าสู่ระบบ</a>
+    <a id="navRegister" class="signup-link" href="/register.html">สมัครสมาชิก</a>
+    <a id="navMember" class="member-nav-status" href="/dashboard.html" hidden>บัญชีสมาชิก</a>
+    <a id="navAdmin" href="/admin.html" hidden>หลังบ้าน</a>
+    <a id="navMyProducts" href="/dashboard.html#my-products">สินค้าของฉัน</a>
     <a class="line-link" href="https://lin.ee/rU7lTLb6" target="_blank" rel="noopener">ติดต่อ LINE</a>
   </nav>
 </header>
@@ -66,7 +67,7 @@
       </div>
       <a class="primary" href="/digital-products.html">เลือกดูสินค้า</a>
     </div>
-    <div class="hero-login-card">
+    <div id="homeMemberCard" class="hero-login-card">
       <p class="login-kicker">MEMBER LOGIN</p>
       <h2>เข้าสู่ระบบสมาชิก</h2>
       <form id="homeLoginForm" class="home-login-form">
@@ -181,7 +182,7 @@
 </main>
 
 
-<script src="/app.js"></script>
+<script src="/app.js?v=086"></script>
 <script src="/catalog-sync.js?v=080"></script>
 </body>
 </html>

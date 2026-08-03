@@ -216,6 +216,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
 .purchase-steps{display:grid;gap:5px;margin-top:18px;padding:15px;border-radius:14px;background:linear-gradient(135deg,var(--tiffany-pale),var(--tiffany-soft));color:var(--tiffany-deep)}
 .purchase-steps span{font-size:13px;color:var(--muted)}
 @media(max-width:760px){.topbar .signup-link{display:inline-flex}.hero-login-card{padding:24px}}
+.member-nav-status{padding:8px 12px;border-radius:999px;background:#fff;color:var(--tiffany-dark)!important}.member-status-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}.member-status-head h2{margin:0 0 6px}.member-status-avatar{display:grid;place-items:center;width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,var(--tiffany),#59d9d4);color:#fff;font-size:20px;font-weight:1000}.home-member-detail{display:grid;gap:0;margin:0 0 18px}.home-member-detail div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}.home-member-detail dt{color:var(--muted)}.home-member-detail dd{margin:0;font-weight:900;text-align:right}.status-active{color:#078c69}.home-logout{margin-top:10px;padding:12px;border:1px solid #d6aaaa;border-radius:11px;background:#fff;color:#9c3535;font-weight:900;cursor:pointer}.hero-login-card .secondary-button{margin-top:10px}
 
 
 /* VisionD v0.3 — digital product categories */
