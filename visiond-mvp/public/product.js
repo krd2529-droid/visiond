@@ -1,6 +1,7 @@
 import('/facebook-chat.js?v=01142');
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+const freshMedia=(url,version)=>url?.startsWith('/api/media/')?`${url}?v=${encodeURIComponent(version||Date.now())}`:url;
 const categoryLabels={dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม'};
 const categoryLabel=product=>product.category_label||categoryLabels[product.category]||product.category||'สินค้าดิจิทัล';
 const fileTypeLabel=product=>product.file_type||(/pdf/i.test(product.description||'')||product.category==='dinosaur'?'PDF พร้อมพิมพ์':'ไฟล์ดิจิทัล');
@@ -13,7 +14,7 @@ const closePayment=document.querySelector('#closePayment');
 
 function galleryMarkup(product){
   const cover=product.cover_url||'/assets/product-placeholder.svg';
-  let saved=[];try{saved=Array.isArray(product.preview_urls)?product.preview_urls:JSON.parse(product.preview_urls||'[]')}catch(error){saved=[]}const previews=[...new Set([cover,...saved].filter(Boolean))].slice(0,3);
+  let saved=[];try{saved=Array.isArray(product.preview_urls)?product.preview_urls:JSON.parse(product.preview_urls||'[]')}catch(error){saved=[]}const previews=[...new Set([cover,...saved].filter(Boolean))].slice(0,3).map(url=>freshMedia(url,product.updated_at));
   return `<div class="product-gallery"><img class="product-main-image" id="mainProductImage" src="${escapeHtml(previews[0])}" alt="${escapeHtml(product.title)}"><div class="product-thumbs ${previews.length===1?'single-thumb':''}">${previews.slice(0,3).map((src,index)=>`<button type="button" class="product-thumb ${index===0?'active':''}" data-preview="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="ภาพตัวอย่าง ${index+1}"></button>`).join('')}</div></div>`;
 }
 function renderProduct(product){
@@ -25,7 +26,7 @@ function renderProduct(product){
 }
 async function loadProduct(){
   const slug=new URLSearchParams(location.search).get('slug')||demoProduct.slug;
-  try{const response=await fetch('/api/products/'+encodeURIComponent(slug));if(!response.ok)throw new Error('not found');const data=await response.json();renderProduct(data.item||demoProduct);}catch(error){renderProduct(demoProduct);}
+  try{const response=await fetch('/api/products/'+encodeURIComponent(slug),{cache:'no-store'});if(!response.ok)throw new Error('not found');const data=await response.json();renderProduct(data.item||demoProduct);}catch(error){renderProduct(demoProduct);}
 }
 async function checkEntitlement(productId){
   const box=document.querySelector('#downloadBox');
