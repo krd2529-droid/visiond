@@ -1,3 +1,4 @@
+import('/facebook-chat.js?v=01142');
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const getCart=()=>{try{return JSON.parse(localStorage.getItem('vd_cart')||'[]')}catch{return[]}};

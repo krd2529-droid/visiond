@@ -1,3 +1,4 @@
+import('/facebook-chat.js?v=01142');
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 const categoryLabels={dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม'};

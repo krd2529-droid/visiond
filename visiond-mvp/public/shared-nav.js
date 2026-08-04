@@ -1,3 +1,4 @@
+import('/facebook-chat.js?v=01142');
 document.addEventListener('DOMContentLoaded',()=>{
   const year=document.querySelector('[data-year]');
   if(year)year.textContent=new Date().getFullYear();
