@@ -9,8 +9,6 @@ export const catalogProducts=[1,2,3,4].map(number=>({
 }));
 
 export async function ensureCatalogProducts(env){
-  for(const product of catalogProducts){
-    await env.DB.prepare(`INSERT OR IGNORE INTO products(slug,title,short_description,description,price,cover_url,category,status,source) VALUES(?,?,?,?,?,?,?,?,?)`)
-      .bind(product.slug,product.title,product.short_description,product.description,product.price,product.cover_url,product.category,'published','catalog').run();
-  }
+  // Starter products were only deployment demos. Real products are now created from Admin/Vision 2.
+  return env;
 }

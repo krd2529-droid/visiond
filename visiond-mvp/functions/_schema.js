@@ -31,6 +31,7 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prompt_usage_user ON prompt_usage_logs(user_id)').run();
   const productColumns = (await env.DB.prepare('PRAGMA table_info(products)').all()).results.map(column => column.name);
   if (!productColumns.includes('file_type')) await env.DB.prepare("ALTER TABLE products ADD COLUMN file_type TEXT DEFAULT 'PDF'").run();
+  if (!productColumns.includes('preview_urls')) await env.DB.prepare("ALTER TABLE products ADD COLUMN preview_urls TEXT DEFAULT '[]'").run();
   const orderItemColumns = (await env.DB.prepare('PRAGMA table_info(order_items)').all()).results.map(column => column.name);
   if (!orderItemColumns.includes('product_title')) await env.DB.prepare('ALTER TABLE order_items ADD COLUMN product_title TEXT').run();
   await env.DB.prepare('UPDATE order_items SET product_title=(SELECT title FROM products WHERE products.id=order_items.product_id) WHERE product_title IS NULL').run();
