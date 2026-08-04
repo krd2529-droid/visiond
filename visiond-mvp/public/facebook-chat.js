@@ -1,5 +1,5 @@
 (()=>{
-  const PAGE_URL=window.VISIOND_FACEBOOK_PAGE_URL||'https://m.me/visiondonline';
+  const PAGE_URL=window.VISIOND_FACEBOOK_PAGE_URL||'https://m.me/61592882337230';
   const STORAGE_KEY='visiond_facebook_chat_open';
   const mount=()=>{
     if(document.querySelector('[data-visiond-facebook-chat]'))return;
