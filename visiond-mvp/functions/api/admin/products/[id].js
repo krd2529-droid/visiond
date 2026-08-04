@@ -2,7 +2,7 @@ import {json,requireAdmin} from '../../../_lib.js';
 const ext=(name,type)=>type==='image/png'?'png':type==='image/webp'?'webp':type==='application/zip'?'zip':name?.toLowerCase().endsWith('.zip')?'zip':type==='application/pdf'?'pdf':'jpg';
 const validFile=(file,max,types)=>file&&typeof file.arrayBuffer==='function'&&file.size>0&&file.size<=max&&types.includes(file.type);
 
-export async function onRequestGet(ctx){const a=await requireAdmin(ctx);if(a.error)return a.error;const item=await ctx.env.DB.prepare('SELECT * FROM products WHERE id=?').bind(ctx.params.id).first();if(!item)return json({error:'ไม่พบสินค้า'},404);const {results}=await ctx.env.DB.prepare('SELECT id,label,mime_type,file_size,version,created_at FROM product_files WHERE product_id=? ORDER BY id DESC').bind(item.id).all();return json({item,files:results})}
+export async function onRequestGet(ctx){const a=await requireAdmin(ctx);if(a.error)return a.error;const item=await ctx.env.DB.prepare('SELECT * FROM products WHERE id=?').bind(ctx.params.id).first();if(!item)return json({error:'ไม่พบสินค้า'},404);const {results}=await ctx.env.DB.prepare('SELECT id,label,mime_type,file_size,version,created_at FROM product_files WHERE product_id=? ORDER BY id DESC').bind(item.id).all();return json({item,files:results.map(file=>({...file,file_name:`${item.slug||'product'}-${file.id}.${file.mime_type==='application/zip'?'zip':'pdf'}`}))})}
 
 export async function onRequestPut(ctx){
   const a=await requireAdmin(ctx);if(a.error)return a.error;

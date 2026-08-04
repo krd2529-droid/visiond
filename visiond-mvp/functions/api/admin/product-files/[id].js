@@ -1,0 +1,11 @@
+import {json,requireAdmin} from '../../../_lib.js';
+
+export async function onRequestGet(ctx){
+  const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const file=await ctx.env.DB.prepare(`SELECT pf.*,p.slug FROM product_files pf JOIN products p ON p.id=pf.product_id WHERE pf.id=?`).bind(ctx.params.id).first();
+  if(!file)return json({error:'ไม่พบไฟล์สินค้า'},404);
+  const object=await ctx.env.FILES.get(file.object_key);if(!object)return json({error:'ไม่พบไฟล์จริงในพื้นที่จัดเก็บ'},404);
+  const extension=file.mime_type==='application/zip'?'zip':'pdf',filename=`${file.slug||'product'}-${file.id}.${extension}`,download=new URL(ctx.request.url).searchParams.get('mode')==='download';
+  const headers=new Headers();object.writeHttpMetadata(headers);headers.set('content-type',file.mime_type||'application/octet-stream');headers.set('content-disposition',`${download?'attachment':'inline'}; filename="${filename}"`);headers.set('cache-control','private, no-store');
+  return new Response(object.body,{headers});
+}
