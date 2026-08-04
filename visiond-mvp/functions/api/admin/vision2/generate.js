@@ -14,16 +14,18 @@ const safeSlug=value=>String(value||'vision2').toLowerCase().normalize('NFKD').r
 export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   if(!ctx.env.FILES)return json({error:'ยังไม่ได้เชื่อม R2 binding ชื่อ FILES',code:'storage_missing'},500);
+  const body=await ctx.request.json().catch(()=>({}));
+  const apiSlot=Number(body.api_slot)===2?2:1;
+  const secretName=apiSlot===2?'GEMINI_API_KEY_2':'GEMINI_API_KEY';
   // Pages Functions exposes encrypted secrets through the runtime env binding.
   // Normalising the value also protects against an accidentally pasted space.
-  const apiKey=String(ctx.env?.GEMINI_API_KEY||'').trim();
+  const apiKey=String(ctx.env?.[secretName]||'').trim();
   if(!apiKey)return json({
-    error:'Deployment นี้ยังไม่ได้รับ Secret ชื่อ GEMINI_API_KEY กรุณา Deploy ใหม่หลังบันทึก Secret',
-    code:'api_key_missing',
-    secretName:'GEMINI_API_KEY',
+    error:`Deployment นี้ยังไม่ได้รับ Secret ชื่อ ${secretName} กรุณา Deploy ใหม่หลังบันทึก Secret`,
+    code:apiSlot===2?'api_key_2_missing':'api_key_missing',
+    secretName,
     deploymentNeedsRefresh:true
   },503);
-  const body=await ctx.request.json().catch(()=>({}));
   // v0.11.2 and older saved several provider aliases in local jobs.
   // Gemini is the only connected image provider for now, so old jobs safely use it too.
   const provider='google-imagen';
@@ -57,6 +59,6 @@ export async function onRequestPost(ctx){
   const mimeType=imagePart.inlineData.mimeType||'image/png',extension=mimeType.includes('jpeg')?'jpg':mimeType.includes('webp')?'webp':'png';
   const project=safeSlug(body.project_name),position=Math.max(1,Math.floor(Number(body.index)||0)+1),key=`vision2/${auth.user.id}/${project}/${Date.now()}-${crypto.randomUUID()}-image-${position}.${extension}`;
   const bytes=decodeBase64(imagePart.inlineData.data);
-  await ctx.env.FILES.put(key,bytes,{httpMetadata:{contentType:mimeType,cacheControl:'private, max-age=3600'},customMetadata:{userId:String(auth.user.id),project,index:String(position),model:MODEL}});
-  return json({ok:true,key,url:`/api/admin/vision2/image?key=${encodeURIComponent(key)}`,mimeType,model:MODEL});
+  await ctx.env.FILES.put(key,bytes,{httpMetadata:{contentType:mimeType,cacheControl:'private, max-age=3600'},customMetadata:{userId:String(auth.user.id),project,index:String(position),model:MODEL,apiSlot:String(apiSlot)}});
+  return json({ok:true,key,url:`/api/admin/vision2/image?key=${encodeURIComponent(key)}`,mimeType,model:MODEL,apiSlot});
 }
