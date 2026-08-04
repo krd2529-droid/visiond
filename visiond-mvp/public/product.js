@@ -14,8 +14,8 @@ const closePayment=document.querySelector('#closePayment');
 
 function galleryMarkup(product){
   const cover=product.cover_url||'/assets/product-placeholder.svg';
-  let saved=[];try{saved=Array.isArray(product.preview_urls)?product.preview_urls:JSON.parse(product.preview_urls||'[]')}catch(error){saved=[]}const previews=[...new Set([cover,...saved].filter(Boolean))].slice(0,3).map(url=>freshMedia(url,product.updated_at));
-  return `<div class="product-gallery"><img class="product-main-image" id="mainProductImage" src="${escapeHtml(previews[0])}" alt="${escapeHtml(product.title)}"><div class="product-thumbs ${previews.length===1?'single-thumb':''}">${previews.slice(0,3).map((src,index)=>`<button type="button" class="product-thumb ${index===0?'active':''}" data-preview="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="ภาพตัวอย่าง ${index+1}"></button>`).join('')}</div></div>`;
+  let saved=[];try{saved=Array.isArray(product.preview_urls)?product.preview_urls:JSON.parse(product.preview_urls||'[]')}catch(error){saved=[]}const previews=[...new Set([cover,...saved].filter(Boolean))].slice(0,10).map(url=>freshMedia(url,product.updated_at));
+  return `<div class="product-gallery"><img class="product-main-image" id="mainProductImage" src="${escapeHtml(previews[0])}" alt="${escapeHtml(product.title)}"><div class="product-thumbs ${previews.length===1?'single-thumb':''}">${previews.map((src,index)=>`<button type="button" class="product-thumb ${index===0?'active':''}" data-preview="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="ภาพตัวอย่าง ${index+1}"></button>`).join('')}</div></div>`;
 }
 function renderProduct(product){
   currentProduct=product;
