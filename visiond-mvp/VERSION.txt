@@ -1,2 +1,2 @@
-VisionD MVP v0.11.66
-Product editor: adds visible clear buttons for newly selected product images and PDF/ZIP before saving, while retaining delete controls for saved files
+VisionD MVP v0.11.67
+Product editor: adds direct upload buttons for cover, preview images 2-3, and PDF/ZIP, while preserving other selected files during individual uploads
