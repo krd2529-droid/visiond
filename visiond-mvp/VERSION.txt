@@ -1,2 +1,2 @@
-VisionD MVP v0.11.63
-Vision 2: Steps 1–5 now support up to 200 images, including 200 prompt rows, Jarvis lists, generation queue, external image/ZIP upload, SAMPLE selection, and compact 200-page PDF output
+VisionD MVP v0.11.64
+Vision 2: fixes SAMPLE generation ReferenceError, adds image decoding fallback, font fallback, per-image error details, and reuses the robust decoder for PDF output
