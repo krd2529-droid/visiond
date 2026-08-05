@@ -345,10 +345,16 @@ import("/facebook-chat.js?v=01144");
         renderBundlePanel();
         syncCartButtons();
       }
-      filters.insertAdjacentHTML(
-        "beforeend",
-        '<button data-category="worksheet" type="button">แบบฝึกหัด</button><button data-category="coloring" type="button">ระบายสี</button><button data-category="tattoo" type="button">แบบสัก</button>',
+      const categoryCounts = [...grid.querySelectorAll(".vd-card")].reduce(
+        (counts, card) => {
+          counts.all += 1;
+          if (counts[card.dataset.category] !== undefined)
+            counts[card.dataset.category] += 1;
+          return counts;
+        },
+        { all: 0, worksheet: 0, coloring: 0, tattoo: 0 },
       );
+      filters.innerHTML = `<button class="active" data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button>`;
       filters.querySelectorAll("button").forEach(
         (button) =>
           (button.onclick = () => {
