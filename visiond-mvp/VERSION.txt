@@ -1,2 +1,2 @@
-VisionD MVP v0.11.52
-Mixed bundles: collect 3 previews per basket, show 15/30-image catalog and product sliders
+VisionD MVP v0.11.54
+Catalog cards: every basket cover supports previous/next controls and horizontal swipe through preview images
