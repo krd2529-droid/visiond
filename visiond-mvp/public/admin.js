@@ -570,10 +570,13 @@ function resetProductForm() {
   clearPendingUploads();
   setBundleMode(false);
   productEditor.elements.id.value = "";
-  productEditor.elements.price.value = 199;
-  productEditor.elements.pages.value = 200;
-  productEditor.elements.category.value =
-    productCategorySelect.options[0]?.value || "";
+  productEditor.elements.price.value = 29;
+  productEditor.elements.pages.value = 30;
+  productEditor.elements.category.value = [...productCategorySelect.options].some(
+    (option) => option.value === "tattoo",
+  )
+    ? "tattoo"
+    : productCategorySelect.options[0]?.value || "";
   productEditor.elements.file_type.value = "PDF";
   productEditor.elements.status.value = "published";
   productEditor.elements.file_label.value = "ไฟล์สินค้าฉบับเต็ม";
