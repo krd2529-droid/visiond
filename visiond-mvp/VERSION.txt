@@ -1,2 +1,2 @@
-VisionD MVP v0.11.70
-Catalog filters: displays every active category from admin in the All Products page, including categories that currently have no published products
+VisionD MVP v0.11.71
+Catalog filters: shows All plus Worksheets, Coloring, and Tattoo Designs; removed the separate mixed-basket creation button
