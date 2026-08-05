@@ -196,7 +196,7 @@ import("/facebook-chat.js?v=01144");
           .filter((p) => !existing.has(p.slug))
           .map(
             (p) =>
-              `<article class="vd-card" data-category="${esc(catalogGroup(p))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")}</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
+              `<article class="vd-card" data-category="${esc(catalogGroup(p))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
           )
           .join(""),
       );

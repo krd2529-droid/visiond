@@ -801,6 +801,7 @@ function formatBytes(n) {
   return (n / 1024 / 1024).toFixed(1) + " MB";
 }
 async function loadProfitDashboard() {
+  loadVisitorStats();
   profitDailyTable.innerHTML = "<p>กำลังคำนวณยอดขายและค่าแอด…</p>";
   const params = new URLSearchParams({
       from: profitDateFrom.value,
@@ -830,6 +831,23 @@ async function loadProfitDashboard() {
         adCostForm.scrollIntoView({ behavior: "smooth", block: "center" });
       }),
   );
+}
+async function loadVisitorStats() {
+  const summary = document.querySelector("#visitorStatsSummary"),
+    productsBox = document.querySelector("#topViewedProducts");
+  if (!summary || !productsBox) return;
+  const r = await fetch("/api/admin/visitor-stats", { cache: "no-store" }),
+    d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    productsBox.innerHTML = `<p>${esc(d.error || "โหลดสถิติผู้เข้าชมไม่สำเร็จ")}</p>`;
+    return;
+  }
+  const number = (value) =>
+    new Intl.NumberFormat("th-TH").format(Number(value) || 0);
+  summary.innerHTML = `<article><small>ยอดเข้าชมทั้งหมด</small><b>${number(d.total)}</b></article><article><small>เข้าชมวันนี้</small><b>${number(d.today)}</b></article><article><small>ผู้ชมไม่ซ้ำทั้งหมด</small><b>${number(d.unique)}</b></article>`;
+  productsBox.innerHTML = d.products?.length
+    ? `<h4>สินค้าที่มีคนดูมากที่สุด</h4>${d.products.map((product, index) => `<a href="/product.html?slug=${encodeURIComponent(product.slug)}" target="_blank" rel="noopener"><span>${index + 1}</span><b>${esc(product.title)}</b><strong>${number(product.views)} ครั้ง</strong></a>`).join("")}`
+    : "<p>ยังไม่มีข้อมูลการเข้าชมสินค้า</p>";
 }
 async function saveAdCost(event) {
   event.preventDefault();
