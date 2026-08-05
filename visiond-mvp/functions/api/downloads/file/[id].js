@@ -3,7 +3,7 @@ import {ensureDatabase} from '../../../_schema.js';
 import {rateLimit,securityLog} from '../../../_security.js';
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireUser(ctx);if(auth.error)return auth.error;
-  const limited=await rateLimit(ctx.env,ctx.request,`download-${auth.user.id}`,80,60,60);if(limited.error)return limited.error;
+  if(auth.user.role!=='boss'){const limited=await rateLimit(ctx.env,ctx.request,`download-${auth.user.id}`,80,60,60);if(limited.error)return limited.error;}
   const file=await ctx.env.DB.prepare(`SELECT pf.* FROM product_files pf WHERE pf.id=? AND (EXISTS(SELECT 1 FROM entitlements e WHERE e.product_id=pf.product_id AND e.user_id=? AND e.active=1) OR EXISTS(SELECT 1 FROM product_bundle_items b JOIN entitlements e ON e.product_id=b.bundle_product_id WHERE b.source_product_id=pf.product_id AND e.user_id=? AND e.active=1))`).bind(ctx.params.id,auth.user.id,auth.user.id).first();
   if(!file){await securityLog(ctx.env,ctx.request,'download_denied','warning',String(ctx.params.id),auth.user.id);return json({error:'ไม่มีสิทธิ์ดาวน์โหลดไฟล์นี้'},403)}
   const object=await ctx.env.FILES.get(file.object_key);if(!object)return json({error:'ไม่พบไฟล์'},404);

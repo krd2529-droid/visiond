@@ -12,9 +12,19 @@ async function ensureStarterProducts(env, slugs) {
 }
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
-  const limited=await rateLimit(ctx.env,ctx.request,'create_order',20,60,60);if(limited.error)return limited.error;
   const a = await requireUser(ctx);
   if (a.error) return a.error;
+  if (a.user.role !== "boss") {
+    const limited = await rateLimit(
+      ctx.env,
+      ctx.request,
+      "create_order",
+      20,
+      60,
+      60,
+    );
+    if (limited.error) return limited.error;
+  }
   const payment = await loadPaymentSettings(ctx.env);
   if (!payment.accepting_orders)
     return json(
