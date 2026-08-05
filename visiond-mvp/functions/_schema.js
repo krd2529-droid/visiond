@@ -18,6 +18,8 @@ export async function ensureDatabase(env) {
     `CREATE TABLE IF NOT EXISTS prompt_usage_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,user_name TEXT NOT NULL,user_role TEXT NOT NULL,project_name TEXT NOT NULL DEFAULT '',topic TEXT NOT NULL DEFAULT '',image_count INTEGER NOT NULL DEFAULT 0,prompt_count INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id))`
     ,`CREATE TABLE IF NOT EXISTS trash_items (id INTEGER PRIMARY KEY AUTOINCREMENT,item_type TEXT NOT NULL,title TEXT NOT NULL,product_id INTEGER,object_key TEXT,payload TEXT NOT NULL DEFAULT '{}',deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,expires_at TEXT NOT NULL DEFAULT (datetime('now','+30 days')))`
     ,`CREATE TABLE IF NOT EXISTS product_slug_history (old_slug TEXT PRIMARY KEY,product_id INTEGER NOT NULL,changed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS security_rate_limits (rate_key TEXT PRIMARY KEY,hits INTEGER NOT NULL DEFAULT 0,window_start TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,blocked_until TEXT)`
+    ,`CREATE TABLE IF NOT EXISTS security_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,event_type TEXT NOT NULL,severity TEXT NOT NULL DEFAULT 'info',user_id INTEGER,ip TEXT,path TEXT,detail TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const statement of statements) await env.DB.prepare(statement).run();
@@ -41,6 +43,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_trash_expires_at ON trash_items(expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_slug_history_product ON product_slug_history(product_id)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_security_logs_created ON security_logs(created_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_security_logs_event ON security_logs(event_type,created_at DESC)').run();
   const orderItemColumns = (await env.DB.prepare('PRAGMA table_info(order_items)').all()).results.map(column => column.name);
   if (!orderItemColumns.includes('product_title')) await env.DB.prepare('ALTER TABLE order_items ADD COLUMN product_title TEXT').run();
   await env.DB.prepare('UPDATE order_items SET product_title=(SELECT title FROM products WHERE products.id=order_items.product_id) WHERE product_title IS NULL').run();

@@ -1,5 +1,7 @@
 import { json, requireUser, statusLabel } from "../../_lib.js";
 import { loadPaymentSettings } from "../../_payment.js";
+import { ensureDatabase } from "../../_schema.js";
+import { rateLimit } from "../../_security.js";
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -9,6 +11,8 @@ async function ensureStarterProducts(env, slugs) {
   return { env, slugs };
 }
 export async function onRequestPost(ctx) {
+  await ensureDatabase(ctx.env);
+  const limited=await rateLimit(ctx.env,ctx.request,'create_order',20,60,60);if(limited.error)return limited.error;
   const a = await requireUser(ctx);
   if (a.error) return a.error;
   const payment = await loadPaymentSettings(ctx.env);
