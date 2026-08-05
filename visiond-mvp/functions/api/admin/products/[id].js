@@ -72,6 +72,11 @@ export async function onRequestPut(ctx) {
     return json({ error: "Slug ใช้ได้เฉพาะ a-z, 0-9 และขีดกลาง" }, 400);
   if (!Number.isInteger(price) || price < 0)
     return json({ error: "ราคาไม่ถูกต้อง" }, 400);
+  const duplicate = await ctx.env.DB.prepare(
+    "SELECT id,title FROM products WHERE lower(trim(title))=lower(trim(?)) AND id<>? LIMIT 1",
+  ).bind(title, old.id).first();
+  if (duplicate)
+    return json({ error: `ชื่อสินค้า “${duplicate.title}” มีอยู่แล้ว กรุณาใช้ชื่ออื่น` }, 409);
   try {
     const category = String(form.get("category") || "dinosaur"),
       isBundle = form.get("bundle_mode") === "1",
