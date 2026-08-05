@@ -1,2 +1,2 @@
-VisionD MVP v0.11.51
-Product editor: isolate mixed-catalog bundle mode from single-product and Vision 2 forms
+VisionD MVP v0.11.52
+Vision 2 Step 1: add camera-angle column with Front, Side, Back, six camera angles, and distributed random selection
