@@ -131,7 +131,15 @@ import("/facebook-chat.js?v=01144");
       .catch(() => ({ items: [] })),
   ])
     .then(([data, categoryData, orderData]) => {
-      const products = data.items || [],
+      const products = [...(data.items || [])].sort((a, b) => {
+          const tattooRank = (item) =>
+            /tattoo|รอยสัก|แบบสัก/.test(
+              `${item.category || ""} ${item.category_label || ""} ${item.title || ""}`.toLowerCase(),
+            )
+              ? 0
+              : 1;
+          return tattooRank(a) - tattooRank(b) || Number(b.id) - Number(a.id);
+        }),
         bySlug = new Map(products.map((p) => [p.slug, p])),
         categoryMap = new Map(
           (categoryData.items || []).map((category) => [
@@ -354,23 +362,26 @@ import("/facebook-chat.js?v=01144");
         },
         { all: 0, worksheet: 0, coloring: 0, tattoo: 0 },
       );
-      filters.innerHTML = `<button class="active" data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button>`;
+      const requestedCategory = new URLSearchParams(location.search).get("category"),
+        initialCategory = ["all", "tattoo", "coloring", "worksheet"].includes(requestedCategory)
+          ? requestedCategory
+          : "all";
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button>`;
+      const applyCategory = (category) => {
+        filters
+          .querySelectorAll("button")
+          .forEach((button) => button.classList.toggle("active", button.dataset.category === category));
+        grid
+          .querySelectorAll(".vd-card")
+          .forEach((card) => (card.hidden = category !== "all" && card.dataset.category !== category));
+      };
       filters.querySelectorAll("button").forEach(
         (button) =>
           (button.onclick = () => {
-            filters
-              .querySelectorAll("button")
-              .forEach((x) => x.classList.toggle("active", x === button));
-            grid
-              .querySelectorAll(".vd-card")
-              .forEach(
-                (card) =>
-                  (card.hidden =
-                    button.dataset.category !== "all" &&
-                    card.dataset.category !== button.dataset.category),
-              );
+            applyCategory(button.dataset.category);
           }),
       );
+      applyCategory(initialCategory);
     })
     .catch(() => {});
 })();
