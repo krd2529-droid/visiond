@@ -1,2 +1,2 @@
-VisionD MVP v0.11.59
-Vision 2 external upload: separate ZIP button extracts 3–30 JPG, PNG, or WEBP images in-browser without manual unzip
+VisionD MVP v0.11.60
+Vision 2: collapsible Thai usage guide appears on every visible Step 1–5, including the product editor
