@@ -1,2 +1,2 @@
-VisionD MVP v0.11.69
-Media delivery: allows product-image keys created by direct upload buttons so uploaded cover and preview images render immediately in admin and storefront
+VisionD MVP v0.11.70
+Catalog filters: displays every active category from admin in the All Products page, including categories that currently have no published products
