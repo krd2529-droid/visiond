@@ -25,6 +25,14 @@ export async function onRequestGet(ctx) {
     .bind(ctx.params.id)
     .first();
   if (!item) return json({ error: "ไม่พบสินค้า" }, 404);
+  const storedFiles = await ctx.env.DB.prepare(
+    "SELECT id,object_key FROM product_files WHERE product_id=? ORDER BY id DESC",
+  ).bind(item.id).all();
+  for (const duplicate of (storedFiles.results || []).slice(1)) {
+    await ctx.env.DB.prepare("DELETE FROM downloads WHERE product_file_id=?").bind(duplicate.id).run();
+    await ctx.env.DB.prepare("DELETE FROM product_files WHERE id=?").bind(duplicate.id).run();
+    await ctx.env.FILES.delete(duplicate.object_key);
+  }
   const { results } = await ctx.env.DB.prepare(
       "SELECT id,label,mime_type,file_size,version,created_at FROM product_files WHERE product_id=? ORDER BY id DESC",
     )
@@ -224,23 +232,33 @@ export async function onRequestPut(ctx) {
       await ctx.env.FILES.put(key, await file.arrayBuffer(), {
         httpMetadata: { contentType: file.type },
       });
-      const current = await ctx.env.DB.prepare(
-        "SELECT COUNT(*) count FROM product_files WHERE product_id=?",
-      )
-        .bind(old.id)
-        .first();
-      await ctx.env.DB.prepare(
-        "INSERT INTO product_files(product_id,label,object_key,mime_type,file_size,version) VALUES(?,?,?,?,?,?)",
-      )
+      const previous = await ctx.env.DB.prepare(
+          "SELECT id,object_key FROM product_files WHERE product_id=? ORDER BY id DESC",
+        )
+          .bind(old.id)
+          .all(),
+        inserted = await ctx.env.DB.prepare(
+          "INSERT INTO product_files(product_id,label,object_key,mime_type,file_size,version) VALUES(?,?,?,?,?,?) RETURNING id",
+        )
         .bind(
           old.id,
           String(form.get("file_label") || "ไฟล์สินค้าฉบับเต็ม"),
           key,
           file.type,
           file.size,
-          `1.${Number(current.count) || 0}`,
+          "1.0",
         )
-        .run();
+        .first();
+      for (const previousFile of previous.results || []) {
+        if (Number(previousFile.id) === Number(inserted.id)) continue;
+        await ctx.env.DB.prepare("DELETE FROM downloads WHERE product_file_id=?")
+          .bind(previousFile.id)
+          .run();
+        await ctx.env.DB.prepare("DELETE FROM product_files WHERE id=?")
+          .bind(previousFile.id)
+          .run();
+        await ctx.env.FILES.delete(previousFile.object_key);
+      }
     }
     return json({
       item: await ctx.env.DB.prepare("SELECT * FROM products WHERE id=?")

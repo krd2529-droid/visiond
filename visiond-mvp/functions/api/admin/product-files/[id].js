@@ -9,3 +9,13 @@ export async function onRequestGet(ctx){
   const headers=new Headers();object.writeHttpMetadata(headers);headers.set('content-type',file.mime_type||'application/octet-stream');headers.set('content-disposition',`${download?'attachment':'inline'}; filename="${filename}"`);headers.set('cache-control','private, no-store');
   return new Response(object.body,{headers});
 }
+
+export async function onRequestDelete(ctx){
+  const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const file=await ctx.env.DB.prepare('SELECT * FROM product_files WHERE id=?').bind(ctx.params.id).first();
+  if(!file)return json({error:'ไม่พบไฟล์สินค้า'},404);
+  await ctx.env.DB.prepare('DELETE FROM downloads WHERE product_file_id=?').bind(file.id).run();
+  await ctx.env.DB.prepare('DELETE FROM product_files WHERE id=?').bind(file.id).run();
+  await ctx.env.FILES.delete(file.object_key);
+  return json({ok:true,product_id:file.product_id});
+}
