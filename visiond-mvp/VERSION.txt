@@ -1,2 +1,2 @@
-VisionD MVP v0.11.60
-Vision 2: collapsible Thai usage guide appears on every visible Step 1–5, including the product editor
+VisionD MVP v0.11.62
+Catalog: adds the top-level worksheet category with automatic sequential slugs worksheet-001, worksheet-002, and onward

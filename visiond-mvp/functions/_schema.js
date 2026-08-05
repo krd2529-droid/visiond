@@ -45,6 +45,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('tattoo','รอยสัก',NULL,'PDF',1,20)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('set-coloring','คละแบบระบายสี',NULL,'ชุด PDF',1,21)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('set-tattoo','คละแบบรอยสัก',NULL,'ชุด PDF',1,22)").run();
+  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('worksheet','แบบฝึกหัด',NULL,'PDF',1,25)").run();
+  await env.DB.prepare("UPDATE categories SET name='แบบฝึกหัด',parent_slug=NULL,file_type='PDF',active=1,sort_order=25 WHERE slug='worksheet'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('dinosaur','ไดโนเสาร์','coloring','PDF',1,11)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('paper-doll','ตุ๊กตากระดาษ',NULL,'PDF',1,30)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('document','เอกสารและแบบฟอร์ม',NULL,'PDF',1,40)").run();
