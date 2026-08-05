@@ -1,2 +1,2 @@
-VisionD MVP v0.11.71
-Catalog filters: shows All plus Worksheets, Coloring, and Tattoo Designs; removed the separate mixed-basket creation button
+VisionD MVP v0.11.72
+Bundle discount cart: select up to 30 products with automatic discounts at 5, 10, 20, and 30 baskets; server recalculates the final total
