@@ -1,2 +1,2 @@
-VisionD MVP v0.11.67
-Product editor: adds direct upload buttons for cover, preview images 2-3, and PDF/ZIP, while preserving other selected files during individual uploads
+VisionD MVP v0.11.69
+Media delivery: allows product-image keys created by direct upload buttons so uploaded cover and preview images render immediately in admin and storefront
