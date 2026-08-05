@@ -376,6 +376,14 @@ async function loadCategories(render = true) {
   }
   categories = d.items || [];
   productCategorySelect.innerHTML = productCategoryOptions();
+  if (!productEditor.elements.id.value) {
+    productCategorySelect.value = [...productCategorySelect.options].some(
+      (option) => option.value === "tattoo",
+    )
+      ? "tattoo"
+      : productCategorySelect.options[0]?.value || "";
+    updateProductSlugPreview();
+  }
   parentCategorySelect.innerHTML =
     '<option value="">— หมวดหลัก —</option>' + categoryOptions(true);
   if (!render) return;
@@ -617,6 +625,7 @@ function resetProductForm() {
   productEditor.elements.status.value = "published";
   productEditor.elements.file_label.value = "ไฟล์สินค้าฉบับเต็ม";
   updateProductSlugPreview();
+  requestAnimationFrame(updateProductSlugPreview);
   editorTitle.textContent = "เพิ่มสินค้าใหม่";
   deleteProductButton.hidden = true;
   existingProductImages.innerHTML = "<span>ยังไม่ได้เลือกรูปตัวอย่าง</span>";

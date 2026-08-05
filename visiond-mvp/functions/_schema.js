@@ -53,7 +53,8 @@ export async function ensureDatabase(env) {
   if (!orderColumns.includes('sale_price_recorded')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN sale_price_recorded INTEGER NOT NULL DEFAULT 1').run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('coloring','ระบายสี',NULL,'PDF',1,10)").run();
   await env.DB.prepare("UPDATE categories SET name='ระบายสี',parent_slug=NULL,active=1,sort_order=10 WHERE slug='coloring'").run();
-  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('tattoo','รอยสัก',NULL,'PDF',1,20)").run();
+  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('tattoo','แบบรอยสัก',NULL,'PDF',1,20)").run();
+  await env.DB.prepare("UPDATE categories SET name='แบบรอยสัก',parent_slug=NULL,file_type='PDF',active=1,sort_order=20 WHERE slug='tattoo'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('set-coloring','คละแบบระบายสี',NULL,'ชุด PDF',1,21)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('set-tattoo','คละแบบรอยสัก',NULL,'ชุด PDF',1,22)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('worksheet','แบบฝึกหัด',NULL,'PDF',1,25)").run();
