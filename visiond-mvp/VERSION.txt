@@ -1,2 +1,2 @@
-VisionD MVP v0.11.73
-Admin save flow: after a successful save, return to the main admin dashboard and show a confirmation notice
+VisionD MVP v0.11.74
+Cart layout fix: compact product thumbnails and a clearly visible remove-from-cart button on every item
