@@ -1,2 +1,2 @@
-VisionD MVP v0.11.74
-Cart layout fix: compact product thumbnails and a clearly visible remove-from-cart button on every item
+VisionD MVP v0.11.75
+Promotion banner: animated GIF across storefront pages and inside checkout summary, with live warnings showing how many baskets remain to unlock the next discount
