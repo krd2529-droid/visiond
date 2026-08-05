@@ -32,4 +32,4 @@ import('/facebook-chat.js?v=01144');
     filters.querySelectorAll('button').forEach(button=>button.onclick=()=>{filters.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));grid.querySelectorAll('.vd-card').forEach(card=>card.hidden=button.dataset.category!=='all'&&card.dataset.category!==button.dataset.category)});
   }).catch(()=>{});
 })();
-import('/nav-account.js?v=0819').then(module=>module.initAccountNav());
+import('/nav-account.js?v=01176').then(module=>module.initAccountNav());
