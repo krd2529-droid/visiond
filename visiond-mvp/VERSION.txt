@@ -1,2 +1,2 @@
 VisionD MVP v0.11.52
-Vision 2 Step 1: add camera-angle column with Front, Side, Back, six camera angles, and distributed random selection
+Mixed bundles: collect 3 previews per basket, show 15/30-image catalog and product sliders
