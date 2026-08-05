@@ -4,7 +4,7 @@ import("/facebook-chat.js?v=01144");
   if (!grid) return;
   document.head.insertAdjacentHTML(
     "beforeend",
-    "<style>.vd-cover>a{display:block;width:100%;height:100%}.vd-cover img[hidden]{display:none!important}.vd-cover-slider{touch-action:pan-y;user-select:none}.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{position:absolute;z-index:3;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:42px;border:0;background:rgba(7,63,61,.78);color:#fff;font-size:24px;cursor:pointer}.vd-cover-slider .vd-slide-prev{left:0;border-radius:0 8px 8px 0}.vd-cover-slider .vd-slide-next{right:0;border-radius:8px 0 0 8px}.vd-slide-count{position:absolute;z-index:3;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(pointer:coarse){.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{opacity:.82}}</style>",
+    "<style>.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover img[hidden]{display:none!important}.vd-cover-slider{touch-action:pan-y;user-select:none}.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{position:absolute;z-index:3;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:42px;border:0;background:rgba(7,63,61,.78);color:#fff;font-size:24px;cursor:pointer}.vd-cover-slider .vd-slide-prev{left:0;border-radius:0 8px 8px 0}.vd-cover-slider .vd-slide-next{right:0;border-radius:8px 0 0 8px}.vd-slide-count{position:absolute;z-index:3;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(pointer:coarse){.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{opacity:.82}}</style>",
   );
   const filters = document.createElement("div");
   filters.className = "catalog-category-filters";
@@ -139,19 +139,31 @@ import("/facebook-chat.js?v=01144");
             category,
           ]),
         ),
-        catalogGroup = (slug) => {
-          if (slug === "set-tattoo") return "tattoo";
-          if (slug === "set-coloring") return "coloring";
-          if (slug === "tattoo") return "tattoo";
-          if (slug === "coloring") return "coloring";
+        catalogGroup = (productOrSlug) => {
+          const product =
+              typeof productOrSlug === "object" ? productOrSlug : null,
+            slug = String(product?.category || productOrSlug || "").toLowerCase(),
+            rootGroup = (value) => {
+              const text = String(value || "").toLowerCase();
+              if (/tattoo|รอยสัก|แบบสัก/.test(text)) return "tattoo";
+              if (/coloring|ระบายสี/.test(text)) return "coloring";
+              if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
+              return "";
+            };
           let current = categoryMap.get(slug),
-            guard = 0;
-          while (current?.parent_slug && guard++ < 10) {
-            if (current.parent_slug === "tattoo") return "tattoo";
-            if (current.parent_slug === "coloring") return "coloring";
+            guard = 0,
+            matched = rootGroup(slug) || rootGroup(current?.name);
+          while (!matched && current?.parent_slug && guard++ < 10) {
+            matched = rootGroup(current.parent_slug);
             current = categoryMap.get(current.parent_slug);
+            matched ||= rootGroup(current?.slug) || rootGroup(current?.name);
           }
-          return "worksheet";
+          if (matched) return matched;
+          return (
+            rootGroup(product?.category_label) ||
+            rootGroup(product?.title) ||
+            "worksheet"
+          );
         };
       [...grid.querySelectorAll(".vd-card")].forEach((card) => {
         const link = card.querySelector('a[href*="slug="]');
@@ -159,7 +171,7 @@ import("/facebook-chat.js?v=01144");
             link &&
             new URL(link.href, location.origin).searchParams.get("slug"),
           product = bySlug.get(slug);
-        card.dataset.category = catalogGroup(product?.category || "worksheet");
+        card.dataset.category = catalogGroup(product || "worksheet");
         if (product) {
           const oldCover = card.querySelector(".vd-cover");
           if (oldCover) oldCover.outerHTML = coverMarkup(product);
@@ -176,7 +188,7 @@ import("/facebook-chat.js?v=01144");
           .filter((p) => !existing.has(p.slug))
           .map(
             (p) =>
-              `<article class="vd-card" data-category="${esc(catalogGroup(p.category))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")}</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
+              `<article class="vd-card" data-category="${esc(catalogGroup(p))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")}</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
           )
           .join(""),
       );
