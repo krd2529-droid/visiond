@@ -1,2 +1,2 @@
-VisionD MVP v0.11.80
+VisionD MVP v0.11.81
 Staff navigation: Boss and Admin always see a separate, fixed Back Office button outside the account ID button on every storefront page
