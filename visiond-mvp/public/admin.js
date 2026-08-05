@@ -38,6 +38,7 @@ const panels = {
   sales: salesPanel,
   settings: settingsPanel,
   users: usersPanel,
+  trash: trashPanel,
 };
 let salesRows = [],
   filteredSalesRows = [];
@@ -73,6 +74,7 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "sales") loadSalesReport();
       if (btn.dataset.adminTab === "settings") loadPaymentSettings();
       if (btn.dataset.adminTab === "users") loadUsers();
+      if (btn.dataset.adminTab === "trash") loadTrash();
     }),
 );
 newProductButton.onclick = () => {
@@ -89,6 +91,36 @@ paymentSettingsForm.onsubmit = savePaymentSettings;
 newCategoryButton.onclick = resetCategoryForm;
 categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
+refreshTrashButton.onclick = loadTrash;
+trashList.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-trash-action]");
+  if (!button) return;
+  const action = button.dataset.trashAction,
+    id = Number(button.dataset.trashId),
+    type = button.dataset.trashType;
+  if (action === "delete" && !confirm("ลบรายการนี้ถาวรทันทีหรือไม่? กู้คืนไม่ได้")) return;
+  button.disabled = true;
+  const response = await fetch(
+    action === "restore" ? "/api/admin/trash/restore" : `/api/admin/trash?type=${encodeURIComponent(type)}&id=${id}`,
+    action === "restore"
+      ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type, id }) }
+      : { method: "DELETE" },
+  );
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) alert(data.error || "ดำเนินการไม่สำเร็จ");
+  await loadTrash();
+});
+
+async function loadTrash() {
+  trashList.innerHTML = "<p>กำลังโหลดถังขยะ…</p>";
+  const response = await fetch("/api/admin/trash", { cache: "no-store" }),
+    data = await response.json().catch(() => ({}));
+  if (!response.ok) return (trashList.innerHTML = `<p>${esc(data.error || "โหลดถังขยะไม่สำเร็จ")}</p>`);
+  const labels = { product: "ตะกร้าสินค้า", product_image: "รูปสินค้า", product_file: "PDF/ZIP" };
+  trashList.innerHTML = data.items?.length
+    ? `<div class="trash-grid">${data.items.map((item) => `<article class="trash-card"><div><b>${esc(item.title)}</b><small>${labels[item.item_type] || esc(item.item_type)} · ลบเมื่อ ${new Date(item.deleted_at + "Z").toLocaleString("th-TH")}</small><small>ล้างอัตโนมัติ ${new Date(item.expires_at + "Z").toLocaleString("th-TH")}</small></div><div><button type="button" data-trash-action="restore" data-trash-type="${esc(item.item_type)}" data-trash-id="${item.id}">กู้คืน</button><button class="danger" type="button" data-trash-action="delete" data-trash-type="${esc(item.item_type)}" data-trash-id="${item.id}">ลบถาวร</button></div></article>`).join("")}</div>`
+    : '<div class="admin-empty">ถังขยะว่าง</div>';
+}
 existingFiles.addEventListener("click", (event) => {
   const button = event.target.closest("[data-delete-product-file]");
   if (button)
@@ -227,7 +259,10 @@ productCategorySelect.onchange = () => {
   );
   if (category)
     productEditor.elements.file_type.value = category.file_type || "PDF";
-  updateProductSlugPreview();
+  const editing = Boolean(productEditor.elements.id.value),
+    originalCategory = productEditor.dataset.originalCategory || "";
+  if (!editing || productCategorySelect.value !== originalCategory)
+    productEditor.elements.slug.value = nextProductSlug(productCategorySelect.value);
 };
 manualUnlockForm.onsubmit = unlockProductForUser;
 applySalesFilter.onclick = renderSalesReport;
@@ -570,6 +605,7 @@ function resetProductForm() {
   clearPendingUploads();
   setBundleMode(false);
   productEditor.elements.id.value = "";
+  productEditor.dataset.originalCategory = "";
   productEditor.elements.price.value = 29;
   productEditor.elements.pages.value = 30;
   productEditor.elements.category.value = [...productCategorySelect.options].some(
@@ -602,6 +638,7 @@ async function editProduct(id) {
   productEditor.elements.title.value = p.title || "";
   productEditor.elements.slug.value = p.slug || "";
   productEditor.elements.category.value = p.category || "";
+  productEditor.dataset.originalCategory = p.category || "";
   productEditor.elements.file_type.value = p.file_type || "PDF";
   productEditor.elements.price.value = (Number(p.price) || 0) / 100;
   const bundleCount = d.bundle_items?.length || 0;
@@ -737,7 +774,7 @@ async function deleteProduct() {
   if (
     !id ||
     !confirm(
-      "ลบสินค้านี้ ไฟล์ สิทธิ์ดาวน์โหลด และคำสั่งซื้อเทสที่เกี่ยวข้องทั้งหมดหรือไม่?",
+      "ย้ายสินค้านี้พร้อมรูปและไฟล์ PDF/ZIP ไปถังขยะ 30 วันหรือไม่?",
     )
   )
     return;
@@ -745,9 +782,7 @@ async function deleteProduct() {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) return setMessage(d.error || "ลบไม่สำเร็จ", true);
   resetProductForm();
-  setMessage(
-    `ลบสินค้าและคำสั่งซื้อเทส ${Number(d.deleted_test_orders) || 0} รายการแล้ว`,
-  );
+  setMessage("ย้ายสินค้าไปถังขยะแล้ว สามารถกู้คืนได้ภายใน 30 วัน");
   loadProducts();
 }
 function formatBytes(n) {

@@ -10,7 +10,7 @@ export async function onRequestPost(ctx){
   if(hasSalePrice&&(!Number.isInteger(enteredSaleTotal)||enteredSaleTotal<0))return json({error:'ราคาขายจริงไม่ถูกต้อง'},400);
   if(slip&&(!(slip instanceof File)||!slip.type.startsWith('image/')||slip.size>10*1024*1024))return json({error:'สลิปต้องเป็นรูป JPG, PNG หรือ WEBP ขนาดไม่เกิน 10 MB'},400);
   const user=await ctx.env.DB.prepare('SELECT id,name,username,role FROM users WHERE id=?').bind(userId).first();if(!user)return json({error:'ไม่พบบัญชีลูกค้า'},404);
-  const placeholders=requestedIds.map(()=>'?').join(','),products=(await ctx.env.DB.prepare(`SELECT id,title,price FROM products WHERE id IN (${placeholders}) AND status='published'`).bind(...requestedIds).all()).results;
+  const placeholders=requestedIds.map(()=>'?').join(','),products=(await ctx.env.DB.prepare(`SELECT id,title,price FROM products WHERE id IN (${placeholders}) AND status='published' AND deleted_at IS NULL`).bind(...requestedIds).all()).results;
   if(!products.length)return json({error:'ไม่พบสินค้าที่พร้อมปลดล็อก'},404);
   const existing=(await ctx.env.DB.prepare(`SELECT product_id FROM entitlements WHERE user_id=? AND active=1 AND product_id IN (${placeholders})`).bind(user.id,...requestedIds).all()).results;
   const existingIds=new Set(existing.map(item=>Number(item.product_id))),newProducts=products.filter(product=>!existingIds.has(Number(product.id))),skipped=products.filter(product=>existingIds.has(Number(product.id)));

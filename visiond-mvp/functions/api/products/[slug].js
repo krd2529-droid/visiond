@@ -14,7 +14,7 @@ const catalogProducts=[1,2,3,4].map(number=>({
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
-  let item=await ctx.env.DB.prepare("SELECT * FROM products WHERE slug=? AND status='published'").bind(ctx.params.slug).first();
+  let item=await ctx.env.DB.prepare("SELECT p.* FROM products p LEFT JOIN product_slug_history h ON h.product_id=p.id WHERE (p.slug=? OR h.old_slug=?) AND p.status='published' AND p.deleted_at IS NULL ORDER BY CASE WHEN p.slug=? THEN 0 ELSE 1 END LIMIT 1").bind(ctx.params.slug,ctx.params.slug,ctx.params.slug).first();
   if(!item)return json({error:'ไม่พบสินค้า'},404);
   if(item){const category=await ctx.env.DB.prepare('SELECT c.name,c.file_type,p.name parent_name FROM categories c LEFT JOIN categories p ON p.slug=c.parent_slug WHERE c.slug=?').bind(item.category).first();item.category_label=category?.parent_name?`${category.parent_name} > ${category.name}`:category?.name||item.category;item.file_type=item.file_type||category?.file_type||'ไฟล์ดิจิทัล';try{item.preview_urls=JSON.parse(item.preview_urls||'[]')}catch(error){item.preview_urls=[]}if(!item.preview_urls.length&&item.cover_url)item.preview_urls=[item.cover_url]}
   return item?json({item}):json({error:'ไม่พบสินค้า'},404);

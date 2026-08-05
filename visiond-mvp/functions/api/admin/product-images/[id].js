@@ -1,4 +1,5 @@
 import { json, requireAdmin } from "../../../_lib.js";
+import { putTrash } from "../../../_trash.js";
 
 const imageTypes = ["image/jpeg", "image/png", "image/webp"];
 const extension = (file) => file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
@@ -22,7 +23,7 @@ export async function onRequestPost(ctx) {
     "UPDATE products SET cover_url=?,preview_urls=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
   ).bind(images[0] || "/assets/product-placeholder.svg", JSON.stringify(images), ctx.params.id).run();
   if (previous?.startsWith("/api/media/") && previous !== url)
-    await ctx.env.FILES.delete(previous.slice("/api/media/".length));
+    await putTrash(ctx.env,{item_type:'product_image',title:`รูปสินค้าช่อง ${slot+1} รุ่นก่อน`,product_id:Number(ctx.params.id),object_key:previous.slice('/api/media/'.length),payload:{slot}});
   return json({ ok: true, slot, url });
 }
 
@@ -42,6 +43,6 @@ export async function onRequestDelete(ctx) {
     "UPDATE products SET cover_url=?,preview_urls=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
   ).bind(images[0], JSON.stringify(images), ctx.params.id).run();
   if (removed?.startsWith("/api/media/"))
-    await ctx.env.FILES.delete(removed.slice("/api/media/".length));
+    await putTrash(ctx.env,{item_type:'product_image',title:`รูปสินค้าช่อง ${slot+1}`,product_id:Number(ctx.params.id),object_key:removed.slice('/api/media/'.length),payload:{slot}});
   return json({ ok: true });
 }

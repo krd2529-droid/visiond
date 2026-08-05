@@ -37,7 +37,7 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT id,slug,title,price FROM products WHERE slug IN (${qs}) AND status='published'`,
+    `SELECT id,slug,title,price FROM products WHERE slug IN (${qs}) AND status='published' AND deleted_at IS NULL`,
   )
     .bind(...slugs)
     .all();

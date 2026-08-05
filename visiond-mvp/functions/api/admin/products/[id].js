@@ -1,4 +1,5 @@
 import { json, requireAdmin } from "../../../_lib.js";
+import { putTrash } from "../../../_trash.js";
 const ext = (name, type) =>
   type === "image/png"
     ? "png"
@@ -61,11 +62,11 @@ export async function onRequestPut(ctx) {
     .first();
   if (!old) return json({ error: "ไม่พบสินค้า" }, 404);
   const form = await ctx.request.formData();
-  const title = String(form.get("title") || "").trim(),
-    slug = String(form.get("slug") || "")
+  const title = String(form.get("title") || "").trim();
+  let slug = String(form.get("slug") || "")
       .trim()
-      .toLowerCase(),
-    price = Number(form.get("price_cents"));
+      .toLowerCase();
+  const price = Number(form.get("price_cents"));
   if (!title || !slug)
     return json({ error: "กรุณากรอกชื่อสินค้าและ Slug" }, 400);
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
@@ -89,6 +90,15 @@ export async function onRequestPut(ctx) {
         ),
       ],
       size = Number(form.get("bundle_size"));
+    if (category !== old.category) {
+      const prefix = `${category}-`,
+        current = await ctx.env.DB.prepare("SELECT slug FROM products WHERE id<>? AND slug LIKE ?").bind(old.id,`${prefix}%`).all(),
+        history = await ctx.env.DB.prepare("SELECT old_slug slug FROM product_slug_history WHERE old_slug LIKE ?").bind(`${prefix}%`).all(),
+        highest = [...(current.results||[]),...(history.results||[])].reduce((max,row)=>Math.max(max,Number(String(row.slug||'').slice(prefix.length))||0),0);
+      slug = `${prefix}${String(highest+1).padStart(3,'0')}`;
+    }
+    if (slug !== old.slug)
+      await ctx.env.DB.prepare("INSERT OR REPLACE INTO product_slug_history(old_slug,product_id,changed_at) VALUES(?,?,CURRENT_TIMESTAMP)").bind(old.slug,old.id).run();
     if (isBundle) {
       if (!["set-coloring", "set-tattoo"].includes(category))
         return json({ error: "กรุณาเลือกหมวดชุดคละ" }, 400);
@@ -99,7 +109,7 @@ export async function onRequestPut(ctx) {
         );
       const marks = ids.map(() => "?").join(","),
         valid = await ctx.env.DB.prepare(
-          `SELECT id,cover_url,preview_urls FROM products WHERE id IN (${marks}) AND id<>? AND status='published' AND category NOT IN ('set-coloring','set-tattoo')`,
+          `SELECT id,cover_url,preview_urls FROM products WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category NOT IN ('set-coloring','set-tattoo')`,
         )
           .bind(...ids, old.id)
           .all();
@@ -209,13 +219,13 @@ export async function onRequestPut(ctx) {
         newPreview2 || oldPreviews[1],
         newPreview3 || oldPreviews[2],
       ].filter(Boolean);
-    for (const [next, previous] of [
+    for (const [slot, [next, previous]] of [
       [newCover, old.cover_url],
       [newPreview2, oldPreviews[1]],
       [newPreview3, oldPreviews[2]],
-    ])
+    ].entries())
       if (next && previous?.startsWith("/api/media/") && previous !== next)
-        await ctx.env.FILES.delete(previous.slice("/api/media/".length));
+        await putTrash(ctx.env,{item_type:'product_image',title:`รูปสินค้าช่อง ${slot+1} รุ่นก่อน`,product_id:old.id,object_key:previous.slice('/api/media/'.length),payload:{slot}});
     await ctx.env.DB.prepare(
       "UPDATE products SET cover_url=?,preview_urls=? WHERE id=?",
     )
@@ -238,7 +248,7 @@ export async function onRequestPut(ctx) {
         httpMetadata: { contentType: file.type },
       });
       const previous = await ctx.env.DB.prepare(
-          "SELECT id,object_key FROM product_files WHERE product_id=? ORDER BY id DESC",
+          "SELECT * FROM product_files WHERE product_id=? ORDER BY id DESC",
         )
           .bind(old.id)
           .all(),
@@ -256,13 +266,13 @@ export async function onRequestPut(ctx) {
         .first();
       for (const previousFile of previous.results || []) {
         if (Number(previousFile.id) === Number(inserted.id)) continue;
+        await putTrash(ctx.env,{item_type:'product_file',title:previousFile.label||'ไฟล์สินค้ารุ่นก่อน',product_id:old.id,object_key:previousFile.object_key,payload:{label:previousFile.label,mime_type:previousFile.mime_type,file_size:previousFile.file_size,version:previousFile.version}});
         await ctx.env.DB.prepare("DELETE FROM downloads WHERE product_file_id=?")
           .bind(previousFile.id)
           .run();
         await ctx.env.DB.prepare("DELETE FROM product_files WHERE id=?")
           .bind(previousFile.id)
           .run();
-        await ctx.env.FILES.delete(previousFile.object_key);
       }
     }
     return json({
@@ -283,75 +293,15 @@ export async function onRequestPut(ctx) {
 }
 
 export async function onRequestDelete(ctx) {
-  const a = await requireAdmin(ctx);
-  if (a.error) return a.error;
-  const item = await ctx.env.DB.prepare("SELECT * FROM products WHERE id=?")
+  const auth = await requireAdmin(ctx);
+  if (auth.error) return auth.error;
+  const item = await ctx.env.DB.prepare("SELECT id,title,deleted_at FROM products WHERE id=?")
     .bind(ctx.params.id)
     .first();
   if (!item) return json({ error: "ไม่พบสินค้า" }, 404);
-  const { results: files } = await ctx.env.DB.prepare(
-    "SELECT id,object_key FROM product_files WHERE product_id=?",
-  )
-    .bind(item.id)
-    .all();
-  for (const file of files) {
-    await ctx.env.DB.prepare("DELETE FROM downloads WHERE product_file_id=?")
-      .bind(file.id)
-      .run();
-    await ctx.env.FILES.delete(file.object_key);
-  }
-  const { results: orders } = await ctx.env.DB.prepare(
-    "SELECT DISTINCT order_id FROM order_items WHERE product_id=?",
-  )
-    .bind(item.id)
-    .all();
-  await ctx.env.DB.prepare("DELETE FROM entitlements WHERE product_id=?")
+  if (item.deleted_at) return json({ error: "สินค้านี้อยู่ในถังขยะแล้ว" }, 409);
+  await ctx.env.DB.prepare("UPDATE products SET deleted_at=CURRENT_TIMESTAMP,deleted_prev_status=status,status='draft',updated_at=CURRENT_TIMESTAMP WHERE id=?")
     .bind(item.id)
     .run();
-  await ctx.env.DB.prepare("DELETE FROM unlock_logs WHERE product_id=?")
-    .bind(item.id)
-    .run();
-  await ctx.env.DB.prepare("DELETE FROM order_items WHERE product_id=?")
-    .bind(item.id)
-    .run();
-  for (const row of orders) {
-    const remain = await ctx.env.DB.prepare(
-      "SELECT 1 found FROM order_items WHERE order_id=? LIMIT 1",
-    )
-      .bind(row.order_id)
-      .first();
-    if (!remain) {
-      const order = await ctx.env.DB.prepare(
-        "SELECT slip_key FROM orders WHERE id=?",
-      )
-        .bind(row.order_id)
-        .first();
-      if (order?.slip_key) await ctx.env.FILES.delete(order.slip_key);
-      await ctx.env.DB.prepare("DELETE FROM orders WHERE id=?")
-        .bind(row.order_id)
-        .run();
-    }
-  }
-  let previews = [];
-  try {
-    previews = JSON.parse(item.preview_urls || "[]");
-  } catch (error) {
-    previews = [];
-  }
-  if (item.source !== "bundle")
-    for (const url of new Set([item.cover_url, ...previews]))
-      if (url?.startsWith("/api/media/"))
-        await ctx.env.FILES.delete(url.slice("/api/media/".length));
-  await ctx.env.DB.prepare(
-    "DELETE FROM product_bundle_items WHERE bundle_product_id=? OR source_product_id=?",
-  )
-    .bind(item.id, item.id)
-    .run();
-  await ctx.env.DB.prepare("DELETE FROM product_files WHERE product_id=?")
-    .bind(item.id)
-    .run();
-  await ctx.env.DB.prepare("DELETE FROM products WHERE id=?")
-    .bind(item.id)
-    .run();
-  return json({ ok: true, deleted_test_orders: orders.length });
+  return json({ ok: true, trashed: true, retention_days: 30 });
 }

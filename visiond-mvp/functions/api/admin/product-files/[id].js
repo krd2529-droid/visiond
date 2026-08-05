@@ -1,4 +1,5 @@
 import {json,requireAdmin} from '../../../_lib.js';
+import {putTrash} from '../../../_trash.js';
 
 export async function onRequestGet(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
@@ -14,8 +15,8 @@ export async function onRequestDelete(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   const file=await ctx.env.DB.prepare('SELECT * FROM product_files WHERE id=?').bind(ctx.params.id).first();
   if(!file)return json({error:'ไม่พบไฟล์สินค้า'},404);
+  await putTrash(ctx.env,{item_type:'product_file',title:file.label||'ไฟล์สินค้า',product_id:file.product_id,object_key:file.object_key,payload:{label:file.label,mime_type:file.mime_type,file_size:file.file_size,version:file.version}});
   await ctx.env.DB.prepare('DELETE FROM downloads WHERE product_file_id=?').bind(file.id).run();
   await ctx.env.DB.prepare('DELETE FROM product_files WHERE id=?').bind(file.id).run();
-  await ctx.env.FILES.delete(file.object_key);
   return json({ok:true,product_id:file.product_id});
 }
