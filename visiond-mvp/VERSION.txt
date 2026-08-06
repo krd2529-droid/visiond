@@ -1,2 +1,2 @@
-VisionD MVP v0.12.14
-Show the three visitor counters in one short centered strip instead of a full-width bar
+VisionD MVP v0.12.15
+Remove the five-page catalog limit so pagination grows with the full product count

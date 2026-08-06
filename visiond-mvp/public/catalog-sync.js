@@ -375,7 +375,7 @@ import("/mouse-ui.js?v=01210");
         const matchingCards = [...grid.querySelectorAll(".vd-card")].filter(
             (card) => category === "all" || card.dataset.category === category,
           ),
-          totalPages = Math.max(1, Math.min(5, Math.ceil(matchingCards.length / pageSize))),
+          totalPages = Math.max(1, Math.ceil(matchingCards.length / pageSize)),
           currentPage = Math.max(1, Math.min(totalPages, requestedPage)),
           start = (currentPage - 1) * pageSize,
           visibleCards = new Set(matchingCards.slice(start, start + pageSize));
