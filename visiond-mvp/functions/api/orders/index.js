@@ -1,5 +1,5 @@
 import { json, requireUser, statusLabel } from "../../_lib.js";
-import { loadPaymentSettings } from "../../_payment.js";
+import { loadPaymentSettings, publicPaymentSettings } from "../../_payment.js";
 import { ensureDatabase } from "../../_schema.js";
 import { rateLimit } from "../../_security.js";
 const starterProducts = [1, 2, 3, 4].map((n) => ({
@@ -126,7 +126,7 @@ export async function onRequestPost(ctx) {
       discount,
       total,
       items: results,
-      bank: payment,
+      bank: publicPaymentSettings(payment),
     },
     201,
   );
@@ -148,5 +148,5 @@ export async function onRequestGet(ctx) {
     o.items = x.results;
     o.status_label = statusLabel(o.status);
   }
-  return json({ items: results, bank: await loadPaymentSettings(ctx.env) });
+  return json({ items: results, bank: publicPaymentSettings(await loadPaymentSettings(ctx.env)) },200,{"cache-control":"no-store"});
 }

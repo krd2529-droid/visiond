@@ -981,9 +981,16 @@ async function loadPaymentSettings() {
     return;
   }
   const p = d.item || {};
-  paymentSettingsForm.elements.bank_name.value = p.bank_name || "";
-  paymentSettingsForm.elements.account_name.value = p.account_name || "";
-  paymentSettingsForm.elements.account_number.value = p.account_number || "";
+  const profiles = p.profiles || {};
+  paymentSettingsForm.elements.active_account.value = p.active_account || "personal";
+  paymentSettingsForm.elements.personal_bank_name.value = profiles.personal?.bank_name || "ธนาคารกรุงศรีอยุธยา";
+  paymentSettingsForm.elements.personal_account_name.value = profiles.personal?.account_name || "รัฐสิทธิ ดำรงรถการ";
+  paymentSettingsForm.elements.personal_account_number.value = profiles.personal?.account_number || "444-118-118-1";
+  paymentSettingsForm.elements.company_bank_name.value = profiles.company?.bank_name || "";
+  paymentSettingsForm.elements.company_account_name.value = profiles.company?.account_name || "";
+  paymentSettingsForm.elements.company_account_number.value = profiles.company?.account_number || "";
+  paymentSettingsForm.querySelectorAll('[name="active_account"]').forEach(input => input.disabled = viewer?.role !== "boss");
+  paymentSettingsForm.querySelector('button[type="submit"]').textContent = viewer?.role === "boss" ? "บันทึกและสลับบัญชี" : "บันทึกการตั้งค่า";
   paymentSettingsForm.elements.accepting_orders.checked =
     p.accepting_orders !== false;
   paymentSettingsForm.elements.payment_message.value = p.payment_message || "";
