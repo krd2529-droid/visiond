@@ -1,43 +1,14 @@
 import("/facebook-chat.js?v=01195");
+import("/mouse-ui.js?v=01204");
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
   const grid = document.querySelector(".vd-grid");
   if (!grid) return;
-  let productPointerStart = null;
+  // Desktop navigation is intentionally handled on mousedown. Slider code no
+  // longer captures the pointer, so a normal left press cannot be swallowed.
   grid.addEventListener(
-    "pointerdown",
-    (event) => {
-      if (event.button !== 0) return;
-      const productLink = event.target.closest('a[href*="/product.html?slug="]');
-      productPointerStart = productLink
-        ? { link: productLink, x: event.clientX, y: event.clientY }
-        : null;
-    },
-    true,
-  );
-  grid.addEventListener(
-    "pointerup",
-    (event) => {
-      const start = productPointerStart;
-      productPointerStart = null;
-      if (!start || event.button !== 0) return;
-      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      const productLink = event.target.closest('a[href*="/product.html?slug="]');
-      if (productLink !== start.link) return;
-      if (Math.abs(event.clientX - start.x) > 12 || Math.abs(event.clientY - start.y) > 12)
-        return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      location.assign(productLink.href);
-    },
-    true,
-  );
-  // Product links must always respond to a normal left click. Handle them in
-  // the capture phase so slider/pointer state restored by Back cannot cancel
-  // navigation. Modified clicks and right clicks keep native browser behavior.
-  grid.addEventListener(
-    "click",
+    "mousedown",
     (event) => {
       if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
         return;
@@ -276,10 +247,6 @@ import("/facebook-chat.js?v=01195");
             slides.forEach((image, i) => (image.hidden = i !== index));
             counter.textContent = `${index + 1}/${slides.length}`;
           };
-        let startX = 0,
-          startY = 0,
-          dragging = false,
-          didSwipe = false;
         slider.querySelector(".vd-slide-prev").onclick = (event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -290,39 +257,6 @@ import("/facebook-chat.js?v=01195");
           event.stopPropagation();
           show(Number(slider.dataset.catalogSlider) + 1);
         };
-        slider.addEventListener("pointerdown", (event) => {
-          if (event.target.closest("button")) return;
-          startX = event.clientX;
-          startY = event.clientY;
-          dragging = true;
-          didSwipe = false;
-          slider.setPointerCapture?.(event.pointerId);
-        });
-        slider.addEventListener("pointerup", (event) => {
-          if (!dragging) return;
-          dragging = false;
-          const dx = event.clientX - startX,
-            dy = event.clientY - startY;
-          if (Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy)) {
-            didSwipe = true;
-            show(Number(slider.dataset.catalogSlider) + (dx < 0 ? 1 : -1));
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        });
-        slider.addEventListener("pointercancel", () => {
-          dragging = false;
-        });
-        link.addEventListener("click", (event) => {
-          if (didSwipe) {
-            event.preventDefault();
-            event.stopPropagation();
-            didSwipe = false;
-            return;
-          }
-          event.preventDefault();
-          location.assign(link.href);
-        });
       });
       grid.querySelectorAll("[data-add-cart]").forEach((button) => {
         const slug = button.dataset.addCart;

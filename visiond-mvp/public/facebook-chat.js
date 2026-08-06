@@ -31,3 +31,4 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
+import('/mouse-ui.js?v=01204');
