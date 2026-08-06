@@ -1,2 +1,2 @@
-VisionD MVP v0.12.04
-Rebuild desktop mouse navigation, cursor visuals, hover, press, focus, and slider controls while retaining v0.12.01 features and database compatibility
+VisionD MVP v0.12.05
+Route desktop links through the rebuilt mouse system and keep Boss/Admin test orders separate from the active storefront cart

@@ -1,25 +1,10 @@
 import("/facebook-chat.js?v=01195");
-import("/mouse-ui.js?v=01204");
+import("/mouse-ui.js?v=01205");
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
   const grid = document.querySelector(".vd-grid");
   if (!grid) return;
-  // Desktop navigation is intentionally handled on mousedown. Slider code no
-  // longer captures the pointer, so a normal left press cannot be swallowed.
-  grid.addEventListener(
-    "mousedown",
-    (event) => {
-      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
-        return;
-      const productLink = event.target.closest('a[href*="/product.html?slug="]');
-      if (!productLink || !grid.contains(productLink)) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      location.assign(productLink.href);
-    },
-    true,
-  );
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.head.insertAdjacentHTML(
     "beforeend",
@@ -165,8 +150,11 @@ import("/mouse-ui.js?v=01204");
     fetch("/api/orders", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .catch(() => ({ items: [] })),
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .catch(() => ({ user: null })),
   ])
-    .then(([data, categoryData, orderData]) => {
+    .then(([data, categoryData, orderData, accountData]) => {
       grid.querySelector(".product-loading")?.remove();
       const products = [...(data.items || [])].sort((a, b) => {
           const tattooRank = (item) =>
@@ -293,8 +281,9 @@ import("/mouse-ui.js?v=01204");
           renderBundlePanel();
         };
       });
-      const purchaseBySlug = new Map();
-      (orderData.items || []).forEach((order) =>
+      const purchaseBySlug = new Map(),
+        isStaffAccount = ["boss", "admin"].includes(accountData.user?.role);
+      (isStaffAccount ? [] : orderData.items || []).forEach((order) =>
         (order.items || []).forEach((item) => {
           const current = purchaseBySlug.get(item.slug),
             rank = {
