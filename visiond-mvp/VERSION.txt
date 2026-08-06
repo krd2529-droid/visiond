@@ -1,2 +1,2 @@
-VisionD MVP v0.11.95
-Clear LINE and Facebook page contact buttons on every storefront page, including the cart
+VisionD MVP v0.11.96
+Show the total number of images on every storefront catalog product card

@@ -4,7 +4,7 @@ import("/facebook-chat.js?v=01195");
   if (!grid) return;
   document.head.insertAdjacentHTML(
     "beforeend",
-    "<style>.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover img[hidden]{display:none!important}.vd-cover-slider{touch-action:pan-y;user-select:none}.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{position:absolute;z-index:3;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:42px;border:0;background:rgba(7,63,61,.78);color:#fff;font-size:24px;cursor:pointer}.vd-cover-slider .vd-slide-prev{left:0;border-radius:0 8px 8px 0}.vd-cover-slider .vd-slide-next{right:0;border-radius:8px 0 0 8px}.vd-slide-count{position:absolute;z-index:3;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(pointer:coarse){.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{opacity:.82}}</style>",
+    "<style>.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover img[hidden]{display:none!important}.vd-cover-slider{touch-action:pan-y;user-select:none}.vd-image-total{position:absolute;z-index:4;right:8px;bottom:8px;padding:7px 10px;border:2px solid rgba(255,255,255,.9);border-radius:999px;background:#087d77;color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.24);font-size:12px;font-weight:900}.vd-cover-slider .vd-image-total{bottom:34px}.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{position:absolute;z-index:3;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:42px;border:0;background:rgba(7,63,61,.78);color:#fff;font-size:24px;cursor:pointer}.vd-cover-slider .vd-slide-prev{left:0;border-radius:0 8px 8px 0}.vd-cover-slider .vd-slide-next{right:0;border-radius:8px 0 0 8px}.vd-slide-count{position:absolute;z-index:3;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(pointer:coarse){.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{opacity:.82}}</style>",
   );
   const filters = document.createElement("div");
   filters.className = "catalog-category-filters";
@@ -25,6 +25,13 @@ import("/facebook-chat.js?v=01195");
     );
   const money = (n) =>
     new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
+  const imageCount = (product) => {
+    const stored = Number(product.bundle_pages) || Number(product.pages) || 0;
+    if (stored > 0) return Math.floor(stored);
+    const text = `${product.title || ""} ${product.short_description || ""} ${product.description || ""}`;
+    const match = text.match(/(\d{1,5})\s*(?:รูป|ภาพ|แผ่น|หน้า)/i);
+    return match ? Number(match[1]) : 0;
+  };
   const previewUrls = (product) => {
     let saved = [];
     try {
@@ -39,8 +46,9 @@ import("/facebook-chat.js?v=01195");
   };
   const coverMarkup = (product) => {
     const images = previewUrls(product),
-      hasSlider = images.length > 1;
-    return `<div class="vd-cover${hasSlider ? " vd-cover-slider" : ""}" data-catalog-slider="0"><span class="vd-tag">${esc(product.file_type || "DIGITAL")}</span><span class="vd-ready">พร้อมดาวน์โหลด</span><a href="/product.html?slug=${encodeURIComponent(product.slug)}">${images.map((url, index) => `<img src="${esc(url)}" alt="${esc(product.title)} รูป ${index + 1}" data-slide="${index}" ${index ? "hidden" : ""}>`).join("")}</a>${hasSlider ? `<button class="vd-slide-prev" type="button" aria-label="รูปก่อนหน้า">‹</button><button class="vd-slide-next" type="button" aria-label="รูปถัดไป">›</button><small class="vd-slide-count">1/${images.length}</small>` : ""}</div>`;
+      hasSlider = images.length > 1,
+      count = imageCount(product);
+    return `<div class="vd-cover${hasSlider ? " vd-cover-slider" : ""}" data-catalog-slider="0"><span class="vd-tag">${esc(product.file_type || "DIGITAL")}</span><span class="vd-ready">พร้อมดาวน์โหลด</span><strong class="vd-image-total" aria-label="จำนวนรูปในชุด">${count ? new Intl.NumberFormat("th-TH").format(count) : "—"} รูป</strong><a href="/product.html?slug=${encodeURIComponent(product.slug)}">${images.map((url, index) => `<img src="${esc(url)}" alt="${esc(product.title)} รูป ${index + 1}" data-slide="${index}" ${index ? "hidden" : ""}>`).join("")}</a>${hasSlider ? `<button class="vd-slide-prev" type="button" aria-label="รูปก่อนหน้า">‹</button><button class="vd-slide-next" type="button" aria-label="รูปถัดไป">›</button><small class="vd-slide-count">1/${images.length}</small>` : ""}</div>`;
   };
   const normalizeCart = (items) => {
     const unique = new Map();

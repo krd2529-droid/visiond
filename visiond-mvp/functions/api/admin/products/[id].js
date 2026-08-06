@@ -67,6 +67,7 @@ export async function onRequestPut(ctx) {
       .trim()
       .toLowerCase();
   const price = Number(form.get("price_cents"));
+  const pages = Math.max(0, Math.floor(Number(form.get("pages")) || 0));
   if (!title || !slug)
     return json({ error: "กรุณากรอกชื่อสินค้าและ Slug" }, 400);
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
@@ -122,7 +123,7 @@ export async function onRequestPut(ctx) {
         valid.results.map((item) => [Number(item.id), item]),
       );
       await ctx.env.DB.prepare(
-        `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+        `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
       )
         .bind(
           slug,
@@ -131,6 +132,7 @@ export async function onRequestPut(ctx) {
           String(form.get("description") || ""),
           price,
           category,
+          pages,
           form.get("status") === "published" ? "published" : "draft",
           old.id,
         )
@@ -175,7 +177,7 @@ export async function onRequestPut(ctx) {
       });
     }
     await ctx.env.DB.prepare(
-      `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,file_type=?,status=?,source='admin',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+      `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type=?,status=?,source='admin',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
     )
       .bind(
         slug,
@@ -184,6 +186,7 @@ export async function onRequestPut(ctx) {
         String(form.get("description") || ""),
         price,
         category,
+        pages,
         String(form.get("file_type") || "PDF"),
         form.get("status") === "published" ? "published" : "draft",
         old.id,

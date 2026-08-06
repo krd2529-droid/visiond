@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS products (
   cover_url TEXT,
   preview_urls TEXT DEFAULT '[]',
   category TEXT DEFAULT 'digital-product',
+  pages INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'draft',
   source TEXT NOT NULL DEFAULT 'manual',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

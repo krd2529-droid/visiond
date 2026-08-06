@@ -652,7 +652,7 @@ async function editProduct(id) {
   productEditor.elements.price.value = (Number(p.price) || 0) / 100;
   const bundleCount = d.bundle_items?.length || 0;
   productEditor.elements.pages.value =
-    bundleCount ||
+    Number(p.pages) ||
     (p.short_description || "").match(/(\d+)\s*แผ่น/)?.[1] ||
     200;
   productEditor.elements.short_description.value = p.short_description || "";
