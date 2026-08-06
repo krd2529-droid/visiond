@@ -1,2 +1,2 @@
-VisionD MVP v0.12.10
-Remove cover swipe gestures and use only the left-right arrow buttons to change catalog images
+VisionD MVP v0.12.11
+Raise catalog arrow buttons above the cover link so both arrows remain visible and clickable
