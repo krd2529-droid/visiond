@@ -11,8 +11,14 @@ async function submitAuth(form,endpoint,loadingText){
   try{
     const payload=Object.fromEntries(new FormData(form));
     if(form.id==='registerPageForm'){
+      payload.firstName=String(payload.firstName||'').trim();
+      payload.lastName=String(payload.lastName||'').trim();
+      payload.email=String(payload.email||'').trim();
+      payload.phone=String(payload.phone||'').replace(/\D/g,'');
+      if(!payload.firstName||!payload.lastName||!payload.email||!payload.phone) throw new Error('กรุณากรอกชื่อ นามสกุล เบอร์โทรศัพท์ และอีเมลให้ครบ');
+      if(!/^\S+@\S+\.\S+$/.test(payload.email)) throw new Error('รูปแบบอีเมลไม่ถูกต้อง');
+      if(!/^0\d{8,9}$/.test(payload.phone)) throw new Error('กรุณากรอกเบอร์โทรศัพท์ไทย 9–10 หลัก โดยขึ้นต้นด้วย 0');
       if(payload.password!==payload.confirmPassword) throw new Error('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
-      payload.name=`${payload.firstName||''} ${payload.lastName||''}`.trim();
       delete payload.confirmPassword;
       payload.termsAccepted=payload.termsAccepted==='true';
     }

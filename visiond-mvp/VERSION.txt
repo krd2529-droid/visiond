@@ -1,2 +1,2 @@
-VisionD MVP v0.12.06
-Add the shared discount-cart action to product detail pages while retaining the rebuilt mouse system and staff storefront behavior
+VisionD MVP v0.12.07
+Require first name, last name, Thai phone number, and email during registration on both the form and server

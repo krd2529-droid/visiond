@@ -51,7 +51,7 @@
         <input name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
       </label>
       <label>เบอร์โทรศัพท์
-        <input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="เช่น 0812345678" pattern="[0-9+ -]{9,20}" required>
+        <input name="phone" type="tel" autocomplete="tel-national" inputmode="numeric" placeholder="เช่น 0812345678" pattern="0[0-9]{8,9}" minlength="9" maxlength="10" required>
       </label>
       <label>รหัสผ่าน
         <input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="อย่างน้อย 10 ตัว" required>
@@ -70,6 +70,6 @@
     <a class="secondary-button wide center" href="/login.html">เข้าสู่ระบบ</a>
   </section>
 </main>
-<script src="/security.js?v=01186"></script><script src="/member-auth.js?v=01186"></script>
+<script src="/security.js?v=01207"></script><script src="/member-auth.js?v=01207"></script>
 <script src="/facebook-chat.js?v=01195"></script></body>
 </html>
