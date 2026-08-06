@@ -1,2 +1,2 @@
-VisionD MVP v0.12.01
-Restore proven product.html catalog navigation while retaining current database and storefront features
+VisionD MVP v0.12.02
+Fix normal left-click product navigation across catalog image, title, and action links while retaining v0.12.01 features and database compatibility

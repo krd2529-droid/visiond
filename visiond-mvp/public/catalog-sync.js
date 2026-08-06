@@ -4,6 +4,22 @@ import("/facebook-chat.js?v=01195");
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
   const grid = document.querySelector(".vd-grid");
   if (!grid) return;
+  // Product links must always respond to a normal left click. Handle them in
+  // the capture phase so slider/pointer state restored by Back cannot cancel
+  // navigation. Modified clicks and right clicks keep native browser behavior.
+  grid.addEventListener(
+    "click",
+    (event) => {
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+        return;
+      const productLink = event.target.closest('a[href*="/product.html?slug="]');
+      if (!productLink || !grid.contains(productLink)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      location.assign(productLink.href);
+    },
+    true,
+  );
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.head.insertAdjacentHTML(
     "beforeend",
@@ -271,8 +287,12 @@ import("/facebook-chat.js?v=01195");
         link.addEventListener("click", (event) => {
           if (didSwipe) {
             event.preventDefault();
+            event.stopPropagation();
             didSwipe = false;
+            return;
           }
+          event.preventDefault();
+          location.assign(link.href);
         });
       });
       grid.querySelectorAll("[data-add-cart]").forEach((button) => {
