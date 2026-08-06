@@ -1,2 +1,2 @@
-VisionD MVP v0.12.15
-Remove the five-page catalog limit so pagination grows with the full product count
+VisionD MVP v0.12.17
+Add a matching multi-cart purchase button beside the main action on the homepage
