@@ -1,2 +1,2 @@
-VisionD MVP v0.12.17
-Add a matching multi-cart purchase button beside the main action on the homepage
+VisionD MVP v0.12.18
+Add the approved 1200x630 Open Graph preview image and social sharing metadata
