@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=01144');
+import('/facebook-chat.js?v=01195');
 const authMessage=document.querySelector('#pageAuthMsg');
 const returnTo=()=>sessionStorage.getItem('vd_return_to')||'/dashboard.html';
 

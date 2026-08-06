@@ -1,4 +1,4 @@
-import("/facebook-chat.js?v=01144");
+import("/facebook-chat.js?v=01195");
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (v) =>

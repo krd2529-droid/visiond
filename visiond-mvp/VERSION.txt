@@ -1,2 +1,2 @@
-VisionD MVP v0.11.94
-Prominent today, 7-day and 30-day visit counters below the storefront promo GIF
+VisionD MVP v0.11.95
+Clear LINE and Facebook page contact buttons on every storefront page, including the cart
