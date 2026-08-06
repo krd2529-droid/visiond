@@ -2,7 +2,7 @@ const securityHeaders={
   'x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin',
   'permissions-policy':'camera=(), microphone=(), geolocation=()',
   'strict-transport-security':'max-age=31536000; includeSubDomains',
-  'content-security-policy':"default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' https://challenges.cloudflare.com; frame-src 'self' blob: https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+  'content-security-policy':"default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' https://challenges.cloudflare.com https://connect.facebook.net; frame-src 'self' blob: https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://connect.facebook.net https://www.facebook.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
 };
 export async function onRequest(ctx){
   const request=ctx.request,url=new URL(request.url),method=request.method.toUpperCase();

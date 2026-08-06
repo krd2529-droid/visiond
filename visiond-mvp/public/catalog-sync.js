@@ -276,6 +276,13 @@ import("/facebook-chat.js?v=01144");
             category: product.category,
             category_label: product.category_label,
           });
+          window.visiondPixel?.track("AddToCart", {
+            content_ids: [String(product.id || product.slug)],
+            content_name: product.title,
+            content_type: "product",
+            value: Number(product.price || 0) / 100,
+            currency: "THB",
+          });
           localStorage.setItem("vd_cart", JSON.stringify(cart));
           button.textContent = "อยู่ในรถเข็นแล้ว";
           updateCartCount();

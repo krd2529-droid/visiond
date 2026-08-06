@@ -1,2 +1,2 @@
-VisionD MVP v0.11.92
-Boss can switch the active storefront payment account between personal and company profiles
+VisionD MVP v0.11.93
+Meta Pixel 37636461872667879 with PageView, ViewContent, AddToCart, InitiateCheckout and Purchase events

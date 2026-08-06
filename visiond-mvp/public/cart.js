@@ -128,6 +128,13 @@ async function checkout() {
       throw new Error(d.error || "สร้างคำสั่งซื้อไม่สำเร็จ");
     }
     activeOrder = d;
+    window.visiondPixel?.track("InitiateCheckout", {
+      content_ids: (d.items || []).map((item) => String(item.id || item.slug)),
+      content_type: "product",
+      num_items: (d.items || []).length,
+      value: Number(d.total || 0) / 100,
+      currency: "THB",
+    });
     checkoutOrderNo.textContent = "เลขคำสั่งซื้อ " + d.orderNo;
     checkoutTotal.textContent = money(d.total);
     bankName.textContent = d.bank?.bank_name || "ยังไม่ได้ตั้งค่า";

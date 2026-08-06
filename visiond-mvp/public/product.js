@@ -19,6 +19,7 @@ function galleryMarkup(product){
 }
 function renderProduct(product){
   currentProduct=product;
+  window.visiondPixel?.track('ViewContent',{content_ids:[String(product.id||product.slug)],content_name:product.title,content_category:categoryLabel(product),content_type:'product',value:Number(product.price||0)/100,currency:'THB'});
   document.title=`${product.title} | ${categoryLabel(product)} PDF | VisionD Online`;
   const description=(product.short_description||product.description||`${product.title} ดูภาพตัวอย่าง ราคา และดาวน์โหลดไฟล์ดิจิทัลหลังอนุมัติ`).replace(/\s+/g,' ').trim().slice(0,180);
   let metaDescription=document.querySelector('meta[name="description"]');
@@ -48,7 +49,7 @@ async function beginPurchase(){
     if(response.status===401){sessionStorage.setItem('vd_return_to',location.href);location.href='/login.html';return;}
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'สร้างคำสั่งซื้อไม่สำเร็จ');
-    activeOrder=data;currentOrderNo=data.orderNo||data.order_no||'';
+    activeOrder=data;currentOrderNo=data.orderNo||data.order_no||'';window.visiondPixel?.track('InitiateCheckout',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',num_items:1,value:Number(data.total||currentProduct.price||0)/100,currency:'THB'});
     const bank=data.bank||{};
     productBankName.textContent=bank.bank_name||'-';
     productAccountName.textContent=bank.account_name||'-';
