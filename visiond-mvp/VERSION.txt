@@ -1,2 +1,2 @@
-VisionD MVP v0.12.11
-Raise catalog arrow buttons above the cover link so both arrows remain visible and clickable
+VisionD MVP v0.12.12
+Keep one current arrow pair per catalog cover and pin both buttons above all cover content
