@@ -10,6 +10,8 @@ document.addEventListener('mousedown', (event) => {
   if (event.button !== 0) return;
   const control = event.target.closest('a,button,[role="button"],input,select,textarea');
   if (!control) return;
+  // Catalog covers decide between a tap and a horizontal swipe on pointerup.
+  if (control.matches('a[href]') && control.closest('.vd-cover-slider')) return;
   if (control.matches('a[href]') && !control.hasAttribute('download') && !control.target) {
     const rawHref = control.getAttribute('href') || '';
     if (rawHref && rawHref !== '#' && !rawHref.startsWith('#') && !rawHref.startsWith('javascript:')) {

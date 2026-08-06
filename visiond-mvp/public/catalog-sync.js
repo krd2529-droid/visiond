@@ -1,5 +1,5 @@
 import("/facebook-chat.js?v=01195");
-import("/mouse-ui.js?v=01205");
+import("/mouse-ui.js?v=01208");
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
@@ -245,6 +245,37 @@ import("/mouse-ui.js?v=01205");
           event.stopPropagation();
           show(Number(slider.dataset.catalogSlider) + 1);
         };
+        let startX = 0,
+          startY = 0,
+          activePointer = null,
+          suppressClick = false;
+        link.addEventListener("pointerdown", (event) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          activePointer = event.pointerId;
+          startX = event.clientX;
+          startY = event.clientY;
+          suppressClick = false;
+        });
+        link.addEventListener("pointerup", (event) => {
+          if (activePointer !== event.pointerId) return;
+          const dx = event.clientX - startX,
+            dy = event.clientY - startY;
+          activePointer = null;
+          if (Math.abs(dx) < 35 || Math.abs(dx) <= Math.abs(dy)) return;
+          suppressClick = true;
+          event.preventDefault();
+          event.stopPropagation();
+          show(Number(slider.dataset.catalogSlider) + (dx < 0 ? 1 : -1));
+        });
+        link.addEventListener("pointercancel", () => {
+          activePointer = null;
+        });
+        link.addEventListener("click", (event) => {
+          if (!suppressClick) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          suppressClick = false;
+        }, true);
       });
       grid.querySelectorAll("[data-add-cart]").forEach((button) => {
         const slug = button.dataset.addCart;
