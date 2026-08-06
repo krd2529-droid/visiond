@@ -1,2 +1,2 @@
-VisionD MVP v0.12.08
-Restore left-right swiping on catalog cover sliders without breaking normal product-link clicks
+VisionD MVP v0.12.10
+Remove cover swipe gestures and use only the left-right arrow buttons to change catalog images
