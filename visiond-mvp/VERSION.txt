@@ -1,2 +1,2 @@
-VisionD MVP v0.12.00
-Fix every catalog product link and lazy-load preview images
+VisionD MVP v0.12.01
+Restore proven product.html catalog navigation while retaining current database and storefront features
