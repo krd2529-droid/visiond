@@ -1,8 +1,10 @@
 import("/facebook-chat.js?v=01195");
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
+  document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
   const grid = document.querySelector(".vd-grid");
   if (!grid) return;
+  if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.head.insertAdjacentHTML(
     "beforeend",
     "<style>.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover img[hidden]{display:none!important}.vd-cover-slider{touch-action:pan-y;user-select:none}.vd-image-total{position:absolute;z-index:4;right:8px;bottom:8px;padding:7px 10px;border:2px solid rgba(255,255,255,.9);border-radius:999px;background:#087d77;color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.24);font-size:12px;font-weight:900}.vd-cover-slider .vd-image-total{bottom:34px}.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{position:absolute;z-index:3;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:42px;border:0;background:rgba(7,63,61,.78);color:#fff;font-size:24px;cursor:pointer}.vd-cover-slider .vd-slide-prev{left:0;border-radius:0 8px 8px 0}.vd-cover-slider .vd-slide-next{right:0;border-radius:8px 0 0 8px}.vd-slide-count{position:absolute;z-index:3;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(pointer:coarse){.vd-cover-slider .vd-slide-prev,.vd-cover-slider .vd-slide-next{opacity:.82}}</style>",
@@ -89,6 +91,14 @@ import("/facebook-chat.js?v=01195");
     bundlePanel.className = "vd-bundle-cart";
     layout.append(bundlePanel);
   }
+  const catalogPager = document.createElement("nav");
+  catalogPager.className = "catalog-pagination";
+  catalogPager.setAttribute("aria-label", "หน้าแคตตาล็อก");
+  (bundlePanel?.parentElement || grid).insertAdjacentElement("afterend", catalogPager);
+  document.head.insertAdjacentHTML(
+    "beforeend",
+    '<style>.catalog-pagination{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:28px 0 8px}.catalog-pagination a{display:grid;place-items:center;min-width:42px;height:42px;padding:0 11px;border:1px solid #8bc8c4;border-radius:10px;background:#fff;color:#08756f;font-weight:900}.catalog-pagination a.active{background:#08756f;color:#fff;border-color:#08756f}.catalog-pagination a:first-child{padding-inline:16px}</style>',
+  );
   const renderBundlePanel = () => {
     if (!bundlePanel) return;
     const items = getCart(),
@@ -141,6 +151,7 @@ import("/facebook-chat.js?v=01195");
       .catch(() => ({ items: [] })),
   ])
     .then(([data, categoryData, orderData]) => {
+      grid.querySelector(".product-loading")?.remove();
       const products = [...(data.items || [])].sort((a, b) => {
           const tattooRank = (item) =>
             /tattoo|รอยสัก|แบบสัก/.test(
@@ -384,13 +395,26 @@ import("/facebook-chat.js?v=01195");
           ? requestedCategory
           : "all";
       filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button>`;
+      const pageSize = 8,
+        requestedPage = location.pathname === "/" ? 1 : Number(new URLSearchParams(location.search).get("page")) || 2;
       const applyCategory = (category) => {
+        const matchingCards = [...grid.querySelectorAll(".vd-card")].filter(
+            (card) => category === "all" || card.dataset.category === category,
+          ),
+          totalPages = Math.max(1, Math.min(5, Math.ceil(matchingCards.length / pageSize))),
+          currentPage = Math.max(1, Math.min(totalPages, requestedPage)),
+          start = (currentPage - 1) * pageSize,
+          visibleCards = new Set(matchingCards.slice(start, start + pageSize));
         filters
           .querySelectorAll("button")
           .forEach((button) => button.classList.toggle("active", button.dataset.category === category));
         grid
           .querySelectorAll(".vd-card")
-          .forEach((card) => (card.hidden = category !== "all" && card.dataset.category !== category));
+          .forEach((card) => (card.hidden = !visibleCards.has(card)));
+        const categoryQuery = category === "all" ? "" : `&category=${encodeURIComponent(category)}`;
+        catalogPager.innerHTML = Array.from({ length: totalPages }, (_, index) => index + 1)
+          .map((page) => `<a class="${page === currentPage ? "active" : ""}" href="${page === 1 ? "/" : `/digital-products?page=${page}${categoryQuery}`}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้าแรก · 1" : page}</a>`)
+          .join("");
       };
       filters.querySelectorAll("button").forEach(
         (button) =>
@@ -400,6 +424,8 @@ import("/facebook-chat.js?v=01195");
       );
       applyCategory(initialCategory);
     })
-    .catch(() => {});
+    .catch(() => {
+      grid.innerHTML = '<div class="product-loading"><b>โหลดแคตตาล็อกไม่สำเร็จ</b><p>การเชื่อมต่อใช้เวลานาน กรุณากดลองใหม่</p><button type="button" onclick="location.reload()">ลองโหลดอีกครั้ง</button></div>';
+    });
 })();
 import("/nav-account.js?v=01176").then((module) => module.initAccountNav());

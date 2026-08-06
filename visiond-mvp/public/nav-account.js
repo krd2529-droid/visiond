@@ -3,6 +3,7 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&
 
 export async function initAccountNav(){
   document.querySelectorAll('a[href="/cart.html"]').forEach(link=>link.setAttribute('href','/cart'));
+  document.querySelectorAll('a[href^="/digital-products.html"]').forEach(link=>link.setAttribute('href',link.getAttribute('href').replace('/digital-products.html','/digital-products')));
   const nav=document.querySelector('.topbar nav');
   if(!nav||nav.dataset.accountReady)return;
   nav.dataset.accountReady='1';
