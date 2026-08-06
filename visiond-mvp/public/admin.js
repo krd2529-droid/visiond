@@ -844,7 +844,7 @@ async function loadVisitorStats() {
   }
   const number = (value) =>
     new Intl.NumberFormat("th-TH").format(Number(value) || 0);
-  summary.innerHTML = `<article><small>ยอดเข้าชมทั้งหมด</small><b>${number(d.total)}</b></article><article><small>เข้าชมวันนี้</small><b>${number(d.today)}</b></article><article><small>ผู้ชมไม่ซ้ำทั้งหมด</small><b>${number(d.unique)}</b></article>`;
+  summary.innerHTML = `<article><small>เข้าชมวันนี้</small><b>${number(d.today)}</b></article><article><small>7 วันล่าสุด</small><b>${number(d.last7)}</b></article><article><small>30 วันล่าสุด</small><b>${number(d.last30)}</b></article>`;
   productsBox.innerHTML = d.products?.length
     ? `<h4>สินค้าที่มีคนดูมากที่สุด</h4>${d.products.map((product, index) => `<a href="/product.html?slug=${encodeURIComponent(product.slug)}" target="_blank" rel="noopener"><span>${index + 1}</span><b>${esc(product.title)}</b><strong>${number(product.views)} ครั้ง</strong></a>`).join("")}`
     : "<p>ยังไม่มีข้อมูลการเข้าชมสินค้า</p>";

@@ -19,13 +19,13 @@ export async function onRequestPost(ctx){
   const userAgent=ctx.request.headers.get('user-agent')||'',isBot=/bot|crawler|spider|slurp|preview|facebookexternalhit/i.test(userAgent),visitorKey=await sha256(`${requestIp(ctx.request)}|${userAgent}|visiond-view-v1`);
   const duplicate=await ctx.env.DB.prepare("SELECT id FROM page_views WHERE visitor_key=? AND path=? AND COALESCE(product_id,0)=? AND viewed_at>=datetime('now','-30 minutes') LIMIT 1").bind(visitorKey,path,product?.id||0).first();
   if(!duplicate&&!isBot)await ctx.env.DB.prepare('INSERT INTO page_views(path,product_id,visitor_key) VALUES(?,?,?)').bind(path,product?.id||null,visitorKey).run();
-  const site=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views').first(),productViews=product?await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views WHERE product_id=?').bind(product.id).first():null;
-  return json({ok:true,counted:!duplicate&&!isBot,site_views:Number(site?.count)||0,product_views:Number(productViews?.count)||0});
+  const site=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views').first(),today=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')=date('now','+7 hours')").first(),last7=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')>=date('now','+7 hours','-6 days')").first(),last30=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')>=date('now','+7 hours','-29 days')").first(),productViews=product?await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views WHERE product_id=?').bind(product.id).first():null;
+  return json({ok:true,counted:!duplicate&&!isBot,site_views:Number(site?.count)||0,today_views:Number(today?.count)||0,last7_views:Number(last7?.count)||0,last30_views:Number(last30?.count)||0,product_views:Number(productViews?.count)||0});
 }
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
   const url=new URL(ctx.request.url),product=await productFromSlug(ctx.env,url.searchParams.get('product_slug'));
-  const site=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views').first(),today=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')=date('now','+7 hours')").first(),productViews=product?await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views WHERE product_id=?').bind(product.id).first():null;
-  return json({site_views:Number(site?.count)||0,today_views:Number(today?.count)||0,product_views:Number(productViews?.count)||0});
+  const site=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views').first(),today=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')=date('now','+7 hours')").first(),last7=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')>=date('now','+7 hours','-6 days')").first(),last30=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM page_views WHERE date(viewed_at,'+7 hours')>=date('now','+7 hours','-29 days')").first(),productViews=product?await ctx.env.DB.prepare('SELECT COUNT(*) count FROM page_views WHERE product_id=?').bind(product.id).first():null;
+  return json({site_views:Number(site?.count)||0,today_views:Number(today?.count)||0,last7_views:Number(last7?.count)||0,last30_views:Number(last30?.count)||0,product_views:Number(productViews?.count)||0});
 }

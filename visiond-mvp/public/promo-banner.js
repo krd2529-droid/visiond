@@ -8,5 +8,14 @@
   banner.innerHTML='<img src="/assets/visiond-bundle-promo.gif?v=01180" alt="โปรจัดชุด: 5 ตะกร้าลด 5% · 10 ตะกร้าลด 10% · 20 ตะกร้าลด 15% · 30 ตะกร้าลด 20%">';
   document.head.insertAdjacentHTML('beforeend','<style>.visiond-promo-banner{display:block;position:relative;z-index:1;width:100%;overflow:hidden;background:#043f3d}.visiond-promo-banner img{display:block;width:100%;height:auto;object-fit:contain;object-position:center top}.visiond-promo-banner:hover img{filter:brightness(1.08)}@media(max-width:600px){.visiond-promo-banner img{width:640px;max-width:none;height:auto;position:relative;left:50%;transform:translateX(-50%)}}</style>');
   const header=document.querySelector('.topbar');
-  if(header)header.insertAdjacentElement('afterend',banner);else document.body.prepend(banner)
+  if(header)header.insertAdjacentElement('afterend',banner);else document.body.prepend(banner);
+  const stats=document.createElement('section');
+  stats.className='visiond-visit-strip';
+  stats.setAttribute('aria-label','สถิติการเข้าชมเว็บไซต์');
+  stats.innerHTML='<article><small>เข้าชมวันนี้</small><b data-visit-today>—</b></article><article><small>7 วันล่าสุด</small><b data-visit-7>—</b></article><article><small>30 วันล่าสุด</small><b data-visit-30>—</b></article>';
+  banner.insertAdjacentElement('afterend',stats);
+  document.head.insertAdjacentHTML('beforeend','<style>.visiond-visit-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;width:100%;background:#b9deda;border-bottom:1px solid #9bcfca;box-shadow:0 8px 20px rgba(0,70,66,.08)}.visiond-visit-strip article{display:grid;place-items:center;gap:3px;padding:13px 8px;background:#effbf9;text-align:center}.visiond-visit-strip small{color:#557572;font-size:12px;font-weight:800}.visiond-visit-strip b{color:#067b75;font-size:25px;line-height:1}.visiond-visit-strip b::after{content:" ครั้ง";font-size:11px;color:#65807e}@media(max-width:520px){.visiond-visit-strip article{padding:10px 3px}.visiond-visit-strip small{font-size:10px}.visiond-visit-strip b{font-size:20px}}</style>');
+  const paintStats=data=>{const number=value=>new Intl.NumberFormat('th-TH').format(Number(value)||0);stats.querySelector('[data-visit-today]').textContent=number(data.today_views);stats.querySelector('[data-visit-7]').textContent=number(data.last7_views);stats.querySelector('[data-visit-30]').textContent=number(data.last30_views)};
+  document.addEventListener('visiond:analytics-counted',event=>paintStats(event.detail),{once:true});
+  if(window.__visiondAnalytics)paintStats(window.__visiondAnalytics);else fetch('/api/analytics/view',{cache:'no-store'}).then(response=>response.ok?response.json():Promise.reject()).then(paintStats).catch(()=>{stats.querySelectorAll('b').forEach(node=>node.textContent='0')});
 })();

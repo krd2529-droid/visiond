@@ -48,6 +48,8 @@ button{border:0;background:transparent;cursor:pointer;font:inherit}
 }
 .topbar nav{display:flex;gap:24px;align-items:center}
 .topbar nav a,.topbar nav button{font-weight:700;transition:.2s ease;color:#fff}
+.topbar nav .nav-home-link{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border:1px solid rgba(255,255,255,.34);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-weight:900}
+.topbar nav .nav-home-link:hover{background:#fff;color:#087a75}
 .topbar nav a:hover,.topbar nav button:hover{color:#DDF7F5}
 .hero{
   max-width:none;
@@ -162,6 +164,7 @@ dialog::backdrop{background:rgba(4,43,42,.60);backdrop-filter:blur(4px)}
   .hero h1{font-size:42px}
   .grid{grid-template-columns:1fr}
   .topbar nav a{display:none}
+  .topbar nav .nav-home-link{display:inline-flex;min-width:max-content}
   .section-head{align-items:stretch;flex-direction:column}
   .section-head input{max-width:none}
 }
