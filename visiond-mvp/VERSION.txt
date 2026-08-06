@@ -1,2 +1,2 @@
-VisionD MVP v0.12.05
-Route desktop links through the rebuilt mouse system and keep Boss/Admin test orders separate from the active storefront cart
+VisionD MVP v0.12.06
+Add the shared discount-cart action to product detail pages while retaining the rebuilt mouse system and staff storefront behavior
