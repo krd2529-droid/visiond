@@ -1,2 +1,2 @@
-VisionD MVP v0.12.12
-Keep one current arrow pair per catalog cover and pin both buttons above all cover content
+VisionD MVP v0.12.14
+Show the three visitor counters in one short centered strip instead of a full-width bar
