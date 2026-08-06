@@ -1,2 +1,2 @@
-VisionD MVP v0.11.99
-Add five-page catalog pagination with the homepage as page one
+VisionD MVP v0.12.00
+Fix every catalog product link and lazy-load preview images

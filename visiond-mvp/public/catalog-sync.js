@@ -2,8 +2,16 @@ import("/facebook-chat.js?v=01195");
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
+  document.querySelectorAll('a[href^="/product.html?slug="]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/product.html", "/product")));
   const grid = document.querySelector(".vd-grid");
   if (!grid) return;
+  grid.addEventListener("click", (event) => {
+    const productLink = event.target.closest('a[href*="/product"][href*="slug="]');
+    if (!productLink) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    location.assign(productLink.href.replace("/product.html", "/product"));
+  }, true);
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.head.insertAdjacentHTML(
     "beforeend",
@@ -51,7 +59,7 @@ import("/facebook-chat.js?v=01195");
     const images = previewUrls(product),
       hasSlider = images.length > 1,
       count = imageCount(product);
-    return `<div class="vd-cover${hasSlider ? " vd-cover-slider" : ""}" data-catalog-slider="0"><span class="vd-tag">${esc(product.file_type || "DIGITAL")}</span><span class="vd-ready">พร้อมดาวน์โหลด</span><strong class="vd-image-total" aria-label="จำนวนรูปในชุด">${count ? new Intl.NumberFormat("th-TH").format(count) : "—"} รูป</strong><a href="/product.html?slug=${encodeURIComponent(product.slug)}">${images.map((url, index) => `<img src="${esc(url)}" alt="${esc(product.title)} รูป ${index + 1}" data-slide="${index}" ${index ? "hidden" : ""}>`).join("")}</a>${hasSlider ? `<button class="vd-slide-prev" type="button" aria-label="รูปก่อนหน้า">‹</button><button class="vd-slide-next" type="button" aria-label="รูปถัดไป">›</button><small class="vd-slide-count">1/${images.length}</small>` : ""}</div>`;
+    return `<div class="vd-cover${hasSlider ? " vd-cover-slider" : ""}" data-catalog-slider="0"><span class="vd-tag">${esc(product.file_type || "DIGITAL")}</span><span class="vd-ready">พร้อมดาวน์โหลด</span><strong class="vd-image-total" aria-label="จำนวนรูปในชุด">${count ? new Intl.NumberFormat("th-TH").format(count) : "—"} รูป</strong><a href="/product?slug=${encodeURIComponent(product.slug)}">${images.map((url, index) => `<img loading="lazy" decoding="async" src="${esc(url)}" alt="${esc(product.title)} รูป ${index + 1}" data-slide="${index}" ${index ? "hidden" : ""}>`).join("")}</a>${hasSlider ? `<button class="vd-slide-prev" type="button" aria-label="รูปก่อนหน้า">‹</button><button class="vd-slide-next" type="button" aria-label="รูปถัดไป">›</button><small class="vd-slide-count">1/${images.length}</small>` : ""}</div>`;
   };
   const normalizeCart = (items) => {
     const unique = new Map();
@@ -217,7 +225,7 @@ import("/facebook-chat.js?v=01195");
           .filter((p) => !existing.has(p.slug))
           .map(
             (p) =>
-              `<article class="vd-card" data-category="${esc(catalogGroup(p))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
+              `<article class="vd-card" data-category="${esc(catalogGroup(p))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
           )
           .join(""),
       );
@@ -344,7 +352,7 @@ import("/facebook-chat.js?v=01195");
           if (ready) ready.textContent = "ซื้อแล้ว · พร้อมดาวน์โหลด";
           if (action) {
             action.textContent = "เปิดไฟล์";
-            action.href = "/product.html?slug=" + encodeURIComponent(slug);
+            action.href = "/product?slug=" + encodeURIComponent(slug);
           }
         } else if (order.status === "pending_review") {
           if (ready) ready.textContent = "ซื้อแล้ว · รอตรวจสลิป";
