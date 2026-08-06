@@ -4,6 +4,35 @@ import("/facebook-chat.js?v=01195");
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
   const grid = document.querySelector(".vd-grid");
   if (!grid) return;
+  let productPointerStart = null;
+  grid.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (event.button !== 0) return;
+      const productLink = event.target.closest('a[href*="/product.html?slug="]');
+      productPointerStart = productLink
+        ? { link: productLink, x: event.clientX, y: event.clientY }
+        : null;
+    },
+    true,
+  );
+  grid.addEventListener(
+    "pointerup",
+    (event) => {
+      const start = productPointerStart;
+      productPointerStart = null;
+      if (!start || event.button !== 0) return;
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const productLink = event.target.closest('a[href*="/product.html?slug="]');
+      if (productLink !== start.link) return;
+      if (Math.abs(event.clientX - start.x) > 12 || Math.abs(event.clientY - start.y) > 12)
+        return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      location.assign(productLink.href);
+    },
+    true,
+  );
   // Product links must always respond to a normal left click. Handle them in
   // the capture phase so slider/pointer state restored by Back cannot cancel
   // navigation. Modified clicks and right clicks keep native browser behavior.
