@@ -110,7 +110,7 @@ async function checkout() {
   try {
     const me = await fetch("/api/auth/me");
     if (!me.ok) {
-      sessionStorage.setItem("vd_return_to", "/cart.html");
+      sessionStorage.setItem("vd_return_to", "/cart");
       location.href = "/login.html";
       return;
     }

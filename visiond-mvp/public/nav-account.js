@@ -2,6 +2,7 @@ const roleLabel={boss:'Boss',admin:'Admin',user:'สมาชิก',customer:'�
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 export async function initAccountNav(){
+  document.querySelectorAll('a[href="/cart.html"]').forEach(link=>link.setAttribute('href','/cart'));
   const nav=document.querySelector('.topbar nav');
   if(!nav||nav.dataset.accountReady)return;
   nav.dataset.accountReady='1';

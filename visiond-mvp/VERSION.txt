@@ -1,2 +1,2 @@
-VisionD MVP v0.11.96
-Show the total number of images on every storefront catalog product card
+VisionD MVP v0.11.97
+Fix storefront cart navigation to use the canonical /cart route
