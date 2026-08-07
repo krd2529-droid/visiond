@@ -1,2 +1,2 @@
-VisionD MVP v0.13.23
-Keep valid legacy password hashes during login and remove repeated schema writes
+VisionD MVP v0.13.24
+Generate collision-free product slugs across active, deleted and historical products
