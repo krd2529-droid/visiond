@@ -1,2 +1,2 @@
-VisionD MVP v0.13.18
-Boss login rate-limit cooldown reduced to one minute; other accounts unchanged
+VisionD MVP v0.13.19
+Boss ID bypasses stale IP rate-limit blocks; password verification remains active
