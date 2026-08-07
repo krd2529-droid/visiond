@@ -105,9 +105,9 @@ export async function onRequestPost(ctx) {
       "-" +
       Math.floor(Math.random() * 90 + 10);
   const r = await ctx.env.DB.prepare(
-    "INSERT INTO orders(order_no,user_id,total) VALUES(?,?,?)",
+    "INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number) VALUES(?,?,?,?,?,?,?)",
   )
-    .bind(orderNo, a.user.id, total)
+    .bind(orderNo, a.user.id, total, payment.active_account, payment.bank_name, payment.account_name, payment.account_number)
     .run();
   const orderId = r.meta.last_row_id;
   for (const p of results)
@@ -147,6 +147,12 @@ export async function onRequestGet(ctx) {
       .all();
     o.items = x.results;
     o.status_label = statusLabel(o.status);
+    o.bank = o.payment_account_name ? {
+      active_account: o.payment_account_type,
+      bank_name: o.payment_bank_name,
+      account_name: o.payment_account_name,
+      account_number: o.payment_account_number,
+    } : null;
   }
   return json({ items: results, bank: publicPaymentSettings(await loadPaymentSettings(ctx.env)) },200,{"cache-control":"no-store"});
 }

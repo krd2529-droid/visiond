@@ -91,6 +91,7 @@ paymentSettingsForm.onsubmit = savePaymentSettings;
 newCategoryButton.onclick = resetCategoryForm;
 categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
+downloadCategoryPreviews.onclick = downloadPreviewArchive;
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-trash-action]");
@@ -375,6 +376,7 @@ async function loadCategories(render = true) {
     return;
   }
   categories = d.items || [];
+  previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + categories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)} (${Number(c.product_count)||0})</option>`).join("");
   productCategorySelect.innerHTML = productCategoryOptions();
   if (!productEditor.elements.id.value) {
     productCategorySelect.value = [...productCategorySelect.options].some(
@@ -403,6 +405,17 @@ async function loadCategories(render = true) {
         (button.onclick = () =>
           editCategory(Number(button.dataset.editCategory))),
     );
+}
+async function downloadPreviewArchive(){
+  const category=previewExportCategory.value,button=downloadCategoryPreviews;
+  button.disabled=true;button.textContent='กำลังรวมรูป…';previewExportMessage.textContent='กำลังสร้าง ZIP กรุณารอสักครู่';
+  try{
+    const response=await fetch('/api/admin/product-previews.zip'+(category?'?category='+encodeURIComponent(category):''));
+    if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'รวมรูปไม่สำเร็จ')}
+    const blob=await response.blob(),disposition=response.headers.get('content-disposition')||'',match=disposition.match(/filename\*=UTF-8''([^;]+)/i),name=match?decodeURIComponent(match[1]):`visiond-previews-${category||'all'}.zip`,url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    previewExportMessage.textContent=`ดาวน์โหลดสำเร็จ ${(blob.size/1024/1024).toFixed(1)} MB`;
+  }catch(error){previewExportMessage.textContent=error.message;alert(error.message)}finally{button.disabled=false;button.textContent='ดาวน์โหลดรูปตัวอย่างทั้งหมด'}
 }
 function resetCategoryForm() {
   categoryEditor.reset();
@@ -982,6 +995,10 @@ async function loadPaymentSettings() {
   }
   const p = d.item || {};
   const profiles = p.profiles || {};
+  if(!paymentSettingsForm.elements.vision3_auto_verify){
+    const box=document.createElement('div');box.className='settings-status';box.innerHTML='<div><b>Vision 3 ตรวจสลิปอัตโนมัติ</b><small>ปิดแล้วลูกค้ายังอัปโหลดสลิปได้ แต่ Boss/Admin ต้องตรวจและปลดล็อกด้วยคน</small></div><label class="switch-line"><input name="vision3_auto_verify" type="checkbox" value="1"><span>เปิด Vision 3</span></label>';
+    paymentSettingsForm.querySelector('.payment-account-switch').before(box);
+  }
   paymentSettingsForm.elements.active_account.value = p.active_account || "personal";
   paymentSettingsForm.elements.personal_bank_name.value = profiles.personal?.bank_name || "ธนาคารกรุงศรีอยุธยา";
   paymentSettingsForm.elements.personal_account_name.value = profiles.personal?.account_name || "รัฐสิทธิ ดำรงรถการ";
@@ -993,6 +1010,8 @@ async function loadPaymentSettings() {
   paymentSettingsForm.querySelector('button[type="submit"]').textContent = viewer?.role === "boss" ? "บันทึกและสลับบัญชี" : "บันทึกการตั้งค่า";
   paymentSettingsForm.elements.accepting_orders.checked =
     p.accepting_orders !== false;
+  paymentSettingsForm.elements.vision3_auto_verify.checked = p.vision3_auto_verify !== false;
+  paymentSettingsForm.elements.vision3_auto_verify.disabled = viewer?.role !== "boss";
   paymentSettingsForm.elements.payment_message.value = p.payment_message || "";
   currentQr.innerHTML = p.qr_url
     ? `<img src="${esc(p.qr_url)}" alt="QR ชำระเงิน"><small>QR ที่ใช้งานอยู่ในขณะนี้</small>`
@@ -1007,6 +1026,7 @@ async function savePaymentSettings(e) {
     "accepting_orders",
     paymentSettingsForm.elements.accepting_orders.checked ? "1" : "0",
   );
+  fd.set("vision3_auto_verify",paymentSettingsForm.elements.vision3_auto_verify.checked ? "1" : "0");
   const r = await fetch("/api/admin/payment-settings", {
     method: "PUT",
     body: fd,

@@ -21,6 +21,7 @@ export async function ensureDatabase(env) {
     ,`CREATE TABLE IF NOT EXISTS security_rate_limits (rate_key TEXT PRIMARY KEY,hits INTEGER NOT NULL DEFAULT 0,window_start TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,blocked_until TEXT)`
     ,`CREATE TABLE IF NOT EXISTS security_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,event_type TEXT NOT NULL,severity TEXT NOT NULL DEFAULT 'info',user_id INTEGER,ip TEXT,path TEXT,detail TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
     ,`CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT,path TEXT NOT NULL,product_id INTEGER,visitor_key TEXT NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL)`
+    ,`CREATE TABLE IF NOT EXISTS verified_slips (id INTEGER PRIMARY KEY AUTOINCREMENT,trans_ref TEXT NOT NULL UNIQUE,order_id INTEGER NOT NULL UNIQUE,provider TEXT NOT NULL DEFAULT 'easyslip',amount INTEGER NOT NULL,receiver_name TEXT,receiver_account TEXT,verified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(order_id) REFERENCES orders(id))`
   ];
 
   for (const statement of statements) await env.DB.prepare(statement).run();
@@ -56,6 +57,16 @@ export async function ensureDatabase(env) {
   await env.DB.prepare(`CREATE TRIGGER IF NOT EXISTS trg_order_item_product_title AFTER INSERT ON order_items WHEN NEW.product_title IS NULL BEGIN UPDATE order_items SET product_title=(SELECT title FROM products WHERE id=NEW.product_id) WHERE id=NEW.id; END`).run();
   const orderColumns = (await env.DB.prepare('PRAGMA table_info(orders)').all()).results.map(column => column.name);
   if (!orderColumns.includes('sale_price_recorded')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN sale_price_recorded INTEGER NOT NULL DEFAULT 1').run();
+  if (!orderColumns.includes('payment_account_type')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN payment_account_type TEXT').run();
+  if (!orderColumns.includes('payment_bank_name')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN payment_bank_name TEXT').run();
+  if (!orderColumns.includes('payment_account_name')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN payment_account_name TEXT').run();
+  if (!orderColumns.includes('payment_account_number')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN payment_account_number TEXT').run();
+  if (!orderColumns.includes('slip_verification_status')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN slip_verification_status TEXT NOT NULL DEFAULT 'not_checked'").run();
+  if (!orderColumns.includes('slip_verification_code')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN slip_verification_code TEXT').run();
+  if (!orderColumns.includes('slip_trans_ref')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN slip_trans_ref TEXT').run();
+  if (!orderColumns.includes('slip_verified_at')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN slip_verified_at TEXT').run();
+  await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_verified_slips_trans_ref ON verified_slips(trans_ref)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_orders_slip_verification ON orders(slip_verification_status,updated_at DESC)').run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('coloring','ระบายสี',NULL,'PDF',1,10)").run();
   await env.DB.prepare("UPDATE categories SET name='ระบายสี',parent_slug=NULL,active=1,sort_order=10 WHERE slug='coloring'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('tattoo','แบบรอยสัก',NULL,'PDF',1,20)").run();
