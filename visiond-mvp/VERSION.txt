@@ -1,2 +1,2 @@
-VisionD MVP v0.13.6
-Boss-only mobile preview for storefront and admin pages, with polished mobile header actions
+VisionD MVP v0.13.7
+Allow secure same-origin mobile preview while blocking embedding from external websites

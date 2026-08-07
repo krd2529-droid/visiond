@@ -2,7 +2,7 @@ const securityHeaders={
   'x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin',
   'permissions-policy':'camera=(), microphone=(), geolocation=()',
   'strict-transport-security':'max-age=31536000; includeSubDomains',
-  'content-security-policy':"default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' https://challenges.cloudflare.com https://connect.facebook.net; frame-src 'self' blob: https://challenges.cloudflare.com https://www.facebook.com; connect-src 'self' https://challenges.cloudflare.com https://connect.facebook.net https://www.facebook.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://www.facebook.com"
+  'content-security-policy':"default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' https://challenges.cloudflare.com https://connect.facebook.net; frame-src 'self' blob: https://challenges.cloudflare.com https://www.facebook.com; connect-src 'self' https://challenges.cloudflare.com https://connect.facebook.net https://www.facebook.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://www.facebook.com"
 };
 export async function onRequest(ctx){
   const request=ctx.request,url=new URL(request.url),method=request.method.toUpperCase();
@@ -12,7 +12,7 @@ export async function onRequest(ctx){
   }
   const response=await ctx.next(),headers=new Headers(response.headers);
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
-  headers.set('x-frame-options','DENY');
+  headers.set('x-frame-options','SAMEORIGIN');
   if(url.pathname.startsWith('/api/'))headers.set('cache-control','private, no-store');
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }
