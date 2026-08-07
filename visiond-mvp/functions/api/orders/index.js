@@ -87,17 +87,19 @@ export async function onRequestPost(ctx) {
     }
   }
   const subtotal = results.reduce((sum, p) => sum + Number(p.price), 0),
+    discountableCount = results.filter(p=>!p.product_kind||p.product_kind==='product').length,
     discountRate =
-      results.length >= 30
-        ? 20
-        : results.length >= 20
-          ? 15
-          : results.length >= 10
+      discountableCount >= 30
+        ? 30
+        : discountableCount >= 20
+          ? 20
+          : discountableCount >= 10
             ? 10
-            : results.length >= 5
+            : discountableCount >= 5
               ? 5
               : 0,
-    discount = Math.round((subtotal * discountRate) / 100),
+    discountBase = results.filter(p=>!p.product_kind||p.product_kind==='product').reduce((sum,p)=>sum+Number(p.price),0),
+    discount = Math.round((discountBase * discountRate) / 100),
     total = subtotal - discount,
     orderNo =
       "VD-" +
@@ -141,7 +143,7 @@ export async function onRequestGet(ctx) {
     .all();
   for (const o of results) {
     const x = await ctx.env.DB.prepare(
-      "SELECT p.id,p.slug,p.title,oi.price FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=?",
+      "SELECT p.id,p.slug,p.title,p.product_kind,oi.price FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=?",
     )
       .bind(o.id)
       .all();

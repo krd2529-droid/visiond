@@ -78,7 +78,7 @@ import('/nav-account.js?v=013121');
       .querySelectorAll("[data-cart-count]")
       .forEach((node) => (node.textContent = getCart().length));
   const discountRate = (count) =>
-    count >= 30 ? 20 : count >= 20 ? 15 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
+    count >= 30 ? 30 : count >= 20 ? 20 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
   let bundlePanel = null,
     blockedSlugs = new Set();
   if (location.pathname.includes("digital-products")) {
@@ -119,7 +119,7 @@ import('/nav-account.js?v=013121');
               : count < 30
                 ? 30
                 : null;
-    bundlePanel.innerHTML = `<h3>จัดชุดส่วนลด</h3><p>${next ? `เลือกอีก ${next - count} ตะกร้า เพื่อรับส่วนลด ${discountRate(next)}%` : "ครบ 30 ตะกร้า · รับส่วนลดสูงสุดแล้ว"}</p><div class="vd-discount-levels">${[5, 10, 20, 30].map((level) => `<span class="${count >= level ? "active" : ""}">${level} ชุด<br>ลด ${discountRate(level)}%</span>`).join("")}</div><div class="vd-bundle-items">${items.length ? items.map((item, index) => `<article class="vd-bundle-item"><img src="${esc(item.cover_url || "/assets/product-placeholder.svg")}" alt=""><b>${esc(item.title)}</b><button type="button" data-bundle-remove="${index}" aria-label="นำออก">×</button></article>`).join("") : '<div class="vd-bundle-empty">ยังไม่ได้เลือกสินค้า<br>เลือกได้สูงสุด 30 ตะกร้า</div>'}</div><div class="vd-bundle-summary"><div><span>${count} ตะกร้า</span><b>${money(subtotal)}</b></div><div class="discount"><span>ส่วนลด ${rate}%</span><b>- ${money(discount)}</b></div><div><strong>ยอดสุทธิ</strong><strong>${money(subtotal - discount)}</strong></div></div><a href="/cart.html">ดูตะกร้าและชำระเงิน</a>`;
+    bundlePanel.innerHTML = `<h3>จัดชุดส่วนลด</h3><p>${next ? `เลือกอีก ${next - count} ตะกร้า เพื่อรับส่วนลด ${discountRate(next)}%` : "ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 30% แล้ว"}</p><div class="vd-discount-levels">${[5, 10, 20, 30].map((level) => `<span class="${count >= level ? "active" : ""}">${level} ชุด<br>ลด ${discountRate(level)}%</span>`).join("")}</div><div class="vd-bundle-items">${items.length ? items.map((item, index) => `<article class="vd-bundle-item"><img src="${esc(item.cover_url || "/assets/product-placeholder.svg")}" alt=""><b>${esc(item.title)}</b><button type="button" data-bundle-remove="${index}" aria-label="นำออก">×</button></article>`).join("") : '<div class="vd-bundle-empty">ยังไม่ได้เลือกสินค้า<br>เลือกได้สูงสุด 30 ตะกร้า</div>'}</div><div class="vd-bundle-summary"><div><span>${count} ตะกร้า</span><b>${money(subtotal)}</b></div><div class="discount"><span>ส่วนลด ${rate}%</span><b>- ${money(discount)}</b></div><div><strong>ยอดสุทธิ</strong><strong>${money(subtotal - discount)}</strong></div></div><a href="/cart.html">ดูตะกร้าและชำระเงิน</a>`;
     bundlePanel.querySelector('a[href="/cart.html"]')?.setAttribute("href", "/cart");
     bundlePanel.querySelectorAll("[data-bundle-remove]").forEach(
       (button) =>

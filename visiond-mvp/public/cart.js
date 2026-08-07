@@ -31,7 +31,7 @@ const saveCart = (items) => {
   render();
 };
 const discountRate = (count) =>
-  count >= 30 ? 20 : count >= 20 ? 15 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
+  count >= 30 ? 30 : count >= 20 ? 20 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
 let activeOrder = null;
 copyAccountButton.onclick = async () => {
   const account = bankAccountNumber.textContent.trim();
@@ -74,7 +74,7 @@ function render() {
   cartTotal.textContent = money(subtotal - discount);
   cartNextDiscount.textContent = next
     ? `⚠ เลือกเพิ่มอีก ${next - items.length} ตะกร้า จะได้รับส่วนลด ${discountRate(next)}%`
-    : "✓ ครบ 30 ตะกร้า · ได้รับส่วนลดสูงสุด 20% แล้ว";
+    : "✓ ครบ 30 ตะกร้า · ได้รับส่วนลดสูงสุด 30% แล้ว";
   cartNextDiscount.classList.toggle("complete", !next);
   cartItems.innerHTML = items.length
     ? items

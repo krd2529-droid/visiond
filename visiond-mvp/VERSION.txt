@@ -1,2 +1,2 @@
-VisionD MVP v0.13.13
-Rename homepage service 01 to Digital Files and show the current product categories
+VisionD MVP v0.13.15
+Promotion tiers updated everywhere: 5/5%, 10/10%, 20/20%, 30/30%
