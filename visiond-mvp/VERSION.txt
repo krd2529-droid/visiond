@@ -1,2 +1,2 @@
-VisionD MVP v0.13.2
-Persistent Boss-only Vision 3 automatic/manual slip verification switch
+VisionD MVP v0.13.3
+Auto-scroll Step 4 directly to the attach-PDF-and-open-product-form button

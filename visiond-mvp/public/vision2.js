@@ -2066,6 +2066,18 @@
       v2FinishWithoutProduct.disabled = false;
       v2ContinueProduct.disabled = false;
       v2ContinueProduct.textContent = "แนบ PDF และไปฟอร์มสินค้า →";
+      v2ContinueProduct.style.scrollMarginBlock = "120px";
+      requestAnimationFrame(() =>
+        setTimeout(
+          () =>
+            v2ContinueProduct.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+              inline: "nearest",
+            }),
+          100,
+        ),
+      );
     } catch (error) {
       v2PdfSummary.innerHTML =
         "<article><small>รวม PDF ไม่สำเร็จ</small><b>กรุณาลองใหม่</b></article>";
