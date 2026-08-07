@@ -250,10 +250,10 @@
         <div class="mobile-preview-toolbar">
           <label>เลือกหน้าที่ต้องการตรวจ<select id="mobilePreviewRoute">
             <optgroup label="หน้าบ้าน">
-              <option value="/">หน้าหลัก</option><option value="/digital-products">สินค้าดิจิทัล</option><option value="/cart">รถเข็น</option><option value="/login.html">เข้าสู่ระบบ</option><option value="/register.html">สมัครสมาชิก</option><option value="/dashboard.html">บัญชีและสินค้าของฉัน</option><option value="/courses.html">คอร์สเรียน</option><option value="/bots.html">โปรแกรมบอท</option><option value="/blog.html">บทความ</option><option value="/about.html">เกี่ยวกับเรา</option>
+              <option value="/">หน้าหลัก</option><option value="/digital-products">สินค้าดิจิทัล</option><option value="/member">Member รายหมวด</option><option value="/cart">รถเข็น</option><option value="/login.html">เข้าสู่ระบบ</option><option value="/register.html">สมัครสมาชิก</option><option value="/dashboard.html">บัญชีและสินค้าของฉัน</option><option value="/courses.html">คอร์สเรียน</option><option value="/bots.html">โปรแกรมบอท</option><option value="/blog.html">บทความ</option><option value="/about.html">เกี่ยวกับเรา</option>
             </optgroup>
             <optgroup label="หลังบ้าน">
-              <option value="/admin?mobile_preview=1&preview_tab=overview">ภาพรวมกำไร</option><option value="/admin?mobile_preview=1&preview_tab=products">จัดการสินค้า</option><option value="/admin?mobile_preview=1&preview_tab=categories">หมวดหมู่</option><option value="/admin?mobile_preview=1&preview_tab=orders">ออเดอร์และสลิป</option><option value="/admin?mobile_preview=1&preview_tab=sales">รายงานยอดขาย</option><option value="/admin?mobile_preview=1&preview_tab=settings">ตั้งค่าชำระเงิน</option><option value="/admin?mobile_preview=1&preview_tab=users">สมาชิกและระดับไอดี</option><option value="/admin?mobile_preview=1&preview_tab=trash">ถังขยะ</option>
+              <option value="/admin?mobile_preview=1&preview_tab=overview">ภาพรวมกำไร</option><option value="/admin?mobile_preview=1&preview_tab=products">จัดการสินค้า</option><option value="/admin?mobile_preview=1&preview_tab=categories">หมวดหมู่</option><option value="/admin?mobile_preview=1&preview_tab=members">Member รายหมวด</option><option value="/admin?mobile_preview=1&preview_tab=orders">ออเดอร์และสลิป</option><option value="/admin?mobile_preview=1&preview_tab=sales">รายงานยอดขาย</option><option value="/admin?mobile_preview=1&preview_tab=settings">ตั้งค่าชำระเงิน</option><option value="/admin?mobile_preview=1&preview_tab=users">สมาชิกและระดับไอดี</option><option value="/admin?mobile_preview=1&preview_tab=trash">ถังขยะ</option>
             </optgroup>
           </select></label>
           <div class="mobile-preview-actions"><button id="mobilePreviewReload" type="button" title="โหลดใหม่">↻</button><a id="mobilePreviewNewTab" href="/" target="_blank" rel="noopener" title="เปิดหน้าเต็ม">↗</a><button id="mobilePreviewClose" type="button" title="ปิด">✕</button></div>
@@ -281,6 +281,7 @@
           <button class="active" data-admin-tab="overview">ภาพรวมกำไร</button
           ><button data-admin-tab="products">จัดการสินค้า</button
           ><button data-admin-tab="categories">หมวดหมู่</button
+          ><button data-admin-tab="members">Member รายหมวด</button
           ><button data-admin-tab="orders">ออเดอร์และสลิป</button
           ><button data-admin-tab="sales">รายงานยอดขาย</button
           ><button data-admin-tab="settings">ตั้งค่าชำระเงิน</button
@@ -699,6 +700,15 @@
             </form>
           </div>
         </section>
+        <section id="membersPanel" hidden>
+          <div class="section-head"><div><p class="eyebrow">CATEGORY MEMBER</p><h2>ตะกร้าสิทธิ์ Member รายหมวด</h2><p>ลูกค้าได้สินค้าทั้งหมวด รวมสินค้าที่เพิ่มในอนาคต สิทธิ์เริ่มเมื่ออนุมัติสลิป</p></div><a class="primary" href="/member.html" target="_blank" rel="noopener">ดูหน้าขาย Member</a></div>
+          <form id="memberPlanForm" class="product-editor member-plan-form">
+            <div class="form-two"><label>หมวดสินค้า<select name="category_slug" id="memberPlanCategory" required></select></label><label>ระยะเวลาสิทธิ์<select name="duration_months"><option value="1">รายเดือน · 1 เดือน</option><option value="12">รายปี · 1 ปี</option></select></label></div>
+            <div class="form-two"><label>ราคา (บาท)<input name="price_baht" type="number" min="0" step="1" required placeholder="ยังไม่คิดราคา ใส่ภายหลังได้"></label><label class="checkline"><input name="active" type="checkbox"> เปิดขายแพ็กเกจนี้</label></div>
+            <button class="primary" type="submit">บันทึกราคาและสถานะ</button><p id="memberPlanMessage" class="form-message"></p>
+          </form>
+          <div id="memberPlanList" class="member-plan-admin-list"><p>กำลังโหลดแพ็กเกจ…</p></div>
+        </section>
         <section id="ordersPanel" hidden>
           <div class="section-head">
             <div>
@@ -916,7 +926,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013110"></script>
+    <script src="/admin.js?v=013121"></script>
     <script src="/vision2.js?v=01340"></script>
   </body>
 </html>

@@ -33,7 +33,7 @@ function previewEntries(rows){
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
-  const params=new URL(ctx.request.url).searchParams,category=params.get('category')?.trim()||'',query=category?'SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND category=? ORDER BY id':'SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL ORDER BY category,id',rows=category?(await ctx.env.DB.prepare(query).bind(category).all()).results:(await ctx.env.DB.prepare(query).all()).results;
+  const params=new URL(ctx.request.url).searchParams,category=params.get('category')?.trim()||'',query=category?"SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product' AND category=? ORDER BY id":"SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product' ORDER BY category,id",rows=category?(await ctx.env.DB.prepare(query).bind(category).all()).results:(await ctx.env.DB.prepare(query).all()).results;
   if(!rows.length)return json({error:'หมวดนี้ยังไม่มีสินค้า'},404);
   const batchSize=80,entries=previewEntries(rows),totalBatches=Math.ceil(entries.length/batchSize);
   if(params.get('info')==='1')return json({category,total_images:entries.length,total_batches:totalBatches,batch_size:batchSize,batches:Array.from({length:totalBatches},(_,index)=>({batch:index+1,from:index*batchSize+1,to:Math.min((index+1)*batchSize,entries.length),count:Math.min(batchSize,entries.length-index*batchSize)}))});

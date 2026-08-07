@@ -1,5 +1,6 @@
 import("/facebook-chat.js?v=01195");
 import("/mouse-ui.js?v=01210");
+import('/nav-account.js?v=013121');
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));

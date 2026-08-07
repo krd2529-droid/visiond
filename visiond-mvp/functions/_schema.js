@@ -11,6 +11,7 @@ export async function ensureDatabase(env) {
     `CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT,order_no TEXT NOT NULL UNIQUE,user_id INTEGER NOT NULL,total INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'awaiting_payment',slip_key TEXT,transfer_note TEXT,admin_note TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id))`,
     `CREATE TABLE IF NOT EXISTS order_items (id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL,product_id INTEGER NOT NULL,product_title TEXT,price INTEGER NOT NULL,FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,FOREIGN KEY(product_id) REFERENCES products(id))`,
     `CREATE TABLE IF NOT EXISTS entitlements (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,product_id INTEGER NOT NULL,order_id INTEGER NOT NULL,active INTEGER NOT NULL DEFAULT 1,granted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(user_id,product_id,order_id),FOREIGN KEY(user_id) REFERENCES users(id),FOREIGN KEY(product_id) REFERENCES products(id),FOREIGN KEY(order_id) REFERENCES orders(id))`,
+    `CREATE TABLE IF NOT EXISTS category_memberships (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,category_slug TEXT NOT NULL,order_id INTEGER NOT NULL,starts_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,expires_at TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(user_id,category_slug),FOREIGN KEY(user_id) REFERENCES users(id),FOREIGN KEY(order_id) REFERENCES orders(id))`,
     `CREATE TABLE IF NOT EXISTS unlock_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,actor_user_id INTEGER NOT NULL,actor_name TEXT NOT NULL,actor_role TEXT NOT NULL,target_user_id INTEGER NOT NULL,target_name TEXT NOT NULL,product_id INTEGER NOT NULL,product_title TEXT NOT NULL,order_id INTEGER NOT NULL,order_no TEXT NOT NULL,method TEXT NOT NULL DEFAULT 'manual',note TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS ad_costs (spend_date TEXT PRIMARY KEY,facebook_cost INTEGER NOT NULL DEFAULT 0,note TEXT,updated_by INTEGER,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS downloads (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,product_file_id INTEGER NOT NULL,downloaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,ip TEXT,FOREIGN KEY(user_id) REFERENCES users(id),FOREIGN KEY(product_file_id) REFERENCES product_files(id))`,
@@ -43,6 +44,9 @@ export async function ensureDatabase(env) {
   if (!productColumns.includes('pages')) await env.DB.prepare("ALTER TABLE products ADD COLUMN pages INTEGER NOT NULL DEFAULT 0").run();
   if (!productColumns.includes('deleted_at')) await env.DB.prepare("ALTER TABLE products ADD COLUMN deleted_at TEXT").run();
   if (!productColumns.includes('deleted_prev_status')) await env.DB.prepare("ALTER TABLE products ADD COLUMN deleted_prev_status TEXT").run();
+  if (!productColumns.includes('product_kind')) await env.DB.prepare("ALTER TABLE products ADD COLUMN product_kind TEXT NOT NULL DEFAULT 'product'").run();
+  if (!productColumns.includes('member_category')) await env.DB.prepare("ALTER TABLE products ADD COLUMN member_category TEXT").run();
+  if (!productColumns.includes('member_duration_months')) await env.DB.prepare("ALTER TABLE products ADD COLUMN member_duration_months INTEGER").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_trash_expires_at ON trash_items(expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_slug_history_product ON product_slug_history(product_id)').run();
@@ -51,6 +55,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_path_time ON page_views(path,viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_product_time ON page_views(product_id,viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_visitor_time ON page_views(visitor_key,viewed_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_user ON category_memberships(user_id,active,expires_at)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_category ON category_memberships(category_slug,active,expires_at)').run();
   const orderItemColumns = (await env.DB.prepare('PRAGMA table_info(order_items)').all()).results.map(column => column.name);
   if (!orderItemColumns.includes('product_title')) await env.DB.prepare('ALTER TABLE order_items ADD COLUMN product_title TEXT').run();
   await env.DB.prepare('UPDATE order_items SET product_title=(SELECT title FROM products WHERE products.id=order_items.product_id) WHERE product_title IS NULL').run();

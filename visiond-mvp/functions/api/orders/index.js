@@ -51,7 +51,7 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT id,slug,title,price FROM products WHERE slug IN (${qs}) AND status='published' AND deleted_at IS NULL`,
+    `SELECT id,slug,title,price,product_kind,member_category FROM products WHERE slug IN (${qs}) AND status='published' AND deleted_at IS NULL`,
   )
     .bind(...slugs)
     .all();
@@ -69,7 +69,7 @@ export async function onRequestPost(ctx) {
     const existing = entitlement
       ? { status: "paid" }
       : await ctx.env.DB.prepare(
-          "SELECT o.status FROM orders o JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? AND oi.product_id=? AND o.status IN ('awaiting_payment','pending_review','paid') ORDER BY o.id DESC LIMIT 1",
+          `SELECT o.status FROM orders o JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? AND oi.product_id=? AND o.status IN (${product.product_kind==='member'?"'awaiting_payment','pending_review'":"'awaiting_payment','pending_review','paid'"}) ORDER BY o.id DESC LIMIT 1`,
         )
           .bind(a.user.id, product.id)
           .first();
