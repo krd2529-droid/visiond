@@ -1,2 +1,2 @@
-VisionD MVP v0.13.12
-Download every category preview in consecutive ZIP files of 80 images with one click
+VisionD MVP v0.13.11
+Download category preview images in selectable Facebook-ready batches of 80
