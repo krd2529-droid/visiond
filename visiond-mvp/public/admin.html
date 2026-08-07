@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Anton&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/style.css?v=01194" />
+    <link rel="stylesheet" href="/style.css?v=01360" />
     <link rel="stylesheet" href="/admin-products.css?v=01169" />
     <link rel="stylesheet" href="/admin-payment.css?v=01192" />
     <link rel="stylesheet" href="/admin-categories.css?v=0910" />
@@ -225,12 +225,42 @@
         }
       }
     </style>
+    <style>
+      .mobile-preview-launcher{position:fixed;z-index:80;left:18px;top:50%;display:grid;place-items:center;gap:5px;width:82px;min-height:82px;padding:10px 7px;border:1px solid rgba(255,255,255,.72);border-radius:18px;background:linear-gradient(145deg,#073f3d,#078b85);color:#fff;box-shadow:0 14px 34px rgba(3,61,58,.28);font-size:11px;font-weight:900;line-height:1.25;transform:translateY(-50%)}
+      .mobile-preview-launcher span{font-size:25px}.mobile-preview-launcher[hidden],.mobile-preview-shell[hidden]{display:none}
+      .mobile-preview-shell{position:fixed;z-index:120;inset:0;display:grid;grid-template-columns:minmax(280px,1fr) auto;background:rgba(3,39,37,.72);backdrop-filter:blur(5px)}
+      .mobile-preview-dismiss{min-width:0;cursor:zoom-out}.mobile-preview-panel{width:min(490px,100vw);height:100vh;padding:14px;overflow:auto;background:#e8f8f6;box-shadow:-18px 0 55px rgba(0,0,0,.25)}
+      .mobile-preview-toolbar{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;margin-bottom:12px}.mobile-preview-toolbar label{display:grid;gap:5px;font-weight:900}.mobile-preview-actions{display:flex;gap:7px;align-self:end}
+      .mobile-preview-actions button,.mobile-preview-actions a{display:grid;place-items:center;width:42px;height:42px;border:1px solid #87c9c4;border-radius:11px;background:#fff;color:#075e5a;font-weight:900}
+      .mobile-preview-device{width:390px;max-width:100%;margin:auto;padding:10px;border:5px solid #123b39;border-radius:38px;background:#123b39;box-shadow:0 20px 45px rgba(0,61,57,.25)}
+      .mobile-preview-speaker{width:74px;height:6px;margin:0 auto 9px;border-radius:99px;background:#7ba09d}.mobile-preview-device iframe{display:block;width:100%;height:min(780px,calc(100vh - 160px));min-height:560px;border:0;border-radius:25px;background:#fff}
+      @media(max-width:1320px){.mobile-preview-launcher{left:8px;width:68px}}
+      @media(max-width:760px){.mobile-preview-launcher{left:10px;top:auto;bottom:82px;width:64px;min-height:64px;transform:none}.mobile-preview-launcher span{font-size:20px}.mobile-preview-shell{grid-template-columns:1fr}.mobile-preview-dismiss{display:none}.mobile-preview-panel{width:100vw;padding:10px}.mobile-preview-device iframe{height:calc(100vh - 145px);min-height:480px}}
+    </style>
     <header class="topbar">
       <a class="brand" href="/">VISIOND <small>CONTROL</small></a>
       <nav>
         <a href="/">หน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
     </header>
+    <button id="mobilePreviewLauncher" class="mobile-preview-launcher" type="button" hidden><span aria-hidden="true">📱</span>มุมมองมือถือ</button>
+    <section id="mobilePreviewShell" class="mobile-preview-shell" hidden aria-label="มุมมองเว็บไซต์บนมือถือ">
+      <button class="mobile-preview-dismiss" type="button" aria-label="ปิดมุมมองมือถือ"></button>
+      <aside class="mobile-preview-panel">
+        <div class="mobile-preview-toolbar">
+          <label>เลือกหน้าที่ต้องการตรวจ<select id="mobilePreviewRoute">
+            <optgroup label="หน้าบ้าน">
+              <option value="/">หน้าหลัก</option><option value="/digital-products">สินค้าดิจิทัล</option><option value="/cart">รถเข็น</option><option value="/login.html">เข้าสู่ระบบ</option><option value="/register.html">สมัครสมาชิก</option><option value="/dashboard.html">บัญชีและสินค้าของฉัน</option><option value="/courses.html">คอร์สเรียน</option><option value="/bots.html">โปรแกรมบอท</option><option value="/blog.html">บทความ</option><option value="/about.html">เกี่ยวกับเรา</option>
+            </optgroup>
+            <optgroup label="หลังบ้าน">
+              <option value="/admin?mobile_preview=1&preview_tab=overview">ภาพรวมกำไร</option><option value="/admin?mobile_preview=1&preview_tab=products">จัดการสินค้า</option><option value="/admin?mobile_preview=1&preview_tab=categories">หมวดหมู่</option><option value="/admin?mobile_preview=1&preview_tab=orders">ออเดอร์และสลิป</option><option value="/admin?mobile_preview=1&preview_tab=sales">รายงานยอดขาย</option><option value="/admin?mobile_preview=1&preview_tab=settings">ตั้งค่าชำระเงิน</option><option value="/admin?mobile_preview=1&preview_tab=users">สมาชิกและระดับไอดี</option><option value="/admin?mobile_preview=1&preview_tab=trash">ถังขยะ</option>
+            </optgroup>
+          </select></label>
+          <div class="mobile-preview-actions"><button id="mobilePreviewReload" type="button" title="โหลดใหม่">↻</button><a id="mobilePreviewNewTab" href="/" target="_blank" rel="noopener" title="เปิดหน้าเต็ม">↗</a><button id="mobilePreviewClose" type="button" title="ปิด">✕</button></div>
+        </div>
+        <div class="mobile-preview-device"><div class="mobile-preview-speaker"></div><iframe id="mobilePreviewFrame" title="ตัวอย่างหน้าเว็บขนาดมือถือ" loading="lazy"></iframe></div>
+      </aside>
+    </section>
     <main class="admin-wrap">
       <section class="admin-hero">
         <div>
@@ -882,7 +912,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=01340"></script>
+    <script src="/admin.js?v=01360"></script>
     <script src="/vision2.js?v=01340"></script>
   </body>
 </html>

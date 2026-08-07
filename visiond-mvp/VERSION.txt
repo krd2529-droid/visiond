@@ -1,2 +1,2 @@
-VisionD MVP v0.13.5
-Export all category preview images in one flat ZIP without product subfolders
+VisionD MVP v0.13.6
+Boss-only mobile preview for storefront and admin pages, with polished mobile header actions

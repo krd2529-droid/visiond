@@ -326,6 +326,7 @@ async function init() {
     deny("บัญชี User ไม่มีสิทธิ์เข้าหลังบ้าน");
     return;
   }
+  setupBossMobilePreview();
   adminPanel.hidden = false;
   Object.entries(panels).forEach(
     ([name, panel]) => (panel.hidden = name !== "overview"),
@@ -337,6 +338,43 @@ async function init() {
   adSpendDate.value = today;
   await loadCategories(false);
   loadProfitDashboard();
+  openRequestedPreviewTab();
+}
+
+function setupBossMobilePreview() {
+  const launcher = document.querySelector("#mobilePreviewLauncher"),
+    shell = document.querySelector("#mobilePreviewShell"),
+    route = document.querySelector("#mobilePreviewRoute"),
+    frame = document.querySelector("#mobilePreviewFrame"),
+    newTab = document.querySelector("#mobilePreviewNewTab");
+  if (!launcher || viewer?.role !== "boss" || new URLSearchParams(location.search).has("mobile_preview")) return;
+  launcher.hidden = false;
+  const loadRoute = () => {
+    frame.src = route.value;
+    newTab.href = route.value;
+  };
+  const close = () => {
+    shell.hidden = true;
+    document.body.style.overflow = "";
+  };
+  launcher.onclick = () => {
+    shell.hidden = false;
+    document.body.style.overflow = "hidden";
+    if (!frame.getAttribute("src")) loadRoute();
+  };
+  route.onchange = loadRoute;
+  document.querySelector("#mobilePreviewReload").onclick = () => frame.contentWindow?.location.reload();
+  document.querySelector("#mobilePreviewClose").onclick = close;
+  shell.querySelector(".mobile-preview-dismiss").onclick = close;
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !shell.hidden) close();
+  });
+}
+
+function openRequestedPreviewTab() {
+  const requested = new URLSearchParams(location.search).get("preview_tab");
+  if (!requested || !panels[requested]) return;
+  document.querySelector(`[data-admin-tab="${requested}"]`)?.click();
 }
 function deny(text) {
   accessDenied.innerHTML = `<div class="admin-card"><b>เข้าไม่ได้</b><p>${esc(text)}</p><a class="primary" href="/account.html">เข้าสู่ระบบหรือกลับหน้าบัญชี</a></div>`;
