@@ -3,9 +3,11 @@ import {rateLimit,verifyTurnstile,verifyPassword,hashPassword,securityLog} from 
 
 export async function onRequestPost(ctx){
   if(!ctx.env.DB)return json({error:'ยังไม่ได้เชื่อมฐานข้อมูลสมาชิก'},503);
-  const limited=await rateLimit(ctx.env,ctx.request,'login',8,15,30);if(limited.error)return limited.error;
-  const b=await ctx.request.json().catch(()=>({})),turnstile=await verifyTurnstile(ctx.env,ctx.request,b.turnstile_token);if(turnstile.error)return turnstile.error;
+  const b=await ctx.request.json().catch(()=>({}));
   const login=String(b.login||b.email||'').trim().toLowerCase();
+  const isBossLogin=login==='visiondboss';
+  const limited=await rateLimit(ctx.env,ctx.request,isBossLogin?'login-boss':'login',8,15,isBossLogin?1:30);if(limited.error)return limited.error;
+  const turnstile=await verifyTurnstile(ctx.env,ctx.request,b.turnstile_token);if(turnstile.error)return turnstile.error;
   if(!login||!b.password)return json({error:'กรุณากรอกไอดีและรหัสผ่าน'},400);
   const u=await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=?').bind(login,login).first();
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
