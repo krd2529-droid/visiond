@@ -376,7 +376,8 @@ async function loadCategories(render = true) {
     return;
   }
   categories = d.items || [];
-  previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + categories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)} (${Number(c.product_count)||0})</option>`).join("");
+  const exportCategories=categories.filter((c)=>Number(c.product_count)>0);
+  previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + exportCategories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)} (${Number(c.product_count)||0} สินค้า)</option>`).join("");
   productCategorySelect.innerHTML = productCategoryOptions();
   if (!productEditor.elements.id.value) {
     productCategorySelect.value = [...productCategorySelect.options].some(
@@ -488,6 +489,7 @@ async function deleteCategory() {
 async function loadProducts() {
   productAdminList.innerHTML =
     '<div class="admin-empty">กำลังโหลดสินค้า…</div>';
+  await loadCategories(false);
   const r = await fetch("/api/admin/products");
   const d = await r.json().catch(() => ({}));
   if (!r.ok) {
