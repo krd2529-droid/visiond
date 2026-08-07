@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/style.css?v=013100" />
-    <link rel="stylesheet" href="/admin-products.css?v=01169" />
+    <link rel="stylesheet" href="/admin-products.css?v=013270" />
     <link rel="stylesheet" href="/admin-payment.css?v=01192" />
     <link rel="stylesheet" href="/admin-categories.css?v=0910" />
     <link rel="stylesheet" href="/vision2.css?v=01169" />
@@ -101,6 +101,10 @@
         overflow-x: auto;
         justify-content: flex-start;
       }
+      .product-search-bar{display:grid;grid-template-columns:auto minmax(220px,520px) auto;gap:12px;align-items:center;margin:16px 0;padding:14px 16px;border:1px solid #bfe1de;border-radius:16px;background:#f5fffe}
+      .product-search-bar label{font-weight:900;color:#075e5a}.product-search-bar input{min-width:0;padding:12px 14px;border:1px solid #89ccc7;border-radius:11px;background:#fff;font:inherit}.product-search-bar input:focus{outline:3px solid rgba(10,186,181,.14);border-color:#0abab5}.product-search-bar small{color:#557976;font-weight:800}
+      .product-card-downloads{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.product-download-action,.product-download-unavailable{display:inline-flex;align-items:center;min-height:32px;box-sizing:border-box;padding:7px 10px;border-radius:9px;font-size:11px;font-weight:900;text-decoration:none}.product-download-action{border:1px solid #0abab5;background:#eafffd;color:#076a65}.product-download-action:hover{background:#0a918b;color:#fff}.product-download-unavailable{border:1px dashed #b7cfcd;color:#78908e;background:#f5f9f9}
+      @media(max-width:720px){.product-search-bar{grid-template-columns:1fr}.product-search-bar small{justify-self:start}.product-card-downloads{grid-column:1/-1}}
     </style>
     <style>
       .product-editor [hidden],
@@ -398,6 +402,11 @@
               >ใช้ได้เฉพาะ Boss และ Admin ·
               เลือกหมวดและชุดที่ต้องการ · ZIP ไม่มีโฟลเดอร์ซ้อน</small
             >
+          </div>
+          <div class="product-search-bar">
+            <label for="productSearchInput">ค้นหาตะกร้า</label>
+            <input id="productSearchInput" type="search" placeholder="พิมพ์ชื่อสินค้า เลขสินค้า Slug หรือหมวด" autocomplete="off" />
+            <small id="productSearchCount">กำลังโหลดรายการสินค้า…</small>
           </div>
           <div class="product-admin-layout">
             <div id="productAdminList" class="product-admin-list"></div>
@@ -930,7 +939,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013260"></script>
+    <script src="/admin.js?v=013270"></script>
     <script src="/vision2.js?v=013250"></script>
   </body>
 </html>

@@ -95,6 +95,7 @@ categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
 downloadCategoryPreviews.onclick = downloadPreviewArchive;
 previewExportCategory.onchange = loadPreviewBatches;
+productSearchInput.oninput = () => renderProductAdminList(productSearchInput.value);
 memberPlanForm.onsubmit = saveMemberPlan;
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
@@ -552,16 +553,25 @@ async function loadProducts() {
   }
   products = d.items || [];
   updateProductSlugPreview();
-  productAdminList.innerHTML =
-    products
-      .map(
-        (p) =>
-          `<article class="product-admin-card"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><div><h3>${esc(p.title)}</h3><p>${esc(p.slug)}</p><div class="product-meta"><span>${money(p.price)}</span><span>${p.status === "published" ? "เปิดขาย" : "แบบร่าง"}</span><span>${Number(p.file_count) || 0} ไฟล์</span></div></div><button type="button" data-edit-product="${p.id}">แก้ไข</button></article>`,
-      )
-      .join("") ||
-    '<div class="admin-empty">ยังไม่มีสินค้า กด “เพิ่มสินค้า” เพื่อเริ่มต้น</div>';
+  renderProductAdminList(productSearchInput.value);
+}
+function renderProductAdminList(search = "") {
+  const query = String(search || "").trim().toLocaleLowerCase("th-TH"),
+    visible = products.filter((p) =>
+      !query || [p.id, p.title, p.slug, p.category].some((value) =>
+        String(value || "").toLocaleLowerCase("th-TH").includes(query),
+      ),
+    );
+  productSearchCount.textContent = query ? `พบ ${visible.length} จาก ${products.length} ตะกร้า` : `ทั้งหมด ${products.length} ตะกร้า`;
+  productAdminList.innerHTML = visible.map((p) => {
+    const fileLabel = p.latest_file_mime === "application/zip" ? "ดาวน์โหลด ZIP" : "ดาวน์โหลด PDF",
+      fileAction = p.latest_file_id
+        ? `<a class="product-download-action" href="/api/admin/product-files/${p.latest_file_id}?mode=download">${fileLabel}</a>`
+        : '<span class="product-download-unavailable">ยังไม่มี PDF/ZIP</span>';
+    return `<article class="product-admin-card"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><div><h3>${esc(p.title)}</h3><p>เลข ${p.id} · ${esc(p.slug)} · ${esc(p.category || "ไม่ระบุหมวด")}</p><div class="product-meta"><span>${money(p.price)}</span><span>${p.status === "published" ? "เปิดขาย" : "แบบร่าง"}</span><span>${Number(p.file_count) || 0} ไฟล์</span></div><div class="product-card-downloads"><a class="product-download-action" href="/api/admin/product-previews.zip?product_id=${p.id}">ดาวน์โหลดรูปปก + รูปตัวอย่าง</a>${fileAction}</div></div><button type="button" data-edit-product="${p.id}">แก้ไข</button></article>`;
+  }).join("") || (products.length ? '<div class="admin-empty">ไม่พบตะกร้าที่ตรงกับคำค้นหา</div>' : '<div class="admin-empty">ยังไม่มีสินค้า กด “เพิ่มสินค้า” เพื่อเริ่มต้น</div>');
   document
-    .querySelectorAll("[data-edit-product]")
+    .querySelectorAll("#productAdminList [data-edit-product]")
     .forEach(
       (b) => (b.onclick = () => editProduct(Number(b.dataset.editProduct))),
     );

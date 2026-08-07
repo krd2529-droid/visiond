@@ -1,2 +1,2 @@
-VisionD MVP v0.13.26
-Upload Vision 2 replacement images and PDF sequentially to avoid Cloudflare error 10001
+VisionD MVP v0.13.27
+Add admin basket search and per-basket cover, preview image, and PDF download actions
