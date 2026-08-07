@@ -1,2 +1,2 @@
-VisionD MVP v0.13.19
-Boss ID bypasses stale IP rate-limit blocks; password verification remains active
+VisionD MVP v0.13.20
+Repair legacy member schema during login and map visiondboss to the existing Boss account
