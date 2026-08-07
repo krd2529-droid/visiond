@@ -449,25 +449,33 @@ async function loadCategories(render = true) {
 }
 async function loadPreviewBatches(){
   const category=previewExportCategory.value;
-  previewExportBatch.disabled=true;previewExportBatch.innerHTML='<option>กำลังนับรูป…</option>';
   try{
     const response=await fetch('/api/admin/product-previews.zip?info=1'+(category?'&category='+encodeURIComponent(category):'')),data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'นับรูปไม่สำเร็จ');
-    previewExportBatch.innerHTML=data.batches.map(item=>`<option value="${item.batch}">ชุดที่ ${item.batch} · รูป ${item.from}–${item.to} (${item.count} รูป)</option>`).join('');
-    previewExportMessage.textContent=`หมวดนี้มี ${data.total_images} รูป · ${data.total_batches} ชุด · เลือกโหลดได้ทีละชุด`;
-  }catch(error){previewExportBatch.innerHTML='<option value="1">ยังไม่มีชุดรูป</option>';previewExportMessage.textContent=error.message}finally{previewExportBatch.disabled=false}
+    previewExportMessage.textContent=`หมวดนี้มี ${data.total_images} รูป · ระบบจะแบ่งเป็น ${data.total_batches} ZIP และโหลดต่อเนื่องจนครบ`;
+  }catch(error){previewExportMessage.textContent=error.message}
 }
 async function downloadPreviewArchive(){
-  const category=previewExportCategory.value,batch=previewExportBatch.value,button=downloadCategoryPreviews;
-  button.disabled=true;button.textContent='กำลังรวมรูป…';previewExportMessage.textContent='กำลังสร้าง ZIP กรุณารอสักครู่';
+  const category=previewExportCategory.value,button=downloadCategoryPreviews;
+  button.disabled=true;button.textContent='กำลังเตรียมรายการ…';previewExportMessage.textContent='กำลังนับรูปทั้งหมดในหมวด';
   try{
-    const query=new URLSearchParams({batch});if(category)query.set('category',category);
-    const response=await fetch('/api/admin/product-previews.zip?'+query.toString());
-    if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'รวมรูปไม่สำเร็จ')}
-    const blob=await response.blob(),disposition=response.headers.get('content-disposition')||'',match=disposition.match(/filename\*=UTF-8''([^;]+)/i),name=match?decodeURIComponent(match[1]):`visiond-previews-${category||'all'}.zip`,url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-    previewExportMessage.textContent=`ดาวน์โหลดสำเร็จ ${(blob.size/1024/1024).toFixed(1)} MB`;
-  }catch(error){previewExportMessage.textContent=error.message;alert(error.message)}finally{button.disabled=false;button.textContent='ดาวน์โหลดชุดที่เลือก'}
+    const infoResponse=await fetch('/api/admin/product-previews.zip?info=1'+(category?'&category='+encodeURIComponent(category):'')),info=await infoResponse.json().catch(()=>({}));
+    if(!infoResponse.ok)throw new Error(info.error||'นับรูปไม่สำเร็จ');
+    if(!info.total_batches)throw new Error('หมวดนี้ยังไม่มีรูปตัวอย่าง');
+    let downloaded=0,totalSize=0;
+    for(const item of info.batches){
+      button.textContent=`กำลังโหลด ZIP ${item.batch}/${info.total_batches}`;
+      previewExportMessage.textContent=`กำลังรวมรูป ${item.from}–${item.to} · กรุณารอจนโหลดครบ ${info.total_batches} ZIP`;
+      const query=new URLSearchParams({batch:String(item.batch)});if(category)query.set('category',category);
+      const response=await fetch('/api/admin/product-previews.zip?'+query.toString());
+      if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||`รวม ZIP ${item.batch} ไม่สำเร็จ`)}
+      const blob=await response.blob(),disposition=response.headers.get('content-disposition')||'',match=disposition.match(/filename\*=UTF-8''([^;]+)/i),name=match?decodeURIComponent(match[1]):`visiond-previews-${category||'all'}-ชุด-${item.batch}-${item.from}-${item.to}.zip`,url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      downloaded++;totalSize+=blob.size;
+      await new Promise(resolve=>setTimeout(resolve,700));
+    }
+    previewExportMessage.textContent=`ดาวน์โหลดครบ ${downloaded} ZIP · ${info.total_images} รูป · ${(totalSize/1024/1024).toFixed(1)} MB`;
+  }catch(error){previewExportMessage.textContent=error.message;alert(error.message)}finally{button.disabled=false;button.textContent='ดาวน์โหลดทุกรูป แบ่ง ZIP ละ 80 รูป'}
 }
 function resetCategoryForm() {
   categoryEditor.reset();
