@@ -1,2 +1,2 @@
-VisionD MVP v0.13.4
-Load real non-empty product categories into preview ZIP selector and refresh browser asset cache
+VisionD MVP v0.13.5
+Export all category preview images in one flat ZIP without product subfolders
