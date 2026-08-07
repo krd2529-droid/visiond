@@ -28,7 +28,7 @@ async function submitAuth(form,endpoint,loadingText){
       body:JSON.stringify(payload)
     });
     const data=await response.json().catch(()=>({}));
-    if(!response.ok) throw new Error(data.error||'ดำเนินการไม่สำเร็จ');
+    if(!response.ok) throw new Error(data.error||`เซิร์ฟเวอร์เข้าสู่ระบบขัดข้อง (${response.status}) กรุณาลองใหม่`);
     sessionStorage.removeItem('vd_return_to');
     location.href=returnTo();
   }catch(error){

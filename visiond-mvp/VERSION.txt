@@ -1,2 +1,2 @@
-VisionD MVP v0.13.16
-Force-refresh all promotion, catalog and cart scripts after discount tier update
+VisionD MVP v0.13.17
+Fix login API failure by removing full database migration from the sign-in request

@@ -1,9 +1,8 @@
 import {json} from '../../_lib.js';
-import {ensureDatabase} from '../../_schema.js';
 import {rateLimit,verifyTurnstile,verifyPassword,hashPassword,securityLog} from '../../_security.js';
 
 export async function onRequestPost(ctx){
-  await ensureDatabase(ctx.env);
+  if(!ctx.env.DB)return json({error:'ยังไม่ได้เชื่อมฐานข้อมูลสมาชิก'},503);
   const limited=await rateLimit(ctx.env,ctx.request,'login',8,15,30);if(limited.error)return limited.error;
   const b=await ctx.request.json().catch(()=>({})),turnstile=await verifyTurnstile(ctx.env,ctx.request,b.turnstile_token);if(turnstile.error)return turnstile.error;
   const login=String(b.login||b.email||'').trim().toLowerCase();
