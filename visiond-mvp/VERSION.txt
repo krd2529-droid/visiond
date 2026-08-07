@@ -1,2 +1,2 @@
-VisionD MVP v0.13.7
-Allow secure same-origin mobile preview while blocking embedding from external websites
+VisionD MVP v0.13.8
+Show the Boss-only mobile preview launcher across storefront and admin pages

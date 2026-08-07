@@ -32,3 +32,4 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
 import('/mouse-ui.js?v=01205');
+import('/boss-mobile-preview.js?v=01380');
