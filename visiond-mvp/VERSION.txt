@@ -1,2 +1,2 @@
-VisionD MVP v0.13.12
-Based on v0.13.11: category Member plans with monthly/yearly access and future products included
+VisionD MVP v0.13.13
+Rename homepage service 01 to Digital Files and show the current product categories
