@@ -181,6 +181,7 @@ import("/mouse-ui.js?v=01210");
               const text = String(value || "").toLowerCase();
               if (/tattoo|รอยสัก|แบบสัก/.test(text)) return "tattoo";
               if (/coloring|ระบายสี/.test(text)) return "coloring";
+              if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
               if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
               return "";
             };
@@ -362,13 +363,13 @@ import("/mouse-ui.js?v=01210");
             counts[card.dataset.category] += 1;
           return counts;
         },
-        { all: 0, worksheet: 0, coloring: 0, tattoo: 0 },
+        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0 },
       );
       const requestedCategory = new URLSearchParams(location.search).get("category"),
-        initialCategory = ["all", "tattoo", "coloring", "worksheet"].includes(requestedCategory)
+        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game"].includes(requestedCategory)
           ? requestedCategory
           : "all";
-      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button>`;
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button>`;
       const pageSize = 8,
         requestedPage = location.pathname === "/" ? 1 : Number(new URLSearchParams(location.search).get("page")) || 2;
       const applyCategory = (category) => {

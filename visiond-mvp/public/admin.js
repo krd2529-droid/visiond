@@ -92,6 +92,7 @@ newCategoryButton.onclick = resetCategoryForm;
 categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
 downloadCategoryPreviews.onclick = downloadPreviewArchive;
+previewExportCategory.onchange = loadPreviewBatches;
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-trash-action]");
@@ -416,6 +417,7 @@ async function loadCategories(render = true) {
   categories = d.items || [];
   const exportCategories=categories.filter((c)=>Number(c.product_count)>0);
   previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + exportCategories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)} (${Number(c.product_count)||0} สินค้า)</option>`).join("");
+  await loadPreviewBatches();
   productCategorySelect.innerHTML = productCategoryOptions();
   if (!productEditor.elements.id.value) {
     productCategorySelect.value = [...productCategorySelect.options].some(
@@ -445,16 +447,27 @@ async function loadCategories(render = true) {
           editCategory(Number(button.dataset.editCategory))),
     );
 }
+async function loadPreviewBatches(){
+  const category=previewExportCategory.value;
+  previewExportBatch.disabled=true;previewExportBatch.innerHTML='<option>กำลังนับรูป…</option>';
+  try{
+    const response=await fetch('/api/admin/product-previews.zip?info=1'+(category?'&category='+encodeURIComponent(category):'')),data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'นับรูปไม่สำเร็จ');
+    previewExportBatch.innerHTML=data.batches.map(item=>`<option value="${item.batch}">ชุดที่ ${item.batch} · รูป ${item.from}–${item.to} (${item.count} รูป)</option>`).join('');
+    previewExportMessage.textContent=`หมวดนี้มี ${data.total_images} รูป · ${data.total_batches} ชุด · เลือกโหลดได้ทีละชุด`;
+  }catch(error){previewExportBatch.innerHTML='<option value="1">ยังไม่มีชุดรูป</option>';previewExportMessage.textContent=error.message}finally{previewExportBatch.disabled=false}
+}
 async function downloadPreviewArchive(){
-  const category=previewExportCategory.value,button=downloadCategoryPreviews;
+  const category=previewExportCategory.value,batch=previewExportBatch.value,button=downloadCategoryPreviews;
   button.disabled=true;button.textContent='กำลังรวมรูป…';previewExportMessage.textContent='กำลังสร้าง ZIP กรุณารอสักครู่';
   try{
-    const response=await fetch('/api/admin/product-previews.zip'+(category?'?category='+encodeURIComponent(category):''));
+    const query=new URLSearchParams({batch});if(category)query.set('category',category);
+    const response=await fetch('/api/admin/product-previews.zip?'+query.toString());
     if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'รวมรูปไม่สำเร็จ')}
     const blob=await response.blob(),disposition=response.headers.get('content-disposition')||'',match=disposition.match(/filename\*=UTF-8''([^;]+)/i),name=match?decodeURIComponent(match[1]):`visiond-previews-${category||'all'}.zip`,url=URL.createObjectURL(blob),link=document.createElement('a');
     link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
     previewExportMessage.textContent=`ดาวน์โหลดสำเร็จ ${(blob.size/1024/1024).toFixed(1)} MB`;
-  }catch(error){previewExportMessage.textContent=error.message;alert(error.message)}finally{button.disabled=false;button.textContent='ดาวน์โหลดรูปตัวอย่างทั้งหมด'}
+  }catch(error){previewExportMessage.textContent=error.message;alert(error.message)}finally{button.disabled=false;button.textContent='ดาวน์โหลดชุดที่เลือก'}
 }
 function resetCategoryForm() {
   categoryEditor.reset();

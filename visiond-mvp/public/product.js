@@ -2,7 +2,7 @@ import('/facebook-chat.js?v=01195');
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 const freshMedia=(url,version)=>url?.startsWith('/api/media/')?`${url}?v=${encodeURIComponent(version||Date.now())}`:url;
-const categoryLabels={tattoo:'แบบรอยสัก',dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม'};
+const categoryLabels={tattoo:'แบบรอยสัก',dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี',worksheet:'แบบฝึกหัด','development-game':'เกมเสริมพัฒนาการ','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม'};
 const categoryLabel=product=>product.category_label||categoryLabels[product.category]||product.category||'สินค้าดิจิทัล';
 const fileTypeLabel=product=>product.file_type||(/pdf/i.test(product.description||'')||product.category==='dinosaur'?'PDF พร้อมพิมพ์':'ไฟล์ดิจิทัล');
 const demoProduct={id:1,slug:'paper-doll-sample',title:'ชุดตุ๊กตากระดาษพร้อมพิมพ์',category:'สินค้าดิจิทัล',description:'ไฟล์ตัวอย่างสำหรับแสดงหน้าสินค้า ประกอบด้วยภาพปก ภาพตัวอย่าง รายละเอียดไฟล์ และสิทธิ์การใช้งาน',short_description:'ชุดกิจกรรมตุ๊กตากระดาษสำหรับพิมพ์ ตัด และเล่น',price:19900,cover_url:'/assets/product-placeholder.svg'};

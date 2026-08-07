@@ -21,13 +21,26 @@ export function makeZip(files){
   const central=join(centrals),end=join([u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(central.length),u32(offset),u16(0)]);return join([...locals,central,end]);
 }
 
+function previewEntries(rows){
+  const entries=[];
+  for(const product of rows){
+    let saved=[];try{saved=JSON.parse(product.preview_urls||'[]')}catch{}
+    const urls=[...new Set([product.cover_url,...saved].filter(url=>url&&!url.includes('product-placeholder')))];
+    urls.forEach((url,index)=>entries.push({product,url,index,position:entries.length+1}));
+  }
+  return entries;
+}
+
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
-  const category=new URL(ctx.request.url).searchParams.get('category')?.trim()||'',query=category?'SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND category=? ORDER BY id':'SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL ORDER BY category,id',rows=category?(await ctx.env.DB.prepare(query).bind(category).all()).results:(await ctx.env.DB.prepare(query).all()).results;
+  const params=new URL(ctx.request.url).searchParams,category=params.get('category')?.trim()||'',query=category?'SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND category=? ORDER BY id':'SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL ORDER BY category,id',rows=category?(await ctx.env.DB.prepare(query).bind(category).all()).results:(await ctx.env.DB.prepare(query).all()).results;
   if(!rows.length)return json({error:'หมวดนี้ยังไม่มีสินค้า'},404);
+  const batchSize=80,entries=previewEntries(rows),totalBatches=Math.ceil(entries.length/batchSize);
+  if(params.get('info')==='1')return json({category,total_images:entries.length,total_batches:totalBatches,batch_size:batchSize,batches:Array.from({length:totalBatches},(_,index)=>({batch:index+1,from:index*batchSize+1,to:Math.min((index+1)*batchSize,entries.length),count:Math.min(batchSize,entries.length-index*batchSize)}))});
+  const batch=Math.max(1,Math.min(totalBatches,Number(params.get('batch'))||1)),selected=entries.slice((batch-1)*batchSize,batch*batchSize);
   const files=[];let total=0,missing=0;
-  for(const product of rows){let saved=[];try{saved=JSON.parse(product.preview_urls||'[]')}catch{}const urls=[...new Set([product.cover_url,...saved].filter(url=>url&&!url.includes('product-placeholder')))];for(let i=0;i<urls.length;i++){const image=await imageBytes(ctx,urls[i]);if(!image){missing++;continue}total+=image.bytes.length;if(total>80*1024*1024)return json({error:'รูปในหมวดนี้รวมเกิน 80 MB กรุณาแบ่งดาวน์โหลดเป็นหมวดย่อย'},413);files.push({name:`${safe(product.slug)}-${String(i+1).padStart(2,'0')}-${i===0?'ปก':'ตัวอย่าง'}.${ext(image.type,urls[i])}`,bytes:image.bytes})}}
+  for(const entry of selected){const image=await imageBytes(ctx,entry.url);if(!image){missing++;continue}total+=image.bytes.length;if(total>80*1024*1024)return json({error:'รูปชุดนี้รวมเกิน 80 MB กรุณาแจ้งจาวิสเพื่อแบ่งชุดให้เล็กลง'},413);files.push({name:`${String(entry.position).padStart(4,'0')}-${safe(entry.product.slug)}-${String(entry.index+1).padStart(2,'0')}-${entry.index===0?'ปก':'ตัวอย่าง'}.${ext(image.type,entry.url)}`,bytes:image.bytes})}
   if(!files.length)return json({error:'ไม่พบรูปตัวอย่างที่ดาวน์โหลดได้'},404);
-  const zip=makeZip(files),label=safe(category||'ทุกหมวด'),filename=`visiond-previews-${label}.zip`;
+  const zip=makeZip(files),label=safe(category||'ทุกหมวด'),filename=`visiond-previews-${label}-ชุด-${batch}-${selected[0].position}-${selected[selected.length-1].position}.zip`;
   return new Response(zip,{headers:{'content-type':'application/zip','content-disposition':`attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,'cache-control':'no-store','x-visiond-files':String(files.length),'x-visiond-missing':String(missing)}});
 }

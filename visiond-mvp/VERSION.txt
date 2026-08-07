@@ -1,2 +1,2 @@
-VisionD MVP v0.13.8
-Show the Boss-only mobile preview launcher across storefront and admin pages
+VisionD MVP v0.13.11
+Download category preview images in selectable Facebook-ready batches of 80
