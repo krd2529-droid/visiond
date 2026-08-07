@@ -297,7 +297,9 @@
     activeQueue = new Set(),
     queueTimers = new Map();
   let queuePaused = false,
-    jobLogs = [];
+    jobLogs = [],
+    editProductTarget = null,
+    launchingProductEdit = false;
   const nowLabel = () =>
     new Date().toLocaleTimeString("th-TH", {
       hour: "2-digit",
@@ -997,6 +999,7 @@
   setSizeMode(false);
   updateSizePreview();
   button.onclick = () => {
+    if(!launchingProductEdit)editProductTarget=null;
     workspace.hidden = false;
     document.body.classList.remove("product-editor-active");
     let saved = localStorage.getItem(JOB_KEY);
@@ -1019,6 +1022,16 @@
     }
     v2ResumeNotice.hidden = !saved;
     show(saved ? 3 : 1);
+  };
+  window.startVision2ProductEdit=(target)=>{
+    editProductTarget={...target};
+    launchingProductEdit=true;
+    button.click();
+    launchingProductEdit=false;
+    externalName.value=target.title||'';
+    externalStatus.textContent=`กำลังแก้ตะกร้าเดิม: ${target.title||target.slug} · เลือก ZIP รูปใหม่ด้านล่าง`;
+    show(1);
+    requestAnimationFrame(()=>externalZip.closest('.v2-external-source')?.scrollIntoView({behavior:'smooth',block:'center'}));
   };
   workspace.querySelector(".v2-close").onclick = () =>
     (workspace.hidden = true);
@@ -2120,13 +2133,25 @@
         .split("\n")
         .filter((value) => value.trim()),
       title = brief.project_name || brief.topic || "สินค้า Vision 2";
-    resetProductForm();
+    const editingTarget=editProductTarget;
+    if(!editingTarget)resetProductForm();
+    else{
+      workspace.hidden=false;
+      document.body.classList.add('product-editor-active');
+      editorTitle.textContent=`แก้ไขรูปและ PDF · ${editingTarget.title||editingTarget.slug}`;
+      deleteProductButton.hidden=false;
+      editProductWithVision2.hidden=false;
+    }
     workspace.hidden = false;
-    productEditor.elements.title.value = title;
-    productEditor.elements.slug.value = "";
+    if(!editingTarget){
+      productEditor.elements.title.value = title;
+      productEditor.elements.slug.value = "";
+    }
     productEditor.elements.pages.value = prompts.length;
-    productEditor.elements.short_description.value = `${title} · ${prompts.length} แผ่น`;
-    productEditor.elements.description.value = `สร้างด้วย Vision 2 ขนาด ${brief.output_size || "A4"} จำนวน ${prompts.length} ภาพ พร้อมรูปตัวอย่างติดลายน้ำ SAMPLE 3 รูป`;
+    if(!editingTarget){
+      productEditor.elements.short_description.value = `${title} · ${prompts.length} แผ่น`;
+      productEditor.elements.description.value = `สร้างด้วย Vision 2 ขนาด ${brief.output_size || "A4"} จำนวน ${prompts.length} ภาพ พร้อมรูปตัวอย่างติดลายน้ำ SAMPLE 3 รูป`;
+    }
     productEditor.elements.file_type.value = "PDF";
     productEditor.elements.file_label.value = "ไฟล์ PDF ฉบับเต็ม";
     setVision2PendingProductFiles({

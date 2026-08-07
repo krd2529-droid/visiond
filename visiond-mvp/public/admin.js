@@ -697,6 +697,7 @@ function resetProductForm() {
   requestAnimationFrame(updateProductSlugPreview);
   editorTitle.textContent = "เพิ่มสินค้าใหม่";
   deleteProductButton.hidden = true;
+  editProductWithVision2.hidden = true;
   existingProductImages.innerHTML = "<span>ยังไม่ได้เลือกรูปตัวอย่าง</span>";
   existingFiles.innerHTML = "";
   setMessage("");
@@ -753,6 +754,7 @@ async function editProduct(id) {
       .join("") || "<span>ยังไม่มีรูปตัวอย่าง</span>";
   editorTitle.textContent = isBundle ? "แก้ไขตะกร้าชุดคละ" : "แก้ไขสินค้า";
   deleteProductButton.hidden = false;
+  editProductWithVision2.hidden = Boolean(isBundle);
   existingFiles.innerHTML = isBundle
     ? `<span>ชุดนี้เชื่อม PDF จากตะกร้าต้นทาง ${bundleCount} รายการอัตโนมัติ</span>`
     : (d.files || [])
@@ -766,6 +768,12 @@ async function editProduct(id) {
     productEditor.scrollIntoView({ behavior: "smooth", block: "start" }),
   );
 }
+editProductWithVision2.onclick=()=>{
+  const id=Number(productEditor.elements.id.value);
+  if(!id)return alert('กรุณาเลือกสินค้าที่ต้องการแก้ก่อน');
+  if(typeof window.startVision2ProductEdit!=='function')return alert('Vision 2 ยังโหลดไม่พร้อม กรุณารีเฟรชหน้าแล้วลองใหม่');
+  window.startVision2ProductEdit({id,title:productEditor.elements.title.value,slug:productEditor.elements.slug.value,pages:Number(productEditor.elements.pages.value)||0});
+};
 async function deleteAttachedProductFile(id) {
   if (
     !id ||
