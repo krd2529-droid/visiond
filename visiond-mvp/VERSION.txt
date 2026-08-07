@@ -1,2 +1,2 @@
-VisionD MVP v0.13.20
-Repair legacy member schema during login and map visiondboss to the existing Boss account
+VisionD MVP v0.13.21
+Allow three Boss IDs/emails without login rate limiting; customer protection remains active
