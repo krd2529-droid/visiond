@@ -806,6 +806,21 @@ function setMessage(text, error = false) {
   productFormMessage.textContent = text;
   productFormMessage.classList.toggle("error", error);
 }
+async function uploadVision2ReplacementFiles(id,files,label){
+  const jobs=[['cover',0,'รูปปก'],['preview_2',1,'รูปตัวอย่าง 2'],['preview_3',2,'รูปตัวอย่าง 3'],['product_file',null,'PDF']];
+  for(let index=0;index<jobs.length;index++){
+    const [name,slot,text]=jobs[index],form=new FormData();
+    form.set('file',files[name]);
+    let endpoint=`/api/admin/product-images/${id}`;
+    if(name==='product_file'){
+      endpoint=`/api/admin/product-upload/${id}`;
+      form.set('label',label||'ไฟล์ PDF ฉบับเต็ม');
+    }else form.set('slot',String(slot));
+    setMessage(`กำลังอัปโหลด ${text} · ${index+1}/${jobs.length}`);
+    const response=await fetch(endpoint,{method:'POST',body:form}),data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||`อัปโหลด ${text} ไม่สำเร็จ`);
+  }
+}
 async function saveProduct(event) {
   event.preventDefault();
   setMessage("กำลังบันทึก…");
@@ -822,7 +837,10 @@ async function saveProduct(event) {
     if (missing.length)
       return setMessage("ไฟล์จาก Vision 2 มาไม่ครบ กรุณากลับไปกดแนบ PDF และรูปตัวอย่างใหม่", true);
   }
-  const id = fd.get("id");
+  const id = fd.get("id"),separateVision2Files=vision2PendingProductFiles?{
+    cover:fd.get('cover'),preview_2:fd.get('preview_2'),preview_3:fd.get('preview_3'),product_file:fd.get('product_file')
+  }:null;
+  if(separateVision2Files)for(const name of ['cover','preview_2','preview_3','product_file'])fd.delete(name);
   const pages = Number(fd.get("pages")) || 0;
   if (bundleMode) {
     const required = Number(fd.get("bundle_size")) || 5,
@@ -851,6 +869,10 @@ async function saveProduct(event) {
   if (!r.ok) {
     setMessage(d.error || "บันทึกไม่สำเร็จ", true);
     return;
+  }
+  if(separateVision2Files){
+    try{await uploadVision2ReplacementFiles(Number(id||d.item?.id),separateVision2Files,String(fd.get('file_label')||''))}
+    catch(error){return setMessage(`${error.message} · ไฟล์เดิมของส่วนที่ยังไม่สำเร็จยังอยู่`,true)}
   }
   vision2PendingProductFiles = null;
   returnAdminHome(`บันทึกสินค้าเรียบร้อย · ${d.item.slug}`);

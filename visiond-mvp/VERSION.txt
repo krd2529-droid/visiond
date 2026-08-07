@@ -1,2 +1,2 @@
-VisionD MVP v0.13.25
-Edit an existing product through Vision 2 ZIP, sample selection and PDF replacement workflow
+VisionD MVP v0.13.26
+Upload Vision 2 replacement images and PDF sequentially to avoid Cloudflare error 10001
