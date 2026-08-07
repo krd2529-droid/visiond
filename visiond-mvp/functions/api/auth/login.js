@@ -11,14 +11,12 @@ export async function onRequestPost(ctx){
   await ctx.env.DB.prepare(`CREATE TABLE IF NOT EXISTS security_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,event_type TEXT NOT NULL,severity TEXT NOT NULL DEFAULT 'info',user_id INTEGER,ip TEXT,path TEXT,detail TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run();
   const b=await ctx.request.json().catch(()=>({}));
   const login=String(b.login||b.email||'').trim().toLowerCase();
-  const bossIdentities=new Set(['visiondboss','krd2529@gmail.com','krd2529+boss@gmail.com']);
-  const isBossLogin=bossIdentities.has(login);
-  if(!isBossLogin){const limited=await rateLimit(ctx.env,ctx.request,'login',5,15,30);if(limited.error)return limited.error;}
+  const staffIdentities=new Set(['visiondboss','krd2529@gmail.com','krd2529+boss@gmail.com']);
+  const isStaffLogin=staffIdentities.has(login);
+  if(!isStaffLogin){const limited=await rateLimit(ctx.env,ctx.request,'login',5,15,30);if(limited.error)return limited.error;}
   const turnstile=await verifyTurnstile(ctx.env,ctx.request,b.turnstile_token);if(turnstile.error)return turnstile.error;
   if(!login||!b.password)return json({error:'กรุณากรอกไอดีและรหัสผ่าน'},400);
-  const u=isBossLogin
-    ?await ctx.env.DB.prepare("SELECT * FROM users WHERE lower(username)='visiondboss' OR lower(email) IN ('krd2529@gmail.com','krd2529+boss@gmail.com') OR role='boss' ORDER BY CASE WHEN lower(username)='visiondboss' THEN 0 WHEN lower(email) IN ('krd2529@gmail.com','krd2529+boss@gmail.com') THEN 1 ELSE 2 END,id LIMIT 1").first()
-    :await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=?').bind(login,login).first();
+  const u=await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=? ORDER BY CASE WHEN lower(username)=? THEN 0 ELSE 1 END,id LIMIT 1').bind(login,login,login).first();
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
   if(!String(u.password_hash).startsWith('pbkdf2:'))await ctx.env.DB.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await hashPassword(b.password),u.id).run();
   const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+30 days'))").bind(id,u.id).run();

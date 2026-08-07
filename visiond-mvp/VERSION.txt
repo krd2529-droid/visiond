@@ -1,2 +1,2 @@
-VisionD MVP v0.13.21
-Allow three Boss IDs/emails without login rate limiting; customer protection remains active
+VisionD MVP v0.13.22
+Match each privileged login identity to its own account and password; no staff rate limit
