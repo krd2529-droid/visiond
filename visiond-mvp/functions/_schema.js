@@ -26,7 +26,7 @@ export async function ensureDatabase(env) {
     ,`CREATE TABLE IF NOT EXISTS security_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,event_type TEXT NOT NULL,severity TEXT NOT NULL DEFAULT 'info',user_id INTEGER,ip TEXT,path TEXT,detail TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
     ,`CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT,path TEXT NOT NULL,product_id INTEGER,visitor_key TEXT NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL)`
     ,`CREATE TABLE IF NOT EXISTS verified_slips (id INTEGER PRIMARY KEY AUTOINCREMENT,trans_ref TEXT NOT NULL UNIQUE,order_id INTEGER NOT NULL UNIQUE,provider TEXT NOT NULL DEFAULT 'easyslip',amount INTEGER NOT NULL,receiver_name TEXT,receiver_account TEXT,verified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(order_id) REFERENCES orders(id))`
-    ,`CREATE TABLE IF NOT EXISTS vision4_pending_files (id INTEGER PRIMARY KEY AUTOINCREMENT,file_name TEXT NOT NULL,object_key TEXT NOT NULL UNIQUE,mime_type TEXT NOT NULL,file_size INTEGER NOT NULL DEFAULT 0,pages INTEGER NOT NULL DEFAULT 1,status TEXT NOT NULL DEFAULT 'waiting_bundle',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
+    ,`CREATE TABLE IF NOT EXISTS vision4_pending_files (id INTEGER PRIMARY KEY AUTOINCREMENT,file_name TEXT NOT NULL,object_key TEXT NOT NULL UNIQUE,mime_type TEXT NOT NULL,file_size INTEGER NOT NULL DEFAULT 0,pages INTEGER NOT NULL DEFAULT 1,preview_urls TEXT NOT NULL DEFAULT '[]',status TEXT NOT NULL DEFAULT 'waiting_bundle',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const statement of statements) await env.DB.prepare(statement).run();
@@ -63,6 +63,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_category ON category_memberships(category_slug,active,expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_lessons_course_sort ON course_lessons(course_id,sort_order,id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_progress_user_course ON course_progress(user_id,course_id,updated_at DESC)').run();
+  const vision4PendingColumns=(await env.DB.prepare('PRAGMA table_info(vision4_pending_files)').all()).results.map(column=>column.name);
+  if(!vision4PendingColumns.includes('preview_urls'))await env.DB.prepare("ALTER TABLE vision4_pending_files ADD COLUMN preview_urls TEXT NOT NULL DEFAULT '[]'").run();
   const orderItemColumns = (await env.DB.prepare('PRAGMA table_info(order_items)').all()).results.map(column => column.name);
   if (!orderItemColumns.includes('product_title')) await env.DB.prepare('ALTER TABLE order_items ADD COLUMN product_title TEXT').run();
   await env.DB.prepare('UPDATE order_items SET product_title=(SELECT title FROM products WHERE products.id=order_items.product_id) WHERE product_title IS NULL').run();
