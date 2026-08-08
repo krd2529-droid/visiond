@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/vision3.css?v=01343" />
     <style>
       .v3-review-section{display:grid;gap:12px;margin-top:24px;padding:18px;border:1px solid #a9d9d5;border-radius:18px;background:#f8fffe}.v3-review-head{display:flex;justify-content:space-between;gap:15px;align-items:center}.v3-review-head h3,.v3-review-head p{margin:0}.v3-review-head p{margin-top:5px;color:#617c79;font-size:12px}.v3-review-head button,.v3-review-card button{padding:8px 11px;border:1px solid #0a928b;border-radius:9px;background:#fff;color:#08756f;font-weight:900;cursor:pointer}.v3-review-grid{display:grid;gap:9px}.v3-review-card{display:grid;grid-template-columns:66px 1fr auto;gap:12px;align-items:center;padding:11px;border:1px solid #c6e1df;border-radius:13px;background:#fff}.v3-review-card img{width:58px;height:68px;object-fit:contain;border-radius:8px;background:#eaf8f7}.v3-review-card b,.v3-review-card small{display:block}.v3-review-card small{margin-top:4px;color:#617c79}.v3-low-content{border-color:#e4bd6e;background:#fffaf0}.v3-low-content .v3-review-card{border-color:#ead4a6}.v3-low-icon{display:grid;place-items:center;width:58px;height:58px;border-radius:12px;background:#fff0c9;font-size:25px}
+      .product-bulk-bar{display:flex;gap:9px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:12px 0;padding:12px;border:1px solid #acd7d3;border-radius:13px;background:#f4fffe}.product-bulk-bar button{padding:9px 12px;border:1px solid #07928b;border-radius:9px;background:#fff;color:#08756f;font-weight:900;cursor:pointer}.product-bulk-bar b{margin-right:auto;color:#075f5b}.product-bulk-bar .bulk-delete-products{border-color:#b83232;background:#b83232;color:#fff}.product-bulk-bar .bulk-delete-products:disabled{opacity:.45;cursor:not-allowed}.product-select-box{display:grid;place-items:center}.product-select-box input{width:22px;height:22px;accent-color:#078f88;cursor:pointer}.product-admin-card:has(.product-select-box){grid-template-columns:34px 92px minmax(0,1fr) auto}.product-admin-card.bulk-selected{border-color:#078f88;box-shadow:0 0 0 2px rgba(7,143,136,.15)}@media(max-width:620px){.product-admin-card:has(.product-select-box){grid-template-columns:30px 72px minmax(0,1fr)}.product-admin-card:has(.product-select-box)>button{grid-column:2/-1}}
     </style>
   </head>
   <body>
@@ -426,6 +427,11 @@
             <label for="productSearchInput">ค้นหาตะกร้า</label>
             <input id="productSearchInput" type="search" placeholder="พิมพ์ชื่อสินค้า เลขสินค้า Slug หรือหมวด" autocomplete="off" />
             <small id="productSearchCount">กำลังโหลดรายการสินค้า…</small>
+          </div>
+          <div class="product-bulk-bar">
+            <b id="bulkProductCount">เลือกแล้ว 0 ตะกร้า</b>
+            <button id="bulkClearProducts" type="button">ยกเลิกการเลือก</button>
+            <button id="bulkDeleteProducts" class="bulk-delete-products" type="button" disabled>ลบตะกร้าที่เลือก</button>
           </div>
           <div class="product-admin-layout">
             <div id="productAdminList" class="product-admin-list"></div>
@@ -970,8 +976,8 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013370"></script>
+    <script src="/admin.js?v=013440"></script>
     <script src="/vision2.js?v=013330"></script>
-    <script src="/vision3.js?v=01343"></script>
+    <script src="/vision3.js?v=01345"></script>
   </body>
 </html>

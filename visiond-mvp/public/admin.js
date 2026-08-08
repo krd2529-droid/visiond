@@ -25,6 +25,7 @@ let viewer = null,
   users = [],
   bundleMode = false,
   vision2PendingProductFiles = null;
+const bulkSelectedProducts = new Set();
 
 function setVision2PendingProductFiles(files) {
   vision2PendingProductFiles = files;
@@ -554,6 +555,7 @@ async function loadProducts() {
     return;
   }
   products = d.items || [];
+  for(const id of [...bulkSelectedProducts])if(!products.some(product=>Number(product.id)===Number(id)))bulkSelectedProducts.delete(id);
   updateProductSlugPreview();
   renderProductAdminList(productSearchInput.value);
 }
@@ -570,14 +572,21 @@ function renderProductAdminList(search = "") {
       fileAction = p.latest_file_id
         ? `<a class="product-download-action" href="/api/admin/product-files/${p.latest_file_id}?mode=download">${fileLabel}</a>`
         : '<span class="product-download-unavailable">ยังไม่มี PDF/ZIP</span>';
-    return `<article class="product-admin-card"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><div><h3>${esc(p.title)}</h3><p>เลข ${p.id} · ${esc(p.slug)} · ${esc(p.category || "ไม่ระบุหมวด")}</p><div class="product-meta"><span>${money(p.price)}</span><span>${p.status === "published" ? "เปิดขาย" : "แบบร่าง"}</span><span>${Number(p.file_count) || 0} ไฟล์</span></div><div class="product-card-downloads"><a class="product-download-action" href="/api/admin/product-previews.zip?product_id=${p.id}">ดาวน์โหลดรูปปก + รูปตัวอย่าง</a>${fileAction}</div></div><button type="button" data-edit-product="${p.id}">แก้ไข</button></article>`;
+    const checked=bulkSelectedProducts.has(Number(p.id));
+    return `<article class="product-admin-card${checked?' bulk-selected':''}"><label class="product-select-box" title="เลือกตะกร้านี้เพื่อลบ"><input type="checkbox" data-select-product="${p.id}" ${checked?'checked':''} aria-label="เลือก ${esc(p.title)}"></label><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><div><h3>${esc(p.title)}</h3><p>เลข ${p.id} · ${esc(p.slug)} · ${esc(p.category || "ไม่ระบุหมวด")}</p><div class="product-meta"><span>${money(p.price)}</span><span>${p.status === "published" ? "เปิดขาย" : "แบบร่าง"}</span><span>${Number(p.file_count) || 0} ไฟล์</span></div><div class="product-card-downloads"><a class="product-download-action" href="/api/admin/product-previews.zip?product_id=${p.id}">ดาวน์โหลดรูปปก + รูปตัวอย่าง</a>${fileAction}</div></div><button type="button" data-edit-product="${p.id}">แก้ไข</button></article>`;
   }).join("") || (products.length ? '<div class="admin-empty">ไม่พบตะกร้าที่ตรงกับคำค้นหา</div>' : '<div class="admin-empty">ยังไม่มีสินค้า กด “เพิ่มสินค้า” เพื่อเริ่มต้น</div>');
   document
     .querySelectorAll("#productAdminList [data-edit-product]")
     .forEach(
       (b) => (b.onclick = () => editProduct(Number(b.dataset.editProduct))),
     );
+  productAdminList.querySelectorAll('[data-select-product]').forEach(input=>input.onchange=()=>{const id=Number(input.dataset.selectProduct);input.checked?bulkSelectedProducts.add(id):bulkSelectedProducts.delete(id);input.closest('.product-admin-card')?.classList.toggle('bulk-selected',input.checked);updateBulkProductBar()});
+  updateBulkProductBar();
 }
+function updateBulkProductBar(){const count=bulkSelectedProducts.size,output=document.getElementById('bulkProductCount'),button=document.getElementById('bulkDeleteProducts');if(output)output.textContent=`เลือกแล้ว ${count} ตะกร้า`;if(button)button.disabled=!count}
+async function bulkDeleteSelectedProducts(){const ids=[...bulkSelectedProducts];if(!ids.length)return;if(!confirm(`ย้ายตะกร้าที่เลือก ${ids.length} รายการไปถังขยะ 30 วันหรือไม่?`))return;const button=document.getElementById('bulkDeleteProducts');button.disabled=true;let deleted=0,failed=0;for(const id of ids){const response=await fetch('/api/admin/products/'+id,{method:'DELETE'});if(response.ok){deleted++;bulkSelectedProducts.delete(id)}else failed++}await loadProducts();alert(`ย้ายไปถังขยะแล้ว ${deleted} ตะกร้า${failed?` · ลบไม่สำเร็จ ${failed} ตะกร้า`:''}`)}
+document.getElementById('bulkClearProducts')?.addEventListener('click',()=>{bulkSelectedProducts.clear();renderProductAdminList(productSearchInput.value)});
+document.getElementById('bulkDeleteProducts')?.addEventListener('click',bulkDeleteSelectedProducts);
 function setBundleMode(active) {
   bundleMode = active;
   bundleBuilder.hidden = !active;
