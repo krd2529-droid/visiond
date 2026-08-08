@@ -26,6 +26,8 @@ let viewer = null,
   bundleMode = false,
   vision2PendingProductFiles = null;
 const bulkSelectedProducts = new Set();
+const PRODUCTS_PER_PAGE = 10;
+let productAdminPage = 1;
 
 function setVision2PendingProductFiles(files) {
   vision2PendingProductFiles = files;
@@ -100,7 +102,7 @@ categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
 downloadCategoryPreviews.onclick = downloadPreviewArchive;
 previewExportCategory.onchange = loadPreviewBatches;
-productSearchInput.oninput = () => renderProductAdminList(productSearchInput.value);
+productSearchInput.oninput = () => { productAdminPage = 1; renderProductAdminList(productSearchInput.value); };
 memberPlanForm.onsubmit = saveMemberPlan;
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
@@ -568,8 +570,11 @@ function renderProductAdminList(search = "") {
         String(value || "").toLocaleLowerCase("th-TH").includes(query),
       ),
     );
-  productSearchCount.textContent = query ? `พบ ${visible.length} จาก ${products.length} ตะกร้า` : `ทั้งหมด ${products.length} ตะกร้า`;
-  productAdminList.innerHTML = visible.map((p) => {
+  const totalPages=Math.max(1,Math.ceil(visible.length/PRODUCTS_PER_PAGE));
+  productAdminPage=Math.min(Math.max(1,productAdminPage),totalPages);
+  const pageItems=visible.slice((productAdminPage-1)*PRODUCTS_PER_PAGE,productAdminPage*PRODUCTS_PER_PAGE);
+  productSearchCount.textContent = `${query ? `พบ ${visible.length} จาก ${products.length}` : `ทั้งหมด ${products.length}`} ตะกร้า · หน้า ${productAdminPage}/${totalPages}`;
+  productAdminList.innerHTML = pageItems.map((p) => {
     const fileLabel = p.latest_file_mime === "application/zip" ? "ดาวน์โหลด ZIP" : "ดาวน์โหลด PDF",
       fileAction = p.latest_file_id
         ? `<a class="product-download-action" href="/api/admin/product-files/${p.latest_file_id}?mode=download">${fileLabel}</a>`
@@ -583,8 +588,10 @@ function renderProductAdminList(search = "") {
       (b) => (b.onclick = () => editProduct(Number(b.dataset.editProduct))),
     );
   productAdminList.querySelectorAll('[data-select-product]').forEach(input=>input.onchange=()=>{const id=Number(input.dataset.selectProduct);input.checked?bulkSelectedProducts.add(id):bulkSelectedProducts.delete(id);input.closest('.product-admin-card')?.classList.toggle('bulk-selected',input.checked);updateBulkProductBar()});
+  renderProductPagination(totalPages,visible.length);
   updateBulkProductBar();
 }
+function renderProductPagination(totalPages,totalItems){const nav=document.getElementById('productAdminPagination');if(!nav)return;if(totalItems<=PRODUCTS_PER_PAGE){nav.innerHTML='';nav.hidden=true;return}nav.hidden=false;const pages=[];for(let page=1;page<=totalPages;page++)if(page===1||page===totalPages||Math.abs(page-productAdminPage)<=2)pages.push(page);let previous=0,html=`<button type="button" data-product-page="${productAdminPage-1}" ${productAdminPage===1?'disabled':''}>ก่อนหน้า</button>`;for(const page of pages){if(previous&&page-previous>1)html+='<span>…</span>';html+=`<button type="button" data-product-page="${page}" class="${page===productAdminPage?'active':''}" ${page===productAdminPage?'aria-current="page"':''}>${page}</button>`;previous=page}html+=`<button type="button" data-product-page="${productAdminPage+1}" ${productAdminPage===totalPages?'disabled':''}>ถัดไป</button>`;nav.innerHTML=html;nav.querySelectorAll('[data-product-page]:not([disabled])').forEach(button=>button.onclick=()=>{productAdminPage=Number(button.dataset.productPage);renderProductAdminList(productSearchInput.value);productAdminList.scrollIntoView({behavior:'smooth',block:'start'})})}
 function updateBulkProductBar(){const count=bulkSelectedProducts.size,output=document.getElementById('bulkProductCount'),button=document.getElementById('bulkDeleteProducts');if(output)output.textContent=`เลือกแล้ว ${count} ตะกร้า`;if(button)button.disabled=!count}
 async function bulkDeleteSelectedProducts(){const ids=[...bulkSelectedProducts];if(!ids.length)return;if(!confirm(`ย้ายตะกร้าที่เลือก ${ids.length} รายการไปถังขยะ 30 วันหรือไม่?`))return;const button=document.getElementById('bulkDeleteProducts');button.disabled=true;let deleted=0,failed=0;for(const id of ids){const response=await fetch('/api/admin/products/'+id,{method:'DELETE'});if(response.ok){deleted++;bulkSelectedProducts.delete(id)}else failed++}await loadProducts();alert(`ย้ายไปถังขยะแล้ว ${deleted} ตะกร้า${failed?` · ลบไม่สำเร็จ ${failed} ตะกร้า`:''}`)}
 document.getElementById('bulkClearProducts')?.addEventListener('click',()=>{bulkSelectedProducts.clear();renderProductAdminList(productSearchInput.value)});

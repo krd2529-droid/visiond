@@ -379,7 +379,7 @@ import('/nav-account.js?v=013121');
         initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game"].includes(requestedCategory)
           ? requestedCategory
           : "all";
-      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button>`;
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
       const pageSize = 8,
         requestedPage = location.pathname === "/" ? 1 : Number(new URLSearchParams(location.search).get("page")) || 2;
       let currentCategory = initialCategory;

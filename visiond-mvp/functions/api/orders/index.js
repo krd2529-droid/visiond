@@ -52,7 +52,9 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT id,slug,title,price,product_kind,member_category FROM products WHERE slug IN (${qs}) AND status='published' AND deleted_at IS NULL`,
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.member_category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url
+     FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
+     WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
   )
     .bind(...slugs)
     .all();
@@ -61,6 +63,8 @@ export async function onRequestPost(ctx) {
       { error: "มีสินค้าบางรายการไม่พร้อมขาย กรุณาลบสินค้าออกแล้วเพิ่มใหม่" },
       400,
     );
+  const sellerItems=results.filter(p=>p.course_owner_user_id);
+  if(sellerItems.length&&(results.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   for (const product of results) {
     const entitlement = await ctx.env.DB.prepare(
       "SELECT id FROM entitlements WHERE user_id=? AND product_id=? AND active=1 LIMIT 1",
@@ -108,10 +112,11 @@ export async function onRequestPost(ctx) {
       Date.now().toString().slice(-10) +
       "-" +
       Math.floor(Math.random() * 90 + 10);
+  const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
   const r = await ctx.env.DB.prepare(
-    "INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number) VALUES(?,?,?,?,?,?,?)",
+    "INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number,course_owner_user_id,seller_course_id,payment_qr_url) VALUES(?,?,?,?,?,?,?,?,?,?)",
   )
-    .bind(orderNo, a.user.id, total, payment.active_account, payment.bank_name, payment.account_name, payment.account_number)
+    .bind(orderNo, a.user.id, total, paymentTarget.active_account, paymentTarget.bank_name, paymentTarget.account_name, paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'')
     .run();
   const orderId = r.meta.last_row_id;
   for (const p of pricedResults)
@@ -131,7 +136,7 @@ export async function onRequestPost(ctx) {
       total,
       items: pricedResults.map(p=>({...p,price:p.sale_price})),
       promotion,
-      bank: publicPaymentSettings(payment),
+      bank: seller?paymentTarget:publicPaymentSettings(payment),
     },
     201,
   );
@@ -157,6 +162,7 @@ export async function onRequestGet(ctx) {
       bank_name: o.payment_bank_name,
       account_name: o.payment_account_name,
       account_number: o.payment_account_number,
+      qr_url: o.payment_qr_url || '',
     } : null;
   }
   return json({ items: results, bank: publicPaymentSettings(await loadPaymentSettings(ctx.env)) },200,{"cache-control":"no-store"});

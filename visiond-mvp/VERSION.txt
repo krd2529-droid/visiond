@@ -1,2 +1,2 @@
-VisionD MVP v0.13.38
-Vision 4 AI batch product draft importer for up to 10 ZIP/PDF files
+VisionD MVP v0.13.55
+Course resale-rights seller portal, direct owner payment, EP uploads and sales totals; email notifications deferred

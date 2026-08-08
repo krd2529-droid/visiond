@@ -104,9 +104,9 @@ function render() {
   checkoutButton.disabled = !items.length;
 }
 checkoutButton.onclick = checkout;
-closeCheckout.onclick = () => checkoutDialog.close();
+closeCheckout.onclick = () => { checkoutDialog.close(); sellerPaymentQr.hidden=true; };
 checkoutDialog.onclick = (e) => {
-  if (e.target === checkoutDialog) checkoutDialog.close();
+  if (e.target === checkoutDialog) { checkoutDialog.close(); sellerPaymentQr.hidden=true; }
 };
 async function checkout() {
   const items = getCart();
@@ -150,6 +150,8 @@ async function checkout() {
     bankName.textContent = d.bank?.bank_name || "ยังไม่ได้ตั้งค่า";
     bankAccountName.textContent = d.bank?.account_name || "กรุณาติดต่อ VisionD";
     bankAccountNumber.textContent = d.bank?.account_number || "-";
+    sellerPaymentQr.hidden = !d.bank?.qr_url;
+    sellerPaymentQr.src = d.bank?.qr_url || "";
     checkoutDialog.showModal();
   } catch (error) {
     alert(error.message);
