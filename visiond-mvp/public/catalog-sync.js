@@ -17,6 +17,9 @@ import('/nav-account.js?v=013121');
   filters.innerHTML =
     '<button class="active" data-category="all" type="button">ทั้งหมด</button>';
   grid.before(filters);
+  const homeSearch = document.querySelector("#homeProductSearch"),
+    clearHomeSearch = document.querySelector("#clearHomeProductSearch"),
+    homeSearchCount = document.querySelector("#homeProductSearchCount");
   const esc = (v) =>
     String(v ?? "").replace(
       /[&<>"']/g,
@@ -209,6 +212,7 @@ import('/nav-account.js?v=013121');
           product = bySlug.get(slug);
         card.dataset.category = catalogGroup(product || "worksheet");
         if (product) {
+          card.dataset.search = `${product.title || ""} ${product.slug || ""} ${product.category || ""} ${product.category_label || ""} ${product.short_description || ""} ${product.description || ""}`.toLocaleLowerCase("th-TH");
           const oldCover = card.querySelector(".vd-cover");
           if (oldCover) oldCover.outerHTML = coverMarkup(product);
         }
@@ -224,7 +228,7 @@ import('/nav-account.js?v=013121');
           .filter((p) => !existing.has(p.slug))
           .map(
             (p) =>
-              `<article class="vd-card" data-category="${esc(catalogGroup(p))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
+              `<article class="vd-card" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
           )
           .join(""),
       );
@@ -373,12 +377,15 @@ import('/nav-account.js?v=013121');
       filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button>`;
       const pageSize = 8,
         requestedPage = location.pathname === "/" ? 1 : Number(new URLSearchParams(location.search).get("page")) || 2;
+      let currentCategory = initialCategory;
       const applyCategory = (category) => {
+        currentCategory = category;
+        const searchText = String(homeSearch?.value || "").trim().toLocaleLowerCase("th-TH");
         const matchingCards = [...grid.querySelectorAll(".vd-card")].filter(
-            (card) => category === "all" || card.dataset.category === category,
+            (card) => (category === "all" || card.dataset.category === category) && (!searchText || String(card.dataset.search || card.textContent).toLocaleLowerCase("th-TH").includes(searchText)),
           ),
           totalPages = Math.max(1, Math.ceil(matchingCards.length / pageSize)),
-          currentPage = Math.max(1, Math.min(totalPages, requestedPage)),
+          currentPage = searchText ? 1 : Math.max(1, Math.min(totalPages, requestedPage)),
           start = (currentPage - 1) * pageSize,
           visibleCards = new Set(matchingCards.slice(start, start + pageSize));
         filters
@@ -387,6 +394,7 @@ import('/nav-account.js?v=013121');
         grid
           .querySelectorAll(".vd-card")
           .forEach((card) => (card.hidden = !visibleCards.has(card)));
+        if (homeSearchCount) homeSearchCount.textContent = searchText ? `พบ ${matchingCards.length} สินค้าที่ตรงกับ “${homeSearch.value.trim()}”` : `แสดงสินค้า ${matchingCards.length} รายการ`;
         const categoryQuery = category === "all" ? "" : `&category=${encodeURIComponent(category)}`;
         catalogPager.innerHTML = Array.from({ length: totalPages }, (_, index) => index + 1)
           .map((page) => `<a class="${page === currentPage ? "active" : ""}" href="${page === 1 ? "/" : `/digital-products?page=${page}${categoryQuery}`}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้าแรก · 1" : page}</a>`)
@@ -398,6 +406,8 @@ import('/nav-account.js?v=013121');
             applyCategory(button.dataset.category);
           }),
       );
+      if (homeSearch) homeSearch.oninput = () => applyCategory(currentCategory);
+      if (clearHomeSearch) clearHomeSearch.onclick = () => { homeSearch.value = ""; applyCategory(currentCategory); homeSearch.focus(); };
       applyCategory(initialCategory);
     })
     .catch(() => {

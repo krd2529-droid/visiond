@@ -38,6 +38,7 @@
     .vd-catalog-wrap{max-width:1180px!important;margin:0 auto!important;padding:46px 24px 68px!important;box-sizing:border-box!important}
     .vd-catalog-head{display:flex!important;justify-content:space-between!important;align-items:end!important;gap:20px!important;margin-bottom:22px!important}
     .vd-catalog-head h2{font-size:34px!important;margin:6px 0!important}.vd-catalog-head p{margin:0!important}.vd-catalog-head>a{color:#087b75!important;font-weight:900!important}
+    .vd-home-search{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;margin:0 0 18px;padding:13px;border:1px solid #9ed7d3;border-radius:16px;background:#effcfb}.vd-home-search input{min-width:0;padding:13px 15px;border:1px solid #7dc8c3;border-radius:11px;background:#fff;font:inherit;color:#073f3d}.vd-home-search input:focus{outline:3px solid rgba(10,186,181,.16);border-color:#07928b}.vd-home-search button{padding:10px 16px;border:0;border-radius:11px;background:#087d77;color:#fff;font-weight:900;cursor:pointer}.vd-home-search small{grid-column:1/-1;color:#527774;font-weight:800}
     .vd-grid{display:grid!important;grid-template-columns:repeat(4,250px)!important;gap:18px!important;justify-content:start!important}
     .vd-card{display:block!important;width:250px!important;max-width:250px!important;border:1px solid #aeb9bd!important;background:#f8fafb!important;overflow:hidden!important;box-sizing:border-box!important}
     .vd-cover{position:relative!important;display:block!important;width:248px!important;height:290px!important;max-width:248px!important;overflow:hidden!important;background:#fff!important;border-bottom:1px solid #aeb9bd!important;box-sizing:border-box!important}
@@ -48,7 +49,7 @@
     .vd-bottom{display:flex!important;justify-content:space-between!important;align-items:center!important;border-top:1px solid #d2d9db!important;padding-top:10px!important}.vd-bottom b{font-size:17px!important}.vd-bottom a{padding:7px 9px!important;background:#0a5b57!important;color:#fff!important;font-size:10px!important;font-weight:900!important}
     .home-purchase-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.home-purchase-actions .primary{display:inline-flex;align-items:center;justify-content:center;min-height:48px;box-sizing:border-box}
     @media(max-width:900px){.vd-grid{grid-template-columns:repeat(2,250px)!important}.vd-card{width:250px!important}.vd-cover,.vd-cover img{width:248px!important;max-width:248px!important;height:300px!important;max-height:300px!important}}
-    @media(max-width:560px){.vd-catalog-wrap{padding:32px 10px 55px!important}.vd-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.vd-card{width:100%!important;max-width:none!important}.vd-cover,.vd-cover img{width:100%!important;max-width:100%!important;height:230px!important;max-height:230px!important}.vd-catalog-head{display:block!important}}
+    @media(max-width:560px){.vd-catalog-wrap{padding:32px 10px 55px!important}.vd-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.vd-card{width:100%!important;max-width:none!important}.vd-cover,.vd-cover img{width:100%!important;max-width:100%!important;height:230px!important;max-height:230px!important}.vd-catalog-head{display:block!important}.vd-home-search{grid-template-columns:1fr}.vd-home-search button{width:100%}}
   </style>
 <script src="/meta-pixel.js?v=01193"></script></head>
 <body>
@@ -128,6 +129,11 @@
 
   <section class="vd-catalog-wrap" aria-label="แคตตาล็อกแนะนำ">
     <div class="vd-catalog-head"><div><p class="eyebrow dark">TATTOO DESIGN COLLECTION</p><h2>แบบรอยสักแนะนำ</h2></div><a href="/digital-products.html?category=tattoo">ดูแบบรอยสักทั้งหมด →</a></div>
+    <div class="vd-home-search" role="search">
+      <input id="homeProductSearch" type="search" placeholder="ค้นหาสินค้า เช่น มังกร ญี่ปุ่น สิงโต หรือแบบฝึกหัด" autocomplete="off" aria-label="ค้นหาสินค้า" />
+      <button id="clearHomeProductSearch" type="button">ล้างคำค้นหา</button>
+      <small id="homeProductSearchCount">พิมพ์ชื่อหรือประเภทสินค้าที่ต้องการค้นหา</small>
+    </div>
     <div class="vd-grid">
     </div>
   </section>
@@ -208,7 +214,7 @@
 
 <script src="/app.js?v=086"></script>
 <link rel="stylesheet" href="/cart-catalog.css?v=01141">
-<script src="/catalog-sync.js?v=013160"></script>
+<script src="/catalog-sync.js?v=013280"></script>
 <script src="/analytics.js?v=01194"></script>
 <script src="/promo-banner.js?v=013160"></script><script src="/facebook-chat.js?v=01380"></script></body>
 </html>
