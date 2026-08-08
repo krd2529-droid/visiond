@@ -1,2 +1,2 @@
-VisionD MVP v0.13.28
-Add instant product search to the homepage catalog
+VisionD MVP v0.13.29
+Add configurable Facebook page video embed to the homepage

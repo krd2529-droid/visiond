@@ -1109,6 +1109,7 @@ async function loadPaymentSettings() {
   paymentSettingsForm.elements.vision3_auto_verify.checked = p.vision3_auto_verify !== false;
   paymentSettingsForm.elements.vision3_auto_verify.disabled = viewer?.role !== "boss";
   paymentSettingsForm.elements.payment_message.value = p.payment_message || "";
+  paymentSettingsForm.elements.homepage_facebook_video_url.value = p.homepage_facebook_video_url || "";
   currentQr.innerHTML = p.qr_url
     ? `<img src="${esc(p.qr_url)}" alt="QR ชำระเงิน"><small>QR ที่ใช้งานอยู่ในขณะนี้</small>`
     : "<small>ยังไม่ได้อัปโหลดรูป QR</small>";
@@ -1132,7 +1133,7 @@ async function savePaymentSettings(e) {
     settingsMessage.textContent = d.error || "บันทึกไม่สำเร็จ";
     return;
   }
-  returnAdminHome("บันทึกการตั้งค่าชำระเงินเรียบร้อย");
+  returnAdminHome("บันทึกการตั้งค่าระบบและวิดีโอเรียบร้อย");
 }
 
 async function loadOrders() {

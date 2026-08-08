@@ -289,7 +289,7 @@
           ><a class="primary" href="/admin-courses.html">จัดการคอร์สออนไลน์</a
           ><button data-admin-tab="orders">ออเดอร์และสลิป</button
           ><button data-admin-tab="sales">รายงานยอดขาย</button
-          ><button data-admin-tab="settings">ตั้งค่าชำระเงิน</button
+          ><button data-admin-tab="settings">ตั้งค่าระบบ/วิดีโอ</button
           ><button data-admin-tab="users">สมาชิกและระดับไอดี</button
           ><button data-admin-tab="trash">ถังขยะ</button>
         </div>
@@ -763,8 +763,8 @@
         <section id="settingsPanel" hidden>
           <div class="section-head">
             <div>
-              <h2>ตั้งค่าการชำระเงิน</h2>
-              <p>Boss เลือกบัญชีรับโอนที่ต้องการให้ลูกค้าเห็นได้ทันที</p>
+              <h2>ตั้งค่าระบบ วิดีโอ และการชำระเงิน</h2>
+              <p>เปลี่ยนวิดีโอหน้าแรกและเลือกบัญชีรับโอนที่ลูกค้าเห็นได้ทันที</p>
             </div>
           </div>
           <form id="paymentSettingsForm" class="payment-settings-card">
@@ -839,6 +839,13 @@
               /><small>JPG, PNG หรือ WEBP ไม่เกิน 5 MB</small></label
             >
             <div id="currentQr" class="current-qr"></div>
+            <div class="payment-profile-card">
+              <h3>วิดีโอจากเพจ VisionD บนหน้าแรก</h3>
+              <label>ลิงก์โพสต์วิดีโอหรือ Reel ของ Facebook
+                <input name="homepage_facebook_video_url" type="url" inputmode="url" placeholder="https://www.facebook.com/..." />
+                <small>โพสต์ต้องเป็นสาธารณะ · เว้นว่างแล้วบันทึกเพื่อซ่อนวิดีโอออกจากหน้าแรก</small>
+              </label>
+            </div>
             <label
               >ข้อความหลังลูกค้าส่งสลิป<textarea
                 name="payment_message"
@@ -939,7 +946,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013270"></script>
+    <script src="/admin.js?v=013290"></script>
     <script src="/vision2.js?v=013250"></script>
   </body>
 </html>
