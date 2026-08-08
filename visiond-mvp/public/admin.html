@@ -263,7 +263,7 @@
               <option value="/">หน้าหลัก</option><option value="/digital-products">สินค้าดิจิทัล</option><option value="/member">Member รายหมวด</option><option value="/cart">รถเข็น</option><option value="/login.html">เข้าสู่ระบบ</option><option value="/register.html">สมัครสมาชิก</option><option value="/dashboard.html">บัญชีและสินค้าของฉัน</option><option value="/courses.html">คอร์สเรียน</option><option value="/bots.html">โปรแกรมบอท</option><option value="/blog.html">บทความ</option><option value="/about.html">เกี่ยวกับเรา</option>
             </optgroup>
             <optgroup label="หลังบ้าน">
-              <option value="/admin?mobile_preview=1&preview_tab=overview">ภาพรวมกำไร</option><option value="/admin?mobile_preview=1&preview_tab=products">จัดการสินค้า</option><option value="/admin?mobile_preview=1&preview_tab=categories">หมวดหมู่</option><option value="/admin?mobile_preview=1&preview_tab=members">Member รายหมวด</option><option value="/admin?mobile_preview=1&preview_tab=orders">ออเดอร์และสลิป</option><option value="/admin?mobile_preview=1&preview_tab=sales">รายงานยอดขาย</option><option value="/admin?mobile_preview=1&preview_tab=settings">ตั้งค่าชำระเงิน</option><option value="/admin?mobile_preview=1&preview_tab=users">สมาชิกและระดับไอดี</option><option value="/admin?mobile_preview=1&preview_tab=trash">ถังขยะ</option>
+              <option value="/admin?mobile_preview=1&preview_tab=overview">ภาพรวมกำไร</option><option value="/admin?mobile_preview=1&preview_tab=products">จัดการสินค้า</option><option value="/admin?mobile_preview=1&preview_tab=categories">หมวดหมู่</option><option value="/admin?mobile_preview=1&preview_tab=members">Member รายหมวด</option><option value="/admin?mobile_preview=1&preview_tab=orders">ออเดอร์และสลิป</option><option value="/admin?mobile_preview=1&preview_tab=sales">รายงานยอดขาย</option><option value="/admin?mobile_preview=1&preview_tab=promotion">โปรโมชั่น</option><option value="/admin?mobile_preview=1&preview_tab=settings">ตั้งค่าชำระเงิน</option><option value="/admin?mobile_preview=1&preview_tab=users">สมาชิกและระดับไอดี</option><option value="/admin?mobile_preview=1&preview_tab=trash">ถังขยะ</option>
             </optgroup>
           </select></label>
           <div class="mobile-preview-actions"><button id="mobilePreviewReload" type="button" title="โหลดใหม่">↻</button><a id="mobilePreviewNewTab" href="/" target="_blank" rel="noopener" title="เปิดหน้าเต็ม">↗</a><button id="mobilePreviewClose" type="button" title="ปิด">✕</button></div>
@@ -296,6 +296,7 @@
           ><a class="primary" href="/admin-courses.html">จัดการคอร์สออนไลน์</a
           ><button data-admin-tab="orders">ออเดอร์และสลิป</button
           ><button data-admin-tab="sales">รายงานยอดขาย</button
+          ><button data-admin-tab="promotion">โปรโมชั่น</button
           ><button data-admin-tab="settings">ตั้งค่าชำระเงิน</button
           ><button data-admin-tab="users">สมาชิกและระดับไอดี</button
           ><button data-admin-tab="trash">ถังขยะ</button>
@@ -785,11 +786,11 @@
             <p>กำลังโหลดรายงาน…</p>
           </div>
         </section>
-        <section id="settingsPanel" hidden>
+        <section id="promotionPanel" hidden>
           <div class="section-head">
             <div>
-              <h2>ตั้งค่าการชำระเงิน</h2>
-              <p>Boss เลือกบัญชีรับโอนที่ต้องการให้ลูกค้าเห็นได้ทันที</p>
+              <h2>โปรโมชั่นและส่วนลด</h2>
+              <p>เปิดป้ายโปรโมชั่น เลือกหมวดสินค้า และกำหนดเปอร์เซ็นต์ส่วนลด</p>
             </div>
           </div>
           <form id="promotionSettingsForm" class="payment-settings-card promotion-settings-card">
@@ -804,6 +805,14 @@
             <p id="promotionSettingsMessage" class="form-message"></p>
             <div class="editor-actions"><button class="primary" type="submit">บันทึกโปรโมชั่น</button><a class="secondary-button" href="/digital-products" target="_blank">ดูหน้าแคตตาล็อก</a></div>
           </form>
+        </section>
+        <section id="settingsPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>ตั้งค่าการชำระเงิน</h2>
+              <p>Boss เลือกบัญชีรับโอนที่ต้องการให้ลูกค้าเห็นได้ทันที</p>
+            </div>
+          </div>
           <form id="paymentSettingsForm" class="payment-settings-card">
             <div class="settings-status">
               <div>
@@ -976,7 +985,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013440"></script>
+    <script src="/admin.js?v=013480"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vision3.js?v=01347"></script>
   </body>

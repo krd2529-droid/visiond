@@ -39,6 +39,7 @@ const panels = {
   members: membersPanel,
   orders: ordersPanel,
   sales: salesPanel,
+  promotion: promotionPanel,
   settings: settingsPanel,
   users: usersPanel,
   trash: trashPanel,
@@ -76,6 +77,7 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "members") loadMemberPlans();
       if (btn.dataset.adminTab === "orders") loadOrders();
       if (btn.dataset.adminTab === "sales") loadSalesReport();
+      if (btn.dataset.adminTab === "promotion") loadPromotionSettings();
       if (btn.dataset.adminTab === "settings") loadPaymentSettings();
       if (btn.dataset.adminTab === "users") loadUsers();
       if (btn.dataset.adminTab === "trash") loadTrash();
@@ -1093,7 +1095,6 @@ function downloadSalesCsv() {
   URL.revokeObjectURL(link.href);
 }
 async function loadPaymentSettings() {
-  loadPromotionSettings();
   settingsMessage.textContent = "กำลังโหลด…";
   const r = await fetch("/api/admin/payment-settings");
   const d = await r.json().catch(() => ({}));
