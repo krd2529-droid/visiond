@@ -2,7 +2,7 @@ import {json,requireAdmin} from '../../../_lib.js';
 import {ensureCatalogProducts} from '../../../_catalog.js';
 import {ensureDatabase} from '../../../_schema.js';
 const ext=(name,type)=>type==='image/png'?'png':type==='image/webp'?'webp':type==='application/zip'?'zip':name?.toLowerCase().endsWith('.zip')?'zip':type==='application/pdf'?'pdf':'jpg';
-const validFile=(file,max,types)=>file&&typeof file.arrayBuffer==='function'&&file.size>0&&file.size<=max&&types.includes(file.type);
+const validFile=(file,max,types)=>file&&typeof file.arrayBuffer==='function'&&file.size>0&&file.size<=max&&(types.includes(file.type)||(types.includes('application/zip')&&/\.zip$/i.test(file.name||''))||(types.includes('application/pdf')&&/\.pdf$/i.test(file.name||'')));
 
 export async function onRequestGet(ctx){await ensureDatabase(ctx.env);const a=await requireAdmin(ctx);if(a.error)return a.error;await ensureCatalogProducts(ctx.env);const {results}=await ctx.env.DB.prepare(`SELECT p.*,(SELECT COUNT(*) FROM product_files own WHERE own.product_id=p.id)+(SELECT COUNT(*) FROM product_bundle_items b JOIN product_files bf ON bf.product_id=b.source_product_id WHERE b.bundle_product_id=p.id) file_count,(SELECT own.id FROM product_files own WHERE own.product_id=p.id ORDER BY own.id DESC LIMIT 1) latest_file_id,(SELECT own.mime_type FROM product_files own WHERE own.product_id=p.id ORDER BY own.id DESC LIMIT 1) latest_file_mime FROM products p WHERE p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product' ORDER BY p.id DESC`).all();return json({items:results})}
 

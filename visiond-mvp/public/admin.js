@@ -33,6 +33,7 @@ const starterCategorySlugs = new Set(["dinosaur", "paper-doll", "document"]);
 const panels = {
   overview: overviewPanel,
   products: productsPanel,
+  vision3: vision3Panel,
   categories: categoriesPanel,
   members: membersPanel,
   orders: ordersPanel,
