@@ -2,6 +2,7 @@ import { json, requireUser, statusLabel } from "../../_lib.js";
 import { loadPaymentSettings, publicPaymentSettings } from "../../_payment.js";
 import { ensureDatabase } from "../../_schema.js";
 import { rateLimit } from "../../_security.js";
+import {applyPromotion,loadPromotion} from '../../_promotion.js';
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -86,8 +87,9 @@ export async function onRequestPost(ctx) {
       );
     }
   }
-  const subtotal = results.reduce((sum, p) => sum + Number(p.price), 0),
-    discountableCount = results.filter(p=>!p.product_kind||p.product_kind==='product').length,
+  const promotion=await loadPromotion(ctx.env),pricedResults=applyPromotion(results,promotion),
+    subtotal = pricedResults.reduce((sum, p) => sum + Number(p.sale_price), 0),
+    discountableCount = pricedResults.filter(p=>!p.product_kind||p.product_kind==='product').length,
     discountRate =
       discountableCount >= 30
         ? 30
@@ -98,7 +100,7 @@ export async function onRequestPost(ctx) {
             : discountableCount >= 5
               ? 5
               : 0,
-    discountBase = results.filter(p=>!p.product_kind||p.product_kind==='product').reduce((sum,p)=>sum+Number(p.price),0),
+    discountBase = pricedResults.filter(p=>!p.product_kind||p.product_kind==='product').reduce((sum,p)=>sum+Number(p.sale_price),0),
     discount = Math.round((discountBase * discountRate) / 100),
     total = subtotal - discount,
     orderNo =
@@ -112,11 +114,11 @@ export async function onRequestPost(ctx) {
     .bind(orderNo, a.user.id, total, payment.active_account, payment.bank_name, payment.account_name, payment.account_number)
     .run();
   const orderId = r.meta.last_row_id;
-  for (const p of results)
+  for (const p of pricedResults)
     await ctx.env.DB.prepare(
       "INSERT INTO order_items(order_id,product_id,price) VALUES(?,?,?)",
     )
-      .bind(orderId, p.id, p.price)
+      .bind(orderId, p.id, p.sale_price)
       .run();
   return json(
     {
@@ -127,7 +129,8 @@ export async function onRequestPost(ctx) {
       discountRate,
       discount,
       total,
-      items: results,
+      items: pricedResults.map(p=>({...p,price:p.sale_price})),
+      promotion,
       bank: publicPaymentSettings(payment),
     },
     201,

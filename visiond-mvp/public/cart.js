@@ -1,4 +1,5 @@
 import("/facebook-chat.js?v=01195");
+if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=01336">');
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (v) =>
@@ -30,6 +31,15 @@ const saveCart = (items) => {
   localStorage.setItem("vd_cart", JSON.stringify(normalizeCart(items)));
   render();
 };
+async function refreshCartPrices(){
+  const current=getCart();if(!current.length)return;
+  try{
+    const response=await fetch('/api/products',{cache:'no-store'});if(!response.ok)return;
+    const data=await response.json(),bySlug=new Map((data.items||[]).map(item=>[item.slug,item]));
+    const fresh=current.map(item=>{const product=bySlug.get(item.slug);if(!product)return item;return {...item,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,category:product.category,category_label:product.category_label,pages:product.pages,cover_url:product.cover_url||item.cover_url}});
+    localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
+  }catch{}
+}
 const discountRate = (count) =>
   count >= 30 ? 30 : count >= 20 ? 20 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
 let activeOrder = null;
@@ -80,7 +90,7 @@ function render() {
     ? items
         .map(
           (p, i) =>
-            `<article class="cart-product"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>ไฟล์ดิจิทัลพร้อมดาวน์โหลด • ${esc(p.pages || "-")} แผ่น</p><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price"><b>${money(p.price)}</b><button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
+            `<article class="cart-product"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>ไฟล์ดิจิทัลพร้อมดาวน์โหลด • ${esc(p.pages || "-")} แผ่น</p><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
@@ -193,5 +203,6 @@ async function removeUnavailableCartItems() {
   }
 }
 render();
+refreshCartPrices();
 removeUnavailableCartItems();
 import("/nav-account.js?v=01176").then((module) => module.initAccountNav());

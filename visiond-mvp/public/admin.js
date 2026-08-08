@@ -90,6 +90,7 @@ closeEditor.onclick = resetProductForm;
 productEditor.onsubmit = saveProduct;
 deleteProductButton.onclick = deleteProduct;
 paymentSettingsForm.onsubmit = savePaymentSettings;
+promotionSettingsForm.onsubmit = savePromotionSettings;
 newCategoryButton.onclick = resetCategoryForm;
 categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
@@ -1082,6 +1083,7 @@ function downloadSalesCsv() {
   URL.revokeObjectURL(link.href);
 }
 async function loadPaymentSettings() {
+  loadPromotionSettings();
   settingsMessage.textContent = "กำลังโหลด…";
   const r = await fetch("/api/admin/payment-settings");
   const d = await r.json().catch(() => ({}));
@@ -1113,6 +1115,24 @@ async function loadPaymentSettings() {
     ? `<img src="${esc(p.qr_url)}" alt="QR ชำระเงิน"><small>QR ที่ใช้งานอยู่ในขณะนี้</small>`
     : "<small>ยังไม่ได้อัปโหลดรูป QR</small>";
   settingsMessage.textContent = "";
+}
+async function loadPromotionSettings(){
+  promotionSettingsMessage.textContent='กำลังโหลดโปรโมชั่น…';
+  const r=await fetch('/api/admin/promotion-settings',{cache:'no-store'}),d=await r.json().catch(()=>({}));
+  if(!r.ok){promotionSettingsMessage.textContent=d.error||'โหลดโปรโมชั่นไม่สำเร็จ';return}
+  const item=d.item||{},select=promotionSettingsForm.elements.scope;
+  select.innerHTML='<option value="all">ทุกหมวดสินค้า</option>'+((d.categories||[]).map(category=>`<option value="${esc(category.slug)}">${esc(category.name)}</option>`).join(''));
+  promotionSettingsForm.elements.enabled.checked=item.enabled===true;
+  select.value=item.scope||'all';
+  promotionSettingsForm.elements.percent.value=item.percent||10;
+  promotionSettingsMessage.textContent=item.enabled?`กำลังลด ${item.percent}% สำหรับ ${item.scope==='all'?'ทุกหมวด':'หมวดที่เลือก'}`:'โปรโมชั่นปิดอยู่';
+}
+async function savePromotionSettings(event){
+  event.preventDefault();promotionSettingsMessage.textContent='กำลังบันทึก…';
+  const body={enabled:promotionSettingsForm.elements.enabled.checked,scope:promotionSettingsForm.elements.scope.value,percent:Number(promotionSettingsForm.elements.percent.value)};
+  const r=await fetch('/api/admin/promotion-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));
+  if(!r.ok){promotionSettingsMessage.textContent=d.error||'บันทึกโปรโมชั่นไม่สำเร็จ';return}
+  returnAdminHome(body.enabled?`เปิดโปรโมชั่นลด ${body.percent}% แล้ว`:'ปิดโปรโมชั่นแล้ว');
 }
 async function savePaymentSettings(e) {
   e.preventDefault();

@@ -1,2 +1,2 @@
-VisionD MVP v0.13.35
-Cloudflare-compatible password hashing and customer registration fixes
+VisionD MVP v0.13.36
+Category-wide promotional pricing, catalog badges, and checkout-safe discounts

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/style.css?v=013100" />
     <link rel="stylesheet" href="/admin-products.css?v=013270" />
     <link rel="stylesheet" href="/admin-payment.css?v=01192" />
+    <link rel="stylesheet" href="/promotion.css?v=01336" />
     <link rel="stylesheet" href="/admin-categories.css?v=0910" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
   </head>
@@ -767,6 +768,18 @@
               <p>Boss เลือกบัญชีรับโอนที่ต้องการให้ลูกค้าเห็นได้ทันที</p>
             </div>
           </div>
+          <form id="promotionSettingsForm" class="payment-settings-card promotion-settings-card">
+            <div class="settings-status">
+              <div><b>ป้ายโปรโมชั่นหน้าแคตตาล็อก</b><small>แสดงป้ายส่วนลด ราคาปกติขีดฆ่า และราคาขายใหม่ พร้อมคิดราคาลดตอนสร้างออเดอร์จริง</small></div>
+              <label class="switch-line"><input name="enabled" type="checkbox" value="1" /><span>เปิดโปรโมชั่น</span></label>
+            </div>
+            <div class="form-two">
+              <label>สินค้าที่ร่วมโปรโมชั่น<select name="scope"><option value="all">ทุกหมวดสินค้า</option></select></label>
+              <label>ส่วนลด (%)<input name="percent" type="number" min="1" max="90" step="1" value="10" required /></label>
+            </div>
+            <p id="promotionSettingsMessage" class="form-message"></p>
+            <div class="editor-actions"><button class="primary" type="submit">บันทึกโปรโมชั่น</button><a class="secondary-button" href="/digital-products" target="_blank">ดูหน้าแคตตาล็อก</a></div>
+          </form>
           <form id="paymentSettingsForm" class="payment-settings-card">
             <div class="settings-status">
               <div>
@@ -939,7 +952,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013300"></script>
+    <script src="/admin.js?v=013360"></script>
     <script src="/vision2.js?v=013330"></script>
   </body>
 </html>

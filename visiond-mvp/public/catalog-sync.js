@@ -8,6 +8,7 @@ import('/nav-account.js?v=013121');
   if (!grid) return;
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.querySelector("#vd-catalog-slider-style")?.remove();
+  if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=01336">');
   document.head.insertAdjacentHTML(
     "beforeend",
     "<style id=\"vd-catalog-slider-style\">.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover-slider{isolation:isolate!important;touch-action:pan-y;user-select:none}.vd-cover-slider>a{position:relative!important;z-index:1!important}.vd-cover img[hidden]{display:none!important}.vd-image-total{position:absolute;z-index:20;right:8px;bottom:8px;padding:7px 10px;border:2px solid rgba(255,255,255,.9);border-radius:999px;background:#087d77;color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.24);font-size:12px;font-weight:900}.vd-cover-slider .vd-image-total{bottom:34px}.vd-cover-slider>.vd-slide-prev,.vd-cover-slider>.vd-slide-next{position:absolute!important;z-index:50!important;top:50%!important;transform:translateY(-50%)!important;display:grid!important;place-items:center!important;width:42px!important;height:52px!important;margin:0!important;padding:0!important;border:2px solid rgba(255,255,255,.95)!important;border-radius:50%!important;background:#087d77!important;color:#fff!important;box-shadow:0 4px 14px rgba(0,0,0,.28)!important;font-size:29px!important;font-weight:900!important;line-height:1!important;cursor:pointer!important;pointer-events:auto!important;visibility:visible!important;opacity:1!important}.vd-cover-slider>.vd-slide-prev{left:8px!important}.vd-cover-slider>.vd-slide-next{right:8px!important}.vd-slide-count{position:absolute;z-index:20;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(max-width:560px){.vd-cover-slider>.vd-slide-prev,.vd-cover-slider>.vd-slide-next{width:38px!important;height:46px!important;font-size:26px!important}.vd-cover-slider>.vd-slide-prev{left:5px!important}.vd-cover-slider>.vd-slide-next{right:5px!important}}</style>",
@@ -34,6 +35,7 @@ import('/nav-account.js?v=013121');
     );
   const money = (n) =>
     new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
+  const priceMarkup=(product)=>Number(product.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(product.original_price||product.price)}</del><strong>${money(product.sale_price)}</strong></span>`:`<b>${money(product.price)}</b>`;
   const imageCount = (product) => {
     const stored = Number(product.bundle_pages) || Number(product.pages) || 0;
     if (stored > 0) return Math.floor(stored);
@@ -57,7 +59,7 @@ import('/nav-account.js?v=013121');
     const images = previewUrls(product),
       hasSlider = images.length > 1,
       count = imageCount(product);
-    return `<div class="vd-cover${hasSlider ? " vd-cover-slider" : ""}" data-catalog-slider="0"><span class="vd-tag">${esc(product.file_type || "DIGITAL")}</span><span class="vd-ready">พร้อมดาวน์โหลด</span><strong class="vd-image-total" aria-label="จำนวนรูปในชุด">${count ? new Intl.NumberFormat("th-TH").format(count) : "—"} รูป</strong><a href="/product.html?slug=${encodeURIComponent(product.slug)}">${images.map((url, index) => `<img loading="lazy" decoding="async" src="${esc(url)}" alt="${esc(product.title)} รูป ${index + 1}" data-slide="${index}" ${index ? "hidden" : ""}>`).join("")}</a>${hasSlider ? `<button class="vd-slide-prev" type="button" aria-label="รูปก่อนหน้า">‹</button><button class="vd-slide-next" type="button" aria-label="รูปถัดไป">›</button><small class="vd-slide-count">1/${images.length}</small>` : ""}</div>`;
+    return `<div class="vd-cover${hasSlider ? " vd-cover-slider" : ""}" data-catalog-slider="0"><span class="vd-tag">${esc(product.file_type || "DIGITAL")}</span>${Number(product.promotion_percent)>0?`<span class="vd-promo-badge">ลด ${Number(product.promotion_percent)}%</span>`:'<span class="vd-ready">พร้อมดาวน์โหลด</span>'}<strong class="vd-image-total" aria-label="จำนวนรูปในชุด">${count ? new Intl.NumberFormat("th-TH").format(count) : "—"} รูป</strong><a href="/product.html?slug=${encodeURIComponent(product.slug)}">${images.map((url, index) => `<img loading="lazy" decoding="async" src="${esc(url)}" alt="${esc(product.title)} รูป ${index + 1}" data-slide="${index}" ${index ? "hidden" : ""}>`).join("")}</a>${hasSlider ? `<button class="vd-slide-prev" type="button" aria-label="รูปก่อนหน้า">‹</button><button class="vd-slide-next" type="button" aria-label="รูปถัดไป">›</button><small class="vd-slide-count">1/${images.length}</small>` : ""}</div>`;
   };
   const normalizeCart = (items) => {
     const unique = new Map();
@@ -215,6 +217,7 @@ import('/nav-account.js?v=013121');
           card.dataset.search = `${product.title || ""} ${product.slug || ""} ${product.category || ""} ${product.category_label || ""} ${product.short_description || ""} ${product.description || ""}`.toLocaleLowerCase("th-TH");
           const oldCover = card.querySelector(".vd-cover");
           if (oldCover) oldCover.outerHTML = coverMarkup(product);
+          const oldPrice=card.querySelector('.vd-bottom>b,.vd-bottom>.vd-promo-price');if(oldPrice)oldPrice.outerHTML=priceMarkup(product);
         }
       });
       const existing = new Set(
@@ -228,7 +231,7 @@ import('/nav-account.js?v=013121');
           .filter((p) => !existing.has(p.slug))
           .map(
             (p) =>
-              `<article class="vd-card" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom"><b>${money(p.price)}</b><div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
+              `<article class="vd-card${Number(p.promotion_percent)>0?' has-promo':''}" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom">${priceMarkup(p)}<div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
           )
           .join(""),
       );
@@ -271,7 +274,9 @@ import('/nav-account.js?v=013121');
             id: product.id,
             slug: product.slug,
             title: product.title,
-            price: product.price,
+            price: Number(product.sale_price??product.price),
+            original_price: Number(product.original_price??product.price),
+            promotion_percent: Number(product.promotion_percent)||0,
             cover_url: product.cover_url,
             category: product.category,
             category_label: product.category_label,
@@ -280,7 +285,7 @@ import('/nav-account.js?v=013121');
             content_ids: [String(product.id || product.slug)],
             content_name: product.title,
             content_type: "product",
-            value: Number(product.price || 0) / 100,
+            value: Number(product.sale_price ?? product.price ?? 0) / 100,
             currency: "THB",
           });
           localStorage.setItem("vd_cart", JSON.stringify(cart));
