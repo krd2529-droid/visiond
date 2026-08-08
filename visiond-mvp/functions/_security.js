@@ -27,10 +27,11 @@ export async function verifyTurnstile(env,request,token){
 }
 
 const bytesToHex=(bytes)=>[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
+const PBKDF2_ITERATIONS=100000;
 export async function hashPassword(password,salt=crypto.randomUUID()){
   const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(password)),'PBKDF2',false,['deriveBits']);
-  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:210000},key,256);
-  return `pbkdf2:210000:${salt}:${bytesToHex(new Uint8Array(bits))}`;
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:PBKDF2_ITERATIONS},key,256);
+  return `pbkdf2:${PBKDF2_ITERATIONS}:${salt}:${bytesToHex(new Uint8Array(bits))}`;
 }
 export async function verifyPassword(password,stored){
   if(String(stored).startsWith('pbkdf2:')){const [,iterations,salt,hash]=stored.split(':'),key=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(password)),'PBKDF2',false,['deriveBits']),bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:Number(iterations)},key,256);return bytesToHex(new Uint8Array(bits))===hash}

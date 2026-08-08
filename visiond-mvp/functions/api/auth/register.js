@@ -1,13 +1,11 @@
-import { json } from '../../_lib.js';
+import { json, sha256 } from '../../_lib.js';
 import { ensureDatabase } from '../../_schema.js';
 import {rateLimit,verifyTurnstile,hashPassword,securityLog} from '../../_security.js';
 
 export async function onRequestPost(ctx) {
   try {
     await ensureDatabase(ctx.env);
-    const limited=await rateLimit(ctx.env,ctx.request,'register',5,60,60);if(limited.error)return limited.error;
     const body = await ctx.request.json();
-    const turnstile=await verifyTurnstile(ctx.env,ctx.request,body.turnstile_token);if(turnstile.error)return turnstile.error;
     const username = String(body.username || '').trim().toLowerCase();
     const email = String(body.email || '').trim().toLowerCase();
     const firstName = String(body.firstName || '').trim().replace(/\s+/g, ' ');
@@ -24,6 +22,17 @@ export async function onRequestPost(ctx) {
     if (!/^\S+@\S+\.\S+$/.test(email)) return json({ error: 'รูปแบบอีเมลไม่ถูกต้อง' }, 400);
     if (!/^0\d{8,9}$/.test(phone)) return json({ error: 'กรุณากรอกเบอร์โทรศัพท์ไทย 9–10 หลัก โดยขึ้นต้นด้วย 0' }, 400);
 
+    // Do not let one customer's mistakes block everyone sharing a mobile,
+    // office, shop, or home NAT address. Invalid forms consume no quota;
+    // valid attempts are limited by both the source IP and applicant identity.
+    const identity = (await sha256(`${email}|${username}`)).slice(0, 24);
+    const ipLimited = await rateLimit(ctx.env, ctx.request, 'register-ip-v2', 30, 60, 15);
+    if (ipLimited.error) return ipLimited.error;
+    const identityLimited = await rateLimit(ctx.env, ctx.request, `register-person-v2-${identity}`, 8, 60, 15);
+    if (identityLimited.error) return identityLimited.error;
+
+    const turnstile=await verifyTurnstile(ctx.env,ctx.request,body.turnstile_token);if(turnstile.error)return turnstile.error;
+
     const exists = await ctx.env.DB.prepare('SELECT id FROM users WHERE lower(email)=? OR lower(username)=?').bind(email, username).first();
     if (exists) return json({ error: 'ไอดีหรืออีเมลนี้ถูกใช้แล้ว' }, 409);
 
@@ -38,6 +47,7 @@ export async function onRequestPost(ctx) {
   } catch (error) {
     console.error('register failed', error);
     if (String(error).includes('D1_NOT_CONNECTED')) return json({ error: 'ยังไม่ได้เชื่อมฐานข้อมูล D1 ชื่อ DB ใน Cloudflare' }, 503);
+    if (String(error).includes('Pbkdf2')) return json({ error: 'ระบบเข้ารหัสรหัสผ่านไม่รองรับบนเซิร์ฟเวอร์ กรุณาอัปเดต VisionD เป็นเวอร์ชันล่าสุด' }, 500);
     return json({ error: 'ระบบสมาชิกยังเชื่อมฐานข้อมูลไม่สำเร็จ กรุณาตรวจ D1 Binding ชื่อ DB' }, 500);
   }
 }

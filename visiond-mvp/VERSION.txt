@@ -1,2 +1,2 @@
-VisionD MVP v0.13.33
-Vision 2 ready ZIP/PDF import, PDF page selection for SAMPLE previews, and direct product attachment
+VisionD MVP v0.13.35
+Cloudflare-compatible password hashing and customer registration fixes
