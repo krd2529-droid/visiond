@@ -14,5 +14,11 @@ export async function onRequest(ctx){
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
   headers.set('x-frame-options','SAMEORIGIN');
   if(url.pathname.startsWith('/api/'))headers.set('cache-control','private, no-store');
+  const country=String(request.cf?.country||request.headers.get('cf-ipcountry')||'').toUpperCase();
+  const cookies=request.headers.get('cookie')||'';
+  const isHtml=(request.headers.get('accept')||'').includes('text/html');
+  if(isHtml&&/^[A-Z]{2}$/.test(country)&&!cookies.includes(`vd_country=${country}`)){
+    headers.append('set-cookie',`vd_country=${country}; Path=/; Max-Age=2592000; SameSite=Lax; Secure`);
+  }
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }

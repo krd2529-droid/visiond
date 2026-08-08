@@ -1309,3 +1309,4 @@ async function saveMemberPlan(event){
 showAdminNotice();
 init();
 import('/mouse-ui.js?v=01205');
+import('/i18n.js?v=01331');

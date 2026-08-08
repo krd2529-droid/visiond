@@ -4,3 +4,4 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(year)year.textContent=new Date().getFullYear();
 });
 import('/nav-account.js?v=01176').then(module=>module.initAccountNav());
+import('/i18n.js?v=01331');

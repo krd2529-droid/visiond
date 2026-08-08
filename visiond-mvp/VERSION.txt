@@ -1,2 +1,2 @@
-VisionD MVP v0.13.30
-Remove unsupported Facebook video embed from homepage and admin settings
+VisionD MVP v0.13.32
+Bilingual Thai/English interface with Cloudflare IP-country detection, browser fallback and TH/EN switcher
