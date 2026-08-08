@@ -1132,7 +1132,7 @@ async function loadPromotionSettings(){
   const r=await fetch('/api/admin/promotion-settings',{cache:'no-store'}),d=await r.json().catch(()=>({}));
   if(!r.ok){promotionSettingsMessage.textContent=d.error||'โหลดโปรโมชั่นไม่สำเร็จ';return}
   const item=d.item||{},select=promotionSettingsForm.elements.scope;
-  select.innerHTML='<option value="all">ทุกหมวดสินค้า</option>'+((d.categories||[]).map(category=>`<option value="${esc(category.slug)}">${esc(category.name)}</option>`).join(''));
+  select.innerHTML='<option value="all">ทุกหมวดสินค้า</option>'+((d.categories||[]).map(category=>`<option value="${esc(category.slug)}">${esc(category.name)} (${Number(category.product_count)||0} สินค้า)</option>`).join(''));
   promotionSettingsForm.elements.enabled.checked=item.enabled===true;
   select.value=item.scope||'all';
   promotionSettingsForm.elements.percent.value=item.percent||10;

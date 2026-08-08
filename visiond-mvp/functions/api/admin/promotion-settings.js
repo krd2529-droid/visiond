@@ -4,7 +4,19 @@ import {saveSetting} from '../../_payment.js';
 
 async function response(env){
   const promotion=await loadPromotion(env);
-  const categories=(await env.DB.prepare("SELECT slug,name FROM categories WHERE active=1 ORDER BY sort_order,id").all()).results||[];
+  const categories=(await env.DB.prepare(`
+    SELECT c.slug,c.name,
+      COUNT(p.id) product_count
+    FROM categories c
+    LEFT JOIN products p ON p.category=c.slug
+      AND p.deleted_at IS NULL
+      AND COALESCE(p.product_kind,'product')='product'
+    WHERE c.active=1
+      AND (c.parent_slug IS NULL OR trim(c.parent_slug)='')
+      AND c.slug NOT IN ('dinosaur','paper-doll','document','set-coloring','set-tattoo')
+    GROUP BY c.id,c.slug,c.name,c.sort_order
+    ORDER BY c.sort_order,c.id
+  `).all()).results||[];
   return json({item:promotion,categories},200,{'cache-control':'no-store'});
 }
 
@@ -19,7 +31,7 @@ export async function onRequestPut(ctx){
   const enabled=body.enabled===true,scope=String(body.scope||'all').trim(),percent=Math.floor(Number(body.percent));
   if(!Number.isInteger(percent)||percent<1||percent>90)return json({error:'เปอร์เซ็นต์ส่วนลดต้องอยู่ระหว่าง 1–90'},400);
   if(scope!=='all'){
-    const category=await ctx.env.DB.prepare('SELECT slug FROM categories WHERE slug=? AND active=1').bind(scope).first();
+    const category=await ctx.env.DB.prepare(`SELECT c.slug FROM categories c WHERE c.slug=? AND c.active=1 AND (c.parent_slug IS NULL OR trim(c.parent_slug)='') AND c.slug NOT IN ('dinosaur','paper-doll','document','set-coloring','set-tattoo')`).bind(scope).first();
     if(!category)return json({error:'ไม่พบหมวดสินค้าที่เลือก'},400);
   }
   await saveSetting(ctx.env,'promotion_enabled',enabled?'1':'0');
