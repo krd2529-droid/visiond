@@ -1,2 +1,2 @@
-VisionD MVP v0.13.32
-Bilingual Thai/English interface with Cloudflare IP-country detection, browser fallback and TH/EN switcher
+VisionD MVP v0.13.33
+Vision 2 ready ZIP/PDF import, PDF page selection for SAMPLE previews, and direct product attachment

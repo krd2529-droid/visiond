@@ -34,7 +34,7 @@
     .querySelector(".v2-head")
     .insertAdjacentHTML(
       "afterend",
-      `<section class="v2-external-upload"><header><b>มีรูปจากที่อื่นแล้ว?</b><small>ข้าม Step 1 และ Step 2 ไปเลือกทำ SAMPLE และรวม PDF ได้ทันที</small></header><label class="v2-external-name">ชื่อสินค้า<input id="v2ExternalName" placeholder="เช่น ชุดแบบฝึกหัด A–Z"></label><div class="v2-external-source"><label><span>อัปโหลดรูป 3–200 รูป</span><input id="v2ExternalFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple><small>รองรับ JPG, PNG, WEBP · ระบบเรียงตามชื่อไฟล์</small></label><button class="v2-upload-action" id="v2ExternalStart" type="button">ใช้รูปที่เลือก → Step 3</button></div><div class="v2-external-source"><label><span>อัปโหลดไฟล์ ZIP</span><input id="v2ExternalZip" type="file" accept=".zip,application/zip,application/x-zip-compressed"><small>ไม่ต้องแตก ZIP · ระบบดึง JPG, PNG, WEBP ให้อัตโนมัติ</small></label><button class="v2-upload-action" id="v2ExternalZipStart" type="button">ใช้ไฟล์ ZIP → Step 3</button></div><p id="v2ExternalStatus"></p></section>`,
+      `<section class="v2-external-upload"><header><b>มี ZIP หรือ PDF พร้อมขายแล้ว?</b><small>ข้ามการเจนภาพ · เลือกหน้าจาก PDF หรือรูปจาก ZIP มาทำ SAMPLE แล้วแนบไฟล์ต้นฉบับเข้าตะกร้าขายทันที</small></header><label class="v2-external-name">ชื่อสินค้า<input id="v2ExternalName" placeholder="เช่น ชุดแบบฝึกหัด A–Z 200 หน้า"></label><div class="v2-external-source"><label><span>อัปโหลดรูป 3–200 รูป</span><input id="v2ExternalFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple><small>รองรับ JPG, PNG, WEBP · ระบบเรียงตามชื่อไฟล์และสร้าง PDF ใหม่</small></label><button class="v2-upload-action" id="v2ExternalStart" type="button">ใช้รูปที่เลือก → เลือก SAMPLE</button></div><div class="v2-external-source v2-zip-pdf-source"><label><span>รับ ZIP / PDF พร้อมขาย</span><input id="v2ExternalZip" type="file" accept=".zip,.pdf,application/pdf,application/zip,application/x-zip-compressed"><small>PDF: เลือกหน้ามาทำตัวอย่าง · ZIP: ดึงรูปหรือหน้า PDF ภายในมาทำตัวอย่าง · แนบไฟล์เดิมโดยไม่สร้างซ้ำ</small></label><label>หน้าที่จะนำมาเลือก SAMPLE<input id="v2ExternalPdfPages" value="1-30" placeholder="เช่น 1-30, 55, 100-110"><small>เปิดเฉพาะหน้าที่ระบุ สูงสุด 200 หน้า ป้องกัน PDF หลายพันหน้าทำเครื่องค้าง</small></label><button class="v2-upload-action" id="v2ExternalZipStart" type="button">อ่าน ZIP / PDF → เลือก SAMPLE</button></div><p id="v2ExternalStatus"></p></section>`,
     );
 
   const steps = [...workspace.querySelectorAll(".v2-step")];
@@ -46,6 +46,9 @@
     pdfObjectUrl = "",
     sampleFiles = [],
     sampleProjectKey = "";
+  let importedProductFile = null,
+    importedPageCount = 0,
+    importedCandidateCount = 0;
   let usageData = { summary: { runs: 0, images: 0, prompts: 0 }, items: [] };
   const show = (number) => {
     steps.forEach((step, index) =>
@@ -800,6 +803,9 @@
       image_api_name: sourceLabel,
       source: "external-upload",
     };
+    importedProductFile = null;
+    importedPageCount = 0;
+    importedCandidateCount = 0;
     promptItems = [];
     v2PromptList.value = files
       .map((file, index) => `รูป ${index + 1}: ${file.name}`)
@@ -812,7 +818,7 @@
     renderSampleSelection();
     show(4);
   };
-  const unzipImageFiles = async (zipFile) => {
+  const unzipImageFiles = async (zipFile, selectionSpec = "1-30") => {
     if (!zipFile) throw new Error("กรุณาเลือกไฟล์ ZIP");
     if (zipFile.size > 500 * 1024 * 1024)
       throw new Error("ไฟล์ ZIP ต้องมีขนาดไม่เกิน 500 MB");
@@ -834,7 +840,7 @@
     if (
       entryCount === 0xffff ||
       centralOffset === 0xffffffff ||
-      entryCount > 2000
+      entryCount > 30000
     )
       throw new Error("ZIP นี้มีรูปแบบหรือจำนวนไฟล์ที่ระบบยังไม่รองรับ");
     const decoder = new TextDecoder("utf-8"),
@@ -860,7 +866,7 @@
         );
       position += 46 + nameLength + extraLength + commentLength;
       if (
-        !/\.(jpe?g|png|webp)$/i.test(name) ||
+        !/\.(jpe?g|png|webp|pdf)$/i.test(name) ||
         name.includes("__MACOSX/") ||
         name.endsWith("/")
       )
@@ -869,24 +875,34 @@
         throw new Error(`ไฟล์ ${name} ถูกเข้ารหัสผ่าน ระบบเปิดไม่ได้`);
       if (![0, 8].includes(method))
         throw new Error(`ไฟล์ ${name} ใช้วิธีบีบอัดที่ไม่รองรับ`);
-      if (size > 15 * 1024 * 1024)
-        throw new Error(`รูป ${name} มีขนาดเกิน 15 MB`);
-      totalSize += size;
-      if (totalSize > 750 * 1024 * 1024)
-        throw new Error("รูปทั้งหมดใน ZIP มีขนาดรวมเกิน 750 MB");
+      const isPdf = /\.pdf$/i.test(name);
+      if (size > (isPdf ? 100 : 15) * 1024 * 1024)
+        throw new Error(`${isPdf ? "PDF" : "รูป"} ${name} มีขนาดใหญ่เกินไป`);
       entries.push({ name, method, compressedSize, size, localOffset });
     }
-    if (entries.length < 3 || entries.length > 200)
-      throw new Error(
-        `พบรูปใน ZIP ${entries.length} รูป ต้องมีตั้งแต่ 3–200 รูป`,
-      );
+    if (!entries.length || entries.length > 30000)
+      throw new Error(`ไม่พบรูปหรือ PDF ที่ระบบรองรับภายใน ZIP`);
+    const sortedEntries = entries.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        }),
+      ),
+      pdfEntries = sortedEntries.filter((entry) => /\.pdf$/i.test(entry.name)),
+      imageEntries = sortedEntries.filter((entry) => !/\.pdf$/i.test(entry.name)),
+      chosenEntries = pdfEntries.length
+        ? pdfEntries.slice(0, 50)
+        : candidatePages(selectionSpec, imageEntries.length).map(
+            (page) => imageEntries[page - 1],
+          );
+    if (pdfEntries.length > 50)
+      throw new Error("ZIP มี PDF เกิน 50 ไฟล์ กรุณาแบ่ง ZIP ก่อนนำเข้า");
     const files = [];
-    for (const entry of entries.sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      }),
-    )) {
+    totalSize = 0;
+    for (const entry of chosenEntries) {
+      totalSize += entry.size;
+      if (totalSize > 750 * 1024 * 1024)
+        throw new Error("ไฟล์ที่เลือกจาก ZIP มีขนาดรวมเกิน 750 MB");
       const offset = entry.localOffset;
       if (
         offset + 30 > bytes.length ||
@@ -923,7 +939,9 @@
         throw new Error(`ขนาดไฟล์ ${entry.name} ไม่ตรงกับข้อมูล ZIP`);
       const extension = entry.name.split(".").pop().toLowerCase(),
         type =
-          extension === "png"
+          extension === "pdf"
+            ? "application/pdf"
+            : extension === "png"
             ? "image/png"
             : extension === "webp"
               ? "image/webp"
@@ -933,7 +951,10 @@
           `image-${files.length + 1}.${extension}`;
       files.push(new File([raw], safeName, { type }));
     }
-    return files;
+    return {
+      files,
+      totalEntries: pdfEntries.length ? pdfEntries.length : imageEntries.length,
+    };
   };
   externalStart.onclick = () => {
     try {
@@ -947,20 +968,141 @@
       alert(error.message);
     }
   };
+  let pdfJsPromise = null;
+  const loadPdfJs = async () => {
+    if (!pdfJsPromise)
+      pdfJsPromise = import("/vendor/pdfjs/pdf.mjs?v=01333").then((pdfjs) => {
+        pdfjs.GlobalWorkerOptions.workerSrc =
+          "/vendor/pdfjs/pdf.worker.mjs?v=01333";
+        return pdfjs;
+      });
+    return pdfJsPromise;
+  };
+  const candidatePages = (value, total) => {
+    const pages = new Set();
+    for (const token of String(value || "1-30").split(",")) {
+      const match = token.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+      if (!match) throw new Error(`รูปแบบเลขหน้า “${token.trim()}” ไม่ถูกต้อง`);
+      let start = Number(match[1]),
+        end = Number(match[2] || match[1]);
+      if (start > end) [start, end] = [end, start];
+      if (start < 1 || start > total)
+        throw new Error(`ไฟล์มี ${total} หน้า/รูป แต่ระบุเริ่มที่ ${start}`);
+      end = Math.min(end, total);
+      for (let page = start; page <= end; page++) {
+        pages.add(page);
+        if (pages.size > 200)
+          throw new Error("เลือกหน้าสำหรับคัด SAMPLE ได้สูงสุด 200 หน้า");
+      }
+    }
+    return [...pages];
+  };
+  const renderPdfCandidates = async (pdfFiles, pageSpec) => {
+    const pdfjs = await loadPdfJs(),
+      rendered = [],
+      documents = [];
+    let totalPages = 0;
+    for (const file of pdfFiles) {
+      const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }),
+        documentPdf = await task.promise;
+      documents.push({ file, documentPdf, firstPage: totalPages + 1 });
+      totalPages += documentPdf.numPages;
+    }
+    const pages = candidatePages(pageSpec, totalPages);
+    for (const globalPage of pages) {
+      const source = [...documents]
+          .reverse()
+          .find((item) => globalPage >= item.firstPage),
+        pageNumber = globalPage - source.firstPage + 1;
+        externalStatus.textContent = `กำลังเปิด ${source.file.name} · หน้า ${pageNumber}/${source.documentPdf.numPages}…`;
+        const page = await source.documentPdf.getPage(pageNumber),
+          base = page.getViewport({ scale: 1 }),
+          scale = Math.min(2, 1400 / Math.max(base.width, base.height)),
+          viewport = page.getViewport({ scale }),
+          canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(viewport.width));
+        canvas.height = Math.max(1, Math.round(viewport.height));
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) throw new Error("เบราว์เซอร์เปิดหน้ากระดาษไม่ได้");
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: context, viewport }).promise;
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/jpeg", 0.86),
+        );
+        page.cleanup();
+        if (!blob) throw new Error(`แปลงหน้า ${pageNumber} เป็นรูปไม่สำเร็จ`);
+        rendered.push(
+          new File([blob], `${source.file.name.replace(/\.pdf$/i, "")}-page-${String(pageNumber).padStart(5, "0")}.jpg`, {
+            type: "image/jpeg",
+          }),
+        );
+    }
+    for (const item of documents) await item.documentPdf.destroy();
+    return { files: rendered, totalPages };
+  };
+  const startImportedProduct = (
+    name,
+    previewFiles,
+    productFile,
+    totalPages,
+    sourceLabel,
+  ) => {
+    if (/\.zip$/i.test(productFile.name) && productFile.type !== "application/zip")
+      productFile = new File([productFile], productFile.name, {
+        type: "application/zip",
+        lastModified: productFile.lastModified,
+      });
+    startExternalImages(name, previewFiles, sourceLabel);
+    importedProductFile = productFile;
+    importedPageCount = totalPages || previewFiles.length;
+    importedCandidateCount = previewFiles.length;
+    brief.source = "ready-file-import";
+    brief.product_file_name = productFile.name;
+    brief.product_file_type = productFile.type;
+    externalStatus.textContent = `พร้อมแล้ว · มีตัวเลือก ${previewFiles.length} รูป · ไฟล์ขาย ${productFile.name} จะถูกแนบเข้าตะกร้าโดยตรง`;
+  };
   externalZipStart.onclick = async () => {
     externalZipStart.disabled = true;
-    externalZipStart.textContent = "กำลังอ่าน ZIP…";
-    externalStatus.textContent =
-      "กำลังดึงรูปจาก ZIP โดยไม่ต้องแตกไฟล์ลงเครื่อง…";
+    externalZipStart.textContent = "กำลังอ่าน ZIP / PDF…";
+    externalStatus.textContent = "กำลังตรวจไฟล์และเตรียมหน้าสำหรับเลือก SAMPLE…";
     try {
-      const files = await unzipImageFiles(externalZip.files?.[0]);
-      startExternalImages(externalName.value.trim(), files, "ไฟล์ ZIP");
+      const source = externalZip.files?.[0];
+      if (!source) throw new Error("กรุณาเลือกไฟล์ ZIP หรือ PDF");
+      if (source.size > 100 * 1024 * 1024)
+        throw new Error("ไฟล์สำหรับตะกร้าต้องมีขนาดไม่เกิน 100 MB");
+      const name = externalName.value.trim();
+      if (!name) throw new Error("กรุณากรอกชื่อสินค้า");
+      const isPdf = source.type === "application/pdf" || /\.pdf$/i.test(source.name);
+      if (isPdf) {
+        const result = await renderPdfCandidates(
+          [source],
+          document.getElementById("v2ExternalPdfPages").value,
+        );
+        startImportedProduct(name, result.files, source, result.totalPages, "หน้า PDF");
+      } else {
+        const unpacked = await unzipImageFiles(
+            source,
+            document.getElementById("v2ExternalPdfPages").value,
+          ),
+          pdfs = unpacked.files.filter((file) => file.type === "application/pdf"),
+          images = unpacked.files.filter((file) => file.type.startsWith("image/"));
+        if (pdfs.length) {
+          const result = await renderPdfCandidates(
+            pdfs,
+            document.getElementById("v2ExternalPdfPages").value,
+          );
+          startImportedProduct(name, result.files, source, result.totalPages, "PDF ภายใน ZIP");
+        } else {
+          startImportedProduct(name, images, source, unpacked.totalEntries, "รูปภายใน ZIP");
+        }
+      }
     } catch (error) {
       externalStatus.textContent = error.message;
       alert(error.message);
     } finally {
       externalZipStart.disabled = false;
-      externalZipStart.textContent = "ใช้ไฟล์ ZIP → Step 3";
+      externalZipStart.textContent = "อ่าน ZIP / PDF → เลือก SAMPLE";
     }
   };
 
@@ -2068,6 +2210,23 @@
     v2ContinueProduct.disabled = true;
     show(5);
     try {
+      if (importedProductFile) {
+        pdfFile = importedProductFile;
+        if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
+        pdfObjectUrl = URL.createObjectURL(pdfFile);
+        const isPdf = pdfFile.type === "application/pdf" || /\.pdf$/i.test(pdfFile.name),
+          typeLabel = isPdf ? "PDF" : "ZIP";
+        v2PdfSummary.innerHTML = `<article><small>รูปที่เปิดให้เลือก SAMPLE</small><b>${importedCandidateCount} รูป</b></article><article><small>${typeLabel} สำหรับลูกค้า</small><b>${(pdfFile.size / 1024 / 1024).toFixed(1)} MB</b></article><article><small>จำนวนหน้าที่ตรวจพบ</small><b>${importedPageCount || "—"} หน้า</b></article>`;
+        v2PdfFilePreview.hidden = false;
+        v2PdfFilePreview.innerHTML = `<div><b>✓ พร้อมแนบไฟล์ต้นฉบับโดยไม่สร้างซ้ำ</b><strong>${esc(pdfFile.name)}</strong><small>${isPdf ? `${importedPageCount} หน้า · ` : ""}${(pdfFile.size / 1024 / 1024).toFixed(2)} MB · จะส่งไฟล์นี้ให้ลูกค้าเมื่อซื้อสำเร็จ</small><a href="${pdfObjectUrl}" target="_blank" rel="noopener">${isPdf ? "เปิดดู PDF จริง" : "ดาวน์โหลด ZIP เพื่อตรวจ"}</a></div>${isPdf ? `<iframe src="${pdfObjectUrl}#page=1&view=FitH" title="ตัวอย่างไฟล์ PDF"></iframe>` : '<div class="v2-zip-ready"><b>ไฟล์ ZIP พร้อมแนบ</b><span>ระบบเก็บ ZIP เดิมครบทั้งไฟล์และไม่แก้ข้อมูลภายใน</span></div>'}`;
+        v2DownloadPdf.disabled = false;
+        v2FinishWithoutProduct.disabled = false;
+        v2ContinueProduct.disabled = false;
+        v2DownloadPdf.textContent = `ดาวน์โหลด ${typeLabel} ลงเครื่อง`;
+        v2ContinueProduct.textContent = `แนบ ${typeLabel} และไปตั้งตะกร้าขาย →`;
+        return;
+      }
+      v2DownloadPdf.textContent = "ดาวน์โหลด PDF ลงเครื่อง";
       const blob = await buildPdf();
       pdfFile = new File([blob], safePdfName(), { type: "application/pdf" });
       if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
@@ -2132,7 +2291,9 @@
     const prompts = v2PromptList.value
         .split("\n")
         .filter((value) => value.trim()),
-      title = brief.project_name || brief.topic || "สินค้า Vision 2";
+      title = brief.project_name || brief.topic || "สินค้า Vision 2",
+      pageTotal = importedProductFile ? importedPageCount : prompts.length,
+      productType = pdfFile.type === "application/zip" || /\.zip$/i.test(pdfFile.name) ? "ZIP" : "PDF";
     const editingTarget=editProductTarget;
     if(!editingTarget)resetProductForm();
     else{
@@ -2147,13 +2308,15 @@
       productEditor.elements.title.value = title;
       productEditor.elements.slug.value = "";
     }
-    productEditor.elements.pages.value = prompts.length;
+    productEditor.elements.pages.value = pageTotal;
     if(!editingTarget){
-      productEditor.elements.short_description.value = `${title} · ${prompts.length} แผ่น`;
-      productEditor.elements.description.value = `สร้างด้วย Vision 2 ขนาด ${brief.output_size || "A4"} จำนวน ${prompts.length} ภาพ พร้อมรูปตัวอย่างติดลายน้ำ SAMPLE 3 รูป`;
+      productEditor.elements.short_description.value = `${title} · ${pageTotal} หน้า`;
+      productEditor.elements.description.value = importedProductFile
+        ? `ไฟล์ ${productType} พร้อมใช้งาน จำนวน ${pageTotal} หน้า พร้อมรูปตัวอย่างติดลายน้ำ SAMPLE 3 รูป`
+        : `สร้างด้วย Vision 2 ขนาด ${brief.output_size || "A4"} จำนวน ${prompts.length} ภาพ พร้อมรูปตัวอย่างติดลายน้ำ SAMPLE 3 รูป`;
     }
-    productEditor.elements.file_type.value = "PDF";
-    productEditor.elements.file_label.value = "ไฟล์ PDF ฉบับเต็ม";
+    productEditor.elements.file_type.value = productType;
+    productEditor.elements.file_label.value = `ไฟล์ ${productType} ฉบับเต็ม`;
     setVision2PendingProductFiles({
       cover: sampleFiles[0],
       preview_2: sampleFiles[1],
@@ -2176,7 +2339,7 @@
           `<article><img src="${URL.createObjectURL(file)}" alt="รูปตัวอย่าง ${index + 1}"><b>รูป ${index + 1}${index === 0 ? " · ปกสินค้า" : ""}</b></article>`,
       )
       .join("");
-    existingFiles.innerHTML = `<article class="attached-pdf-card"><b>✓ แนบไฟล์ PDF จริงแล้ว</b><span>${esc(pdfFile.name)}</span><small>${prompts.length} หน้า · ${(pdfFile.size / 1024 / 1024).toFixed(2)} MB · จะอัปโหลดเมื่อกดบันทึกสินค้า</small><a href="${pdfObjectUrl}" target="_blank" rel="noopener">เปิดดู PDF ที่แนบ</a></article>`;
+    existingFiles.innerHTML = `<article class="attached-pdf-card"><b>✓ แนบไฟล์ ${productType} จริงแล้ว</b><span>${esc(pdfFile.name)}</span><small>${pageTotal} หน้า · ${(pdfFile.size / 1024 / 1024).toFixed(2)} MB · จะอัปโหลดเมื่อกดบันทึกสินค้า</small><a href="${pdfObjectUrl}" target="_blank" rel="noopener">${productType === "PDF" ? "เปิดดู PDF ที่แนบ" : "ดาวน์โหลด ZIP ที่แนบเพื่อตรวจ"}</a></article>`;
     steps.forEach((step, index) =>
       step.classList.toggle("active", index === 5),
     );
