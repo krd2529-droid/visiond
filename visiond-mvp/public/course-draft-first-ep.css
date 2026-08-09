@@ -1,0 +1,7 @@
+.draft-first-ep{grid-column:1/-1;margin:4px 0;padding:18px;border:2px solid #8bd8d2;border-radius:17px;background:linear-gradient(145deg,#effbf9,#fff)}
+.draft-first-ep legend{padding:0 9px;color:#076f69;font-size:16px;font-weight:900}
+.draft-first-ep-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.draft-first-ep-note{margin:0 0 14px;color:#557572;font-size:12px}
+.draft-upload-box{padding:13px;border:1px dashed #65bfb8;border-radius:12px;background:#fff}
+.draft-upload-box input[type=file]{padding:9px;background:#f7fffe}
+@media(max-width:700px){.draft-first-ep-grid{grid-template-columns:1fr}}

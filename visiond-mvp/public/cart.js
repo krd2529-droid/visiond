@@ -95,7 +95,7 @@ function render() {
     ? items
         .map(
           (p, i) =>
-            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด · โปรดอ่านเงื่อนไขก่อนซื้อให้ครบถ้วน</strong><a class="cart-rights-document" href="/Vision5-course-selling-rights-read-before-buy.txt" target="_blank" rel="noopener">📎 เอกสารแนบ: โปรดอ่านก่อนซื้อ</a>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>ได้รับ ${Number(p.quantity)||1} เครดิต · รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
+            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด · ไม่คืนเงิน เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>ได้รับ ${Number(p.quantity)||1} เครดิต · รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
@@ -117,8 +117,6 @@ checkoutDialog.onclick = (e) => {
 async function checkout() {
   const items = getCart();
   if (!items.length) return;
-  const buyingRights=items.some(item=>item.category==='resale-rights'||item.slug==='course-selling-rights');
-  if(buyingRights&&!confirm('โปรดยืนยันก่อนสั่งซื้อ\n\nผู้ซื้อได้เปิดอ่านเอกสารแนบ “โปรดอ่านก่อนซื้อ” และอ่านรายละเอียดครบถ้วนแล้ว'))return;
   if (activeOrder) {
     checkoutDialog.showModal();
     return;
@@ -139,7 +137,6 @@ async function checkout() {
         productSlugs: items.map((x) => x.slug),
         productIds: items.map((x) => x.id),
         quantities:Object.fromEntries(items.map(item=>[item.slug,Number(item.quantity)||1])),
-        rights_terms_acknowledged:buyingRights,
       }),
     });
     const d = await r.json().catch(() => ({}));

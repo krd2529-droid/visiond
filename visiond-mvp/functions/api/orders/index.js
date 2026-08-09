@@ -63,7 +63,6 @@ export async function onRequestPost(ctx) {
   if([...repeated].some(slug=>bySlug.get(slug)?.category!=='resale-rights'))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์ส'},409);
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
   if(orderedResults.some(product=>product.category==='resale-rights')){
-    if(b.rights_terms_acknowledged!==true)return json({error:'ก่อนสั่งซื้อ กรุณาอ่านเอกสารแนบ “โปรดอ่านก่อนซื้อ” ให้ครบถ้วน และยืนยันว่าอ่านแล้ว'},400);
     const buyerApi=await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(a.user.id).first();
     if(!buyerApi?.seller_slip_api_key||buyerApi.seller_slip_api_key.length<20)return json({error:'กรุณาบันทึก EasySlip API ของคุณเองในหน้าสิทธิ์ลงขายคอร์สก่อนสั่งซื้อ'},409);
   }
