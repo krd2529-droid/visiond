@@ -123,7 +123,9 @@ assert.match(chatSource,/safeElonOutput\(item\.content[\s\S]{0,300}memberContext
 assert.match(chatSource,/safeElonOutput\(extractProviderText[\s\S]{0,300}memberContext\)/,'provider output must be filtered before persistence');
 assert.doesNotMatch(elonSource,/memberContext\.(?:pending_orders|unlocked_products|available_course_credits|owned_courses|enrolled_courses|is_staff)/,'AI prompt must not receive account counts or staff status');
 assert.doesNotMatch(elonSource,/\)\s+pending_orders|\)\s+unlocked_products|\)\s+available_course_credits|\)\s+owned_courses|\)\s+enrolled_courses|\)\s+is_staff/,'ELON member query must not fetch unnecessary account counts or staff status');
-assert.match(elonSource,/return \{authenticated:true,can_use_seller_vision5:Boolean/,'ELON member context must return only authentication and seller eligibility booleans');
+assert.match(elonSource,/return \{authenticated:true,can_use_seller_vision5:bossFrontendAccess\|\|Boolean/,'ELON member context must collapse Boss access into the seller eligibility boolean');
+assert.doesNotMatch(elonSource,/return \{[^}]*role/,'ELON member context must never return the verified Boss role to the provider');
+assert.match(chatSource,/elonMemberContext\(ctx\.env,auth\.user\.id,auth\.user\.role\)/,'member handler must derive frontend entitlement from the verified session role');
 assert.match(publicChatSource,/สมัครสมาชิกหรือเข้าสู่ระบบก่อน/,'guest must be directed to register or sign in');
 assert.doesNotMatch(publicChatSource,/env\.DB|ensureDatabase|requireUser|currentUser|persistElon|elon_conversations|elon_messages|requestElonProvider|selectElonProvider/,'guest endpoint must have no database, session, persistence, or AI provider access');
 assert.doesNotMatch(chatSource,/env\.DB\.prepare|env\.DB\.batch/,'member chat handler must use the owner-scoped store gateway instead of direct database queries');

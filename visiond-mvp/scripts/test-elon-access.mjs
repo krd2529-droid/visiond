@@ -3,11 +3,16 @@ import {
   ELON_KNOWLEDGE,
   ELON_RESTRICTED_REFUSAL,
   elonAccessDecision,
+  elonMemberContext,
   safeElonOutput
 } from '../functions/_elon.js';
 
 const customer={can_use_seller_vision5:false,is_staff:false};
 const seller={can_use_seller_vision5:true,is_staff:false};
+
+const noSellerRightsDb={prepare:()=>({bind:()=>({first:async()=>({can_use_seller_vision5:0})})})};
+assert.deepEqual(await elonMemberContext({DB:noSellerRightsDb},999,'boss'),{authenticated:true,can_use_seller_vision5:true},'verified Boss must receive seller-facing frontend help');
+assert.deepEqual(await elonMemberContext({DB:noSellerRightsDb},999,'admin'),{authenticated:true,can_use_seller_vision5:false},'Admin must not inherit seller access without a real entitlement');
 
 const restrictedQuestions=[
   'หน้า Boss มีปุ่มอะไรบ้าง',

@@ -256,13 +256,17 @@ export function extractResponseText(payload){
   return '';
 }
 
-export async function elonMemberContext(env,userId){
+export async function elonMemberContext(env,userId,verifiedRole=''){
+  // Boss may use every member/seller-facing screen, but the role itself is
+  // never included in the model context. It is collapsed into one minimum
+  // boolean so ELON still cannot discuss Admin/Boss/back-office features.
+  const bossFrontendAccess=verifiedRole==='boss';
   const row=await env.DB.prepare(`SELECT
     ((SELECT COUNT(*) FROM courses WHERE owner_user_id=?)>0 OR
      (SELECT COUNT(*) FROM course_right_credits WHERE user_id=? AND active=1)>0 OR
      EXISTS(SELECT 1 FROM entitlements e JOIN products p ON p.id=e.product_id LEFT JOIN courses c ON c.product_id=p.id WHERE e.user_id=? AND e.active=1 AND (p.category='resale-rights' OR c.course_type='resale_rights'))) can_use_seller_vision5
     `).bind(userId,userId,userId).first();
-  return {authenticated:true,can_use_seller_vision5:Boolean(Number(row?.can_use_seller_vision5||0))};
+  return {authenticated:true,can_use_seller_vision5:bossFrontendAccess||Boolean(Number(row?.can_use_seller_vision5||0))};
 }
 
 const boundedInt=(value,fallback,min,max)=>{const parsed=Number.parseInt(String(value??''),10);return Number.isFinite(parsed)?Math.max(min,Math.min(max,parsed)):fallback};

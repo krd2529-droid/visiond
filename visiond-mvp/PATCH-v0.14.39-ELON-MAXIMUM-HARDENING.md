@@ -9,5 +9,6 @@
 - ใช้ API key เฉพาะ ELON และปิด shared-key fallback โดยค่าเริ่มต้น
 - คง ownership guard, output filter, secret/PII/link blacklist และ retention 60 วัน
 - เพิ่ม regression tests สำหรับ dedicated credential, guest gate และ page-title injection
+- Boss ใช้คู่มือ Frontend ฝั่งผู้ขายได้อัตโนมัติ แต่ AI ไม่ได้รับคำว่า Boss หรือสิทธิ์หลังบ้าน
 
 หลัง deploy ต้องตั้ง `ELON_OPENAI_API_KEY` หรือ `ELON_GEMINI_API_KEY` ใหม่ มิฉะนั้น ELON จะ fail closed และไม่เรียก AI

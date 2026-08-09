@@ -10,7 +10,7 @@ const validConversationId=value=>/^[a-f0-9-]{20,64}$/i.test(String(value||''))?S
 export async function onRequestGet(ctx){
   const auth=await requireUser(ctx);if(auth.error)return auth.error;
   await ensureDatabase(ctx.env);await purgeExpiredElonData(ctx.env);
-  const memberContext=await elonMemberContext(ctx.env,auth.user.id);
+  const memberContext=await elonMemberContext(ctx.env,auth.user.id,auth.user.role);
   const conversationId=validConversationId(new URL(ctx.request.url).searchParams.get('conversation_id'));
   if(!conversationId)return json({error:'ไม่พบรหัสบทสนทนา'},400,noStore);
   const conversation=await ownElonConversation(ctx.env,conversationId,auth.user.id);
@@ -34,7 +34,7 @@ export async function onRequestPost(ctx){
   const blockedPersonal=containsProtectedPersonalData(message)||containsProtectedPersonalData(JSON.stringify(rawPageContext));
   const blockedSecret=containsSensitiveToken(message)||containsSensitiveToken(JSON.stringify(rawPageContext));
   const blockedExternalLink=containsExternalLink(message,ctx.env)||contextContainsExternalLink(rawPageContext,ctx.env);
-  const memberContext=await elonMemberContext(ctx.env,auth.user.id);
+  const memberContext=await elonMemberContext(ctx.env,auth.user.id,auth.user.role);
   const messageAccess=elonAccessDecision(message,memberContext),contextAccess=elonAccessDecision(JSON.stringify(rawPageContext),memberContext);
   const accessDecision=messageAccess.blocked?messageAccess:contextAccess,blockedRestricted=accessDecision.blocked;
   const blockedUnsafe=blockedPersonal||blockedExternalLink||blockedSecret||blockedRestricted;
