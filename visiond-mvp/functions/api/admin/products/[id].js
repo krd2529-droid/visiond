@@ -177,7 +177,7 @@ export async function onRequestPut(ctx) {
       });
     }
     await ctx.env.DB.prepare(
-      `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type=?,status=?,source='admin',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+      `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type=?,status=?,source=CASE WHEN source='vision4' AND status='draft' THEN 'vision4' ELSE 'admin' END,updated_at=CURRENT_TIMESTAMP WHERE id=?`,
     )
       .bind(
         slug,
