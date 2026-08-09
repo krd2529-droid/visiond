@@ -1,4 +1,5 @@
-VisionD MVP v0.14.08
+VisionD MVP v0.14.09
+Apply the unified account action buttons across all public page depths and refresh every parent script cache
 Unify cart, admin, account, and logout header actions to the same size and visual style
 Add secure in-account password changing with current-password verification and other-session revocation
 Remove the legacy home script that restored duplicate “ของฉัน” and “สินค้าของฉัน” navigation buttons

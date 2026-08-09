@@ -7,8 +7,9 @@ export async function initAccountNav(){
   const nav=document.querySelector('.topbar nav');
   if(!nav||nav.dataset.accountReady)return;
   nav.dataset.accountReady='1';
-  nav.querySelectorAll('a[href="/dashboard.html#my-products"]').forEach(link=>link.remove());
-  const cartLink=nav.querySelector('a[href="/cart"],a[href="/cart.html"]');
+  nav.querySelectorAll('a[href^="/dashboard"]').forEach(link=>link.remove());
+  let cartLink=nav.querySelector('a[href="/cart"],a[href="/cart.html"]');
+  if(!cartLink){cartLink=document.createElement('a');cartLink.href='/cart';nav.append(cartLink)}
   if(cartLink){cartLink.classList.add('nav-quick-action','nav-cart-action');const count=cartLink.querySelector('[data-cart-count]')?.outerHTML||'<b data-cart-count>0</b>';cartLink.innerHTML=`<span aria-hidden="true">🛒</span><strong>รถเข็น</strong>${count}`}
   if(![...nav.querySelectorAll('a')].some(link=>['/member','/member.html'].includes(link.getAttribute('href')))){
     const memberStore=document.createElement('a');memberStore.href='/member';memberStore.textContent='Member รายหมวด';nav.append(memberStore);
