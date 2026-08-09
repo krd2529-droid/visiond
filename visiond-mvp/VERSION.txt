@@ -1,2 +1,2 @@
-VisionD MVP v0.13.57
+VisionD MVP v0.13.58
 Course resale-rights seller portal, direct owner payment, EP uploads and sales totals; email notifications deferred

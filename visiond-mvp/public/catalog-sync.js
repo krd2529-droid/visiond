@@ -189,6 +189,7 @@ import('/nav-account.js?v=013121');
               if (/coloring|ระบายสี/.test(text)) return "coloring";
               if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
               if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
+              if (/resale-rights|สิทธิ์ลงขายคอร์ส/.test(text)) return "resale-rights";
               return "";
             };
           let current = categoryMap.get(slug),
@@ -373,13 +374,13 @@ import('/nav-account.js?v=013121');
             counts[card.dataset.category] += 1;
           return counts;
         },
-        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0 },
+        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "resale-rights": 0 },
       );
       const requestedCategory = new URLSearchParams(location.search).get("category"),
-        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game"].includes(requestedCategory)
+        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "resale-rights"].includes(requestedCategory)
           ? requestedCategory
           : "all";
-      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><button data-category="resale-rights" type="button">สิทธิ์ลงขายคอร์ส ${categoryCounts["resale-rights"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
       const pageSize = 8,
         requestedPage = location.pathname === "/" ? 1 : Number(new URLSearchParams(location.search).get("page")) || 2;
       let currentCategory = initialCategory;

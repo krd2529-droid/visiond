@@ -52,7 +52,7 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.member_category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.member_category,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
   )
@@ -66,6 +66,7 @@ export async function onRequestPost(ctx) {
   const sellerItems=results.filter(p=>p.course_owner_user_id);
   if(sellerItems.length&&(results.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   for (const product of results) {
+    if(product.category==='resale-rights')continue;
     const entitlement = await ctx.env.DB.prepare(
       "SELECT id FROM entitlements WHERE user_id=? AND product_id=? AND active=1 LIMIT 1",
     )

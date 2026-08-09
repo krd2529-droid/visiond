@@ -7,7 +7,7 @@ export async function onRequestGet(ctx) {
   const { results } = await ctx.env.DB.prepare(`SELECT c.id,c.subtitle,c.teacher_name,c.total_minutes,c.course_type,p.id product_id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,
     (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id) lesson_count
     FROM courses c JOIN products p ON p.id=c.product_id
-    WHERE c.active=1 AND p.status='published' AND p.deleted_at IS NULL ORDER BY p.id DESC`).all();
+    WHERE c.active=1 AND c.course_type='online_course' AND p.status='published' AND p.deleted_at IS NULL ORDER BY p.id DESC`).all();
   if (user) for (const course of results) {
     const staff = ['boss','admin'].includes(user.role);
     course.owned = staff ? 1 : Number(!!(await ctx.env.DB.prepare('SELECT id FROM entitlements WHERE user_id=? AND product_id=? AND active=1 LIMIT 1').bind(user.id,course.product_id).first()));
