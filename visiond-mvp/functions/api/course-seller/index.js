@@ -6,7 +6,7 @@ const ext=(name,type)=>String(name||'').split('.').pop()?.toLowerCase()||({'imag
 const imageTypes=['image/jpeg','image/png','image/webp'];
 const videoTypes=['video/mp4','video/webm'];
 const documentTypes=['application/pdf','application/zip','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.openxmlformats-officedocument.presentationml.presentation'];
-const expiry=(granted,days)=>Number(days)===0?null:new Date(new Date(String(granted).replace(' ','T')+'Z').getTime()+Number(days)*86400000).toISOString();
+const expiry=(granted,days)=>{if(Number(days)===0)return null;const raw=String(granted).replace(' ','T'),start=new Date(/[zZ]|[+-]\d\d:\d\d$/.test(raw)?raw:raw+'Z');return new Date(start.getTime()+Number(days)*86400000).toISOString()};
 const editable=c=>!c.edit_expires_at||Date.parse(c.edit_expires_at)>Date.now();
 
 async function put(env,file,prefix,types,max){
@@ -23,8 +23,15 @@ export async function onRequestGet(ctx){
     owned.id bound_course_id,op.title bound_course_title,owned.edit_expires_at,op.status bound_status
     FROM entitlements e JOIN products p ON p.id=e.product_id JOIN courses c ON c.product_id=p.id AND c.course_type='resale_rights'
     LEFT JOIN courses owned ON owned.license_entitlement_id=e.id LEFT JOIN products op ON op.id=owned.product_id
-    WHERE e.user_id=? AND e.active=1 ORDER BY e.id DESC`).bind(auth.user.id).all();
-  licenses.forEach(x=>{x.purchased_at=x.granted_at;x.available=!x.bound_course_id;x.expires_at=expiry(x.granted_at,x.license_edit_days);x.editable=x.bound_course_id?editable(x):(!x.expires_at||Date.parse(x.expires_at)>Date.now())});
+    WHERE e.user_id=? AND e.active=1 AND EXISTS(SELECT 1 FROM courses legacy_owned WHERE legacy_owned.license_entitlement_id=e.id) ORDER BY e.id DESC`).bind(auth.user.id).all();
+  const {results:creditLicenses}=await ctx.env.DB.prepare(`SELECT cr.id credit_id,cr.active,cr.used_at,cr.granted_at,p.title license_title,c.license_edit_days,
+    owned.id bound_course_id,op.title bound_course_title,owned.edit_expires_at,op.status bound_status
+    FROM course_right_credits cr JOIN products p ON p.id=cr.product_id JOIN courses c ON c.product_id=p.id AND c.course_type='resale_rights'
+    LEFT JOIN courses owned ON owned.license_entitlement_id=(0-cr.id) LEFT JOIN products op ON op.id=owned.product_id
+    WHERE cr.user_id=? ORDER BY cr.id DESC`).bind(auth.user.id).all();
+  creditLicenses.forEach(x=>{x.entitlement_id=`credit-${x.credit_id}`;x.credit=1;licenses.push(x)});
+  licenses.forEach(x=>{x.purchased_at=x.granted_at;x.available=x.credit?Boolean(x.active)&&!x.bound_course_id:!x.bound_course_id;if(x.credit){x.expires_at=x.bound_course_id?x.edit_expires_at:null;x.editable=x.available||editable(x);x.credit_used=!x.active}else{x.expires_at=expiry(x.granted_at,x.license_edit_days);x.editable=x.bound_course_id?editable(x):(!x.expires_at||Date.parse(x.expires_at)>Date.now())}});
+  licenses.sort((a,b)=>String(b.granted_at).localeCompare(String(a.granted_at)));
   const {results:courses}=await ctx.env.DB.prepare(`SELECT c.id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,c.teacher_name,c.contact_info,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,c.edit_expires_at,c.license_edit_days,
     (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id) episode_count,
     COALESCE((SELECT SUM(o.total) FROM orders o WHERE o.seller_course_id=c.id AND o.status='paid'),0) paid_total,
@@ -32,17 +39,19 @@ export async function onRequestGet(ctx){
     FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? ORDER BY c.id DESC`).bind(auth.user.id).all();
   const {results:sales}=await ctx.env.DB.prepare(`SELECT o.order_no,o.total,o.updated_at,c.id course_id,p.title course_title FROM orders o JOIN courses c ON c.id=o.seller_course_id JOIN products p ON p.id=c.product_id WHERE o.course_owner_user_id=? AND o.status='paid' ORDER BY o.updated_at DESC LIMIT 200`).bind(auth.user.id).all();
   const totals=sales.reduce((a,x)=>{a.amount+=Number(x.total)||0;a.orders++;return a},{amount:0,orders:0});
-  return json({licenses,courses,sales,totals},200,{'cache-control':'no-store'});
+  return json({licenses,courses,sales,totals,credit_balance:creditLicenses.filter(x=>x.active&&!x.bound_course_id).length,credit_used:creditLicenses.filter(x=>!x.active).length},200,{'cache-control':'no-store'});
 }
 
 export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);const auth=await requireUser(ctx);if(auth.error)return auth.error;
-  const form=await ctx.request.formData(),entitlementId=Number(form.get('license_entitlement_id')),title=String(form.get('title')||'').trim(),price=Math.round(Number(form.get('price_baht'))*100),episodes=Math.min(100,Math.max(1,Number(form.get('episode_count'))||1));
+  const form=await ctx.request.formData(),licenseToken=String(form.get('license_entitlement_id')||''),isCredit=licenseToken.startsWith('credit-'),licenseId=Number(isCredit?licenseToken.slice(7):licenseToken),bindingId=isCredit?-licenseId:licenseId,title=String(form.get('title')||'').trim(),price=Math.round(Number(form.get('price_baht'))*100),episodes=Math.min(100,Math.max(1,Number(form.get('episode_count'))||1));
   if(!title||!Number.isFinite(price)||price<0)return json({error:'กรุณากรอกชื่อคอร์สและราคาให้ถูกต้อง'},400);
-  const license=await ctx.env.DB.prepare(`SELECT e.id,e.granted_at,c.license_edit_days FROM entitlements e JOIN courses c ON c.product_id=e.product_id AND c.course_type='resale_rights' WHERE e.id=? AND e.user_id=? AND e.active=1`).bind(entitlementId,auth.user.id).first();
+  const license=isCredit
+    ?await ctx.env.DB.prepare(`SELECT cr.id,cr.granted_at,c.license_edit_days FROM course_right_credits cr JOIN courses c ON c.product_id=cr.product_id AND c.course_type='resale_rights' WHERE cr.id=? AND cr.user_id=? AND cr.active=1 AND cr.used_course_id IS NULL`).bind(licenseId,auth.user.id).first()
+    :await ctx.env.DB.prepare(`SELECT e.id,e.granted_at,c.license_edit_days FROM entitlements e JOIN courses c ON c.product_id=e.product_id AND c.course_type='resale_rights' WHERE e.id=? AND e.user_id=? AND e.active=1`).bind(licenseId,auth.user.id).first();
   if(!license)return json({error:'ไม่พบสิทธิ์ลงขายคอร์สออนไลน์'},403);
-  if(await ctx.env.DB.prepare('SELECT id FROM courses WHERE license_entitlement_id=?').bind(entitlementId).first())return json({error:'สิทธิ์นี้ผูกกับตะกร้าคอร์สแล้ว ไม่สามารถนำไปสร้างตะกร้าอื่นได้'},409);
-  const expiresAt=expiry(license.granted_at,license.license_edit_days);if(expiresAt&&Date.parse(expiresAt)<=Date.now())return json({error:'สิทธิ์นี้หมดระยะเวลาสร้าง/แก้ไขแล้ว'},403);
+  if(await ctx.env.DB.prepare('SELECT id FROM courses WHERE license_entitlement_id=?').bind(bindingId).first())return json({error:'เครดิตสิทธิ์นี้ถูกใช้เปิดตะกร้าคอร์สแล้ว'},409);
+  const expiresAt=isCredit?null:expiry(license.granted_at,license.license_edit_days);if(!isCredit&&expiresAt&&Date.parse(expiresAt)<=Date.now())return json({error:'สิทธิ์นี้หมดระยะเวลาสร้าง/แก้ไขแล้ว'},403);
   const cover=form.get('cover'),qr=form.get('payment_qr');
   let coverKey,qrKey;try{coverKey=await put(ctx.env,cover,'seller-course-cover',imageTypes,8*1024*1024);qrKey=await put(ctx.env,qr,'seller-course-qr',imageTypes,8*1024*1024)}catch{return json({error:'รูปปกหรือ QR ต้องเป็น JPG, PNG, WEBP ไม่เกิน 8 MB'},400)}
   if(!coverKey)return json({error:'กรุณาอัปโหลดรูปปก'},400);
@@ -51,11 +60,13 @@ export async function onRequestPost(ctx){
   if(!qrKey&&!bank)return json({error:'กรุณาแนบ QR หรือกรอกข้อมูลบัญชีรับเงิน'},400);
   const product=await ctx.env.DB.prepare(`INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) VALUES(?,?,?,?,?,?,?,'online-course','วิดีโอ + เอกสาร',?,'published','course-seller','course')`).bind(slug,title,String(form.get('short_description')||''),String(form.get('description')||''),price,coverUrl,JSON.stringify([coverUrl]),episodes).run();
   let courseId;
-  try{const c=await ctx.env.DB.prepare(`INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,payment_bank_name,payment_account_name,payment_account_number,payment_qr_url) VALUES(?,?,?,1,'online_course',?,?,?,?,?,?,?,?,?)`).bind(product.meta.last_row_id,String(form.get('short_description')||''),String(form.get('teacher_name')||''),license.license_edit_days,auth.user.id,entitlementId,expiresAt,String(form.get('contact_info')||''),bank,accountName,accountNo,qrKey?'/api/course-seller/payment-qr/'+entitlementId:'').run();courseId=c.meta.last_row_id}catch(e){return json({error:'สร้างตะกร้าไม่สำเร็จ หรือสิทธิ์ถูกใช้ไปแล้ว'},409)}
+  try{const c=await ctx.env.DB.prepare(`INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,payment_bank_name,payment_account_name,payment_account_number,payment_qr_url) VALUES(?,?,?,1,'online_course',?,?,?,?,?,?,?,?,?)`).bind(product.meta.last_row_id,String(form.get('short_description')||''),String(form.get('teacher_name')||''),license.license_edit_days,auth.user.id,bindingId,expiresAt,String(form.get('contact_info')||''),bank,accountName,accountNo,qrKey?'/api/course-seller/payment-qr/'+bindingId:'').run();courseId=c.meta.last_row_id}catch(e){await ctx.env.DB.prepare('DELETE FROM products WHERE id=?').bind(product.meta.last_row_id).run();return json({error:'สร้างตะกร้าไม่สำเร็จ หรือสิทธิ์ถูกใช้ไปแล้ว'},409)}
   for(let n=1;n<=episodes;n++){
     const epTitle=String(form.get(`episode_title_${n}`)||'').trim()||`EP.${n}`;
-    let videoKey=null,docKey=null;try{videoKey=await put(ctx.env,form.get(`video_${n}`),`seller-course-${courseId}-video`,videoTypes,1024*1024*1024);docKey=await put(ctx.env,form.get(`document_${n}`),`seller-course-${courseId}-document`,documentTypes,1024*1024*1024)}catch{return json({error:`ไฟล์ EP.${n} ไม่รองรับหรือเกิน 1 GB ตะกร้าถูกสร้างแล้ว กรุณาแก้ไขภายหลัง`,course_id:courseId},400)}
+    let videoKey=null,docKey=null;try{videoKey=await put(ctx.env,form.get(`video_${n}`),`seller-course-${courseId}-video`,videoTypes,1024*1024*1024);docKey=await put(ctx.env,form.get(`document_${n}`),`seller-course-${courseId}-document`,documentTypes,1024*1024*1024)}catch{await ctx.env.DB.prepare('DELETE FROM products WHERE id=?').bind(product.meta.last_row_id).run();return json({error:`ไฟล์ EP.${n} ไม่รองรับหรือเกิน 1 GB เครดิตสิทธิ์ยังไม่ถูกหัก`,credit_kept:true},400)}
     await ctx.env.DB.prepare(`INSERT INTO course_lessons(course_id,title,description,sort_order,video_key,pdf_key,video_mime,pdf_mime,document_name) VALUES(?,?,?,?,?,?,?,?,?)`).bind(courseId,epTitle,String(form.get(`episode_detail_${n}`)||''),n*10,videoKey,docKey,form.get(`video_${n}`)?.type||null,form.get(`document_${n}`)?.type||null,form.get(`document_${n}`)?.name||'').run();
   }
-  return json({ok:true,id:courseId,slug},201);
+  if(isCredit){const editStartsAt=new Date().toISOString(),editExpiresAt=expiry(editStartsAt,license.license_edit_days);const used=await ctx.env.DB.prepare('UPDATE course_right_credits SET active=0,used_at=CURRENT_TIMESTAMP,used_course_id=? WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL').bind(courseId,licenseId,auth.user.id).run();if(!used.meta.changes){await ctx.env.DB.prepare('DELETE FROM products WHERE id=?').bind(product.meta.last_row_id).run();return json({error:'เครดิตถูกใช้ไปแล้ว ตะกร้าไม่ได้ถูกสร้างและไม่หักเครดิตเพิ่ม'},409)}await ctx.env.DB.prepare('UPDATE courses SET edit_expires_at=? WHERE id=?').bind(editExpiresAt,courseId).run()}
+  const remaining=isCredit?(await ctx.env.DB.prepare('SELECT COUNT(*) total FROM course_right_credits WHERE user_id=? AND active=1 AND used_course_id IS NULL').bind(auth.user.id).first()).total:null;
+  return json({ok:true,id:courseId,slug,credit_used:isCredit,credit_balance:remaining},201);
 }

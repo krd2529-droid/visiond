@@ -1,5 +1,6 @@
 import("/facebook-chat.js?v=01195");
 if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=01336">');
+if(!document.querySelector('#rights-quantity-style'))document.head.insertAdjacentHTML('beforeend','<style id="rights-quantity-style">.rights-quantity{display:grid;gap:4px;color:#315f5b;font-size:11px;font-weight:900}.rights-quantity input{width:76px;padding:8px;border:1px solid #39aaa4;border-radius:8px;text-align:center;font-weight:900}</style>');
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (v) =>
@@ -13,7 +14,7 @@ const esc = (v) =>
 const normalizeCart = (items) => {
   const unique = new Map();
   for (const item of Array.isArray(items) ? items : [])
-    if (item?.slug && !unique.has(item.slug)) unique.set(item.slug, item);
+    if (item?.slug && !unique.has(item.slug)) unique.set(item.slug, {...item,quantity:item.category==='resale-rights'||item.slug==='course-selling-rights-30-days'?Math.min(30,Math.max(1,Number(item.quantity)||1)):1});
   return [...unique.values()].slice(0, 30);
 };
 const getCart = () => {
@@ -61,7 +62,8 @@ copyAccountButton.onclick = async () => {
 };
 function render() {
   const items = getCart(),
-    subtotal = items.reduce((sum, x) => sum + Number(x.price || 0), 0),
+    itemCount=items.reduce((sum,x)=>sum+(Number(x.quantity)||1),0),
+    subtotal = items.reduce((sum, x) => sum + Number(x.price || 0)*(Number(x.quantity)||1), 0),
     discountableItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights-30-days"),
     discountableCount = discountableItems.length,
     discountableSubtotal = discountableItems.reduce((sum, x) => sum + Number(x.price || 0), 0),
@@ -79,8 +81,8 @@ function render() {
               : null;
   document
     .querySelectorAll("[data-cart-count]")
-    .forEach((x) => (x.textContent = items.length));
-  cartQty.textContent = items.length + " รายการ";
+    .forEach((x) => (x.textContent = itemCount));
+  cartQty.textContent = itemCount + " ชิ้น";
   cartSubtotal.textContent = money(subtotal);
   cartDiscountLabel.textContent = `ส่วนลด ${rate}%`;
   cartDiscount.textContent = "- " + money(discount);
@@ -93,7 +95,7 @@ function render() {
     ? items
         .map(
           (p, i) =>
-            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?'สิทธิ์ลงขายคอร์สออนไลน์':'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลดกับตะกร้าใด ๆ</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
+            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด และเครดิตสิทธิ์ไม่สามารถคืนเงินหรือแลกเป็นเงินสดได้</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
@@ -104,6 +106,7 @@ function render() {
         (b.onclick = () =>
           saveCart(items.filter((_, i) => i !== Number(b.dataset.remove)))),
     );
+  document.querySelectorAll('[data-rights-quantity]').forEach(input=>input.onchange=()=>{const next=[...items],index=Number(input.dataset.rightsQuantity),otherCount=next.reduce((sum,item,i)=>sum+(i===index?0:Number(item.quantity)||1),0);next[index].quantity=Math.min(30-otherCount,Math.max(1,Number(input.value)||1));saveCart(next)});
   checkoutButton.disabled = !items.length;
 }
 checkoutButton.onclick = checkout;
@@ -133,6 +136,7 @@ async function checkout() {
       body: JSON.stringify({
         productSlugs: items.map((x) => x.slug),
         productIds: items.map((x) => x.id),
+        quantities:Object.fromEntries(items.map(item=>[item.slug,Number(item.quantity)||1])),
       }),
     });
     const d = await r.json().catch(() => ({}));
@@ -197,7 +201,7 @@ async function removeUnavailableCartItems() {
   const blocked = new Set();
   for (const order of data.items || [])
     if (["paid", "pending_review", "awaiting_payment"].includes(order.status))
-      for (const item of order.items || []) blocked.add(item.slug);
+      for (const item of order.items || []) if(item.slug!=='course-selling-rights-30-days')blocked.add(item.slug);
   const before = getCart(),
     after = before.filter((item) => !blocked.has(item.slug));
   if (after.length !== before.length) {

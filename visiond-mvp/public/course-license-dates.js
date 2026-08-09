@@ -7,12 +7,20 @@ const licenseDate=value=>{
 
 function showLicenseDates(){
   if(typeof state==='undefined'||!state?.licenses)return;
+  let summary=licenseList.parentElement.querySelector('.credit-summary');
+  if(!summary){
+    summary=document.createElement('div');
+    summary.className='credit-summary';
+    licenseList.before(summary);
+  }
+  summary.innerHTML=`<span><small>เครดิตสิทธิ์คงเหลือ</small><strong>${Number(state.credit_balance)||0} แต้ม</strong></span><span><small>ใช้เปิดตะกร้าแล้ว</small><strong>${Number(state.credit_used)||0} แต้ม</strong></span><p>1 เครดิต = เปิดตะกร้าคอร์สได้ 1 ตะกร้า · หักเครดิตเมื่อสร้างสำเร็จเท่านั้น · เครดิตสิทธิ์ไม่สามารถคืนเงินหรือแลกเป็นเงินสดได้</p>`;
   licenseList.querySelectorAll('.license-row').forEach((row,index)=>{
     const license=state.licenses[index];
     if(!license||row.querySelector('.license-dates'))return;
+    if(license.credit_used&&!license.bound_course_id){const pill=row.querySelector('.pill');if(pill)pill.textContent='ใช้เครดิตแล้ว'}
     const details=document.createElement('div');
     details.className='license-dates';
-    details.innerHTML=`<span><small>ซื้อและได้รับอนุมัติสิทธิ์</small><strong>${licenseDate(license.purchased_at||license.granted_at)}</strong></span><span><small>แก้ไขคอร์สได้ถึง</small><strong>${Number(license.license_edit_days)===0?'ตลอดอายุระบบ':licenseDate(license.expires_at)}</strong></span>`;
+    details.innerHTML=`<span><small>ซื้อและได้รับอนุมัติสิทธิ์</small><strong>${licenseDate(license.purchased_at||license.granted_at)}</strong></span><span><small>ระยะเวลาแก้ไข</small><strong>${license.credit&&license.available?'ยังไม่เริ่มนับ — เริ่มเมื่อสร้างสำเร็จ':Number(license.license_edit_days)===0?'ตลอดอายุระบบ':license.expires_at?`แก้ไขได้ถึง ${licenseDate(license.expires_at)}`:'ใช้เครดิตแล้ว'}</strong></span>`;
     row.querySelector('div')?.append(details);
   });
 }

@@ -34,7 +34,7 @@ export async function onRequestPost(ctx) {
     );
   const b = await ctx.request.json();
   const requestedSlugs = (b.productSlugs || [])
-    .map((x) => String(x || "").trim())
+    .flatMap((x) => {const slug=String(x || "").trim(),quantity=Math.min(30,Math.max(1,Number(b.quantities?.[slug])||1));return Array(quantity).fill(slug)})
     .filter(Boolean);
   const slugs = [
     ...new Set(
@@ -42,12 +42,7 @@ export async function onRequestPost(ctx) {
     ),
   ];
   if (!slugs.length) return json({ error: "ไม่มีสินค้าในตะกร้า" }, 400);
-  if (slugs.length !== requestedSlugs.length)
-    return json(
-      { error: "สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น ห้ามใส่รายการเดิมซ้ำ" },
-      409,
-    );
-  if (slugs.length > 30)
+  if (requestedSlugs.length > 30)
     return json({ error: "เลือกสินค้าได้สูงสุด 30 ตะกร้าต่อคำสั่งซื้อ" }, 400);
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
@@ -63,8 +58,12 @@ export async function onRequestPost(ctx) {
       { error: "มีสินค้าบางรายการไม่พร้อมขาย กรุณาลบสินค้าออกแล้วเพิ่มใหม่" },
       400,
     );
-  const sellerItems=results.filter(p=>p.course_owner_user_id);
-  if(sellerItems.length&&(results.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
+  const bySlug=new Map(results.map(product=>[product.slug,product]));
+  const repeated=new Set(requestedSlugs.filter((slug,index,list)=>list.indexOf(slug)!==index));
+  if([...repeated].some(slug=>bySlug.get(slug)?.category!=='resale-rights'))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์ส'},409);
+  const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
+  const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
+  if(sellerItems.length&&(orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   for (const product of results) {
     if(product.category==='resale-rights')continue;
     const entitlement = await ctx.env.DB.prepare(
@@ -92,7 +91,7 @@ export async function onRequestPost(ctx) {
       );
     }
   }
-  const promotion=await loadPromotion(ctx.env),pricedResults=applyPromotion(results,promotion),
+  const promotion=await loadPromotion(ctx.env),pricedResults=applyPromotion(orderedResults,promotion),
     subtotal = pricedResults.reduce((sum, p) => sum + Number(p.sale_price), 0),
     discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&(!p.product_kind||p.product_kind==='product')),
     discountableCount = discountableItems.length,

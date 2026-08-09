@@ -1,2 +1,2 @@
-VisionD MVP v0.13.67
-Course-selling rights show approval purchase timestamp and exact editing expiry timestamp
+VisionD MVP v0.13.68
+Multi-quantity course-right credits; consume one only after successful course creation; edit period starts on creation success
