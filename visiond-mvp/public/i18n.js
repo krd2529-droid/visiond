@@ -54,6 +54,10 @@
     'สินค้าดิจิทัลแนะนำ':'Recommended Digital Products','ดูสินค้าดิจิทัลทั้งหมด →':'View All Digital Products →'
   };
   const phrases=[
+    ['คลังสินค้าดิจิทัลพร้อมใช้และดาวน์โหลด','Ready-to-Use Digital Product Library'],
+    ['รวมไฟล์ดิจิทัลหลากหลายประเภท ทั้งแบบฝึกหัด เกมเสริมพัฒนาการ ภาพระบายสี แบบรอยสัก เอกสารและแบบฟอร์มพร้อมใช้ ดูตัวอย่างก่อนซื้อ แล้วดาวน์โหลดจากบัญชีสมาชิกได้หลังอนุมัติ','Discover worksheets, learning games, coloring pages, tattoo designs, documents, and ready-to-use templates. Preview before buying and download from your account after approval.'],
+    ['แบบฝึกหัด','Worksheets'],['เกมเสริมพัฒนาการ','Learning Games'],['ภาพระบายสี','Coloring Pages'],['แบบรอยสัก','Tattoo Designs'],['เอกสารพร้อมใช้','Ready-to-Use Documents'],
+    ['เลือกดูสินค้าดิจิทัล','Browse Digital Products'],['เลือกดูตามหมวดหมู่','Browse by Category'],
     ['รวมแบบรอยสักและลายสักหลายสไตล์ ทั้งมินิมอล ญี่ปุ่น ดุดัน วินเทจ สตรีท สัตว์ และลายยอดนิยม ดูภาพตัวอย่างก่อนซื้อ แล้วดาวน์โหลดไฟล์ PDF พร้อมใช้จากบัญชีสมาชิก','Explore tattoo designs in minimal, Japanese, bold, vintage, street, animal, and popular styles. Preview each collection before buying, then download the ready-to-use PDF from your account.'],
     ['ซื้อแล้วดาวน์โหลดจากหน้าสินค้า','Purchase and download from the product page'],
     ['สมัคร → สั่งซื้อ → ส่งสลิป → รออนุมัติ','Register → Order → Submit payment → Await approval'],

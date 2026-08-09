@@ -12,9 +12,9 @@ let activeOrder=null;
 const paymentDialog=document.querySelector('#paymentDialog');
 const closePayment=document.querySelector('#closePayment');
 const getCart=()=>{try{const saved=JSON.parse(localStorage.getItem('vd_cart')||'[]'),unique=new Map();for(const item of Array.isArray(saved)?saved:[])if(item?.slug&&!unique.has(item.slug))unique.set(item.slug,item);return [...unique.values()].slice(0,30)}catch{return[]}};
-const updateCartCount=()=>document.querySelectorAll('[data-cart-count]').forEach(node=>node.textContent=getCart().length);
+const updateCartCount=()=>{const count=getCart().reduce((sum,item)=>sum+(Number(item.quantity)||1),0);document.querySelectorAll('[data-cart-count]').forEach(node=>node.textContent=count)};
 function syncProductCartButton(){const button=document.querySelector('#addProductToCart');if(!button)return;const added=getCart().some(item=>item.slug===currentProduct.slug);button.textContent=added?'อยู่ในรถเข็นแล้ว ✓':'ใส่รถเข็น';button.classList.toggle('in-cart',added)}
-function addCurrentProductToCart(){const cart=getCart();if(cart.some(item=>item.slug===currentProduct.slug)){syncProductCartButton();return}if(cart.length>=30){alert('เลือกสินค้าได้สูงสุด 30 ตะกร้า');return}const sale=Number(currentProduct.sale_price??currentProduct.price)||0;cart.push({id:currentProduct.id,slug:currentProduct.slug,title:currentProduct.title,category:currentProduct.category,category_label:categoryLabel(currentProduct),price:sale,original_price:Number(currentProduct.original_price??currentProduct.price)||sale,promotion_percent:Number(currentProduct.promotion_percent)||0,cover_url:currentProduct.cover_url||'/assets/product-placeholder.svg'});localStorage.setItem('vd_cart',JSON.stringify(cart));window.visiondPixel?.track('AddToCart',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',value:sale/100,currency:'THB'});updateCartCount();syncProductCartButton()}
+function addCurrentProductToCart(){const cart=getCart(),rights=currentProduct.category==='resale-rights',quantity=rights?Math.min(30,Math.max(1,Number(document.querySelector('#courseRightsQuantity')?.value)||1)):1,existing=cart.find(item=>item.slug===currentProduct.slug);if(existing){if(rights){existing.quantity=quantity;localStorage.setItem('vd_cart',JSON.stringify(cart));updateCartCount();syncProductCartButton()}else syncProductCartButton();return}if(cart.length>=30){alert('เลือกสินค้าได้สูงสุด 30 ตะกร้า');return}const sale=Number(currentProduct.sale_price??currentProduct.price)||0;cart.push({id:currentProduct.id,slug:currentProduct.slug,title:currentProduct.title,category:currentProduct.category,category_label:categoryLabel(currentProduct),price:sale,original_price:Number(currentProduct.original_price??currentProduct.price)||sale,promotion_percent:Number(currentProduct.promotion_percent)||0,cover_url:currentProduct.cover_url||'/assets/product-placeholder.svg',quantity});localStorage.setItem('vd_cart',JSON.stringify(cart));window.visiondPixel?.track('AddToCart',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',value:(sale*quantity)/100,currency:'THB'});updateCartCount();syncProductCartButton()}
 
 function galleryMarkup(product){
   const cover=product.cover_url||'/assets/product-placeholder.svg';
@@ -65,7 +65,8 @@ async function checkEntitlement(productId){
 async function beginPurchase(){
   const button=document.querySelector('#buyNowButton');button.disabled=true;button.textContent='กำลังสร้างคำสั่งซื้อ…';
   try{
-    const response=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({productSlugs:[currentProduct.slug]})});
+    const quantity=currentProduct.category==='resale-rights'?Math.min(30,Math.max(1,Number(document.querySelector('#courseRightsQuantity')?.value)||1)):1;
+    const response=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({productSlugs:[currentProduct.slug],quantities:{[currentProduct.slug]:quantity}})});
     if(response.status===401){sessionStorage.setItem('vd_return_to',location.href);location.href='/login.html';return;}
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'สร้างคำสั่งซื้อไม่สำเร็จ');

@@ -1190,12 +1190,27 @@ async function loadOrders() {
           : waiting
             ? '<div class="order-wait-note"><b>ยังไม่ต้องตรวจสอบ</b><span>ลูกค้ายังไม่ได้ส่งสลิป ระบบจะแสดงปุ่มอนุมัติหลังได้รับสลิปแล้ว</span></div>'
             : '<div class="order-wait-note rejected"><b>สลิปไม่ผ่าน</b><span>กำลังรอลูกค้าส่งสลิปใหม่</span></div>';
-        return `<article class="admin-card order-admin-card ${esc(o.status)}"><div class="section-head"><div><b>${esc(o.order_no)}</b><p>${esc(o.customer_name)} · ${esc(o.customer_email)} · โทร ${esc(o.customer_phone || "ไม่ได้ระบุ")}</p></div><span class="status ${esc(o.status)}">${esc(o.status_label)}</span></div><div class="order-admin-items"><b>${Number(o.item_count) || o.items.length} สินค้าในรถเข็น</b>${o.items.map((item, index) => `<span><i>${index + 1}</i><strong>${esc(item.title)}</strong><em>${money(item.price)}</em></span>`).join("")}</div><b class="order-admin-total">ยอดรวม ${money(o.total)}</b>${o.slip_url ? `<div class="submitted-slip"><b>สลิปที่ลูกค้าส่ง</b><a href="${esc(o.slip_url)}" target="_blank"><img class="slip-preview" src="${esc(o.slip_url)}" alt="สลิปโอนเงิน"></a></div>` : '<p class="no-slip">ยังไม่มีสลิปจากลูกค้า</p>'}${actionMarkup}</article>`;
+        return `<article class="admin-card order-admin-card ${esc(o.status)}"><label class="order-select-line"><input type="checkbox" data-order-select="${o.id}"> เลือกออเดอร์นี้เพื่อล้าง</label><div class="section-head"><div><b>${esc(o.order_no)}</b><p>${esc(o.customer_name)} · ${esc(o.customer_email)} · โทร ${esc(o.customer_phone || "ไม่ได้ระบุ")}</p></div><span class="status ${esc(o.status)}">${esc(o.status_label)}</span></div><div class="order-admin-items"><b>${Number(o.item_count) || o.items.length} สินค้าในรถเข็น</b>${o.items.map((item, index) => `<span><i>${index + 1}</i><strong>${esc(item.title)}</strong><em>${money(item.price)}</em></span>`).join("")}</div><b class="order-admin-total">ยอดรวม ${money(o.total)}</b>${o.slip_url ? `<div class="submitted-slip"><b>สลิปที่ลูกค้าส่ง</b><a href="${esc(o.slip_url)}" target="_blank"><img class="slip-preview" src="${esc(o.slip_url)}" alt="สลิปโอนเงิน"></a></div>` : '<p class="no-slip">ยังไม่มีสลิปจากลูกค้า</p>'}${actionMarkup}</article>`;
       })
       .join("") || "<p>ยังไม่มีคำสั่งซื้อ</p>";
   document
     .querySelectorAll("[data-act]")
     .forEach((b) => (b.onclick = () => act(b.dataset.id, b.dataset.act)));
+  const selected=()=>[...document.querySelectorAll('[data-order-select]:checked')].map(input=>Number(input.dataset.orderSelect));
+  const syncSelected=()=>{const count=selected().length;selectedOrderCount.textContent=`เลือกแล้ว ${count} ออเดอร์`;clearSelectedOrders.disabled=count===0;document.querySelectorAll('[data-order-select]').forEach(input=>input.closest('.order-admin-card')?.classList.toggle('order-selected',input.checked))};
+  document.querySelectorAll('[data-order-select]').forEach(input=>input.onchange=syncSelected);
+  clearSelectedOrders.onclick=()=>clearOldOrders('selected',selected());
+  clearAllOrders.onclick=()=>clearOldOrders('all',[]);
+  syncSelected();
+}
+async function clearOldOrders(mode,ids){
+  const count=mode==='all'?'ทั้งหมด':`${ids.length} รายการที่เลือก`;
+  if(!confirm(`ยืนยันล้างออเดอร์เก่า ${count}?\nข้อมูลออเดอร์และสลิปของรายการนี้จะถูกลบถาวร`))return;
+  if(!confirm('ยืนยันครั้งสุดท้ายว่าต้องการล้างออเดอร์จริง'))return;
+  const button=mode==='all'?clearAllOrders:clearSelectedOrders;button.disabled=true;
+  const response=await fetch('/api/admin/orders/clear',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,ids})}),data=await response.json().catch(()=>({}));
+  alert(data.error||data.message||'ล้างออเดอร์เรียบร้อย');
+  if(response.ok)await loadOrders();else button.disabled=false;
 }
 async function act(id, action) {
   const note =

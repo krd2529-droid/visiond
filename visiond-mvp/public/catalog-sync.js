@@ -166,13 +166,8 @@ import('/nav-account.js?v=013121');
     .then(([data, categoryData, orderData, accountData]) => {
       grid.querySelector(".product-loading")?.remove();
       const products = [...(data.items || [])].sort((a, b) => {
-          const tattooRank = (item) =>
-            /tattoo|รอยสัก|แบบสัก/.test(
-              `${item.category || ""} ${item.category_label || ""} ${item.title || ""}`.toLowerCase(),
-            )
-              ? 0
-              : 1;
-          return tattooRank(a) - tattooRank(b) || Number(b.id) - Number(a.id);
+          const tattooLast = (item) => /tattoo|รอยสัก|แบบสัก/.test(`${item.category || ""} ${item.category_label || ""} ${item.title || ""}`.toLowerCase()) ? 1 : 0;
+          return tattooLast(a) - tattooLast(b) || Number(b.id) - Number(a.id);
         }),
         bySlug = new Map(products.map((p) => [p.slug, p])),
         categoryMap = new Map(
