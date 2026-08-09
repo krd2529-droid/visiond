@@ -4,6 +4,7 @@ import { ensureDatabase } from "../../_schema.js";
 import { rateLimit } from "../../_security.js";
 import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {loadSellerToken} from '../../_seller_token.js';
+import {firstOrderPromoStatus,calculateFirstOrderDiscount} from '../../_first_order_promo.js';
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -116,7 +117,12 @@ export async function onRequestPost(ctx) {
               ? 5
               : 0,
     discountBase = discountableItems.reduce((sum,p)=>sum+Number(p.sale_price),0),
-    discount = Math.round((discountBase * discountRate) / 100),
+    bundleDiscount = Math.round((discountBase * discountRate) / 100),
+    firstOrderStatus=await firstOrderPromoStatus(ctx.env,a.user.id),
+    firstOrderDiscount=calculateFirstOrderDiscount(firstOrderStatus,discountBase),
+    discount=firstOrderDiscount>0?firstOrderDiscount:bundleDiscount,
+    appliedDiscountRate=firstOrderDiscount>0?50:discountRate,
+    discountKind=firstOrderDiscount>0?'first_order_50':'bundle',
     total = subtotal - discount,
     orderNo =
       "VD-" +
@@ -125,24 +131,29 @@ export async function onRequestPost(ctx) {
       Math.floor(Math.random() * 90 + 10);
   const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
   const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights').map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
-  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number,course_owner_user_id,seller_course_id,payment_qr_url)
-    SELECT ?,?,?,?,?,?,?,?,?,?
+  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount)
+    SELECT ?,?,?,?,?,?,?,?,?,?,?,?
     WHERE ?='[]' OR NOT EXISTS(
       SELECT 1 FROM orders existing_order JOIN order_items existing_item ON existing_item.order_id=existing_order.id
       WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
       AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
-    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_name,paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',guardJson,a.user.id,guardJson)];
+    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,guardJson,a.user.id,guardJson)];
   for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price) SELECT id,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
   const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);
+  if(firstOrderDiscount>0)await ctx.env.DB.batch([
+    ctx.env.DB.prepare('UPDATE first_order_promo_state SET used_order_id=?,updated_at=CURRENT_TIMESTAMP WHERE user_id=? AND used_order_id IS NULL').bind(orderId,a.user.id),
+    ctx.env.DB.prepare("INSERT INTO user_activity_log(user_id,event_type,path,metadata) VALUES(?,'first_order_promo_applied','/cart',?)").bind(a.user.id,JSON.stringify({order_id:orderId,discount:firstOrderDiscount}))
+  ]);
   return json(
     {
       ok: true,
       id: orderId,
       orderNo,
       subtotal,
-      discountRate,
+      discountRate:appliedDiscountRate,
       discount,
+      discountKind,
       total,
       items: pricedResults.map(p=>({...p,price:p.sale_price})),
       promotion,

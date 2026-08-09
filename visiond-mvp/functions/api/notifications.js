@@ -1,5 +1,6 @@
 import {json,requireUser} from '../_lib.js';
 import {ensureDatabase} from '../_schema.js';
+import {firstOrderPromoStatus} from '../_first_order_promo.js';
 
 const notice=(key,type,title,message,href,created_at)=>({key,type,title,message,href,created_at});
 export async function onRequestGet(ctx){
@@ -15,6 +16,9 @@ export async function onRequestGet(ctx){
     ctx.env.DB.prepare('SELECT notification_key FROM notification_reads WHERE user_id=?').bind(auth.user.id).all()
   ]);
   const items=[];
+  const firstOrder=await firstOrderPromoStatus(ctx.env,auth.user.id);
+  if(firstOrder.stage==='teaser')items.push(notice('first-order-teaser','danger','🎁 มีของขวัญสมาชิกใหม่รออยู่','กลับมาอีกครั้งเพื่อรับสิทธิพิเศษสำหรับการซื้อครั้งแรก','/',''));
+  if(firstOrder.stage==='offer'&&firstOrder.active)items.push(notice('first-order-offer','danger','🔥 ส่วนลดพิเศษของคุณมาแล้ว','ลด 50% สูงสุด 200 บาท เมื่อยอดสินค้าที่ร่วมรายการ 399 บาทขึ้นไป · ระบบใช้ให้อัตโนมัติ · ไม่รวมสิทธิ์ลงขายคอร์สออนไลน์','/digital-products.html',firstOrder.expires_at));
   for(const o of orders.results||[]){const course=Boolean(o.seller_course_id),href=course?'/dashboard.html#orders':`/product.html?slug=${encodeURIComponent(o.slug||'')}`,label=`${o.title||'สินค้า'}${Number(o.item_count)>1?` และรายการอื่น รวม ${Number(o.item_count)} ชิ้น`:''}`;
     if(o.status==='rejected')items.push(notice(`order-rejected-${o.id}`,'danger','สลิปไม่ผ่าน',`${label}: ${o.admin_note||'กรุณาตรวจสอบและส่งสลิปใหม่'}`,'/dashboard.html#orders',o.updated_at));
     else if(o.status==='pending_review')items.push(notice(`order-pending-${o.id}`,'warning','กำลังตรวจสลิป',course?`${label} กำลังรอเจ้าของคอร์สตรวจ`:`${label} กำลังรอตรวจสอบ`,'/dashboard.html#orders',o.updated_at));

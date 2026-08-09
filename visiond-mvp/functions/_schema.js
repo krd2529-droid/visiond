@@ -36,6 +36,8 @@ async function initializeDatabase(env) {
     ,`CREATE TABLE IF NOT EXISTS course_lesson_files (id INTEGER PRIMARY KEY AUTOINCREMENT,lesson_id INTEGER NOT NULL,object_key TEXT NOT NULL UNIQUE,file_name TEXT NOT NULL,mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',file_size INTEGER NOT NULL DEFAULT 0,sort_order INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS course_progress (user_id INTEGER NOT NULL,course_id INTEGER NOT NULL,lesson_id INTEGER NOT NULL,last_position_seconds INTEGER NOT NULL DEFAULT 0,completed INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,lesson_id),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(course_id) REFERENCES courses(id) ON DELETE CASCADE,FOREIGN KEY(lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS notification_reads (user_id INTEGER NOT NULL,notification_key TEXT NOT NULL,read_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,notification_key),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS user_activity_log (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,event_type TEXT NOT NULL,path TEXT NOT NULL DEFAULT '',metadata TEXT NOT NULL DEFAULT '{}',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS first_order_promo_state (user_id INTEGER PRIMARY KEY,login_count INTEGER NOT NULL DEFAULT 0,offer_granted_at TEXT,offer_expires_at TEXT,used_order_id INTEGER,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(used_order_id) REFERENCES orders(id))`
     ,`CREATE TABLE IF NOT EXISTS elon_conversations (id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,title TEXT NOT NULL DEFAULT 'สนทนากับ ELON',status TEXT NOT NULL DEFAULT 'active',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,ended_at TEXT,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS elon_messages (id INTEGER PRIMARY KEY AUTOINCREMENT,conversation_id TEXT NOT NULL,user_id INTEGER NOT NULL,role TEXT NOT NULL CHECK(role IN ('user','assistant')),content TEXT NOT NULL,page_path TEXT NOT NULL DEFAULT '',page_title TEXT NOT NULL DEFAULT '',page_context TEXT NOT NULL DEFAULT '{}',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(conversation_id) REFERENCES elon_conversations(id) ON DELETE CASCADE,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS elon_rate_limits (user_id INTEGER NOT NULL,window_start TEXT NOT NULL,hits INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(user_id,window_start),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
@@ -72,6 +74,8 @@ async function initializeDatabase(env) {
   if (!columns.includes('seller_slip_api_updated_at')) await env.DB.prepare('ALTER TABLE users ADD COLUMN seller_slip_api_updated_at TEXT').run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_user_activity_user_time ON user_activity_log(user_id,created_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_user_activity_event_time ON user_activity_log(event_type,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_password_reset_expiry ON password_reset_tokens(expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_right_credits_user ON course_right_credits(user_id,active,granted_at DESC)').run();
@@ -172,6 +176,8 @@ async function initializeDatabase(env) {
   if (!orderColumns.includes('course_owner_user_id')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN course_owner_user_id INTEGER').run();
   if (!orderColumns.includes('seller_course_id')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN seller_course_id INTEGER').run();
   if (!orderColumns.includes('payment_qr_url')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN payment_qr_url TEXT NOT NULL DEFAULT ''").run();
+  if (!orderColumns.includes('discount_kind')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN discount_kind TEXT NOT NULL DEFAULT 'none'").run();
+  if (!orderColumns.includes('discount_amount')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0').run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_verified_slips_trans_ref ON verified_slips(trans_ref)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_orders_slip_verification ON orders(slip_verification_status,updated_at DESC)').run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('coloring','ระบายสี',NULL,'PDF',1,10)").run();

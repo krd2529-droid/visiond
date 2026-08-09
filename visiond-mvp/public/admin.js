@@ -108,6 +108,7 @@ productEditor.onsubmit = saveProduct;
 deleteProductButton.onclick = deleteProduct;
 paymentSettingsForm.onsubmit = savePaymentSettings;
 promotionSettingsForm.onsubmit = savePromotionSettings;
+firstOrderPromotionForm.onsubmit = saveFirstOrderPromotion;
 newCategoryButton.onclick = resetCategoryForm;
 categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
@@ -1138,14 +1139,18 @@ async function loadPromotionSettings(){
   select.value=item.scope||'all';
   promotionSettingsForm.elements.percent.value=item.percent||10;
   promotionSettingsMessage.textContent=item.enabled?`กำลังลด ${item.percent}% สำหรับ ${item.scope==='all'?'ทุกหมวด':'หมวดที่เลือก'}`:'โปรโมชั่นปิดอยู่';
+  const first=d.first_order||{},stats=first.stats||{};firstOrderPromotionForm.elements.enabled.checked=first.enabled!==false;
+  firstOrderPromotionStats.innerHTML=`<article><small>ติดตามแล้ว</small><b>${Number(stats.tracked_users)||0}</b></article><article><small>ได้รับข้อความสะกิด</small><b>${Number(stats.teased_users)||0}</b></article><article><small>ได้รับสิทธิ์</small><b>${Number(stats.granted_users)||0}</b></article><article><small>ใช้สิทธิ์</small><b>${Number(stats.used_users)||0}</b></article>`;
+  firstOrderPromotionMessage.textContent=first.enabled!==false?'โปรลูกค้าใหม่เปิดอยู่':'โปรลูกค้าใหม่ปิดอยู่';
 }
 async function savePromotionSettings(event){
   event.preventDefault();promotionSettingsMessage.textContent='กำลังบันทึก…';
-  const body={enabled:promotionSettingsForm.elements.enabled.checked,scope:promotionSettingsForm.elements.scope.value,percent:Number(promotionSettingsForm.elements.percent.value)};
+  const body={enabled:promotionSettingsForm.elements.enabled.checked,scope:promotionSettingsForm.elements.scope.value,percent:Number(promotionSettingsForm.elements.percent.value),first_order_enabled:firstOrderPromotionForm.elements.enabled.checked};
   const r=await fetch('/api/admin/promotion-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));
   if(!r.ok){promotionSettingsMessage.textContent=d.error||'บันทึกโปรโมชั่นไม่สำเร็จ';return}
   returnAdminHome(body.enabled?`เปิดโปรโมชั่นลด ${body.percent}% แล้ว`:'ปิดโปรโมชั่นแล้ว');
 }
+async function saveFirstOrderPromotion(event){event.preventDefault();firstOrderPromotionMessage.textContent='กำลังบันทึก…';const body={enabled:promotionSettingsForm.elements.enabled.checked,scope:promotionSettingsForm.elements.scope.value,percent:Number(promotionSettingsForm.elements.percent.value),first_order_enabled:firstOrderPromotionForm.elements.enabled.checked};const r=await fetch('/api/admin/promotion-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok){firstOrderPromotionMessage.textContent=d.error||'บันทึกไม่สำเร็จ';return}returnAdminHome(body.first_order_enabled?'เปิดโปรโมชั่นลูกค้าใหม่แล้ว':'ปิดโปรโมชั่นลูกค้าใหม่แล้ว')}
 async function savePaymentSettings(e) {
   e.preventDefault();
   settingsMessage.textContent = "กำลังบันทึก…";

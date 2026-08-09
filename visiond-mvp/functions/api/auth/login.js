@@ -1,5 +1,6 @@
 import {json} from '../../_lib.js';
 import {rateLimit,rateLimitIdentity,verifyTurnstile,verifyPassword,securityLog} from '../../_security.js';
+import {recordSuccessfulLogin} from '../../_first_order_promo.js';
 
 export async function onRequestPost(ctx){
  try{
@@ -18,6 +19,7 @@ export async function onRequestPost(ctx){
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
   const remember=b.remember===true,sessionDuration=remember?'+30 days':'+24 hours';
   const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now',?))").bind(id,u.id,sessionDuration).run();
+  await recordSuccessfulLogin(ctx.env,u.id);
   await securityLog(ctx.env,ctx.request,'login_success','info','',u.id);
   const maxAge=remember?'; Max-Age=2592000':'';
   return json({ok:true},200,{'set-cookie':`vd_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/${maxAge}`});

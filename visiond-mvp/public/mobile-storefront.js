@@ -1,3 +1,4 @@
+import('/notification-bell.js?v=01443');
 (()=>{
   const MOBILE='(max-width: 760px)';
   const init=()=>{
