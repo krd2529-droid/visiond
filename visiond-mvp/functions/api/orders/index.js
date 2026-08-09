@@ -152,7 +152,7 @@ export async function onRequestGet(ctx) {
     .all();
   for (const o of results) {
     const x = await ctx.env.DB.prepare(
-      "SELECT p.id,p.slug,p.title,p.product_kind,oi.price FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=?",
+      "SELECT p.id,p.slug,p.title,p.product_kind,p.category,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? GROUP BY p.id,p.slug,p.title,p.product_kind,p.category,oi.price ORDER BY MIN(oi.id)",
     )
       .bind(o.id)
       .all();
