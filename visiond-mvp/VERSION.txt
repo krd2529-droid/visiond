@@ -1,2 +1,2 @@
-VisionD MVP v0.13.96
-Cloudflare Pages Functions build fix for malformed course-rights schema SQL
+VisionD MVP v0.14.01
+Show the registered VisionD buyer name in course sales and failed-slip review tables
