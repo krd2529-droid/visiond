@@ -62,6 +62,10 @@ export async function onRequestPost(ctx) {
   const repeated=new Set(requestedSlugs.filter((slug,index,list)=>list.indexOf(slug)!==index));
   if([...repeated].some(slug=>bySlug.get(slug)?.category!=='resale-rights'))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์ส'},409);
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
+  if(orderedResults.some(product=>product.category==='resale-rights')){
+    const buyerApi=await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(a.user.id).first();
+    if(!buyerApi?.seller_slip_api_key||buyerApi.seller_slip_api_key.length<20)return json({error:'กรุณาบันทึก EasySlip API ของคุณเองในหน้าสิทธิ์ลงขายคอร์สก่อนสั่งซื้อ'},409);
+  }
   const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
   if(sellerItems.length&&(orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   for (const product of results) {

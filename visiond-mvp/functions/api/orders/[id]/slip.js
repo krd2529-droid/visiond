@@ -30,20 +30,25 @@ export async function onRequestPost(ctx){
   await ctx.env.FILES.put(key,file.stream(),{httpMetadata:{contentType:file.type}});
   await ctx.env.DB.prepare("UPDATE orders SET slip_key=?,transfer_note=?,status='pending_review',slip_verification_status='checking',slip_verification_code=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(key,String(fd.get('note')||'').slice(0,300),order.id).run();
   const paymentSettings=await loadPaymentSettings(ctx.env);
-  if(!paymentSettings.vision3_auto_verify||!ctx.env.EASYSLIP_API_KEY){
-    const code=paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
+  const rightsOrder=await ctx.env.DB.prepare("SELECT 1 found FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND p.category='resale-rights' LIMIT 1").bind(order.id).first();
+  const sellerApi=order.course_owner_user_id?await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(order.course_owner_user_id).first():null;
+  const buyerApi=rightsOrder?await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(auth.user.id).first():null;
+  const apiKey=order.course_owner_user_id?String(sellerApi?.seller_slip_api_key||''):rightsOrder?String(buyerApi?.seller_slip_api_key||''):String(ctx.env.EASYSLIP_API_KEY||'');
+  const autoEnabled=(order.course_owner_user_id||rightsOrder)?Boolean(apiKey):paymentSettings.vision3_auto_verify&&Boolean(apiKey);
+  if(!autoEnabled){
+    const code=order.course_owner_user_id?'SELLER_API_NOT_CONFIGURED':rightsOrder?'BUYER_API_NOT_CONFIGURED':paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
     await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=? WHERE id=?").bind(code,order.id).run();
-    return json({ok:true,auto_approved:false,message:'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
+    return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว แต่ API ของเจ้าของคอร์สไม่พร้อม กรุณารอเจ้าของคอร์สแก้ไข API':rightsOrder?'กรุณาตั้งค่า EasySlip API ของคุณเอง แล้วส่งสลิปใหม่อีกครั้ง':'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
   }
   try{
     const verifyForm=new FormData();verifyForm.set('image',file,file.name||`slip.${ext}`);verifyForm.set('remark',order.order_no);verifyForm.set('matchAccount','true');verifyForm.set('matchAmount',(Number(order.total)/100).toFixed(2));verifyForm.set('checkDuplicate','true');
-    const response=await fetch('https://api.easyslip.com/v2/verify/bank',{method:'POST',headers:{authorization:`Bearer ${ctx.env.EASYSLIP_API_KEY}`},body:verifyForm});
+    const response=await fetch('https://api.easyslip.com/v2/verify/bank',{method:'POST',headers:{authorization:`Bearer ${apiKey}`},body:verifyForm});
     const result=await response.json().catch(()=>({success:false,error:{code:'INVALID_RESPONSE'}}));
     if(!response.ok||!result.success){
       const code=result?.error?.code||`HTTP_${response.status}`;
       await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=? WHERE id=?").bind(code,order.id).run();
       await securityLog(ctx.env,ctx.request,'slip_verify_failed','warning',`${order.order_no}:${code}`,auth.user.id);
-      return json({ok:true,auto_approved:false,message:code==='SLIP_PENDING'?'ธนาคารกำลังยืนยันรายการ กรุณาลองส่งอีกครั้งในอีกสักครู่':'รับสลิปแล้ว ระบบส่งให้เจ้าหน้าที่ตรวจสอบ'});
+      return json({ok:true,auto_approved:false,message:code==='SLIP_PENDING'?'ธนาคารกำลังยืนยันรายการ กรุณาลองส่งอีกครั้งในอีกสักครู่':order.course_owner_user_id?'API ของเจ้าของคอร์สตรวจไม่สำเร็จ กรุณารอเจ้าของคอร์สแก้ไข API':'รับสลิปแล้ว ระบบส่งให้เจ้าหน้าที่ตรวจสอบ'});
     }
     const data=result.data||{},raw=data.rawSlip||{},transRef=String(raw.transRef||'').trim(),amount=Math.round(Number(data.amountInSlip??raw.amount?.amount)*100);
     const accountOk=Boolean(data.matchedAccount)&&sameAccount(order.payment_account_name,order.payment_account_number,data.matchedAccount);

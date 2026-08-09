@@ -1184,7 +1184,7 @@ async function loadOrders() {
     (d.items || [])
       .map((o) => {
         const waiting = o.status === "awaiting_payment";
-        const review = o.status === "pending_review" && o.slip_url;
+        const review = o.status === "pending_review" && o.slip_url && o.slip_verification_status === "manual";
         const actionMarkup = review
           ? `<div class="actions review-actions"><button class="primary" data-act="approve" data-id="${o.id}">✓ อนุมัติและปลดล็อกไฟล์</button><button class="danger" data-act="reject" data-id="${o.id}">✕ ไม่อนุมัติสลิป</button></div>`
           : waiting
