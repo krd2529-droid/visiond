@@ -1,2 +1,2 @@
-VisionD MVP v0.13.93
-Course payment-access integrity audit plus D1 and R2 disaster backup and verified restore tools
+VisionD MVP v0.13.95
+Digital product library homepage hero with stale tattoo-first cache and SEO copy removed

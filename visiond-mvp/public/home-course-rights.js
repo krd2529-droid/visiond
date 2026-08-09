@@ -10,8 +10,8 @@
       const price = document.getElementById("courseOwnerPrice");
       const originalPrice = document.getElementById("courseOwnerOriginalPrice");
       const cover = document.getElementById("courseOwnerCover");
-      if (price) price.textContent = formatPrice(product.sale_price ?? product.price);
-      if (originalPrice) originalPrice.textContent = formatPrice(product.original_price ?? 99900);
+      if (price) price.textContent = `ลดเหลือ ${formatPrice(product.sale_price ?? product.price)}`;
+      if (originalPrice) originalPrice.textContent = `ราคาเต็ม ${formatPrice(product.original_price ?? 99900)}`;
       if (cover && product.cover_url) cover.src = product.cover_url;
       const addButton = document.getElementById("courseOwnerAddCart");
       const getCart = () => { try { return JSON.parse(localStorage.getItem("vd_cart") || "[]"); } catch { return []; } };
