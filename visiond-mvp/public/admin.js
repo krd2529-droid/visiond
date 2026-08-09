@@ -1258,11 +1258,19 @@ async function loadUsers() {
       })
       .join("");
   selectedProductCount.textContent = "เลือกแล้ว 0 รายการ";
-  usersTable.innerHTML = `<div class="user-table"><div class="user-row user-head"><b>สมาชิก</b><b>ไอดี</b><b>เบอร์โทร</b><b>ระดับ/สถานะ</b><b>จัดการ</b></div>${users.map((u) => `<div class="user-row"><div><b>${esc(u.name)}</b><small>${esc(u.email)}</small></div><span>${esc(u.username || "-")}</span><a href="tel:${esc(u.phone || "")}">${esc(u.phone || "ไม่ได้ระบุ")}</a><div class="user-status-stack"><span class="role-badge ${esc(u.role)}">${roleText[u.role] || esc(u.role)}</span>${u.is_course_owner ? `<span class="course-owner-badge">เจ้าของคอร์ส · ${Number(u.course_credit_balance)||0} เครดิต</span>` : ''}</div><div>${viewer.role === "boss" && u.role !== "boss" ? `<select data-role-id="${u.id}"><option value="user" ${["user", "customer"].includes(u.role) ? "selected" : ""}>User</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select><button data-save-role="${u.id}">บันทึก</button>` : '<span class="muted">ดูอย่างเดียว</span>'}</div></div>`).join("")}</div>`;
+  usersTable.innerHTML = `<div class="user-table"><div class="user-row user-head"><b>สมาชิก</b><b>ไอดี</b><b>เบอร์โทร</b><b>ระดับ/สถานะ</b><b>จัดการ</b></div>${users.map((u) => `<div class="user-row"><div><b>${esc(u.name)}</b><small>${esc(u.email)}</small></div><span>${esc(u.username || "-")}</span><a href="tel:${esc(u.phone || "")}">${esc(u.phone || "ไม่ได้ระบุ")}</a><div class="user-status-stack"><span class="role-badge ${esc(u.role)}">${roleText[u.role] || esc(u.role)}</span><span class="course-credit-count">แต้มสิทธิ์คงเหลือ ${Number(u.course_credit_balance)||0}</span>${u.is_course_owner ? '<span class="course-owner-badge">เจ้าของคอร์ส</span>' : ''}</div><div class="user-manage-actions">${viewer.role === "boss" && u.role !== "boss" ? `<select data-role-id="${u.id}"><option value="user" ${["user", "customer"].includes(u.role) ? "selected" : ""}>User</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select><button data-save-role="${u.id}">บันทึก</button>` : '<span class="muted">ดูอย่างเดียว</span>'}${viewer.role==='boss'&&["user","customer"].includes(u.role)?`<button class="add-course-credit-button" data-add-course-credit="${u.id}" data-user-name="${esc(u.name||u.username||u.email)}">+ เพิ่มแต้มสิทธิ์</button>`:''}</div></div>`).join("")}</div>`;
   document
     .querySelectorAll("[data-save-role]")
     .forEach((b) => (b.onclick = () => saveRole(b.dataset.saveRole)));
+  document.querySelectorAll('[data-add-course-credit]').forEach(button=>button.onclick=()=>addCourseCredits(button));
   loadUnlockHistory();
+}
+async function addCourseCredits(button){
+  const raw=prompt(`เพิ่มแต้มสิทธิ์ให้ ${button.dataset.userName}\nกรอกจำนวนแต้ม (1–100)`,`1`);if(raw===null)return;
+  const credits=Math.floor(Number(raw));if(!Number.isInteger(credits)||credits<1||credits>100)return alert('กรุณากรอกจำนวน 1–100 แต้ม');
+  if(!confirm(`ยืนยันเพิ่ม ${credits} แต้มสิทธิ์ให้ ${button.dataset.userName}?\nเมื่อเพิ่มครั้งแรก User จะได้รับป้ายเจ้าของคอร์สทันที`))return;
+  const note=prompt('หมายเหตุการเพิ่มแต้ม (ไม่บังคับ)','')||'';button.disabled=true;
+  try{const response=await fetch(`/api/admin/users/${button.dataset.addCourseCredit}/course-credits`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({credits,note})}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'เพิ่มแต้มไม่สำเร็จ');alert(`เพิ่ม ${data.credits_added} แต้มสำเร็จ\nแต้มคงเหลือ ${data.credit_balance} แต้ม`);await loadUsers()}catch(error){alert(error.message);button.disabled=false}
 }
 async function loadUnlockHistory() {
   unlockHistoryList.innerHTML = "<p>กำลังโหลดประวัติ…</p>";
