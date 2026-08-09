@@ -38,7 +38,6 @@ const panels = {
   products: productsPanel,
   vision3: vision3Panel,
   categories: categoriesPanel,
-  members: membersPanel,
   orders: ordersPanel,
   sales: salesPanel,
   promotion: promotionPanel,
@@ -76,7 +75,6 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "overview") loadProfitDashboard();
       if (btn.dataset.adminTab === "products") loadProducts();
       if (btn.dataset.adminTab === "categories") loadCategories();
-      if (btn.dataset.adminTab === "members") loadMemberPlans();
       if (btn.dataset.adminTab === "orders") loadOrders();
       if (btn.dataset.adminTab === "sales") loadSalesReport();
       if (btn.dataset.adminTab === "promotion") loadPromotionSettings();
@@ -103,7 +101,6 @@ deleteCategoryButton.onclick = deleteCategory;
 downloadCategoryPreviews.onclick = downloadPreviewArchive;
 previewExportCategory.onchange = loadPreviewBatches;
 productSearchInput.oninput = () => { productAdminPage = 1; renderProductAdminList(productSearchInput.value); };
-memberPlanForm.onsubmit = saveMemberPlan;
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-trash-action]");
@@ -1352,20 +1349,6 @@ async function saveRole(id) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) return alert(d.error || "บันทึกไม่สำเร็จ");
   returnAdminHome("บันทึกระดับสมาชิกเรียบร้อย");
-}
-async function loadMemberPlans(){
-  memberPlanList.innerHTML='<p>กำลังโหลดแพ็กเกจ…</p>';
-  const response=await fetch('/api/admin/member-plans',{cache:'no-store'}),data=await response.json().catch(()=>({}));
-  if(!response.ok){memberPlanList.innerHTML=`<p>${esc(data.error||'โหลดแพ็กเกจไม่สำเร็จ')}</p>`;return}
-  memberPlanCategory.innerHTML='<option value="">— เลือกหมวดสินค้า —</option>'+data.categories.map(category=>`<option value="${esc(category.slug)}">${esc(category.name)}</option>`).join('');
-  memberPlanList.innerHTML=data.plans.length?data.plans.map(plan=>`<article class="member-plan-admin-card"><div><b>${esc(plan.category_name||plan.category_slug)}</b><span>${Number(plan.duration_months)===12?'รายปี · 1 ปี':'รายเดือน · 1 เดือน'}</span></div><strong>${money(plan.price)}</strong><span class="${plan.status==='published'?'category-on':'category-off'}">${plan.status==='published'?'เปิดขาย':'ปิดขาย'}</span><small>สมาชิกที่ยังมีสิทธิ์ ${Number(plan.active_members)||0} คน</small><button type="button" data-edit-member="${plan.id}">แก้ไข</button></article>`).join(''):'<div class="admin-empty">ยังไม่มีตะกร้า Member เลือกหมวด ระยะเวลา และราคาเพื่อสร้างแพ็กเกจ</div>';
-  memberPlanList.querySelectorAll('[data-edit-member]').forEach(button=>button.onclick=()=>{const plan=data.plans.find(item=>String(item.id)===button.dataset.editMember);if(!plan)return;memberPlanForm.elements.category_slug.value=plan.category_slug;memberPlanForm.elements.duration_months.value=String(plan.duration_months);memberPlanForm.elements.price_baht.value=Number(plan.price)/100;memberPlanForm.elements.active.checked=plan.status==='published';memberPlanForm.scrollIntoView({behavior:'smooth',block:'center'})});
-}
-async function saveMemberPlan(event){
-  event.preventDefault();const button=memberPlanForm.querySelector('button[type="submit"]'),form=new FormData(memberPlanForm);button.disabled=true;memberPlanMessage.textContent='กำลังบันทึก…';
-  const response=await fetch('/api/admin/member-plans',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({category_slug:form.get('category_slug'),duration_months:Number(form.get('duration_months')),price_baht:Number(form.get('price_baht')),active:memberPlanForm.elements.active.checked})}),data=await response.json().catch(()=>({}));button.disabled=false;
-  if(!response.ok){memberPlanMessage.textContent=data.error||'บันทึกไม่สำเร็จ';memberPlanMessage.classList.add('error');return}
-  memberPlanMessage.classList.remove('error');memberPlanMessage.textContent='บันทึกแพ็กเกจเรียบร้อย';loadMemberPlans();
 }
 showAdminNotice();
 init();

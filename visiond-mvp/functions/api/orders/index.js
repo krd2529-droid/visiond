@@ -47,9 +47,9 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.member_category,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
-     WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
+     WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')<>'member'`,
   )
     .bind(...slugs)
     .all();
@@ -78,7 +78,7 @@ export async function onRequestPost(ctx) {
     const existing = entitlement
       ? { status: "paid" }
       : await ctx.env.DB.prepare(
-          `SELECT o.status FROM orders o JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? AND oi.product_id=? AND o.status IN (${product.product_kind==='member'?"'awaiting_payment','pending_review'":"'awaiting_payment','pending_review','paid'"}) ORDER BY o.id DESC LIMIT 1`,
+          "SELECT o.status FROM orders o JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? AND oi.product_id=? AND o.status IN ('awaiting_payment','pending_review','paid') ORDER BY o.id DESC LIMIT 1",
         )
           .bind(a.user.id, product.id)
           .first();

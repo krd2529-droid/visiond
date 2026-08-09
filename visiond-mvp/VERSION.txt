@@ -1,4 +1,5 @@
-VisionD MVP v0.14.10
+VisionD MVP v0.14.11
+Remove the legacy Member รายหมวด storefront, navigation, dashboard widget, admin tools, APIs, ordering, and download grants so the future annual-member basket can be built cleanly
 Delete duplicate course-selling-right products after safely migrating orders and credits to slug course-selling-rights
 Connect the single remaining rights basket to the five-step Vision 5 seller workflow
 Apply the unified account action buttons across all public page depths and refresh every parent script cache
