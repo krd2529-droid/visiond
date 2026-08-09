@@ -3,6 +3,7 @@ import {ensureDatabase} from '../../../_schema.js';
 import {rateLimit,securityLog} from '../../../_security.js';
 import {grantOrder} from '../../../_orders.js';
 import {loadPaymentSettings} from '../../../_payment.js';
+import {loadSellerToken} from '../../../_seller_token.js';
 
 const accepted=new Set(['image/jpeg','image/png','image/gif','image/webp']);
 const clean=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/^(นาย|นางสาว|นาง|บริษัท|บจก\.?|หจก\.?)/g,'').replace(/[^\p{L}\p{N}]/gu,'');
@@ -35,12 +36,11 @@ export async function onRequestPost(ctx){
   const note=String(fd.get('note')||'').slice(0,300);await ctx.env.DB.batch([ctx.env.DB.prepare('INSERT INTO order_slip_evidence(order_id,object_key,mime_type,file_size,uploaded_by_user_id,source,note) VALUES(?,?,?,?,?,?,?)').bind(order.id,key,file.type,file.size,auth.user.id,'buyer_upload',note),ctx.env.DB.prepare("UPDATE orders SET slip_key=?,transfer_note=?,status='pending_review',slip_verification_status='checking',slip_verification_code=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(key,note,order.id)]);
   const paymentSettings=await loadPaymentSettings(ctx.env);
   const rightsOrder=await ctx.env.DB.prepare("SELECT 1 found FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND p.category='resale-rights' LIMIT 1").bind(order.id).first();
-  const sellerApi=order.course_owner_user_id?await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(order.course_owner_user_id).first():null;
-  const buyerApi=rightsOrder?await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(auth.user.id).first():null;
-  const apiKey=order.course_owner_user_id?String(sellerApi?.seller_slip_api_key||''):rightsOrder?String(buyerApi?.seller_slip_api_key||''):String(ctx.env.EASYSLIP_API_KEY||'');
+  let apiKey='',tokenError='';
+  try{apiKey=order.course_owner_user_id?await loadSellerToken(ctx.env,order.course_owner_user_id):rightsOrder?await loadSellerToken(ctx.env,auth.user.id):String(ctx.env.EASYSLIP_API_KEY||'')}catch(error){tokenError=String(error?.message||'TOKEN_DECRYPT_FAILED')}
   const autoEnabled=(order.course_owner_user_id||rightsOrder)?Boolean(apiKey):paymentSettings.vision3_auto_verify&&Boolean(apiKey);
   if(!autoEnabled){
-    const code=order.course_owner_user_id?'SELLER_API_NOT_CONFIGURED':rightsOrder?'BUYER_API_NOT_CONFIGURED':paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
+    const code=tokenError==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'TOKEN_ENCRYPTION_NOT_CONFIGURED':tokenError?'TOKEN_DECRYPT_FAILED':order.course_owner_user_id?'SELLER_API_NOT_CONFIGURED':rightsOrder?'BUYER_API_NOT_CONFIGURED':paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
     await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=? WHERE id=?").bind(code,order.id).run();
     return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว ระบบส่งให้เจ้าของคอร์สตรวจเอง เนื่องจาก API ของเจ้าของคอร์สไม่พร้อม':rightsOrder?'กรุณาตั้งค่า EasySlip API ของคุณเอง แล้วส่งสลิปใหม่อีกครั้ง':'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
   }

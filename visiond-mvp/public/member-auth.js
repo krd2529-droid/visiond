@@ -32,6 +32,7 @@ async function submitAuth(form,endpoint,loadingText){
       delete payload.confirmPassword;
       payload.termsAccepted=payload.termsAccepted==='true';
     }
+    if(form.id==='loginPageForm') payload.remember=payload.remember==='on';
     const response=await fetch(endpoint,{
       method:'POST',
       headers:{'content-type':'application/json'},
@@ -62,5 +63,10 @@ document.querySelector('#registerPageForm')?.addEventListener('submit',event=>{
 
 document.querySelector('#forgotForm')?.addEventListener('submit',async event=>{
   event.preventDefault();
-  if(authMessage) authMessage.textContent='ระบบตั้งรหัสผ่านใหม่จะเปิดใช้งานเมื่อเชื่อมอีเมลของ VisionD';
+  const email=String(new FormData(event.currentTarget).get('email')||'').trim();
+  if(authMessage){
+    authMessage.textContent='';
+    authMessage.append('ยังไม่มีระบบส่งอีเมลอัตโนมัติ กรุณาแจ้งอีเมล ',email,' กับเจ้าหน้าที่ VisionD ทาง ');
+    const link=document.createElement('a');link.href='https://lin.ee/RJZwr1p';link.target='_blank';link.rel='noopener';link.textContent='LINE';authMessage.append(link,' โดยห้ามส่งรหัสผ่านเดิม');
+  }
 });

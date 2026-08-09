@@ -1,3 +1,9 @@
+VisionD MVP v0.14.28 — ELON Gemini and Account Security
+Run ELON with OpenAI first or existing Gemini secrets as a safe fallback
+Require and record versioned Terms and Privacy acceptance during registration
+Make Remember me control matching browser and server session lifetimes
+Show a truthful staff-assisted recovery path until an email provider is connected
+Encrypt seller EasySlip tokens at rest with AES-GCM and migrate legacy plaintext safely
 VisionD MVP v0.14.27 — System Data Integrity and Retention
 Commit payment account and QR settings atomically after complete validation
 Rate-limit analytics writes and use a stable first-party visitor identity for deduplication

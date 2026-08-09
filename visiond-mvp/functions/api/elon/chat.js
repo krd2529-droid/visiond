@@ -1,6 +1,7 @@
 import {json,requireUser} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
-import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_SECRET_REFUSAL,containsExternalLink,containsSensitiveToken,contextContainsExternalLink,elonMemberContext,elonSystemPrompt,enforceElonRateLimit,extractResponseText,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
+import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_SECRET_REFUSAL,containsExternalLink,containsSensitiveToken,contextContainsExternalLink,elonMemberContext,elonSystemPrompt,enforceElonRateLimit,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
+import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
 
 const noStore={'cache-control':'no-store'};
 const validConversationId=value=>/^[a-f0-9-]{20,64}$/i.test(String(value||''))?String(value):'';
@@ -56,34 +57,30 @@ export async function onRequestPost(ctx){
     await persistExchange(ctx.env,conversation.id,auth.user.id,redactedMessage,refusal,pageContext);
     return json({conversation_id:conversation.id,message:{role:'assistant',content:refusal},blocked_external_link:blockedExternalLink,blocked_secret:blockedSecret},200,noStore);
   }
-  if(!ctx.env.OPENAI_API_KEY)return json({error:'ELON ยังไม่ได้ตั้งค่าระบบ AI กรุณาติดต่อเจ้าหน้าที่ VisionD'},503,noStore);
+  const provider=selectElonProvider(ctx.env);
+  if(!provider)return json({error:'ELON ยังไม่ได้ตั้งค่าระบบ AI กรุณาติดต่อเจ้าหน้าที่ VisionD'},503,noStore);
 
   const historyResult=await ctx.env.DB.prepare(`SELECT role,content FROM elon_messages
     WHERE conversation_id=? AND user_id=? AND page_context NOT LIKE '%"error":true%' ORDER BY id DESC LIMIT ?`).bind(conversation.id,auth.user.id,ELON_HISTORY_LIMIT).all();
   const history=(historyResult.results||[]).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':safeElonOutput(item.content,ctx.env)}));
   const memberContext=await elonMemberContext(ctx.env,auth.user.id);
-  const model=/^[a-zA-Z0-9._:-]{1,100}$/.test(String(ctx.env.OPENAI_MODEL||''))?String(ctx.env.OPENAI_MODEL):'gpt-4.1-mini';
-  let responsePayload;
+  let providerResult;
   try{
-    const response=await fetch('https://api.openai.com/v1/responses',{
-      method:'POST',headers:{authorization:`Bearer ${ctx.env.OPENAI_API_KEY}`,'content-type':'application/json'},
-      body:JSON.stringify({model,instructions:elonSystemPrompt(memberContext,pageContext),input:[...history,{role:'user',content:message}],max_output_tokens:500,store:false}),
-      signal:AbortSignal.timeout(25000)
-    });
-    if(!response.ok)throw new Error(`OPENAI_${response.status}`);
-    responsePayload=await response.json();
+    providerResult=await requestElonProvider(provider,{systemPrompt:elonSystemPrompt(memberContext,pageContext),history,message});
   }catch(error){
-    console.error('ELON_RESPONSE_FAILED',String(error?.message||error));
+    // Provider errors are deliberately reduced to internal codes; request
+    // headers and API keys are never logged or persisted.
+    console.error('ELON_RESPONSE_FAILED',String(error?.message||'AI_PROVIDER_ERROR').slice(0,120));
     try{await persistErrorExchange(ctx.env,conversation.id,auth.user.id,message,pageContext)}catch(persistError){console.error('ELON_ERROR_AUDIT_FAILED',String(persistError?.message||persistError))}
     return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore);
   }
-  const answer=safeElonOutput(extractResponseText(responsePayload).slice(0,5000),ctx.env);
+  const answer=safeElonOutput(extractProviderText(provider.name,providerResult.payload).slice(0,5000),ctx.env);
   if(!answer){
     try{await persistErrorExchange(ctx.env,conversation.id,auth.user.id,message,pageContext)}catch(persistError){console.error('ELON_ERROR_AUDIT_FAILED',String(persistError?.message||persistError))}
     return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore);
   }
   await persistExchange(ctx.env,conversation.id,auth.user.id,message,answer,pageContext);
-  return json({conversation_id:conversation.id,message:{role:'assistant',content:answer},usage:responsePayload.usage||null},200,noStore);
+  return json({conversation_id:conversation.id,message:{role:'assistant',content:answer},usage:providerResult.usage},200,noStore);
 }
 
 async function persistErrorExchange(env,conversationId,userId,message,pageContext){

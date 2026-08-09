@@ -1,6 +1,9 @@
 import { json, sha256 } from '../../_lib.js';
 import { ensureDatabase } from '../../_schema.js';
 import {rateLimit,verifyTurnstile,hashPassword,securityLog} from '../../_security.js';
+import {requestIp} from '../../_security.js';
+
+const TERMS_VERSION='2026-08-10-v1';
 
 export async function onRequestPost(ctx) {
   try {
@@ -12,6 +15,8 @@ export async function onRequestPost(ctx) {
     const lastName = String(body.lastName || '').trim().replace(/\s+/g, ' ');
     const name = `${firstName} ${lastName}`.trim();
     const phone = String(body.phone || '').replace(/\D/g, '');
+
+    if (body.termsAccepted !== true) return json({ error: 'กรุณายอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว' }, 400);
 
     if (!firstName || !lastName || username.length < 4 || !email || !phone || String(body.password || '').length < 10) {
       return json({ error: 'กรุณากรอกชื่อ นามสกุล เบอร์โทรศัพท์ อีเมล ไอดีสมาชิก และรหัสผ่านให้ครบ' }, 400);
@@ -37,13 +42,14 @@ export async function onRequestPost(ctx) {
     if (exists) return json({ error: 'ไอดีหรืออีเมลนี้ถูกใช้แล้ว' }, 409);
 
     const hash = await hashPassword(body.password);
-    const result = await ctx.env.DB.prepare("INSERT INTO users(email,username,name,phone,password_hash,role) VALUES(?,?,?,?,?,'user')")
-      .bind(email, username, name, phone, hash).run();
-    const sessionId = crypto.randomUUID();
-    await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+30 days'))")
-      .bind(sessionId, result.meta.last_row_id).run();
+    const acceptedIpHash=await sha256(`${requestIp(ctx.request)}|visiond-terms-ip-v1`),sessionId=crypto.randomUUID();
+    const [result] = await ctx.env.DB.batch([
+      ctx.env.DB.prepare("INSERT INTO users(email,username,name,phone,password_hash,role) VALUES(?,?,?,?,?,'user')").bind(email, username, name, phone, hash),
+      ctx.env.DB.prepare('INSERT INTO user_terms_acceptances(user_id,terms_version,accepted_at,ip_hash) SELECT id,?,CURRENT_TIMESTAMP,? FROM users WHERE lower(email)=?').bind(TERMS_VERSION,acceptedIpHash,email),
+      ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) SELECT ?,id,datetime('now','+24 hours') FROM users WHERE lower(email)=?").bind(sessionId,email)
+    ]);
     await securityLog(ctx.env,ctx.request,'register_success','info',username,result.meta.last_row_id);
-    return json({ ok: true }, 200, { 'set-cookie': `vd_session=${sessionId}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000` });
+    return json({ ok: true }, 200, { 'set-cookie': `vd_session=${sessionId}; HttpOnly; Secure; SameSite=Lax; Path=/` });
   } catch (error) {
     console.error('register failed', error);
     if (String(error).includes('D1_NOT_CONNECTED')) return json({ error: 'ยังไม่ได้เชื่อมฐานข้อมูล D1 ชื่อ DB ใน Cloudflare' }, 503);

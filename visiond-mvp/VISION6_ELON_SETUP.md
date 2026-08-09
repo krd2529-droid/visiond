@@ -6,11 +6,15 @@ ELON เป็นผู้ช่วยสำหรับสมาชิก Visio
 
 1. เปิดโปรเจกต์ VisionD ใน Cloudflare Dashboard
 2. ไปที่ Settings → Variables and Secrets
-3. เพิ่ม Secret ชื่อ `OPENAI_API_KEY` แล้ววาง API key ของบัญชีที่บริษัทใช้
-4. เพิ่มตัวแปร `OPENAI_MODEL` หากต้องการเปลี่ยนโมเดล ค่าเริ่มต้นในระบบคือ `gpt-4.1-mini`
-5. Deploy ZIP นี้ตามขั้นตอนเดิม
+3. ตั้งค่า AI Secret อย่างน้อยหนึ่งรายการ โดยระบบเลือกตามลำดับนี้:
+   - `OPENAI_API_KEY` — ใช้ก่อนเมื่อมีค่า
+   - `GEMINI_API_KEY` — ใช้เมื่อไม่ได้ตั้ง OpenAI
+   - `GEMINI_API_KEY_2` — สำรองกรณีบัญชีมีคีย์ชื่อนี้แทน
+4. สำหรับ OpenAI เพิ่ม `OPENAI_MODEL` ได้ ค่าเริ่มต้นคือ `gpt-4.1-mini`
+5. สำหรับ Gemini เพิ่ม `ELON_GEMINI_MODEL` ได้ ค่าเริ่มต้นคือ `gemini-2.5-flash`
+6. Deploy ตามขั้นตอนเดิม
 
-ห้ามใส่ `OPENAI_API_KEY` ลงใน JavaScript, HTML, Git หรือไฟล์ ZIP โดยตรง
+ห้ามใส่ API key ทุกชนิดลงใน JavaScript, HTML, Git หรือไฟล์ ZIP โดยตรง ต้องบันทึกเป็น Cloudflare Secret เท่านั้น
 
 ## ขอบเขตความปลอดภัย
 
@@ -23,7 +27,7 @@ ELON เป็นผู้ช่วยสำหรับสมาชิก Visio
 - ELON ไม่เปิด วิเคราะห์ หรือตอบกลับด้วยลิงก์ภายนอก อนุญาตเฉพาะเส้นทางภายใน VisionD, `developer.easyslip.com` สำหรับแนะนำการสมัคร API และ `api.easyslip.com` ที่ Vision 5 ใช้ตรวจสลิป
 - แม้เป็นโดเมน EasySlip ที่อนุญาต ELON มีสิทธิ์เพียงแนะนำหรืออธิบายการตั้งค่า ไม่เรียก API แทนและไม่รับหรือแสดง Token
 - ปุ่มส่งต่อเจ้าหน้าที่ของ ELON พาไปหน้า `/contact.html` ภายใน VisionD เท่านั้น
-- API key ถูกเรียกใช้ฝั่ง Cloudflare Function เท่านั้น
+- API key ถูกส่งจาก Cloudflare Function ไปยังผู้ให้บริการผ่าน header เท่านั้น ไม่ส่งลง browser, URL, prompt, audit log หรือข้อความ error
 
 ## การทดสอบหลัง Deploy
 

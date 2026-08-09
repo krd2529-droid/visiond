@@ -16,8 +16,10 @@ export async function onRequestPost(ctx){
   const u=await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=? ORDER BY CASE WHEN lower(username)=? THEN 0 ELSE 1 END,id LIMIT 1').bind(login,login,login).first();
   if(u){const accountLimited=await rateLimitIdentity(ctx.env,ctx.request,'login_account',`user:${u.id}`,10,15,30);if(accountLimited.error)return accountLimited.error;}
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
-  const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+30 days'))").bind(id,u.id).run();
+  const remember=b.remember===true,sessionDuration=remember?'+30 days':'+24 hours';
+  const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now',?))").bind(id,u.id,sessionDuration).run();
   await securityLog(ctx.env,ctx.request,'login_success','info','',u.id);
-  return json({ok:true},200,{'set-cookie':`vd_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`});
+  const maxAge=remember?'; Max-Age=2592000':'';
+  return json({ok:true},200,{'set-cookie':`vd_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/${maxAge}`});
  }catch(error){console.error('AUTH_LOGIN_FAILED',error);return json({error:'ระบบเข้าสู่ระบบขัดข้อง [AUTH-LOGIN]'},500)}
 }
