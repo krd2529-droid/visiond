@@ -1,6 +1,7 @@
 {
   "name": "visiond-mvp",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "wrangler pages dev public --d1=DB --r2=FILES",

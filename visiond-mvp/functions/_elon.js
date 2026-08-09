@@ -20,7 +20,16 @@ const ELON_GUEST_PAGE_PATHS=new Set([
   '/','/about','/blog','/bots','/cart','/contact','/course-rights-terms','/courses',
   '/digital-products','/forgot-password','/index','/login','/product','/register','/reset-password'
 ]);
-const guestRateWindows=new Map();
+const PAGE_TITLES=new Map([
+  ['/','หน้าแรก'],['/about','เกี่ยวกับ VisionD'],['/account','บัญชีของฉัน'],
+  ['/blog','บทความ'],['/bots','ผู้ช่วย VisionD'],['/cart','ตะกร้าสินค้า'],
+  ['/contact','ติดต่อ VisionD'],['/course-basket-edit','จัดการตะกร้าคอร์ส'],
+  ['/course-rights-terms','เงื่อนไขสิทธิ์คอร์ส'],['/course-seller','คอร์สของฉัน'],
+  ['/courses','คอร์สออนไลน์'],['/dashboard','ของฉัน'],['/digital-products','สินค้าดิจิทัล'],
+  ['/forgot-password','ลืมรหัสผ่าน'],['/index','หน้าแรก'],['/learn','บทเรียน'],
+  ['/login','เข้าสู่ระบบ'],['/my-courses','คอร์สเรียนของฉัน'],['/product','รายละเอียดสินค้า'],
+  ['/register','สมัครสมาชิก'],['/reset-password','ตั้งรหัสผ่านใหม่']
+]);
 
 export const ELON_KNOWLEDGE=`ข้อมูลมาตรฐานของ VisionD (ใช้เป็นแหล่งคำตอบหลัก):
 - VisionD เป็นเว็บไซต์จำหน่ายสินค้าดิจิทัลและคอร์สออนไลน์ ผู้เยี่ยมชมใช้ ELON ถามข้อมูลหน้าร้านทั่วไปได้ ส่วนข้อมูลบัญชีต้องเข้าสู่ระบบก่อน
@@ -193,9 +202,12 @@ export function sanitizeElonContext(value,{authenticated=true}={}){
   if(normalizedPath.length>1)normalizedPath=normalizedPath.replace(/\/$/,'').replace(/\.html$/,'');
   const allowed=authenticated?ELON_ALLOWED_PAGE_PATHS:ELON_GUEST_PAGE_PATHS;
   const path=allowed.has(normalizedPath)||normalizedPath.startsWith('/blog/')?normalizedPath:'';
+  const title=path.startsWith('/blog/')?'บทความ VisionD':PAGE_TITLES.get(path)||'';
   return {
     path,
-    title:cleanText(source.title,160),
+    // Never trust a client-supplied title: it would otherwise become an
+    // indirect prompt-injection channel inside the system prompt.
+    title,
     product_slug:cleanId(source.product_slug),
     product_id:cleanId(source.product_id),
     course_id:cleanId(source.course_id)
@@ -253,15 +265,24 @@ export async function elonMemberContext(env,userId){
   return {authenticated:true,can_use_seller_vision5:Boolean(Number(row?.can_use_seller_vision5||0))};
 }
 
-export async function enforceGuestElonRateLimit(request){
+const boundedInt=(value,fallback,min,max)=>{const parsed=Number.parseInt(String(value??''),10);return Number.isFinite(parsed)?Math.max(min,Math.min(max,parsed)):fallback};
+const usageWindow=(kind)=>kind==='minute'?new Date(Math.floor(Date.now()/60000)*60000).toISOString():new Date().toISOString().slice(0,10);
+async function incrementUsage(env,key,kind,limit){
+  const windowStart=usageWindow(kind);
+  await env.DB.prepare(`INSERT INTO elon_usage_limits(rate_key,window_start,hits) VALUES(?,?,1)
+    ON CONFLICT(rate_key,window_start) DO UPDATE SET hits=hits+1`).bind(key,windowStart).run();
+  const row=await env.DB.prepare('SELECT hits FROM elon_usage_limits WHERE rate_key=? AND window_start=?').bind(key,windowStart).first();
+  return Number(row?.hits||0)<=limit;
+}
+
+export async function enforceGuestElonRateLimit(env,request){
   const source=String(request?.headers?.get('cf-connecting-ip')||request?.headers?.get('x-forwarded-for')||'guest').split(',')[0].trim().slice(0,64);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(source));
   const key=[...new Uint8Array(digest)].slice(0,12).map(value=>value.toString(16).padStart(2,'0')).join('');
-  const windowStart=Math.floor(Date.now()/60000),windowKey=`${windowStart}:${key}`;
-  const hits=(guestRateWindows.get(windowKey)||0)+1;
-  guestRateWindows.set(windowKey,hits);
-  if(guestRateWindows.size>2000)for(const entry of guestRateWindows.keys())if(!entry.startsWith(`${windowStart}:`))guestRateWindows.delete(entry);
-  return hits<=ELON_GUEST_RATE_LIMIT_PER_MINUTE;
+  const minuteLimit=boundedInt(env.ELON_GUEST_MINUTE_LIMIT,ELON_GUEST_RATE_LIMIT_PER_MINUTE,1,30);
+  const dailyLimit=boundedInt(env.ELON_GUEST_DAILY_LIMIT,30,1,300);
+  if(!await incrementUsage(env,`guest:minute:${key}`,'minute',minuteLimit))return false;
+  return incrementUsage(env,`guest:day:${key}`,'day',dailyLimit);
 }
 
 export async function enforceElonRateLimit(env,userId){
@@ -270,7 +291,14 @@ export async function enforceElonRateLimit(env,userId){
     ON CONFLICT(user_id,window_start) DO UPDATE SET hits=hits+1`).bind(userId,windowStart).run();
   const row=await env.DB.prepare('SELECT hits FROM elon_rate_limits WHERE user_id=? AND window_start=?').bind(userId,windowStart).first();
   if(Math.random()<0.02)await env.DB.prepare("DELETE FROM elon_rate_limits WHERE window_start<datetime('now','-1 day')").run();
-  return Number(row?.hits||0)<=ELON_RATE_LIMIT_PER_MINUTE;
+  if(Number(row?.hits||0)>ELON_RATE_LIMIT_PER_MINUTE)return false;
+  const memberDaily=boundedInt(env.ELON_MEMBER_DAILY_LIMIT,100,10,1000);
+  return incrementUsage(env,`member:day:${userId}`,'day',memberDaily);
+}
+
+export async function enforceElonGlobalBudget(env){
+  const dailyLimit=boundedInt(env.ELON_GLOBAL_DAILY_LIMIT,1000,10,100000);
+  return incrementUsage(env,'global:provider','day',dailyLimit);
 }
 
 // Runs at most hourly from ELON traffic. Deletes expired conversations from
@@ -284,6 +312,7 @@ export async function purgeExpiredElonData(env,{force=false}={}){
     env.DB.prepare(`DELETE FROM elon_conversations WHERE datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_messages m WHERE m.conversation_id=elon_conversations.id),created_at))<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
     env.DB.prepare(`DELETE FROM elon_messages WHERE datetime(created_at)<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
     env.DB.prepare("DELETE FROM elon_rate_limits WHERE window_start<datetime('now','-1 day')"),
+    env.DB.prepare("DELETE FROM elon_usage_limits WHERE window_start<date('now','-2 days')"),
     env.DB.prepare("INSERT INTO settings(key,value,updated_at) VALUES('elon_last_retention_purge',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(now)
   ]);
   return true;

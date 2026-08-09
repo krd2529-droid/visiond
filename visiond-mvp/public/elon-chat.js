@@ -135,16 +135,29 @@
 
     const welcome = authenticated
       ? 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD ผมตอบเฉพาะข้อมูลของบัญชีคุณและการใช้งานที่คุณมีสิทธิ์เข้าถึงเท่านั้นครับ'
-      : 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD ผมตอบได้เฉพาะข้อมูลทั่วไปและวิธีใช้งานหน้าร้าน หากต้องการตรวจออเดอร์หรือข้อมูลส่วนตัว กรุณาเข้าสู่ระบบครับ';
+      : 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD กรุณาสมัครสมาชิกหรือเข้าสู่ระบบก่อน จึงจะสามารถถามคำถามกับ ELON ได้ครับ';
     addMessage(messages, 'bot', welcome);
-    renderQuick(quick, input, composer);
-    loadHistory(messages, welcome);
+    if (authenticated) {
+      renderQuick(quick, input, composer);
+      loadHistory(messages, welcome);
+    } else {
+      reset.hidden = true;
+      input.disabled = true;
+      input.placeholder = 'สมัครสมาชิกหรือเข้าสู่ระบบก่อนใช้งาน ELON';
+      send.disabled = true;
+      quick.replaceChildren();
+      const registerLink = el('a', 'elon-guest-register', 'สมัครสมาชิก');
+      registerLink.href = '/register.html';
+      const loginLink = el('a', 'elon-guest-login', 'เข้าสู่ระบบ');
+      loginLink.href = '/login.html';
+      quick.append(registerLink, loginLink);
+    }
 
     function setOpen(open) {
       panel.hidden = !open;
       launcher.hidden = open;
       launcher.setAttribute('aria-expanded', String(open));
-      if (open) setTimeout(() => input.focus(), 30);
+      if (open && authenticated) setTimeout(() => input.focus(), 30);
     }
     launcher.addEventListener('click', () => setOpen(true));
     close.addEventListener('click', () => { setOpen(false); launcher.focus(); });
@@ -178,6 +191,10 @@
     });
     composer.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!authenticated) {
+        location.href = '/register.html';
+        return;
+      }
       const value = input.value.trim();
       if (!value || isSending) return;
       input.value = '';
@@ -318,7 +335,7 @@
       }
       mount().hidden = false;
     } catch (_) {
-      // Authentication lookup failure falls back to stateless public guidance.
+      // Authentication lookup failure fails closed to the registration gate.
       authenticated = false;
       storageKey = '';
       conversationId = '';

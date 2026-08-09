@@ -1,6 +1,6 @@
 import {json,requireUser} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
-import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonSystemPrompt,enforceElonRateLimit,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
+import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonSystemPrompt,enforceElonGlobalBudget,enforceElonRateLimit,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
 import {createElonConversation,loadElonMessages,loadElonProviderHistory,ownElonConversation,persistElonExchange} from '../../_elon-member-store.js';
 import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
 
@@ -54,6 +54,7 @@ export async function onRequestPost(ctx){
 
   const provider=selectElonProvider(ctx.env);
   if(!provider)return json({error:'ELON ยังไม่ได้ตั้งค่าระบบ AI กรุณาติดต่อเจ้าหน้าที่ VisionD'},503,noStore);
+  if(!(await enforceElonGlobalBudget(ctx.env)))return json({error:'ELON พักการตอบชั่วคราวเพื่อความปลอดภัย กรุณาลองใหม่ภายหลัง'},429,{...noStore,'retry-after':'3600'});
   const history=(await loadElonProviderHistory(ctx.env,conversation.id,auth.user.id,ELON_HISTORY_LIMIT)).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':safeElonOutput(item.content,ctx.env,memberContext)}));
   let providerResult;
   try{providerResult=await requestElonProvider(provider,{systemPrompt:elonSystemPrompt(memberContext,pageContext),history,message})}

@@ -9,8 +9,10 @@ assert.match(widget,/if \(!frontendSurface\(location\.pathname\)\) return/,'unkn
 assert.match(widget,/authenticated = Boolean\(user/,'widget must distinguish an authenticated member from a guest');
 assert.match(widget,/const PUBLIC_API = '\/api\/elon\/public-chat'/,'guest must use the database-free public endpoint');
 assert.match(widget,/const chatApi = \(\) => authenticated \? API : PUBLIC_API/,'widget must route member and guest requests separately');
-assert.match(widget,/Authentication lookup failure falls back to stateless public guidance/,'guest mode must remain stateless when auth lookup fails');
+assert.match(widget,/Authentication lookup failure fails closed to the registration gate/,'auth lookup failure must fail closed');
 assert.match(widget,/if \(authenticated && previousId\)/,'guest reset must not call conversation-history APIs');
+assert.match(widget,/input\.disabled = true/,'guest input must be disabled');
+assert.match(widget,/registerLink\.href = '\/register\.html'/,'guest widget must link directly to registration');
 
 const html=[];
 function walk(directory){

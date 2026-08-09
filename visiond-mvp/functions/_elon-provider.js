@@ -5,9 +5,12 @@ const cleanModel=(value,fallback)=>MODEL_PATTERN.test(String(value||''))?String(
 const secret=value=>String(value||'').trim();
 
 export function selectElonProvider(env={}){
-  const openaiKey=secret(env.OPENAI_API_KEY);
+  // ELON uses dedicated credentials. Shared Vision 2/OpenAI keys are accepted
+  // only when the operator explicitly opts in during a controlled migration.
+  const allowShared=String(env.ELON_ALLOW_SHARED_PROVIDER_KEYS||'')==='1';
+  const openaiKey=secret(env.ELON_OPENAI_API_KEY)||(allowShared?secret(env.OPENAI_API_KEY):'');
   if(openaiKey)return {name:'openai',key:openaiKey,model:cleanModel(env.OPENAI_MODEL,'gpt-4.1-mini')};
-  const geminiKey=secret(env.GEMINI_API_KEY)||secret(env.GEMINI_API_KEY_2);
+  const geminiKey=secret(env.ELON_GEMINI_API_KEY)||(allowShared?(secret(env.GEMINI_API_KEY)||secret(env.GEMINI_API_KEY_2)):'');
   if(geminiKey)return {name:'gemini',key:geminiKey,model:cleanModel(env.ELON_GEMINI_MODEL||env.GEMINI_TEXT_MODEL,'gemini-2.5-flash')};
   return null;
 }
