@@ -1,2 +1,2 @@
-VisionD MVP v0.13.91
-Permanent versioned slip evidence plus seller alerts with username, slip link and payment amount
+VisionD MVP v0.13.92
+Post-sale full content lock, VisionD-only error corrections and immediate basket suspension
