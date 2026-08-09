@@ -1,3 +1,9 @@
+VisionD MVP v0.14.29 — Full Mobile UI
+Replace storefront horizontal navigation with an accessible mobile drawer on every topbar page
+Fit product, catalog, cart, auth, dashboard, seller, and V-Learning actions at 320 to 430 pixels
+Render Admin sales, profit, users, orders, ELON, review, and integrity data as mobile cards
+Open the Admin product editor as an accessible bottom drawer on narrow screens
+Preserve routes, IDs, API contracts, and safe spacing around ELON and contact controls
 VisionD MVP v0.14.28 — ELON Gemini and Account Security
 Run ELON with OpenAI first or existing Gemini secrets as a safe fallback
 Require and record versioned Terms and Privacy acceptance during registration

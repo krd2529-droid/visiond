@@ -1,1 +1,154 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>แก้ไขตะกร้าร่าง Vision 4</title><link rel="stylesheet" href="/style.css?v=01414"><style>main{max-width:980px;margin:30px auto;padding:20px}.v4-edit-shell{background:#fff;border:2px solid #19aaa3;border-radius:20px;padding:24px;box-shadow:0 15px 40px #08756f1c}.v4-edit-head{display:flex;justify-content:space-between;gap:18px;align-items:center}.v4-edit-form{display:grid;grid-template-columns:1fr 1fr;gap:15px}.v4-edit-form label{display:grid;gap:7px;font-weight:900}.v4-edit-form input,.v4-edit-form select,.v4-edit-form textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #9ed6d2;border-radius:10px;font:inherit}.v4-span{grid-column:1/-1}.v4-previews{display:flex;gap:12px;overflow:auto}.v4-previews img{width:150px;height:190px;object-fit:contain;border:1px solid #b9dcda;border-radius:10px}.v4-buttons{display:flex;gap:12px;align-items:center}.v4-buttons button,.v4-back{padding:12px 18px;border:0;border-radius:11px;background:#078e87;color:#fff;text-decoration:none;font-weight:900}.v4-back{background:#fff;color:#08756f;border:1px solid #078e87}@media(max-width:700px){.v4-edit-form{grid-template-columns:1fr}.v4-span{grid-column:auto}.v4-edit-head{align-items:flex-start;flex-direction:column}}</style></head><body><header class="topbar"><a class="brand" href="/admin">VISIOND <small>CONTROL</small></a></header><main><section class="v4-edit-shell"><div class="v4-edit-head"><div><p class="eyebrow dark">VISION 4 · DRAFT</p><h1>แก้ไขตะกร้าก่อนเผยแพร่</h1><p>บันทึกแล้วรายการจะยังอยู่ในรอ Boss ตรวจ</p></div><a class="v4-back" href="/admin?preview_tab=vision3">← กลับ Vision 4</a></div><div id="v4EditPreviews" class="v4-previews"></div><form id="v4EditForm" class="v4-edit-form"><input name="slug" type="hidden"><label>ชื่อสินค้า<input name="title" required></label><label>หมวดหมู่<select name="category" required></select></label><label>ประเภทไฟล์<input name="file_type" required></label><label>จำนวนหน้า<input name="pages" type="number" min="0" required></label><label>ราคา (บาท)<input name="price_baht" type="number" min="0" step="1" required></label><label class="v4-span">คำอธิบายย่อ<textarea name="short_description" rows="3"></textarea></label><label class="v4-span">รายละเอียดสินค้า<textarea name="description" rows="8"></textarea></label><input name="status" type="hidden" value="draft"><div class="v4-buttons v4-span"><button type="submit">บันทึกการแก้ไข</button><a class="v4-back" href="/admin?preview_tab=vision3">ยกเลิกและกลับ</a><span id="v4EditMessage"></span></div></form></section></main><script src="/vision4-edit.js?v=01372"></script></body></html>
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>แก้ไขตะกร้าร่าง Vision 4</title>
+    <link rel="stylesheet" href="/style.css?v=01414" />
+    <link rel="stylesheet" href="/admin-mobile.css?v=01429" />
+    <style>
+      main {
+        max-width: 980px;
+        margin: 30px auto;
+        padding: 20px;
+      }
+      .v4-edit-shell {
+        background: #fff;
+        border: 2px solid #19aaa3;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 15px 40px #08756f1c;
+      }
+      .v4-edit-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: center;
+      }
+      .v4-edit-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      .v4-edit-form label {
+        display: grid;
+        gap: 7px;
+        font-weight: 900;
+      }
+      .v4-edit-form input,
+      .v4-edit-form select,
+      .v4-edit-form textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px;
+        border: 1px solid #9ed6d2;
+        border-radius: 10px;
+        font: inherit;
+      }
+      .v4-span {
+        grid-column: 1/-1;
+      }
+      .v4-previews {
+        display: flex;
+        gap: 12px;
+        overflow: auto;
+      }
+      .v4-previews img {
+        width: 150px;
+        height: 190px;
+        object-fit: contain;
+        border: 1px solid #b9dcda;
+        border-radius: 10px;
+      }
+      .v4-buttons {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .v4-buttons button,
+      .v4-back {
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 11px;
+        background: #078e87;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 900;
+      }
+      .v4-back {
+        background: #fff;
+        color: #08756f;
+        border: 1px solid #078e87;
+      }
+      @media (max-width: 700px) {
+        .v4-edit-form {
+          grid-template-columns: 1fr;
+        }
+        .v4-span {
+          grid-column: auto;
+        }
+        .v4-edit-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/admin">VISIOND <small>CONTROL</small></a>
+    </header>
+    <main>
+      <section class="v4-edit-shell">
+        <div class="v4-edit-head">
+          <div>
+            <p class="eyebrow dark">VISION 4 · DRAFT</p>
+            <h1>แก้ไขตะกร้าก่อนเผยแพร่</h1>
+            <p>บันทึกแล้วรายการจะยังอยู่ในรอ Boss ตรวจ</p>
+          </div>
+          <a class="v4-back" href="/admin?preview_tab=vision3"
+            >← กลับ Vision 4</a
+          >
+        </div>
+        <div id="v4EditPreviews" class="v4-previews"></div>
+        <form id="v4EditForm" class="v4-edit-form">
+          <input name="slug" type="hidden" /><label
+            >ชื่อสินค้า<input name="title" required /></label
+          ><label>หมวดหมู่<select name="category" required></select></label
+          ><label>ประเภทไฟล์<input name="file_type" required /></label
+          ><label
+            >จำนวนหน้า<input
+              name="pages"
+              type="number"
+              min="0"
+              required /></label
+          ><label
+            >ราคา (บาท)<input
+              name="price_baht"
+              type="number"
+              min="0"
+              step="1"
+              required /></label
+          ><label class="v4-span"
+            >คำอธิบายย่อ<textarea
+              name="short_description"
+              rows="3"
+            ></textarea></label
+          ><label class="v4-span"
+            >รายละเอียดสินค้า<textarea
+              name="description"
+              rows="8"
+            ></textarea></label
+          ><input name="status" type="hidden" value="draft" />
+          <div class="v4-buttons v4-span">
+            <button type="submit">บันทึกการแก้ไข</button
+            ><a class="v4-back" href="/admin?preview_tab=vision3"
+              >ยกเลิกและกลับ</a
+            ><span id="v4EditMessage"></span>
+          </div>
+        </form>
+      </section>
+    </main>
+    <script src="/vision4-edit.js?v=01429"></script>
+  </body>
+</html>

@@ -49,6 +49,14 @@ const panels = {
 let salesRows = [],
   filteredSalesRows = [], salesReportSummary = {}, salesProductRows = [],
   salesNextCursor = null, salesCursor = null, salesCursorHistory = [];
+let lastEditorTrigger=null;
+const mobileEditorQuery=matchMedia('(max-width:1040px)');
+document.addEventListener('click',event=>{if(!document.body.classList.contains('product-editor-active'))lastEditorTrigger=event.target.closest('button,a')||lastEditorTrigger},{capture:true});
+const syncEditorDialog=()=>{const open=document.body.classList.contains('product-editor-active')&&mobileEditorQuery.matches;if(open){productEditor.setAttribute('role','dialog');productEditor.setAttribute('aria-modal','true');productEditor.setAttribute('aria-label','แก้ไขสินค้า');requestAnimationFrame(()=>closeEditor.focus())}else{productEditor.removeAttribute('role');productEditor.removeAttribute('aria-modal');productEditor.removeAttribute('aria-label')}};
+new MutationObserver(syncEditorDialog).observe(document.body,{attributes:true,attributeFilter:['class']});
+mobileEditorQuery.addEventListener?.('change',syncEditorDialog);
+document.addEventListener('keydown',event=>{const open=document.body.classList.contains('product-editor-active')&&mobileEditorQuery.matches;if(!open)return;if(event.key==='Escape'){event.preventDefault();resetProductForm();lastEditorTrigger?.focus?.();return}if(event.key==='Tab'){const focusable=[...productEditor.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled])')].filter(node=>node.offsetParent!==null);if(!focusable.length)return;const first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}});
+for(const region of [profitDailyTable,usersTable])if(region){region.tabIndex=0;region.setAttribute('role','region');region.setAttribute('aria-label','ข้อมูลแบบเลื่อนหรือการ์ดตามขนาดหน้าจอ')}
 function returnAdminHome(message = "บันทึกเรียบร้อย") {
   sessionStorage.setItem("visiond_admin_notice", message);
   location.href = "/admin?done=" + Date.now();

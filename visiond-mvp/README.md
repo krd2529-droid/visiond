@@ -1,5 +1,16 @@
 # VisionD MVP
 
+## v0.14.29 — UI มือถือทั้งหน้าบ้านและหลังบ้าน
+
+- เปลี่ยนเมนูหน้าบ้านมือถือเป็น drawer ซ้ายในทุกหน้าที่มี topbar ไม่ต้องเลื่อนแนวนอนเพื่อค้นหาปุ่มสำคัญ
+- รองรับ 320/375/430px พร้อม Escape, focus trap, คืน focus, `aria-expanded` และ `aria-current`
+- ปรับสินค้า แคตตาล็อก ตะกร้า ฟอร์มสมาชิก dialog และปุ่มชำระเงินไม่ให้ล้นจอ
+- Dashboard/My Hub มี drawer และสถานะการ์ด/อัปโหลดที่ใช้งานด้วยนิ้วได้
+- Course Seller และ V-Learning ปรับฟอร์ม EP ไฟล์ วิดีโอ PDF สารบัญ และปุ่มก่อนหน้า/ถัดไปสำหรับมือถือ
+- Control Center เปลี่ยนตารางยอดขาย กำไร ผู้ใช้ ออเดอร์ ELON และ Course Review เป็นการ์ดบนจอแคบ
+- Product Editor หลังบ้านเปิดเป็น bottom drawer พร้อม focus trap; ปุ่มลบและล้างลดความเด่นเพื่อป้องกันกดผิด
+- รักษา routes, IDs, API contracts และไม่ให้เมนูใหม่ชน ELON หรือปุ่มติดต่อเดิม
+
 ## v0.14.28 — ELON Gemini และความปลอดภัยบัญชี/Token
 
 - ELON ใช้ `OPENAI_API_KEY` ก่อน และ fallback ไป `GEMINI_API_KEY` หรือ `GEMINI_API_KEY_2` ที่ตั้งไว้เดิมได้ทันที
