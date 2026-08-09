@@ -1,4 +1,6 @@
-VisionD MVP v0.14.06
+VisionD MVP v0.14.08
+Unify cart, admin, account, and logout header actions to the same size and visual style
+Add secure in-account password changing with current-password verification and other-session revocation
 Remove the legacy home script that restored duplicate “ของฉัน” and “สินค้าของฉัน” navigation buttons
 Remove duplicate account and my-products header shortcuts, rename the account button, and use “ดูหน้าร้าน” in admin
 Arrange the admin navigation into two equal rows and repair the course menu button styling
