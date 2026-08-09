@@ -1,2 +1,2 @@
-VisionD MVP v0.13.84
-Generic course-selling-rights slug plus draft/publish credit-aware actions
+VisionD MVP v0.13.85
+Complete EP upload with unlimited multi-file attachments of any document type
