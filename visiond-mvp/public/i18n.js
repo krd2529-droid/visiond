@@ -50,7 +50,8 @@
     'สร้างคอร์ส':'Create Course','เพิ่มบทเรียน':'Add Lesson','เปิดขายทันที':'Publish Immediately',
     'Control Center':'Control Center','ค้นหาสินค้า สมาชิก หรือคำสั่งซื้อ':'Search products, members, or orders',
     'บันทึก':'Save','แก้ไข':'Edit','ยกเลิก':'Cancel','เพิ่ม':'Add','สร้าง':'Create','รีเฟรช':'Refresh',
-    'คำสั่งซื้อ':'Orders','สมาชิก':'Members','ยอดขาย':'Sales','ตั้งค่า':'Settings','เครื่องมือ':'Tools'
+    'คำสั่งซื้อ':'Orders','สมาชิก':'Members','ยอดขาย':'Sales','ตั้งค่า':'Settings','เครื่องมือ':'Tools',
+    'สินค้าดิจิทัลแนะนำ':'Recommended Digital Products','ดูสินค้าดิจิทัลทั้งหมด →':'View All Digital Products →'
   };
   const phrases=[
     ['รวมแบบรอยสักและลายสักหลายสไตล์ ทั้งมินิมอล ญี่ปุ่น ดุดัน วินเทจ สตรีท สัตว์ และลายยอดนิยม ดูภาพตัวอย่างก่อนซื้อ แล้วดาวน์โหลดไฟล์ PDF พร้อมใช้จากบัญชีสมาชิก','Explore tattoo designs in minimal, Japanese, bold, vintage, street, animal, and popular styles. Preview each collection before buying, then download the ready-to-use PDF from your account.'],
