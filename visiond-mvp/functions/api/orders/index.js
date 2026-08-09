@@ -94,7 +94,8 @@ export async function onRequestPost(ctx) {
   }
   const promotion=await loadPromotion(ctx.env),pricedResults=applyPromotion(results,promotion),
     subtotal = pricedResults.reduce((sum, p) => sum + Number(p.sale_price), 0),
-    discountableCount = pricedResults.filter(p=>!p.product_kind||p.product_kind==='product').length,
+    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&(!p.product_kind||p.product_kind==='product')),
+    discountableCount = discountableItems.length,
     discountRate =
       discountableCount >= 30
         ? 30
@@ -105,7 +106,7 @@ export async function onRequestPost(ctx) {
             : discountableCount >= 5
               ? 5
               : 0,
-    discountBase = pricedResults.filter(p=>!p.product_kind||p.product_kind==='product').reduce((sum,p)=>sum+Number(p.sale_price),0),
+    discountBase = discountableItems.reduce((sum,p)=>sum+Number(p.sale_price),0),
     discount = Math.round((discountBase * discountRate) / 100),
     total = subtotal - discount,
     orderNo =

@@ -62,16 +62,19 @@ copyAccountButton.onclick = async () => {
 function render() {
   const items = getCart(),
     subtotal = items.reduce((sum, x) => sum + Number(x.price || 0), 0),
-    rate = discountRate(items.length),
-    discount = Math.round((subtotal * rate) / 100),
+    discountableItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights-30-days"),
+    discountableCount = discountableItems.length,
+    discountableSubtotal = discountableItems.reduce((sum, x) => sum + Number(x.price || 0), 0),
+    rate = discountRate(discountableCount),
+    discount = Math.round((discountableSubtotal * rate) / 100),
     next =
-      items.length < 5
+      discountableCount < 5
         ? 5
-        : items.length < 10
+        : discountableCount < 10
           ? 10
-          : items.length < 20
+          : discountableCount < 20
             ? 20
-            : items.length < 30
+            : discountableCount < 30
               ? 30
               : null;
   document
@@ -83,14 +86,14 @@ function render() {
   cartDiscount.textContent = "- " + money(discount);
   cartTotal.textContent = money(subtotal - discount);
   cartNextDiscount.textContent = next
-    ? `⚠ เลือกเพิ่มอีก ${next - items.length} ตะกร้า จะได้รับส่วนลด ${discountRate(next)}%`
+    ? `⚠ เลือกสินค้าโปรเพิ่มอีก ${next - discountableCount} ตะกร้า จะได้รับส่วนลด ${discountRate(next)}%`
     : "✓ ครบ 30 ตะกร้า · ได้รับส่วนลดสูงสุด 30% แล้ว";
   cartNextDiscount.classList.toggle("complete", !next);
   cartItems.innerHTML = items.length
     ? items
         .map(
           (p, i) =>
-            `<article class="cart-product"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>ไฟล์ดิจิทัลพร้อมดาวน์โหลด • ${esc(p.pages || "-")} แผ่น</p><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
+            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?'สิทธิ์ลงขายคอร์สออนไลน์':'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights-30-days'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลดกับตะกร้าใด ๆ</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
