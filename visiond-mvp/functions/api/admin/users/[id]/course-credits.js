@@ -7,7 +7,7 @@ export async function onRequestPost(ctx){
   const body=await ctx.request.json().catch(()=>({})),userId=Number(ctx.params.id),credits=Math.min(100,Math.max(1,Math.floor(Number(body.credits)||1))),note=String(body.note||'').trim().slice(0,300);
   const user=await ctx.env.DB.prepare("SELECT id,name,username,email,role FROM users WHERE id=? AND role IN ('user','customer')").bind(userId).first();
   if(!user)return json({error:'ไม่พบบัญชี User ที่ต้องการเพิ่มแต้มสิทธิ์'},404);
-  const product=await ctx.env.DB.prepare("SELECT id,title FROM products WHERE slug='course-selling-rights-30-days' AND deleted_at IS NULL").first();
+  const product=await ctx.env.DB.prepare("SELECT id,title FROM products WHERE slug='course-selling-rights' AND deleted_at IS NULL").first();
   if(!product)return json({error:'ไม่พบตะกร้าสิทธิ์ลงขายคอร์สออนไลน์'},404);
   const orderNo=`VD-CREDIT-${Date.now()}-${crypto.randomUUID().slice(0,4).toUpperCase()}`;
   const order=await ctx.env.DB.prepare("INSERT INTO orders(order_no,user_id,total,status,admin_note,sale_price_recorded,updated_at) VALUES(?,?,0,'paid',?,0,CURRENT_TIMESTAMP) RETURNING id").bind(orderNo,user.id,`Boss เพิ่ม ${credits} เครดิต${note?' · '+note:''}`).first();

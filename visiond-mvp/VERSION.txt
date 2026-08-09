@@ -1,2 +1,2 @@
-VisionD MVP v0.13.82
-Unified My Hub for every user
+VisionD MVP v0.13.84
+Generic course-selling-rights slug plus draft/publish credit-aware actions

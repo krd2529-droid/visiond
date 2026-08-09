@@ -1,5 +1,5 @@
 (() => {
-  const slug = "course-selling-rights-30-days";
+  const slug = "course-selling-rights";
   const formatPrice = (satang) =>
     `${new Intl.NumberFormat("th-TH").format((Number(satang) || 0) / 100)} บาท`;
   fetch("/api/products", { cache: "no-store" })

@@ -110,7 +110,7 @@ import('/nav-account.js?v=013121');
   const renderBundlePanel = () => {
     if (!bundlePanel) return;
     const items = getCart(),
-      eligibleItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights-30-days"),
+      eligibleItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights"),
       count = eligibleItems.length,
       subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0),
       discountableSubtotal = eligibleItems.reduce((sum, item) => sum + Number(item.price || 0), 0),
@@ -126,7 +126,7 @@ import('/nav-account.js?v=013121');
               : count < 30
                 ? 30
                 : null;
-    bundlePanel.innerHTML = `<h3>จัดชุดส่วนลด</h3><p>${next ? `เลือกสินค้าโปรอีก ${next - count} ตะกร้า เพื่อรับส่วนลด ${discountRate(next)}%` : "ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 30% แล้ว"}</p><div class="vd-discount-levels">${[5, 10, 20, 30].map((level) => `<span class="${count >= level ? "active" : ""}">${level} ชุด<br>ลด ${discountRate(level)}%</span>`).join("")}</div><div class="vd-bundle-items">${items.length ? items.map((item, index) => `<article class="vd-bundle-item"><img src="${esc(item.cover_url || "/assets/product-placeholder.svg")}" alt=""><b>${esc(item.title)}${item.category==='resale-rights'||item.slug==='course-selling-rights-30-days'?'<small>ไม่ร่วมโปรส่วนลด</small>':''}</b><button type="button" data-bundle-remove="${index}" aria-label="นำออก">×</button></article>`).join("") : '<div class="vd-bundle-empty">ยังไม่ได้เลือกสินค้า<br>เลือกได้สูงสุด 30 ตะกร้า</div>'}</div><div class="vd-bundle-summary"><div><span>${items.length} ตะกร้า</span><b>${money(subtotal)}</b></div><div class="discount"><span>ส่วนลด ${rate}%</span><b>- ${money(discount)}</b></div><div><strong>ยอดสุทธิ</strong><strong>${money(subtotal - discount)}</strong></div></div><a href="/cart.html">ดูตะกร้าและชำระเงิน</a>`;
+    bundlePanel.innerHTML = `<h3>จัดชุดส่วนลด</h3><p>${next ? `เลือกสินค้าโปรอีก ${next - count} ตะกร้า เพื่อรับส่วนลด ${discountRate(next)}%` : "ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 30% แล้ว"}</p><div class="vd-discount-levels">${[5, 10, 20, 30].map((level) => `<span class="${count >= level ? "active" : ""}">${level} ชุด<br>ลด ${discountRate(level)}%</span>`).join("")}</div><div class="vd-bundle-items">${items.length ? items.map((item, index) => `<article class="vd-bundle-item"><img src="${esc(item.cover_url || "/assets/product-placeholder.svg")}" alt=""><b>${esc(item.title)}${item.category==='resale-rights'||item.slug==='course-selling-rights'?'<small>ไม่ร่วมโปรส่วนลด</small>':''}</b><button type="button" data-bundle-remove="${index}" aria-label="นำออก">×</button></article>`).join("") : '<div class="vd-bundle-empty">ยังไม่ได้เลือกสินค้า<br>เลือกได้สูงสุด 30 ตะกร้า</div>'}</div><div class="vd-bundle-summary"><div><span>${items.length} ตะกร้า</span><b>${money(subtotal)}</b></div><div class="discount"><span>ส่วนลด ${rate}%</span><b>- ${money(discount)}</b></div><div><strong>ยอดสุทธิ</strong><strong>${money(subtotal - discount)}</strong></div></div><a href="/cart.html">ดูตะกร้าและชำระเงิน</a>`;
     bundlePanel.querySelector('a[href="/cart.html"]')?.setAttribute("href", "/cart");
     bundlePanel.querySelectorAll("[data-bundle-remove]").forEach(
       (button) =>
@@ -226,7 +226,7 @@ import('/nav-account.js?v=013121');
       grid.insertAdjacentHTML(
         "beforeend",
         products
-          .filter((p) => !existing.has(p.slug) && !(location.pathname === "/" && p.slug === "course-selling-rights-30-days"))
+          .filter((p) => !existing.has(p.slug) && !(location.pathname === "/" && p.slug === "course-selling-rights"))
           .map(
             (p) =>
               `<article class="vd-card${Number(p.promotion_percent)>0?' has-promo':''}" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom">${priceMarkup(p)}<div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,

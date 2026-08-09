@@ -1,5 +1,5 @@
 (()=>{
-  if(new URLSearchParams(location.search).get('slug')!=='course-selling-rights-30-days')return;
+  if(new URLSearchParams(location.search).get('slug')!=='course-selling-rights')return;
   let applied=false;
   const apply=()=>{
     const page=document.querySelector('#productPage'),info=page?.querySelector('.product-info');

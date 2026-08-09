@@ -12,7 +12,7 @@ function syncSellerCreateButton(){
   }
   sellerCreateButton.textContent=available?'+ สร้างตะกร้าคอร์ส (ใช้ 1 เครดิต)':'ซื้อเครดิตเพิ่ม';
   sellerCreateButton.onclick=()=>{
-    if(!available){location.href='/product.html?slug=course-selling-rights-30-days';return}
+    if(!available){location.href='/product.html?slug=course-selling-rights';return}
     sellerCourseForm.elements.license_entitlement_id.value=available.entitlement_id;
     createPanel.hidden=false;
     createPanel.scrollIntoView({behavior:'smooth',block:'start'});
