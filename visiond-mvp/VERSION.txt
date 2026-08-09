@@ -1,2 +1,2 @@
-VisionD MVP v0.13.85
-Complete EP upload with unlimited multi-file attachments of any document type
+VisionD MVP v0.13.86
+One-time course-to-rights-basket binding, credit deduction, 30-day edit clock and Boss review publishing
