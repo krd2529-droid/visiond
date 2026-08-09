@@ -1,2 +1,2 @@
-VisionD MVP v0.13.86
-One-time course-to-rights-basket binding, credit deduction, 30-day edit clock and Boss review publishing
+VisionD MVP v0.13.87
+Buyer course checkout, seller EasySlip verification, owner manual review, instant unlock and learning progress

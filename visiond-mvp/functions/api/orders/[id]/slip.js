@@ -38,7 +38,7 @@ export async function onRequestPost(ctx){
   if(!autoEnabled){
     const code=order.course_owner_user_id?'SELLER_API_NOT_CONFIGURED':rightsOrder?'BUYER_API_NOT_CONFIGURED':paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
     await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=? WHERE id=?").bind(code,order.id).run();
-    return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว แต่ API ของเจ้าของคอร์สไม่พร้อม กรุณารอเจ้าของคอร์สแก้ไข API':rightsOrder?'กรุณาตั้งค่า EasySlip API ของคุณเอง แล้วส่งสลิปใหม่อีกครั้ง':'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
+    return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว ระบบส่งให้เจ้าของคอร์สตรวจเอง เนื่องจาก API ของเจ้าของคอร์สไม่พร้อม':rightsOrder?'กรุณาตั้งค่า EasySlip API ของคุณเอง แล้วส่งสลิปใหม่อีกครั้ง':'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
   }
   try{
     const verifyForm=new FormData();verifyForm.set('image',file,file.name||`slip.${ext}`);verifyForm.set('remark',order.order_no);verifyForm.set('matchAccount','true');verifyForm.set('matchAmount',(Number(order.total)/100).toFixed(2));verifyForm.set('checkDuplicate','true');
@@ -48,7 +48,7 @@ export async function onRequestPost(ctx){
       const code=result?.error?.code||`HTTP_${response.status}`;
       await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=? WHERE id=?").bind(code,order.id).run();
       await securityLog(ctx.env,ctx.request,'slip_verify_failed','warning',`${order.order_no}:${code}`,auth.user.id);
-      return json({ok:true,auto_approved:false,message:code==='SLIP_PENDING'?'ธนาคารกำลังยืนยันรายการ กรุณาลองส่งอีกครั้งในอีกสักครู่':order.course_owner_user_id?'API ของเจ้าของคอร์สตรวจไม่สำเร็จ กรุณารอเจ้าของคอร์สแก้ไข API':'รับสลิปแล้ว ระบบส่งให้เจ้าหน้าที่ตรวจสอบ'});
+      return json({ok:true,auto_approved:false,message:code==='SLIP_PENDING'?'ธนาคารกำลังยืนยันรายการ กรุณาลองส่งอีกครั้งในอีกสักครู่':order.course_owner_user_id?'API ตรวจไม่สำเร็จ ระบบส่งสลิปให้เจ้าของคอร์สตรวจเองแล้ว':'รับสลิปแล้ว ระบบส่งให้เจ้าหน้าที่ตรวจสอบ'});
     }
     const data=result.data||{},raw=data.rawSlip||{},transRef=String(raw.transRef||'').trim(),amount=Math.round(Number(data.amountInSlip??raw.amount?.amount)*100);
     const accountOk=Boolean(data.matchedAccount)&&sameAccount(order.payment_account_name,order.payment_account_number,data.matchedAccount);
@@ -57,12 +57,12 @@ export async function onRequestPost(ctx){
       const code=duplicate?'DUPLICATE_OR_NO_REF':!amountOk?'AMOUNT_MISMATCH':'ACCOUNT_MISMATCH';
       await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=?,slip_trans_ref=?,slip_verified_at=CURRENT_TIMESTAMP WHERE id=?").bind(code,transRef||null,order.id).run();
       await securityLog(ctx.env,ctx.request,'slip_mismatch','warning',`${order.order_no}:${code}`,auth.user.id);
-      return json({ok:true,auto_approved:false,message:'ข้อมูลสลิปไม่ตรงครบทุกข้อ ส่งให้เจ้าหน้าที่ตรวจสอบแล้ว'});
+      return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'ข้อมูลสลิปไม่ตรงครบทุกข้อ ระบบส่งให้เจ้าของคอร์สตรวจเองแล้ว':'ข้อมูลสลิปไม่ตรงครบทุกข้อ ส่งให้เจ้าหน้าที่ตรวจสอบแล้ว'});
     }
     const used=await ctx.env.DB.prepare('SELECT order_id FROM verified_slips WHERE trans_ref=?').bind(transRef).first();
     if(used&&Number(used.order_id)!==Number(order.id)){
       await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code='LOCAL_DUPLICATE',slip_trans_ref=? WHERE id=?").bind(transRef,order.id).run();
-      return json({ok:true,auto_approved:false,message:'สลิปนี้เคยใช้กับคำสั่งซื้ออื่นแล้ว ส่งให้เจ้าหน้าที่ตรวจสอบ'});
+      return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'สลิปนี้เคยใช้กับคำสั่งซื้ออื่น ระบบส่งให้เจ้าของคอร์สตรวจเองแล้ว':'สลิปนี้เคยใช้กับคำสั่งซื้ออื่นแล้ว ส่งให้เจ้าหน้าที่ตรวจสอบ'});
     }
     await ctx.env.DB.prepare("INSERT INTO verified_slips(trans_ref,order_id,amount,receiver_name,receiver_account) VALUES(?,?,?,?,?)").bind(transRef,order.id,amount,data.matchedAccount.nameTh||data.matchedAccount.nameEn||'',data.matchedAccount.bankNumber||'').run();
     await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='verified',slip_verification_code='OK',slip_trans_ref=?,slip_verified_at=CURRENT_TIMESTAMP WHERE id=?").bind(transRef,order.id).run();
@@ -72,6 +72,6 @@ export async function onRequestPost(ctx){
   }catch(error){
     await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code='VERIFY_ERROR' WHERE id=?").bind(order.id).run();
     await securityLog(ctx.env,ctx.request,'slip_verify_error','error',`${order.order_no}:${String(error).slice(0,180)}`,auth.user.id);
-    return json({ok:true,auto_approved:false,message:'รับสลิปแล้ว ระบบตรวจอัตโนมัติขัดข้อง จึงส่งให้เจ้าหน้าที่ตรวจสอบ'});
+    return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว ระบบตรวจอัตโนมัติขัดข้อง จึงส่งให้เจ้าของคอร์สตรวจเอง':'รับสลิปแล้ว ระบบตรวจอัตโนมัติขัดข้อง จึงส่งให้เจ้าหน้าที่ตรวจสอบ'});
   }
 }

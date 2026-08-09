@@ -39,6 +39,13 @@ function renderProduct(product){
     productPage.querySelector('.instant-badge').textContent='ซื้อแล้วใช้สิทธิ์ได้หลังอนุมัติ';
     const detailSection=productPage.querySelector('.product-detail-sections');
     detailSection?.firstElementChild?.insertAdjacentHTML('afterend','<article class="course-cover-policy"><h2>กติกาภาพปกคอร์ส</h2><p><b>ใช้ชื่อแพลตฟอร์มเป็นข้อความธรรมดาได้ แต่ห้ามนำโลโก้หรือสื่อของแบรนด์อื่นมาใช้เป็นภาพปกโดยไม่มีหลักฐานอนุญาต</b></p><ul><li>ห้ามใช้โลโก้ เครื่องหมายการค้า ภาพหน้าจอ หรือสื่อประชาสัมพันธ์ของบุคคลและแบรนด์อื่นเป็นภาพปก</li><li>หากจำเป็นต้องใช้ ต้องมีหนังสืออนุญาตและส่งหลักฐานให้ VisionD ตรวจสอบก่อน</li><li>พิมพ์ชื่อแพลตฟอร์มเป็นข้อความธรรมดาได้ เช่น “สอนเปิดร้านบน Shopee” หรือ “เทคนิคขายสินค้าบน Lazada”</li><li>ห้ามใช้สี ตัวอักษร รูปแบบ หรือองค์ประกอบที่ทำให้เข้าใจว่าเป็นคอร์สทางการหรือได้รับการรับรองจากแบรนด์</li><li>VisionD มีสิทธิ์ขอให้เปลี่ยนหรือระงับภาพปกที่เสี่ยงละเมิดสิทธิ์</li></ul></article>');
+  }else if(product.category==='online-course'){
+    productPage.querySelector('.product-info>.eyebrow').textContent='VISIOND ONLINE COURSE';
+    productPage.querySelector('.instant-badge').textContent='ตรวจผ่านแล้วเข้าเรียนทันที';
+    productPage.querySelector('.product-benefits').innerHTML='<h2>สิ่งที่จะได้รับ</h2><ul><li>ดูวิดีโอแยกตาม EP</li><li>ดาวน์โหลดไฟล์ประกอบของแต่ละ EP</li><li>บันทึกบทที่เรียนจบและกลับมาเรียนต่อได้</li><li>ชำระเงินตรงเข้าบัญชีเจ้าของคอร์ส</li><li>ตรวจสลิปด้วย API ของเจ้าของคอร์ส หาก API อ่านไม่ได้เจ้าของคอร์สจะตรวจเอง</li></ul>';
+    productPage.querySelector('#addProductToCart').hidden=true;productPage.querySelector('#multiCartButton').hidden=true;
+    const steps=productPage.querySelector('.product-detail-sections article:nth-child(2)');
+    if(steps)steps.innerHTML='<h2>ขั้นตอนการซื้อคอร์ส</h2><ol><li>เข้าสู่ระบบบัญชี VisionD</li><li>กดซื้อและโอนเข้าบัญชีเจ้าของคอร์สที่ระบบแสดง</li><li>อัปโหลดสลิปเพื่อให้ API ของเจ้าของคอร์สตรวจ</li><li>เมื่อผ่าน คอร์สจะเข้า “คอร์สเรียนของฉัน” และเริ่มเรียนได้ทันที</li></ol>';
   }
   if(Number(product.promotion_percent)>0){
     const row=productPage.querySelector('.product-price-row'),priceBox=row?.firstElementChild,badge=row?.querySelector('.instant-badge');
@@ -75,6 +82,7 @@ async function beginPurchase(){
     productBankName.textContent=bank.bank_name||'-';
     productAccountName.textContent=bank.account_name||'-';
     productAccountNumber.textContent=bank.account_number||'-';
+    productPaymentQr.hidden=!bank.qr_url;productPaymentQr.src=bank.qr_url||'';
     paymentProduct.textContent=currentProduct.title;paymentAmount.textContent=money(data.total||currentProduct.price);paymentOrder.textContent='เลขออเดอร์: '+currentOrderNo;paymentDialog.showModal();
   }catch(error){alert(error.message);}
   finally{button.disabled=false;button.textContent='ซื้อสินค้านี้';}
@@ -82,6 +90,6 @@ async function beginPurchase(){
 closePayment.addEventListener('click',()=>paymentDialog.close());
 paymentDialog.addEventListener('click',event=>{if(event.target===paymentDialog)paymentDialog.close();});
 productCopyAccount.addEventListener('click',async()=>{const number=productAccountNumber.textContent.trim();if(!number||number==='-')return;await navigator.clipboard.writeText(number);productCopyAccount.textContent='คัดลอกแล้ว ✓';setTimeout(()=>productCopyAccount.textContent='คัดลอกเลขบัญชี',1600)});
-productSlipForm.addEventListener('submit',async event=>{event.preventDefault();if(!activeOrder?.id)return;const button=productSlipForm.querySelector('button');button.disabled=true;productSlipMessage.textContent='กำลังอัปโหลดสลิป…';try{const response=await fetch(`/api/orders/${activeOrder.id}/slip`,{method:'POST',body:new FormData(productSlipForm)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ส่งสลิปไม่สำเร็จ');productSlipMessage.textContent=activeOrder.bank?.payment_message||'ส่งสลิปเรียบร้อย กรุณารอแอดมินตรวจสอบ';setTimeout(()=>location.href='/dashboard.html#orders',900)}catch(error){productSlipMessage.textContent=error.message;button.disabled=false;}});
+productSlipForm.addEventListener('submit',async event=>{event.preventDefault();if(!activeOrder?.id)return;const button=productSlipForm.querySelector('button');button.disabled=true;productSlipMessage.textContent='กำลังอัปโหลดและตรวจสลิป…';try{const response=await fetch(`/api/orders/${activeOrder.id}/slip`,{method:'POST',body:new FormData(productSlipForm)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ส่งสลิปไม่สำเร็จ');productSlipMessage.textContent=data.message||'รับสลิปเรียบร้อย';setTimeout(()=>location.href=data.auto_approved&&currentProduct.category==='online-course'?'/my-courses.html':'/dashboard.html#orders',1400)}catch(error){productSlipMessage.textContent=error.message;button.disabled=false;}});
 loadProduct();
 import('/nav-account.js?v=01176').then(module=>module.initAccountNav());
