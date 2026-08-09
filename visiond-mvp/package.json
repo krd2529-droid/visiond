@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "wrangler pages dev public --d1=DB --r2=FILES",
     "deploy": "wrangler pages deploy public",
-    "db:init": "wrangler d1 execute visiond-db --file=./migrations/0001_init.sql"
+    "db:init": "wrangler d1 execute visiond-db --file=./migrations/0001_init.sql",
+    "vision5:backup": "node scripts/vision5-backup.mjs",
+    "vision5:restore": "node scripts/vision5-restore.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.28.0"
+    "wrangler": "^4.28.0",
+    "@aws-sdk/client-s3": "^3.864.0"
   }
 }

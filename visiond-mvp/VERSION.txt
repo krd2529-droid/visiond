@@ -1,2 +1,2 @@
-VisionD MVP v0.13.92
-Post-sale full content lock, VisionD-only error corrections and immediate basket suspension
+VisionD MVP v0.13.93
+Course payment-access integrity audit plus D1 and R2 disaster backup and verified restore tools
