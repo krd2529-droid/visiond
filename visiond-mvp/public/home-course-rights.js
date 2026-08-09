@@ -10,7 +10,7 @@
       const price = document.getElementById("courseOwnerPrice");
       const originalPrice = document.getElementById("courseOwnerOriginalPrice");
       const cover = document.getElementById("courseOwnerCover");
-      if (price) price.textContent = `ลดเหลือ ${formatPrice(product.sale_price ?? product.price)}`;
+      if (price) price.innerHTML = `ลดเหลือ <span>${formatPrice(product.sale_price ?? product.price)}</span>`;
       if (originalPrice) originalPrice.textContent = `ราคาเต็ม ${formatPrice(product.original_price ?? 99900)}`;
       if (cover && product.cover_url) cover.src = product.cover_url;
       const addButton = document.getElementById("courseOwnerAddCart");
