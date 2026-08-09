@@ -4,6 +4,50 @@
 
 รัน `npm run predeploy:check` เพื่อตรวจ Cloudflare config/bindings, placeholder, migrations, Functions imports, HTML assets, cache version และ ID ซ้ำ โดยไม่อ่านหรือแสดง Secret ดูรายละเอียดใน `PREDEPLOY_CHECK.md`
 
+## v0.14.37 — ELON Per-user and Guest Frontend Isolation
+
+- สมาชิกที่ล็อกอินได้รับคำตอบเฉพาะข้อมูลของบัญชีตนเอง โดยทุกประวัติและ Query ผูกกับ user ID ที่ session ฝั่งเซิร์ฟเวอร์ยืนยัน
+- ผู้ไม่มีบัญชีหรือไม่ได้ล็อกอินใช้ ELON ได้แบบ Guest เฉพาะข้อมูลทั่วไปและหน้า Frontend สาธารณะ
+- Guest ไม่มีประวัติแชตในฐานข้อมูล ไม่มี conversation ID ไม่มีข้อมูลสมาชิก และไม่มีสิทธิ์ถามหน้า Dashboard, ห้องเรียนของฉัน หรือผู้ขาย
+- บริบท Guest ใช้ allowlist แยกต่างหากและตัดเส้นทางส่วนตัวทิ้ง แม้ผู้ใช้จะส่ง path ปลอมเข้ามาเอง
+- Guest จำกัด 5 ข้อความต่อนาทีด้วยค่าแฮชในหน่วยความจำชั่วคราว ไม่เก็บ IP หรือข้อความลงฐานข้อมูล
+- หากการตรวจล็อกอินขัดข้อง Widget จะลดสิทธิ์เป็น Guest อัตโนมัติ ไม่ยกระดับเป็นสมาชิก
+
+## v0.14.36 — ELON Minimum Database Context
+
+- ตัดจำนวนออเดอร์ สินค้าที่ปลดล็อก เครดิต คอร์สเจ้าของ คอร์สเรียน และสถานะ Staff ออกจากบริบท AI ทั้งหมด
+- Query ของ ELON อ่านจากฐานข้อมูลเฉพาะผลสิทธิ์ผู้ขายแบบ true/false เพื่อกำหนดว่าอธิบายเมนู Vision 5 ได้หรือไม่
+- AI ไม่ได้รับชื่อ อีเมล เบอร์โทร เลขบัญชี เลขสลิป รายละเอียดออเดอร์ หรือจำนวนข้อมูลใด ๆ
+- ยังคงฐานข้อมูลเฉพาะการล็อกอิน แยกประวัติสนทนาของเจ้าของบัญชี และตรวจสิทธิ์ฝั่งเซิร์ฟเวอร์
+- เพิ่ม Regression test ป้องกันการนำตัวเลขหรือสถานะ Staff กลับเข้า ELON ในแพตช์ถัดไป
+
+## v0.14.35 — ELON Read-only Security Lock
+
+- ย้ำว่า ELON เป็นคู่มืออ่านอย่างเดียว ไม่มีเครื่องมือเรียก API และห้ามอ้างว่าดำเนินรายการแทนผู้ใช้
+- บล็อกคำขออนุมัติ แก้ ลบ ปลดล็อก สวมรอย ข้ามสิทธิ์ เข้าบัญชีอื่น หรือดึงข้อมูลลูกค้ารวม
+- บล็อก Prompt Injection/Jailbreak ทั้งไทยและอังกฤษก่อนส่งข้อความให้ผู้ให้บริการ AI
+- บริบทหน้าเว็บใช้ allowlist เดียวกับ Widget ตัด query/hash และส่งค่าว่างทันทีเมื่อเป็นหน้า Admin, Vision 4 หรือเส้นทางที่ไม่รู้จัก
+- ห้ามอนุมานหรือเปิดเผยชื่อ อีเมล เบอร์โทร เลขบัญชี เลขสลิป และรายละเอียดออเดอร์ที่ระบบไม่ได้แนบให้โดยตรง
+- เพิ่ม Red-team สำหรับคำสั่งหลอก การสวมรอย การสั่งทำรายการ และ path injection
+
+## v0.14.34 — ELON Frontend-only Lock
+
+- ELON ตอบเฉพาะหน้า เมนู ปุ่ม แบบฟอร์ม และขั้นตอนที่บัญชีผู้ใช้มองเห็นและกดใช้งานได้
+- เจ้าของคอร์สถามหน้าจอ Vision 5 ได้เฉพาะเมื่อฐานข้อมูลยืนยันสิทธิ์ผู้ขายจริง
+- บล็อกรายละเอียด Backend, API/HTTP ภายใน, Functions/Workers, D1/R2, SQL, migration, Secret, provider, session, encryption, deployment, cron, logs และอัลกอริทึม
+- EasySlip อนุญาตเฉพาะลิงก์ทางการและวิธีนำ API ไปวางในช่องตั้งค่าที่ผู้ขายมองเห็น ห้ามอธิบาย token/protocol/endpoint
+- Widget ใช้ Frontend allowlist แบบ fail-closed: หน้าใหม่หรือหน้าไม่รู้จักจะไม่เปิด ELON อัตโนมัติ
+- ทดสอบ Frontend 22 หน้าและหน้าระบบภายใน 0 หน้า พร้อม Red-team ทั้ง input, context, history และ output
+
+## v0.14.33 — ELON Customer Access Control
+
+- ELON ตอบเฉพาะฟังก์ชันที่ลูกค้าหรือเจ้าของคอร์สคนนั้นมีสิทธิ์ใช้งาน โดยตรวจสิทธิ์ผู้ขาย Vision 5 จากฐานข้อมูลเท่านั้น
+- บล็อกคำถามเกี่ยวกับ Boss/Admin/หลังบ้าน, Vision 2, Vision 4, System Health, Danger Zone, API/route ภายใน, ฐานข้อมูล, config และ source prompt ก่อนส่งให้ AI
+- กรองคำตอบจาก AI ซ้ำก่อนจัดเก็บและแสดงผล พร้อมรับมือคำถามหลบด้วยการเว้นวรรค URL encoding และ Base64
+- คำถามต้องห้ามตอบเพียง `ข้อมูลส่วนนี้จำกัดเฉพาะผู้ดูแลระบบ VisionD` และ Boss ยังตรวจ transcript ได้ตามนโยบายเดิม
+- Widget ไม่ส่ง query string, reset token, email หรือข้อความ DOM และไม่เปิดบนหน้า Admin/Vision 4/System Health
+- เพิ่ม `npm run test:elon-access` ครอบคลุมคำถามต้องห้าม ลูกค้าปกติ และเจ้าของคอร์สที่มีสิทธิ์
+
 ## v0.14.32 — System Health, Maintenance Cron และ Pre-deploy Gate
 
 - เพิ่มหน้า System Health เฉพาะ Boss ตรวจ D1, R2, migrations, Vision 5 encryption, EasySlip, ELON, Resend, Turnstile และ retention โดยไม่คืนค่า Secret

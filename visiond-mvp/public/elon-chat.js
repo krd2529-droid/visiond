@@ -7,13 +7,29 @@
   const API = '/api/elon/chat';
   const AUTH_API = '/api/auth/me';
   const STORAGE_PREFIX = 'visiond_elon_conversation_id';
+  // Fail closed: ELON is a member-facing helper, so it may mount only on an
+  // explicitly reviewed frontend surface. A newly added internal page never
+  // inherits the widget merely because someone copied the script tag.
+  const FRONTEND_SURFACES = new Set([
+    '/', '/about', '/account', '/blog', '/bots', '/cart', '/contact',
+    '/course-basket-edit', '/course-rights-terms', '/course-seller', '/courses',
+    '/dashboard', '/digital-products', '/forgot-password', '/index', '/learn',
+    '/login', '/my-courses', '/product', '/register', '/reset-password'
+  ]);
   let storageKey = '';
   let conversationId = '';
   let isSending = false;
   let activeController = null;
   let generation = 0;
+  let authenticated = false;
 
   const validConversationId = (value) => /^[a-f0-9-]{20,64}$/i.test(String(value || '')) ? String(value) : '';
+  function frontendSurface(pathname) {
+    let path = String(pathname || '/').toLowerCase().replace(/\/{2,}/g, '/');
+    if (path.length > 1) path = path.replace(/\/$/, '').replace(/\.html$/, '');
+    if (path.startsWith('/blog/')) return true;
+    return FRONTEND_SURFACES.has(path);
+  }
   function readStoredConversation() {
     if (!storageKey) return '';
     try { return validConversationId(localStorage.getItem(storageKey)); } catch (_) { return ''; }
@@ -37,15 +53,18 @@
 
   function getContext() {
     const params = new URLSearchParams(location.search);
-    const heading = document.querySelector('main h1, main h2, h1');
     const productCard = document.querySelector('[data-product-id], [data-product-slug], [data-course-id], [data-course-slug]');
+    const path = location.pathname.toLowerCase();
+    const isProductPage = path === '/product' || path === '/product.html';
+    const isCoursePage = path === '/learn' || path === '/learn.html' || path === '/courses' || path === '/courses.html';
     return {
-      path: location.pathname + location.search,
+      // Never send the query string. Password-reset tokens, email addresses and
+      // other private values can legitimately live there on public pages.
+      path: location.pathname,
       title: document.title || '',
-      heading: heading ? heading.textContent.trim().slice(0, 160) : '',
-      product_slug: params.get('slug') || (productCard && productCard.dataset.productSlug) || '',
-      product_id: params.get('id') || (productCard && productCard.dataset.productId) || '',
-      course_id: params.get('course') || params.get('courseId') || (productCard && productCard.dataset.courseId) || ''
+      product_slug: isProductPage ? (params.get('slug') || (productCard && productCard.dataset.productSlug) || '') : '',
+      product_id: isProductPage ? ((productCard && productCard.dataset.productId) || '') : '',
+      course_id: isCoursePage ? (params.get('course') || params.get('courseId') || (productCard && productCard.dataset.courseId) || '') : ''
     };
   }
 
@@ -112,7 +131,9 @@
     root.append(panel, launcher);
     document.body.append(root);
 
-    const welcome = 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD ผมตอบและแนะนำได้เฉพาะเรื่องสินค้า คอร์ส คำสั่งซื้อ และการใช้งานเว็บไซต์ VisionD เท่านั้นครับ';
+    const welcome = authenticated
+      ? 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD ผมตอบเฉพาะข้อมูลของบัญชีคุณและการใช้งานที่คุณมีสิทธิ์เข้าถึงเท่านั้นครับ'
+      : 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD ผมตอบได้เฉพาะข้อมูลทั่วไปและวิธีใช้งานหน้าร้าน หากต้องการตรวจออเดอร์หรือข้อมูลส่วนตัว กรุณาเข้าสู่ระบบครับ';
     addMessage(messages, 'bot', welcome);
     renderQuick(quick, input, composer);
     loadHistory(messages, welcome);
@@ -146,7 +167,7 @@
       addMessage(messages, 'bot', 'เริ่มบทสนทนาใหม่แล้วครับ ถามผมเกี่ยวกับ VisionD ได้เลย');
       quick.hidden = false;
       input.focus();
-      if (previousId) {
+      if (authenticated && previousId) {
         try {
           await fetch('/api/elon/clear', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: previousId }), signal: AbortSignal.timeout(12000) });
         } catch (_) {}
@@ -257,7 +278,9 @@
       }
       loading.remove();
       addMessage(messages, 'bot', data.reply || data.message?.content || (typeof data.message === 'string' ? data.message : '') || 'ขออภัยครับ ผมหาคำตอบเรื่องนี้ไม่พบ กรุณาติดต่อเจ้าหน้าที่ VisionD');
-      renderQuick(quick, input, input.form, Array.isArray(data.suggestions) ? data.suggestions : null);
+      // Keep customer prompts deterministic. Provider-generated suggestions
+      // must never advertise an internal or higher-privilege function.
+      renderQuick(quick, input, input.form);
     } catch (error) {
       if (generation !== sendGeneration || error?.name === 'AbortError') return;
       loading.remove();
@@ -277,19 +300,27 @@
   }
 
   async function start() {
+    if (!frontendSurface(location.pathname)) return;
     try {
       const response = await fetch(AUTH_API, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-      if (!response.ok) return;
-      const data = await response.json().catch(() => null);
+      const data = response.ok ? await response.json().catch(() => null) : null;
       const user = data && (data.user || data.member || data.data || (data.authenticated && data));
-      if (!user || data.authenticated === false || data.loggedIn === false) return;
-      const userKey = String(user.id || user.username || user.email || '').replace(/[^a-zA-Z0-9_.@-]/g, '').slice(0, 120);
-      if (!userKey) return;
-      storageKey = `${STORAGE_PREFIX}:${userKey}`;
-      conversationId = readStoredConversation();
+      authenticated = Boolean(user && data.authenticated !== false && data.loggedIn !== false);
+      if (authenticated) {
+        const userKey = String(user.id || user.username || user.email || '').replace(/[^a-zA-Z0-9_.@-]/g, '').slice(0, 120);
+        if (!userKey) authenticated = false;
+        else {
+          storageKey = `${STORAGE_PREFIX}:${userKey}`;
+          conversationId = readStoredConversation();
+        }
+      }
       mount().hidden = false;
     } catch (_) {
-      // Fail closed: ELON is only available to authenticated members.
+      // Authentication lookup failure falls back to stateless public guidance.
+      authenticated = false;
+      storageKey = '';
+      conversationId = '';
+      mount().hidden = false;
     }
   }
 

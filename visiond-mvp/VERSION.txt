@@ -1,3 +1,15 @@
+VisionD MVP v0.14.34 — ELON Frontend-only Lock
+Answer only visible pages, menus, buttons, forms, and journeys authorized for the account
+Allow seller Vision 5 UI help only after server-side seller eligibility is confirmed
+Block backend, APIs, Workers, databases, secrets, sessions, deployment, cron, logs, and implementation details
+Fail closed outside the explicit frontend widget surface allowlist
+Red-team input, context, stored history, provider output, customer UI, and eligible seller UI
+VisionD MVP v0.14.33 — ELON Customer Access Control
+Answer only customer features and seller tools authorized by server-side account state
+Block Boss, Admin, back-office, Vision 2, Vision 4, internal APIs, database, config, and source prompt details
+Filter restricted input, untrusted page context, provider output, stored history, and conversation lists
+Strip query strings and sensitive DOM context from the customer widget
+Red-team direct, encoded, spaced, Base64, prompt-injection, customer, and eligible-seller cases
 VisionD MVP v0.14.32 — System Health, Maintenance Cron, and Pre-deploy Gate
 Show Boss-only deployment readiness without exposing secret values
 Run ELON and Analytics retention from a separate daily Cloudflare Worker Cron
