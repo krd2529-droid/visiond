@@ -1,3 +1,5 @@
-VisionD MVP v0.14.02
+VisionD MVP v0.14.04
+Arrange the admin navigation into two equal rows and repair the course menu button styling
+Force-refresh the admin navigation CSS so every icon menu renders as a complete button
 Add icons and refreshed styling to every admin dashboard navigation button
 Show the registered VisionD buyer name in course sales and failed-slip review tables

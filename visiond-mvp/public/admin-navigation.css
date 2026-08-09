@@ -1,0 +1,77 @@
+/* VisionD v0.14.04 — consistent two-row admin navigation */
+.admin-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin: 22px 0 30px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  align-items: stretch !important;
+}
+
+.admin-tabs > button,
+.admin-tabs > a.admin-tab-link {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 104px !important;
+  margin: 0 !important;
+  padding: 12px 10px !important;
+  border: 1px solid rgba(7, 143, 136, 0.2) !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  color: #143f3d !important;
+  box-shadow: 0 7px 18px rgba(6, 78, 76, 0.08) !important;
+  text-decoration: none !important;
+  font: inherit !important;
+  font-weight: 800 !important;
+  line-height: 1.28 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease !important;
+}
+
+.admin-tabs > button:hover,
+.admin-tabs > a.admin-tab-link:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(7, 143, 136, 0.55) !important;
+  box-shadow: 0 11px 24px rgba(6, 78, 76, 0.14) !important;
+}
+
+.admin-tabs > button.active {
+  border-color: transparent !important;
+  background: linear-gradient(145deg, #0bc4bd, #07958f) !important;
+  color: #063d3a !important;
+  box-shadow: 0 10px 24px rgba(7, 143, 136, 0.25) !important;
+}
+
+.admin-tabs .admin-tab-icon {
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 38px !important;
+  border-radius: 12px !important;
+  background: #e8f9f7 !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+}
+
+.admin-tabs > button.active .admin-tab-icon {
+  background: rgba(255, 255, 255, 0.34) !important;
+}
+
+@media (max-width: 900px) {
+  .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 520px) {
+  .admin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
+  .admin-tabs > button,
+  .admin-tabs > a.admin-tab-link { min-height: 96px !important; font-size: 14px !important; }
+}
