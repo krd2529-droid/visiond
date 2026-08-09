@@ -229,7 +229,7 @@ import('/nav-account.js?v=013121');
       grid.insertAdjacentHTML(
         "beforeend",
         products
-          .filter((p) => !existing.has(p.slug))
+          .filter((p) => !existing.has(p.slug) && !(location.pathname === "/" && p.slug === "course-selling-rights-30-days"))
           .map(
             (p) =>
               `<article class="vd-card${Number(p.promotion_percent)>0?' has-promo':''}" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom">${priceMarkup(p)}<div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
