@@ -306,9 +306,8 @@ import('/nav-account.js?v=01411');
           renderBundlePanel();
         };
       });
-      const purchaseBySlug = new Map(),
-        isStaffAccount = ["boss", "admin"].includes(accountData.user?.role);
-      (isStaffAccount ? [] : orderData.items || []).forEach((order) =>
+      const purchaseBySlug = new Map();
+      (orderData.items || []).forEach((order) =>
         (order.items || []).forEach((item) => {
           const current = purchaseBySlug.get(item.slug),
             rank = {

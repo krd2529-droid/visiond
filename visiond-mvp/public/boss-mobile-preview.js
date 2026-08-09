@@ -1,4 +1,5 @@
-if (window.self === window.top && !location.pathname.startsWith("/admin")) initBossMobilePreview();
+const bossPreviewDesktop = !matchMedia("(max-width: 760px), (pointer: coarse)").matches;
+if (window.self === window.top && !location.pathname.startsWith("/admin") && bossPreviewDesktop) initBossMobilePreview();
 
 async function initBossMobilePreview() {
   try {

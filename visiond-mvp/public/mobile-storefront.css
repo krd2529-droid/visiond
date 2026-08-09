@@ -3,6 +3,7 @@ html,body{max-width:100%;overflow-x:clip}
 img,video,iframe{max-width:100%}
 @media(max-width:760px){
   .topbar.mobile-nav-ready{min-height:64px!important;height:64px;padding:8px 12px!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;z-index:10018}
+  .mobile-nav-open .topbar.mobile-nav-ready{z-index:10022!important}
   .topbar.mobile-nav-ready .brand{min-width:0;font-size:20px;line-height:1.05}
   .topbar.mobile-nav-ready .brand small{letter-spacing:4px}
   .mobile-nav-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:48px;min-height:44px;padding:8px 11px;border:1px solid #ffffff70;border-radius:12px;background:#ffffff18;color:#fff;font-weight:900}
@@ -14,7 +15,7 @@ img,video,iframe{max-width:100%}
   .topbar.mobile-nav-ready>nav>a[aria-current="page"]{border-color:#fff!important;background:#fff!important;color:#05645f!important}
   .topbar.mobile-nav-ready>nav .nav-member-account b{max-width:none!important}
   .topbar.mobile-nav-ready>nav .nav-notification-badge{position:static;margin-left:auto}
-  .mobile-nav-backdrop{position:fixed;z-index:10020;inset:0;display:block;border:0;background:#062f2d99;backdrop-filter:blur(2px)}
+  .mobile-nav-backdrop{position:fixed;z-index:10020;inset:0;display:block;border:0;background:rgba(6,47,45,.72);backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   .mobile-nav-backdrop[hidden]{display:none}
   body.mobile-nav-open{overflow:hidden}
   .product-page,.catalog-page,.vd-catalog-wrap,.cart-page,.auth-shell{max-width:100%;overflow-x:hidden}

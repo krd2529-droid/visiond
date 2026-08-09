@@ -16,6 +16,7 @@
     "test:commerce-final": "node scripts/test-commerce-final.mjs",
     "test:v01431": "node scripts/test-v01431.mjs",
     "test:maintenance-worker": "node scripts/test-maintenance-worker.mjs",
+    "test:mobile-frontend": "node scripts/test-mobile-frontend.mjs",
     "predeploy:check": "node scripts/predeploy-check.mjs"
   },
   "devDependencies": {

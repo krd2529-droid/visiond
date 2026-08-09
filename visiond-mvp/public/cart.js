@@ -74,7 +74,9 @@ copyAccountButton.onclick = async () => {
     const selection = getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
-    copyAccountButton.textContent = "เลือกเลขแล้ว กด Ctrl+C";
+    let copied = false;
+    try { copied = document.execCommand("copy"); } catch {}
+    copyAccountButton.textContent = copied ? "คัดลอกแล้ว ✓" : "เลือกเลขแล้ว แตะค้างเพื่อคัดลอก";
   }
   setTimeout(() => (copyAccountButton.textContent = "คัดลอกเลขบัญชี"), 1800);
 };
