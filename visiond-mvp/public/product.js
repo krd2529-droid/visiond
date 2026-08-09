@@ -2,7 +2,7 @@ import('/facebook-chat.js?v=01195');
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 const freshMedia=(url,version)=>url?.startsWith('/api/media/')?`${url}?v=${encodeURIComponent(version||Date.now())}`:url;
-const categoryLabels={tattoo:'แบบรอยสัก',dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี',worksheet:'แบบฝึกหัด','development-game':'เกมเสริมพัฒนาการ','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม','resale-rights':'สิทธิ์ลงขายคอร์ส'};
+const categoryLabels={tattoo:'แบบรอยสัก',dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี',worksheet:'แบบฝึกหัด','development-game':'เกมเสริมพัฒนาการ','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม','resale-rights':'สิทธิ์ลงขายคอร์สออนไลน์'};
 const categoryLabel=product=>product.category_label||categoryLabels[product.category]||product.category||'สินค้าดิจิทัล';
 const fileTypeLabel=product=>product.file_type||(/pdf/i.test(product.description||'')||product.category==='dinosaur'?'PDF พร้อมพิมพ์':'ไฟล์ดิจิทัล');
 const demoProduct={id:1,slug:'paper-doll-sample',title:'ชุดตุ๊กตากระดาษพร้อมพิมพ์',category:'สินค้าดิจิทัล',description:'ไฟล์ตัวอย่างสำหรับแสดงหน้าสินค้า ประกอบด้วยภาพปก ภาพตัวอย่าง รายละเอียดไฟล์ และสิทธิ์การใช้งาน',short_description:'ชุดกิจกรรมตุ๊กตากระดาษสำหรับพิมพ์ ตัด และเล่น',price:19900,cover_url:'/assets/product-placeholder.svg'};
@@ -37,6 +37,8 @@ function renderProduct(product){
     productPage.querySelector('.product-info>.eyebrow').textContent='VISIOND COURSE SELLER';
     productPage.querySelector('.product-benefits').innerHTML='<h2>สิ่งที่จะได้รับ</h2><ul><li>สิทธิ์สร้างตะกร้าขายคอร์สออนไลน์ 1 ตะกร้า</li><li>กำหนดราคา ช่องทางติดต่อ QR และบัญชีรับเงินของคุณเอง</li><li>เพิ่มคลิปและเอกสารประกอบแยกตาม EP</li><li>ดูยอดขาย จำนวนออเดอร์ และวันเวลาได้จากแดชบอร์ดผู้ขาย</li></ul>';
     productPage.querySelector('.instant-badge').textContent='ซื้อแล้วใช้สิทธิ์ได้หลังอนุมัติ';
+    const detailSection=productPage.querySelector('.product-detail-sections');
+    detailSection?.firstElementChild?.insertAdjacentHTML('afterend','<article class="course-cover-policy"><h2>กติกาภาพปกคอร์ส</h2><p><b>ใช้ชื่อแพลตฟอร์มเป็นข้อความธรรมดาได้ แต่ห้ามนำโลโก้หรือสื่อของแบรนด์อื่นมาใช้เป็นภาพปกโดยไม่มีหลักฐานอนุญาต</b></p><ul><li>ห้ามใช้โลโก้ เครื่องหมายการค้า ภาพหน้าจอ หรือสื่อประชาสัมพันธ์ของบุคคลและแบรนด์อื่นเป็นภาพปก</li><li>หากจำเป็นต้องใช้ ต้องมีหนังสืออนุญาตและส่งหลักฐานให้ VisionD ตรวจสอบก่อน</li><li>พิมพ์ชื่อแพลตฟอร์มเป็นข้อความธรรมดาได้ เช่น “สอนเปิดร้านบน Shopee” หรือ “เทคนิคขายสินค้าบน Lazada”</li><li>ห้ามใช้สี ตัวอักษร รูปแบบ หรือองค์ประกอบที่ทำให้เข้าใจว่าเป็นคอร์สทางการหรือได้รับการรับรองจากแบรนด์</li><li>VisionD มีสิทธิ์ขอให้เปลี่ยนหรือระงับภาพปกที่เสี่ยงละเมิดสิทธิ์</li></ul></article>');
   }
   if(Number(product.promotion_percent)>0){
     const row=productPage.querySelector('.product-price-row'),priceBox=row?.firstElementChild,badge=row?.querySelector('.instant-badge');

@@ -30,7 +30,7 @@ async function loadCourses() {
     ? courses
         .map(
           (c) =>
-            `<article class="admin-course-item"><div><b>${esc(c.title)}</b><p>${money(c.price)} · ${Number(c.lesson_count) || 0} บท · นักเรียน ${Number(c.student_count) || 0} คน</p><small>${c.course_type === "resale_rights" ? `สิทธิ์ลงขายคอร์ส · ${Number(c.license_edit_days)===0?'ตลอดอายุระบบ':Number(c.license_edit_days)===365?'1 ปี':'30 วัน'}` : "คอร์สออนไลน์"} · ${c.status === "published" ? "เปิดขาย" : "แบบร่าง"}</small></div><button data-lessons="${c.id}">จัดการบทเรียน</button></article>`,
+            `<article class="admin-course-item"><div><b>${esc(c.title)}</b><p>${money(c.price)} · ${Number(c.lesson_count) || 0} บท · นักเรียน ${Number(c.student_count) || 0} คน</p><small>${c.course_type === "resale_rights" ? `สิทธิ์ลงขายคอร์สออนไลน์ · ${Number(c.license_edit_days)===0?'ตลอดอายุระบบ':Number(c.license_edit_days)===365?'1 ปี':'30 วัน'}` : "คอร์สออนไลน์"} · ${c.status === "published" ? "เปิดขาย" : "แบบร่าง"}</small></div><button data-lessons="${c.id}">จัดการบทเรียน</button></article>`,
         )
         .join("")
     : "<p>ยังไม่มีคอร์ส</p>";
