@@ -102,6 +102,8 @@ export async function ensureDatabase(env) {
   if(!courseColumns.includes('approved_at'))await env.DB.prepare('ALTER TABLE courses ADD COLUMN approved_at TEXT').run();
   if(!courseColumns.includes('approved_by'))await env.DB.prepare('ALTER TABLE courses ADD COLUMN approved_by INTEGER').run();
   if(!courseColumns.includes('course_origin'))await env.DB.prepare("ALTER TABLE courses ADD COLUMN course_origin TEXT NOT NULL DEFAULT 'company'").run();
+  if(!courseColumns.includes('basket_binding_locked'))await env.DB.prepare('ALTER TABLE courses ADD COLUMN basket_binding_locked INTEGER NOT NULL DEFAULT 0').run();
+  if(!courseColumns.includes('basket_bound_at'))await env.DB.prepare('ALTER TABLE courses ADD COLUMN basket_bound_at TEXT').run();
   await env.DB.prepare("UPDATE courses SET course_origin='seller_rights' WHERE owner_user_id IS NOT NULL AND course_type='online_course' AND course_origin='company'").run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_courses_license_entitlement ON courses(license_entitlement_id) WHERE license_entitlement_id IS NOT NULL').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_courses_owner ON courses(owner_user_id,created_at DESC)').run();

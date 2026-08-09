@@ -1,2 +1,2 @@
-VisionD MVP v0.13.70
-Prominent course-creation actions in member dashboard and seller portal with credit confirmation
+VisionD MVP v0.13.81
+Three free course drafts; no credit until one-time basket binding
