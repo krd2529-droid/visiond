@@ -1040,8 +1040,10 @@ function renderSalesReport() {
       filteredSalesRows
         .filter((row) => row.slip_url)
         .map((row) => row.order_id),
-    ).size;
-  salesSummary.innerHTML = `<article><b>${money(total)}</b><span>ยอดรวมที่ลงราคาแล้ว</span></article><article><b>${orderCount}</b><span>คำสั่งซื้อ</span></article><article><b>${filteredSalesRows.length}</b><span>สินค้าที่ขาย</span></article><article><b>${slipCount}</b><span>สลิปที่เก็บไว้</span></article>`;
+    ).size,
+    visiondTotal=filteredSalesRows.filter(row=>row.revenue_channel!=='seller_course').reduce((sum,row)=>sum+(row.sale_price_recorded===0?0:Number(row.sale_price||0)),0),
+    sellerCourseTotal=filteredSalesRows.filter(row=>row.revenue_channel==='seller_course').reduce((sum,row)=>sum+(row.sale_price_recorded===0?0:Number(row.sale_price||0)),0);
+  salesSummary.innerHTML = `<article><b>${money(visiondTotal)}</b><span>รายได้เข้า VisionD</span></article><article><b>${money(sellerCourseTotal)}</b><span>ยอดคอร์สเข้าเจ้าของคอร์ส</span></article><article><b>${money(total)}</b><span>ยอดผ่านระบบทั้งหมด</span></article><article><b>${orderCount}</b><span>คำสั่งซื้อ</span></article><article><b>${filteredSalesRows.length}</b><span>จำนวนชิ้น</span></article><article><b>${slipCount}</b><span>สลิปที่เก็บไว้</span></article>`;
   const productMap = new Map();
   filteredSalesRows.forEach((row) => {
     const item = productMap.get(row.product_title) || { qty: 0, total: 0 };
@@ -1059,7 +1061,7 @@ function renderSalesReport() {
     )
     .join("");
   salesReportTable.innerHTML = filteredSalesRows.length
-    ? `<div class="sales-row sales-head"><b>วันเวลา</b><b>สินค้า/ราคา</b><b>ลูกค้า</b><b>ออเดอร์</b><b>ผู้อนุมัติ</b><b>สลิป</b></div>${filteredSalesRows.map((row) => `<div class="sales-row"><time>${new Date(row.paid_at + "Z").toLocaleString("th-TH")}</time><div><b>${esc(row.product_title)}</b><small>${row.sale_price_recorded === 0 ? "ยังไม่ลงราคา" : money(row.sale_price)}</small></div><div><b>${esc(row.customer_name)}</b><small>${esc(row.customer_email)}</small><small>โทร ${esc(row.customer_phone || "ไม่ได้ระบุ")}</small></div><div><b>${esc(row.order_no)}</b><small>${row.sale_type === "manual" ? "ปลดล็อกโดยตรง" : "ยอดขายจากสลิป"}</small></div><span>${esc(row.approved_by || "-")}</span><div>${row.slip_url ? `<a class="slip-report-link" href="${esc(row.slip_url)}" target="_blank">เปิดสลิป</a>` : '<span class="no-slip-label">ยังไม่มีสลิป</span>'}</div></div>`).join("")}`
+    ? `<div class="sales-row sales-head"><b>วันเวลา</b><b>สินค้า/ราคา</b><b>ลูกค้า</b><b>ออเดอร์</b><b>ผู้อนุมัติ</b><b>สลิป</b></div>${filteredSalesRows.map((row) => `<div class="sales-row"><time>${new Date(row.paid_at + "Z").toLocaleString("th-TH")}</time><div><b>${esc(row.product_title)}</b><small>${row.sale_price_recorded === 0 ? "ยังไม่ลงราคา" : money(row.sale_price)}</small><small>${row.revenue_channel==='seller_course'?'เงินเข้าเจ้าของคอร์ส':'รายได้ VisionD'}</small></div><div><b>${esc(row.customer_name)}</b><small>${esc(row.customer_email)}</small><small>โทร ${esc(row.customer_phone || "ไม่ได้ระบุ")}</small></div><div><b>${esc(row.order_no)}</b><small>${row.sale_type === "manual" ? "ปลดล็อกโดยตรง" : "ยอดขายจากสลิป"}</small></div><span>${esc(row.approved_by || "-")}</span><div>${row.slip_url ? `<a class="slip-report-link" href="${esc(row.slip_url)}" target="_blank">เปิดสลิป</a>` : '<span class="no-slip-label">ยังไม่มีสลิป</span>'}</div></div>`).join("")}`
     : "<p>ไม่พบยอดขายตามตัวกรอง</p>";
 }
 function downloadSalesCsv() {
@@ -1074,6 +1076,7 @@ function downloadSalesCsv() {
       "เบอร์โทร",
       "เลขออเดอร์",
       "ประเภท",
+      "ช่องทางเงิน",
       "ผู้อนุมัติ",
       "ลิงก์สลิป",
     ],
@@ -1088,6 +1091,7 @@ function downloadSalesCsv() {
       row.customer_phone || "",
       row.order_no,
       row.sale_type === "manual" ? "ปลดล็อกโดยตรง" : "ยอดขายจากสลิป",
+      row.revenue_channel === "seller_course" ? "เข้าบัญชีเจ้าของคอร์ส" : "เข้า VisionD",
       row.approved_by || "",
       row.slip_url ? location.origin + row.slip_url : "",
     ]);
@@ -1184,13 +1188,15 @@ async function loadOrders() {
     (d.items || [])
       .map((o) => {
         const waiting = o.status === "awaiting_payment";
-        const review = o.status === "pending_review" && o.slip_url && o.slip_verification_status === "manual";
-        const actionMarkup = review
+        const review = !o.vision5_managed && o.status === "pending_review" && o.slip_url && o.slip_verification_status === "manual";
+        const actionMarkup = o.vision5_managed
+          ? `<div class="order-wait-note"><b>ออเดอร์ Vision 5 — VisionD อนุมัติแทนไม่ได้</b><span>${esc(o.vision5_reason || "จัดการผ่านระบบ Vision 5")}</span></div>`
+          : review
           ? `<div class="actions review-actions"><button class="primary" data-act="approve" data-id="${o.id}">✓ อนุมัติและปลดล็อกไฟล์</button><button class="danger" data-act="reject" data-id="${o.id}">✕ ไม่อนุมัติสลิป</button></div>`
           : waiting
             ? '<div class="order-wait-note"><b>ยังไม่ต้องตรวจสอบ</b><span>ลูกค้ายังไม่ได้ส่งสลิป ระบบจะแสดงปุ่มอนุมัติหลังได้รับสลิปแล้ว</span></div>'
             : '<div class="order-wait-note rejected"><b>สลิปไม่ผ่าน</b><span>กำลังรอลูกค้าส่งสลิปใหม่</span></div>';
-        return `<article class="admin-card order-admin-card ${esc(o.status)}"><label class="order-select-line"><input type="checkbox" data-order-select="${o.id}"> เลือกออเดอร์นี้เพื่อล้าง</label><div class="section-head"><div><b>${esc(o.order_no)}</b><p>${esc(o.customer_name)} · ${esc(o.customer_email)} · โทร ${esc(o.customer_phone || "ไม่ได้ระบุ")}</p></div><span class="status ${esc(o.status)}">${esc(o.status_label)}</span></div><div class="order-admin-items"><b>${Number(o.item_count) || o.items.length} สินค้าในรถเข็น</b>${o.items.map((item, index) => `<span><i>${index + 1}</i><strong>${esc(item.title)}</strong><em>${money(item.price)}</em></span>`).join("")}</div><b class="order-admin-total">ยอดรวม ${money(o.total)}</b>${o.slip_url ? `<div class="submitted-slip"><b>สลิปที่ลูกค้าส่ง</b><a href="${esc(o.slip_url)}" target="_blank"><img class="slip-preview" src="${esc(o.slip_url)}" alt="สลิปโอนเงิน"></a></div>` : '<p class="no-slip">ยังไม่มีสลิปจากลูกค้า</p>'}${actionMarkup}</article>`;
+        return `<article class="admin-card order-admin-card ${esc(o.status)}"><label class="order-select-line"><input type="checkbox" data-order-select="${o.id}"> เลือกออเดอร์นี้เพื่อล้าง</label><div class="section-head"><div><b>${esc(o.order_no)}</b><p>${esc(o.customer_name)} · ${esc(o.customer_email)} · โทร ${esc(o.customer_phone || "ไม่ได้ระบุ")}</p></div><span class="status ${esc(o.status)}">${esc(o.status_label)}</span></div><div class="order-admin-items"><b>${Number(o.item_count) || o.items.length} สินค้าในรถเข็น</b>${o.items.map((item, index) => `<span><i>${index + 1}</i><strong>${esc(item.title)}${Number(item.quantity)>1?` × ${Number(item.quantity)}`:''}</strong><em>${money(item.line_total??item.price)}</em></span>`).join("")}</div><b class="order-admin-total">ยอดรวม ${money(o.total)}</b>${o.slip_url ? `<div class="submitted-slip"><b>สลิปที่ลูกค้าส่ง</b><a href="${esc(o.slip_url)}" target="_blank"><img class="slip-preview" src="${esc(o.slip_url)}" alt="สลิปโอนเงิน"></a></div>` : '<p class="no-slip">ยังไม่มีสลิปจากลูกค้า</p>'}${actionMarkup}</article>`;
       })
       .join("") || "<p>ยังไม่มีคำสั่งซื้อ</p>";
   document

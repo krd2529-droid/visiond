@@ -8,7 +8,7 @@ export async function onRequestGet(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   const url=new URL(ctx.request.url),today=new Date().toISOString().slice(0,10),defaultFrom=new Date(Date.now()-29*86400000).toISOString().slice(0,10),from=isoDate(url.searchParams.get('from'))||defaultFrom,to=isoDate(url.searchParams.get('to'))||today;
   if(from>to)return json({error:'วันเริ่มต้นต้องไม่เกินวันสิ้นสุด'},400);
-  const sales=(await ctx.env.DB.prepare(`SELECT date(updated_at,'+7 hours') day,SUM(total) sales,COUNT(*) orders FROM orders WHERE status='paid' AND sale_price_recorded=1 AND date(updated_at,'+7 hours') BETWEEN ? AND ? GROUP BY day`).bind(from,to).all()).results;
+  const sales=(await ctx.env.DB.prepare(`SELECT date(updated_at,'+7 hours') day,SUM(total) sales,COUNT(*) orders FROM orders WHERE status='paid' AND sale_price_recorded=1 AND course_owner_user_id IS NULL AND date(updated_at,'+7 hours') BETWEEN ? AND ? GROUP BY day`).bind(from,to).all()).results;
   const ads=(await ctx.env.DB.prepare(`SELECT spend_date day,facebook_cost,note,updated_at FROM ad_costs WHERE spend_date BETWEEN ? AND ?`).bind(from,to).all()).results;
   const map=new Map();for(const row of sales)map.set(row.day,{day:row.day,sales:Number(row.sales)||0,orders:Number(row.orders)||0,facebook_cost:0,note:''});for(const row of ads){const item=map.get(row.day)||{day:row.day,sales:0,orders:0,facebook_cost:0,note:''};item.facebook_cost=Number(row.facebook_cost)||0;item.note=row.note||'';map.set(row.day,item)}
   const items=[...map.values()].sort((a,b)=>b.day.localeCompare(a.day)).map(item=>({...item,profit:item.sales-item.facebook_cost,roas:item.facebook_cost>0?item.sales/item.facebook_cost:null}));
