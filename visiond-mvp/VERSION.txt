@@ -1,2 +1,2 @@
-VisionD MVP v0.13.65
-Course resale-rights seller portal, direct owner payment, EP uploads and sales totals; email notifications deferred
+VisionD MVP v0.13.67
+Course-selling rights show approval purchase timestamp and exact editing expiry timestamp

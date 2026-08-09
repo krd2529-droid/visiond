@@ -24,7 +24,7 @@ export async function onRequestGet(ctx){
     FROM entitlements e JOIN products p ON p.id=e.product_id JOIN courses c ON c.product_id=p.id AND c.course_type='resale_rights'
     LEFT JOIN courses owned ON owned.license_entitlement_id=e.id LEFT JOIN products op ON op.id=owned.product_id
     WHERE e.user_id=? AND e.active=1 ORDER BY e.id DESC`).bind(auth.user.id).all();
-  licenses.forEach(x=>{x.available=!x.bound_course_id;x.expires_at=expiry(x.granted_at,x.license_edit_days);x.editable=x.bound_course_id?editable(x):(!x.expires_at||Date.parse(x.expires_at)>Date.now())});
+  licenses.forEach(x=>{x.purchased_at=x.granted_at;x.available=!x.bound_course_id;x.expires_at=expiry(x.granted_at,x.license_edit_days);x.editable=x.bound_course_id?editable(x):(!x.expires_at||Date.parse(x.expires_at)>Date.now())});
   const {results:courses}=await ctx.env.DB.prepare(`SELECT c.id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,c.teacher_name,c.contact_info,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,c.edit_expires_at,c.license_edit_days,
     (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id) episode_count,
     COALESCE((SELECT SUM(o.total) FROM orders o WHERE o.seller_course_id=c.id AND o.status='paid'),0) paid_total,
