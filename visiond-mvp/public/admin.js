@@ -101,7 +101,7 @@ newProductButton.onclick = () => {
     productEditor.scrollIntoView({ behavior: "smooth", block: "start" }),
   );
 };
-closeEditor.onclick = resetProductForm;
+closeEditor.onclick = () => { resetProductForm(); if(mobileEditorQuery.matches)lastEditorTrigger?.focus?.(); };
 productEditor.onsubmit = saveProduct;
 deleteProductButton.onclick = deleteProduct;
 paymentSettingsForm.onsubmit = savePaymentSettings;
@@ -1041,8 +1041,8 @@ function renderSalesReport() {
   salesReportTable.querySelector('[data-sales-page="next"]')?.addEventListener("click",()=>{salesCursorHistory.push(salesCursor);salesCursor=salesNextCursor;loadSalesReport()});
 }
 async function downloadSalesCsv() {
-  const originalText=exportSalesCsv.textContent;exportSalesCsv.disabled=true;exportSalesCsv.textContent="กำลังเตรียม CSV…";const allRows=[];let cursor=null;
-  try{do{const params=salesReportParams();params.set("export","1");params.set("limit","200");if(cursor)params.set("cursor",cursor);const response=await fetch("/api/admin/sales-report?"+params,{cache:"no-store"}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"ดาวน์โหลดรายงานไม่สำเร็จ");allRows.push(...(data.items||[]));cursor=data.pagination?.next_cursor||null}while(cursor)}catch(error){alert(error.message);return}finally{exportSalesCsv.disabled=false;exportSalesCsv.textContent=originalText}
+  const originalText=exportSalesCsv.textContent;exportSalesCsv.disabled=true;exportSalesCsv.textContent="กำลังเตรียม CSV…";const allRows=[],seenCursors=new Set();let cursor=null;
+  try{do{const params=salesReportParams();params.set("export","1");params.set("limit","200");if(cursor){if(seenCursors.has(cursor))throw new Error("ระบบแบ่งหน้ารายงานส่งเคอร์เซอร์ซ้ำ กรุณาลองใหม่");seenCursors.add(cursor);params.set("cursor",cursor)}const response=await fetch("/api/admin/sales-report?"+params,{cache:"no-store"}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"ดาวน์โหลดรายงานไม่สำเร็จ");allRows.push(...(data.items||[]));cursor=data.pagination?.next_cursor||null}while(cursor)}catch(error){alert(error.message);return}finally{exportSalesCsv.disabled=false;exportSalesCsv.textContent=originalText}
   if(!allRows.length)return alert("ไม่มีข้อมูลสำหรับดาวน์โหลด");
   const q = (value) => '"' + String(value ?? "").replaceAll('"', '""') + '"',
     header = [

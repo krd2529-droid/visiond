@@ -26,8 +26,8 @@ export async function onRequestPut(ctx){
     personal:{bank_name:text('personal_bank_name',100),account_name:text('personal_account_name',150),account_number:text('personal_account_number',50)},
     company:{bank_name:text('company_bank_name',100),account_name:text('company_account_name',150),account_number:text('company_account_number',50)}
   };
-  const activeProfile=profiles[active];
-  if(!activeProfile.bank_name||!activeProfile.account_name||!activeProfile.account_number)return json({error:'กรุณากรอกข้อมูลบัญชีที่เลือกให้ครบ'},400);
+  const invalidProfile=Object.values(profiles).some(profile=>!profile.bank_name||!profile.account_name||!profile.account_number);
+  if(invalidProfile)return json({error:'กรุณากรอกข้อมูลบัญชีส่วนตัวและบัญชีบริษัทให้ครบก่อนบันทึก'},400);
   const accepting=String(form.get('accepting_orders')??'0');
   if(!['0','1'].includes(accepting))return json({error:'สถานะรับคำสั่งซื้อไม่ถูกต้อง'},400);
   const requestedAutoVerify=String(form.get('vision3_auto_verify')??(old.vision3_auto_verify?'1':'0'));

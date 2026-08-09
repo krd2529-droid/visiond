@@ -11,8 +11,10 @@ export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireUser(ctx);if(auth.error)return auth.error;
   const course=await owned(ctx,auth.user);if(!course)return json({error:'ไม่พบคอร์ส'},404);
   const rows=await ctx.env.DB.prepare(`SELECT id,title,description,sort_order,duration_seconds,CASE WHEN video_key IS NULL THEN 0 ELSE 1 END has_video,CASE WHEN pdf_key IS NULL THEN 0 ELSE 1 END has_legacy_document,CASE WHEN ${readySql} THEN 1 ELSE 0 END is_complete FROM course_lessons WHERE course_id=? ORDER BY sort_order,id`).bind(course.id).all();
-  for(const lesson of rows.results||[]){const files=await ctx.env.DB.prepare('SELECT id,file_name,mime_type,file_size,sort_order FROM course_lesson_files WHERE lesson_id=? ORDER BY sort_order,id').bind(lesson.id).all();lesson.files=files.results||[];lesson.file_count=lesson.files.length+(lesson.has_legacy_document?1:0)}
-  return json({items:rows.results||[],editable:editable(course)},200,{'cache-control':'no-store'});
+  const lessons=rows.results||[],filesByLesson=new Map();
+  if(lessons.length){const files=await ctx.env.DB.prepare('SELECT f.id,f.lesson_id,f.file_name,f.mime_type,f.file_size,f.sort_order FROM course_lesson_files f JOIN course_lessons l ON l.id=f.lesson_id WHERE l.course_id=? ORDER BY f.lesson_id,f.sort_order,f.id').bind(course.id).all();for(const file of files.results||[]){const {lesson_id,...asset}=file,key=String(lesson_id),group=filesByLesson.get(key)||[];group.push(asset);filesByLesson.set(key,group)}}
+  for(const lesson of lessons){lesson.files=filesByLesson.get(String(lesson.id))||[];lesson.file_count=lesson.files.length+(lesson.has_legacy_document?1:0)}
+  return json({items:lessons,editable:editable(course)},200,{'cache-control':'no-store'});
 }
 
 export async function onRequestPost(ctx){

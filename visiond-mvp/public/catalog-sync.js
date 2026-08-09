@@ -166,11 +166,11 @@ import('/nav-account.js?v=01411');
       );
   updateCartCount();
   renderBundlePanel();
+  const loadOrderPages=async()=>{const items=[];let cursor='';for(let page=0;page<20;page++){const query=cursor?`?limit=100&cursor=${encodeURIComponent(cursor)}`:'?limit=100',response=await fetch(`/api/orders${query}`,{cache:'no-store'});if(!response.ok)return {items:[]};const data=await response.json();items.push(...(data.items||[]));if(!data.pagination?.has_more||!data.pagination?.next_cursor)break;cursor=String(data.pagination.next_cursor)}return {items}};
   Promise.all([
     fetch("/api/products").then((r) => (r.ok ? r.json() : Promise.reject())),
     fetch("/api/categories").then((r) => (r.ok ? r.json() : { items: [] })),
-    fetch("/api/orders", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { items: [] }))
+    loadOrderPages()
       .catch(() => ({ items: [] })),
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { user: null }))

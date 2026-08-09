@@ -46,10 +46,11 @@ const saveCart = (items) => {
 async function refreshCartPrices(){
   if(!getCart().length)return;
   try{
-    const response=await fetch('/api/products',{cache:'no-store'});if(!response.ok)return;
-    const data=await response.json(),bySlug=new Map((data.items||[]).map(item=>[item.slug,item]));
-    const fresh=getCart().map(item=>{const product=bySlug.get(item.slug);if(!product)return item;return {...item,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,category:product.category,category_label:product.category_label,product_kind:product.product_kind,course_origin:product.course_origin,pages:product.pages,cover_url:product.cover_url||item.cover_url}});
+    const [productsResponse,coursesResponse]=await Promise.all([fetch('/api/products',{cache:'no-store'}),fetch('/api/courses',{cache:'no-store'})]);if(!productsResponse.ok||!coursesResponse.ok)return;
+    const [products,courses]=await Promise.all([productsResponse.json(),coursesResponse.json()]),available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,product_kind:'course',category:'online-course'}))],bySlug=new Map(available.map(item=>[item.slug,item])),before=getCart(),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return [];return [{...item,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,category:product.category,category_label:product.category_label,product_kind:product.product_kind,course_origin:product.course_origin,pages:product.pages??product.lesson_count,cover_url:product.cover_url||item.cover_url}]});
+    if(fresh.length!==before.length)resetActiveOrder();
     localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
+    if(fresh.length!==before.length)alert(`นำสินค้า ${before.length-fresh.length} รายการออกจากตะกร้าแล้ว เพราะสินค้าปิดขายหรือถูกลบ`);
   }catch{}
 }
 const discountRate = (count) =>
@@ -252,13 +253,16 @@ slipForm.onsubmit = async (e) => {
   }
 };
 async function removeUnavailableCartItems() {
-  const response = await fetch("/api/orders", { cache: "no-store" }).catch(
-    () => null,
-  );
-  if (!response?.ok) return;
-  const data = await response.json().catch(() => ({ items: [] }));
+  const orders=[];let cursor='';
+  for(let page=0;page<20;page++){
+    const query=cursor?`?limit=100&cursor=${encodeURIComponent(cursor)}`:'?limit=100',response=await fetch(`/api/orders${query}`,{cache:'no-store'}).catch(()=>null);
+    if(!response?.ok)return;
+    const data=await response.json().catch(()=>({items:[],pagination:{}}));orders.push(...(data.items||[]));
+    if(!data.pagination?.has_more||!data.pagination?.next_cursor)break;
+    cursor=String(data.pagination.next_cursor);
+  }
   const blocked = new Set();
-  for (const order of data.items || [])
+  for (const order of orders)
     if (["paid", "pending_review", "awaiting_payment"].includes(order.status))
       for (const item of order.items || []) if(item.slug!=='course-selling-rights')blocked.add(item.slug);
   const before = getCart(),

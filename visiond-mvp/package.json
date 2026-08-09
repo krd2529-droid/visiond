@@ -8,7 +8,8 @@
     "db:init": "wrangler d1 execute visiond-db --file=./migrations/0001_init.sql",
     "vision5:backup": "node scripts/vision5-backup.mjs",
     "vision5:restore": "node scripts/vision5-restore.mjs",
-    "test:elon-provider": "node scripts/test-elon-provider.mjs"
+    "test:elon-provider": "node scripts/test-elon-provider.mjs",
+    "test:commerce-final": "node scripts/test-commerce-final.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

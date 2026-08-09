@@ -1,4 +1,4 @@
-/* v0.14.29 — Control Center responsive and keyboard-safe layout */
+/* v0.14.30 — Control Center responsive and keyboard-safe layout */
 :where(.admin-wrap, .course-admin-shell, main) {
   box-sizing: border-box;
 }

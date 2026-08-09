@@ -140,8 +140,8 @@ export async function enforceElonRateLimit(env,userId){
   return Number(row?.hits||0)<=ELON_RATE_LIMIT_PER_MINUTE;
 }
 
-// Runs at most hourly from ELON traffic. Deletes messages explicitly before
-// conversations so retention does not depend on foreign-key cascade settings.
+// Runs at most hourly from ELON traffic. Deletes expired conversations from
+// their last real message first, then trims messages outside the audit window.
 export async function purgeExpiredElonData(env,{force=false}={}){
   const marker=await env.DB.prepare("SELECT value FROM settings WHERE key='elon_last_retention_purge'").first();
   const lastRun=Date.parse(String(marker?.value||''));

@@ -1,5 +1,15 @@
 # VisionD MVP
 
+## v0.14.30 — Final Regression QA ทั้งระบบ
+
+- ทดสอบรวมหน้าร้าน ตะกร้า ส่วนลด 5/10/20/30 ออเดอร์ สลิป สิทธิ์ดาวน์โหลด Dashboard, Vision 5, V-Learning, ELON และ Control Center
+- ตะกร้าลบสินค้าที่ปิดขายหรือถูกลบจริง พร้อมยกเลิกการอ้างอิงออเดอร์เก่า และตรวจออเดอร์ค้าง/ซื้อแล้วครบทุกหน้าผ่าน cursor
+- Order API ตอบ 400 เมื่อ JSON หรือตะกร้าผิดรูปแบบแทนการหลุดเป็น 500
+- ลด query ของไฟล์ 200 EP เป็น bulk query และปรับการเพิ่ม/ลด 1–200 EP เป็น set-based SQL
+- ป้องกัน progress request เก่าทำตำแหน่งเรียนต่อถอยหลัง และลดงานตรวจ schema ซ้ำใน Worker isolate เดียวกัน
+- เพิ่มความเข้มงวดให้ Analytics, ELON cleanup, Payment Settings, Sales Report และ CSV pagination
+- ตรวจซ้ำสิทธิ์ Admin/Boss, Terms, session, EasySlip, OpenAI/Gemini fallback, mobile keyboard/ARIA และ Cloudflare Functions build
+
 ## v0.14.29 — UI มือถือทั้งหน้าบ้านและหลังบ้าน
 
 - เปลี่ยนเมนูหน้าบ้านมือถือเป็น drawer ซ้ายในทุกหน้าที่มี topbar ไม่ต้องเลื่อนแนวนอนเพื่อค้นหาปุ่มสำคัญ

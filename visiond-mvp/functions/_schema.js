@@ -1,5 +1,18 @@
+// Cloudflare reuses a Worker isolate for many requests. Schema compatibility
+// checks only need to run once per D1 binding in that isolate, not on every API
+// call. A rejected initialization is removed so the next request can retry.
+const schemaReadyByDatabase=new WeakMap();
 export async function ensureDatabase(env) {
   if (!env.DB) throw new Error('D1_NOT_CONNECTED');
+  let ready=schemaReadyByDatabase.get(env.DB);
+  if(!ready){
+    ready=initializeDatabase(env).catch(error=>{schemaReadyByDatabase.delete(env.DB);throw error});
+    schemaReadyByDatabase.set(env.DB,ready);
+  }
+  return ready;
+}
+
+async function initializeDatabase(env) {
 
   const statements = [
     `CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT,email TEXT NOT NULL UNIQUE,username TEXT UNIQUE,name TEXT NOT NULL,phone TEXT,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'user',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,

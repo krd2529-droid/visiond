@@ -12,7 +12,7 @@ export async function onRequestPost(ctx){
   // actual uploaded video. Do not use it to move a learner backwards on resume.
   const position=Math.min(Math.max(0,Math.floor(rawPosition)),86400);
   await ctx.env.DB.prepare(`INSERT INTO course_progress(user_id,course_id,lesson_id,last_position_seconds,completed,updated_at) VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)
-    ON CONFLICT(user_id,lesson_id) DO UPDATE SET last_position_seconds=excluded.last_position_seconds,completed=MAX(course_progress.completed,excluded.completed),updated_at=CURRENT_TIMESTAMP`)
+    ON CONFLICT(user_id,lesson_id) DO UPDATE SET last_position_seconds=MAX(course_progress.last_position_seconds,excluded.last_position_seconds),completed=MAX(course_progress.completed,excluded.completed),updated_at=CURRENT_TIMESTAMP`)
     .bind(access.user.id,access.course.id,lessonId,position,completed).run();
   const summary=await ctx.env.DB.prepare(`SELECT COUNT(*) total_lessons,SUM(CASE WHEN cp.completed=1 THEN 1 ELSE 0 END) completed_lessons,MAX(cp.updated_at) last_activity_at
     FROM course_lessons l LEFT JOIN course_progress cp ON cp.lesson_id=l.id AND cp.user_id=? WHERE l.course_id=?`).bind(access.user.id,access.course.id).first();

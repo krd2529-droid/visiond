@@ -6,7 +6,7 @@ const noStore={'cache-control':'private, no-store'};
 async function digest(value){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))}
 async function validToken(request,secret){
   const expected=String(secret||''),header=request.headers.get('authorization')||'',provided=header.startsWith('Bearer ')?header.slice(7):'';
-  if(expected.length<32||!provided)return false;
+  if(expected.length<32||!provided||provided.length>512)return false;
   const [a,b]=await Promise.all([digest(expected),digest(provided)]);let different=a.length===b.length?0:1;for(let i=0;i<Math.min(a.length,b.length);i++)different|=a[i]^b[i];return different===0;
 }
 export async function onRequestPost(ctx){

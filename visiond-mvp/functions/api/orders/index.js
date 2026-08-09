@@ -33,10 +33,11 @@ export async function onRequestPost(ctx) {
       { error: "ขณะนี้ VisionD ปิดรับคำสั่งซื้อชั่วคราว กรุณาติดต่อ LINE" },
       503,
     );
-  const b = await ctx.request.json();
-  const invalidQuantity=(b.productSlugs||[]).some(x=>{const slug=String(x||'').trim(),raw=b.quantities?.[slug];if(raw===undefined||raw===null||raw==='')return false;const quantity=Number(raw);return !Number.isInteger(quantity)||quantity<1||quantity>30});
+  const b = await ctx.request.json().catch(()=>null);
+  if(!b||!Array.isArray(b.productSlugs)||b.productSlugs.length>30||(b.quantities!==undefined&&(b.quantities===null||typeof b.quantities!=='object'||Array.isArray(b.quantities))))return json({error:'ข้อมูลตะกร้าไม่ถูกต้อง'},400);
+  const invalidQuantity=b.productSlugs.some(x=>{const slug=String(x||'').trim(),raw=b.quantities?.[slug];if(raw===undefined||raw===null||raw==='')return false;const quantity=Number(raw);return !Number.isInteger(quantity)||quantity<1||quantity>30});
   if(invalidQuantity)return json({error:'จำนวนสินค้าต้องเป็นเลขจำนวนเต็ม 1–30'},400);
-  const requestedSlugs = (b.productSlugs || [])
+  const requestedSlugs = b.productSlugs
     .flatMap((x) => {const slug=String(x || "").trim(),quantity=Number(b.quantities?.[slug]||1);return Array(quantity).fill(slug)})
     .filter(Boolean);
   const slugs = [

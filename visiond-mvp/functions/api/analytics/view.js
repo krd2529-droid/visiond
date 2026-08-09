@@ -47,6 +47,7 @@ export async function onRequestPost(ctx){
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
+  const limited=await rateLimitIdentity(ctx.env,ctx.request,'analytics-read-ip',requestIp(ctx.request),120,1,5);if(limited.error)return limited.error;
   const url=new URL(ctx.request.url),product=await productFromSlug(ctx.env,url.searchParams.get('product_slug'));
   return json(await viewStats(ctx.env,product),200,{'cache-control':'no-store'});
 }

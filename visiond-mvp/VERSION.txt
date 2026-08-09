@@ -1,3 +1,10 @@
+VisionD MVP v0.14.30 — Final Regression QA
+Validate storefront, discounts, orders, slips, downloads, Dashboard, Vision 5, V-Learning, ELON, and Admin together
+Remove unavailable cart products and check purchased or pending orders across every cursor page
+Return 400 for malformed order payloads instead of an internal server error
+Bulk-load 200-episode lesson files and resize episode plans with set-based SQL
+Keep video resume positions monotonic when stale progress requests arrive out of order
+Harden analytics, cleanup, payment settings, sales dates, CSV cursors, and mobile focus restoration
 VisionD MVP v0.14.29 — Full Mobile UI
 Replace storefront horizontal navigation with an accessible mobile drawer on every topbar page
 Fit product, catalog, cart, auth, dashboard, seller, and V-Learning actions at 320 to 430 pixels
