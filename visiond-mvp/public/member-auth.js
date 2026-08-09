@@ -63,10 +63,14 @@ document.querySelector('#registerPageForm')?.addEventListener('submit',event=>{
 
 document.querySelector('#forgotForm')?.addEventListener('submit',async event=>{
   event.preventDefault();
-  const email=String(new FormData(event.currentTarget).get('email')||'').trim();
-  if(authMessage){
-    authMessage.textContent='';
-    authMessage.append('ยังไม่มีระบบส่งอีเมลอัตโนมัติ กรุณาแจ้งอีเมล ',email,' กับเจ้าหน้าที่ VisionD ทาง ');
-    const link=document.createElement('a');link.href='https://lin.ee/RJZwr1p';link.target='_blank';link.rel='noopener';link.textContent='LINE';authMessage.append(link,' โดยห้ามส่งรหัสผ่านเดิม');
-  }
+  const form=event.currentTarget,button=form.querySelector('button[type="submit"]'),original=button.textContent;
+  button.disabled=true;button.textContent='กำลังส่งลิงก์…';if(authMessage)authMessage.textContent='';
+  try{
+    const fields=new FormData(form),email=String(fields.get('email')||'').trim(),turnstile_token=String(fields.get('turnstile_token')||'');
+    const response=await fetch('/api/auth/forgot-password',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,turnstile_token})});
+    const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ส่งคำขอไม่สำเร็จ กรุณาลองใหม่');
+    if(authMessage)authMessage.textContent=data.message;
+    form.reset();
+  }catch(error){if(authMessage)authMessage.textContent=error.message}
+  finally{button.disabled=false;button.textContent=original}
 });

@@ -9,7 +9,10 @@
     "vision5:backup": "node scripts/vision5-backup.mjs",
     "vision5:restore": "node scripts/vision5-restore.mjs",
     "test:elon-provider": "node scripts/test-elon-provider.mjs",
-    "test:commerce-final": "node scripts/test-commerce-final.mjs"
+    "test:commerce-final": "node scripts/test-commerce-final.mjs",
+    "test:v01431": "node scripts/test-v01431.mjs",
+    "test:maintenance-worker": "node scripts/test-maintenance-worker.mjs",
+    "predeploy:check": "node scripts/predeploy-check.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

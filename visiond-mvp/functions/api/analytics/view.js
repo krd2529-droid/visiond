@@ -1,6 +1,7 @@
 import {cookie,json,sha256} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
 import {rateLimitIdentity,requestIp} from '../../_security.js';
+import {analyticsStats,recordPageView} from '../../_analytics.js';
 
 const VISITOR_COOKIE='__Host-vd_vid';
 
@@ -22,16 +23,8 @@ async function productFromSlug(env,slug){
 }
 
 async function viewStats(env,product){
-  const [site,rolling,productViews]=await Promise.all([
-    env.DB.prepare('SELECT COALESCE(MAX(id),0) count FROM page_views').first(),
-    env.DB.prepare(`SELECT
-      COALESCE(SUM(CASE WHEN date(viewed_at,'+7 hours')=date('now','+7 hours') THEN 1 ELSE 0 END),0) today,
-      COALESCE(SUM(CASE WHEN date(viewed_at,'+7 hours')>=date('now','+7 hours','-6 days') THEN 1 ELSE 0 END),0) last7,
-      COUNT(*) last30
-      FROM page_views WHERE viewed_at>=datetime(date('now','+7 hours','-29 days'),'-7 hours')`).first(),
-    product?env.DB.prepare('SELECT COUNT(*) count FROM page_views WHERE product_id=?').bind(product.id).first():null
-  ]);
-  return {site_views:Number(site?.count)||0,today_views:Number(rolling?.today)||0,last7_views:Number(rolling?.last7)||0,last30_views:Number(rolling?.last30)||0,product_views:Number(productViews?.count)||0};
+  const [site,productStats]=await Promise.all([analyticsStats(env),product?analyticsStats(env,product.id):null]);
+  return {site_views:site.total,today_views:site.today,last7_views:site.last7,last30_views:site.last30,product_views:productStats?.total||0};
 }
 
 export async function onRequestPost(ctx){
@@ -40,7 +33,7 @@ export async function onRequestPost(ctx){
   const body=await ctx.request.json().catch(()=>({})),path=cleanPath(body.path),product=await productFromSlug(ctx.env,body.product_slug);
   const userAgent=ctx.request.headers.get('user-agent')||'',isBot=/bot|crawler|spider|slurp|preview|facebookexternalhit/i.test(userAgent),visitor=visitorIdentity(ctx.request),visitorKey=await sha256(`${visitor.id}|visiond-view-v2`);
   const duplicate=await ctx.env.DB.prepare("SELECT id FROM page_views WHERE visitor_key=? AND path=? AND COALESCE(product_id,0)=? AND viewed_at>=datetime('now','-30 minutes') LIMIT 1").bind(visitorKey,path,product?.id||0).first();
-  if(!duplicate&&!isBot)await ctx.env.DB.prepare('INSERT INTO page_views(path,product_id,visitor_key) VALUES(?,?,?)').bind(path,product?.id||null,visitorKey).run();
+  if(!duplicate&&!isBot)await recordPageView(ctx.env,{path,productId:product?.id,visitorKey});
   const stats=await viewStats(ctx.env,product),headers={'cache-control':'no-store'};if(visitor.setCookie)headers['set-cookie']=visitor.setCookie;
   return json({ok:true,counted:!duplicate&&!isBot,...stats},200,headers);
 }

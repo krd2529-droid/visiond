@@ -44,6 +44,7 @@ const panels = {
   settings: settingsPanel,
   users: usersPanel,
   elon: elonPanel,
+  health: healthPanel,
   trash: trashPanel,
 };
 let salesRows = [],
@@ -91,6 +92,7 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "settings") loadPaymentSettings();
       if (btn.dataset.adminTab === "users") loadUsers();
       if (btn.dataset.adminTab === "elon") loadElonConversations();
+      if (btn.dataset.adminTab === "health") loadSystemHealth();
       if (btn.dataset.adminTab === "trash") loadTrash();
     }),
 );
@@ -119,7 +121,11 @@ trashList.addEventListener("click", async (event) => {
   const action = button.dataset.trashAction,
     id = Number(button.dataset.trashId),
     type = button.dataset.trashType;
-  if (action === "delete" && !confirm("ลบรายการนี้ถาวรทันทีหรือไม่? กู้คืนไม่ได้")) return;
+  if (action === "delete") {
+    if (viewer?.role !== "boss") return alert("เฉพาะ Boss ลบถาวรได้");
+    if (!confirm("ลบรายการนี้ถาวรทันทีหรือไม่? กู้คืนไม่ได้")) return;
+    if (prompt("พิมพ์ DELETE เพื่อยืนยันลบถาวร") !== "DELETE") return;
+  }
   button.disabled = true;
   const response = await fetch(
     action === "restore" ? "/api/admin/trash/restore" : `/api/admin/trash?type=${encodeURIComponent(type)}&id=${id}`,
@@ -139,7 +145,7 @@ async function loadTrash() {
   if (!response.ok) return (trashList.innerHTML = `<p>${esc(data.error || "โหลดถังขยะไม่สำเร็จ")}</p>`);
   const labels = { product: "ตะกร้าสินค้า", product_image: "รูปสินค้า", product_file: "PDF/ZIP" };
   trashList.innerHTML = data.items?.length
-    ? `<div class="trash-grid">${data.items.map((item) => `<article class="trash-card"><div><b>${esc(item.title)}</b><small>${labels[item.item_type] || esc(item.item_type)} · ลบเมื่อ ${new Date(item.deleted_at + "Z").toLocaleString("th-TH")}</small><small>ล้างอัตโนมัติ ${new Date(item.expires_at + "Z").toLocaleString("th-TH")}</small></div><div><button type="button" data-trash-action="restore" data-trash-type="${esc(item.item_type)}" data-trash-id="${item.id}">กู้คืน</button><button class="danger" type="button" data-trash-action="delete" data-trash-type="${esc(item.item_type)}" data-trash-id="${item.id}">ลบถาวร</button></div></article>`).join("")}</div>`
+    ? `<div class="trash-grid">${data.items.map((item) => `<article class="trash-card"><div><b>${esc(item.title)}</b><small>${labels[item.item_type] || esc(item.item_type)} · ลบเมื่อ ${new Date(item.deleted_at + "Z").toLocaleString("th-TH")}</small><small>ล้างอัตโนมัติ ${new Date(item.expires_at + "Z").toLocaleString("th-TH")}</small></div><div><button type="button" data-trash-action="restore" data-trash-type="${esc(item.item_type)}" data-trash-id="${item.id}">กู้คืน</button>${viewer?.role === "boss" ? `<button class="danger" type="button" data-trash-action="delete" data-trash-type="${esc(item.item_type)}" data-trash-id="${item.id}">ลบถาวร</button>` : ""}</div></article>`).join("")}</div>`
     : '<div class="admin-empty">ถังขยะว่าง</div>';
 }
 existingFiles.addEventListener("click", (event) => {
@@ -510,7 +516,7 @@ function editCategory(id) {
   categoryEditor.elements.sort_order.value = c.sort_order || 0;
   categoryEditor.elements.active.checked = Boolean(Number(c.active));
   categoryEditorTitle.textContent = "แก้ไขหมวด";
-  deleteCategoryButton.hidden = false;
+  deleteCategoryButton.hidden = viewer?.role !== "boss";
   categoryFormMessage.textContent = "";
   categoryEditor.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1345,6 +1351,20 @@ if (typeof refreshElonButton !== "undefined") refreshElonButton.onclick = loadEl
 if (typeof elonSearchInput !== "undefined") elonSearchInput.oninput = () => { clearTimeout(elonSearchTimer); elonSearchTimer=setTimeout(loadElonConversations,250); };
 if (typeof elonStatusFilter !== "undefined") elonStatusFilter.onchange = loadElonConversations;
 if (typeof elonLoadMore !== "undefined") elonLoadMore.onclick = () => { elonPage += 1; loadElonConversations(true); };
+function healthGroup(title,group,required){
+  const items=group?.items||[];
+  return `<section class="health-group"><div class="health-group-head"><h3>${esc(title)}</h3><b>${Number(group?.ready)||0}/${Number(group?.total)||0} พร้อม</b></div><div class="health-list">${items.map(item=>`<article class="health-item ${item.status==='ready'?'ready':'missing'}"><span class="health-icon" aria-hidden="true">${item.status==='ready'?'✓':'!'}</span><div><b>${esc(item.label)}</b>${item.detail?`<small>${esc(item.detail)}</small>`:''}<p>${esc(item.action)}</p></div><span class="health-badge">${item.status==='ready'?'พร้อม':required?'ต้องแก้':'แนะนำ'}</span></article>`).join('')}</div></section>`;
+}
+async function loadSystemHealth(){
+  if(viewer?.role!=='boss'){systemHealthContent.innerHTML='<div class="admin-empty">เฉพาะ Boss ตรวจสถานะระบบได้</div>';return}
+  refreshSystemHealth.disabled=true;systemHealthContent.innerHTML='<p>กำลังตรวจสถานะระบบ…</p>';
+  const response=await fetch('/api/admin/system-health',{cache:'no-store'}),data=await response.json().catch(()=>({}));
+  refreshSystemHealth.disabled=false;
+  if(!response.ok){systemHealthContent.innerHTML=`<div class="admin-empty">${esc(data.error||'ตรวจระบบไม่สำเร็จ')}</div>`;return}
+  systemHealthChecked.textContent=`ตรวจล่าสุด ${new Date(data.checked_at).toLocaleString('th-TH')}`;
+  systemHealthContent.innerHTML=healthGroup('จำเป็นต่อการทำงาน',data.required,true)+healthGroup('แนะนำให้ตั้งค่า',data.recommended,false);
+}
+if(typeof refreshSystemHealth!=='undefined')refreshSystemHealth.onclick=loadSystemHealth;
 async function unlockProductForUser(event) {
   event.preventDefault();
   const form = new FormData(manualUnlockForm),

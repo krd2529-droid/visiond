@@ -1,4 +1,4 @@
-import {json,requireAdmin} from '../../../_lib.js';
+import {json,requireAdmin,requireBoss} from '../../../_lib.js';
 import {purgeExpiredTrash,permanentlyDeleteProduct} from '../../../_trash.js';
 import {ensureDatabase} from '../../../_schema.js';
 
@@ -12,7 +12,7 @@ export async function onRequestGet(ctx){
 }
 
 export async function onRequestDelete(ctx){
-  const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const auth=await requireBoss(ctx);if(auth.error)return auth.error;
   await ensureDatabase(ctx.env);
   const url=new URL(ctx.request.url),type=url.searchParams.get('type'),id=Number(url.searchParams.get('id'));
   if(type==='product'){

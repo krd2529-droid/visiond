@@ -43,8 +43,11 @@ async function initializeDatabase(env) {
     ,`CREATE TABLE IF NOT EXISTS product_slug_history (old_slug TEXT PRIMARY KEY,product_id INTEGER NOT NULL,changed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS security_rate_limits (rate_key TEXT PRIMARY KEY,hits INTEGER NOT NULL DEFAULT 0,window_start TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,blocked_until TEXT)`
     ,`CREATE TABLE IF NOT EXISTS security_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,event_type TEXT NOT NULL,severity TEXT NOT NULL DEFAULT 'info',user_id INTEGER,ip TEXT,path TEXT,detail TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
-    ,`CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT,path TEXT NOT NULL,product_id INTEGER,visitor_key TEXT NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL)`
+    ,`CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT,path TEXT NOT NULL,product_id INTEGER,visitor_key TEXT NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,aggregated_at TEXT,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL)`
+    ,`CREATE TABLE IF NOT EXISTS analytics_daily (day_local TEXT NOT NULL,path TEXT NOT NULL,product_id INTEGER NOT NULL DEFAULT 0,views INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(day_local,path,product_id))`
+    ,`CREATE TABLE IF NOT EXISTS analytics_visitors (visitor_key TEXT PRIMARY KEY,first_seen_at TEXT NOT NULL,last_seen_at TEXT NOT NULL)`
     ,`CREATE TABLE IF NOT EXISTS user_terms_acceptances (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,terms_version TEXT NOT NULL,accepted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,ip_hash TEXT NOT NULL,UNIQUE(user_id,terms_version),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS password_reset_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,token_hash TEXT NOT NULL UNIQUE,expires_at TEXT NOT NULL,used_at TEXT,consume_id TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS verified_slips (id INTEGER PRIMARY KEY AUTOINCREMENT,trans_ref TEXT NOT NULL UNIQUE,order_id INTEGER NOT NULL UNIQUE,provider TEXT NOT NULL DEFAULT 'easyslip',amount INTEGER NOT NULL,receiver_name TEXT,receiver_account TEXT,verified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(order_id) REFERENCES orders(id))`
     ,`CREATE TABLE IF NOT EXISTS order_slip_evidence (id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL,object_key TEXT NOT NULL UNIQUE,mime_type TEXT NOT NULL DEFAULT 'image/jpeg',file_size INTEGER NOT NULL DEFAULT 0,uploaded_by_user_id INTEGER,source TEXT NOT NULL DEFAULT 'buyer_upload',note TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(order_id) REFERENCES orders(id),FOREIGN KEY(uploaded_by_user_id) REFERENCES users(id))`
     ,`CREATE TABLE IF NOT EXISTS vision4_pending_files (id INTEGER PRIMARY KEY AUTOINCREMENT,file_name TEXT NOT NULL,object_key TEXT NOT NULL UNIQUE,mime_type TEXT NOT NULL,file_size INTEGER NOT NULL DEFAULT 0,pages INTEGER NOT NULL DEFAULT 1,preview_urls TEXT NOT NULL DEFAULT '[]',status TEXT NOT NULL DEFAULT 'waiting_bundle',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
@@ -68,6 +71,8 @@ async function initializeDatabase(env) {
   if (!columns.includes('seller_slip_api_updated_at')) await env.DB.prepare('ALTER TABLE users ADD COLUMN seller_slip_api_updated_at TEXT').run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id,created_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_password_reset_expiry ON password_reset_tokens(expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_right_credits_user ON course_right_credits(user_id,active,granted_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_right_credits_order ON course_right_credits(order_id)').run();
   const creditColumns=(await env.DB.prepare('PRAGMA table_info(course_right_credits)').all()).results.map(column=>column.name);
@@ -99,6 +104,10 @@ async function initializeDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_product_time ON page_views(product_id,viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_visitor_time ON page_views(visitor_key,viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_time ON page_views(viewed_at DESC)').run();
+  const pageViewColumns=(await env.DB.prepare('PRAGMA table_info(page_views)').all()).results.map(column=>column.name);
+  if(!pageViewColumns.includes('aggregated_at'))await env.DB.prepare('ALTER TABLE page_views ADD COLUMN aggregated_at TEXT').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_aggregation ON page_views(aggregated_at,id)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_analytics_daily_product_day ON analytics_daily(product_id,day_local)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_terms_acceptances_user ON user_terms_acceptances(user_id,accepted_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_user ON category_memberships(user_id,active,expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_category ON category_memberships(category_slug,active,expires_at)').run();
@@ -201,6 +210,11 @@ async function initializeDatabase(env) {
     await env.DB.prepare("UPDATE entitlements SET product_id=? WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId,rightsId).run();
     await env.DB.prepare("UPDATE course_right_credits SET product_id=? WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId,rightsId).run();
     await env.DB.prepare("UPDATE unlock_logs SET product_id=?,product_title='สิทธิ์ลงขายคอร์สออนไลน์ 1 ตะกร้า' WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId,rightsId).run();
+    await env.DB.prepare(`INSERT INTO analytics_daily(day_local,path,product_id,views)
+      SELECT day_local,path,?,SUM(views) FROM analytics_daily WHERE product_id IN
+      (SELECT id FROM products WHERE category='resale-rights' AND id<>?) GROUP BY day_local,path
+      ON CONFLICT(day_local,path,product_id) DO UPDATE SET views=views+excluded.views`).bind(rightsId,rightsId).run();
+    await env.DB.prepare("DELETE FROM analytics_daily WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId).run();
     await env.DB.prepare("UPDATE page_views SET product_id=? WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId,rightsId).run();
     await env.DB.prepare("UPDATE trash_items SET product_id=? WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId,rightsId).run();
     await env.DB.prepare("UPDATE product_slug_history SET product_id=? WHERE product_id IN (SELECT id FROM products WHERE category='resale-rights' AND id<>?)").bind(rightsId,rightsId).run();

@@ -1,5 +1,28 @@
 # VisionD MVP
 
+## ตรวจสอบก่อน Deploy
+
+รัน `npm run predeploy:check` เพื่อตรวจ Cloudflare config/bindings, placeholder, migrations, Functions imports, HTML assets, cache version และ ID ซ้ำ โดยไม่อ่านหรือแสดง Secret ดูรายละเอียดใน `PREDEPLOY_CHECK.md`
+
+## v0.14.32 — System Health, Maintenance Cron และ Pre-deploy Gate
+
+- เพิ่มหน้า System Health เฉพาะ Boss ตรวจ D1, R2, migrations, Vision 5 encryption, EasySlip, ELON, Resend, Turnstile และ retention โดยไม่คืนค่า Secret
+- แยกสถานะที่จำเป็นต่อระบบออกจากรายการแนะนำ พร้อมบอกวิธีแก้แต่ละจุด
+- เพิ่ม Cloudflare Maintenance Worker เรียก ELON 60 วันและ Analytics 90 วันทุกวัน 01:17 น. เวลาไทย
+- Cron ใช้ Token คนละตัว บังคับ HTTPS origin, timeout 8 วินาที และ retry เฉพาะข้อผิดพลาดชั่วคราวสูงสุด 3 ครั้ง
+- เพิ่ม `npm run predeploy:check` ตรวจ bindings, placeholders, migrations, imports, HTML assets, duplicate IDs และ cache versions โดยไม่อ่าน Secret
+- เพิ่ม unit tests ของ Worker และคงระบบ Pages, Vision 2, Vision 5, V-Learning และ ELON เดิม
+
+## v0.14.31 — Account Recovery, Analytics Retention และ Boss Danger Zone
+
+- เปิดระบบลืมรหัสผ่านจริงผ่านอีเมล: token 256-bit เก็บเฉพาะ hash หมดอายุ 30 นาที ใช้ครั้งเดียว และตัด session ทุกอุปกรณ์หลังตั้งรหัสใหม่
+- ป้องกันการเดาอีเมลสมาชิกด้วยข้อความตอบแบบเดียว พร้อม Turnstile และ rate limit; หากยังไม่ตั้งผู้ส่งอีเมลจะแจ้งตามจริง
+- สรุป Analytics เป็นยอดรายวัน/รายสินค้า/ตลอดกาลก่อนลบข้อมูล page view ดิบที่เกิน 90 วัน จึงรักษาตัวเลข Dashboard เดิมไว้
+- เพิ่ม endpoint สำหรับ Worker Cron ที่ตรวจ Secret และประมวลผล backfill/purge ครั้งละไม่เกิน 5,000 แถว
+- จัดเมนูหลังบ้านเป็นกลุ่ม เพิ่มทางเข้า Integrity และรวมงานเสี่ยงไว้ใน Boss Danger Zone
+- ลบถาวร ลบหมวด ล้างออเดอร์ และเปลี่ยน Role จำกัดเฉพาะ Boss; การลบถาวรต้องพิมพ์ `DELETE`
+- คง Vision 2 ไว้ครบ และเพิ่ม migration สำหรับ password reset/analytics โดยไม่ลบข้อมูลเดิม
+
 ## v0.14.30 — Final Regression QA ทั้งระบบ
 
 - ทดสอบรวมหน้าร้าน ตะกร้า ส่วนลด 5/10/20/30 ออเดอร์ สลิป สิทธิ์ดาวน์โหลด Dashboard, Vision 5, V-Learning, ELON และ Control Center
@@ -481,6 +504,8 @@
 - BANK_ACCOUNT_NAME
 - BANK_ACCOUNT_NUMBER
 - ADMIN_EMAIL
+- ระบบลืมรหัสผ่านจริง: ตั้ง `PASSWORD_RESET_EMAIL_PROVIDER=resend`, `APP_ORIGIN=https://visiondonline.com`, `RESET_EMAIL_FROM` เป็นผู้ส่งจากโดเมนที่ยืนยันแล้ว และเพิ่ม `RESEND_API_KEY` เป็น Cloudflare Secret ห้ามใส่คีย์ในโค้ด
+- หากตั้งค่าอีเมลไม่ครบ API จะแจ้งว่าไม่พร้อมใช้งานตามจริงและจะไม่แสดงว่าส่งสำเร็จ ลิงก์มีอายุ 30 นาที ใช้ได้ครั้งเดียว และการตั้งรหัสใหม่จะยกเลิกเซสชันทุกอุปกรณ์
 
 ## ตั้งบัญชีแอดมิน
 หลังสมัครสมาชิกแล้ว รัน SQL:

@@ -1,3 +1,16 @@
+VisionD MVP v0.14.32 — System Health, Maintenance Cron, and Pre-deploy Gate
+Show Boss-only deployment readiness without exposing secret values
+Run ELON and Analytics retention from a separate daily Cloudflare Worker Cron
+Validate HTTPS origin, separate cleanup tokens, bounded timeout, and safe retries
+Check bindings, placeholders, migrations, imports, HTML assets, duplicate IDs, and cache versions before deploy
+Preserve Pages, Vision 2, Vision 5, V-Learning, and ELON contracts
+VisionD MVP v0.14.31 — Account Recovery, Analytics Retention, and Boss Danger Zone
+Reset passwords with single-use 30-minute hashed tokens and revoke every existing session
+Send reset links through configured Resend credentials without disclosing member emails
+Aggregate analytics before deleting raw page views older than 90 days
+Run bounded analytics retention from a token-protected daily cron endpoint
+Group secondary Admin navigation and reserve permanent destructive actions for Boss
+Preserve Vision 2 and existing route/API contracts
 VisionD MVP v0.14.30 — Final Regression QA
 Validate storefront, discounts, orders, slips, downloads, Dashboard, Vision 5, V-Learning, ELON, and Admin together
 Remove unavailable cart products and check purchased or pending orders across every cursor page

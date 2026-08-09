@@ -1,4 +1,4 @@
-import {json,requireAdmin} from '../../../_lib.js';
+import {json,requireAdmin,requireBoss} from '../../../_lib.js';
 import {ensureDatabase} from '../../../_schema.js';
 
 export async function onRequestPut(ctx){
@@ -14,7 +14,7 @@ export async function onRequestPut(ctx){
 
 export async function onRequestDelete(ctx){
   await ensureDatabase(ctx.env);
-  const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const auth=await requireBoss(ctx);if(auth.error)return auth.error;
   const used=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM products WHERE category=(SELECT slug FROM categories WHERE id=?)').bind(ctx.params.id).first();
   if(Number(used?.count))return json({error:'หมวดนี้มีสินค้าอยู่ ให้ย้ายสินค้าหรือปิดหมวดแทน'},409);
   await ctx.env.DB.prepare('DELETE FROM categories WHERE id=?').bind(ctx.params.id).run();return json({ok:true});

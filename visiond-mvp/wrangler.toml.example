@@ -19,10 +19,15 @@ BANK_ACCOUNT_NAME = "ตั้งค่าใน Cloudflare"
 BANK_ACCOUNT_NUMBER = "ตั้งค่าใน Cloudflare"
 ADMIN_EMAIL = "admin@example.com"
 TURNSTILE_SITE_KEY = ""
+PASSWORD_RESET_EMAIL_PROVIDER = "resend"
+APP_ORIGIN = "https://visiondonline.com"
+RESET_EMAIL_FROM = "VisionD <no-reply@example.com>"
 # เพิ่ม TURNSTILE_SECRET_KEY เป็น Secret ใน Cloudflare ห้ามใส่คีย์จริงในไฟล์นี้
 # เพิ่ม EASYSLIP_API_KEY เป็น Secret ใน Cloudflare ห้ามใส่คีย์จริงในไฟล์นี้
 # เพิ่ม OPENAI_API_KEY เป็น Secret ใน Cloudflare ห้ามใส่คีย์จริงในไฟล์นี้
 # หากไม่มี OpenAI ให้ใช้ GEMINI_API_KEY หรือ GEMINI_API_KEY_2 เป็น Secret (ELON จะเลือกตามลำดับนี้)
 # ELON_GEMINI_MODEL = "gemini-2.5-flash" # ไม่ใส่ก็ใช้ค่านี้อัตโนมัติ
 # เพิ่ม ELON_CLEANUP_TOKEN เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร ห้ามใส่คีย์จริงในไฟล์นี้
+# เพิ่ม ANALYTICS_CLEANUP_TOKEN เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร สำหรับงานสรุป/ล้าง page views รายวัน
 # เพิ่ม VISION5_TOKEN_ENCRYPTION_KEY เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร และห้ามเปลี่ยนหลังเริ่มใช้งาน
+# เพิ่ม RESEND_API_KEY เป็น Secret เพื่อเปิดระบบลืมรหัสผ่าน (ต้องยืนยันโดเมนผู้ส่งใน Resend)

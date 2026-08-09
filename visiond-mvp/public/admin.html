@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/admin-categories.css?v=01398" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
-    <link rel="stylesheet" href="/admin-navigation.css?v=01416" />
+    <link rel="stylesheet" href="/admin-navigation.css?v=01431" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
     <style>
       .v3-review-section{display:grid;gap:12px;margin-top:24px;padding:18px;border:1px solid #a9d9d5;border-radius:18px;background:#f8fffe}.v3-review-head{display:flex;justify-content:space-between;gap:15px;align-items:center}.v3-review-head h3,.v3-review-head p{margin:0}.v3-review-head p{margin-top:5px;color:#617c79;font-size:12px}.v3-review-head button,.v3-review-card button{padding:8px 11px;border:1px solid #0a928b;border-radius:9px;background:#fff;color:#08756f;font-weight:900;cursor:pointer}.v3-review-grid{display:grid;gap:9px}.v3-review-card{display:grid;grid-template-columns:66px 1fr auto;gap:12px;align-items:center;padding:11px;border:1px solid #c6e1df;border-radius:13px;background:#fff}.v3-review-card img{width:58px;height:68px;object-fit:contain;border-radius:8px;background:#eaf8f7}.v3-review-card b,.v3-review-card small{display:block}.v3-review-card small{margin-top:4px;color:#617c79}.v3-low-content{border-color:#e4bd6e;background:#fffaf0}.v3-low-content .v3-review-card{border-color:#ead4a6}.v3-low-icon{display:grid;place-items:center;width:58px;height:58px;border-radius:12px;background:#fff0c9;font-size:25px}
@@ -298,7 +298,7 @@
           <button data-admin-tab="products"><span class="admin-tab-icon" aria-hidden="true">🛍️</span><span>จัดการสินค้า</span></button>
           <a class="admin-tab-link course-tab-link" href="/admin-courses.html#sellerReview"><span class="admin-tab-icon" aria-hidden="true">🎓</span><span>ตรวจคอร์ส<br>ผู้ขาย</span></a>
         </div>
-        <details class="admin-more-nav"><summary><span aria-hidden="true">☰</span> เพิ่มเติม — รายงาน การขาย สมาชิก และตั้งค่าระบบ</summary><div class="admin-more-grid"><button data-admin-tab="overview">📊 ภาพรวมกำไร</button><button data-admin-tab="sales">📈 รายงานยอดขาย</button><button data-admin-tab="promotion">🏷️ โปรโมชั่น</button><button data-admin-tab="categories">🗂️ หมวดหมู่</button><button data-admin-tab="users">👥 สมาชิกและระดับไอดี</button><button data-admin-tab="elon">🤖 ELON AI Support</button><button data-admin-tab="settings">⚙️ ตั้งค่าระบบและชำระเงิน</button><button class="danger-link boss-only-danger" data-admin-tab="trash">🗑️ ถังขยะ / ลบถาวร</button></div></details>
+        <details class="admin-more-nav"><summary><span aria-hidden="true">☰</span> เพิ่มเติม — รายงาน การขาย สมาชิก และตั้งค่าระบบ</summary><div class="admin-more-grid"><div class="admin-more-group"><b>รายงานและการขาย</b><button data-admin-tab="overview">📊 ภาพรวมกำไร</button><button data-admin-tab="sales">📈 รายงานยอดขาย</button><button data-admin-tab="promotion">🏷️ โปรโมชั่น</button></div><div class="admin-more-group"><b>คลังและสมาชิก</b><button data-admin-tab="categories">🗂️ หมวดหมู่</button><button data-admin-tab="users">👥 สมาชิกและระดับไอดี</button></div><div class="admin-more-group"><b>ระบบและชำระเงิน</b><button data-admin-tab="settings">⚙️ ตั้งค่าชำระเงิน</button><button data-admin-tab="elon">🤖 ELON AI Support</button><button class="boss-only-danger" data-admin-tab="health">🩺 System Health</button><a class="admin-more-link" href="/course-integrity.html">🛡️ ตรวจ Integrity</a></div><div class="admin-more-group admin-danger-group boss-only-danger"><b>BOSS · DANGER ZONE</b><button class="danger-link" data-admin-tab="trash">🗑️ ถังขยะ / ลบถาวร</button><small>ลบถาวรและล้างออเดอร์ได้เฉพาะ Boss</small></div></div></details>
         <section id="vision3Panel" hidden>
           <div class="section-head"><div><p class="eyebrow">VISION 4 AUTO MULTI-PRODUCT DRAFT</p><h2>โยนหลายไฟล์ → สร้างร่างหลายตะกร้าอัตโนมัติ</h2><p>หนึ่งไฟล์สร้างหนึ่งตะกร้า รับ PDF, ZIP ที่มี PDF หรือ ZIP ที่มี JPG/PNG/WEBP พร้อมกันสูงสุด 30 ไฟล์</p></div></div>
           <section class="v3-batch-card">
@@ -657,7 +657,7 @@
                   แก้รูปและ PDF จาก ZIP
                 </button
                 ><button
-                  class="danger"
+                  class="danger boss-only-danger"
                   id="deleteProductButton"
                   type="button"
                   hidden
@@ -962,6 +962,11 @@
           </div>
           <div id="elonAdminRestricted" class="elon-empty" hidden>Admin ดูได้เฉพาะจำนวนรวม บทสนทนาเต็มเปิดได้ด้วยบัญชี Boss เท่านั้น</div>
         </section>
+        <section id="healthPanel" class="system-health-panel" hidden>
+          <div class="section-head"><div><p class="eyebrow">BOSS · SYSTEM HEALTH</p><h2>ความพร้อมของระบบ</h2><p>แสดงเฉพาะว่าตั้งค่าแล้วหรือยัง ระบบจะไม่ส่งหรือแสดงค่า Secret</p></div><button id="refreshSystemHealth" class="primary" type="button">ตรวจใหม่</button></div>
+          <p id="systemHealthChecked" class="health-checked">ยังไม่ได้ตรวจ</p>
+          <div id="systemHealthContent"><p>กำลังตรวจสถานะระบบ…</p></div>
+        </section>
         <section id="trashPanel" hidden>
           <div class="section-head">
             <div>
@@ -982,7 +987,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=01430"></script>
+    <script src="/admin.js?v=01432"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>
