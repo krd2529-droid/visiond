@@ -5,6 +5,7 @@
   window.__visiondElonChatLoaded = true;
 
   const API = '/api/elon/chat';
+  const PUBLIC_API = '/api/elon/public-chat';
   const AUTH_API = '/api/auth/me';
   const STORAGE_PREFIX = 'visiond_elon_conversation_id';
   // Fail closed: ELON is a member-facing helper, so it may mount only on an
@@ -22,6 +23,7 @@
   let activeController = null;
   let generation = 0;
   let authenticated = false;
+  const chatApi = () => authenticated ? API : PUBLIC_API;
 
   const validConversationId = (value) => /^[a-f0-9-]{20,64}$/i.test(String(value || '')) ? String(value) : '';
   function frontendSurface(pathname) {
@@ -255,7 +257,7 @@
       let response;
       let data;
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        response = await fetch(API, {
+        response = await fetch(chatApi(), {
           method: 'POST',
           credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },

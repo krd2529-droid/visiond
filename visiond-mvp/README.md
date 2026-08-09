@@ -4,6 +4,15 @@
 
 รัน `npm run predeploy:check` เพื่อตรวจ Cloudflare config/bindings, placeholder, migrations, Functions imports, HTML assets, cache version และ ID ซ้ำ โดยไม่อ่านหรือแสดง Secret ดูรายละเอียดใน `PREDEPLOY_CHECK.md`
 
+## v0.14.38 — ELON Database Air-gap and Permanent Blacklist
+
+- แยก Guest ไป `/api/elon/public-chat` ซึ่งไม่มี DB/session import ไม่มี Query ไม่มี conversation ID และส่ง history ว่างให้ AI ทุกครั้ง
+- Member chat handler ไม่มี SQL โดยตรง ใช้ owner-scoped store gateway ที่บังคับ conversation ID คู่กับ user ID จาก session ทุกคำสั่ง
+- AI ยังได้รับเพียง authenticated และ seller eligibility แบบ boolean ไม่ได้รับข้อมูลบัญชี ออเดอร์ หรือจำนวนใด ๆ
+- เพิ่มบัญชีดำถาวร: PII, การเงิน, สลิป, Secret, Log, Analytics, ไฟล์ฉบับเต็ม/ไฟล์ร่าง, object key, Firewall, ช่องโหว่ และโครงสร้างหลังบ้าน
+- บล็อกอีเมล เบอร์โทร เลขบัญชี เลขสลิปและเลขอ้างอิงทั้งก่อนส่งเข้า AI และหลังรับคำตอบจาก AI
+- Widget แยก endpoint สมาชิก/Guest และลดสิทธิ์เป็น Guest เมื่อการตรวจ session ผิดพลาด
+
 ## v0.14.37 — ELON Per-user and Guest Frontend Isolation
 
 - สมาชิกที่ล็อกอินได้รับคำตอบเฉพาะข้อมูลของบัญชีตนเอง โดยทุกประวัติและ Query ผูกกับ user ID ที่ session ฝั่งเซิร์ฟเวอร์ยืนยัน

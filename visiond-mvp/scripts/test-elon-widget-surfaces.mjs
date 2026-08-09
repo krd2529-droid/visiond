@@ -7,6 +7,8 @@ const widget=readFileSync(new URL('../public/elon-chat.js',import.meta.url),'utf
 assert.match(widget,/const FRONTEND_SURFACES = new Set/,'widget must use an explicit frontend allowlist');
 assert.match(widget,/if \(!frontendSurface\(location\.pathname\)\) return/,'unknown routes must fail closed before authentication or mount');
 assert.match(widget,/authenticated = Boolean\(user/,'widget must distinguish an authenticated member from a guest');
+assert.match(widget,/const PUBLIC_API = '\/api\/elon\/public-chat'/,'guest must use the database-free public endpoint');
+assert.match(widget,/const chatApi = \(\) => authenticated \? API : PUBLIC_API/,'widget must route member and guest requests separately');
 assert.match(widget,/Authentication lookup failure falls back to stateless public guidance/,'guest mode must remain stateless when auth lookup fails');
 assert.match(widget,/if \(authenticated && previousId\)/,'guest reset must not call conversation-history APIs');
 

@@ -1,109 +1,68 @@
-import {currentUser,json,requireUser} from '../../_lib.js';
+import {json,requireUser} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
-import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_LOGIN_REQUIRED_REFUSAL,ELON_MAX_MESSAGE_LENGTH,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonSystemPrompt,enforceElonRateLimit,enforceGuestElonRateLimit,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
+import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonSystemPrompt,enforceElonRateLimit,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
+import {createElonConversation,loadElonMessages,loadElonProviderHistory,ownElonConversation,persistElonExchange} from '../../_elon-member-store.js';
 import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
 
 const noStore={'cache-control':'no-store'};
 const validConversationId=value=>/^[a-f0-9-]{20,64}$/i.test(String(value||''))?String(value):'';
 
-async function ownConversation(env,id,userId,activeOnly=false){
-  if(!id)return null;
-  return env.DB.prepare(`SELECT id,title,status,created_at,COALESCE((SELECT MAX(activity.created_at) FROM elon_messages activity WHERE activity.conversation_id=c.id),c.created_at) updated_at,ended_at FROM elon_conversations c WHERE id=? AND user_id=? AND datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_messages m WHERE m.conversation_id=c.id),c.created_at))>=datetime('now','-60 days')${activeOnly?" AND status='active'":''}`).bind(id,userId).first();
-}
-
 export async function onRequestGet(ctx){
   const auth=await requireUser(ctx);if(auth.error)return auth.error;
-  await ensureDatabase(ctx.env);
-  await purgeExpiredElonData(ctx.env);
+  await ensureDatabase(ctx.env);await purgeExpiredElonData(ctx.env);
   const memberContext=await elonMemberContext(ctx.env,auth.user.id);
-  const url=new URL(ctx.request.url),conversationId=validConversationId(url.searchParams.get('conversation_id'));
+  const conversationId=validConversationId(new URL(ctx.request.url).searchParams.get('conversation_id'));
   if(!conversationId)return json({error:'ไม่พบรหัสบทสนทนา'},400,noStore);
-  const conversation=await ownConversation(ctx.env,conversationId,auth.user.id);
+  const conversation=await ownElonConversation(ctx.env,conversationId,auth.user.id);
   if(!conversation)return json({error:'ไม่พบบทสนทนานี้'},404,noStore);
-  const result=await ctx.env.DB.prepare(`SELECT id,role,content,page_path,page_title,page_context,created_at
-    FROM elon_messages WHERE conversation_id=? AND user_id=? ORDER BY id DESC LIMIT 50`).bind(conversationId,auth.user.id).all();
-  const messages=(result.results||[]).reverse().map(item=>{const parsed=parseContext(item.page_context);return {...item,content:item.role==='user'&&containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกเพื่อความปลอดภัย]':safeElonOutput(item.content,ctx.env,memberContext),page_context:contextContainsExternalLink(parsed,ctx.env)?{blocked_external_link:true}:parsed}});
-  const safeConversation={...conversation,title:containsExternalLink(conversation.title,ctx.env)?'ลิงก์ภายนอกถูกบล็อก':conversation.title};
-  return json({conversation:safeConversation,messages},200,noStore);
+  const rows=await loadElonMessages(ctx.env,conversationId,auth.user.id,50);
+  const messages=rows.reverse().map(item=>{const parsed=parseContext(item.page_context);return {...item,content:item.role==='user'&&containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกเพื่อความปลอดภัย]':safeElonOutput(item.content,ctx.env,memberContext),page_context:contextContainsExternalLink(parsed,ctx.env)?{blocked_external_link:true}:parsed}});
+  return json({conversation:{...conversation,title:containsExternalLink(conversation.title,ctx.env)?'ลิงก์ภายนอกถูกบล็อก':conversation.title},messages},200,noStore);
 }
 
 export async function onRequestPost(ctx){
-  const user=await currentUser(ctx),authenticated=Boolean(user);
-  if(authenticated){await ensureDatabase(ctx.env);await purgeExpiredElonData(ctx.env)}
+  const auth=await requireUser(ctx);if(auth.error)return auth.error;
+  await ensureDatabase(ctx.env);await purgeExpiredElonData(ctx.env);
   const body=await ctx.request.json().catch(()=>null);
   if(!body||typeof body.message!=='string')return json({error:'กรุณาพิมพ์คำถาม'},400,noStore);
   const message=body.message.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'').trim();
   if(!message)return json({error:'กรุณาพิมพ์คำถาม'},400,noStore);
   if(message.length>ELON_MAX_MESSAGE_LENGTH)return json({error:`ข้อความยาวเกิน ${ELON_MAX_MESSAGE_LENGTH} ตัวอักษร`},413,noStore);
-  const withinLimit=authenticated?await enforceElonRateLimit(ctx.env,user.id):await enforceGuestElonRateLimit(ctx.request);
-  if(!withinLimit)return json({error:'ส่งข้อความเร็วเกินไป กรุณารอสักครู่แล้วลองใหม่'},429,{...noStore,'retry-after':'60'});
+  if(!(await enforceElonRateLimit(ctx.env,auth.user.id)))return json({error:'ส่งข้อความเร็วเกินไป กรุณารอสักครู่แล้วลองใหม่'},429,{...noStore,'retry-after':'60'});
 
   const rawPageContext=body.page_context||body.context||body;
+  const blockedPersonal=containsProtectedPersonalData(message)||containsProtectedPersonalData(JSON.stringify(rawPageContext));
   const blockedSecret=containsSensitiveToken(message)||containsSensitiveToken(JSON.stringify(rawPageContext));
   const blockedExternalLink=containsExternalLink(message,ctx.env)||contextContainsExternalLink(rawPageContext,ctx.env);
-  const memberContext=authenticated?await elonMemberContext(ctx.env,user.id):{authenticated:false,can_use_seller_vision5:false};
-  const messageAccess=elonAccessDecision(message,memberContext);
-  const contextAccess=elonAccessDecision(JSON.stringify(rawPageContext),memberContext);
-  const accessDecision=messageAccess.blocked?messageAccess:contextAccess;
-  const blockedRestricted=accessDecision.blocked;
-  const blockedUnsafe=blockedExternalLink||blockedSecret||blockedRestricted;
-  const pageContext=blockedUnsafe?{path:'',title:'',product_slug:'',product_id:'',course_id:'',blocked_external_link:blockedExternalLink,blocked_secret:blockedSecret}:sanitizeElonContext(rawPageContext,{authenticated});
-  const requestedId=authenticated?validConversationId(body.conversation_id):'';
-  let conversation=requestedId?await ownConversation(ctx.env,requestedId,user.id,true):null;
+  const memberContext=await elonMemberContext(ctx.env,auth.user.id);
+  const messageAccess=elonAccessDecision(message,memberContext),contextAccess=elonAccessDecision(JSON.stringify(rawPageContext),memberContext);
+  const accessDecision=messageAccess.blocked?messageAccess:contextAccess,blockedRestricted=accessDecision.blocked;
+  const blockedUnsafe=blockedPersonal||blockedExternalLink||blockedSecret||blockedRestricted;
+  const pageContext=blockedUnsafe?{path:'',title:'',product_slug:'',product_id:'',course_id:'',blocked_external_link:blockedExternalLink,blocked_secret:blockedSecret,blocked_personal:blockedPersonal}:sanitizeElonContext(rawPageContext,{authenticated:true});
+  const requestedId=validConversationId(body.conversation_id);
+  let conversation=requestedId?await ownElonConversation(ctx.env,requestedId,auth.user.id,true):null;
   if(requestedId&&!conversation)return json({error:'ไม่พบบทสนทนานี้ หรือบทสนทนาสิ้นสุดแล้ว'},404,noStore);
-  if(authenticated&&!conversation){
-    const id=crypto.randomUUID(),title=blockedUnsafe?'เนื้อหาไม่ปลอดภัยถูกบล็อก':message.replace(/\s+/g,' ').slice(0,80)||'สนทนากับ ELON';
-    await ctx.env.DB.prepare('INSERT INTO elon_conversations(id,user_id,title,status) VALUES(?,?,?,\'active\')').bind(id,user.id,title).run();
-    conversation={id,title,status:'active'};
-  }
+  if(!conversation)conversation=await createElonConversation(ctx.env,auth.user.id,blockedUnsafe?'เนื้อหาไม่ปลอดภัยถูกบล็อก':message.replace(/\s+/g,' ').slice(0,80)||'สนทนากับ ELON');
 
   if(blockedUnsafe){
-    const guestNeedsLogin=!authenticated&&['login_required','seller_not_eligible'].includes(accessDecision.reason);
-    const refusal=blockedSecret?ELON_SECRET_REFUSAL:blockedExternalLink?ELON_EXTERNAL_LINK_REFUSAL:guestNeedsLogin?ELON_LOGIN_REQUIRED_REFUSAL:ELON_RESTRICTED_REFUSAL;
-    const redactedMessage=blockedSecret?'[ข้อมูลลับถูกบล็อกและไม่ได้จัดเก็บ]':blockedExternalLink?'[ลิงก์ภายนอกถูกบล็อกและไม่ได้จัดเก็บ]':'[คำถามเกี่ยวกับข้อมูลจำกัดสิทธิ์ถูกบล็อก]';
+    const refusal=blockedPersonal?ELON_PERSONAL_DATA_REFUSAL:blockedSecret?ELON_SECRET_REFUSAL:blockedExternalLink?ELON_EXTERNAL_LINK_REFUSAL:ELON_RESTRICTED_REFUSAL;
+    const redactedMessage=blockedPersonal?'[ข้อมูลส่วนบุคคลถูกบล็อกและไม่ได้จัดเก็บ]':blockedSecret?'[ข้อมูลลับถูกบล็อกและไม่ได้จัดเก็บ]':blockedExternalLink?'[ลิงก์ภายนอกถูกบล็อกและไม่ได้จัดเก็บ]':'[คำถามเกี่ยวกับข้อมูลจำกัดสิทธิ์ถูกบล็อก]';
     pageContext.restricted=blockedRestricted;pageContext.restricted_reason=blockedRestricted?accessDecision.reason:'';
-    if(authenticated)await persistExchange(ctx.env,conversation.id,user.id,redactedMessage,refusal,pageContext);
-    return json({conversation_id:authenticated?conversation.id:undefined,message:{role:'assistant',content:refusal},blocked_external_link:blockedExternalLink,blocked_secret:blockedSecret,blocked_restricted:blockedRestricted,guest:!authenticated},200,noStore);
+    await persistElonExchange(ctx.env,conversation.id,auth.user.id,redactedMessage,refusal,pageContext);
+    return json({conversation_id:conversation.id,message:{role:'assistant',content:refusal},blocked_external_link:blockedExternalLink,blocked_secret:blockedSecret,blocked_personal:blockedPersonal,blocked_restricted:blockedRestricted},200,noStore);
   }
+
   const provider=selectElonProvider(ctx.env);
   if(!provider)return json({error:'ELON ยังไม่ได้ตั้งค่าระบบ AI กรุณาติดต่อเจ้าหน้าที่ VisionD'},503,noStore);
-
-  const historyResult=authenticated?await ctx.env.DB.prepare(`SELECT role,content FROM elon_messages
-    WHERE conversation_id=? AND user_id=? AND page_context NOT LIKE '%"error":true%' ORDER BY id DESC LIMIT ?`).bind(conversation.id,user.id,ELON_HISTORY_LIMIT).all():{results:[]};
-  const history=(historyResult.results||[]).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':safeElonOutput(item.content,ctx.env,memberContext)}));
+  const history=(await loadElonProviderHistory(ctx.env,conversation.id,auth.user.id,ELON_HISTORY_LIMIT)).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':safeElonOutput(item.content,ctx.env,memberContext)}));
   let providerResult;
-  try{
-    providerResult=await requestElonProvider(provider,{systemPrompt:elonSystemPrompt(memberContext,pageContext),history,message});
-  }catch(error){
-    // Provider errors are deliberately reduced to internal codes; request
-    // headers and API keys are never logged or persisted.
-    console.error('ELON_RESPONSE_FAILED',String(error?.message||'AI_PROVIDER_ERROR').slice(0,120));
-    if(authenticated)try{await persistErrorExchange(ctx.env,conversation.id,user.id,message,pageContext)}catch(persistError){console.error('ELON_ERROR_AUDIT_FAILED',String(persistError?.message||persistError))}
-    return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore);
-  }
+  try{providerResult=await requestElonProvider(provider,{systemPrompt:elonSystemPrompt(memberContext,pageContext),history,message})}
+  catch(error){console.error('ELON_RESPONSE_FAILED',String(error?.message||'AI_PROVIDER_ERROR').slice(0,120));try{await persistError(ctx.env,conversation.id,auth.user.id,message,pageContext)}catch{}return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore)}
   const answer=safeElonOutput(extractProviderText(provider.name,providerResult.payload).slice(0,5000),ctx.env,memberContext);
-  if(!answer){
-    if(authenticated)try{await persistErrorExchange(ctx.env,conversation.id,user.id,message,pageContext)}catch(persistError){console.error('ELON_ERROR_AUDIT_FAILED',String(persistError?.message||persistError))}
-    return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore);
-  }
-  if(authenticated)await persistExchange(ctx.env,conversation.id,user.id,message,answer,pageContext);
-  return json({conversation_id:authenticated?conversation.id:undefined,message:{role:'assistant',content:answer},usage:providerResult.usage,guest:!authenticated},200,noStore);
+  if(!answer){try{await persistError(ctx.env,conversation.id,auth.user.id,message,pageContext)}catch{}return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore)}
+  await persistElonExchange(ctx.env,conversation.id,auth.user.id,message,answer,pageContext);
+  return json({conversation_id:conversation.id,message:{role:'assistant',content:answer},usage:providerResult.usage},200,noStore);
 }
 
-async function persistErrorExchange(env,conversationId,userId,message,pageContext){
-  const errorContext={...pageContext,error:true};
-  await persistExchange(env,conversationId,userId,message,'[ELON ตอบไม่สำเร็จ ระบบบันทึกเหตุการณ์เพื่อให้ Boss ตรวจสอบ]',errorContext);
-}
-
-async function persistExchange(env,conversationId,userId,message,answer,pageContext){
-  const contextJson=JSON.stringify(pageContext);
-  await env.DB.batch([
-    env.DB.prepare(`INSERT INTO elon_messages(conversation_id,user_id,role,content,page_path,page_title,page_context)
-      VALUES(?,?,'user',?,?,?,?)`).bind(conversationId,userId,message,pageContext.path||'',pageContext.title||'',contextJson),
-    env.DB.prepare(`INSERT INTO elon_messages(conversation_id,user_id,role,content,page_path,page_title,page_context)
-      VALUES(?,?,'assistant',?,?,?,?)`).bind(conversationId,userId,answer,pageContext.path||'',pageContext.title||'',contextJson),
-    env.DB.prepare('UPDATE elon_conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?').bind(conversationId,userId)
-  ]);
-}
-
+async function persistError(env,conversationId,userId,message,pageContext){return persistElonExchange(env,conversationId,userId,message,'[ELON ตอบไม่สำเร็จ ระบบบันทึกเหตุการณ์เพื่อให้ Boss ตรวจสอบ]',{...pageContext,error:true})}
 function parseContext(value){try{return JSON.parse(value||'{}')}catch{return {}}}
