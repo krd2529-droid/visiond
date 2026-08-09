@@ -1,3 +1,34 @@
+VisionD MVP v0.14.19 — Vision 5 Full-System QA
+Make rights credit grants and course publishing idempotent under concurrent requests
+Create orders and items atomically, validate integer quantities, and block self-purchase
+Stream large lesson uploads, claim placeholders safely, and lock content after slip submission
+Create 200 planned episodes with one SQL statement and retain the draft course price
+Restrict course-owner slip actions to manual review and expand Boss integrity diagnostics
+Repair course-rights purchase status and retry-safe dynamic EP forms
+VisionD MVP v0.14.18 — Vision 5 Dynamic EP Builder
+Create EP forms from the planned episode count with per-episode video and document upload controls
+Save episode metadata as placeholders and edit or upload each EP later
+Require every planned EP to have a title and media before seller publish or Boss approval
+Keep episode counts synchronized and prevent unsafe reduction when trailing EPs contain media
+VisionD MVP v0.14.17 — Vision 5 Customer EasySlip API Editing
+Keep ELON secret blocking isolated from Vision 5 seller settings
+Allow each seller to edit the input and save a new EasySlip token over the previous token
+Never return the previously saved token to the browser
+VisionD MVP v0.14.16 — Vision 6 ELON QA and Security Fixes
+Redact unsafe links, API tokens, Bearer credentials, and JWTs before storing audit messages
+Retain conversations from their latest activity and prevent members from permanently deleting Boss audit history
+Repair stale sessions, account-scoped history, reset races, network timeouts, and blocked local storage
+Load prior member transcripts and keep the ELON widget clear of the existing contact dock
+Add Boss transcript pagination and preserve ended status when archived conversations are restored
+Record safe OpenAI failure markers for Control Center monitoring
+VisionD MVP v0.14.15 — Vision 6 ELON AI Support
+Add a members-only VisionD support assistant that answers only questions about the website
+Retain ELON conversation history for 60 days and purge expired transcripts automatically
+Reject external links before AI processing and block external URLs from every ELON answer
+Ground every answer in VisionD routes, products, orders, courses, seller rights, Vision 4, Vision 5, and account workflows
+Store each member conversation and message in D1 with strict per-user access
+Allow Boss to search and read every ELON transcript from the Control Center
+Keep OpenAI credentials server-side and configurable through Cloudflare secrets
 VisionD MVP v0.14.12
 Make the 499-baht promotional price red on both the course-rights cover and homepage price text
 Remove the legacy Member รายหมวด storefront, navigation, dashboard widget, admin tools, APIs, ordering, and download grants so the future annual-member basket can be built cleanly

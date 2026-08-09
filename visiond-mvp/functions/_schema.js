@@ -23,6 +23,9 @@ export async function ensureDatabase(env) {
     ,`CREATE TABLE IF NOT EXISTS course_lesson_files (id INTEGER PRIMARY KEY AUTOINCREMENT,lesson_id INTEGER NOT NULL,object_key TEXT NOT NULL UNIQUE,file_name TEXT NOT NULL,mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',file_size INTEGER NOT NULL DEFAULT 0,sort_order INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS course_progress (user_id INTEGER NOT NULL,course_id INTEGER NOT NULL,lesson_id INTEGER NOT NULL,last_position_seconds INTEGER NOT NULL DEFAULT 0,completed INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,lesson_id),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(course_id) REFERENCES courses(id) ON DELETE CASCADE,FOREIGN KEY(lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS notification_reads (user_id INTEGER NOT NULL,notification_key TEXT NOT NULL,read_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,notification_key),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS elon_conversations (id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,title TEXT NOT NULL DEFAULT 'สนทนากับ ELON',status TEXT NOT NULL DEFAULT 'active',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,ended_at TEXT,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS elon_messages (id INTEGER PRIMARY KEY AUTOINCREMENT,conversation_id TEXT NOT NULL,user_id INTEGER NOT NULL,role TEXT NOT NULL CHECK(role IN ('user','assistant')),content TEXT NOT NULL,page_path TEXT NOT NULL DEFAULT '',page_title TEXT NOT NULL DEFAULT '',page_context TEXT NOT NULL DEFAULT '{}',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(conversation_id) REFERENCES elon_conversations(id) ON DELETE CASCADE,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
+    ,`CREATE TABLE IF NOT EXISTS elon_rate_limits (user_id INTEGER NOT NULL,window_start TEXT NOT NULL,hits INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(user_id,window_start),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS trash_items (id INTEGER PRIMARY KEY AUTOINCREMENT,item_type TEXT NOT NULL,title TEXT NOT NULL,product_id INTEGER,object_key TEXT,payload TEXT NOT NULL DEFAULT '{}',deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,expires_at TEXT NOT NULL DEFAULT (datetime('now','+30 days')))`
     ,`CREATE TABLE IF NOT EXISTS product_slug_history (old_slug TEXT PRIMARY KEY,product_id INTEGER NOT NULL,changed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE)`
     ,`CREATE TABLE IF NOT EXISTS security_rate_limits (rate_key TEXT PRIMARY KEY,hits INTEGER NOT NULL DEFAULT 0,window_start TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,blocked_until TEXT)`
@@ -55,7 +58,9 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_right_credits_order ON course_right_credits(order_id)').run();
   const creditColumns=(await env.DB.prepare('PRAGMA table_info(course_right_credits)').all()).results.map(column=>column.name);
   if(!creditColumns.includes('source_entitlement_id'))await env.DB.prepare('ALTER TABLE course_right_credits ADD COLUMN source_entitlement_id INTEGER').run();
+  if(!creditColumns.includes('source_order_item_id'))await env.DB.prepare('ALTER TABLE course_right_credits ADD COLUMN source_order_item_id INTEGER').run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_course_right_credits_source_entitlement ON course_right_credits(source_entitlement_id) WHERE source_entitlement_id IS NOT NULL').run();
+  await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_course_right_credits_source_order_item ON course_right_credits(source_order_item_id) WHERE source_order_item_id IS NOT NULL').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_unlock_logs_created ON unlock_logs(created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_unlock_logs_target ON unlock_logs(target_user_id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ad_costs_date ON ad_costs(spend_date DESC)').run();
@@ -84,6 +89,13 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_lessons_course_sort ON course_lessons(course_id,sort_order,id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_lesson_files_lesson ON course_lesson_files(lesson_id,sort_order,id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_progress_user_course ON course_progress(user_id,course_id,updated_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_elon_conversations_user_updated ON elon_conversations(user_id,updated_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_elon_messages_conversation_created ON elon_messages(conversation_id,created_at DESC,id DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_elon_rate_limits_window ON elon_rate_limits(window_start)').run();
+  const elonMessageColumns=(await env.DB.prepare('PRAGMA table_info(elon_messages)').all()).results.map(column=>column.name);
+  if(!elonMessageColumns.includes('page_path'))await env.DB.prepare("ALTER TABLE elon_messages ADD COLUMN page_path TEXT NOT NULL DEFAULT ''").run();
+  if(!elonMessageColumns.includes('page_title'))await env.DB.prepare("ALTER TABLE elon_messages ADD COLUMN page_title TEXT NOT NULL DEFAULT ''").run();
+  if(!elonMessageColumns.includes('page_context'))await env.DB.prepare("ALTER TABLE elon_messages ADD COLUMN page_context TEXT NOT NULL DEFAULT '{}'").run();
   const vision4PendingColumns=(await env.DB.prepare('PRAGMA table_info(vision4_pending_files)').all()).results.map(column=>column.name);
   if(!vision4PendingColumns.includes('preview_urls'))await env.DB.prepare("ALTER TABLE vision4_pending_files ADD COLUMN preview_urls TEXT NOT NULL DEFAULT '[]'").run();
   const courseColumns=(await env.DB.prepare('PRAGMA table_info(courses)').all()).results.map(column=>column.name);
@@ -114,6 +126,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare(`INSERT OR IGNORE INTO course_right_credits(user_id,product_id,order_id,active,granted_at,source_entitlement_id) SELECT e.user_id,e.product_id,e.order_id,e.active,e.granted_at,e.id FROM entitlements e JOIN products p ON p.id=e.product_id WHERE p.category='resale-rights' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.license_entitlement_id=e.id)`).run();
   const lessonColumns=(await env.DB.prepare('PRAGMA table_info(course_lessons)').all()).results.map(column=>column.name);
   if(!lessonColumns.includes('document_name'))await env.DB.prepare("ALTER TABLE course_lessons ADD COLUMN document_name TEXT NOT NULL DEFAULT ''").run();
+  if(!lessonColumns.includes('upload_claim'))await env.DB.prepare('ALTER TABLE course_lessons ADD COLUMN upload_claim TEXT').run();
+  if(!lessonColumns.includes('upload_claimed_at'))await env.DB.prepare('ALTER TABLE course_lessons ADD COLUMN upload_claimed_at TEXT').run();
   const orderItemColumns = (await env.DB.prepare('PRAGMA table_info(order_items)').all()).results.map(column => column.name);
   if (!orderItemColumns.includes('product_title')) await env.DB.prepare('ALTER TABLE order_items ADD COLUMN product_title TEXT').run();
   await env.DB.prepare('UPDATE order_items SET product_title=(SELECT title FROM products WHERE products.id=order_items.product_id) WHERE product_title IS NULL').run();

@@ -163,8 +163,7 @@ dialog::backdrop{background:rgba(4,43,42,.60);backdrop-filter:blur(4px)}
   .hero{padding-top:58px}
   .hero h1{font-size:42px}
   .grid{grid-template-columns:1fr}
-  .topbar nav a{display:none}
-  .topbar nav .nav-home-link{display:inline-flex;min-width:max-content}
+  .topbar nav a{display:inline-flex;min-width:max-content}
   .section-head{align-items:stretch;flex-direction:column}
   .section-head input{max-width:none}
 }

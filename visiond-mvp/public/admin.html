@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Anton&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/style.css?v=01403" />
+    <link rel="stylesheet" href="/style.css?v=01414" />
     <link rel="stylesheet" href="/course-owner-badge.css?v=01369" />
     <link rel="stylesheet" href="/admin-products.css?v=013270" />
     <link rel="stylesheet" href="/admin-payment.css?v=01192" />
@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/admin-categories.css?v=01398" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
-    <link rel="stylesheet" href="/admin-navigation.css?v=01404" />
+    <link rel="stylesheet" href="/admin-navigation.css?v=01416" />
     <style>
       .v3-review-section{display:grid;gap:12px;margin-top:24px;padding:18px;border:1px solid #a9d9d5;border-radius:18px;background:#f8fffe}.v3-review-head{display:flex;justify-content:space-between;gap:15px;align-items:center}.v3-review-head h3,.v3-review-head p{margin:0}.v3-review-head p{margin-top:5px;color:#617c79;font-size:12px}.v3-review-head button,.v3-review-card button{padding:8px 11px;border:1px solid #0a928b;border-radius:9px;background:#fff;color:#08756f;font-weight:900;cursor:pointer}.v3-review-grid{display:grid;gap:9px}.v3-review-card{display:grid;grid-template-columns:66px 1fr auto;gap:12px;align-items:center;padding:11px;border:1px solid #c6e1df;border-radius:13px;background:#fff}.v3-review-card img{width:58px;height:68px;object-fit:contain;border-radius:8px;background:#eaf8f7}.v3-review-card b,.v3-review-card small{display:block}.v3-review-card small{margin-top:4px;color:#617c79}.v3-low-content{border-color:#e4bd6e;background:#fffaf0}.v3-low-content .v3-review-card{border-color:#ead4a6}.v3-low-icon{display:grid;place-items:center;width:58px;height:58px;border-radius:12px;background:#fff0c9;font-size:25px}
       .product-bulk-bar{display:flex;gap:9px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:12px 0;padding:12px;border:1px solid #acd7d3;border-radius:13px;background:#f4fffe}.product-bulk-bar button{padding:9px 12px;border:1px solid #07928b;border-radius:9px;background:#fff;color:#08756f;font-weight:900;cursor:pointer}.product-bulk-bar b{margin-right:auto;color:#075f5b}.product-bulk-bar .bulk-delete-products{border-color:#b83232;background:#b83232;color:#fff}.product-bulk-bar .bulk-delete-products:disabled{opacity:.45;cursor:not-allowed}.product-select-box{display:grid;place-items:center}.product-select-box input{width:22px;height:22px;accent-color:#078f88;cursor:pointer}.product-admin-card:has(.product-select-box){grid-template-columns:34px 92px minmax(0,1fr) auto}.product-admin-card.bulk-selected{border-color:#078f88;box-shadow:0 0 0 2px rgba(7,143,136,.15)}.v3-review-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.v3-review-draft{grid-template-columns:66px 1fr auto}.v3-draft-detail{grid-column:1/-1;padding:15px;border-top:1px solid #c6e1df}.v3-draft-images{display:grid;grid-template-columns:repeat(3,minmax(0,160px));gap:10px;margin-bottom:13px}.v3-draft-images img{width:100%;height:180px;object-fit:contain;border:1px solid #c6e1df;background:#fff}.v3-draft-detail dl{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.v3-draft-detail dl div{padding:9px;border-radius:9px;background:#eaf8f7}.v3-draft-detail dt{font-size:10px;color:#617c79}.v3-draft-detail dd{margin:4px 0 0;font-weight:900}.v3-draft-detail p{line-height:1.6}.v3-open-original{display:inline-block;padding:10px 13px;border-radius:9px;background:#087f79;color:#fff;font-weight:900}.v3-no-file{color:#b83232}@media(max-width:620px){.product-admin-card:has(.product-select-box){grid-template-columns:30px 72px minmax(0,1fr)}.product-admin-card:has(.product-select-box)>button{grid-column:2/-1}.v3-review-draft{grid-template-columns:58px 1fr}.v3-review-actions{grid-column:1/-1;justify-content:flex-start}.v3-draft-detail dl{grid-template-columns:1fr 1fr}.v3-draft-images img{height:120px}}
@@ -291,19 +291,13 @@
       </section>
       <div id="accessDenied"></div>
       <section id="adminPanel" hidden>
-        <div class="admin-tabs">
-          <button class="active" data-admin-tab="overview"><span class="admin-tab-icon" aria-hidden="true">📊</span><span>ภาพรวมกำไร</span></button>
-          <button data-admin-tab="products"><span class="admin-tab-icon" aria-hidden="true">🛍️</span><span>จัดการสินค้า</span></button>
+        <div class="admin-tabs" aria-label="งานหลักหลังบ้าน">
+          <button class="active" data-admin-tab="orders"><span class="admin-tab-icon" aria-hidden="true">🧾</span><span>ออเดอร์<br>และสลิป</span></button>
           <button data-admin-tab="vision3"><span class="admin-tab-icon" aria-hidden="true">🧺</span><span>Vision 4<br>สร้างหลายตะกร้า</span></button>
-          <button data-admin-tab="categories"><span class="admin-tab-icon" aria-hidden="true">🗂️</span><span>หมวดหมู่</span></button>
-          <a class="admin-tab-link course-tab-link" href="/admin-courses.html"><span class="admin-tab-icon" aria-hidden="true">🎓</span><span>จัดการคอร์ส<br>ออนไลน์</span></a>
-          <button data-admin-tab="orders"><span class="admin-tab-icon" aria-hidden="true">🧾</span><span>ออเดอร์<br>และสลิป</span></button>
-          <button data-admin-tab="sales"><span class="admin-tab-icon" aria-hidden="true">📈</span><span>รายงาน<br>ยอดขาย</span></button>
-          <button data-admin-tab="promotion"><span class="admin-tab-icon" aria-hidden="true">🏷️</span><span>โปรโมชั่น</span></button>
-          <button data-admin-tab="settings"><span class="admin-tab-icon" aria-hidden="true">💳</span><span>ตั้งค่า<br>ชำระเงิน</span></button>
-          <button data-admin-tab="users"><span class="admin-tab-icon" aria-hidden="true">👥</span><span>สมาชิกและ<br>ระดับไอดี</span></button>
-          <button data-admin-tab="trash"><span class="admin-tab-icon" aria-hidden="true">🗑️</span><span>ถังขยะ</span></button>
+          <button data-admin-tab="products"><span class="admin-tab-icon" aria-hidden="true">🛍️</span><span>จัดการสินค้า</span></button>
+          <a class="admin-tab-link course-tab-link" href="/admin-courses.html#sellerReview"><span class="admin-tab-icon" aria-hidden="true">🎓</span><span>ตรวจคอร์ส<br>ผู้ขาย</span></a>
         </div>
+        <details class="admin-more-nav"><summary><span aria-hidden="true">☰</span> เพิ่มเติม — รายงาน การขาย สมาชิก และตั้งค่าระบบ</summary><div class="admin-more-grid"><button data-admin-tab="overview">📊 ภาพรวมกำไร</button><button data-admin-tab="sales">📈 รายงานยอดขาย</button><button data-admin-tab="promotion">🏷️ โปรโมชั่น</button><button data-admin-tab="categories">🗂️ หมวดหมู่</button><button data-admin-tab="users">👥 สมาชิกและระดับไอดี</button><button data-admin-tab="elon">🤖 ELON AI Support</button><button data-admin-tab="settings">⚙️ ตั้งค่าระบบและชำระเงิน</button><button class="danger-link boss-only-danger" data-admin-tab="trash">🗑️ ถังขยะ / ลบถาวร</button></div></details>
         <section id="vision3Panel" hidden>
           <div class="section-head"><div><p class="eyebrow">VISION 4 AUTO MULTI-PRODUCT DRAFT</p><h2>โยนหลายไฟล์ → สร้างร่างหลายตะกร้าอัตโนมัติ</h2><p>หนึ่งไฟล์สร้างหนึ่งตะกร้า รับ PDF, ZIP ที่มี PDF หรือ ZIP ที่มี JPG/PNG/WEBP พร้อมกันสูงสุด 30 ไฟล์</p></div></div>
           <section class="v3-batch-card">
@@ -317,7 +311,7 @@
           <section class="v3-review-section"><div class="v3-review-head"><div><h3>รอ Boss ตรวจ</h3><p>ร่างอยู่เฉพาะ Vision 4 เมื่อตรวจผ่านจึงย้ายไปหน้าสินค้าปกติ</p></div><button id="v3RefreshReview" type="button">โหลดใหม่</button></div><div id="v3ReviewQueue" class="v3-review-grid"><div class="v3-empty">กำลังโหลดร่าง...</div></div></section>
           <section id="v3PendingSection" class="v3-review-section v3-low-content"><div class="v3-review-head"><div><h3>เนื้อหาน้อย — รอรวมชุดอื่น</h3><p>ติ๊กเลือกหลายไฟล์เพื่อรวมเป็น PDF เดียว แล้วกรอกตะกร้าเองจนเสร็จ</p></div><div class="v4-bundle-toolbar"><b id="v4BundleSelectedCount">เลือกแล้ว 0 ไฟล์</b><button id="v4StartBundle" type="button">รวมไฟล์ที่เลือก</button></div></div><div id="v3PendingQueue" class="v3-review-grid"><div class="v3-empty">กำลังโหลดไฟล์...</div></div><section id="v4BundleWorkspace" class="v4-bundle-workspace" hidden><div><h3>สร้างตะกร้าจากไฟล์ที่รวม</h3><p id="v4BundleMessage" class="v4-bundle-message">กำลังเตรียมไฟล์…</p></div><div><b>เลือกรูปตัวอย่างให้ครบ 3 รูป</b><div id="v4SamplePicker" class="v4-sample-picker"></div></div><form id="v4ManualProductForm" class="v4-manual-form"><label>ชื่อสินค้า<input name="title" required></label><div class="v4-form-two"><label>หมวดหมู่<select name="category" required></select></label><label>ประเภทไฟล์<input name="file_type" value="PDF" readonly></label></div><div class="v4-form-two"><label>ราคา (บาท)<input name="price" type="number" min="0" step="1" required></label><label>จำนวนหน้า<input name="pages" type="number" min="1" readonly></label></div><label>คำอธิบายสั้น<input name="short_description" required></label><label>รายละเอียดสินค้า<textarea name="description" rows="5" required></textarea></label><button class="primary" type="submit">สร้างสินค้าและเปิดขายทันที</button></form></section></section>
         </section>
-        <section id="overviewPanel">
+        <section id="overviewPanel" hidden>
           <div class="section-head">
             <div>
               <p class="eyebrow">BUSINESS DASHBOARD</p>
@@ -679,7 +673,7 @@
               <h2>จัดการหมวดหมู่สินค้า</h2>
               <p>สร้างและจัดการหมวดหมู่ พร้อมกำหนดประเภทไฟล์เริ่มต้น</p>
             </div>
-            <div class="editor-actions"><a class="primary" href="/admin-courses.html">คอร์สออนไลน์</a><button class="primary" id="newCategoryButton" type="button">+ เพิ่มหมวดสินค้า</button></div>
+            <div class="editor-actions"><button class="primary" id="newCategoryButton" type="button">+ เพิ่มหมวดสินค้า</button></div>
           </div>
           <div class="category-admin-layout">
             <div id="categoryAdminList" class="category-admin-list"></div>
@@ -740,7 +734,7 @@
             </form>
           </div>
         </section>
-        <section id="ordersPanel" hidden>
+        <section id="ordersPanel">
           <div class="section-head">
             <div>
               <h2>คำสั่งซื้อและตรวจสลิป</h2>
@@ -748,7 +742,7 @@
                 ปุ่มอนุมัติจะแสดงเฉพาะคำสั่งซื้อที่ลูกค้าส่งสลิปแล้วเท่านั้น
               </p>
             </div>
-            <div class="order-clear-toolbar"><b id="selectedOrderCount">เลือกแล้ว 0 ออเดอร์</b><button id="clearSelectedOrders" class="danger" type="button" disabled>ล้างที่เลือก</button><button id="clearAllOrders" class="danger" type="button">ล้างออเดอร์ทั้งหมด</button></div>
+            <div class="order-clear-toolbar danger-zone boss-only-danger"><span class="danger-zone-label">BOSS · DANGER ZONE</span><b id="selectedOrderCount">เลือกแล้ว 0 ออเดอร์</b><button id="clearSelectedOrders" class="danger" type="button" disabled>ล้างที่เลือก</button><button id="clearAllOrders" class="danger" type="button">ล้างออเดอร์ทั้งหมด</button></div>
           </div>
           <div id="adminOrders"></div>
         </section>
@@ -958,6 +952,15 @@
           </form>
           <div id="usersTable"></div>
         </section>
+        <section id="elonPanel" class="elon-admin-panel" hidden>
+          <div class="section-head"><div><p class="eyebrow">VISION 6 · ELON AI SUPPORT</p><h2>บทสนทนาผู้ช่วย VisionD</h2><p id="elonPrivacyNote">เก็บประวัติ 60 วัน · Admin ดูภาพรวมได้ ส่วนบทสนทนาเต็มสงวนไว้สำหรับ Boss เพื่อคุ้มครองข้อมูลสมาชิก</p></div><button id="refreshElonButton" class="primary" type="button">รีเฟรช</button></div>
+          <div id="elonStats" class="elon-stats" aria-live="polite"><div><small>บทสนทนาทั้งหมด</small><b>—</b></div><div><small>กำลังใช้งาน</small><b>—</b></div><div><small>นอกขอบเขต</small><b>—</b></div><div><small>พบข้อผิดพลาด</small><b>—</b></div></div>
+          <div id="elonBossWorkspace" hidden>
+            <div class="elon-filter-bar"><label>ค้นหาสมาชิก<input id="elonSearchInput" type="search" placeholder="ชื่อ ไอดี หรืออีเมล"></label><label>สถานะ<select id="elonStatusFilter"><option value="">ทุกสถานะ</option><option value="active">กำลังใช้งาน</option><option value="ended">จบการสนทนา</option><option value="archived">เก็บแล้ว</option><option value="out_of_scope">นอกขอบเขต</option><option value="error">ข้อผิดพลาด</option></select></label></div>
+            <div class="elon-admin-layout"><div><div class="elon-list-heading"><h3>บทสนทนาล่าสุด</h3><span>เฉพาะสมาชิกที่เข้าสู่ระบบ</span></div><div id="elonConversationList" class="elon-conversation-list"><p>กำลังโหลดบทสนทนา…</p></div><button id="elonLoadMore" class="elon-load-more" type="button" hidden>โหลดบทสนทนาเพิ่ม</button></div><aside id="elonTranscript" class="elon-transcript" aria-live="polite"><div class="elon-transcript-empty"><span>🤖</span><b>เลือกบทสนทนาเพื่อเปิดอ่าน</b><p>แสดงเวลาและหน้าเว็บ แต่ไม่แสดง API key หรือข้อมูลลับ</p></div></aside></div>
+          </div>
+          <div id="elonAdminRestricted" class="elon-empty" hidden>Admin ดูได้เฉพาะจำนวนรวม บทสนทนาเต็มเปิดได้ด้วยบัญชี Boss เท่านั้น</div>
+        </section>
         <section id="trashPanel" hidden>
           <div class="section-head">
             <div>
@@ -978,7 +981,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01178" />
-    <script src="/admin.js?v=013770"></script>
+    <script src="/admin.js?v=01416"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>

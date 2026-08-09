@@ -33,8 +33,10 @@ export async function onRequestPost(ctx) {
       503,
     );
   const b = await ctx.request.json();
+  const invalidQuantity=(b.productSlugs||[]).some(x=>{const slug=String(x||'').trim(),raw=b.quantities?.[slug];if(raw===undefined||raw===null||raw==='')return false;const quantity=Number(raw);return !Number.isInteger(quantity)||quantity<1||quantity>30});
+  if(invalidQuantity)return json({error:'จำนวนสินค้าต้องเป็นเลขจำนวนเต็ม 1–30'},400);
   const requestedSlugs = (b.productSlugs || [])
-    .flatMap((x) => {const slug=String(x || "").trim(),quantity=Math.min(30,Math.max(1,Number(b.quantities?.[slug])||1));return Array(quantity).fill(slug)})
+    .flatMap((x) => {const slug=String(x || "").trim(),quantity=Number(b.quantities?.[slug]||1);return Array(quantity).fill(slug)})
     .filter(Boolean);
   const slugs = [
     ...new Set(
@@ -68,6 +70,7 @@ export async function onRequestPost(ctx) {
   }
   const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
   if(sellerItems.length&&(orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
+  if(sellerItems.some(product=>Number(product.course_owner_user_id)===Number(a.user.id)))return json({error:'ไม่สามารถซื้อคอร์สของบัญชีตนเองได้'},409);
   for (const product of results) {
     if(product.category==='resale-rights')continue;
     const entitlement = await ctx.env.DB.prepare(
@@ -118,18 +121,10 @@ export async function onRequestPost(ctx) {
       "-" +
       Math.floor(Math.random() * 90 + 10);
   const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
-  const r = await ctx.env.DB.prepare(
-    "INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number,course_owner_user_id,seller_course_id,payment_qr_url) VALUES(?,?,?,?,?,?,?,?,?,?)",
-  )
-    .bind(orderNo, a.user.id, total, paymentTarget.active_account, paymentTarget.bank_name, paymentTarget.account_name, paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'')
-    .run();
-  const orderId = r.meta.last_row_id;
-  for (const p of pricedResults)
-    await ctx.env.DB.prepare(
-      "INSERT INTO order_items(order_id,product_id,price) VALUES(?,?,?)",
-    )
-      .bind(orderId, p.id, p.sale_price)
-      .run();
+  const statements=[ctx.env.DB.prepare("INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number,course_owner_user_id,seller_course_id,payment_qr_url) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_name,paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'')];
+  for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,price) SELECT id,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.sale_price,orderNo,a.user.id));
+  try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
+  const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409);
   return json(
     {
       ok: true,

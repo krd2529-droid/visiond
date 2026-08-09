@@ -13,6 +13,7 @@ const esc = (v) =>
   money = (n) =>
     new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 let courses = [];
+document.querySelector("#sellerPaymentReviews")?.closest("section")?.setAttribute("id", "sellerReview");
 async function auth() {
   const r = await fetch("/api/auth/me"),
     d = await r.json().catch(() => ({}));

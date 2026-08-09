@@ -43,6 +43,7 @@ const panels = {
   promotion: promotionPanel,
   settings: settingsPanel,
   users: usersPanel,
+  elon: elonPanel,
   trash: trashPanel,
 };
 let salesRows = [],
@@ -80,6 +81,7 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "promotion") loadPromotionSettings();
       if (btn.dataset.adminTab === "settings") loadPaymentSettings();
       if (btn.dataset.adminTab === "users") loadUsers();
+      if (btn.dataset.adminTab === "elon") loadElonConversations();
       if (btn.dataset.adminTab === "trash") loadTrash();
     }),
 );
@@ -330,6 +332,7 @@ async function init() {
     return;
   }
   viewer = (await me.json()).user;
+  document.body.classList.toggle("viewer-is-boss", viewer.role === "boss");
   adminIdentity.innerHTML = `เข้าสู่ระบบเป็น <b>${esc(viewer.name)}</b> · <span class="role-badge ${esc(viewer.role)}">${roleText[viewer.role] || esc(viewer.role)}</span>`;
   if (!["boss", "admin"].includes(viewer.role)) {
     deny("บัญชี User ไม่มีสิทธิ์เข้าหลังบ้าน");
@@ -338,7 +341,7 @@ async function init() {
   setupBossMobilePreview();
   adminPanel.hidden = false;
   Object.entries(panels).forEach(
-    ([name, panel]) => (panel.hidden = name !== "overview"),
+    ([name, panel]) => (panel.hidden = name !== "orders"),
   );
   const today = new Date().toISOString().slice(0, 10),
     from = new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10);
@@ -346,7 +349,7 @@ async function init() {
   profitDateTo.value = today;
   adSpendDate.value = today;
   await loadCategories(false);
-  loadProfitDashboard();
+  loadOrders();
   openRequestedPreviewTab();
 }
 
@@ -1300,6 +1303,58 @@ async function loadUnlockHistory() {
       )
       .join("") || "<p>ยังไม่มีประวัติการปลดล็อก</p>";
 }
+
+let elonSelectedConversation = "";
+let elonSearchTimer = null;
+let elonPage = 1;
+let elonItems = [];
+const elonTime = (value) => value ? new Date(String(value).endsWith("Z") ? value : value + "Z").toLocaleString("th-TH") : "—";
+function elonBadges(item) {
+  const statusLabel = item.status === "archived" ? "เก็บแล้ว" : item.status === "ended" ? "จบการสนทนา" : "กำลังใช้งาน";
+  const badges = [`<span class="elon-flag ${esc(item.status)}">${statusLabel}</span>`];
+  if (Number(item.out_of_scope_count)) badges.push('<span class="elon-flag out-of-scope">นอกขอบเขต</span>');
+  if (Number(item.error_count)) badges.push('<span class="elon-flag error">ข้อผิดพลาด</span>');
+  return badges.join("");
+}
+async function loadElonConversations(append = false) {
+  if (!append) { elonPage = 1; elonItems = []; }
+  elonConversationList.innerHTML = "<p>กำลังโหลดบทสนทนา…</p>";
+  const query = new URLSearchParams({q: elonSearchInput?.value || "", status: elonStatusFilter?.value || "", page:String(elonPage)});
+  const r = await fetch(`/api/admin/elon?${query}`, {cache:"no-store"}), d = await r.json().catch(() => ({}));
+  if (!r.ok) { elonConversationList.innerHTML = `<div class="elon-empty">${esc(d.error || "โหลดข้อมูล ELON ไม่สำเร็จ")}</div>`; return; }
+  const s = d.stats || {};
+  elonStats.innerHTML = `<div><small>บทสนทนาทั้งหมด</small><b>${Number(s.total)||0}</b></div><div><small>กำลังใช้งาน</small><b>${Number(s.active)||0}</b></div><div><small>นอกขอบเขต</small><b>${Number(s.out_of_scope)||0}</b></div><div><small>พบข้อผิดพลาด</small><b>${Number(s.errors)||0}</b></div>`;
+  const boss = d.can_view_transcripts === true;
+  elonBossWorkspace.hidden = !boss; elonAdminRestricted.hidden = boss;
+  if (!boss) { elonPrivacyNote.textContent = "เก็บประวัติ 60 วัน · Admin เห็นเฉพาะจำนวนรวม บทสนทนาเต็มเปิดได้ด้วยบัญชี Boss เท่านั้น"; return; }
+  elonItems = append ? elonItems.concat(d.items || []) : (d.items || []);
+  elonConversationList.innerHTML = elonItems.map(item => `<button type="button" class="elon-conversation-card ${item.id===elonSelectedConversation?'active':''}" data-elon-conversation="${esc(item.id)}"><div class="elon-conversation-card-head"><b>${esc(item.member_name || item.username || "สมาชิก")}</b><small>@${esc(item.username || "-")}</small></div><p>${esc(item.last_message || "ยังไม่มีข้อความ")}</p><div class="elon-conversation-meta"><span>${Number(item.message_count)||0} ข้อความ</span><time>${elonTime(item.updated_at)}</time>${elonBadges(item)}</div></button>`).join("") || '<div class="elon-empty">ยังไม่มีบทสนทนาที่ตรงกับตัวกรอง</div>';
+  const pagination=d.pagination||{}; elonLoadMore.hidden=Number(pagination.page||1)>=Number(pagination.total_pages||1);
+  elonConversationList.querySelectorAll("[data-elon-conversation]").forEach(button => button.onclick = () => openElonTranscript(button.dataset.elonConversation));
+}
+function safeElonContext(raw) {
+  try { const x = typeof raw === "string" ? JSON.parse(raw) : raw || {}; return [x.path || x.pathname, x.page_title || x.title, x.product_slug || x.slug].filter(Boolean).map(esc).join(" · "); } catch { return ""; }
+}
+async function openElonTranscript(id) {
+  elonSelectedConversation = id; elonTranscript.innerHTML = '<div class="elon-transcript-empty"><b>กำลังเปิดบทสนทนา…</b></div>';
+  const r = await fetch(`/api/admin/elon/${encodeURIComponent(id)}`, {cache:"no-store"}), d = await r.json().catch(() => ({}));
+  if (!r.ok) { elonTranscript.innerHTML = `<div class="elon-empty">${esc(d.error || "เปิดบทสนทนาไม่สำเร็จ")}</div>`; return; }
+  const c = d.conversation, messages = d.messages || [];
+  elonTranscript.innerHTML = `<div class="elon-transcript-head"><div><h3>${esc(c.member_name || c.username || "สมาชิก")}</h3><p>@${esc(c.username || "-")} · ${esc(c.email || "-")} · เริ่ม ${elonTime(c.created_at)}</p></div><button class="elon-archive-button" type="button" data-elon-archive>${c.status === "archived" ? "นำกลับมาใช้งาน" : "เก็บบทสนทนา"}</button></div>${messages.map(m => { const context=safeElonContext(m.page_context); return `<article class="elon-message ${esc(m.role)}"><div class="elon-message-role"><span>${m.role === "user" ? "สมาชิก" : "ELON"}</span><time>${elonTime(m.created_at)}</time></div><div class="elon-message-content">${esc(m.content)}</div>${context ? `<div class="elon-message-context">หน้าที่ใช้งาน: ${context}</div>` : ""}</article>`; }).join("") || '<div class="elon-empty">บทสนทนานี้ยังไม่มีข้อความ</div>'}`;
+  elonTranscript.querySelector("[data-elon-archive]").onclick = () => archiveElonConversation(c.id, c.status !== "archived");
+  elonConversationList.querySelectorAll("[data-elon-conversation]").forEach(button => button.classList.toggle("active", button.dataset.elonConversation === id));
+}
+async function archiveElonConversation(id, archive) {
+  if (!confirm(archive ? "เก็บบทสนทนานี้หรือไม่?" : "นำบทสนทนานี้กลับมาใช้งานหรือไม่?")) return;
+  const r = await fetch(`/api/admin/elon/${encodeURIComponent(id)}`, {method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({archived:archive})}), d = await r.json().catch(()=>({}));
+  if (!r.ok) return alert(d.error || "เปลี่ยนสถานะไม่สำเร็จ");
+  await loadElonConversations();
+  await openElonTranscript(id);
+}
+if (typeof refreshElonButton !== "undefined") refreshElonButton.onclick = loadElonConversations;
+if (typeof elonSearchInput !== "undefined") elonSearchInput.oninput = () => { clearTimeout(elonSearchTimer); elonSearchTimer=setTimeout(loadElonConversations,250); };
+if (typeof elonStatusFilter !== "undefined") elonStatusFilter.onchange = loadElonConversations;
+if (typeof elonLoadMore !== "undefined") elonLoadMore.onclick = () => { elonPage += 1; loadElonConversations(true); };
 async function unlockProductForUser(event) {
   event.preventDefault();
   const form = new FormData(manualUnlockForm),

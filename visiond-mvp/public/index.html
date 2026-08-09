@@ -33,9 +33,10 @@
   }
   </script>
   <link rel="canonical" href="https://visiondonline.com/">
-  <link rel="stylesheet" href="/style.css?v=013950">
+  <link rel="stylesheet" href="/style.css?v=01414">
   <link rel="stylesheet" href="/course-owner-badge.css?v=01366">
   <link rel="stylesheet" href="/promotion.css?v=01336">
+  <link rel="stylesheet" href="/front-ui-cleanup.css?v=01414">
   <style>
     .vd-catalog-wrap{max-width:1180px!important;margin:0 auto!important;padding:46px 24px 68px!important;box-sizing:border-box!important}
     .vd-catalog-head{display:flex!important;justify-content:space-between!important;align-items:end!important;gap:20px!important;margin-bottom:22px!important}
@@ -56,7 +57,7 @@
     @media(max-width:760px){.course-owner-feature{margin:24px 12px;padding:20px;grid-template-columns:1fr;gap:22px}.course-owner-cover{max-width:300px;margin:auto}.course-owner-points{grid-template-columns:1fr}.course-owner-actions{display:grid;grid-template-columns:1fr 1fr}.course-owner-actions button,.course-owner-actions a{width:100%;box-sizing:border-box}.home-contact-section{margin:20px 12px 50px;padding:26px 18px}}
     @media(max-width:560px){.vd-catalog-wrap{padding:32px 10px 55px!important}.vd-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.vd-card{width:100%!important;max-width:none!important}.vd-cover,.vd-cover img{width:100%!important;max-width:100%!important;height:230px!important;max-height:230px!important}.vd-catalog-head{display:block!important}.vd-home-search{grid-template-columns:1fr}.vd-home-search button{width:100%}}
   </style>
-<script src="/meta-pixel.js?v=01193"></script></head>
+<script src="/meta-pixel.js?v=01193"></script><link rel="stylesheet" href="/elon-chat.css?v=01416"></head>
 <body>
 <header class="topbar">
   <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
@@ -85,29 +86,6 @@
       </div>
       <div class="home-purchase-actions">
         <a class="primary" href="/digital-products.html">เลือกดูสินค้าดิจิทัล</a>
-        <a class="primary" href="#digital-categories">เลือกดูตามหมวดหมู่</a>
-      </div>
-    </div>
-    <div id="homeMemberCard" class="hero-login-card">
-      <p class="login-kicker">MEMBER LOGIN</p>
-      <h2>เข้าสู่ระบบสมาชิก</h2>
-      <form id="homeLoginForm" class="home-login-form">
-        <label>ไอดีสมาชิก
-          <input name="login" autocomplete="username" placeholder="กรอกไอดีหรืออีเมล" required>
-        </label>
-        <label>รหัสผ่าน
-          <input name="password" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required>
-        </label>
-        <button class="primary wide" type="submit">เข้าสู่ระบบ</button>
-      </form>
-      <p id="homeLoginMsg" class="auth-message" aria-live="polite"></p>
-      <div class="register-cta">
-        <span>ยังไม่มีบัญชี?</span>
-        <a href="/register.html">สมัครสมาชิก</a>
-      </div>
-      <div class="purchase-steps">
-        <b>ซื้อแล้วดาวน์โหลดจากหน้าสินค้า</b>
-        <span>สมัคร → สั่งซื้อ → ส่งสลิป → รออนุมัติ</span>
       </div>
     </div>
   </section>
@@ -165,34 +143,11 @@
     <div class="section-head category-title-row">
       <div><p class="eyebrow">DIGITAL PRODUCT CATEGORIES</p><h2>เลือกประเภทสินค้าดิจิทัล</h2><p class="category-intro">ค้นหาไฟล์พร้อมใช้ตามงานที่ต้องการ ระบบรองรับการเพิ่ม แก้ไข และจัดเรียงหมวดในหลังบ้านภายหลัง</p></div>
     </div>
-    <div id="categoryFilter" class="category-filter" aria-label="ตัวกรองหมวดสินค้าดิจิทัล">
-      <button class="active" data-category="all">ทั้งหมด</button>
-      <button data-category="design">งานออกแบบ</button>
-      <button data-category="packaging">บรรจุภัณฑ์</button>
-      <button data-category="kids">เด็กและการเรียนรู้</button>
-      <button data-category="papercraft">งานกระดาษ</button>
-      <button data-category="event">งานพิธีและเทศกาล</button>
-      <button data-category="business">ธุรกิจ</button>
-      <button data-category="planner">แพลนเนอร์และเอกสาร</button>
-    </div>
     <div class="digital-category-grid">
-      <a class="digital-category-card" href="#products" data-pick-category="design"><span>01</span><h3>การ์ดและงานออกแบบ</h3><p>การ์ดเชิญ การ์ดขอบคุณ โปสเตอร์ ใบปลิว แบนเนอร์ เมนู และป้ายร้าน</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="design"><span>02</span><h3>นามบัตรและแบรนด์</h3><p>นามบัตร โลโก้ Company Profile Social Media Kit ฉลาก และสติ๊กเกอร์</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="packaging"><span>03</span><h3>แบบซองสินค้า</h3><p>ซองขนม ซองกาแฟ ซองเครื่องสำอาง ซองของขวัญ และแบบไดคัทพร้อมพิมพ์</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="packaging"><span>04</span><h3>แบบกล่องและแพ็กเกจ</h3><p>กล่องสินค้า กล่องพัสดุ กล่องของขวัญ Hang Tag Label และบรรจุภัณฑ์</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="kids"><span>05</span><h3>ตุ๊กตากระดาษ</h3><p>ตัวละคร เสื้อผ้า อาชีพ สัตว์ และชุดกิจกรรมสำหรับพิมพ์ ตัด และเล่น</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="kids"><span>06</span><h3>แบบระบายสี</h3><p>สมุดระบายสี เด็ก ผู้ใหญ่ Mandala Line Art Dot to Dot และกิจกรรมสร้างสรรค์</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="kids"><span>07</span><h3>แบบฝึกเขียนและหนังสือ</h3><p>ฝึกเขียน ฝึกอ่าน ABC ตัวเลข Worksheet Flash Card และเกมการศึกษา</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="/digital-products?category=development-game" data-pick-category="kids"><span>08</span><h3>เกมเสริมพัฒนาการ</h3><p>เกมเขาวงกต จับคู่ภาพ หาจุดต่าง ต่อจุด ฝึกสังเกต และฝึกสมาธิ</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="papercraft"><span>08</span><h3>โมเดลกระดาษ</h3><p>Paper Craft แบบพับโมเดล Origami Pop-up Diorama และงานประดิษฐ์</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="event"><span>09</span><h3>งานพิธีและเทศกาล</h3><p>งานแต่ง งานบวช วันเกิด ปีใหม่ วาเลนไทน์ สงกรานต์ วันแม่ และวันพ่อ</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="planner"><span>10</span><h3>แพลนเนอร์และเอกสาร</h3><p>Planner Calendar Checklist To-do List Resume Invoice และแบบฟอร์มธุรกิจ</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="business"><span>11</span><h3>สื่อธุรกิจและการตลาด</h3><p>Catalog Brochure Presentation Price List Media Kit และไฟล์ประชาสัมพันธ์</p><b>ดูสินค้า →</b></a>
-      <a class="digital-category-card" href="#products" data-pick-category="design"><span>12</span><h3>เทมเพลตออนไลน์</h3><p>โพสต์โซเชียล Thumbnail Digital Planner eBook Prompt และ AI Template</p><b>ดูสินค้า →</b></a>
-    </div>
-    <div class="collection-row">
-      <strong>คอลเลกชันแนะนำ</strong>
-      <span>มาใหม่</span><span>ขายดี</span><span>สำหรับเด็ก</span><span>สำหรับธุรกิจ</span><span>Back to School</span><span>Wedding</span><span>Christmas</span><span>Printable A4</span>
+      <a class="digital-category-card" href="/digital-products?category=tattoo"><span>01</span><h3>แบบรอยสัก</h3><p>รวมแบบรอยสักหลายแนว พร้อมภาพตัวอย่างก่อนเลือกซื้อ</p><b>ดูสินค้า →</b></a>
+      <a class="digital-category-card" href="/digital-products?category=coloring"><span>02</span><h3>แบบระบายสี</h3><p>ภาพระบายสีและกิจกรรมสร้างสรรค์ในรูปแบบไฟล์พร้อมพิมพ์</p><b>ดูสินค้า →</b></a>
+      <a class="digital-category-card" href="/digital-products?category=worksheet"><span>03</span><h3>แบบฝึกหัด</h3><p>แบบฝึกเขียน ฝึกอ่าน ABC ตัวเลข และ Worksheet สำหรับการเรียนรู้</p><b>ดูสินค้า →</b></a>
+      <a class="digital-category-card" href="/digital-products?category=development-game"><span>04</span><h3>เกมเสริมพัฒนาการ</h3><p>เกมเขาวงกต จับคู่ภาพ หาจุดต่าง ต่อจุด ฝึกสังเกต และฝึกสมาธิ</p><b>ดูสินค้า →</b></a>
     </div>
   </section>
 
@@ -207,9 +162,9 @@
 
 <script src="/app.js?v=01406"></script>
 <link rel="stylesheet" href="/cart-catalog.css?v=01141">
-<script src="/catalog-sync.js?v=01413"></script>
+<script src="/catalog-sync.js?v=01414"></script>
 <script src="/home-course-rights.js?v=01412"></script>
 <script src="/course-owner-badge.js?v=01366"></script>
 <script src="/analytics.js?v=01194"></script>
-<script src="/promo-banner.js?v=013160"></script><script src="/facebook-chat.js?v=01380"></script></body>
+<script src="/promo-banner.js?v=013160"></script><script src="/facebook-chat.js?v=01380"></script><script src="/elon-chat.js?v=01416" defer></script></body>
 </html>
