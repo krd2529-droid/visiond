@@ -214,4 +214,4 @@ async function removeUnavailableCartItems() {
 render();
 refreshCartPrices();
 removeUnavailableCartItems();
-import("/nav-account.js?v=01176").then((module) => module.initAccountNav());
+import("/nav-account.js?v=01388").then((module) => module.initAccountNav());

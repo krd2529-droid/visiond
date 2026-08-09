@@ -1,2 +1,2 @@
-VisionD MVP v0.13.87
-Buyer course checkout, seller EasySlip verification, owner manual review, instant unlock and learning progress
+VisionD MVP v0.13.88
+My Hub notification center with 10 explained alerts, order recovery status, 30-day edit warnings and navigation badge
