@@ -1,2 +1,2 @@
-VisionD MVP v0.13.88
-My Hub notification center with 10 explained alerts, order recovery status, 30-day edit warnings and navigation badge
+VisionD MVP v0.13.91
+Permanent versioned slip evidence plus seller alerts with username, slip link and payment amount

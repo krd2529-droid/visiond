@@ -28,7 +28,7 @@ export async function onRequestPost(ctx){
   const ext={'image/png':'png','image/gif':'gif','image/webp':'webp'}[file.type]||'jpg';
   const key=`slips/${auth.user.id}/${order.order_no}-${crypto.randomUUID()}.${ext}`;
   await ctx.env.FILES.put(key,file.stream(),{httpMetadata:{contentType:file.type}});
-  await ctx.env.DB.prepare("UPDATE orders SET slip_key=?,transfer_note=?,status='pending_review',slip_verification_status='checking',slip_verification_code=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(key,String(fd.get('note')||'').slice(0,300),order.id).run();
+  const note=String(fd.get('note')||'').slice(0,300);await ctx.env.DB.batch([ctx.env.DB.prepare('INSERT INTO order_slip_evidence(order_id,object_key,mime_type,file_size,uploaded_by_user_id,source,note) VALUES(?,?,?,?,?,?,?)').bind(order.id,key,file.type,file.size,auth.user.id,'buyer_upload',note),ctx.env.DB.prepare("UPDATE orders SET slip_key=?,transfer_note=?,status='pending_review',slip_verification_status='checking',slip_verification_code=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(key,note,order.id)]);
   const paymentSettings=await loadPaymentSettings(ctx.env);
   const rightsOrder=await ctx.env.DB.prepare("SELECT 1 found FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND p.category='resale-rights' LIMIT 1").bind(order.id).first();
   const sellerApi=order.course_owner_user_id?await ctx.env.DB.prepare('SELECT seller_slip_api_key FROM users WHERE id=?').bind(order.course_owner_user_id).first():null;
