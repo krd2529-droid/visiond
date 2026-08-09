@@ -17,6 +17,7 @@ export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   const form=await ctx.request.formData(),title=String(form.get('title')||'').trim(),price=Math.round(Number(form.get('price_baht'))*100),courseType=form.get('course_type')==='resale_rights'?'resale_rights':'online_course',licenseDays=courseType==='resale_rights'?[0,30,365].includes(Number(form.get('license_edit_days')))?Number(form.get('license_edit_days')):30:30;
   if(!title)return json({error:'กรุณาใส่ชื่อคอร์ส'},400);if(!Number.isFinite(price)||price<0)return json({error:'ราคาไม่ถูกต้อง'},400);
+  if(courseType==='resale_rights')return json({error:'ตะกร้าสิทธิ์มีได้เพียงอันเดียว ระบบใช้ “สิทธิ์ลงขายคอร์สออนไลน์ 1 ตะกร้า” อยู่แล้ว'},409);
   let slug=slugify(form.get('slug')||title),n=1;while(await ctx.env.DB.prepare('SELECT id FROM products WHERE slug=?').bind(slug).first())slug=`${slugify(form.get('slug')||title)}-${++n}`;
   let cover='/assets/product-placeholder.svg';const file=form.get('cover');
   if(file?.size){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)return json({error:'รูปปกต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB'},400);const key=`course-cover-${crypto.randomUUID()}.${ext(file.name,file.type)}`;await ctx.env.FILES.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:file.type}});cover='/api/media/'+key;}

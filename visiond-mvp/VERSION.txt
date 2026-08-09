@@ -1,4 +1,6 @@
-VisionD MVP v0.14.09
+VisionD MVP v0.14.10
+Delete duplicate course-selling-right products after safely migrating orders and credits to slug course-selling-rights
+Connect the single remaining rights basket to the five-step Vision 5 seller workflow
 Apply the unified account action buttons across all public page depths and refresh every parent script cache
 Unify cart, admin, account, and logout header actions to the same size and visual style
 Add secure in-account password changing with current-password verification and other-session revocation
