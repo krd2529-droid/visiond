@@ -4,7 +4,7 @@ import { ensureDatabase } from '../../_schema.js';
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
   const user = await currentUser(ctx);
-  const { results } = await ctx.env.DB.prepare(`SELECT c.id,c.subtitle,c.teacher_name,c.total_minutes,c.course_type,p.id product_id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,
+  const { results } = await ctx.env.DB.prepare(`SELECT c.id,c.subtitle,c.teacher_name,c.total_minutes,c.course_type,c.course_origin,c.platform_tags,c.learner_level,c.expected_episodes,p.id product_id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,
     (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id) lesson_count
     FROM courses c JOIN products p ON p.id=c.product_id
     WHERE c.active=1 AND c.course_type='online_course' AND p.status='published' AND p.deleted_at IS NULL ORDER BY p.id DESC`).all();

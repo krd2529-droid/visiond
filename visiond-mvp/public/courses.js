@@ -1,44 +1,5 @@
-const esc = (v) =>
-  String(v ?? "").replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
-const money = (n) =>
-  new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
-const saveCart = (item) => {
-  localStorage.setItem("vd_cart", JSON.stringify([item]));
-  location.href = "/cart.html";
-};
-async function load() {
-  const r = await fetch("/api/courses", { cache: "no-store" }),
-    d = await r.json().catch(() => ({ items: [] }));
-  if (!r.ok) {
-    courseList.innerHTML = `<p>${esc(d.error || "โหลดคอร์สไม่สำเร็จ")}</p>`;
-    return;
-  }
-  const items=(d.items || []).filter(c=>c.course_type!=='resale_rights');
-  courseList.innerHTML = items.length
-    ? items
-        .map(
-          (c) =>
-            `<article class="course-card"><img src="${esc(c.cover_url || "/assets/product-placeholder.svg")}" alt="${esc(c.title)}"><div class="course-card-body"><small>${Number(c.lesson_count) || 0} บท · ${Number(c.total_minutes) || 0} นาที</small><h2>${esc(c.title)}</h2><p>${esc(c.short_description || c.subtitle || "เรียนออนไลน์ตามเวลาของคุณ")}</p>${c.teacher_name ? `<span>ผู้สอน ${esc(c.teacher_name)}</span>` : ""}<div class="course-card-action"><b>${money(c.price)}</b>${c.owned ? `<a class="primary" href="/learn.html?course=${c.id}">${Number(c.completed_lessons) ? "เรียนต่อ" : "เริ่มเรียน"}</a>` : `<button class="primary" data-buy="${c.id}">ซื้อคอร์ส</button>`}</div>${c.owned ? `<progress max="${Math.max(1, Number(c.lesson_count) || 1)}" value="${Number(c.completed_lessons) || 0}"></progress><small>เรียนแล้ว ${Number(c.completed_lessons) || 0}/${Number(c.lesson_count) || 0} บท</small>` : ""}</div></article>`,
-        )
-        .join("")
-    : '<div class="course-empty"><b>กำลังเตรียมคอร์สแรก</b><p>เมื่อเปิดขายแล้ว คอร์สจะแสดงที่หน้านี้</p></div>';
-  courseList.querySelectorAll("[data-buy]").forEach(
-    (btn) =>
-      (btn.onclick = () => {
-        const c = d.items.find((x) => String(x.id) === btn.dataset.buy);
-        saveCart({
-          ...c,
-          category_label: "คอร์สออนไลน์",
-          category: "online-course",
-          pages: c.lesson_count,
-        });
-      }),
-  );
-}
-load();
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';let allCourses=[],activePlatform='ทั้งหมด';
+const tagsOf=course=>{try{return JSON.parse(course.platform_tags||'[]')}catch{return[]}};
+const saveCart=item=>{localStorage.setItem('vd_cart',JSON.stringify([item]));location.href='/cart.html'};
+function render(){const items=activePlatform==='ทั้งหมด'?allCourses:allCourses.filter(c=>tagsOf(c).includes(activePlatform));courseList.innerHTML=items.length?items.map(c=>`<article class="course-card"><img src="${esc(c.cover_url||'/assets/product-placeholder.svg')}" alt="${esc(c.title)}"><div class="course-card-body"><small>${Number(c.lesson_count)||Number(c.expected_episodes)||0} EP · ${Number(c.total_minutes)||0} นาที</small><div class="course-tag-row">${tagsOf(c).map(x=>`<span>${esc(x)}</span>`).join('')}</div><h2>${esc(c.title)}</h2><p>${esc(c.short_description||c.subtitle||'เรียนออนไลน์ตามเวลาของคุณ')}</p>${c.teacher_name?`<span>ผู้สอน ${esc(c.teacher_name)}</span>`:''}<div class="course-card-action"><b>${money(c.price)}</b>${c.owned?`<a class="primary" href="/learn.html?course=${c.id}">${Number(c.completed_lessons)?'เรียนต่อ':'เริ่มเรียน'}</a>`:`<button class="primary" data-buy="${c.id}">ซื้อคอร์ส</button>`}</div>${c.owned?`<progress max="${Math.max(1,Number(c.lesson_count)||1)}" value="${Number(c.completed_lessons)||0}"></progress><small>เรียนแล้ว ${Number(c.completed_lessons)||0}/${Number(c.lesson_count)||0} บท</small>`:''}</div></article>`).join(''):'<div class="course-empty"><b>ยังไม่มีคอร์สในหัวข้อนี้</b></div>';courseList.querySelectorAll('[data-buy]').forEach(button=>button.onclick=()=>{const c=allCourses.find(x=>String(x.id)===button.dataset.buy);saveCart({...c,category_label:'คอร์สออนไลน์',category:'online-course',pages:c.lesson_count})})}
+async function load(){const response=await fetch('/api/courses',{cache:'no-store'}),data=await response.json().catch(()=>({items:[]}));if(!response.ok){courseList.innerHTML=`<p>${esc(data.error||'โหลดคอร์สไม่สำเร็จ')}</p>`;return}allCourses=(data.items||[]).filter(c=>c.course_type!=='resale_rights');const platforms=['ทั้งหมด',...new Set(allCourses.flatMap(tagsOf))];coursePlatformFilters.innerHTML=platforms.map(x=>`<button type="button" data-platform="${esc(x)}" class="${x==='ทั้งหมด'?'active':''}">${esc(x)}</button>`).join('');coursePlatformFilters.querySelectorAll('button').forEach(button=>button.onclick=()=>{activePlatform=button.dataset.platform;coursePlatformFilters.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));render()});render()}load();
