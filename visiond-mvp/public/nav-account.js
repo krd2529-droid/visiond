@@ -7,8 +7,7 @@ export async function initAccountNav(){
   const nav=document.querySelector('.topbar nav');
   if(!nav||nav.dataset.accountReady)return;
   nav.dataset.accountReady='1';
-  const myProducts=nav.querySelector('a[href="/dashboard.html#my-products"]');
-  if(myProducts){myProducts.classList.add('nav-quick-action','nav-products-action');myProducts.innerHTML='<span aria-hidden="true">▣</span><b>สินค้าของฉัน</b>'}
+  nav.querySelectorAll('a[href="/dashboard.html#my-products"]').forEach(link=>link.remove());
   const cartLink=nav.querySelector('a[href="/cart"],a[href="/cart.html"]');
   if(cartLink){cartLink.classList.add('nav-quick-action','nav-cart-action');const count=cartLink.querySelector('[data-cart-count]')?.outerHTML||'<b data-cart-count>0</b>';cartLink.innerHTML=`<span aria-hidden="true">🛒</span><strong>รถเข็น</strong>${count}`}
   if(![...nav.querySelectorAll('a')].some(link=>['/member','/member.html'].includes(link.getAttribute('href')))){
@@ -24,11 +23,9 @@ export async function initAccountNav(){
     const account=document.createElement('a');
     account.className='nav-member-account';
     account.href='/dashboard.html';
-    account.innerHTML=`<span class="nav-member-dot"></span><span><small>ศูนย์บัญชี</small><b>ของฉัน</b></span><em>${esc(roleLabel[user.role]||user.role)}</em>`;
+    nav.querySelectorAll('#navMember,.member-nav-status').forEach(link=>link.remove());
+    account.innerHTML=`<span class="nav-member-dot"></span><span><b>บัญชีของฉัน</b></span><em>${esc(roleLabel[user.role]||user.role)}</em>`;
     const ownerBadge=user.is_course_owner?Object.assign(document.createElement('a'),{className:'course-owner-badge',href:'/course-seller.html',textContent:'เจ้าของคอร์ส'}):null;
-    const products=document.createElement('a');
-    products.href='/dashboard.html#my-products';
-    products.textContent='สินค้าของฉัน';
     const isStaff=['boss','admin'].includes(user.role);
     let adminLink=nav.querySelector('.nav-admin-link');
     if(isStaff&&!adminLink)adminLink=nav.querySelector('a[href="/admin"],a[href="/admin.html"]');
@@ -39,7 +36,6 @@ export async function initAccountNav(){
     logout.type='button';
     logout.innerHTML='<span aria-hidden="true">↪</span> ออกจากระบบ';
     logout.onclick=async()=>{logout.disabled=true;await fetch('/api/auth/logout',{method:'POST'});location.href='/'};
-    if(![...nav.querySelectorAll('a')].some(link=>link.getAttribute('href')==='/dashboard.html#my-products'))nav.append(products);
     if(adminLink)nav.append(adminLink);
     nav.append(account,...(ownerBadge?[ownerBadge]:[]),logout);
     fetch('/api/notifications',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{const count=Number(d?.count)||0;if(!count)return;const badge=document.createElement('i');badge.className='nav-notification-badge';badge.textContent=count>99?'99+':count;account.append(badge);account.href='/dashboard.html#notifications';account.title=`มีการแจ้งเตือน ${count} รายการ`}).catch(()=>{});

@@ -1,4 +1,5 @@
-VisionD MVP v0.14.04
+VisionD MVP v0.14.05
+Remove duplicate account and my-products header shortcuts, rename the account button, and use “ดูหน้าร้าน” in admin
 Arrange the admin navigation into two equal rows and repair the course menu button styling
 Force-refresh the admin navigation CSS so every icon menu renders as a complete button
 Add icons and refreshed styling to every admin dashboard navigation button
