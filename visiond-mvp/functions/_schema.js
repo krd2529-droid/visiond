@@ -84,6 +84,7 @@ export async function ensureDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_path_time ON page_views(path,viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_product_time ON page_views(product_id,viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_visitor_time ON page_views(visitor_key,viewed_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_time ON page_views(viewed_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_user ON category_memberships(user_id,active,expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_category_memberships_category ON category_memberships(category_slug,active,expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_lessons_course_sort ON course_lessons(course_id,sort_order,id)').run();

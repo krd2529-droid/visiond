@@ -9,9 +9,18 @@ export async function onRequestPost(ctx){
   const form=await ctx.request.formData(),title=String(form.get('title')||'').trim();if(!title)return json({error:'กรุณาใส่ชื่อบทเรียน'},400);
   const video=form.get('video'),pdf=form.get('pdf');if(!video?.size&&!pdf?.size)return json({error:'แนบคลิปหรือ PDF อย่างน้อยหนึ่งไฟล์'},400);
   let videoKey=null,pdfKey=null;
-  if(video?.size){if(!['video/mp4','video/webm'].includes(video.type)||video.size>200*1024*1024)return json({error:'คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 200 MB'},400);videoKey=`course-${course.id}-video-${crypto.randomUUID()}.${extension(video.name,video.type)}`;await ctx.env.FILES.put(videoKey,await video.arrayBuffer(),{httpMetadata:{contentType:video.type}});}
-  if(pdf?.size){if(pdf.type!=='application/pdf'||pdf.size>100*1024*1024){if(videoKey)await ctx.env.FILES.delete(videoKey);return json({error:'สไลด์ต้องเป็น PDF ไม่เกิน 100 MB'},400);}pdfKey=`course-${course.id}-slide-${crypto.randomUUID()}.pdf`;await ctx.env.FILES.put(pdfKey,await pdf.arrayBuffer(),{httpMetadata:{contentType:'application/pdf'}});}
+  if(video?.size){if(!['video/mp4','video/webm'].includes(video.type)||video.size>200*1024*1024)return json({error:'คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 200 MB'},400);videoKey=`course-${course.id}-video-${crypto.randomUUID()}.${extension(video.name,video.type)}`;await ctx.env.FILES.put(videoKey,video.stream(),{httpMetadata:{contentType:video.type}});}
+  if(pdf?.size){if(pdf.type!=='application/pdf'||pdf.size>100*1024*1024){if(videoKey)await ctx.env.FILES.delete(videoKey);return json({error:'สไลด์ต้องเป็น PDF ไม่เกิน 100 MB'},400);}pdfKey=`course-${course.id}-slide-${crypto.randomUUID()}.pdf`;try{await ctx.env.FILES.put(pdfKey,pdf.stream(),{httpMetadata:{contentType:'application/pdf'}})}catch(error){if(videoKey)await ctx.env.FILES.delete(videoKey);throw error}}
   const max=await ctx.env.DB.prepare('SELECT COALESCE(MAX(sort_order),0) n FROM course_lessons WHERE course_id=?').bind(course.id).first();
-  const result=await ctx.env.DB.prepare(`INSERT INTO course_lessons(course_id,title,description,sort_order,video_key,pdf_key,video_mime,pdf_mime,duration_seconds) VALUES(?,?,?,?,?,?,?,?,?)`).bind(course.id,title,String(form.get('description')||''),Number(max.n)+10,videoKey,pdfKey,video?.type||null,pdfKey?'application/pdf':null,Math.max(0,Number(form.get('duration_seconds'))||0)).run();
-  await ctx.env.DB.prepare('UPDATE courses SET total_minutes=(SELECT CAST(COALESCE(SUM(duration_seconds),0)/60 AS INTEGER) FROM course_lessons WHERE course_id=?),updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(course.id,course.id).run();return json({ok:true,id:result.meta.last_row_id},201);
+  try{
+    const result=await ctx.env.DB.batch([
+      ctx.env.DB.prepare(`INSERT INTO course_lessons(course_id,title,description,sort_order,video_key,pdf_key,video_mime,pdf_mime,duration_seconds) VALUES(?,?,?,?,?,?,?,?,?)`).bind(course.id,title,String(form.get('description')||''),Number(max.n)+10,videoKey,pdfKey,video?.type||null,pdfKey?'application/pdf':null,Math.max(0,Number(form.get('duration_seconds'))||0)),
+      ctx.env.DB.prepare('UPDATE courses SET total_minutes=(SELECT CAST(COALESCE(SUM(duration_seconds),0)/60 AS INTEGER) FROM course_lessons WHERE course_id=?),updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(course.id,course.id)
+    ]);
+    return json({ok:true,id:result[0]?.meta?.last_row_id},201);
+  }catch(error){
+    if(videoKey)await ctx.env.FILES.delete(videoKey).catch(()=>{});
+    if(pdfKey)await ctx.env.FILES.delete(pdfKey).catch(()=>{});
+    return json({error:'บันทึกบทเรียนไม่สำเร็จ กรุณาลองใหม่'},500);
+  }
 }

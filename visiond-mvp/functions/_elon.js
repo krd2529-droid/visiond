@@ -142,14 +142,14 @@ export async function enforceElonRateLimit(env,userId){
 
 // Runs at most hourly from ELON traffic. Deletes messages explicitly before
 // conversations so retention does not depend on foreign-key cascade settings.
-export async function purgeExpiredElonData(env){
+export async function purgeExpiredElonData(env,{force=false}={}){
   const marker=await env.DB.prepare("SELECT value FROM settings WHERE key='elon_last_retention_purge'").first();
   const lastRun=Date.parse(String(marker?.value||''));
-  if(Number.isFinite(lastRun)&&Date.now()-lastRun<ELON_PURGE_INTERVAL_MS)return false;
+  if(!force&&Number.isFinite(lastRun)&&Date.now()-lastRun<ELON_PURGE_INTERVAL_MS)return false;
   const now=new Date().toISOString();
   await env.DB.batch([
+    env.DB.prepare(`DELETE FROM elon_conversations WHERE datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_messages m WHERE m.conversation_id=elon_conversations.id),created_at))<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
     env.DB.prepare(`DELETE FROM elon_messages WHERE datetime(created_at)<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
-    env.DB.prepare(`DELETE FROM elon_conversations WHERE datetime(updated_at)<datetime('now',?) AND NOT EXISTS (SELECT 1 FROM elon_messages m WHERE m.conversation_id=elon_conversations.id AND datetime(m.created_at)>=datetime('now',?))`).bind(`-${ELON_RETENTION_DAYS} days`,`-${ELON_RETENTION_DAYS} days`),
     env.DB.prepare("DELETE FROM elon_rate_limits WHERE window_start<datetime('now','-1 day')"),
     env.DB.prepare("INSERT INTO settings(key,value,updated_at) VALUES('elon_last_retention_purge',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(now)
   ]);

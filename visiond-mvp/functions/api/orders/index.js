@@ -152,18 +152,21 @@ export async function onRequestPost(ctx) {
 export async function onRequestGet(ctx) {
   const a = await requireUser(ctx);
   if (a.error) return a.error;
-  const { results } = await ctx.env.DB.prepare(
-    "SELECT * FROM orders WHERE user_id=? ORDER BY id DESC",
-  )
-    .bind(a.user.id)
-    .all();
+  const url=new URL(ctx.request.url),limit=Math.min(100,Math.max(1,Number.parseInt(url.searchParams.get('limit'),10)||30)),rawCursor=url.searchParams.get('cursor'),cursor=rawCursor===null?null:Number(rawCursor);
+  if(rawCursor!==null&&(!/^\d+$/.test(rawCursor)||!Number.isSafeInteger(cursor)||cursor<1))return json({error:'เคอร์เซอร์ไม่ถูกต้อง'},400);
+  const query=cursor
+    ? ctx.env.DB.prepare("SELECT * FROM orders WHERE user_id=? AND id<? ORDER BY id DESC LIMIT ?").bind(a.user.id,cursor,limit+1)
+    : ctx.env.DB.prepare("SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT ?").bind(a.user.id,limit+1);
+  const page=await query.all(),results=page.results||[],hasMore=results.length>limit;
+  if(hasMore)results.pop();
+  const byOrder=new Map();
+  if(results.length){
+    const ids=results.map(order=>Number(order.id));
+    const lines=(await ctx.env.DB.prepare(`SELECT oi.order_id,oi.product_id id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม') title,p.product_kind,p.category,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id IN (${ids.map(()=>'?').join(',')}) GROUP BY oi.order_id,oi.product_id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม'),p.product_kind,p.category,oi.price ORDER BY oi.order_id DESC,MIN(oi.id)`).bind(...ids).all()).results||[];
+    for(const item of lines){const items=byOrder.get(Number(item.order_id))||[];items.push(item);byOrder.set(Number(item.order_id),items)}
+  }
   for (const o of results) {
-    const x = await ctx.env.DB.prepare(
-      "SELECT oi.product_id id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม') title,p.product_kind,p.category,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? GROUP BY oi.product_id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม'),p.product_kind,p.category,oi.price ORDER BY MIN(oi.id)",
-    )
-      .bind(o.id)
-      .all();
-    o.items = x.results;
+    o.items = byOrder.get(Number(o.id))||[];
     o.status_label = statusLabel(o.status);
     o.bank = o.payment_account_name ? {
       active_account: o.payment_account_type,
@@ -173,5 +176,6 @@ export async function onRequestGet(ctx) {
       qr_url: o.payment_qr_url || '',
     } : null;
   }
-  return json({ items: results, bank: publicPaymentSettings(await loadPaymentSettings(ctx.env)) },200,{"cache-control":"no-store"});
+  const last=results.at(-1);
+  return json({items:results,bank:publicPaymentSettings(await loadPaymentSettings(ctx.env)),pagination:{limit,has_more:hasMore,next_cursor:hasMore&&last?String(last.id):null}},200,{"cache-control":"no-store"});
 }

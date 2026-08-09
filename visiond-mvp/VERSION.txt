@@ -1,3 +1,17 @@
+VisionD MVP v0.14.27 — System Data Integrity and Retention
+Commit payment account and QR settings atomically after complete validation
+Rate-limit analytics writes and use a stable first-party visitor identity for deduplication
+Reduce page-view write-path counts to bounded aggregates while preserving dashboard fields
+Base ELON retention on real message activity so archive metadata never extends the 60-day window
+Provide a token-protected cleanup endpoint for a separate Cloudflare Worker Cron
+Stream company-course media and compensate R2 objects when database writes fail
+VisionD MVP v0.14.26 — Dashboard and V-Learning Scalability
+Replace per-course entitlement and progress queries with one bulk course query
+Separate real learner ownership from Boss and Admin preview permissions
+Load lesson attachments in one course-scoped query and validate video byte ranges strictly
+Paginate member orders and fetch every page's item lines in one grouped query
+Show dashboard and hub retry states without blocking unrelated sections
+Preserve real video resume positions and only mark lessons complete after a successful save
 VisionD MVP v0.14.25 — Order and Finance Correctness
 Snapshot product titles in order items so historical orders remain accurate after product changes
 Preserve purchased digital files when a product is retired and show the saved title through LEFT JOIN reads

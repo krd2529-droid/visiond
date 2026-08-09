@@ -7,7 +7,7 @@ const validConversationId=value=>/^[a-f0-9-]{20,64}$/i.test(String(value||''))?S
 
 async function ownConversation(env,id,userId,activeOnly=false){
   if(!id)return null;
-  return env.DB.prepare(`SELECT id,title,status,created_at,updated_at,ended_at FROM elon_conversations WHERE id=? AND user_id=? AND datetime(updated_at)>=datetime('now','-60 days')${activeOnly?" AND status='active'":''}`).bind(id,userId).first();
+  return env.DB.prepare(`SELECT id,title,status,created_at,COALESCE((SELECT MAX(activity.created_at) FROM elon_messages activity WHERE activity.conversation_id=c.id),c.created_at) updated_at,ended_at FROM elon_conversations c WHERE id=? AND user_id=? AND datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_messages m WHERE m.conversation_id=c.id),c.created_at))>=datetime('now','-60 days')${activeOnly?" AND status='active'":''}`).bind(id,userId).first();
 }
 
 export async function onRequestGet(ctx){

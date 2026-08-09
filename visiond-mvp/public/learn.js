@@ -5,10 +5,10 @@ const percent=()=>data?.lessons?.length?Math.round(completedCount()*100/data.les
 function setSaveState(text,state=''){const el=document.querySelector('#saveState');if(el){el.textContent=text;el.className=`save-state ${state}`}}
 function progressBody(completed=false){const video=document.querySelector('#lessonVideo');return{lesson_id:current.id,position_seconds:video&&Number.isFinite(video.currentTime)?Math.floor(video.currentTime):Number(current.last_position_seconds)||0,completed}}
 async function save(completed=false,{keepalive=false}={}){
-  if(!current)return true;const body=progressBody(completed);current.last_position_seconds=body.position_seconds;if(completed)current.completed=1;
+  if(!current)return true;const lesson=current,previousCompleted=Number(lesson.completed)||0,body=progressBody(completed);lesson.last_position_seconds=body.position_seconds;
   if(saving){queuedSave={completed:completed||queuedSave?.completed,keepalive};return false} saving=true;setSaveState('กำลังบันทึก…','saving');
-  try{const r=await fetch(`/api/courses/${courseId}/progress`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),keepalive});if(!r.ok)throw new Error('save');clearTimeout(saveRetry);setSaveState('บันทึกแล้ว ✓','saved');renderProgress();return true}
-  catch{setSaveState('บันทึกไม่สำเร็จ — กำลังลองใหม่','error');clearTimeout(saveRetry);saveRetry=setTimeout(()=>save(completed),4000);return false}
+  try{const r=await fetch(`/api/courses/${courseId}/progress`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),keepalive});if(!r.ok)throw new Error('save');if(completed)lesson.completed=1;clearTimeout(saveRetry);setSaveState('บันทึกแล้ว ✓','saved');renderProgress();return true}
+  catch{lesson.completed=previousCompleted;setSaveState('บันทึกไม่สำเร็จ — กำลังลองใหม่','error');clearTimeout(saveRetry);saveRetry=setTimeout(()=>save(completed),4000);return false}
   finally{saving=false;if(queuedSave){const q=queuedSave;queuedSave=null;setTimeout(()=>save(q.completed,{keepalive:q.keepalive}),0)}}
 }
 function renderProgress(){const p=percent(),done=completedCount(),total=data.lessons.length;document.querySelectorAll('[data-progress]').forEach(x=>{x.value=done;x.max=Math.max(1,total)});document.querySelectorAll('[data-percent]').forEach(x=>x.textContent=`${p}%`);const summary=document.querySelector('#progressSummary');if(summary)summary.textContent=p===100?'เรียนจบแล้ว 100% 🎉':`เรียนจบ ${done}/${total} EP`;const btn=document.querySelector('#completeLesson');if(btn)btn.textContent=current?.completed?'เรียนบทนี้แล้ว ✓':'ทำเครื่องหมายว่าเรียนแล้ว';renderNav()}

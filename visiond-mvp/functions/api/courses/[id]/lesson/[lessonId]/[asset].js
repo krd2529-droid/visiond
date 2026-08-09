@@ -10,6 +10,13 @@ export async function onRequestGet(ctx){
   if(!key)return json({error:'ไม่พบไฟล์บทเรียน'},404);
   const head=await ctx.env.FILES.head(key);if(!head)return json({error:'ไฟล์บทเรียนสูญหาย'},404);
   const range=ctx.request.headers.get('range');let object,status=200;
-  if(isVideo&&range){const match=/bytes=(\d+)-(\d*)/.exec(range),start=Number(match?.[1]||0),requestedEnd=match?.[2]?Number(match[2]):head.size-1,end=Math.min(requestedEnd,head.size-1);if(start>head.size-1||end<start)return new Response(null,{status:416,headers:{'content-range':`bytes */${head.size}`}});object=await ctx.env.FILES.get(key,{range:{offset:start,length:end-start+1}});status=206;const headers=new Headers();head.writeHttpMetadata(headers);headers.set('content-range',`bytes ${start}-${end}/${head.size}`);headers.set('content-length',String(end-start+1));headers.set('accept-ranges','bytes');headers.set('cache-control','private, no-store');headers.set('content-disposition','inline');headers.set('x-content-type-options','nosniff');return new Response(object.body,{status,headers});}
+  if(isVideo&&range){
+    const unsatisfied=()=>new Response(null,{status:416,headers:{'content-range':`bytes */${head.size}`,'accept-ranges':'bytes'}});
+    const match=/^bytes=(\d*)-(\d*)$/.exec(range.trim());
+    if(!match||(!match[1]&&!match[2])||head.size<1)return unsatisfied();
+    let start,end;
+    if(!match[1]){const suffix=Number(match[2]);if(!Number.isSafeInteger(suffix)||suffix<1)return unsatisfied();start=Math.max(0,head.size-suffix);end=head.size-1}
+    else{start=Number(match[1]);const requestedEnd=match[2]?Number(match[2]):head.size-1;if(!Number.isSafeInteger(start)||!Number.isSafeInteger(requestedEnd)||start>=head.size||requestedEnd<start)return unsatisfied();end=Math.min(requestedEnd,head.size-1)}
+    object=await ctx.env.FILES.get(key,{range:{offset:start,length:end-start+1}});status=206;const headers=new Headers();head.writeHttpMetadata(headers);headers.set('content-range',`bytes ${start}-${end}/${head.size}`);headers.set('content-length',String(end-start+1));headers.set('accept-ranges','bytes');headers.set('cache-control','private, no-store');headers.set('content-disposition','inline');headers.set('x-content-type-options','nosniff');return new Response(object.body,{status,headers});}
   object=await ctx.env.FILES.get(key);const headers=new Headers();object.writeHttpMetadata(headers);headers.set('content-length',String(head.size));headers.set('accept-ranges','bytes');headers.set('cache-control','private, no-store');headers.set('content-disposition',isVideo?'inline':`${lesson.pdf_mime==='application/pdf'?'inline':'attachment'}; filename="${String(lesson.document_name||'lesson.pdf').replace(/["\r\n]/g,'')}"`);headers.set('x-content-type-options','nosniff');return new Response(object.body,{status,headers});
 }

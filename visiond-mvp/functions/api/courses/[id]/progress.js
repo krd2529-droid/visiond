@@ -8,7 +8,9 @@ export async function onRequestPost(ctx){
   if(!Number.isInteger(lessonId)||lessonId<1||!Number.isFinite(rawPosition))return json({error:'ข้อมูลความคืบหน้าไม่ถูกต้อง'},400);
   const lesson=await ctx.env.DB.prepare('SELECT id,duration_seconds FROM course_lessons WHERE id=? AND course_id=?').bind(lessonId,access.course.id).first();
   if(!lesson)return json({error:'ไม่พบบทเรียน'},404);
-  const position=Math.min(Math.max(0,Math.floor(rawPosition)),Math.max(0,Number(lesson.duration_seconds)||0)||86400);
+  // Seller-entered duration is descriptive metadata and may be shorter than the
+  // actual uploaded video. Do not use it to move a learner backwards on resume.
+  const position=Math.min(Math.max(0,Math.floor(rawPosition)),86400);
   await ctx.env.DB.prepare(`INSERT INTO course_progress(user_id,course_id,lesson_id,last_position_seconds,completed,updated_at) VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)
     ON CONFLICT(user_id,lesson_id) DO UPDATE SET last_position_seconds=excluded.last_position_seconds,completed=MAX(course_progress.completed,excluded.completed),updated_at=CURRENT_TIMESTAMP`)
     .bind(access.user.id,access.course.id,lessonId,position,completed).run();

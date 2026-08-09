@@ -10,7 +10,12 @@ export async function onRequestGet(ctx) {
     COALESCE(cp.last_position_seconds,0) last_position_seconds,COALESCE(cp.completed,0) completed,cp.updated_at progress_updated_at
     FROM course_lessons l LEFT JOIN course_progress cp ON cp.lesson_id=l.id AND cp.user_id=?
     WHERE l.course_id=? ORDER BY l.sort_order,l.id`).bind(access.user.id,access.course.id).all();
-  for(const lesson of results){const files=await ctx.env.DB.prepare('SELECT id,file_name,mime_type,file_size,sort_order FROM course_lesson_files WHERE lesson_id=? ORDER BY sort_order,id').bind(lesson.id).all();lesson.files=files.results||[];lesson.file_count=lesson.files.length+(lesson.has_pdf?1:0)}
+  const filesByLesson=new Map();
+  if(results.length){
+    const files=await ctx.env.DB.prepare(`SELECT f.id,f.lesson_id,f.file_name,f.mime_type,f.file_size,f.sort_order FROM course_lesson_files f JOIN course_lessons l ON l.id=f.lesson_id WHERE l.course_id=? ORDER BY f.lesson_id,f.sort_order,f.id`).bind(access.course.id).all();
+    for(const file of files.results||[]){const {lesson_id,...asset}=file,key=String(lesson_id),group=filesByLesson.get(key)||[];group.push(asset);filesByLesson.set(key,group)}
+  }
+  for(const lesson of results){lesson.files=filesByLesson.get(String(lesson.id))||[];lesson.file_count=lesson.files.length+(lesson.has_pdf?1:0)}
   const total=results.length,completed=results.filter(lesson=>Number(lesson.completed)===1).length;
   const started=results.filter(lesson=>!Number(lesson.completed)&&lesson.progress_updated_at).sort((a,b)=>String(b.progress_updated_at).localeCompare(String(a.progress_updated_at)))[0];
   const resume=started||results.find(lesson=>!Number(lesson.completed))||null;
