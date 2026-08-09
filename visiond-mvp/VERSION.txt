@@ -1,2 +1,2 @@
-VisionD MVP v0.13.96
-Cloudflare Pages Functions build fix for malformed course-rights schema SQL
+VisionD MVP v0.13.97
+Course-rights read-before-buy acknowledgement and automatic slip unlock details

@@ -1,6 +1,6 @@
 import("/facebook-chat.js?v=01195");
 import("/mouse-ui.js?v=01210");
-import('/nav-account.js?v=01399');
+import('/nav-account.js?v=01388');
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
@@ -417,4 +417,4 @@ import('/nav-account.js?v=01399');
       grid.innerHTML = '<div class="product-loading"><b>โหลดแคตตาล็อกไม่สำเร็จ</b><p>การเชื่อมต่อใช้เวลานาน กรุณากดลองใหม่</p><button type="button" onclick="location.reload()">ลองโหลดอีกครั้ง</button></div>';
     });
 })();
-import("/nav-account.js?v=01399").then((module) => module.initAccountNav());
+import("/nav-account.js?v=01388").then((module) => module.initAccountNav());
