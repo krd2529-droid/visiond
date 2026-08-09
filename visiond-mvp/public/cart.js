@@ -21,6 +21,12 @@ const normalizeCart = (items) => {
   }
   return [...unique.values()];
 };
+const cartSignature = (items) =>
+  normalizeCart(items)
+    .map((item) => `${String(item.slug)}:${Number(item.quantity) || 1}`)
+    .sort()
+    .join("|");
+let activeOrder = null;
 const getCart = () => {
   try {
     const saved = JSON.parse(localStorage.getItem("vd_cart") || "[]"),
@@ -33,6 +39,7 @@ const getCart = () => {
   }
 };
 const saveCart = (items) => {
+  resetActiveOrder();
   localStorage.setItem("vd_cart", JSON.stringify(normalizeCart(items)));
   render();
 };
@@ -47,7 +54,6 @@ async function refreshCartPrices(){
 }
 const discountRate = (count) =>
   count >= 30 ? 30 : count >= 20 ? 20 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
-let activeOrder = null;
 const isVLearningOrder = (order) =>
   Boolean(
     order?.items?.some(
@@ -121,10 +127,26 @@ function render() {
   checkoutButton.disabled = !items.length;
 }
 checkoutButton.onclick = checkout;
-closeCheckout.onclick = () => { checkoutDialog.close(); sellerPaymentQr.hidden=true; };
+function resetActiveOrder() {
+  activeOrder = null;
+  slipForm.reset();
+  slipMessage.textContent = "";
+  slipForm.classList.remove("checkout-working");
+  sellerPaymentQr.hidden = true;
+  sellerPaymentQr.removeAttribute("src");
+  if (checkoutDialog.open) checkoutDialog.close();
+}
+closeCheckout.onclick = () => resetActiveOrder();
 checkoutDialog.onclick = (e) => {
-  if (e.target === checkoutDialog) { checkoutDialog.close(); sellerPaymentQr.hidden=true; }
+  if (e.target === checkoutDialog) resetActiveOrder();
 };
+checkoutDialog.addEventListener("close", resetActiveOrder);
+checkoutDialog.addEventListener("cancel", () => resetActiveOrder());
+addEventListener("storage", (event) => {
+  if (event.key !== "vd_cart") return;
+  resetActiveOrder();
+  render();
+});
 async function checkout() {
   const items = getCart();
   if (!items.length) return;
@@ -160,11 +182,14 @@ async function checkout() {
       if (d.slug) saveCart(items.filter((item) => item.slug !== d.slug));
       throw new Error(d.error || "สร้างคำสั่งซื้อไม่สำเร็จ");
     }
-    activeOrder = d;
+    activeOrder = { ...d, cart_signature: cartSignature(items) };
     window.visiondPixel?.track("InitiateCheckout", {
       content_ids: (d.items || []).map((item) => String(item.id || item.slug)),
       content_type: "product",
-      num_items: (d.items || []).length,
+      num_items: (d.items || []).reduce(
+        (sum, item) => sum + (Number(item.quantity) || 1),
+        0,
+      ),
       value: Number(d.total || 0) / 100,
       currency: "THB",
     });
@@ -185,21 +210,27 @@ async function checkout() {
 }
 slipForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (!activeOrder?.id) return;
+  if (!activeOrder?.id || slipForm.classList.contains("checkout-working")) return;
+  const order = activeOrder;
+  if (cartSignature(getCart()) !== order.cart_signature) {
+    resetActiveOrder();
+    alert("ตะกร้ามีการเปลี่ยนแปลง กรุณากดชำระเงินเพื่อสร้างคำสั่งซื้อใหม่");
+    return;
+  }
   const file = slipInput.files[0];
   if (!file) return;
   slipMessage.textContent = "กำลังอัปโหลดสลิป…";
   slipForm.classList.add("checkout-working");
   const fd = new FormData(slipForm);
   try {
-    const r = await fetch(`/api/orders/${activeOrder.id}/slip`, {
+    const r = await fetch(`/api/orders/${order.id}/slip`, {
       method: "POST",
       body: fd,
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || "ส่งสลิปไม่สำเร็จ");
     localStorage.removeItem("vd_cart");
-    const learningOrder = isVLearningOrder(activeOrder);
+    const learningOrder = isVLearningOrder(order);
     slipMessage.textContent = d.auto_approved
       ? learningOrder
         ? "ชำระเงินสำเร็จ ปลดล็อกแล้ว กำลังเข้าสู่ระบบ V-Learning"
@@ -207,7 +238,7 @@ slipForm.onsubmit = async (e) => {
       : learningOrder
         ? d.message || "รับสลิปแล้ว คอร์สกำลังรอตรวจสอบ ยังไม่ปลดล็อก"
         : d.message || "รับสลิปแล้ว กำลังรอตรวจสอบ";
-    const courseId = activeOrder.items?.find(
+    const courseId = order.items?.find(
       (item) =>
         item?.category === "online-course" || item?.product_kind === "course",
     )?.seller_course_id;

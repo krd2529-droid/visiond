@@ -1,6 +1,16 @@
 import('/facebook-chat.js?v=01195');
 const authMessage=document.querySelector('#pageAuthMsg');
-const returnTo=()=>sessionStorage.getItem('vd_return_to')||'/dashboard.html';
+const returnTo=()=>{
+  const saved=String(sessionStorage.getItem('vd_return_to')||'').trim();
+  if(!/^\/(?!\/)/.test(saved)) return '/dashboard.html';
+  try{
+    const target=new URL(saved,location.origin);
+    if(target.origin!==location.origin) return '/dashboard.html';
+    return `${target.pathname}${target.search}${target.hash}`;
+  }catch{
+    return '/dashboard.html';
+  }
+};
 
 async function submitAuth(form,endpoint,loadingText){
   const button=form.querySelector('button[type="submit"]');
@@ -29,8 +39,9 @@ async function submitAuth(form,endpoint,loadingText){
     });
     const data=await response.json().catch(()=>({}));
     if(!response.ok) throw new Error(data.error||`เซิร์ฟเวอร์เข้าสู่ระบบขัดข้อง (${response.status}) กรุณาลองใหม่`);
+    const destination=returnTo();
     sessionStorage.removeItem('vd_return_to');
-    location.href=returnTo();
+    location.href=destination;
   }catch(error){
     if(authMessage) authMessage.textContent=error.message;
   }finally{

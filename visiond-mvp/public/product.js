@@ -5,8 +5,7 @@ const freshMedia=(url,version)=>url?.startsWith('/api/media/')?`${url}?v=${encod
 const categoryLabels={tattoo:'แบบรอยสัก',dinosaur:'ภาพระบายสีไดโนเสาร์','digital-product':'สินค้าดิจิทัล','coloring':'ภาพระบายสี',worksheet:'แบบฝึกหัด','development-game':'เกมเสริมพัฒนาการ','paper-doll':'ตุ๊กตากระดาษ','document':'เอกสารและแบบฟอร์ม','resale-rights':'สิทธิ์ลงขายคอร์สออนไลน์'};
 const categoryLabel=product=>product.category_label||categoryLabels[product.category]||product.category||'สินค้าดิจิทัล';
 const fileTypeLabel=product=>product.file_type||(/pdf/i.test(product.description||'')||product.category==='dinosaur'?'PDF พร้อมพิมพ์':'ไฟล์ดิจิทัล');
-const demoProduct={id:1,slug:'paper-doll-sample',title:'ชุดตุ๊กตากระดาษพร้อมพิมพ์',category:'สินค้าดิจิทัล',description:'ไฟล์ตัวอย่างสำหรับแสดงหน้าสินค้า ประกอบด้วยภาพปก ภาพตัวอย่าง รายละเอียดไฟล์ และสิทธิ์การใช้งาน',short_description:'ชุดกิจกรรมตุ๊กตากระดาษสำหรับพิมพ์ ตัด และเล่น',price:19900,cover_url:'/assets/product-placeholder.svg'};
-let currentProduct=demoProduct;
+let currentProduct=null;
 let currentOrderNo='';
 let activeOrder=null;
 const paymentDialog=document.querySelector('#paymentDialog');
@@ -14,8 +13,15 @@ const closePayment=document.querySelector('#closePayment');
 const isRightsItem=item=>item?.category==='resale-rights'||item?.slug==='course-selling-rights';
 const getCart=()=>{try{const saved=JSON.parse(localStorage.getItem('vd_cart')||'[]'),unique=new Map();let remaining=30;for(const raw of Array.isArray(saved)?saved:[]){if(!raw?.slug||unique.has(raw.slug)||remaining<1)continue;const quantity=isRightsItem(raw)?Math.min(remaining,Math.max(1,Math.floor(Number(raw.quantity)||1))):1;unique.set(raw.slug,{...raw,quantity});remaining-=quantity}return [...unique.values()]}catch{return[]}};
 const updateCartCount=()=>{const count=getCart().reduce((sum,item)=>sum+(Number(item.quantity)||1),0);document.querySelectorAll('[data-cart-count]').forEach(node=>node.textContent=count)};
-function syncProductCartButton(){const button=document.querySelector('#addProductToCart');if(!button)return;const added=getCart().some(item=>item.slug===currentProduct.slug);button.textContent=added?'อยู่ในรถเข็นแล้ว ✓':'ใส่รถเข็น';button.classList.toggle('in-cart',added)}
-function addCurrentProductToCart(){const cart=getCart(),rights=currentProduct.category==='resale-rights',requested=rights?Math.min(30,Math.max(1,Math.floor(Number(document.querySelector('#courseRightsQuantity')?.value)||1))):1,existing=cart.find(item=>item.slug===currentProduct.slug),otherCount=cart.reduce((sum,item)=>sum+(item===existing?0:Number(item.quantity)||1),0),quantity=Math.min(requested,30-otherCount);if(quantity<1){alert('เลือกสินค้าได้สูงสุดรวม 30 ชิ้นต่อคำสั่งซื้อ');return}if(existing){if(rights){existing.quantity=quantity;localStorage.setItem('vd_cart',JSON.stringify(cart));updateCartCount();syncProductCartButton()}else syncProductCartButton();return}if(otherCount+quantity>30){alert('เลือกสินค้าได้สูงสุดรวม 30 ชิ้นต่อคำสั่งซื้อ');return}const sale=Number(currentProduct.sale_price??currentProduct.price)||0;cart.push({id:currentProduct.id,slug:currentProduct.slug,title:currentProduct.title,category:currentProduct.category,category_label:categoryLabel(currentProduct),price:sale,original_price:Number(currentProduct.original_price??currentProduct.price)||sale,promotion_percent:Number(currentProduct.promotion_percent)||0,cover_url:currentProduct.cover_url||'/assets/product-placeholder.svg',quantity});localStorage.setItem('vd_cart',JSON.stringify(cart));window.visiondPixel?.track('AddToCart',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',value:(sale*quantity)/100,currency:'THB'});updateCartCount();syncProductCartButton()}
+function syncProductCartButton(){const button=document.querySelector('#addProductToCart');if(!button||!currentProduct)return;const added=getCart().some(item=>item.slug===currentProduct.slug);button.textContent=added?'อยู่ในรถเข็นแล้ว ✓':'ใส่รถเข็น';button.classList.toggle('in-cart',added)}
+function addCurrentProductToCart(){if(!currentProduct)return;const cart=getCart(),rights=currentProduct.category==='resale-rights',requested=rights?Math.min(30,Math.max(1,Math.floor(Number(document.querySelector('#courseRightsQuantity')?.value)||1))):1,existing=cart.find(item=>item.slug===currentProduct.slug),otherCount=cart.reduce((sum,item)=>sum+(item===existing?0:Number(item.quantity)||1),0),quantity=Math.min(requested,30-otherCount);if(quantity<1){alert('เลือกสินค้าได้สูงสุดรวม 30 ชิ้นต่อคำสั่งซื้อ');return}if(existing){if(rights){existing.quantity=quantity;localStorage.setItem('vd_cart',JSON.stringify(cart));updateCartCount();syncProductCartButton()}else syncProductCartButton();return}if(otherCount+quantity>30){alert('เลือกสินค้าได้สูงสุดรวม 30 ชิ้นต่อคำสั่งซื้อ');return}const sale=Number(currentProduct.sale_price??currentProduct.price)||0;cart.push({id:currentProduct.id,slug:currentProduct.slug,title:currentProduct.title,category:currentProduct.category,category_label:categoryLabel(currentProduct),price:sale,original_price:Number(currentProduct.original_price??currentProduct.price)||sale,promotion_percent:Number(currentProduct.promotion_percent)||0,cover_url:currentProduct.cover_url||'/assets/product-placeholder.svg',quantity});localStorage.setItem('vd_cart',JSON.stringify(cart));window.visiondPixel?.track('AddToCart',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',value:(sale*quantity)/100,currency:'THB'});updateCartCount();syncProductCartButton()}
+
+function renderProductError(message){
+  currentProduct=null;
+  document.title='ไม่พบสินค้า | VisionD Online';
+  productPage.innerHTML=`<section class="product-loading product-load-error"><b>${escapeHtml(message)}</b><p>หน้านี้ไม่เปิดให้สั่งซื้อจนกว่าจะโหลดข้อมูลสินค้าจริงสำเร็จ</p><div class="actions"><a class="primary" href="/digital-products">กลับไปเลือกสินค้า</a><button class="secondary-button" type="button" onclick="location.reload()">ลองโหลดอีกครั้ง</button></div></section>`;
+  updateCartCount();
+}
 
 function galleryMarkup(product){
   const cover=product.cover_url||'/assets/product-placeholder.svg';
@@ -55,7 +61,7 @@ function renderProduct(product){
   }
   document.dispatchEvent(new CustomEvent('visiond:product-rendered'));
   document.querySelectorAll('[data-preview]').forEach(button=>button.addEventListener('click',()=>{document.querySelector('#mainProductImage').src=button.dataset.preview;document.querySelectorAll('.product-thumb').forEach(item=>item.classList.toggle('active',item===button));}));
-  document.querySelector('#buyNowButton').addEventListener('click',beginPurchase);
+  document.querySelector('#buyNowButton').addEventListener('click',product.category==='resale-rights'?()=>{addCurrentProductToCart();location.href='/cart'}:beginPurchase);
   document.querySelector('#productBackButton').addEventListener('click',()=>{try{const referrer=new URL(document.referrer);if(referrer.origin===location.origin){history.back();return}}catch{}location.href='/digital-products.html'});
   document.querySelector('#addProductToCart').addEventListener('click',addCurrentProductToCart);
   syncProductCartButton();
@@ -63,14 +69,16 @@ function renderProduct(product){
   checkEntitlement(product.id);
 }
 async function loadProduct(){
-  const slug=new URLSearchParams(location.search).get('slug')||demoProduct.slug;
-  try{const response=await fetch('/api/products/'+encodeURIComponent(slug),{cache:'no-store'});if(!response.ok)throw new Error('not found');const data=await response.json();renderProduct(data.item||demoProduct);}catch(error){renderProduct(demoProduct);}
+  const slug=String(new URLSearchParams(location.search).get('slug')||'').trim();
+  if(!slug){renderProductError('ไม่พบรหัสสินค้า');return}
+  try{const response=await fetch('/api/products/'+encodeURIComponent(slug),{cache:'no-store'});if(!response.ok){renderProductError(response.status===404?'ไม่พบสินค้านี้':'โหลดสินค้าไม่สำเร็จ');return}const data=await response.json();if(!data?.item?.id||!data.item.slug){renderProductError('ข้อมูลสินค้าไม่สมบูรณ์');return}renderProduct(data.item);}catch(error){renderProductError('เชื่อมต่อข้อมูลสินค้าไม่สำเร็จ');}
 }
 async function checkEntitlement(productId){
   const box=document.querySelector('#downloadBox');
   try{const response=await fetch('/api/downloads/product/'+productId);const data=await response.json().catch(()=>({}));if(response.ok&&data.allowed){if(currentProduct.category==='resale-rights'){box.classList.add('unlocked');box.innerHTML='<div class="unlocked-head"><div><b>ได้รับเครดิตสิทธิ์แล้ว</b><p>ไปต่อ Vision 5 เพื่อเลือกคอร์สร่างและผูกตะกร้า</p></div><span>UNLOCKED</span></div><a class="download-primary" href="/course-seller.html?vision5=1">ไปขั้นตอน Vision 5</a>';return}const files=data.files||[];box.classList.add('unlocked');box.innerHTML=`<div class="unlocked-head"><div><b>ปลดล็อกแล้ว — พร้อมดาวน์โหลด</b><p>ไฟล์ของสินค้านี้พร้อมใช้งานในบัญชีของคุณ</p></div><span>UNLOCKED</span></div>${files.length?files.map(file=>`<section class="unlocked-file"><div class="unlocked-file-title"><b>${escapeHtml(file.label)}</b><small>เวอร์ชัน ${escapeHtml(file.version)}${file.file_size?' · '+new Intl.NumberFormat('th-TH').format(file.file_size/1048576)+' MB':''}</small></div>${file.mime_type==='application/pdf'?`<div class="pdf-preview"><iframe src="/api/downloads/file/${file.id}?view=1" title="ตัวอย่าง ${escapeHtml(file.label)}"></iframe></div>`:''}<a class="download-primary" href="/api/downloads/file/${file.id}">ดาวน์โหลด${file.mime_type==='application/pdf'?' PDF':''}</a></section>`).join(''):'<div class="file-waiting"><b>สิทธิ์ได้รับอนุมัติแล้ว</b><p>แอดมินกำลังเพิ่มไฟล์ดาวน์โหลด กรุณาตรวจสอบอีกครั้งภายหลัง</p></div>'}<a class="secondary-button center" href="/dashboard.html#my-products">ดูสินค้าทั้งหมดของฉัน</a>`;document.querySelector('#purchaseActions').hidden=true;}else{box.innerHTML='<b>ยังไม่ได้ปลดล็อก</b><p>กดซื้อและแจ้งสลิป เมื่อ Admin อนุมัติแล้วจะใช้งานได้จากหน้านี้และสินค้าของฉัน</p>';}}catch(error){box.innerHTML='<b>ยังไม่ได้ปลดล็อก</b><p>เข้าสู่ระบบเพื่อเช็กสิทธิ์ หรือกดซื้อสินค้านี้</p>';}
 }
 async function beginPurchase(){
+  if(!currentProduct)return;
   const button=document.querySelector('#buyNowButton');button.disabled=true;button.textContent='กำลังสร้างคำสั่งซื้อ…';
   try{
     const quantity=currentProduct.category==='resale-rights'?Math.min(30,Math.max(1,Number(document.querySelector('#courseRightsQuantity')?.value)||1)):1;
@@ -90,7 +98,7 @@ async function beginPurchase(){
 }
 closePayment.addEventListener('click',()=>paymentDialog.close());
 paymentDialog.addEventListener('click',event=>{if(event.target===paymentDialog)paymentDialog.close();});
-productCopyAccount.addEventListener('click',async()=>{const number=productAccountNumber.textContent.trim();if(!number||number==='-')return;await navigator.clipboard.writeText(number);productCopyAccount.textContent='คัดลอกแล้ว ✓';setTimeout(()=>productCopyAccount.textContent='คัดลอกเลขบัญชี',1600)});
+productCopyAccount.addEventListener('click',async()=>{const number=productAccountNumber.textContent.trim();if(!number||number==='-')return;try{await navigator.clipboard.writeText(number);productCopyAccount.textContent='คัดลอกแล้ว ✓'}catch{const range=document.createRange();range.selectNode(productAccountNumber);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);productCopyAccount.textContent='เลือกเลขแล้ว กดคัดลอก'}setTimeout(()=>productCopyAccount.textContent='คัดลอกเลขบัญชี',1600)});
 productSlipForm.addEventListener('submit',async event=>{event.preventDefault();if(!activeOrder?.id)return;const button=productSlipForm.querySelector('button');button.disabled=true;productSlipMessage.textContent='กำลังอัปโหลดและตรวจสลิป…';try{const response=await fetch(`/api/orders/${activeOrder.id}/slip`,{method:'POST',body:new FormData(productSlipForm)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ส่งสลิปไม่สำเร็จ');productSlipMessage.textContent=data.message||'รับสลิปเรียบร้อย';setTimeout(()=>location.href=data.auto_approved&&currentProduct.category==='online-course'?'/my-courses.html':'/dashboard.html#orders',1400)}catch(error){productSlipMessage.textContent=error.message;button.disabled=false;}});
 loadProduct();
 import('/nav-account.js?v=01411').then(module=>module.initAccountNav());

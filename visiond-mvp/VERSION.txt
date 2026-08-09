@@ -1,3 +1,9 @@
+VisionD MVP v0.14.23 — Purchase Transaction Blockers
+Stop missing or failed product pages from exposing a purchasable demo item
+Give course-selling rights one cart-only primary action without creating an orphan order
+Bind checkout uploads to the exact cart snapshot and discard stale orders when the cart changes
+Return members to the validated page they entered from after login
+Start the catalog on page one and reset pagination when filters or searches change
 VisionD MVP v0.14.22 — Vision 5 Data Separation and Dashboard Fixes
 Keep seller-course revenue out of VisionD profit while showing both channels in sales reports
 Prevent generic Admin approval or rejection from bypassing Vision 5 course and rights workflows

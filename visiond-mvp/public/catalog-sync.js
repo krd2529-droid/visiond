@@ -45,10 +45,18 @@ import('/nav-account.js?v=01411');
   };
   const previewUrls = (product) => {
     let saved = [];
-    try {
-      saved = JSON.parse(product.preview_urls || "[]");
-    } catch (error) {
-      saved = [];
+    if (Array.isArray(product.preview_urls)) {
+      saved = product.preview_urls;
+    } else if (typeof product.preview_urls === "string") {
+      const raw = product.preview_urls.trim();
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          saved = Array.isArray(parsed) ? parsed : typeof parsed === "string" ? [parsed] : [];
+        } catch (error) {
+          saved = [raw];
+        }
+      }
     }
     return [...new Set([product.cover_url, ...saved].filter(Boolean))].slice(
       0,
@@ -385,16 +393,18 @@ import('/nav-account.js?v=01411');
           : "all";
       filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
       const pageSize = 8,
-        requestedPage = location.pathname === "/" ? 1 : Number(new URLSearchParams(location.search).get("page")) || 2;
-      let currentCategory = initialCategory;
-      const applyCategory = (category) => {
+        requestedPage = Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1);
+      let currentCategory = initialCategory,
+        selectedPage = requestedPage;
+      const applyCategory = (category, resetPage = false) => {
         currentCategory = category;
+        if (resetPage) selectedPage = 1;
         const searchText = String(homeSearch?.value || "").trim().toLocaleLowerCase("th-TH");
         const matchingCards = [...grid.querySelectorAll(".vd-card")].filter(
             (card) => (category === "all" || card.dataset.category === category) && (!searchText || String(card.dataset.search || card.textContent).toLocaleLowerCase("th-TH").includes(searchText)),
           ),
           totalPages = Math.max(1, Math.ceil(matchingCards.length / pageSize)),
-          currentPage = searchText ? 1 : Math.max(1, Math.min(totalPages, requestedPage)),
+          currentPage = searchText ? 1 : Math.max(1, Math.min(totalPages, selectedPage)),
           start = (currentPage - 1) * pageSize,
           visibleCards = new Set(matchingCards.slice(start, start + pageSize));
         filters
@@ -404,19 +414,22 @@ import('/nav-account.js?v=01411');
           .querySelectorAll(".vd-card")
           .forEach((card) => (card.hidden = !visibleCards.has(card)));
         if (homeSearchCount) homeSearchCount.textContent = searchText ? `พบ ${matchingCards.length} สินค้าที่ตรงกับ “${homeSearch.value.trim()}”` : `แสดงสินค้า ${matchingCards.length} รายการ`;
-        const categoryQuery = category === "all" ? "" : `&category=${encodeURIComponent(category)}`;
+        const categoryValue = category === "all" ? "" : encodeURIComponent(category),
+          firstPageHref = location.pathname === "/"
+            ? categoryValue ? `/?category=${categoryValue}` : "/"
+            : categoryValue ? `/digital-products?category=${categoryValue}` : "/digital-products";
         catalogPager.innerHTML = Array.from({ length: totalPages }, (_, index) => index + 1)
-          .map((page) => `<a class="${page === currentPage ? "active" : ""}" href="${page === 1 ? "/" : `/digital-products?page=${page}${categoryQuery}`}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้าแรก · 1" : page}</a>`)
+          .map((page) => `<a class="${page === currentPage ? "active" : ""}" href="${page === 1 ? firstPageHref : `/digital-products?page=${page}${categoryValue ? `&category=${categoryValue}` : ""}`}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้า 1" : page}</a>`)
           .join("");
       };
       filters.querySelectorAll("button").forEach(
         (button) =>
           (button.onclick = () => {
-            applyCategory(button.dataset.category);
+            applyCategory(button.dataset.category, true);
           }),
       );
-      if (homeSearch) homeSearch.oninput = () => applyCategory(currentCategory);
-      if (clearHomeSearch) clearHomeSearch.onclick = () => { homeSearch.value = ""; applyCategory(currentCategory); homeSearch.focus(); };
+      if (homeSearch) homeSearch.oninput = () => applyCategory(currentCategory, true);
+      if (clearHomeSearch) clearHomeSearch.onclick = () => { homeSearch.value = ""; applyCategory(currentCategory, true); homeSearch.focus(); };
       applyCategory(initialCategory);
     })
     .catch(() => {
