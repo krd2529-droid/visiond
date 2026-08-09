@@ -1,3 +1,15 @@
+VisionD MVP v0.14.21 — Cart and Order Race Fixes
+Enforce the 30-item limit from total quantities across every add-to-cart entry point
+Show rights quantities and correct totals in the catalog basket summary
+Refresh live cart state without restoring removed or already purchased products
+Guard order creation inside the database batch against overlapping active purchases
+VisionD MVP v0.14.20 — V-Learning Learner Experience
+Rebrand the learner journey as VisionD V-Learning
+Show server-calculated learning percentages, resume lesson, and last video position
+Save progress on pause, lesson changes, visibility changes, and page exit
+Add previous/next episode navigation, mobile lesson drawer, and 100% completion state
+Route verified and pending course payments into the learner hub with truthful status
+Keep paid courses available after sales stop while blocking explicitly suspended access
 VisionD MVP v0.14.19 — Vision 5 Full-System QA
 Make rights credit grants and course publishing idempotent under concurrent requests
 Create orders and items atomically, validate integer quantities, and block self-purchase

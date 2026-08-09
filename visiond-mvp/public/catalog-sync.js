@@ -63,9 +63,13 @@ import('/nav-account.js?v=01411');
   };
   const normalizeCart = (items) => {
     const unique = new Map();
-    for (const item of Array.isArray(items) ? items : [])
-      if (item?.slug && !unique.has(item.slug)) unique.set(item.slug, item);
-    return [...unique.values()].slice(0, 30);
+    let remaining=30;
+    for (const item of Array.isArray(items) ? items : []) {
+      if(!item?.slug||unique.has(item.slug)||remaining<1)continue;
+      const rights=item.category==='resale-rights'||item.slug==='course-selling-rights',quantity=rights?Math.min(remaining,Math.max(1,Math.floor(Number(item.quantity)||1))):1;
+      unique.set(item.slug,{...item,quantity});remaining-=quantity;
+    }
+    return [...unique.values()];
   };
   const getCart = () => {
     try {
@@ -81,7 +85,7 @@ import('/nav-account.js?v=01411');
   const updateCartCount = () =>
     document
       .querySelectorAll("[data-cart-count]")
-      .forEach((node) => (node.textContent = getCart().length));
+      .forEach((node) => (node.textContent = getCart().reduce((sum,item)=>sum+(Number(item.quantity)||1),0)));
   const discountRate = (count) =>
     count >= 30 ? 30 : count >= 20 ? 20 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
   let bundlePanel = null,
@@ -110,9 +114,10 @@ import('/nav-account.js?v=01411');
   const renderBundlePanel = () => {
     if (!bundlePanel) return;
     const items = getCart(),
-      eligibleItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights"),
+      itemCount=items.reduce((sum,item)=>sum+(Number(item.quantity)||1),0),
+      eligibleItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights" && (!item.product_kind||item.product_kind==='product')),
       count = eligibleItems.length,
-      subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0),
+      subtotal = items.reduce((sum, item) => sum + Number(item.price || 0)*(Number(item.quantity)||1), 0),
       discountableSubtotal = eligibleItems.reduce((sum, item) => sum + Number(item.price || 0), 0),
       rate = discountRate(count),
       discount = Math.round((discountableSubtotal * rate) / 100),
@@ -126,7 +131,7 @@ import('/nav-account.js?v=01411');
               : count < 30
                 ? 30
                 : null;
-    bundlePanel.innerHTML = `<h3>จัดชุดส่วนลด</h3><p>${next ? `เลือกสินค้าโปรอีก ${next - count} ตะกร้า เพื่อรับส่วนลด ${discountRate(next)}%` : "ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 30% แล้ว"}</p><div class="vd-discount-levels">${[5, 10, 20, 30].map((level) => `<span class="${count >= level ? "active" : ""}">${level} ชุด<br>ลด ${discountRate(level)}%</span>`).join("")}</div><div class="vd-bundle-items">${items.length ? items.map((item, index) => `<article class="vd-bundle-item"><img src="${esc(item.cover_url || "/assets/product-placeholder.svg")}" alt=""><b>${esc(item.title)}${item.category==='resale-rights'||item.slug==='course-selling-rights'?'<small>ไม่ร่วมโปรส่วนลด</small>':''}</b><button type="button" data-bundle-remove="${index}" aria-label="นำออก">×</button></article>`).join("") : '<div class="vd-bundle-empty">ยังไม่ได้เลือกสินค้า<br>เลือกได้สูงสุด 30 ตะกร้า</div>'}</div><div class="vd-bundle-summary"><div><span>${items.length} ตะกร้า</span><b>${money(subtotal)}</b></div><div class="discount"><span>ส่วนลด ${rate}%</span><b>- ${money(discount)}</b></div><div><strong>ยอดสุทธิ</strong><strong>${money(subtotal - discount)}</strong></div></div><a href="/cart.html">ดูตะกร้าและชำระเงิน</a>`;
+    bundlePanel.innerHTML = `<h3>จัดชุดส่วนลด</h3><p>${next ? `เลือกสินค้าโปรอีก ${next - count} ตะกร้า เพื่อรับส่วนลด ${discountRate(next)}%` : "ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 30% แล้ว"}</p><div class="vd-discount-levels">${[5, 10, 20, 30].map((level) => `<span class="${count >= level ? "active" : ""}">${level} ชุด<br>ลด ${discountRate(level)}%</span>`).join("")}</div><div class="vd-bundle-items">${items.length ? items.map((item, index) => `<article class="vd-bundle-item"><img src="${esc(item.cover_url || "/assets/product-placeholder.svg")}" alt=""><b>${esc(item.title)}${Number(item.quantity)>1?` <small>× ${Number(item.quantity)} ชิ้น</small>`:''}${item.category==='resale-rights'||item.slug==='course-selling-rights'?'<small>ไม่ร่วมโปรส่วนลด</small>':''}</b><button type="button" data-bundle-remove="${index}" aria-label="นำออก">×</button></article>`).join("") : '<div class="vd-bundle-empty">ยังไม่ได้เลือกสินค้า<br>เลือกได้สูงสุดรวม 30 ชิ้น</div>'}</div><div class="vd-bundle-summary"><div><span>${itemCount} ชิ้น</span><b>${money(subtotal)}</b></div><div class="discount"><span>ส่วนลด ${rate}%</span><b>- ${money(discount)}</b></div><div><strong>ยอดสุทธิ</strong><strong>${money(subtotal - discount)}</strong></div></div><a href="/cart.html">ดูตะกร้าและชำระเงิน</a>`;
     bundlePanel.querySelector('a[href="/cart.html"]')?.setAttribute("href", "/cart");
     bundlePanel.querySelectorAll("[data-bundle-remove]").forEach(
       (button) =>
@@ -267,7 +272,8 @@ import('/nav-account.js?v=01411');
             return alert("สินค้านี้ซื้อแล้วหรือมีคำสั่งซื้ออยู่ จึงเพิ่มซ้ำไม่ได้");
           if (cart.some((item) => item.slug === slug))
             return alert("สินค้าดิจิทัลแต่ละตะกร้าเพิ่มได้เพียง 1 ชิ้น");
-          if (cart.length >= 30) return alert("เลือกสินค้าได้สูงสุด 30 ตะกร้า");
+          const itemCount=cart.reduce((sum,item)=>sum+(Number(item.quantity)||1),0);
+          if (itemCount >= 30) return alert("เลือกสินค้าได้สูงสุดรวม 30 ชิ้นต่อคำสั่งซื้อ");
           cart.push({
             id: product.id,
             slug: product.slug,

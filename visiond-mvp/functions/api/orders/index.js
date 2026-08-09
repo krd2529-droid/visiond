@@ -121,10 +121,17 @@ export async function onRequestPost(ctx) {
       "-" +
       Math.floor(Math.random() * 90 + 10);
   const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
-  const statements=[ctx.env.DB.prepare("INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number,course_owner_user_id,seller_course_id,payment_qr_url) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_name,paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'')];
+  const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights').map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
+  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_name,payment_account_number,course_owner_user_id,seller_course_id,payment_qr_url)
+    SELECT ?,?,?,?,?,?,?,?,?,?
+    WHERE ?='[]' OR NOT EXISTS(
+      SELECT 1 FROM orders existing_order JOIN order_items existing_item ON existing_item.order_id=existing_order.id
+      WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
+      AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
+    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_name,paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',guardJson,a.user.id,guardJson)];
   for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,price) SELECT id,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.sale_price,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
-  const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409);
+  const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);
   return json(
     {
       ok: true,

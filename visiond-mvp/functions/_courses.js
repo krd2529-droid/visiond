@@ -11,5 +11,10 @@ export async function requireCourseAccess(ctx, courseId) {
     'SELECT id FROM entitlements WHERE user_id=? AND product_id=? AND active=1 LIMIT 1'
   ).bind(auth.user.id, course.product_id).first();
   if (!entitlement) return { error: json({ error: 'บัญชีนี้ยังไม่ได้ซื้อคอร์ส' }, 403) };
-  return { user: auth.user, course };
+  // Unpublishing or pausing sales must not remove lessons from customers who
+  // already paid. Only an explicit safety suspension blocks learner access.
+  if (!isStaff && course.review_status === 'suspended') {
+    return { error: json({ error: 'คอร์สนี้ถูกระงับการเข้าถึงชั่วคราว กรุณาติดต่อ VisionD', code: 'COURSE_SUSPENDED' }, 423) };
+  }
+  return { user: auth.user, course, entitlement, isStaff };
 }

@@ -13,9 +13,13 @@ const esc = (v) =>
   );
 const normalizeCart = (items) => {
   const unique = new Map();
-  for (const item of Array.isArray(items) ? items : [])
-    if (item?.slug && !unique.has(item.slug)) unique.set(item.slug, {...item,quantity:item.category==='resale-rights'||item.slug==='course-selling-rights'?Math.min(30,Math.max(1,Number(item.quantity)||1)):1});
-  return [...unique.values()].slice(0, 30);
+  let remaining=30;
+  for (const item of Array.isArray(items) ? items : []) {
+    if(!item?.slug||unique.has(item.slug)||remaining<1)continue;
+    const rights=item.category==='resale-rights'||item.slug==='course-selling-rights',quantity=rights?Math.min(remaining,Math.max(1,Math.floor(Number(item.quantity)||1))):1;
+    unique.set(item.slug,{...item,quantity});remaining-=quantity;
+  }
+  return [...unique.values()];
 };
 const getCart = () => {
   try {
@@ -33,17 +37,24 @@ const saveCart = (items) => {
   render();
 };
 async function refreshCartPrices(){
-  const current=getCart();if(!current.length)return;
+  if(!getCart().length)return;
   try{
     const response=await fetch('/api/products',{cache:'no-store'});if(!response.ok)return;
     const data=await response.json(),bySlug=new Map((data.items||[]).map(item=>[item.slug,item]));
-    const fresh=current.map(item=>{const product=bySlug.get(item.slug);if(!product)return item;return {...item,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,category:product.category,category_label:product.category_label,pages:product.pages,cover_url:product.cover_url||item.cover_url}});
+    const fresh=getCart().map(item=>{const product=bySlug.get(item.slug);if(!product)return item;return {...item,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,category:product.category,category_label:product.category_label,product_kind:product.product_kind,course_origin:product.course_origin,pages:product.pages,cover_url:product.cover_url||item.cover_url}});
     localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
   }catch{}
 }
 const discountRate = (count) =>
   count >= 30 ? 30 : count >= 20 ? 20 : count >= 10 ? 10 : count >= 5 ? 5 : 0;
 let activeOrder = null;
+const isVLearningOrder = (order) =>
+  Boolean(
+    order?.items?.some(
+      (item) =>
+        item?.category === "online-course" || item?.product_kind === "course",
+    ),
+  );
 copyAccountButton.onclick = async () => {
   const account = bankAccountNumber.textContent.trim();
   if (!account || account === "-") return;
@@ -64,7 +75,7 @@ function render() {
   const items = getCart(),
     itemCount=items.reduce((sum,x)=>sum+(Number(x.quantity)||1),0),
     subtotal = items.reduce((sum, x) => sum + Number(x.price || 0)*(Number(x.quantity)||1), 0),
-    discountableItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights"),
+    discountableItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights" && (!item.product_kind || item.product_kind === "product")),
     discountableCount = discountableItems.length,
     discountableSubtotal = discountableItems.reduce((sum, x) => sum + Number(x.price || 0), 0),
     rate = discountRate(discountableCount),
@@ -95,7 +106,7 @@ function render() {
     ? items
         .map(
           (p, i) =>
-            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด · ไม่คืนเงิน เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>ได้รับ ${Number(p.quantity)||1} เครดิต · รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
+            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights'||p.product_kind==='course'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':p.product_kind==='course'?`คอร์ส V-Learning • ${esc(p.pages || '-')} EP`:'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด · ไม่คืนเงิน เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</strong>':p.product_kind==='course'?'<strong class="cart-no-promo-note">คอร์สไม่ร่วมโปรส่วนลดหลายตะกร้า</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>ได้รับ ${Number(p.quantity)||1} เครดิต · รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
@@ -117,6 +128,11 @@ checkoutDialog.onclick = (e) => {
 async function checkout() {
   const items = getCart();
   if (!items.length) return;
+  const sellerCourses=items.filter(item=>item.product_kind==='course'&&item.course_origin==='seller_rights');
+  if(sellerCourses.length&&(items.length!==1||sellerCourses.length!==1)){
+    alert('คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส กรุณาลบรายการอื่นออกก่อน');
+    return;
+  }
   if (activeOrder) {
     checkoutDialog.showModal();
     return;
@@ -183,10 +199,22 @@ slipForm.onsubmit = async (e) => {
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || "ส่งสลิปไม่สำเร็จ");
     localStorage.removeItem("vd_cart");
-    slipMessage.textContent =
-      activeOrder.bank?.payment_message ||
-      "ส่งสลิปเรียบร้อย กำลังไปหน้าคำสั่งซื้อ";
-    setTimeout(() => (location.href = "/dashboard.html#orders"), 900);
+    const learningOrder = isVLearningOrder(activeOrder);
+    slipMessage.textContent = d.auto_approved
+      ? learningOrder
+        ? "ชำระเงินสำเร็จ ปลดล็อกแล้ว กำลังเข้าสู่ระบบ V-Learning"
+        : d.message || "ชำระเงินสำเร็จ ปลดล็อกสินค้าแล้ว"
+      : learningOrder
+        ? d.message || "รับสลิปแล้ว คอร์สกำลังรอตรวจสอบ ยังไม่ปลดล็อก"
+        : d.message || "รับสลิปแล้ว กำลังรอตรวจสอบ";
+    const courseId = activeOrder.items?.find(
+      (item) =>
+        item?.category === "online-course" || item?.product_kind === "course",
+    )?.seller_course_id;
+    const destination = learningOrder
+      ? `/my-courses.html?payment=${d.auto_approved ? "verified" : "pending"}${courseId ? `&course=${encodeURIComponent(courseId)}` : ""}`
+      : "/dashboard.html#orders";
+    setTimeout(() => (location.href = destination), 1100);
   } catch (error) {
     slipMessage.textContent = error.message;
     slipForm.classList.remove("checkout-working");
@@ -212,6 +240,5 @@ async function removeUnavailableCartItems() {
   }
 }
 render();
-refreshCartPrices();
-removeUnavailableCartItems();
+(async()=>{await removeUnavailableCartItems();await refreshCartPrices()})();
 import("/nav-account.js?v=01411").then((module) => module.initAccountNav());

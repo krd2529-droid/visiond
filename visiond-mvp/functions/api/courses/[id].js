@@ -11,5 +11,22 @@ export async function onRequestGet(ctx) {
     FROM course_lessons l LEFT JOIN course_progress cp ON cp.lesson_id=l.id AND cp.user_id=?
     WHERE l.course_id=? ORDER BY l.sort_order,l.id`).bind(access.user.id,access.course.id).all();
   for(const lesson of results){const files=await ctx.env.DB.prepare('SELECT id,file_name,mime_type,file_size,sort_order FROM course_lesson_files WHERE lesson_id=? ORDER BY sort_order,id').bind(lesson.id).all();lesson.files=files.results||[];lesson.file_count=lesson.files.length+(lesson.has_pdf?1:0)}
-  return json({ course:access.course,lessons:results },200,{'cache-control':'no-store'});
+  const total=results.length,completed=results.filter(lesson=>Number(lesson.completed)===1).length;
+  const started=results.filter(lesson=>!Number(lesson.completed)&&lesson.progress_updated_at).sort((a,b)=>String(b.progress_updated_at).localeCompare(String(a.progress_updated_at)))[0];
+  const resume=started||results.find(lesson=>!Number(lesson.completed))||null;
+  const lastActivity=results.reduce((latest,lesson)=>!lesson.progress_updated_at||String(lesson.progress_updated_at)<=String(latest||'')?latest:lesson.progress_updated_at,null);
+  const progress={
+    total_lessons:total,
+    completed_lessons:completed,
+    total,
+    completed,
+    progress_percent:total?Math.round(completed*100/total):0,
+    resume_lesson_id:resume?.id||null,
+    resume_position_seconds:Number(resume?.last_position_seconds)||0,
+    resume_position:Number(resume?.last_position_seconds)||0,
+    last_activity_at:lastActivity,
+    last_activity:lastActivity,
+    is_completed:total>0&&completed===total
+  };
+  return json({ course:{...access.course,...progress},lessons:results,progress },200,{'cache-control':'no-store'});
 }
