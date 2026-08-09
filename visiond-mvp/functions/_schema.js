@@ -111,8 +111,8 @@ export async function ensureDatabase(env) {
   await env.DB.prepare("UPDATE categories SET name='เกมเสริมพัฒนาการ',parent_slug=NULL,file_type='PDF',active=1,sort_order=26 WHERE slug='development-game'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('online-course','คอร์สออนไลน์',NULL,'วิดีโอ + เอกสาร',1,50)").run();
   await env.DB.prepare("UPDATE categories SET name='คอร์สออนไลน์',parent_slug=NULL,file_type='วิดีโอ + เอกสาร',active=1,sort_order=50 WHERE slug='online-course'").run();
-  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('resale-rights','สิทธิ์ขายคอร์ส',NULL,'สิทธิ์ใช้งาน',1,51)").run();
-  await env.DB.prepare("UPDATE categories SET name='สิทธิ์ขายคอร์ส',parent_slug=NULL,file_type='สิทธิ์ใช้งาน',active=1,sort_order=51 WHERE slug='resale-rights'").run();
+  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('resale-rights','สิทธิ์ลงขายคอร์ส',NULL,'สิทธิ์ใช้งาน',1,51)").run();
+  await env.DB.prepare("UPDATE categories SET name='สิทธิ์ลงขายคอร์ส',parent_slug=NULL,file_type='สิทธิ์ใช้งาน',active=1,sort_order=51 WHERE slug='resale-rights'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('dinosaur','ไดโนเสาร์','coloring','PDF',1,11)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('paper-doll','ตุ๊กตากระดาษ',NULL,'PDF',1,30)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('document','เอกสารและแบบฟอร์ม',NULL,'PDF',1,40)").run();

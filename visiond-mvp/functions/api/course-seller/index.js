@@ -40,7 +40,7 @@ export async function onRequestPost(ctx){
   const form=await ctx.request.formData(),entitlementId=Number(form.get('license_entitlement_id')),title=String(form.get('title')||'').trim(),price=Math.round(Number(form.get('price_baht'))*100),episodes=Math.min(100,Math.max(1,Number(form.get('episode_count'))||1));
   if(!title||!Number.isFinite(price)||price<0)return json({error:'กรุณากรอกชื่อคอร์สและราคาให้ถูกต้อง'},400);
   const license=await ctx.env.DB.prepare(`SELECT e.id,e.granted_at,c.license_edit_days FROM entitlements e JOIN courses c ON c.product_id=e.product_id AND c.course_type='resale_rights' WHERE e.id=? AND e.user_id=? AND e.active=1`).bind(entitlementId,auth.user.id).first();
-  if(!license)return json({error:'ไม่พบสิทธิ์ขายคอร์ส'},403);
+  if(!license)return json({error:'ไม่พบสิทธิ์ลงขายคอร์ส'},403);
   if(await ctx.env.DB.prepare('SELECT id FROM courses WHERE license_entitlement_id=?').bind(entitlementId).first())return json({error:'สิทธิ์นี้ผูกกับตะกร้าคอร์สแล้ว ไม่สามารถนำไปสร้างตะกร้าอื่นได้'},409);
   const expiresAt=expiry(license.granted_at,license.license_edit_days);if(expiresAt&&Date.parse(expiresAt)<=Date.now())return json({error:'สิทธิ์นี้หมดระยะเวลาสร้าง/แก้ไขแล้ว'},403);
   const cover=form.get('cover'),qr=form.get('payment_qr');
