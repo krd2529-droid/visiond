@@ -7,10 +7,14 @@ import {loadPaymentSettings} from '../../../_payment.js';
 const accepted=new Set(['image/jpeg','image/png','image/gif','image/webp']);
 const clean=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/^(นาย|นางสาว|นาง|บริษัท|บจก\.?|หจก\.?)/g,'').replace(/[^\p{L}\p{N}]/gu,'');
 const digits=s=>String(s||'').replace(/\D/g,'');
-const sameAccount=(expectedName,expectedNumber,matched)=>{
+export const slipReceiverMatches=(expectedName,expectedNumber,matched)=>{
   if(!matched)return false;
-  const expected=digits(expectedNumber),actual=digits(matched.bankNumber),a=clean(expectedName),b=clean(matched.nameTh||matched.nameEn||'');
-  return Boolean(expected&&actual&&(expected===actual||(expected.length>=4&&actual.length>=4&&expected.slice(-4)===actual.slice(-4)))&&a&&b&&(a===b||a.includes(b)||b.includes(a)));
+  const expected=digits(expectedNumber),actual=digits(matched.bankNumber),a=clean(expectedName),names=[matched.nameTh,matched.nameEn].map(clean).filter(Boolean);
+  // Never auto-approve from a four-digit suffix or a short substring. Some banks
+  // mask account numbers, so those slips safely fall back to manual review.
+  const numberOk=expected===actual||(expected.length>=6&&actual.length>=6&&expected.slice(-6)===actual.slice(-6));
+  const nameOk=a.length>=4&&names.some(name=>name.length>=4&&name===a);
+  return Boolean(expected&&actual&&numberOk&&nameOk);
 };
 
 export async function onRequestPost(ctx){
@@ -51,7 +55,7 @@ export async function onRequestPost(ctx){
       return json({ok:true,auto_approved:false,message:code==='SLIP_PENDING'?'ธนาคารกำลังยืนยันรายการ กรุณาลองส่งอีกครั้งในอีกสักครู่':order.course_owner_user_id?'API ตรวจไม่สำเร็จ ระบบส่งสลิปให้เจ้าของคอร์สตรวจเองแล้ว':'รับสลิปแล้ว ระบบส่งให้เจ้าหน้าที่ตรวจสอบ'});
     }
     const data=result.data||{},raw=data.rawSlip||{},transRef=String(raw.transRef||'').trim(),amount=Math.round(Number(data.amountInSlip??raw.amount?.amount)*100);
-    const accountOk=Boolean(data.matchedAccount)&&sameAccount(order.payment_account_name,order.payment_account_number,data.matchedAccount);
+    const accountOk=Boolean(data.matchedAccount)&&slipReceiverMatches(order.payment_account_name,order.payment_account_number,data.matchedAccount);
     const amountOk=data.isAmountMatched===true&&amount===Number(order.total),duplicate=Boolean(data.isDuplicate)||!transRef;
     if(!accountOk||!amountOk||duplicate){
       const code=duplicate?'DUPLICATE_OR_NO_REF':!amountOk?'AMOUNT_MISMATCH':'ACCOUNT_MISMATCH';

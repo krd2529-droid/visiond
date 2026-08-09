@@ -1,17 +1,20 @@
 import {json} from '../../_lib.js';
-import {rateLimit,verifyTurnstile,verifyPassword,securityLog} from '../../_security.js';
+import {rateLimit,rateLimitIdentity,verifyTurnstile,verifyPassword,securityLog} from '../../_security.js';
 
 export async function onRequestPost(ctx){
  try{
   if(!ctx.env.DB)return json({error:'ยังไม่ได้เชื่อมฐานข้อมูลสมาชิก'},503);
   const b=await ctx.request.json().catch(()=>({}));
   const login=String(b.login||b.email||'').trim().toLowerCase();
-  const staffIdentities=new Set(['visiondboss','krd2529@gmail.com','krd2529+boss@gmail.com']);
-  const isStaffLogin=staffIdentities.has(login);
-  if(!isStaffLogin){const limited=await rateLimit(ctx.env,ctx.request,'login',5,15,30);if(limited.error)return limited.error;}
+  // Every identity, including Boss, is protected. The wider IP limit avoids
+  // punishing a shared office/mobile IP while the identity/account limits stop
+  // both direct brute force and attempts through aliases of the same account.
+  const ipLimited=await rateLimit(ctx.env,ctx.request,'login_ip',30,15,30);if(ipLimited.error)return ipLimited.error;
+  const identityLimited=await rateLimitIdentity(ctx.env,ctx.request,'login_name',login,10,15,30);if(identityLimited.error)return identityLimited.error;
   const turnstile=await verifyTurnstile(ctx.env,ctx.request,b.turnstile_token);if(turnstile.error)return turnstile.error;
   if(!login||!b.password)return json({error:'กรุณากรอกไอดีและรหัสผ่าน'},400);
   const u=await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=? ORDER BY CASE WHEN lower(username)=? THEN 0 ELSE 1 END,id LIMIT 1').bind(login,login,login).first();
+  if(u){const accountLimited=await rateLimitIdentity(ctx.env,ctx.request,'login_account',`user:${u.id}`,10,15,30);if(accountLimited.error)return accountLimited.error;}
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
   const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+30 days'))").bind(id,u.id).run();
   await securityLog(ctx.env,ctx.request,'login_success','info','',u.id);

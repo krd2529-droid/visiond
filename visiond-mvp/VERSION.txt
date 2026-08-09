@@ -1,3 +1,9 @@
+VisionD MVP v0.14.24 — Vision 5 Security Isolation
+Protect every login identity including Boss with IP, identity, and resolved-account rate limits
+Block generic Admin course, product, image, file, and multipart APIs from mutating Vision 5 assets
+Make Boss seller-course review transitions conditional and keep course/product states consistent
+Require strict EasySlip receiver identity and stronger account matching before auto approval
+Authorize seller QR access and serve only database-referenced public media images
 VisionD MVP v0.14.23 — Purchase Transaction Blockers
 Stop missing or failed product pages from exposing a purchasable demo item
 Give course-selling rights one cart-only primary action without creating an orphan order

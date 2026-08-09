@@ -9,7 +9,12 @@ export async function onRequestGet(ctx){
   const {results}=await ctx.env.DB.prepare(`SELECT c.*,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,
     (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id) lesson_count,
     (SELECT COUNT(DISTINCT e.user_id) FROM entitlements e WHERE e.product_id=p.id AND e.active=1) student_count
-    FROM courses c JOIN products p ON p.id=c.product_id WHERE p.deleted_at IS NULL ORDER BY c.id DESC`).all();
+    FROM courses c JOIN products p ON p.id=c.product_id
+    WHERE p.deleted_at IS NULL
+      AND c.owner_user_id IS NULL
+      AND COALESCE(c.course_origin,'company')='company'
+      AND c.course_type='online_course'
+    ORDER BY c.id DESC`).all();
   return json({items:results});
 }
 

@@ -18,6 +18,8 @@ const validFile = (file, max, types) =>
   file.size > 0 &&
   file.size <= max &&
   types.includes(file.type);
+const vision5Product = (env, id) => env.DB.prepare(`SELECT p.id FROM products p WHERE p.id=? AND (p.category='resale-rights' OR EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')))`)
+  .bind(id).first();
 
 export async function onRequestGet(ctx) {
   const a = await requireAdmin(ctx);
@@ -26,6 +28,7 @@ export async function onRequestGet(ctx) {
     .bind(ctx.params.id)
     .first();
   if (!item) return json({ error: "ไม่พบสินค้า" }, 404);
+  if (await vision5Product(ctx.env,item.id)) return json({error:"สินค้า Vision 5 ต้องจัดการผ่านหน้าระบบ Vision 5 เท่านั้น"},403);
   const storedFiles = await ctx.env.DB.prepare(
     "SELECT id,object_key FROM product_files WHERE product_id=? ORDER BY id DESC",
   ).bind(item.id).all();
@@ -61,6 +64,7 @@ export async function onRequestPut(ctx) {
     .bind(ctx.params.id)
     .first();
   if (!old) return json({ error: "ไม่พบสินค้า" }, 404);
+  if (await vision5Product(ctx.env,old.id)) return json({error:"สินค้า Vision 5 ต้องจัดการผ่านหน้าระบบ Vision 5 เท่านั้น"},403);
   const form = await ctx.request.formData();
   const title = String(form.get("title") || "").trim();
   let slug = String(form.get("slug") || "")
@@ -91,6 +95,7 @@ export async function onRequestPut(ctx) {
         ),
       ],
       size = Number(form.get("bundle_size"));
+    if(category==='resale-rights')return json({error:'ตะกร้าสิทธิ์ Vision 5 ต้องจัดการผ่านระบบ Vision 5 เท่านั้น'},403);
     if (category !== old.category) {
       const prefix = `${category}-`,
         current = await ctx.env.DB.prepare("SELECT slug FROM products WHERE id<>? AND slug LIKE ?").bind(old.id,`${prefix}%`).all(),
@@ -110,7 +115,7 @@ export async function onRequestPut(ctx) {
         );
       const marks = ids.map(() => "?").join(","),
         valid = await ctx.env.DB.prepare(
-          `SELECT id,cover_url,preview_urls FROM products WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category NOT IN ('set-coloring','set-tattoo')`,
+          `SELECT id,cover_url,preview_urls FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category NOT IN ('set-coloring','set-tattoo','resale-rights') AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights'))`,
         )
           .bind(...ids, old.id)
           .all();
@@ -302,6 +307,7 @@ export async function onRequestDelete(ctx) {
     .bind(ctx.params.id)
     .first();
   if (!item) return json({ error: "ไม่พบสินค้า" }, 404);
+  if (await vision5Product(ctx.env,item.id)) return json({error:"สินค้า Vision 5 ต้องลบหรือระงับผ่านหน้าระบบ Vision 5 เท่านั้น"},403);
   if (item.deleted_at) return json({ error: "สินค้านี้อยู่ในถังขยะแล้ว" }, 409);
   await ctx.env.DB.prepare("UPDATE products SET deleted_at=CURRENT_TIMESTAMP,deleted_prev_status=status,status='draft',updated_at=CURRENT_TIMESTAMP WHERE id=?")
     .bind(item.id)

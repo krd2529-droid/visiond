@@ -17,6 +17,22 @@ export async function rateLimit(env,request,action,limit,windowMinutes,blockMinu
   await env.DB.prepare('UPDATE security_rate_limits SET hits=? WHERE rate_key=?').bind(hits,key).run();return {ok:true};
 }
 
+// Use this for identifiers such as a login name or account id. The discriminator is
+// hashed before it is persisted so security_rate_limits never becomes a PII store.
+export async function rateLimitIdentity(env,request,action,identity,limit,windowMinutes,blockMinutes=15){
+  const normalized=String(identity||'').normalize('NFKC').trim().toLowerCase();
+  if(!normalized)return {ok:true};
+  const fingerprint=(await sha256(normalized)).slice(0,32);
+  const now=Date.now(),key=`${action}:identity:${fingerprint}`,
+    row=await env.DB.prepare('SELECT * FROM security_rate_limits WHERE rate_key=?').bind(key).first();
+  if(row?.blocked_until&&Date.parse(row.blocked_until.replace(' ','T')+'Z')>now)return {error:json({error:'ลองใหม่ภายหลัง ระบบพักคำขอนี้ชั่วคราว'},429,{'retry-after':String(blockMinutes*60)})};
+  const windowExpired=!row||Date.parse(String(row.window_start||'').replace(' ','T')+'Z')+windowMinutes*60000<=now;
+  if(windowExpired){await env.DB.prepare("INSERT INTO security_rate_limits(rate_key,hits,window_start,blocked_until) VALUES(?,1,CURRENT_TIMESTAMP,NULL) ON CONFLICT(rate_key) DO UPDATE SET hits=1,window_start=CURRENT_TIMESTAMP,blocked_until=NULL").bind(key).run();return {ok:true}}
+  const hits=Number(row.hits||0)+1;
+  if(hits>limit){await env.DB.prepare("UPDATE security_rate_limits SET hits=?,blocked_until=datetime('now',?) WHERE rate_key=?").bind(hits,`+${blockMinutes} minutes`,key).run();await securityLog(env,request,'rate_limit_block','warning',action);return {error:json({error:'คำขอมากเกินไป ระบบพักชั่วคราว'},429,{'retry-after':String(blockMinutes*60)})}}
+  await env.DB.prepare('UPDATE security_rate_limits SET hits=? WHERE rate_key=?').bind(hits,key).run();return {ok:true};
+}
+
 export async function verifyTurnstile(env,request,token){
   if(!env.TURNSTILE_SECRET_KEY)return {ok:true,disabled:true};
   if(!token)return {error:json({error:'กรุณายืนยันว่าไม่ใช่โปรแกรมอัตโนมัติ'},400)};

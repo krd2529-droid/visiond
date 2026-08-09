@@ -2,9 +2,10 @@ import { json, requireAdmin } from '../../../../_lib.js';
 import { ensureDatabase } from '../../../../_schema.js';
 
 const extension=(name,type)=>String(name||'').split('.').pop()?.toLowerCase()||({"video/mp4":'mp4',"video/webm":'webm',"application/pdf":'pdf'}[type]||'bin');
-export async function onRequestGet(ctx){await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const {results}=await ctx.env.DB.prepare(`SELECT id,title,description,sort_order,duration_seconds,CASE WHEN video_key IS NULL THEN 0 ELSE 1 END has_video,CASE WHEN pdf_key IS NULL THEN 0 ELSE 1 END has_pdf FROM course_lessons WHERE course_id=? ORDER BY sort_order,id`).bind(ctx.params.id).all();return json({items:results});}
+async function companyCourse(ctx){return ctx.env.DB.prepare("SELECT id FROM courses WHERE id=? AND owner_user_id IS NULL AND COALESCE(course_origin,'company')='company' AND course_type='online_course'").bind(ctx.params.id).first();}
+export async function onRequestGet(ctx){await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const course=await companyCourse(ctx);if(!course)return json({error:'ไม่พบคอร์สบริษัท หรือคอร์สนี้ต้องจัดการผ่าน Vision 5'},403);const {results}=await ctx.env.DB.prepare(`SELECT id,title,description,sort_order,duration_seconds,CASE WHEN video_key IS NULL THEN 0 ELSE 1 END has_video,CASE WHEN pdf_key IS NULL THEN 0 ELSE 1 END has_pdf FROM course_lessons WHERE course_id=? ORDER BY sort_order,id`).bind(course.id).all();return json({items:results});}
 export async function onRequestPost(ctx){
-  await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const course=await ctx.env.DB.prepare('SELECT id FROM courses WHERE id=?').bind(ctx.params.id).first();if(!course)return json({error:'ไม่พบคอร์ส'},404);
+  await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const exists=await ctx.env.DB.prepare('SELECT id FROM courses WHERE id=?').bind(ctx.params.id).first();if(!exists)return json({error:'ไม่พบคอร์ส'},404);const course=await companyCourse(ctx);if(!course)return json({error:'คอร์ส Vision 5 ต้องจัดการบทเรียนผ่านหน้าของเจ้าของคอร์สเท่านั้น'},403);
   const form=await ctx.request.formData(),title=String(form.get('title')||'').trim();if(!title)return json({error:'กรุณาใส่ชื่อบทเรียน'},400);
   const video=form.get('video'),pdf=form.get('pdf');if(!video?.size&&!pdf?.size)return json({error:'แนบคลิปหรือ PDF อย่างน้อยหนึ่งไฟล์'},400);
   let videoKey=null,pdfKey=null;

@@ -3,6 +3,8 @@ import { putTrash } from "../../../_trash.js";
 
 const imageTypes = ["image/jpeg", "image/png", "image/webp"];
 const extension = (file) => file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+const vision5Product = (env,id) => env.DB.prepare(`SELECT p.id FROM products p WHERE p.id=? AND (p.category='resale-rights' OR EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')))`)
+  .bind(id).first();
 
 export async function onRequestPost(ctx) {
   const auth = await requireAdmin(ctx);
@@ -11,6 +13,7 @@ export async function onRequestPost(ctx) {
     "SELECT cover_url,preview_urls FROM products WHERE id=?",
   ).bind(ctx.params.id).first();
   if (!product) return json({ error: "ไม่พบสินค้า กรุณาบันทึกสินค้าก่อนอัปโหลดรูป" }, 404);
+  if (await vision5Product(ctx.env,ctx.params.id)) return json({error:"รูปของสินค้า Vision 5 ต้องจัดการผ่านหน้าระบบ Vision 5 เท่านั้น"},403);
   const form = await ctx.request.formData(), file = form.get("file"), slot = Math.max(0, Math.min(2, Number(form.get("slot")) || 0));
   if (!file || typeof file.arrayBuffer !== "function" || !file.size || file.size > 5 * 1024 * 1024 || !imageTypes.includes(file.type))
     return json({ error: "รูปต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB" }, 400);
@@ -34,6 +37,7 @@ export async function onRequestDelete(ctx) {
     "SELECT cover_url,preview_urls FROM products WHERE id=?",
   ).bind(ctx.params.id).first();
   if (!product) return json({ error: "ไม่พบสินค้า" }, 404);
+  if (await vision5Product(ctx.env,ctx.params.id)) return json({error:"รูปของสินค้า Vision 5 ต้องจัดการผ่านหน้าระบบ Vision 5 เท่านั้น"},403);
   const slot = Math.max(0, Math.min(2, Number(new URL(ctx.request.url).searchParams.get("slot")) || 0));
   let previews = [];
   try { previews = JSON.parse(product.preview_urls || "[]"); } catch (error) { previews = []; }
