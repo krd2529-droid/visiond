@@ -20,7 +20,7 @@ export async function initAccountNav(){
     const account=document.createElement('a');
     account.className='nav-member-account';
     account.href='/dashboard.html';
-    account.innerHTML=`<span class="nav-member-dot"></span><span><small>กำลังใช้งาน</small><b>${esc(user.username||user.name||'สมาชิก')}</b></span><em>${esc(roleLabel[user.role]||user.role)}</em>`;
+    account.innerHTML=`<span class="nav-member-dot"></span><span><small>ศูนย์บัญชี</small><b>ของฉัน</b></span><em>${esc(roleLabel[user.role]||user.role)}</em>`;
     const ownerBadge=user.is_course_owner?Object.assign(document.createElement('a'),{className:'course-owner-badge',href:'/course-seller.html',textContent:'เจ้าของคอร์ส'}):null;
     const products=document.createElement('a');
     products.href='/dashboard.html#my-products';
