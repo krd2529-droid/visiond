@@ -1,2 +1,2 @@
-VisionD MVP v0.13.95
-Digital product library homepage hero with stale tattoo-first cache and SEO copy removed
+VisionD MVP v0.13.96
+Cloudflare Pages Functions build fix for malformed course-rights schema SQL
