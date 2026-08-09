@@ -12,7 +12,7 @@ export async function onRequestPost(ctx){
   const orderNo=`VD-CREDIT-${Date.now()}-${crypto.randomUUID().slice(0,4).toUpperCase()}`;
   const order=await ctx.env.DB.prepare("INSERT INTO orders(order_no,user_id,total,status,admin_note,sale_price_recorded,updated_at) VALUES(?,?,0,'paid',?,0,CURRENT_TIMESTAMP) RETURNING id").bind(orderNo,user.id,`Boss เพิ่ม ${credits} เครดิต${note?' · '+note:''}`).first();
   const actorName=auth.user.name||auth.user.username||auth.user.email||String(auth.user.id),statements=[
-    ctx.env.DB.prepare('WITH RECURSIVE amount(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM amount WHERE n<?) INSERT INTO order_items(order_id,product_id,price) SELECT ?,?,0 FROM amount').bind(credits,order.id,product.id),
+    ctx.env.DB.prepare('WITH RECURSIVE amount(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM amount WHERE n<?) INSERT INTO order_items(order_id,product_id,product_title,price) SELECT ?,?,?,0 FROM amount').bind(credits,order.id,product.id,product.title),
     ctx.env.DB.prepare('WITH RECURSIVE amount(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM amount WHERE n<?) INSERT INTO course_right_credits(user_id,product_id,order_id,active) SELECT ?,?,?,1 FROM amount').bind(credits,user.id,product.id,order.id),
     ctx.env.DB.prepare('INSERT INTO unlock_logs(actor_user_id,actor_name,actor_role,target_user_id,target_name,product_id,product_title,order_id,order_no,method,note) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(auth.user.id,actorName,auth.user.role,user.id,user.name||user.username||user.email,product.id,`${product.title} × ${credits} เครดิต`,order.id,orderNo,'manual_course_credit',note)
   ];

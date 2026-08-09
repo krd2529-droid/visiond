@@ -11,6 +11,14 @@ export async function purgeExpiredTrash(env) {
 }
 
 export async function permanentlyDeleteProduct(env, product) {
+  // Keep purchased products as hidden tombstones so order history and foreign
+  // keys remain intact. Keep their paid files/bundle links too: an old buyer
+  // must not lose a download merely because the product was removed from sale.
+  const orderReference = await env.DB.prepare('SELECT 1 found FROM order_items WHERE product_id=? LIMIT 1').bind(product.id).first();
+  if (orderReference) {
+    await env.DB.prepare("UPDATE products SET status='draft',deleted_at='9999-12-31 23:59:59',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(product.id).run();
+    return;
+  }
   const {results: files=[]} = await env.DB.prepare('SELECT id,object_key FROM product_files WHERE product_id=?').bind(product.id).all();
   for (const file of files) {
     await env.DB.prepare('DELETE FROM downloads WHERE product_file_id=?').bind(file.id).run();
@@ -21,7 +29,6 @@ export async function permanentlyDeleteProduct(env, product) {
   if (product.source!=='bundle') for (const key of new Set([product.cover_url,...previews].map(mediaKey).filter(Boolean))) await env.FILES.delete(key);
   await env.DB.prepare('DELETE FROM entitlements WHERE product_id=?').bind(product.id).run();
   await env.DB.prepare('DELETE FROM unlock_logs WHERE product_id=?').bind(product.id).run();
-  await env.DB.prepare('DELETE FROM order_items WHERE product_id=?').bind(product.id).run();
   await env.DB.prepare('DELETE FROM product_bundle_items WHERE bundle_product_id=? OR source_product_id=?').bind(product.id,product.id).run();
   await env.DB.prepare('DELETE FROM product_files WHERE product_id=?').bind(product.id).run();
   await env.DB.prepare('DELETE FROM product_slug_history WHERE product_id=?').bind(product.id).run();

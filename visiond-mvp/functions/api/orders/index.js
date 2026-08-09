@@ -69,7 +69,8 @@ export async function onRequestPost(ctx) {
     if(!buyerApi?.seller_slip_api_key||buyerApi.seller_slip_api_key.length<20)return json({error:'กรุณาบันทึก EasySlip API ของคุณเองในหน้าสิทธิ์ลงขายคอร์สก่อนสั่งซื้อ'},409);
   }
   const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
-  if(sellerItems.length&&(orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
+  if(sellerItems.length && (orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
+  if(sellerItems.some(product=>!Number.isFinite(Number(product.price))||Number(product.price)<100))return json({error:'คอร์สจากผู้ขายต้องมีราคาอย่างน้อย 1 บาท กรุณาแจ้งผู้ขายให้แก้ราคา'},409);
   if(sellerItems.some(product=>Number(product.course_owner_user_id)===Number(a.user.id)))return json({error:'ไม่สามารถซื้อคอร์สของบัญชีตนเองได้'},409);
   for (const product of results) {
     if(product.category==='resale-rights')continue;
@@ -129,7 +130,7 @@ export async function onRequestPost(ctx) {
       WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
       AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
     )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_name,paymentTarget.account_number,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',guardJson,a.user.id,guardJson)];
-  for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,price) SELECT id,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.sale_price,orderNo,a.user.id));
+  for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price) SELECT id,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
   const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);
   return json(
@@ -158,7 +159,7 @@ export async function onRequestGet(ctx) {
     .all();
   for (const o of results) {
     const x = await ctx.env.DB.prepare(
-      "SELECT p.id,p.slug,p.title,p.product_kind,p.category,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? GROUP BY p.id,p.slug,p.title,p.product_kind,p.category,oi.price ORDER BY MIN(oi.id)",
+      "SELECT oi.product_id id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม') title,p.product_kind,p.category,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? GROUP BY oi.product_id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม'),p.product_kind,p.category,oi.price ORDER BY MIN(oi.id)",
     )
       .bind(o.id)
       .all();

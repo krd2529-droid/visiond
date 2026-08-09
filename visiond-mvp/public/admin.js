@@ -47,7 +47,8 @@ const panels = {
   trash: trashPanel,
 };
 let salesRows = [],
-  filteredSalesRows = [];
+  filteredSalesRows = [], salesReportSummary = {}, salesProductRows = [],
+  salesNextCursor = null, salesCursor = null, salesCursorHistory = [];
 function returnAdminHome(message = "บันทึกเรียบร้อย") {
   sessionStorage.setItem("visiond_admin_notice", message);
   location.href = "/admin?done=" + Date.now();
@@ -277,7 +278,7 @@ productCategorySelect.onchange = () => {
     productEditor.elements.slug.value = nextProductSlug(productCategorySelect.value);
 };
 manualUnlockForm.onsubmit = unlockProductForUser;
-applySalesFilter.onclick = renderSalesReport;
+applySalesFilter.onclick = () => { salesCursor = null; salesCursorHistory = []; loadSalesReport(); };
 exportSalesCsv.onclick = downloadSalesCsv;
 profitFilterForm.onsubmit = (event) => {
   event.preventDefault();
@@ -1007,70 +1008,41 @@ async function saveAdCost(event) {
 }
 async function loadSalesReport() {
   salesReportTable.innerHTML = "<p>กำลังโหลดรายงาน…</p>";
-  const r = await fetch("/api/admin/sales-report", { cache: "no-store" }),
+  const params = salesReportParams(); if (salesCursor) params.set("cursor", salesCursor);
+  const r = await fetch("/api/admin/sales-report?" + params, { cache: "no-store" }),
     d = await r.json().catch(() => ({}));
   if (!r.ok) {
     salesReportTable.innerHTML = `<p>${esc(d.error || "โหลดรายงานไม่สำเร็จ")}</p>`;
     return;
   }
   salesRows = d.items || [];
+  filteredSalesRows = salesRows; salesReportSummary = d.summary || salesReportSummary || {};
+  salesProductRows = d.products || salesProductRows || [];
+  salesNextCursor = d.pagination?.next_cursor || null;
   renderSalesReport();
 }
+function salesReportParams() { const params = new URLSearchParams({limit:"50"}); if(salesDateFrom.value)params.set("from",salesDateFrom.value);if(salesDateTo.value)params.set("to",salesDateTo.value);if(salesTypeFilter.value!=="all")params.set("sale_type",salesTypeFilter.value);return params; }
 function renderSalesReport() {
-  const from = salesDateFrom.value
-      ? new Date(salesDateFrom.value + "T00:00:00")
-      : null,
-    to = salesDateTo.value ? new Date(salesDateTo.value + "T23:59:59") : null,
-    type = salesTypeFilter.value;
-  filteredSalesRows = salesRows.filter((row) => {
-    const date = new Date(row.paid_at + "Z");
-    return (
-      (!from || date >= from) &&
-      (!to || date <= to) &&
-      (type === "all" || row.sale_type === type)
-    );
-  });
-  const orderCount = new Set(filteredSalesRows.map((row) => row.order_id)).size,
-    total = filteredSalesRows.reduce(
-      (sum, row) =>
-        sum + (row.sale_price_recorded === 0 ? 0 : Number(row.sale_price || 0)),
-      0,
-    ),
-    slipCount = new Set(
-      filteredSalesRows
-        .filter((row) => row.slip_url)
-        .map((row) => row.order_id),
-    ).size,
-    visiondTotal=filteredSalesRows.filter(row=>row.revenue_channel!=='seller_course').reduce((sum,row)=>sum+(row.sale_price_recorded===0?0:Number(row.sale_price||0)),0),
-    sellerCourseTotal=filteredSalesRows.filter(row=>row.revenue_channel==='seller_course').reduce((sum,row)=>sum+(row.sale_price_recorded===0?0:Number(row.sale_price||0)),0);
-  salesSummary.innerHTML = `<article><b>${money(visiondTotal)}</b><span>รายได้เข้า VisionD</span></article><article><b>${money(sellerCourseTotal)}</b><span>ยอดคอร์สเข้าเจ้าของคอร์ส</span></article><article><b>${money(total)}</b><span>ยอดผ่านระบบทั้งหมด</span></article><article><b>${orderCount}</b><span>คำสั่งซื้อ</span></article><article><b>${filteredSalesRows.length}</b><span>จำนวนชิ้น</span></article><article><b>${slipCount}</b><span>สลิปที่เก็บไว้</span></article>`;
-  const productMap = new Map();
-  filteredSalesRows.forEach((row) => {
-    const item = productMap.get(row.product_title) || { qty: 0, total: 0 };
-    item.qty++;
-    if (row.sale_price_recorded !== 0)
-      item.total += Number(row.sale_price || 0);
-    productMap.set(row.product_title, item);
-  });
-  salesProductSummary.innerHTML = [...productMap.entries()]
-    .sort((a, b) => b[1].qty - a[1].qty)
-    .slice(0, 8)
-    .map(
-      ([title, item]) =>
-        `<span><b>${esc(title)}</b><small>${item.qty} ชุด · ${money(item.total)}</small></span>`,
-    )
-    .join("");
+  const s=salesReportSummary;
+  salesSummary.innerHTML=`<article><b>${money(s.visiond_total)}</b><span>รายได้เข้า VisionD</span></article><article><b>${money(s.seller_course_total)}</b><span>ยอดคอร์สเข้าเจ้าของคอร์ส</span></article><article><b>${money(s.total)}</b><span>ยอดผ่านระบบทั้งหมด</span></article><article><b>${Number(s.order_count)||0}</b><span>คำสั่งซื้อ</span></article><article><b>${Number(s.item_quantity)||0}</b><span>จำนวนชิ้น</span></article><article><b>${Number(s.slip_count)||0}</b><span>สลิปที่เก็บไว้</span></article>`;
+  salesProductSummary.innerHTML=salesProductRows.map(item=>`<span><b>${esc(item.product_title)}</b><small>${Number(item.quantity)||0} ชิ้น · ${money(item.total)}</small></span>`).join("");
   salesReportTable.innerHTML = filteredSalesRows.length
-    ? `<div class="sales-row sales-head"><b>วันเวลา</b><b>สินค้า/ราคา</b><b>ลูกค้า</b><b>ออเดอร์</b><b>ผู้อนุมัติ</b><b>สลิป</b></div>${filteredSalesRows.map((row) => `<div class="sales-row"><time>${new Date(row.paid_at + "Z").toLocaleString("th-TH")}</time><div><b>${esc(row.product_title)}</b><small>${row.sale_price_recorded === 0 ? "ยังไม่ลงราคา" : money(row.sale_price)}</small><small>${row.revenue_channel==='seller_course'?'เงินเข้าเจ้าของคอร์ส':'รายได้ VisionD'}</small></div><div><b>${esc(row.customer_name)}</b><small>${esc(row.customer_email)}</small><small>โทร ${esc(row.customer_phone || "ไม่ได้ระบุ")}</small></div><div><b>${esc(row.order_no)}</b><small>${row.sale_type === "manual" ? "ปลดล็อกโดยตรง" : "ยอดขายจากสลิป"}</small></div><span>${esc(row.approved_by || "-")}</span><div>${row.slip_url ? `<a class="slip-report-link" href="${esc(row.slip_url)}" target="_blank">เปิดสลิป</a>` : '<span class="no-slip-label">ยังไม่มีสลิป</span>'}</div></div>`).join("")}`
+    ? `<div class="sales-row sales-head"><b>วันเวลา</b><b>สินค้า/ราคา</b><b>ลูกค้า</b><b>ออเดอร์</b><b>ผู้อนุมัติ</b><b>สลิป</b></div>${filteredSalesRows.map(row=>`<div class="sales-row"><time>${new Date(row.paid_at+"Z").toLocaleString("th-TH")}</time><div><b>${esc(row.product_title)}${Number(row.quantity)>1?` × ${Number(row.quantity)}`:""}</b><small>${row.sale_price_recorded===0?"ยังไม่ลงราคา":`${money(row.unit_price)} ต่อชิ้น · รวม ${money(row.line_total)}`}</small><small>${row.revenue_channel==='seller_course'?'เงินเข้าเจ้าของคอร์ส':'รายได้ VisionD'}</small></div><div><b>${esc(row.customer_name)}</b><small>${esc(row.customer_email)}</small><small>โทร ${esc(row.customer_phone||"ไม่ได้ระบุ")}</small></div><div><b>${esc(row.order_no)}</b><small>${row.sale_type==="manual"?"ปลดล็อกโดยตรง":"ยอดขายจากสลิป"}</small></div><span>${esc(row.approved_by||"-")}</span><div>${row.slip_url?`<a class="slip-report-link" href="${esc(row.slip_url)}" target="_blank">เปิดสลิป</a>`:'<span class="no-slip-label">ยังไม่มีสลิป</span>'}</div></div>`).join("")}<div class="sales-page-controls"><button type="button" data-sales-page="previous" ${salesCursorHistory.length?"":"disabled"}>หน้าก่อน</button><span>หน้านี้ ${new Set(filteredSalesRows.map(row=>row.order_id)).size} ออเดอร์</span><button type="button" data-sales-page="next" ${salesNextCursor?"":"disabled"}>หน้าถัดไป</button></div>`
     : "<p>ไม่พบยอดขายตามตัวกรอง</p>";
+  salesReportTable.querySelector('[data-sales-page="previous"]')?.addEventListener("click",()=>{salesCursor=salesCursorHistory.pop()||null;loadSalesReport()});
+  salesReportTable.querySelector('[data-sales-page="next"]')?.addEventListener("click",()=>{salesCursorHistory.push(salesCursor);salesCursor=salesNextCursor;loadSalesReport()});
 }
-function downloadSalesCsv() {
-  if (!filteredSalesRows.length) return alert("ไม่มีข้อมูลสำหรับดาวน์โหลด");
+async function downloadSalesCsv() {
+  const originalText=exportSalesCsv.textContent;exportSalesCsv.disabled=true;exportSalesCsv.textContent="กำลังเตรียม CSV…";const allRows=[];let cursor=null;
+  try{do{const params=salesReportParams();params.set("export","1");params.set("limit","200");if(cursor)params.set("cursor",cursor);const response=await fetch("/api/admin/sales-report?"+params,{cache:"no-store"}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"ดาวน์โหลดรายงานไม่สำเร็จ");allRows.push(...(data.items||[]));cursor=data.pagination?.next_cursor||null}while(cursor)}catch(error){alert(error.message);return}finally{exportSalesCsv.disabled=false;exportSalesCsv.textContent=originalText}
+  if(!allRows.length)return alert("ไม่มีข้อมูลสำหรับดาวน์โหลด");
   const q = (value) => '"' + String(value ?? "").replaceAll('"', '""') + '"',
     header = [
       "วันเวลา",
       "สินค้า",
-      "ราคาขาย (บาท)",
+      "จำนวน (ชิ้น)",
+      "ราคาต่อชิ้น (บาท)",
+      "รวมรายการ (บาท)",
       "ลูกค้า",
       "อีเมล",
       "เบอร์โทร",
@@ -1080,12 +1052,16 @@ function downloadSalesCsv() {
       "ผู้อนุมัติ",
       "ลิงก์สลิป",
     ],
-    rows = filteredSalesRows.map((row) => [
+    rows = allRows.map((row) => [
       new Date(row.paid_at + "Z").toLocaleString("th-TH"),
       row.product_title,
+      Number(row.quantity)||0,
       row.sale_price_recorded === 0
         ? ""
-        : (Number(row.sale_price || 0) / 100).toFixed(2),
+        : (Number(row.unit_price || 0) / 100).toFixed(2),
+      row.sale_price_recorded === 0
+        ? ""
+        : (Number(row.line_total || 0) / 100).toFixed(2),
       row.customer_name,
       row.customer_email,
       row.customer_phone || "",

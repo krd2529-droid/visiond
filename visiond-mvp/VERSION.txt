@@ -1,3 +1,9 @@
+VisionD MVP v0.14.25 — Order and Finance Correctness
+Snapshot product titles in order items so historical orders remain accurate after product changes
+Preserve purchased digital files when a product is retired and show the saved title through LEFT JOIN reads
+Require seller courses to cost at least 1 baht from draft creation through checkout
+Deduplicate Meta Pixel Purchase events across devices with a stable order event ID
+Paginate sales reports by order and export quantity, unit price, line total, and revenue channel correctly
 VisionD MVP v0.14.24 — Vision 5 Security Isolation
 Protect every login identity including Boss with IP, identity, and resolved-account rate limits
 Block generic Admin course, product, image, file, and multipart APIs from mutating Vision 5 assets

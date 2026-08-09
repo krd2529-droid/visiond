@@ -86,7 +86,7 @@ async function beginPurchase(){
     if(response.status===401){sessionStorage.setItem('vd_return_to',location.href);location.href='/login.html';return;}
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'สร้างคำสั่งซื้อไม่สำเร็จ');
-    activeOrder=data;currentOrderNo=data.orderNo||data.order_no||'';window.visiondPixel?.track('InitiateCheckout',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',num_items:1,value:Number(data.total||currentProduct.price||0)/100,currency:'THB'});
+    activeOrder=data;currentOrderNo=data.orderNo||data.order_no||'';window.visiondPixel?.track('InitiateCheckout',{content_ids:[String(currentProduct.id||currentProduct.slug)],content_name:currentProduct.title,content_type:'product',num_items:quantity,value:Number(data.total||currentProduct.price||0)/100,currency:'THB'});
     const bank=data.bank||{};
     productBankName.textContent=bank.bank_name||'-';
     productAccountName.textContent=bank.account_name||'-';

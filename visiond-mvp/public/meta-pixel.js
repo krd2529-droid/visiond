@@ -19,8 +19,15 @@
   fbq("track", "PageView");
   window.visiondPixel = {
     id: PIXEL_ID,
-    track(eventName, parameters) {
-      if (typeof window.fbq === "function") window.fbq("track", eventName, parameters || {});
+    track(eventName, parameters, options) {
+      if (typeof window.fbq !== "function") return;
+      const eventOptions =
+        typeof options === "string" ? { eventID: options } : options;
+      if (eventOptions && eventOptions.eventID) {
+        window.fbq("track", eventName, parameters || {}, eventOptions);
+        return;
+      }
+      window.fbq("track", eventName, parameters || {});
     },
   };
 })();

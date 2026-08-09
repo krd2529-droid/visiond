@@ -1,6 +1,6 @@
 export async function grantOrder(env, order, actor = {}) {
   const target = await env.DB.prepare('SELECT name,username,email FROM users WHERE id=?').bind(order.user_id).first();
-  const items = (await env.DB.prepare('SELECT oi.id order_item_id,p.id product_id,p.title,p.product_kind,p.category FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? ORDER BY oi.id').bind(order.id).all()).results||[];
+  const items = (await env.DB.prepare("SELECT oi.id order_item_id,oi.product_id,COALESCE(oi.product_title,p.title,'สินค้าเดิม') title,p.product_kind,p.category FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? ORDER BY oi.id").bind(order.id).all()).results||[];
   const actorName = actor.name || actor.username || actor.email || 'VisionD Auto',actorRole = actor.role || 'system',actorId = Number(actor.id) || 0,statements=[],grantIndexes=[];
   for (const item of items) {
     grantIndexes.push(statements.length);

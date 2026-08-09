@@ -6,7 +6,7 @@ export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireUser(ctx);if(auth.error)return auth.error;
   const [orders,courses,issues,reads]=await Promise.all([
     ctx.env.DB.prepare(`SELECT o.id,o.order_no,o.status,o.admin_note,o.updated_at,o.seller_course_id,
-      (SELECT COALESCE(p.title,oi.product_title,'สินค้า') FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id ORDER BY oi.id LIMIT 1) title,
+      (SELECT COALESCE(oi.product_title,p.title,'สินค้า') FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id ORDER BY oi.id LIMIT 1) title,
       (SELECT p.slug FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id ORDER BY oi.id LIMIT 1) slug,
       (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id=o.id) item_count
       FROM orders o WHERE o.user_id=? AND o.status IN ('awaiting_payment','pending_review','rejected','paid') ORDER BY o.id DESC LIMIT 100`).bind(auth.user.id).all(),
