@@ -35,7 +35,8 @@
     "test:v01454": "node scripts/test-v01454.mjs",
     "test:v01455": "node scripts/test-v01455.mjs",
     "test:regression-all": "node scripts/test-all-regressions.mjs",
-    "requirements:source-recheck": "node scripts/source-to-ledger-recheck.mjs"
+    "requirements:source-recheck": "node scripts/source-to-ledger-recheck.mjs",
+    "test:v01456": "node scripts/test-v01456.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

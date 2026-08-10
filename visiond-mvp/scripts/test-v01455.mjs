@@ -1,7 +1,7 @@
 import fs from 'node:fs';import {metaEventTime} from '../functions/_meta_messenger.js';
 const read=p=>fs.readFileSync(p,'utf8'),api=read('functions/api/meta/messenger.js'),worker=read('functions/_meta_messenger.js'),schema=read('migrations/0021_meta_webhook_qa_hardening.sql'),road=read('VISIOND-ROADMAP.md');
 const actual=metaEventTime(1767225600000,1767229200000);const checks=[
- ['version',read('VERSION.txt').trim()==='v0.14.55'],
+ ['version',Number(read('VERSION.txt').trim().split('.').pop())>=55],
  ['utf8 byte limit',api.includes('TextEncoder().encode(raw).byteLength')],
  ['page id required',worker.includes('META_PAGE_ID_NOT_CONFIGURED')&&worker.includes("recipient!==expectedPage")],
  ['failed event reclaim',worker.includes("WHERE elon_page_webhook_events.status='failed'")&&worker.includes('attempts=elon_page_webhook_events.attempts+1')],
