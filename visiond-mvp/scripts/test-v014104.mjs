@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const read=(p)=>fs.readFileSync(p,"utf8"),html=read("public/vision7-admin.html"),js=read("public/vision7-admin.js"),css=read("public/vision7.css");
-assert.equal(read("VERSION.txt").trim(),"v0.14.104");
+assert.ok(Number(read("VERSION.txt").trim().split(".").at(-1))>=104);
 for(const token of ['class="v7-admin"','id="keyWorkflow"','data-workflow-step="program"','data-workflow-step="key"','data-workflow-step="release"','id="nextAction"','<details id="releaseDetails"','type="search"','aria-labelledby="programDialogTitle"'])assert.ok(html.includes(token),token);
 for(const id of ["programs","licenses","licenseSearch","releaseProgram","keyProgram","keyPlan","keyUser","releaseForm","newProgram","newKey","programForm","keyForm","issuedKey"])assert.ok(html.includes(`id="${id}"`),id);
 for(const token of ['licenseFilter = "all"','data-license-filter','effectiveStatus','data-first-program','data-issue-program','data-release-program','releaseDetails.dataset.blocked','openKeyDialog'])assert.ok(js.includes(token),token);

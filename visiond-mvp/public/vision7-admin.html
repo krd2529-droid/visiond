@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Vision 7 Control</title>
-    <link rel="stylesheet" href="/vision7.css?v=014104" />
+    <link rel="stylesheet" href="/vision7.css?v=014105" />
   </head>
   <body class="v7-admin">
     <header class="top">
@@ -104,8 +104,9 @@
         ><label>แพ็กเกจรายเดือน<select name="monthly_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>อายุคีย์ 30 วันต่อการซื้อหรือต่ออายุ 1 ครั้ง</small></label
         ><label>แพ็กเกจรายปี<select name="yearly_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>อายุคีย์ 365 วันต่อการซื้อหรือต่ออายุ 1 ครั้ง</small></label></div></fieldset>
         <div id="programPreview" class="program-preview" aria-live="polite">ยังไม่ได้ผูกตะกร้าขาย · แอดมินยังออกคีย์ทั้ง 3 แบบได้</div>
-        ><p id="programState" class="muted" role="status" aria-live="polite"></p
-        ><button type="button" data-close="programDialog">ยกเลิก</button
+        <p id="programState" class="muted" role="status" aria-live="polite"></p>
+        <button id="retryProductOptions" type="button" class="secondary-action" hidden>ลองโหลดรายการสินค้าใหม่</button>
+        <button type="button" data-close="programDialog">ยกเลิก</button
         ><button id="saveProgram" type="submit">สร้างโปรแกรมและแพ็กเกจ</button>
       </form>
     </dialog>
@@ -124,11 +125,13 @@
             id="keyProgram"
             required
           ></select></label
+        ><label>ประเภทคีย์<select name="key_mode" id="keyMode"><option value="test">คีย์ทดสอบ — ไม่มีค่าใช้จ่าย</option><option value="customer">คีย์ลูกค้า — คิดราคาตามแพ็กเกจ</option></select></label
         ><label
           >แพ็กเกจ<select name="plan_id" id="keyPlan">
             <option value="">ไม่กำหนด</option>
           </select></label
         >
+        <p id="keyCostSummary" class="program-preview" role="status">คีย์ทดสอบ · ไม่มีค่าใช้จ่าย</p>
         <p id="keyBindingPreview" class="notice" hidden></p>
         <label>หมายเหตุ<input name="note" maxlength="300" /></label>
         <p id="issuedKey" class="notice" hidden></p>
@@ -143,6 +146,6 @@
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js?v=014104" type="module"></script>
+    <script src="/vision7-admin.js?v=014105" type="module"></script>
   </body>
 </html>

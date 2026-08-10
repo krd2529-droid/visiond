@@ -38,10 +38,16 @@ const esc = (s) =>
   issueKeySubmit = document.querySelector("#issueKeySubmit"),
   nextAction = document.querySelector("#nextAction"),
   releaseDetails = document.querySelector("#releaseDetails");
+const programPreview = document.querySelector("#programPreview"),
+  platformHelp = document.querySelector("#platformHelp"),
+  retryProductOptions = document.querySelector("#retryProductOptions"),
+  keyMode = document.querySelector("#keyMode"),
+  keyCostSummary = document.querySelector("#keyCostSummary");
 let programs = [],
   users = [],
   encryptionReady = false,
   licenseFilter = "all";
+window.__licenses = [];
 const plans = (p) => {
   try {
     return typeof p.plans === "string" ? JSON.parse(p.plans) : p.plans || [];
@@ -67,7 +73,7 @@ function planOptions() {
       .filter((x) => x.active !== 0)
       .map(
         (x) =>
-          `<option value="${x.id}">${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}</option>`,
+          `<option value="${x.id}">${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}${x.product_price != null ? ` · ${Number(x.product_price).toLocaleString("th-TH")} บาท` : " · ยังไม่มีราคาขาย"}</option>`,
       )
       .join("");
   const veasy = program?.platform_type === "veasy";
@@ -75,6 +81,16 @@ function planOptions() {
   keyBindingPreview.textContent = veasy
     ? "คีย์ V Easy นี้ออกแยกจาก APK · เริ่มสถานะ ‘รอผูกร้าน’ ลูกค้านำไปกรอกใน Settings และผูกได้ 1 ร้าน"
     : "";
+  updateKeyCost();
+}
+function updateKeyCost() {
+  if (keyMode.value === "test") {
+    keyCostSummary.textContent = "คีย์ทดสอบ · ไม่มีค่าใช้จ่าย";
+    return;
+  }
+  const program = programs.find((x) => Number(x.id) === Number(keyProgram.value));
+  const plan = plans(program || {}).find((x) => Number(x.id) === Number(keyPlan.value));
+  keyCostSummary.textContent = !plan ? "กรุณาเลือกแพ็กเกจเพื่อดูค่าใช้จ่าย" : plan.product_price != null ? `ค่าใช้จ่าย ${Number(plan.product_price).toLocaleString("th-TH")} บาท · ${plan.name}` : `${plan.name} · ยังไม่ได้กำหนดราคาขาย`;
 }
 function userOptions(q = "") {
   const needle = q.trim().toLowerCase();
@@ -123,7 +139,7 @@ function productLabel(x) {
   const status = x.status === "published" ? "เปิดขาย" : "แบบร่าง—ลูกค้ายังซื้อไม่ได้";
   return `#${x.id} · ${x.title} · ${x.slug} · ${price} · ${status}${x.binding_program ? ` · ใช้แล้วกับ ${x.binding_program}` : ""}`;
 }
-function fillProductSelects() {
+function fillProductSelects(available = true) {
   document.querySelectorAll("[data-product-select]").forEach((select) => {
     const chosen = select.value;
     select.replaceChildren(new Option("— ไม่ผูกตะกร้าสินค้า —", ""));
@@ -132,9 +148,19 @@ function fillProductSelects() {
       option.disabled = Boolean(x.binding_program);
       select.add(option);
     });
-    select.value = chosen;
+    select.value = available ? chosen : "";
+    select.disabled = !available;
   });
   saveProgram.disabled = false;
+  retryProductOptions.hidden = available;
+  if (available) {
+    if (programState.textContent.includes("โหลดรายการสินค้า")) programState.textContent = "";
+    programPreview.textContent = "ยังไม่ได้ผูกตะกร้าขาย · แอดมินยังออกคีย์ทั้ง 3 แบบได้";
+  } else {
+    programState.className = "muted error";
+    programState.textContent = "โหลดรายการสินค้าไม่สำเร็จ แต่ยังสร้างโปรแกรมเพื่อออกคีย์โดยแอดมินได้ โดยยังไม่ผูกตะกร้าขาย";
+    programPreview.textContent = "โหมดออกคีย์โดยแอดมิน · Product ID ทุกแพ็กเกจจะเว้นว่าง";
+  }
 }
 function validateProductChoices() {
   const selects = [...programForm.querySelectorAll("[data-product-select]")];
@@ -153,25 +179,34 @@ function validateProductChoices() {
   return true;
 }
 async function load() {
-  const [p, l, r, u] = await Promise.all([
-      fetch("/api/admin/vision7/programs"),
-      fetch("/api/admin/vision7/licenses"),
-      fetch("/api/admin/vision7/releases"),
-      fetch("/api/admin/users"),
-    ]),
-    pd = await p.json(),
-    ld = await l.json(),
-    rd = await r.json(),
-    ud = await u.json();
-  if (p.status === 401 || p.status === 403) {
-    location.href = "/login.html?next=/vision7-admin.html";
-    return;
+  let pd = {items:[],product_options:[],product_options_available:false};
+  try {
+    const p = await fetch("/api/admin/vision7/programs", {cache:"no-store"});
+    if (p.status === 401 || p.status === 403) { location.href = "/login.html?next=/vision7-admin.html"; return; }
+    const parsed = await p.json().catch(() => null);
+    if (!p.ok || !parsed) throw new Error(parsed?.error || "โหลดโปรแกรมไม่สำเร็จ");
+    pd = parsed;
+  } catch (error) {
+    programsEl.innerHTML = `<p class="muted error">${esc(error.message || "โหลดโปรแกรมไม่สำเร็จ")} · ยังสร้างโปรแกรมแบบไม่ผูกตะกร้าได้</p>`;
   }
-  programs = pd.items || [];
-  productOptions = pd.product_options || [];
-  fillProductSelects();
-  users = ud.items || [];
-  window.__licenses = ld.items || [];
+  programs = Array.isArray(pd.items) ? pd.items : [];
+  productOptions = Array.isArray(pd.product_options) ? pd.product_options : [];
+  fillProductSelects(pd.product_options_available !== false);
+  const safeLoad = async (url) => {
+    const response = await fetch(url, {cache:"no-store"});
+    if (response.status === 401 || response.status === 403) { location.href = "/login.html?next=/vision7-admin.html"; throw new Error("AUTH_REDIRECT"); }
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data) throw new Error(data?.error || `โหลดข้อมูลไม่สำเร็จ (${response.status})`);
+    return data;
+  };
+  const [licenseResult, releaseResult, userResult] = await Promise.allSettled([
+    safeLoad("/api/admin/vision7/licenses"), safeLoad("/api/admin/vision7/releases"), safeLoad("/api/admin/users")
+  ]);
+  const ld = licenseResult.status === "fulfilled" ? licenseResult.value : {items:[],encryption_ready:false,summary:{}};
+  const rd = releaseResult.status === "fulfilled" ? releaseResult.value : {items:[]};
+  const ud = userResult.status === "fulfilled" ? userResult.value : {items:[]};
+  users = Array.isArray(ud.items) ? ud.items : [];
+  window.__licenses = Array.isArray(ld.items) ? ld.items : [];
   encryptionReady = ld.encryption_ready === true;
   encryptionState.className = `key-center-state ${encryptionReady ? "ready" : "blocked"}`;
   encryptionState.textContent = encryptionReady
@@ -228,7 +263,8 @@ async function load() {
         (x) =>
           `<section class="release-row"><b>${esc(x.program_code)} v${esc(x.version)}</b>${x.mandatory ? " · บังคับอัปเดต" : ""}<small>${esc(x.file_name)}</small><details><summary>ดู SHA-256</summary><code>${esc(x.sha256)}</code></details></section>`,
       )
-      .join("") || '<p class="muted">ยังไม่มีรีลีส</p>';
+      .join("") || `<p class="muted">${releaseResult.status === "rejected" ? "โหลดรีลีสไม่สำเร็จ กรุณาลองใหม่" : "ยังไม่มีรีลีส"}</p>`;
+  if (licenseResult.status === "rejected") licensesEl.innerHTML = '<p class="muted error">โหลดรายการคีย์ไม่สำเร็จ แต่ยังเพิ่มโปรแกรมได้</p>';
 }
 async function patchLicense(body) {
   const r = await fetch("/api/admin/vision7/licenses", {
@@ -300,6 +336,8 @@ function openProgramDialog() {
   programState.textContent = "";
   programState.className = "muted";
   programDialog.showModal();
+  const platform = programForm.elements.platform_type.value;
+  platformHelp.textContent = ({windows:"โปรแกรมติดตั้งบน Windows",mac:"โปรแกรมติดตั้งบน macOS",web:"ใช้งานผ่านเว็บเบราว์เซอร์","cross-platform":"ไฟล์หรือบัญชีเดียวรองรับหลายระบบ",veasy:"APK กลาง ไม่ฝังคีย์ · ลูกค้ากรอกคีย์ใน Settings · 1 คีย์ต่อ 1 ร้าน"})[platform];
   programForm.elements.code.focus();
 }
 function openKeyDialog(programId) {
@@ -317,6 +355,7 @@ function openKeyDialog(programId) {
 newProgram.onclick = openProgramDialog;
 document.querySelectorAll("[data-open-program]").forEach((x)=>x.onclick=openProgramDialog);
 newKey.onclick = () => openKeyDialog();
+retryProductOptions.onclick = () => { retryProductOptions.disabled = true; load().finally(()=>{retryProductOptions.disabled=false;}); };
 releaseDetails.querySelector("summary").addEventListener("click", (event) => {
   if (releaseDetails.dataset.blocked === "true") {
     event.preventDefault();
@@ -324,6 +363,8 @@ releaseDetails.querySelector("summary").addEventListener("click", (event) => {
   }
 });
 keyProgram.onchange = planOptions;
+keyPlan.onchange = updateKeyCost;
+keyMode.onchange = updateKeyCost;
 userSearch.oninput = () => userOptions(userSearch.value);
 licenseSearch.oninput = renderLicenses;
 document
@@ -340,6 +381,7 @@ programForm.onsubmit = async (e) => {
   programState.textContent = "กำลังสร้างโปรแกรม…";
   const f = new FormData(programForm),
     b = Object.fromEntries(f);
+  if (!retryProductOptions.hidden) b.product_id = "";
   b.plans = [
     {
       plan_code: "lifetime",
@@ -360,6 +402,7 @@ programForm.onsubmit = async (e) => {
       product_id: b.yearly_product_id,
     },
   ];
+  if (!retryProductOptions.hidden) b.plans.forEach((plan) => { plan.product_id = ""; });
   try {
     const r = await fetch("/api/admin/vision7/programs", {
         method: "POST",
@@ -385,6 +428,7 @@ programForm.elements.platform_type.addEventListener("change", (e) => {
 });
 keyForm.onsubmit = async (e) => {
   e.preventDefault();
+  if (keyMode.value === "customer" && !keyPlan.value) return alert("คีย์ลูกค้าต้องเลือกแพ็กเกจก่อน เพื่อแสดงค่าใช้จ่ายให้ถูกต้อง");
   const selectedUser = users.find(
       (x) => Number(x.id) === Number(keyUser.value),
     ),
@@ -444,4 +488,9 @@ releaseForm.onsubmit = async (e) => {
     button.disabled = false;
   }
 };
-load();
+fillProductSelects(false);
+load().catch((error) => {
+  programState.className = "muted error";
+  programState.textContent = error.message || "โหลดข้อมูล Vision 7 ไม่สำเร็จ แต่ยังสร้างโปรแกรมแบบไม่ผูกตะกร้าได้";
+  fillProductSelects(false);
+});

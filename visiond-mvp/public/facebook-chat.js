@@ -1,4 +1,4 @@
-import('/i18n.js?v=014104');
+import('/i18n.js?v=014105');
 (()=>{
   const PAGE_URL=window.VISIOND_FACEBOOK_PAGE_URL||'https://m.me/61592882337230';
   const LINE_URL=window.VISIOND_LINE_URL||'https://lin.ee/RJZwr1p';
@@ -32,5 +32,5 @@ import('/i18n.js?v=014104');
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
-import('/mouse-ui.js?v=014104');
-import('/boss-mobile-preview.js?v=014104');
+import('/mouse-ui.js?v=014105');
+import('/boss-mobile-preview.js?v=014105');

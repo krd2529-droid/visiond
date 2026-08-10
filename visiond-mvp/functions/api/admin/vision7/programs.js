@@ -12,9 +12,11 @@ export async function onRequestGet(ctx) {
   const a = await requireAdmin(ctx);
   if (a.error) return a.error;
   const rows = await ctx.env.DB.prepare(
-    `SELECT p.*,x.title product_title,(SELECT json_group_array(json_object('id',q.id,'code',q.plan_code,'name',q.name,'price',q.price,'duration_days',q.duration_days,'product_id',q.product_id,'active',q.active)) FROM vision7_plans q WHERE q.program_id=p.id) plans FROM vision7_programs p LEFT JOIN products x ON x.id=p.product_id ORDER BY p.updated_at DESC`,
+    `SELECT p.*,x.title product_title,(SELECT json_group_array(json_object('id',q.id,'code',q.plan_code,'name',q.name,'price',q.price,'product_price',(SELECT z.price FROM products z WHERE z.id=q.product_id),'duration_days',q.duration_days,'product_id',q.product_id,'active',q.active)) FROM vision7_plans q WHERE q.program_id=p.id) plans FROM vision7_programs p LEFT JOIN products x ON x.id=p.product_id ORDER BY p.updated_at DESC`,
   ).all();
-  const options = await ctx.env.DB.prepare(
+  let productOptions = [], productOptionsAvailable = true;
+  try {
+    const options = await ctx.env.DB.prepare(
     `SELECT x.id,x.title,x.slug,x.price,x.status,x.category,
       CASE WHEN p.id IS NOT NULL THEN 'program' WHEN q.id IS NOT NULL THEN 'plan' ELSE NULL END binding_type,
       COALESCE(p.code,v.code) binding_program
@@ -23,8 +25,12 @@ export async function onRequestGet(ctx) {
      LEFT JOIN vision7_plans q ON q.product_id=x.id
      LEFT JOIN vision7_programs v ON v.id=q.program_id
      WHERE x.deleted_at IS NULL ORDER BY x.id DESC`,
-  ).all();
-  return json({ items: rows.results || [], product_options: options.results || [] });
+    ).all();
+    productOptions = options.results || [];
+  } catch {
+    productOptionsAvailable = false;
+  }
+  return json({ items: rows.results || [], product_options: productOptions, product_options_available: productOptionsAvailable, product_options_error: productOptionsAvailable ? null : "VISION7_PRODUCT_OPTIONS_UNAVAILABLE" });
 }
 
 const optionalProductId = (value) => {

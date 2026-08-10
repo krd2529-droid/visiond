@@ -83,7 +83,8 @@
     "test:v014102": "node scripts/test-v014102.mjs",
     "release:stamp-assets": "node scripts/release-stamp-assets.mjs",
     "test:v014103": "node scripts/test-v014103.mjs",
-    "test:v014104": "node scripts/test-v014104.mjs"
+    "test:v014104": "node scripts/test-v014104.mjs",
+    "test:v014105": "node scripts/test-v014105.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",
