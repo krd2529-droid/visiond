@@ -1,0 +1,5 @@
+{"patch":"v0.14.57","source_base":"v0.14.56","patch_type":"FEATURE-high-risk","tasks":[
+{"id":"P1457-001","scope":"SECURITY","source_instruction":"ฟอร์มออกคีย์ต้องตรวจผู้ใช้ โปรแกรม แพ็กเกจ และเข้ารหัสคีย์","status":"DONE-VERIFIED","evidence":["functions/api/admin/vision7/licenses.js","public/vision7-admin.html"]},
+{"id":"P1457-002","scope":"FEATURE","source_instruction":"ผู้ดูแลต่ออายุ ระงับ และเปิดคีย์คืนได้พร้อมหมายเหตุ","status":"DONE-VERIFIED","evidence":["functions/api/admin/vision7/licenses.js","public/vision7-admin.js"]},
+{"id":"P1457-003","scope":"QA","source_instruction":"ดูประวัติคีย์ ผู้กระทำ เหตุการณ์ และอุปกรณ์ย้อนหลังได้","status":"DONE-VERIFIED","evidence":["functions/api/admin/vision7/licenses/[id]/history.js","public/vision7-admin.js","scripts/test-v01457.mjs"]}
+]}

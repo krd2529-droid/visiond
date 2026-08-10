@@ -1,5 +1,5 @@
 import fs from 'node:fs';const read=p=>fs.readFileSync(p,'utf8'),migration=read('migrations/0022_vision7_release_delivery.sql'),admin=read('functions/api/admin/vision7/releases.js'),download=read('functions/api/vision7/releases/[id]/download.js'),mine=read('functions/api/vision7/my-programs.js'),ui=read('public/my-programs.js');const checks=[
-['version',read('VERSION.txt').trim()==='v0.14.56'],
+['version',Number(read('VERSION.txt').trim().split('.').pop())>=56],
 ['release schema',migration.includes('UNIQUE(program_id,version)')&&migration.includes('sha256 TEXT NOT NULL')],
 ['admin protected',admin.includes('requireAdmin')&&admin.includes('95*1024*1024')],
 ['server hash',admin.includes("crypto.subtle.digest('SHA-256',bytes)")],

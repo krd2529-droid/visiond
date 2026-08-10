@@ -13,7 +13,7 @@
     {"id":"EC-V7-008","source":"quantity purchase issues separate keys and renewal extends selected key","status":"DONE-VERIFIED","evidence":["functions/_vision7_orders.js","scripts/test-v01452.mjs"]},
     {"id":"EC-V7-009","source":"customer can view licenses, devices and key securely","status":"DONE-VERIFIED","evidence":["functions/api/vision7/my-programs.js","public/my-programs.html"]},
     {"id":"EC-V7-010","source":"program installer download and update delivery","status":"DONE-VERIFIED","evidence":["functions/api/admin/vision7/releases.js","functions/api/vision7/releases/[id]/download.js","scripts/test-v01456.mjs"]},
-    {"id":"EC-V7-011","source":"full operator forms for issue, renew, suspend and history","status":"PENDING","evidence":[]},
+    {"id":"EC-V7-011","source":"full operator forms for issue, renew, suspend and history","status":"DONE-VERIFIED","evidence":["functions/api/admin/vision7/licenses.js","functions/api/admin/vision7/licenses/[id]/history.js","public/vision7-admin.js","scripts/test-v01457.mjs"]},
     {"id":"EC-EP-001","source":"ELON Page is PAGE_SALES and isolated from member ELON","status":"DONE-VERIFIED","evidence":["migrations/0017_vision7_elon_page_foundation.sql","public/elon-page-admin.html"]},
     {"id":"EC-EP-002","source":"human handoff queue","status":"DONE-VERIFIED","evidence":["functions/api/admin/elon-page/index.js","public/elon-page-admin.js"]},
     {"id":"EC-EP-003","source":"production Meta webhook signature, dedupe and private participant storage","status":"DONE-VERIFIED","evidence":["functions/api/meta/messenger.js","functions/_meta_messenger.js","scripts/test-v01453.mjs"]},
