@@ -2,6 +2,8 @@
 html,body{max-width:100%;overflow-x:clip}
 img,video,iframe{max-width:100%}
 @media(max-width:760px){
+  .topbar.mobile-nav-ready>nav>.nav-primary-group,.topbar.mobile-nav-ready>nav>.nav-utility-group{display:contents!important}
+  .topbar.mobile-nav-ready>nav>.nav-primary-group>a,.topbar.mobile-nav-ready>nav>.nav-primary-group>button,.topbar.mobile-nav-ready>nav>.nav-utility-group>a,.topbar.mobile-nav-ready>nav>.nav-utility-group>button,.topbar.mobile-nav-ready>nav>.nav-utility-group>.vd-language-switcher{box-sizing:border-box!important;width:100%!important;min-width:0!important;min-height:46px!important;height:auto!important;margin:0!important;padding:11px 13px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;border:1px solid #ffffff32!important;border-radius:11px!important;background:#ffffff10!important;color:#fff!important;text-align:left;white-space:normal!important}
   .topbar.mobile-nav-ready{min-height:64px!important;height:64px;padding:8px 12px!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;z-index:10018}
   .mobile-nav-open .topbar.mobile-nav-ready{z-index:10022!important}
   .topbar.mobile-nav-ready .brand{min-width:0;font-size:20px;line-height:1.05}
