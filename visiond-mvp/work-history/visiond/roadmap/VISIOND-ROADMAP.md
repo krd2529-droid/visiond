@@ -128,6 +128,9 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 QA is a permanent Event Roadmap track. It does not need a new Event Case unless an urgent defect is found.
 
 ### Every patch — mandatory Patch Smoke Check
+- **Deep Frontend Parity:** `สินค้าดิจิทัล → รายละเอียดสินค้า` และ `โปรแกรมบอท → หน้าลึก` ต้องคง Header กลาง แถบปุ่มบน GIF โปร แชท และ Boss Mobile Preview ครบเหมือนหน้าแรก; ห้ามส่งแพตหากหน้าใดขาดหนึ่งองค์ประกอบ.
+- ลูกศรแคตตาล็อกซ้าย/ขวาต้องเป็น Tiffany พร้อม touch target อย่างน้อย 44px. ราคาโปรสิทธิ์คอร์ส “ลดเหลือ 499 บาท” ต้องเป็นสีแดงทั้งวลีทั้งหน้าแรกและหน้าที่นำส่วนนี้ไปใช้.
+- ข้อความราคาเดิม ข้อความกำกับ และหมายเหตุบนพื้น Tiffany อ่อน/ขาวต้องใช้สี Ink เข้มและ opacity 100%; ห้ามใช้เทาอ่อนหรือเหลืองอ่อนจนอ่านแทบไม่เห็น.
 - Run `npm run release:stamp-assets` before tests and ZIP delivery. `VERSION.txt` is the only cache identity; frontend HTML and first-party imports must never carry mixed manual cache versions.
 - Every frontend page and Boss mobile preview route must load the canonical `frontend-theme.css` last: page background Tiffany-to-white only; actions use Tiffany/white/pale Tiffany and never a dark green or black fill except approved semantic/social surfaces.
 - Animated promotional GIF integrity is permanent: four distinct frames, infinite loop, fresh runtime request on homepage and cart, and a cache-revalidation policy for mutable GIF/JS/CSS assets.
@@ -177,6 +180,7 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.103 Deep Frontend Parity: ลูกศรแคตตาล็อก Tiffany 44px, วลีลดเหลือ 499 บาทสีแดงทั้งชุด และหน้าลึก Digital Products/Product/Bots ผูก Header, GIF, chat และ Boss mobile preview เป็น contract ถาวร.
 - IMPLEMENTED — v0.14.102 canonical frontend contract: 26 customer-facing pages use one Tiffany-to-white background and one non-dark action system; product cards, deep member/course pages and Boss mobile preview inherit it. Automated release stamping and revalidation remove mixed cache keys; the approved four-frame promo GIF is forced fresh and loops on homepage/cart.
 - IMPLEMENTED — v0.14.101 Vision 7 Product Mapping: เลือกสินค้าจริงสำหรับข้อมูลโปรแกรมและแพ็กเกจตลอดชีพ/30 วัน/365 วัน แยกหน้าที่ชัด ตรวจ ID ซ้ำ และยังสร้างโปรแกรมเพื่อออกคีย์ทดสอบโดยไม่ผูกตะกร้าได้.
 - COMPLETE — establish two-queue patch protocol and rotating roadmap tracks.
