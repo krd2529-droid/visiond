@@ -190,6 +190,9 @@ async function initializeDatabase(env) {
   if (!orderColumns.includes('payment_qr_url')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN payment_qr_url TEXT NOT NULL DEFAULT ''").run();
   if (!orderColumns.includes('discount_kind')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN discount_kind TEXT NOT NULL DEFAULT 'none'").run();
   if (!orderColumns.includes('discount_amount')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0').run();
+  if (!orderColumns.includes('order_origin')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN order_origin TEXT NOT NULL DEFAULT 'customer'").run();
+  if (!orderColumns.includes('gift_for_order_id')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN gift_for_order_id INTEGER').run();
+  await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_first_order_gift ON orders(user_id) WHERE order_origin='first_order_gift'").run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_verified_slips_trans_ref ON verified_slips(trans_ref)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_orders_slip_verification ON orders(slip_verification_status,updated_at DESC)').run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('coloring','ระบายสี',NULL,'PDF',1,10)").run();

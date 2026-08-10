@@ -3,7 +3,7 @@ import {ensureDatabase} from '../../_schema.js';
 import {rateLimitIdentity,requestIp} from '../../_security.js';
 
 const VISITOR_COOKIE='__Host-vd_vid';
-const EVENTS=new Set(['landing_view','product_view','course_view','signup_start','signup_complete','login_success','add_to_cart','remove_from_cart','checkout_start','payment_submit','payment_failed','download','course_start','return_visit']);
+const EVENTS=new Set(['landing_view','product_view','course_view','signup_start','signup_complete','login_success','add_to_cart','remove_from_cart','checkout_start','payment_submit','payment_failed','download','course_start','return_visit','guest_gift_view','guest_gift_click','first_order_gift_granted','first_order_gift_opened']);
 const text=(v,n=120)=>String(v||'').replace(/[\u0000-\u001f]/g,'').slice(0,n);
 const cleanPath=v=>{const x=text(v||'/',160).split('?')[0];return x.startsWith('/')?x:'/'};
 const cleanRef=v=>{try{const u=new URL(String(v||''));return `${u.origin}${u.pathname}`.slice(0,240)}catch{return ''}};

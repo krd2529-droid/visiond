@@ -74,3 +74,20 @@ export async function maintainAnalyticsRetention(env){
   const customerEventsRemoved=await env.DB.prepare(`DELETE FROM customer_events WHERE id IN (SELECT id FROM customer_events WHERE created_at<datetime('now',?) ORDER BY id LIMIT ?)` ).bind(`-${RAW_RETENTION_DAYS} days`,BATCH_SIZE).run();
   return {retention_days:RAW_RETENTION_DAYS,backfilled,removed:number(removed?.meta?.changes),customer_events_removed:number(customerEventsRemoved?.meta?.changes),more_backfill:backfilled===BATCH_SIZE};
 }
+
+
+export const VISITOR_COOKIE='__Host-vd_vid';
+export async function visitorKeyFromRequest(request){
+  const cookieHeader=request.headers.get('cookie')||'';
+  const match=cookieHeader.match(/(?:^|;\s*)__Host-vd_vid=([^;]+)/);
+  const raw=match?decodeURIComponent(match[1]):'';
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(raw))return null;
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(`${raw}|visiond-view-v2`));
+  return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+export async function claimVisitorHistory(env,request,userId){
+  const visitorKey=await visitorKeyFromRequest(request);
+  if(!visitorKey||!Number(userId))return {visitor_key:null,claimed:0};
+  const result=await env.DB.prepare("UPDATE customer_events SET user_id=? WHERE visitor_key=? AND user_id IS NULL").bind(Number(userId),visitorKey).run();
+  return {visitor_key:visitorKey,claimed:Number(result?.meta?.changes)||0};
+}

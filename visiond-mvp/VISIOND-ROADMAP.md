@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.47
+Current build: v0.14.48
 Owner protocol: JARVIS / J
 
 ## Operating rule
@@ -24,21 +24,25 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 - Proposed — conversion diagnostics for Product View → Add Cart → Checkout → Paid.
 - Proposed — compare new vs returning visitors and first purchase behavior without exposing PII.
 
+## Phase 2B — Guest acquisition
+- IMPLEMENTED — v0.14.48: unique anonymous visitor identity per browser/device, guest → member history claim, guest signup/first-bill gift notice, and automatic first-paid-order digital gift with no Boss action.
+- NEEDS DEPLOY/VALIDATION — verify separate browsers do not collapse into one guest, measure guest notice → signup → paid uplift, and confirm exactly-one gift idempotency.
+
 ## Phase 3 — Personalization + retargeting
-- NEXT — v0.14.48: interest profile + related-product engine for anonymous/member visitors, using recent product-family interest.
+- NEXT — v0.14.49: interest profile + related-product engine for anonymous/member visitors, using recent product-family interest.
 - Proposed — smart related-product/promo surfaces with frequency caps; measure recommendation impression → click → cart → purchase.
 - Proposed — production queue should extend winning families sequentially (same base title, next set number) and mark those new sets `demand_driven`.
 
 ## Phase 3B — Retargeting segments
-- Proposed — v0.14.48: privacy-minimized actionable segments: viewed-not-carted, cart-not-checkout, checkout-not-paid, buyer, repeat buyer.
+- Proposed — v0.14.50: privacy-minimized actionable segments: viewed-not-carted, cart-not-checkout, checkout-not-paid, buyer, repeat buyer.
 - Proposed — segment counts and campaign-ready criteria; no raw secret/slip/customer contact data in planning files.
 
 ## Phase 4 — Growth experiments
-- Proposed — v0.14.49: experiment registry for offer/creative/promo/landing tests with baseline, hypothesis, KPI, start/end and result.
+- Proposed — v0.14.51: experiment registry for offer/creative/promo/landing tests with baseline, hypothesis, KPI, start/end and result.
 - Proposed — prevent declaring a winner without adequate observed data.
 
 ## Phase 5 — Growth Command Center
-- Proposed — v0.14.50: combine customer funnel, ads, product performance and experiment outcomes into one decision surface.
+- Proposed — v0.14.52: combine customer funnel, ads, product performance and experiment outcomes into one decision surface.
 - Proposed — generate the next prioritized action from measured bottlenecks.
 
 ## Decision gates
@@ -48,4 +52,4 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 4. When this roadmap is completed, J drafts the next phase automatically and clearly marks it proposed for Boss review.
 
 ## Current next decision
-Deploy v0.14.47 and inspect Product Family demand using real traffic. Unless production data exposes a more urgent issue, proceed with v0.14.48 Personalized Product Engine. Do not produce additional numbered sets merely because old premade sets already exist.
+Deploy v0.14.48 and validate guest separation + first-paid gift with real traffic. Analyze `guest_gift_view → guest_gift_click → signup_complete → paid → first_order_gift_granted`. Unless production data exposes a more urgent conversion/payment issue, proceed with v0.14.49 Personalized Product Engine. Continue Product Family production decisions from exposure/cart/paid evidence, never inventory count alone.

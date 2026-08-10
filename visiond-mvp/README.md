@@ -713,3 +713,7 @@ UPDATE users SET role='boss' WHERE lower(email)=lower('อีเมลเจ้�
 - ทุกแพตช์ถัดไปต้องวิเคราะห์ข้อมูลลูกค้า/ธุรกิจแบบ aggregate เท่าที่มีจริงก่อนตัดสินใจลำดับงาน และห้ามเดาผล production เมื่อไม่มีข้อมูล
 - แยกสถานะ Implemented / Deployed / Validated เพื่อไม่ถือว่าโค้ดเสร็จเท่ากับผลธุรกิจสำเร็จ
 - หลังทุกแพตช์ต้องอัปเดต Roadmap, Marketing Plan, Data Analysis และบอกงานที่เหลือกับแพตช์ถัดไป
+
+
+## Current patch
+v0.14.48 — Guest Identity + Automatic First-Order Gift. See `PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md`, `VISIOND-ROADMAP.md`, and `VISIOND-MARKETING-PLAN.md`.

@@ -1,7 +1,7 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-10
-Current build: v0.14.47
+Current build: v0.14.48
 
 ## Positioning
 VisionD is a platform for digital products and online courses, with a creator path for people who want to sell their own course. Keep the storefront message simple: buy digital products, learn online, or create/sell a course.
@@ -58,3 +58,23 @@ J must create the next marketing phase from observed customer and revenue data, 
 - Low exposure means insufficient evidence, not automatically poor demand.
 - Winning families may be extended sequentially with the same base title and next set number; those follow-up products should be marked `demand_driven`.
 - Next personalization phase should recommend related families/products to interested visitors and measure incremental purchase lift.
+
+
+## Guest Acquisition Offer — v0.14.48
+Offer: unauthenticated visitors are informed that registering and completing their first paid bill unlocks one digital-product basket for free.
+
+Measurement funnel:
+`guest_gift_view → guest_gift_click → signup_complete → checkout_start → authoritative paid → first_order_gift_granted`
+
+Rules:
+- Optimize the offer from paid uplift, not signup volume alone.
+- Gift issuance is automatic after authoritative paid confirmation; Boss performs no manual unlock/order creation.
+- Gift value is zero in revenue reporting.
+- Prefer a gift near the visitor/member's observed digital-product interest, but exclude special rights/courses and already-owned products.
+- Compare conversion/margin before and after deployment; if signup rises but paid does not, revise the offer instead of expanding giveaways.
+- Keep frequency controlled so the guest notice does not become intrusive.
+
+Next marketing work:
+- DEPLOY/VALIDATE — measure guest notice impression → click → signup → first paid.
+- NEXT — personalize related digital products by Product Family and recent interest.
+- NEXT — use aggregate Product Family demand to decide which numbered sets to produce next.

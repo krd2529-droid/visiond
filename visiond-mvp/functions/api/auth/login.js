@@ -1,6 +1,7 @@
 import {json} from '../../_lib.js';
 import {rateLimit,rateLimitIdentity,verifyTurnstile,verifyPassword,securityLog} from '../../_security.js';
 import {recordSuccessfulLogin} from '../../_first_order_promo.js';
+import {claimVisitorHistory} from '../../_analytics.js';
 
 export async function onRequestPost(ctx){
  try{
@@ -20,6 +21,8 @@ export async function onRequestPost(ctx){
   const remember=b.remember===true,sessionDuration=remember?'+30 days':'+24 hours';
   const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now',?))").bind(id,u.id,sessionDuration).run();
   await recordSuccessfulLogin(ctx.env,u.id);
+  const claimed=await claimVisitorHistory(ctx.env,ctx.request,u.id);
+  await ctx.env.DB.prepare(`INSERT INTO customer_events(visitor_key,user_id,event_type,path,metadata) VALUES(?,?,'login_success','/login',?)`).bind(claimed.visitor_key,u.id,JSON.stringify({claimed_guest_events:claimed.claimed})).run().catch(()=>{});
   await securityLog(ctx.env,ctx.request,'login_success','info','',u.id);
   const maxAge=remember?'; Max-Age=2592000':'';
   return json({ok:true},200,{'set-cookie':`vd_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/${maxAge}`});

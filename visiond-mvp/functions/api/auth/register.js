@@ -2,6 +2,7 @@ import { json, sha256 } from '../../_lib.js';
 import { ensureDatabase } from '../../_schema.js';
 import {rateLimit,verifyTurnstile,hashPassword,securityLog} from '../../_security.js';
 import {requestIp} from '../../_security.js';
+import {claimVisitorHistory} from '../../_analytics.js';
 
 const TERMS_VERSION='2026-08-10-v1';
 
@@ -48,7 +49,10 @@ export async function onRequestPost(ctx) {
       ctx.env.DB.prepare('INSERT INTO user_terms_acceptances(user_id,terms_version,accepted_at,ip_hash) SELECT id,?,CURRENT_TIMESTAMP,? FROM users WHERE lower(email)=?').bind(TERMS_VERSION,acceptedIpHash,email),
       ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) SELECT ?,id,datetime('now','+24 hours') FROM users WHERE lower(email)=?").bind(sessionId,email)
     ]);
-    await securityLog(ctx.env,ctx.request,'register_success','info',username,result.meta.last_row_id);
+    const userId=Number(result.meta.last_row_id);
+    const claimed=await claimVisitorHistory(ctx.env,ctx.request,userId);
+    await ctx.env.DB.prepare(`INSERT INTO customer_events(visitor_key,user_id,event_type,path,metadata) VALUES(?,?,'signup_complete','/register',?)`).bind(claimed.visitor_key,userId,JSON.stringify({claimed_guest_events:claimed.claimed})).run().catch(()=>{});
+    await securityLog(ctx.env,ctx.request,'register_success','info',username,userId);
     return json({ ok: true }, 200, { 'set-cookie': `vd_session=${sessionId}; HttpOnly; Secure; SameSite=Lax; Path=/` });
   } catch (error) {
     console.error('register failed', error);

@@ -6,7 +6,7 @@ const notice=(key,type,title,message,href,created_at)=>({key,type,title,message,
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireUser(ctx);if(auth.error)return auth.error;
   const [orders,courses,issues,reads]=await Promise.all([
-    ctx.env.DB.prepare(`SELECT o.id,o.order_no,o.status,o.admin_note,o.updated_at,o.seller_course_id,
+    ctx.env.DB.prepare(`SELECT o.id,o.order_no,o.status,o.admin_note,o.updated_at,o.seller_course_id,o.order_origin,
       (SELECT COALESCE(oi.product_title,p.title,'สินค้า') FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id ORDER BY oi.id LIMIT 1) title,
       (SELECT p.slug FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id ORDER BY oi.id LIMIT 1) slug,
       (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id=o.id) item_count
@@ -23,7 +23,7 @@ export async function onRequestGet(ctx){
     if(o.status==='rejected')items.push(notice(`order-rejected-${o.id}`,'danger','สลิปไม่ผ่าน',`${label}: ${o.admin_note||'กรุณาตรวจสอบและส่งสลิปใหม่'}`,'/dashboard.html#orders',o.updated_at));
     else if(o.status==='pending_review')items.push(notice(`order-pending-${o.id}`,'warning','กำลังตรวจสลิป',course?`${label} กำลังรอเจ้าของคอร์สตรวจ`:`${label} กำลังรอตรวจสอบ`,'/dashboard.html#orders',o.updated_at));
     else if(o.status==='awaiting_payment')items.push(notice(`order-payment-${o.id}`,'warning','ออเดอร์รอชำระเงิน',`${label} · ${o.order_no}`,'/dashboard.html#orders',o.updated_at));
-    else if(o.status==='paid')items.push(notice(`order-paid-${o.id}`,'success',course?'คอร์สพร้อมเรียนแล้ว':'สินค้าปลดล็อกแล้ว',label,course?'/my-courses.html':href,o.updated_at));
+    else if(o.status==='paid')items.push(notice(`order-paid-${o.id}`,'success',o.order_origin==='first_order_gift'?'🎁 ของฟรีเปิดบิลแรกพร้อมแล้ว':course?'คอร์สพร้อมเรียนแล้ว':'สินค้าปลดล็อกแล้ว',o.order_origin==='first_order_gift'?`${label} · ระบบมอบให้ฟรีอัตโนมัติ`:label,course?'/my-courses.html':href,o.updated_at));
   }
   for(const c of courses.results||[]){if(c.review_status==='suspended')items.push(notice(`course-suspended-${c.id}`,'danger','ตะกร้าคอร์สถูกระงับ',`${c.title}: ${c.review_note||'กรุณาติดต่อ VisionD'}`,'/course-seller.html',c.updated_at));else if(c.review_status==='changes_requested')items.push(notice(`course-changes-${c.id}`,'danger','Boss ขอให้แก้คอร์ส',`${c.title}: ${c.review_note||'กรุณาเปิดดูรายละเอียด'}`,`/course-basket-edit.html?id=${c.id}`,c.updated_at));else if(c.review_status==='pending')items.push(notice(`course-pending-${c.id}`,'warning','คอร์สรอ Boss ตรวจ',c.title,'/course-seller.html',c.updated_at));else if(c.review_status==='approved')items.push(notice(`course-approved-${c.id}`,'success','คอร์สเปิดขายแล้ว',c.title,`/product.html?slug=${c.slug||''}`,c.updated_at));
     if(c.edit_expires_at&&c.license_entitlement_id!==null){const days=Math.ceil((Date.parse(c.edit_expires_at)-Date.now())/86400000);if(days<=7)items.push(notice(`course-edit-${c.id}-${days<=0?'expired':'ending'}`,days<=0?'danger':'warning',days<=0?'หมดเวลาแก้ไขคอร์สแล้ว':`เหลือเวลาแก้ไข ${days} วัน`,c.title,`/course-basket-edit.html?id=${c.id}`,c.edit_expires_at));}

@@ -14,3 +14,10 @@ When a VisionD ZIP is received with `J` or `เจ`:
 11. If the current roadmap/marketing phase is complete, draft the next phase automatically as PROPOSED for Boss review.
 
 Data rule: aggregate/minimum necessary. Never place customer PII, slip data, secrets, tokens or API keys in roadmap/marketing/handoff files.
+
+
+## Guest identity rule
+Never collapse unauthenticated visitors into one `guest` identity. Use the platform's hashed per-browser/device visitor key. When a guest authenticates, claim prior events into the user where technically safe. Treat device/browser identity as a technical visitor, not proof of a unique natural person.
+
+## First-order gift rule
+The automatic digital gift is granted only after an authoritative paid first customer order, exactly once, from backend logic. System gift orders must be identifiable and excluded from revenue. Analyze its real conversion uplift before expanding the incentive.

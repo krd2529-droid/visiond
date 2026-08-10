@@ -21,7 +21,8 @@
     "predeploy:check": "node scripts/predeploy-check.mjs",
     "test:v01445": "node scripts/test-v01445.mjs",
     "test:v01446": "node scripts/test-v01446.mjs",
-    "test:v01447": "node scripts/test-v01447.mjs"
+    "test:v01447": "node scripts/test-v01447.mjs",
+    "test:v01448": "node scripts/test-v01448.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",
