@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "event_case": "ELON Page + Vision 7",
+  "event_case": "Vision 7 Key Center + V Easy Binding",
   "updated_at": "2026-08-10",
   "requirements": [
     {"id":"EC-V7-001","source":"1 key supports 3 concurrent devices","status":"DONE-VERIFIED","evidence":["functions/api/vision7/activate.js","scripts/test-v01451.mjs"]},
@@ -22,6 +22,13 @@
     {"id":"EC-EP-006","source":"reply sending with encrypted Page token and retry queue","status":"DONE-VERIFIED","evidence":["functions/_meta_sender.js","functions/api/internal/meta-outbox.js","migrations/0020_elon_page_outbox.sql"]},
     {"id":"EC-ADS-001","source":"Ads Center is separate from existing income dashboard","status":"DONE-VERIFIED","evidence":["public/ads-center.html","functions/api/admin/ads-center.js"]},
     {"id":"EC-ADS-002","source":"ad advice: continue, observe, adjust or stop","status":"DONE-VERIFIED","evidence":["functions/api/admin/ads-center.js","public/ads-center.js"]},
-    {"id":"EC-ADS-003","source":"production Ads API ingestion at campaign, adset and creative levels","status":"DONE-VERIFIED","evidence":["functions/_meta_ads.js","functions/api/admin/meta-ads-sync.js","public/ads-center.js","scripts/test-v01459.mjs"]}
+    {"id":"EC-ADS-003","source":"production Ads API ingestion at campaign, adset and creative levels","status":"DONE-VERIFIED","evidence":["functions/_meta_ads.js","functions/api/admin/meta-ads-sync.js","public/ads-center.js","scripts/test-v01459.mjs"]},
+    {"id":"VE-KEYCENTER-001","source":"Vision 7 keys must be issued from a visible admin center","status":"DONE-VERIFIED","evidence":["public/admin.html","public/vision7-admin.html","functions/api/admin/vision7/licenses.js","scripts/test-v01463.mjs"]},
+    {"id":"VE-AUTH-001","source":"V Easy must require VisionD user login and session ownership","status":"PENDING","evidence":[]},
+    {"id":"VE-LICENSE-001","source":"one V Easy key binds to exactly one shop","status":"PENDING","evidence":["migrations/0025_vision7_key_center.sql"]},
+    {"id":"VE-SHOP-001","source":"account key shop and Facebook Page must share one owner","status":"PENDING","evidence":[]},
+    {"id":"VE-RUNTIME-001","source":"one shop has one active bot worker and one worker per conversation","status":"PENDING","evidence":[]},
+    {"id":"VE-IDEMPOTENCY-001","source":"duplicate messages and duplicate chat orders must be blocked","status":"PENDING","evidence":[]},
+    {"id":"VE-ISOLATION-001","source":"switching accounts must never expose the previous shop chats or orders","status":"PENDING","evidence":[]}
   ]
 }

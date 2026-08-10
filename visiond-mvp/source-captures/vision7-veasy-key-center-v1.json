@@ -1,0 +1,14 @@
+{
+  "capture_id":"vision7-veasy-key-center-v1",
+  "event_case":"Vision 7 Key Center + V Easy Binding",
+  "intake_complete":true,
+  "items":[
+    {"source_id":"SRC-021","requirement_id":"VE-KEYCENTER-001","atomic":true,"text":"Vision 7 ต้องสร้างคีย์จากหลังบ้านและต้องมองเห็นระบบออกคีย์","acceptance":"Boss/Admin เข้าศูนย์ออกคีย์จาก Admin หลักและออกคีย์ได้เมื่อ Secret พร้อม"},
+    {"source_id":"SRC-022","requirement_id":"VE-AUTH-001","atomic":true,"text":"V Easy ต้องใช้ยูสเซอร์ VisionD ล็อกอินเพื่อระบุบัญชีใช้งาน","acceptance":"Session และเจ้าของคีย์ต้องเป็น user เดียวกัน"},
+    {"source_id":"SRC-023","requirement_id":"VE-LICENSE-001","atomic":true,"text":"คีย์ของ V Easy หนึ่งคีย์ใช้ได้หนึ่งร้าน","acceptance":"License Active หนึ่งรายการผูก shop ได้หนึ่งรายการเท่านั้น"},
+    {"source_id":"SRC-024","requirement_id":"VE-SHOP-001","atomic":true,"text":"บัญชี คีย์ ร้าน และเพจต้องระบุเจ้าของถูกต้อง","acceptance":"ทุก API ตรวจ owner user, license, shop และ page เป็นชุดเดียวกัน"},
+    {"source_id":"SRC-025","requirement_id":"VE-RUNTIME-001","atomic":true,"text":"ป้องกันโปรแกรมซ้อนเข้าใช้งานแชทเดิมพร้อมกัน","acceptance":"หนึ่งร้านมี active worker เดียวและหนึ่ง conversation มี lease เดียว"},
+    {"source_id":"SRC-026","requirement_id":"VE-IDEMPOTENCY-001","atomic":true,"text":"แชทเดิมห้ามตอบหรือสร้างออเดอร์ซ้ำ","acceptance":"message ID และ order idempotency key ไม่ซ้ำ"},
+    {"source_id":"SRC-027","requirement_id":"VE-ISOLATION-001","atomic":true,"text":"เปลี่ยนบัญชีแล้วห้ามเห็นแชทหรือข้อมูลร้านเดิม","acceptance":"ล้าง local state และ server scope ทุกข้อมูลด้วย session owner"}
+  ]
+}

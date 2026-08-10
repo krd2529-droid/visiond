@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.62** — large bugfix hardening for document recovery, Vision 7 device limits, Meta Webhook recovery, removal of the unused legacy Account renderer and cross-patch ledger continuity.
+Current package: **v0.14.63** — visible Vision 7 Key Center with encryption readiness, operator confirmation, V Easy program type and unbound one-key/one-shop preparation.
 
 ## ตรวจสอบก่อน Deploy
 

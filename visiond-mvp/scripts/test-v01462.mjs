@@ -9,7 +9,7 @@ const read=file=>fs.readFileSync(file,'utf8');
 const checks=[];
 const check=(name,fn)=>{try{fn();checks.push([name,true]);console.log(`PASS ${name}`)}catch(error){checks.push([name,false]);console.error(`FAIL ${name}: ${error.message}`)}};
 
-check('version v0.14.62',()=>assert.equal(read('VERSION.txt').trim(),'v0.14.62'));
+check('version v0.14.62 or newer',()=>assert.ok(Number(read('VERSION.txt').trim().split('.').pop())>=62));
 
 check('document migration preserves a recognized legacy when archive differs',()=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'visiond-doc-safety-'));
