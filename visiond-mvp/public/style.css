@@ -293,3 +293,5 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
 .site-visitor-counter{margin:14px 0 0;color:#d7fffc;font-size:13px}.site-visitor-counter b{font-size:18px;color:#fff}
 
 /* v0.13.12 category Member */
+/* v0.14.47 Product Demand Intelligence */
+.product-demand-intelligence{margin-top:16px;padding-top:14px;border-top:1px solid #dcebea}.product-demand-intelligence .muted{color:#617c79;font-size:13px}.demand-row strong{min-width:110px;text-align:right}.demand-row strong small{display:block;margin-top:4px;color:#08756f}

@@ -706,3 +706,10 @@ UPDATE users SET role='boss' WHERE lower(email)=lower('อีเมลเจ้�
 - ลด 50% สูงสุด 200 บาท เมื่อยอดสินค้าที่ร่วมรายการ 399 บาทขึ้นไป ภายใน 2 ชั่วโมง
 - ตะกร้าสิทธิ์ลงขายคอร์สออนไลน์ไม่ร่วมรายการและไม่นับยอดขั้นต่ำ
 - ELON อธิบายเงื่อนไขล่าสุดได้ แต่ส่วนลดจริงคำนวณโดยระบบออเดอร์เท่านั้น
+
+# v0.14.46 — Living Roadmap + Customer Data Protocol
+
+- เพิ่ม `VISIOND-ROADMAP.md`, `VISIOND-MARKETING-PLAN.md`, `CUSTOMER-DATA-ANALYSIS.md` และ `JARVIS-PATCH-PROTOCOL.md` ลงในแพตช์เพื่อส่งต่อบริบทงานให้ทีม J ทุกครั้ง
+- ทุกแพตช์ถัดไปต้องวิเคราะห์ข้อมูลลูกค้า/ธุรกิจแบบ aggregate เท่าที่มีจริงก่อนตัดสินใจลำดับงาน และห้ามเดาผล production เมื่อไม่มีข้อมูล
+- แยกสถานะ Implemented / Deployed / Validated เพื่อไม่ถือว่าโค้ดเสร็จเท่ากับผลธุรกิจสำเร็จ
+- หลังทุกแพตช์ต้องอัปเดต Roadmap, Marketing Plan, Data Analysis และบอกงานที่เหลือกับแพตช์ถัดไป

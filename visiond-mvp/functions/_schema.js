@@ -102,6 +102,10 @@ async function initializeDatabase(env) {
   if (!productColumns.includes('product_kind')) await env.DB.prepare("ALTER TABLE products ADD COLUMN product_kind TEXT NOT NULL DEFAULT 'product'").run();
   if (!productColumns.includes('member_category')) await env.DB.prepare("ALTER TABLE products ADD COLUMN member_category TEXT").run();
   if (!productColumns.includes('member_duration_months')) await env.DB.prepare("ALTER TABLE products ADD COLUMN member_duration_months INTEGER").run();
+  if (!productColumns.includes('inventory_origin')) await env.DB.prepare("ALTER TABLE products ADD COLUMN inventory_origin TEXT NOT NULL DEFAULT 'premade_stock'").run();
+  if (!productColumns.includes('family_key')) await env.DB.prepare("ALTER TABLE products ADD COLUMN family_key TEXT").run();
+  if (!productColumns.includes('series_no')) await env.DB.prepare("ALTER TABLE products ADD COLUMN series_no INTEGER").run();
+  if (!productColumns.includes('demand_basis')) await env.DB.prepare("ALTER TABLE products ADD COLUMN demand_basis TEXT").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_trash_expires_at ON trash_items(expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_slug_history_product ON product_slug_history(product_id)').run();

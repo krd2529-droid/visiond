@@ -19,7 +19,9 @@
     "test:mobile-frontend": "node scripts/test-mobile-frontend.mjs",
     "test:first-order-promo": "node scripts/test-first-order-promo.mjs",
     "predeploy:check": "node scripts/predeploy-check.mjs",
-    "test:v01445": "node scripts/test-v01445.mjs"
+    "test:v01445": "node scripts/test-v01445.mjs",
+    "test:v01446": "node scripts/test-v01446.mjs",
+    "test:v01447": "node scripts/test-v01447.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

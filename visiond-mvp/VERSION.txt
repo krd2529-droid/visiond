@@ -1,5 +1,1 @@
-VisionD MVP v0.14.45 — Ads Intelligence
-Add campaign/creative ad-spend tracking while preserving the legacy daily Facebook-cost dashboard
-Carry the latest safe first-party UTM attribution into authoritative backend purchase events
-Compare campaign spend with attributed paid revenue, orders, profit, and ROAS in Boss/Admin
-Keep raw customer/admin analytics outside Elon access in this patch
+v0.14.47
