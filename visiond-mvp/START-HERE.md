@@ -1,11 +1,11 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.65**
+เวอร์ชันปัจจุบัน: **v0.14.67**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
-2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.65-VEASY-SHOP-BINDING.md`
+2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.67-CONVERSATION-ISOLATION.md`
 3. Requirement ปัจจุบัน: `requirements-ledger.json`
 4. Roadmap ปัจจุบัน: `work-history/visiond/roadmap/VISIOND-ROADMAP.md`
 5. กติกาแพต: `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`

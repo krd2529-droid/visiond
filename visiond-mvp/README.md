@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.65** — V Easy one-key/one-shop binding with account, license, shop and Meta Page ownership chain.
+Current package: **v0.14.67** — post-close QA hardening that binds every V Easy conversation to its owning shop before a worker lease can be issued.
 
 ## ตรวจสอบก่อน Deploy
 

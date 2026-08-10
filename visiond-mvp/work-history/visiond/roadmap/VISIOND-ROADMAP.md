@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.65
+Current build: v0.14.67
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -31,7 +31,9 @@ Current QA-only patch: `v0.14.55` — Webhook hardening, Source-to-Ledger covera
 
 `v0.14.65 IMPLEMENTED` — ผูก V Easy 1 คีย์ต่อ 1 ร้าน พร้อมตรวจเจ้าของภายใน Account + License + Shop + Facebook Page ID และกันคีย์/Page ซ้ำด้วย Unique Constraint
 
-`v0.14.66 NEXT` — Runtime/Chat Lock, message/order idempotency และ account-switch isolation
+`v0.14.66 IMPLEMENTED` — Runtime/Chat Lock, message/order idempotency และ account-switch isolation; Event Case ฝั่ง VisionD พร้อมตรวจปิด
+
+`v0.14.67 QA HARDENED` — เพิ่มทะเบียน Conversation แยกร้าน เก็บ participant แบบ hash และห้ามออก Conversation Lease ให้รหัสแชทที่ไม่ได้อยู่ในร้าน
 
 `v0.14.64 NEXT EVENT CASE` — V Easy Account + Key Ownership: บังคับล็อกอิน VisionD, session owner ต้องตรงกับเจ้าของคีย์ และเตรียม session/device token ที่เพิกถอนได้
 
