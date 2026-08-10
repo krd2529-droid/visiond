@@ -43,7 +43,8 @@
     "test:v01460": "node scripts/test-v01460.mjs",
     "docs:history-check": "node scripts/test-v01461.mjs",
     "docs:migrate": "node scripts/migrate-document-history.mjs",
-    "test:v01461": "node scripts/test-v01461.mjs"
+    "test:v01461": "node scripts/test-v01461.mjs",
+    "test:v01462": "node scripts/test-v01462.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

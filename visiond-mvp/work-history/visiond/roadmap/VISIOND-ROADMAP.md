@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.59
+Current build: v0.14.62
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -22,6 +22,8 @@ Current QA-only patch: `v0.14.55` — Webhook hardening, Source-to-Ledger covera
 `v0.14.58 IMPLEMENTED` — PAGE_SALES Grounded AI: รับงานจาก Meta แบบ async, ตอบจากแคตตาล็อก/ราคาโปรโมชันจริง, ตรวจ slug และราคาหลัง AI ตอบ, บล็อกข้อมูลส่วนตัว/Secret/ลิงก์ และส่งผ่าน outbox ที่ retry ได้
 
 `v0.14.59 IMPLEMENTED` — Production Meta Ads API: ซิงก์ Insight รายวันระดับโฆษณาและประกบ Campaign / Ad Set / Ad / Creative, upsert กันข้อมูลซ้ำ, เก็บสถานะรอบซิงก์ และแสดง Spend / Impression / Click / CTR / ROAS ใน Ads Center โดยไม่แก้ไขโฆษณา
+
+`v0.14.62 IMPLEMENTED` — Large Bugfix: เก็บเอกสารรุ่นเก่าที่ต่างจาก archive ไว้กู้คืน, บังคับเพดานเครื่อง Vision 7 แบบ atomic, reclaim Meta Webhook ที่ค้าง, นำ Account renderer เก่าที่ไม่ใช้และเสี่ยง injection ออก และตรวจ Patch Ledger ต่อเนื่องทุกเวอร์ชัน
 
 ## Operating rule
 This file is the project handoff source of truth inside every VisionD patch. Before changing code, J must read this roadmap, the marketing plan, the latest patch note, and the available aggregate customer/business data. After each patch, J updates statuses and recommends the next patch from evidence rather than blindly following old sequencing.

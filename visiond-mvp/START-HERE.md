@@ -1,11 +1,11 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.61**
+เวอร์ชันปัจจุบัน: **v0.14.62**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
-2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.61-DOCUMENT-HISTORY-PHASE2.md`
+2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.62-LARGE-BUGFIX.md`
 3. Requirement ปัจจุบัน: `requirements-ledger.json`
 4. Roadmap ปัจจุบัน: `work-history/visiond/roadmap/VISIOND-ROADMAP.md`
 5. กติกาแพต: `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`
@@ -22,3 +22,4 @@
 
 - Phase 1: คัดลอกและตรวจความตรงกัน — เสร็จใน v0.14.60
 - Phase 2: เปลี่ยนจุดอ้างอิงและเก็บต้นฉบับออกอย่างปลอดภัย — เสร็จใน v0.14.61
+- Safety hardening: ไฟล์เก่าที่เนื้อหาต่างจะถูกเก็บใน `legacy-versions/` ห้ามลบทิ้ง — v0.14.62

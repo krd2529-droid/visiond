@@ -19,8 +19,9 @@ if (fs.existsSync(manifestPath)) {
 }
 
 const start = fs.readFileSync('START-HERE.md', 'utf8');
-if (!start.includes('work-history/visiond/patch-history/PATCH-v0.14.61-DOCUMENT-HISTORY-PHASE2.md')) fail('START-HERE does not point to latest patch');
-else pass('START-HERE points to v0.14.61');
+const latest = start.match(/PATCH ล่าสุด: `([^`]+)`/)?.[1];
+if (!latest || !fs.existsSync(latest)) fail('START-HERE does not point to an existing latest patch');
+else pass(`START-HERE points to ${latest}`);
 
 if (failed) process.exit(1);
 console.log('v0.14.61 document history Phase 2 passed');

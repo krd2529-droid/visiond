@@ -1,5 +1,7 @@
 # VisionD MVP
 
+Current package: **v0.14.62** — large bugfix hardening for document recovery, Vision 7 device limits, Meta Webhook recovery, removal of the unused legacy Account renderer and cross-patch ledger continuity.
+
 ## ตรวจสอบก่อน Deploy
 
 รัน `npm run predeploy:check` เพื่อตรวจ Cloudflare config/bindings, placeholder, migrations, Functions imports, HTML assets, cache version และ ID ซ้ำ โดยไม่อ่านหรือแสดง Secret ดูรายละเอียดใน `work-history/visiond/setup-and-operations/PREDEPLOY_CHECK.md`

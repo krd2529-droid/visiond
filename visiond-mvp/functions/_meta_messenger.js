@@ -34,10 +34,10 @@ export async function ingestMetaWebhook(env,payload){
       const sender=safe(event?.sender?.id,100),recipient=safe(event?.recipient?.id,100),messageId=safe(event?.message?.mid||event?.postback?.mid,200);
       if(!sender||!recipient||sender===recipient||event?.message?.is_echo||recipient!==expectedPage){ignored++;continue}
       const eventAt=metaEventTime(event?.timestamp),eventKey=messageId||await sha256(`${sender}|${recipient}|${event?.timestamp||0}|${JSON.stringify(event?.postback||event?.message||{}).slice(0,1000)}`);
-      const existing=await env.DB.prepare(`SELECT status FROM elon_page_webhook_events WHERE event_key=?`).bind(eventKey).first();
-      const reserved=await env.DB.prepare(`INSERT INTO elon_page_webhook_events(event_key,event_type,event_timestamp,status,attempts,last_attempt_at) VALUES(?,?,?,'processing',1,CURRENT_TIMESTAMP) ON CONFLICT(event_key) DO UPDATE SET status='processing',attempts=elon_page_webhook_events.attempts+1,last_attempt_at=CURRENT_TIMESTAMP,error_code='' WHERE elon_page_webhook_events.status='failed'`).bind(eventKey,event?.postback?'postback':'message',eventAt).run();
+      const existing=await env.DB.prepare(`SELECT status,last_attempt_at FROM elon_page_webhook_events WHERE event_key=?`).bind(eventKey).first();
+      const reserved=await env.DB.prepare(`INSERT INTO elon_page_webhook_events(event_key,event_type,event_timestamp,status,attempts,last_attempt_at) VALUES(?,?,?,'processing',1,CURRENT_TIMESTAMP) ON CONFLICT(event_key) DO UPDATE SET status='processing',attempts=elon_page_webhook_events.attempts+1,last_attempt_at=CURRENT_TIMESTAMP,error_code='' WHERE elon_page_webhook_events.status='failed' OR (elon_page_webhook_events.status='processing' AND elon_page_webhook_events.last_attempt_at<datetime('now','-5 minutes'))`).bind(eventKey,event?.postback?'postback':'message',eventAt).run();
       if(!reserved.meta?.changes){duplicates++;continue}
-      if(existing?.status==='failed')retried++;
+      if(existing?.status==='failed'||existing?.status==='processing')retried++;
       try{
         const participantHash=await sha256(`meta:${sender}`),conversationId=`ep_${participantHash.slice(0,32)}`,ciphertext=await encryptMetaParticipant(env,sender),content=safe(event?.message?.text||event?.postback?.title||event?.postback?.payload||'[ไฟล์แนบ]',2000);
         const metadata=JSON.stringify({attachments:attachmentSummary(event?.message?.attachments),quick_reply:safe(event?.message?.quick_reply?.payload,120),postback:Boolean(event?.postback),event_timestamp:eventAt}).slice(0,1500);
