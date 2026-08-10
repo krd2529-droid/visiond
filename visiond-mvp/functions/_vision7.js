@@ -14,9 +14,11 @@ export const safeDeviceName=value=>clean(value,80);
 export const safePlatform=value=>clean(value,40).toLowerCase();
 export const safeVersion=value=>/^\d+(?:\.\d+){0,3}(?:[-+][a-z0-9.-]+)?$/i.test(String(value||''))?String(value):'';
 
-export async function issueLicense(env,{userId,programId,planId=null,orderId=null,status='active',maxDevices=3,source='admin',note='',createdBy=null,expiresAt=null}={}){
+export async function issueLicense(env,{userId,programId,planId=null,orderId=null,status='active',maxDevices=3,source='admin',note='',createdBy=null,expiresAt=null,issuanceType=null,issueCost=0}={}){
   const random=crypto.getRandomValues(new Uint8Array(18)),raw=`VD7-${b64url(random).toUpperCase()}`,id=crypto.randomUUID(),hash=await hashLicenseKey(raw),ciphertext=await encryptVision7Key(env,raw),last4=raw.slice(-4);
-  await env.DB.prepare(`INSERT INTO vision7_licenses(id,key_hash,key_ciphertext,key_last4,user_id,program_id,plan_id,order_id,status,expires_at,max_devices,source,note,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,hash,ciphertext,last4,userId,programId,planId,orderId,status,expiresAt,Math.max(1,Math.min(50,Number(maxDevices)||3)),clean(source,40),clean(note,300),createdBy).run();
+  for(const sql of ["ALTER TABLE vision7_licenses ADD COLUMN issuance_type TEXT NOT NULL DEFAULT 'legacy'","ALTER TABLE vision7_licenses ADD COLUMN issue_cost INTEGER NOT NULL DEFAULT 0"])await env.DB.prepare(sql).run().catch(()=>{});
+  const kind=clean(issuanceType||(orderId?'order':'admin'),20),cost=Math.max(0,Math.round(Number(issueCost)||0));
+  await env.DB.prepare(`INSERT INTO vision7_licenses(id,key_hash,key_ciphertext,key_last4,user_id,program_id,plan_id,order_id,status,expires_at,max_devices,source,note,created_by,issuance_type,issue_cost) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,hash,ciphertext,last4,userId,programId,planId,orderId,status,expiresAt,Math.max(1,Math.min(50,Number(maxDevices)||3)),clean(source,40),clean(note,300),createdBy,kind,cost).run();
   try {
     await licenseEvent(env,id,createdBy,'issued',{source,status,max_devices:maxDevices,order_id:orderId||null});
     return {id,key:raw,key_last4:last4};

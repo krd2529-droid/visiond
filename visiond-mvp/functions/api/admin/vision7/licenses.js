@@ -23,8 +23,9 @@ export async function onRequestGet(ctx) {
   await ensureVision7KeyCenterSchema(ctx.env);
   const a = await requireAdmin(ctx);
   if (a.error) return a.error;
+  for (const sql of ["ALTER TABLE vision7_licenses ADD COLUMN issuance_type TEXT NOT NULL DEFAULT 'legacy'", "ALTER TABLE vision7_licenses ADD COLUMN issue_cost INTEGER NOT NULL DEFAULT 0"]) await ctx.env.DB.prepare(sql).run().catch(() => {});
   const rows = await ctx.env.DB.prepare(
-    `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.key_last4,l.status,l.starts_at,l.expires_at,l.renewed_at,l.max_devices,l.binding_state,l.source,l.note,l.created_at,u.name user_name,u.email,p.code program_code,p.platform_type,x.title program_title,q.name plan_name,(SELECT COUNT(*) FROM vision7_license_devices d WHERE d.license_id=l.id AND d.revoked_at IS NULL) active_devices FROM vision7_licenses l JOIN users u ON u.id=l.user_id JOIN vision7_programs p ON p.id=l.program_id LEFT JOIN products x ON x.id=p.product_id LEFT JOIN vision7_plans q ON q.id=l.plan_id ORDER BY l.created_at DESC LIMIT 500`,
+    `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.order_id,l.key_last4,l.status,l.starts_at,l.expires_at,l.renewed_at,l.max_devices,l.binding_state,l.source,l.note,l.created_at,l.issuance_type,l.issue_cost,u.name user_name,u.email,p.code program_code,p.platform_type,x.title program_title,q.name plan_name,q.duration_days,COALESCE(NULLIF(l.issue_cost,0),CASE WHEN l.order_id IS NOT NULL THEN COALESCE((SELECT oi.price FROM order_items oi WHERE oi.order_id=l.order_id AND oi.product_id=q.product_id LIMIT 1),0) WHEN l.issuance_type='test' THEN 0 ELSE COALESCE(px.price,q.price,0) END,0) display_cost,COALESCE(issuer.name,issuer.username,CASE WHEN l.order_id IS NOT NULL THEN 'ระบบ/ออเดอร์' ELSE 'ระบบ' END) issuer_name,(SELECT COUNT(*) FROM vision7_license_devices d WHERE d.license_id=l.id AND d.revoked_at IS NULL) active_devices FROM vision7_licenses l JOIN users u ON u.id=l.user_id JOIN vision7_programs p ON p.id=l.program_id LEFT JOIN products x ON x.id=p.product_id LEFT JOIN vision7_plans q ON q.id=l.plan_id LEFT JOIN products px ON px.id=q.product_id LEFT JOIN users issuer ON issuer.id=l.created_by ORDER BY l.created_at DESC`,
   ).all();
   const items = (rows.results || []).map((x) => ({
       ...x,
@@ -44,6 +45,7 @@ export async function onRequestGet(ctx) {
     };
   return json({
     encryption_ready: vision7LicenseEncryptionConfigured(ctx.env),
+    operator: { id: a.user.id, name: a.user.name || a.user.username || "Boss" },
     summary,
     items,
   });
@@ -62,9 +64,10 @@ export async function onRequestPost(ctx) {
       503,
     );
   const b = await ctx.request.json().catch(() => ({})),
-    userId = Number(b.user_id),
-    programId = Number(b.program_id),
-    planId = Number(b.plan_id) || null;
+    issuanceType = b.key_mode === "test" ? "test" : "customer",
+    userId = issuanceType === "test" ? Number(a.user.id) : Number(b.user_id),
+    programId = Number(b.program_id);
+  let planId = issuanceType === "test" ? null : Number(b.plan_id) || null;
   if (!userId || !programId)
     return json({ error: "กรุณาเลือกผู้ใช้และโปรแกรม" }, 400);
   const user = await ctx.env.DB.prepare("SELECT id FROM users WHERE id=?")
@@ -76,14 +79,20 @@ export async function onRequestPost(ctx) {
       .bind(programId)
       .first();
   if (!user || !program) return json({ error: "ไม่พบผู้ใช้หรือโปรแกรม" }, 404);
-  let expiresAt = null;
+  let expiresAt = null, issueCost = 0;
+  if (issuanceType === "test") {
+    const testDuration = String(b.test_duration || "30");
+    if (!new Set(["30", "365", "lifetime"]).has(testDuration)) return json({ error: "อายุคีย์ทดสอบไม่ถูกต้อง" }, 400);
+    if (testDuration !== "lifetime") expiresAt = sqlTime(new Date(Date.now() + Number(testDuration) * 86400000));
+  }
   if (planId) {
     const p = await ctx.env.DB.prepare(
-      "SELECT duration_days FROM vision7_plans WHERE id=? AND program_id=? AND active=1",
+      "SELECT q.duration_days,COALESCE(q.offer_price,x.price,q.price,0) issue_cost FROM vision7_plans q LEFT JOIN products x ON x.id=q.product_id WHERE q.id=? AND q.program_id=? AND q.active=1",
     )
       .bind(planId, programId)
       .first();
     if (!p) return json({ error: "ไม่พบแพ็กเกจ" }, 404);
+    issueCost = issuanceType === "test" ? 0 : Math.max(0, Math.round(Number(p.issue_cost) || 0));
     if (p.duration_days)
       expiresAt = sqlTime(
         new Date(Date.now() + Number(p.duration_days) * 86400000),
@@ -101,6 +110,8 @@ export async function onRequestPost(ctx) {
       note: text(b.note),
       createdBy: a.user.id,
       expiresAt,
+      issuanceType,
+      issueCost,
     });
     const bindingState = bindingStateForProgram(program.platform_type);
     await ctx.env.DB.prepare(

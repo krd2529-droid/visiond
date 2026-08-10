@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Vision 7 Control</title>
-    <link rel="stylesheet" href="/vision7.css?v=014105" />
+    <link rel="stylesheet" href="/vision7.css?v=014108" />
   </head>
   <body class="v7-admin">
     <header class="top">
@@ -37,7 +37,7 @@
           <div id="programs"></div>
         </article>
         <article id="licenseWorkspace" class="card license-panel">
-          <header class="card-heading"><div><small>STEP 2</small><h2>จัดการคีย์</h2></div></header>
+          <header class="card-heading"><div><small>STEP 2</small><h2>ทุกคีย์ในระบบ</h2><p class="muted">เรียงจากคีย์ที่ออกล่าสุด</p></div></header>
           <label class="search-label" for="licenseSearch">ค้นหาคีย์</label><input
             id="licenseSearch"
             type="search"
@@ -85,56 +85,50 @@
         </details>
       </section>
     </main>
-    <dialog id="programDialog" aria-labelledby="programDialogTitle">
-      <form id="programForm">
-        <h2 id="programDialogTitle">เพิ่มโปรแกรม</h2>
-        <label>รหัสโปรแกรม (Program Code)<input name="code" required maxlength="50" pattern="[a-z0-9_-]+" placeholder="เช่น veasy หรือ vision-bridge" autocomplete="off" autocapitalize="none" spellcheck="false" /><small>รหัสภายในและ API · ใช้อักษรอังกฤษเล็ก ตัวเลข - หรือ _ · ห้ามซ้ำ</small></label
-        ><label>สินค้าหลักของโปรแกรม (ไม่บังคับ)<select name="product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>ใช้ดึงชื่อและรูปมาแสดงเท่านั้น · ไม่ใช่ตะกร้าที่ใช้ออกคีย์อัตโนมัติ</small></label
-        ><label
-          >แพลตฟอร์ม<select name="platform_type">
-            <option value="windows">Windows</option>
-            <option value="mac">macOS</option>
-            <option value="web">Web</option>
-            <option value="cross-platform">Cross-platform</option>
-            <option value="veasy">V Easy · 1 คีย์ต่อ 1 ร้าน</option>
-          </select><small id="platformHelp">โปรแกรมติดตั้งบน Windows</small></label
-        ><label>เวอร์ชันเริ่มต้น<input name="current_version" value="1.0.0" required maxlength="40" pattern="[0-9]+(\.[0-9]+){0,3}([+-][A-Za-z0-9.-]+)?" placeholder="เช่น 1.0.0" spellcheck="false" /><small>รองรับ เช่น 1.0, 1.0.0 หรือ 1.0.0-beta.1</small></label>
-        <fieldset class="package-fieldset"><legend>เชื่อมตะกร้าสินค้ากับอายุคีย์</legend><p class="muted package-intro">เมื่อลูกค้าชำระตะกร้าที่เลือกสำเร็จ ระบบจะออกหรือต่ออายุคีย์อัตโนมัติ · เว้นว่างได้หากออกคีย์โดยแอดมินเท่านั้น</p>
-        <div class="package-grid"><label>แพ็กเกจตลอดชีพ<select name="lifetime_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>คีย์ไม่มีวันหมดอายุ</small></label
-        ><label>แพ็กเกจรายเดือน<select name="monthly_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>อายุคีย์ 30 วันต่อการซื้อหรือต่ออายุ 1 ครั้ง</small></label
-        ><label>แพ็กเกจรายปี<select name="yearly_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>อายุคีย์ 365 วันต่อการซื้อหรือต่ออายุ 1 ครั้ง</small></label></div></fieldset>
-        <div id="programPreview" class="program-preview" aria-live="polite">ยังไม่ได้ผูกตะกร้าขาย · แอดมินยังออกคีย์ทั้ง 3 แบบได้</div>
+    <dialog id="programDialog" class="app-builder-dialog" aria-labelledby="programDialogTitle" aria-describedby="programDialogIntro">
+      <form id="programForm" enctype="multipart/form-data">
+        <header class="app-builder-heading"><div><small>VBOT APP BUILDER · สร้างฟรี</small><h2 id="programDialogTitle">สร้างแอปพร้อมขาย</h2><p id="programDialogIntro">สร้างแอปได้ฟรี ใส่ข้อมูลครั้งเดียว ระบบจะเตรียมแพ็กเกจคีย์และไฟล์ให้พร้อมใช้งาน</p></div><button type="button" class="dialog-close" data-close="programDialog" aria-label="ปิด">×</button></header>
+        <section class="app-builder-section" aria-labelledby="appInfoTitle">
+          <h3 id="appInfoTitle"><span>1</span> ข้อมูลแอป</h3>
+          <label>ชื่อแอปที่ลูกค้าเห็น<input name="name" required maxlength="120" placeholder="เช่น V Easy ผู้ช่วยขายร้านค้า" autocomplete="off" /><small>ระบบจะสร้างรหัสแอปให้อัตโนมัติ</small></label><input name="code" type="hidden" />
+          <label>รายละเอียดแอป<textarea name="description" required maxlength="2000" rows="4" placeholder="บอกว่าแอปช่วยลูกค้าทำอะไร และเหมาะกับใคร"></textarea></label>
+          <div class="app-builder-grid"><label>รูปปกแอป<input name="cover" type="file" accept="image/png,image/jpeg,image/webp" required /><small>PNG, JPG หรือ WebP · แนะนำภาพสี่เหลี่ยม 1200 × 1200 px</small></label><label>ไฟล์ติดตั้ง<input name="installer" type="file" accept=".apk,.aab,.exe,.msi,.dmg,.pkg,.zip,application/vnd.android.package-archive" required /><small>APK หรือไฟล์ติดตั้ง ไม่เกิน 95 MB</small></label></div>
+          <div class="app-builder-grid"><label>แพลตฟอร์ม<select name="platform_type" required><option value="android">VBot · Android APK</option><option value="veasy">V Easy · 1 คีย์ = 1 ร้าน</option><option value="windows">Windows</option><option value="mac">macOS</option><option value="web">Web</option><option value="cross-platform">หลายแพลตฟอร์ม</option></select><small id="platformHelp">แอป VBot สำหรับติดตั้งบน Android</small></label><label>เวอร์ชันเริ่มต้น<input name="current_version" value="1.0.0" required maxlength="40" pattern="[0-9]+(\.[0-9]+){0,3}([+-][A-Za-z0-9.-]+)?" inputmode="decimal" spellcheck="false" /><small>เช่น 1.0.0</small></label></div>
+        </section>
+        <fieldset class="app-builder-section price-builder"><legend><span>2</span> ราคาและอายุคีย์</legend><p>กรอกเฉพาะแบบที่ต้องการขาย หากเว้นว่างทั้งหมด แอปจะถูกเก็บเป็นร่าง</p>
+          <div class="package-grid"><label>คีย์ 30 วัน<div class="price-input"><input name="price_30d" type="number" min="1" step="1" inputmode="numeric" placeholder="ว่าง = ไม่ขาย" /><span>บาท</span></div></label><label>คีย์ 1 ปี<div class="price-input"><input name="price_1y" type="number" min="1" step="1" inputmode="numeric" placeholder="ว่าง = ไม่ขาย" /><span>บาท</span></div></label><label>คีย์ตลอดชีพ<div class="price-input"><input name="price_lifetime" type="number" min="1" step="1" inputmode="numeric" placeholder="ว่าง = ไม่ขาย" /><span>บาท</span></div></label></div>
+        </fieldset>
+        <div id="programPreview" class="program-preview" aria-live="polite">เว้นราคาทั้งหมดเพื่อบันทึกเป็นร่าง หรือใส่ราคาอย่างน้อย 1 แบบเพื่อเปิดขาย</div>
         <p id="programState" class="muted" role="status" aria-live="polite"></p>
-        <button id="retryProductOptions" type="button" class="secondary-action" hidden>ลองโหลดรายการสินค้าใหม่</button>
-        <button type="button" data-close="programDialog">ยกเลิก</button
-        ><button id="saveProgram" type="submit">สร้างโปรแกรมและแพ็กเกจ</button>
+        <footer class="dialog-actions"><button type="button" class="secondary-action" data-close="programDialog">ยกเลิก</button><button id="saveProgram" type="submit">สร้างแอป VBot ฟรี</button></footer>
       </form>
     </dialog>
     <dialog id="keyDialog" aria-labelledby="keyDialogTitle">
       <form id="keyForm">
         <h2 id="keyDialogTitle">ออกคีย์ใหม่</h2>
-        <label
+        <label>ประเภทคีย์<select name="key_mode" id="keyMode"><option value="test">คีย์ทดสอบ — ไม่มีค่าใช้จ่าย</option><option value="customer">คีย์ลูกค้า — คิดราคาตามแพ็กเกจ</option></select></label>
+        <div id="keyCustomerFields" hidden><label
           >ค้นหาลูกค้า<input
             id="userSearch"
             placeholder="ชื่อ อีเมล หรือเบอร์" /></label
         ><label
           >ลูกค้า<select name="user_id" id="keyUser" required></select></label
-        ><label
+        ></div><label
           >โปรแกรม<select
             name="program_id"
             id="keyProgram"
             required
-          ></select></label
-        ><label>ประเภทคีย์<select name="key_mode" id="keyMode"><option value="test">คีย์ทดสอบ — ไม่มีค่าใช้จ่าย</option><option value="customer">คีย์ลูกค้า — คิดราคาตามแพ็กเกจ</option></select></label
-        ><label
+          ></select></label>
+        <label id="testDurationField">อายุคีย์ทดสอบ<select name="test_duration" id="testDuration"><option value="30">30 วัน</option><option value="365">1 ปี</option><option value="lifetime">ตลอดอายุ</option></select></label>
+        <label id="keyPackageField" hidden
           >แพ็กเกจ<select name="plan_id" id="keyPlan">
             <option value="">ไม่กำหนด</option>
           </select></label
         >
-        <p id="keyCostSummary" class="program-preview" role="status">คีย์ทดสอบ · ไม่มีค่าใช้จ่าย</p>
-        <p id="keyBindingPreview" class="notice" hidden></p>
+        <p id="keyCostSummary" class="key-info" role="status">คีย์ทดสอบ · ไม่มีค่าใช้จ่าย</p>
+        <p id="keyBindingPreview" class="key-info" hidden></p>
         <label>หมายเหตุ<input name="note" maxlength="300" /></label>
-        <p id="issuedKey" class="notice" hidden></p>
+        <p id="issuedKey" class="key-success" hidden></p>
         <button type="button" data-close="keyDialog">ยกเลิก</button
         ><button id="issueKeySubmit" type="submit">ออกคีย์</button>
       </form>
@@ -146,6 +140,6 @@
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js?v=014105" type="module"></script>
+    <script src="/vision7-admin.js?v=014108" type="module"></script>
   </body>
 </html>

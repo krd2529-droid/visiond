@@ -5,6 +5,16 @@ export async function ensureVEasyShopSchema(env){
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS veasy_shops (id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,license_id TEXT NOT NULL UNIQUE,name TEXT NOT NULL,meta_page_id TEXT NOT NULL UNIQUE,meta_page_name TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'active',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(license_id) REFERENCES vision7_licenses(id) ON DELETE RESTRICT,CHECK(status IN ('active','suspended','disconnected')))`).run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_veasy_shop_owner ON veasy_shops(user_id,status,updated_at DESC)').run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_veasy_shop_owner_chain ON veasy_shops(id,user_id,license_id,meta_page_id)').run();
+  await env.DB.prepare(`CREATE TRIGGER IF NOT EXISTS trg_veasy_shop_license_platform_insert BEFORE INSERT ON veasy_shops
+    WHEN NOT EXISTS(
+      SELECT 1 FROM vision7_licenses l JOIN vision7_programs p ON p.id=l.program_id
+      WHERE l.id=NEW.license_id AND l.user_id=NEW.user_id AND lower(p.platform_type)='veasy'
+    ) BEGIN SELECT RAISE(ABORT,'VEASY_LICENSE_REQUIRED'); END`).run();
+  await env.DB.prepare(`CREATE TRIGGER IF NOT EXISTS trg_veasy_shop_license_platform_update BEFORE UPDATE OF license_id,user_id ON veasy_shops
+    WHEN NOT EXISTS(
+      SELECT 1 FROM vision7_licenses l JOIN vision7_programs p ON p.id=l.program_id
+      WHERE l.id=NEW.license_id AND l.user_id=NEW.user_id AND lower(p.platform_type)='veasy'
+    ) BEGIN SELECT RAISE(ABORT,'VEASY_LICENSE_REQUIRED'); END`).run();
   const columns=(await env.DB.prepare('PRAGMA table_info(veasy_shops)').all()).results||[];
   if(!columns.some(column=>column.name==='plan_limit'))await env.DB.prepare('ALTER TABLE veasy_shops ADD COLUMN plan_limit INTEGER NOT NULL DEFAULT 20').run();
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS veasy_categories (id TEXT PRIMARY KEY,shop_id TEXT NOT NULL,name TEXT NOT NULL,slug TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(shop_id) REFERENCES veasy_shops(id) ON DELETE CASCADE,UNIQUE(shop_id,slug))`).run();

@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
-Updated: 2026-08-10
-Current build: v0.14.105
+Updated: 2026-08-11
+Current build: v0.14.108
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -46,6 +46,16 @@ Status: `IMPLEMENTED` = code exists, `DEPLOYED` = production deploy confirmed, `
 
 ## North star
 Build VisionD into a low-manual-work digital commerce platform where products/courses can be published, sold, paid, delivered, measured, and improved from customer behavior data.
+
+## Permanent VBot Marketplace Roadmap
+
+1. IMPLEMENTED v0.14.108 — Free app draft foundation: one multipart form creates app identity, cover, first installer release and three duration plans. The installer is free to download; customers pay for keys. Blank offer prices remain `NULL` in satang and customer offers must be positive; creation never consumes Vision 5 rights or credits. One-key-one-shop binding applies only to V Easy.
+2. NEXT — Storefront basket: publish only explicitly enabled offers with a valid positive price and downloadable release. A draft, `NULL` price and zero price must never become the same state.
+3. NEXT — Paid entitlement: a paid order grants the matching customer download and issues exactly one key per purchased quantity, idempotently.
+4. NEXT — Key ledger: keep test keys and customer keys visibly separate while all issued keys remain auditable in the existing Vision 7 ledger.
+5. NEXT — Marketplace QA: test duplicate submit, partial D1/R2 failure, missing/unsupported files, stale release, expired/suspended key, refund/revoke policy, cross-account access and Android/mobile flow.
+
+Compatibility rule: extend the existing Vision 7 Program → Plan → Release → License chain. Do not create a parallel VBot key engine and do not repurpose `vision7_plans.price`; marketplace selling price is the nullable `offer_price` field.
 
 ## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
 
@@ -180,6 +190,9 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.108 VBot Marketplace Foundation: Boss สร้างร่างแอปฟรีจากชื่อ รายละเอียด ปก ตัวติดตั้ง แพลตฟอร์มและเวอร์ชัน; ราคาเสนอขายคีย์แต่ละอายุเว้นว่างเป็น NULL ได้; ใช้ Program/Plan/Release/License เดิมและล้างงานค้างเมื่อสร้างไม่สำเร็จ. ขั้นถัดไปคือ storefront basket, paid entitlement/download และ key fulfillment โดยห้ามเปิดขายร่างที่ยังไม่มีราคา.
+- IMPLEMENTED — v0.14.107 Key Mode Clarity: คีย์ทดสอบเหลือเพียงแอปและอายุ 30 วัน/1 ปี/ตลอดอายุโดยใช้บัญชี Boss อัตโนมัติ; คีย์ลูกค้าจึงค่อยแสดงลูกค้า แพ็กเกจและราคา; ข้อมูลปกติไม่ใช้กล่องเหลือง.
+- IMPLEMENTED — v0.14.106 Complete License Ledger: ตารางทุกคีย์เรียง ลูกค้า → แอป/เลขคีย์ → แพ็กเกจ/อายุ → ค่าใช้จ่าย → วันที่ออก → ผู้ออก → สถานะ → จัดการ, เก็บต้นทุน ณ วันออก และคีย์ทดสอบข้อมูลไม่ครบยังทำงานได้.
 - IMPLEMENTED — v0.14.105 Vision 7 Manual Key Hotfix: เพิ่มแอปได้แม้รายการสินค้าหรือ API ส่วนอื่นโหลดพัง, Product ID ว่างทั้งสามแพ็กเกจได้, มีปุ่มลองใหม่ และออกคีย์แบบ “คีย์ทดสอบไม่มีค่าใช้จ่าย” หรือ “คีย์ลูกค้าแสดงราคาตามแพ็กเกจ”.
 - IMPLEMENTED — v0.14.104 Vision 7 Guided Control: หลังบ้านแสดงลำดับ เพิ่มโปรแกรม → ออกคีย์ทดสอบ → เผยแพร่ตัวติดตั้ง, มี empty state ที่บอกงานถัดไป, ปุ่มรายโปรแกรม, ตัวกรองคีย์จริง และพับแบบฟอร์ม APK ไว้จนกว่าจะใช้งาน.
 - IMPLEMENTED — v0.14.103 Deep Frontend Parity: ลูกศรแคตตาล็อก Tiffany 44px, วลีลดเหลือ 499 บาทสีแดงทั้งชุด และหน้าลึก Digital Products/Product/Bots ผูก Header, GIF, chat และ Boss mobile preview เป็น contract ถาวร.

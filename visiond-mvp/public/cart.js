@@ -1,6 +1,6 @@
-import("/facebook-chat.js?v=014105");
+import("/facebook-chat.js?v=014108");
 const bundlePromoImage=document.querySelector('.cart-promo-gif');if(bundlePromoImage){bundlePromoImage.src=`/assets/visiond-bundle-promo.gif?motion=${Date.now()}`;bundlePromoImage.classList.add('cart-promo-banner')}
-if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014105">');
+if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014108">');
 if(!document.querySelector('#rights-quantity-style'))document.head.insertAdjacentHTML('beforeend','<style id="rights-quantity-style">.rights-quantity{display:grid;gap:4px;color:#315f5b;font-size:11px;font-weight:900}.rights-quantity input{width:76px;padding:8px;border:1px solid #39aaa4;border-radius:8px;text-align:center;font-weight:900}</style>');
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
@@ -294,4 +294,4 @@ async function removeUnavailableCartItems() {
 }
 render();
 (async()=>{await removeUnavailableCartItems();await refreshCartPrices()})();
-import("/nav-account.js?v=014105").then((module) => module.initAccountNav());
+import("/nav-account.js?v=014108").then((module) => module.initAccountNav());

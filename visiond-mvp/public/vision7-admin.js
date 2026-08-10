@@ -40,13 +40,17 @@ const esc = (s) =>
   releaseDetails = document.querySelector("#releaseDetails");
 const programPreview = document.querySelector("#programPreview"),
   platformHelp = document.querySelector("#platformHelp"),
-  retryProductOptions = document.querySelector("#retryProductOptions"),
   keyMode = document.querySelector("#keyMode"),
-  keyCostSummary = document.querySelector("#keyCostSummary");
+  keyCostSummary = document.querySelector("#keyCostSummary"),
+  keyCustomerFields = document.querySelector("#keyCustomerFields"),
+  keyPackageField = document.querySelector("#keyPackageField"),
+  testDurationField = document.querySelector("#testDurationField"),
+  testDuration = document.querySelector("#testDuration");
 let programs = [],
   users = [],
   encryptionReady = false,
-  licenseFilter = "all";
+  licenseFilter = "all",
+  operatorUserId = 0;
 window.__licenses = [];
 const plans = (p) => {
   try {
@@ -73,7 +77,7 @@ function planOptions() {
       .filter((x) => x.active !== 0)
       .map(
         (x) =>
-          `<option value="${x.id}">${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}${x.product_price != null ? ` · ${Number(x.product_price).toLocaleString("th-TH")} บาท` : " · ยังไม่มีราคาขาย"}</option>`,
+          `<option value="${x.id}">${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}${x.offer_price != null ? ` · ${(Number(x.offer_price)/100).toLocaleString("th-TH")} บาท` : " · ยังไม่มีราคาขาย"}</option>`,
       )
       .join("");
   const veasy = program?.platform_type === "veasy";
@@ -90,7 +94,17 @@ function updateKeyCost() {
   }
   const program = programs.find((x) => Number(x.id) === Number(keyProgram.value));
   const plan = plans(program || {}).find((x) => Number(x.id) === Number(keyPlan.value));
-  keyCostSummary.textContent = !plan ? "กรุณาเลือกแพ็กเกจเพื่อดูค่าใช้จ่าย" : plan.product_price != null ? `ค่าใช้จ่าย ${Number(plan.product_price).toLocaleString("th-TH")} บาท · ${plan.name}` : `${plan.name} · ยังไม่ได้กำหนดราคาขาย`;
+  keyCostSummary.textContent = !plan ? "กรุณาเลือกแพ็กเกจเพื่อดูค่าใช้จ่าย" : plan.offer_price != null ? `ค่าใช้จ่าย ${(Number(plan.offer_price)/100).toLocaleString("th-TH")} บาท · ${plan.name}` : `${plan.name} · ยังไม่ได้กำหนดราคาขาย`;
+}
+function syncKeyMode() {
+  const testMode = keyMode.value === "test";
+  keyCustomerFields.hidden = testMode;
+  keyPackageField.hidden = testMode;
+  testDurationField.hidden = !testMode;
+  keyUser.required = !testMode;
+  keyPlan.required = !testMode;
+  if (testMode && operatorUserId) keyUser.value = String(operatorUserId);
+  updateKeyCost();
 }
 function userOptions(q = "") {
   const needle = q.trim().toLowerCase();
@@ -117,20 +131,16 @@ function renderLicenses() {
     (licenseFilter === "expired" && effectiveStatus(x) === "expired") ||
     (licenseFilter === "unbound" && x.platform_type === "veasy" && x.binding_state === "unbound") ||
     (licenseFilter === "devices" && Number(x.active_devices) > 0);
-  licensesEl.innerHTML =
-    window.__licenses
-      .filter(
+  const filtered = window.__licenses.filter(
         (x) =>
           matchesFilter(x) && (!q ||
           `${x.user_name} ${x.email} ${x.program_title} ${x.program_code} ${x.key_last4}`
             .toLowerCase()
             .includes(q)),
-      )
-      .map(
-        (x) =>
-          `<section class="license-row"><div><b>${esc(x.user_name)}</b> · ${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title || x.program_code)}<br><code>${esc(x.key_masked)}</code> · <span class="status">${esc(effectiveStatus(x))}</span> · ${Number(x.active_devices)}/${Number(x.max_devices) || 3} เครื่อง<br><small>${esc(x.plan_name || "ไม่กำหนดแพ็กเกจ")} · หมดอายุ ${esc(x.expires_at || "ไม่หมดอายุ")}</small>${x.platform_type === "veasy" && x.binding_state === "unbound" ? '<br><span class="binding-unbound">รอผูกร้าน · 1 คีย์ต่อ 1 ร้าน</span>' : ""}</div><div class="bar"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended" ? `<button data-status="active" data-id="${x.id}">เปิดคืน</button>` : `<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></section>`,
-      )
-      .join("") || '<p class="muted">ไม่พบคีย์</p>';
+      );
+  const ageLabel = (x) => { let days=x.duration_days;if(x.issuance_type==="test"&&x.expires_at&&x.starts_at)days=Math.round((Date.parse(String(x.expires_at).replace(" ","T")+"Z")-Date.parse(String(x.starts_at).replace(" ","T")+"Z"))/86400000);return days==null?"ตลอดอายุ":Number(days)===30?"30 วัน":Number(days)===365?"1 ปี":`${Number(days)} วัน`;};
+  const dateLabel = (value) => value ? new Intl.DateTimeFormat("th-TH",{dateStyle:"short",timeStyle:"short"}).format(new Date(String(value).replace(" ","T")+"Z")) : "-";
+  licensesEl.innerHTML = filtered.length ? `<div class="license-table-wrap"><table class="license-table"><thead><tr><th>ลูกค้า</th><th>แอป / เลขคีย์</th><th>แพ็กเกจ / อายุคีย์</th><th>ค่าใช้จ่าย</th><th>วันที่ออก</th><th>ผู้ออก</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${filtered.map((x)=>`<tr><td><b>#${Number(x.user_id)}</b><br>${esc(x.user_name)}<br><small>${esc(x.email||"")}</small></td><td><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title||x.program_code)}</b><br><code>${esc(x.key_masked)}</code></td><td>${esc(x.plan_name||"ไม่กำหนดแพ็กเกจ")}<br><b>${ageLabel(x)}</b></td><td><b>${Number(x.display_cost||0).toLocaleString("th-TH")} บาท</b><br><small>${x.issuance_type === "test" ? "คีย์ทดสอบ" : x.order_id ? "จากออเดอร์" : "คีย์ลูกค้า"}</small></td><td>${dateLabel(x.created_at)}</td><td>${esc(x.issuer_name||"ระบบ")}</td><td><span class="status">${esc(effectiveStatus(x))}</span><br><small>${Number(x.active_devices)}/${Number(x.max_devices)||3} เครื่อง</small>${x.platform_type === "veasy"&&x.binding_state === "unbound"?'<br><span class="binding-unbound">รอผูกร้าน</span>':""}</td><td><div class="license-actions"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended"?`<button data-status="active" data-id="${x.id}">เปิดคืน</button>`:`<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">ไม่พบคีย์</p>';
   bindLicenseActions();
 }
 let productOptions = [];
@@ -140,7 +150,8 @@ function productLabel(x) {
   return `#${x.id} · ${x.title} · ${x.slug} · ${price} · ${status}${x.binding_program ? ` · ใช้แล้วกับ ${x.binding_program}` : ""}`;
 }
 function fillProductSelects(available = true) {
-  document.querySelectorAll("[data-product-select]").forEach((select) => {
+  const selects = document.querySelectorAll("[data-product-select]");
+  selects.forEach((select) => {
     const chosen = select.value;
     select.replaceChildren(new Option("— ไม่ผูกตะกร้าสินค้า —", ""));
     productOptions.forEach((x) => {
@@ -151,8 +162,8 @@ function fillProductSelects(available = true) {
     select.value = available ? chosen : "";
     select.disabled = !available;
   });
+  if (!selects.length) return;
   saveProgram.disabled = false;
-  retryProductOptions.hidden = available;
   if (available) {
     if (programState.textContent.includes("โหลดรายการสินค้า")) programState.textContent = "";
     programPreview.textContent = "ยังไม่ได้ผูกตะกร้าขาย · แอดมินยังออกคีย์ทั้ง 3 แบบได้";
@@ -206,6 +217,7 @@ async function load() {
   const rd = releaseResult.status === "fulfilled" ? releaseResult.value : {items:[]};
   const ud = userResult.status === "fulfilled" ? userResult.value : {items:[]};
   users = Array.isArray(ud.items) ? ud.items : [];
+  operatorUserId = Number(ld.operator?.id) || 0;
   window.__licenses = Array.isArray(ld.items) ? ld.items : [];
   encryptionReady = ld.encryption_ready === true;
   encryptionState.className = `key-center-state ${encryptionReady ? "ready" : "blocked"}`;
@@ -239,7 +251,9 @@ async function load() {
   programOptions(releaseProgram);
   programOptions(keyProgram);
   userOptions();
+  syncKeyMode();
   planOptions();
+  syncKeyMode();
   const hasPrograms = programs.length > 0;
   newProgram.textContent = hasPrograms ? "＋ เพิ่มโปรแกรม" : "＋ เพิ่มโปรแกรมแรก";
   newKey.toggleAttribute("disabled", !hasPrograms);
@@ -333,12 +347,14 @@ async function showHistory(id) {
   historyDialog.showModal();
 }
 function openProgramDialog() {
+  programForm.reset();
   programState.textContent = "";
   programState.className = "muted";
+  programPreview.textContent = "เว้นราคาทั้งหมดเพื่อบันทึกเป็นร่าง หรือใส่ราคาอย่างน้อย 1 แบบเพื่อเปิดขาย";
   programDialog.showModal();
   const platform = programForm.elements.platform_type.value;
-  platformHelp.textContent = ({windows:"โปรแกรมติดตั้งบน Windows",mac:"โปรแกรมติดตั้งบน macOS",web:"ใช้งานผ่านเว็บเบราว์เซอร์","cross-platform":"ไฟล์หรือบัญชีเดียวรองรับหลายระบบ",veasy:"APK กลาง ไม่ฝังคีย์ · ลูกค้ากรอกคีย์ใน Settings · 1 คีย์ต่อ 1 ร้าน"})[platform];
-  programForm.elements.code.focus();
+  platformHelp.textContent = ({android:"แอป VBot สำหรับติดตั้งบน Android",windows:"โปรแกรมติดตั้งบน Windows",mac:"โปรแกรมติดตั้งบน macOS",web:"ใช้งานผ่านเว็บเบราว์เซอร์","cross-platform":"ไฟล์หรือบัญชีเดียวรองรับหลายระบบ",veasy:"V Easy · 1 คีย์ = 1 ร้าน · ลูกค้ากรอกคีย์ใน Settings"})[platform];
+  programForm.elements.name.focus();
 }
 function openKeyDialog(programId) {
   if (!encryptionReady)
@@ -355,7 +371,6 @@ function openKeyDialog(programId) {
 newProgram.onclick = openProgramDialog;
 document.querySelectorAll("[data-open-program]").forEach((x)=>x.onclick=openProgramDialog);
 newKey.onclick = () => openKeyDialog();
-retryProductOptions.onclick = () => { retryProductOptions.disabled = true; load().finally(()=>{retryProductOptions.disabled=false;}); };
 releaseDetails.querySelector("summary").addEventListener("click", (event) => {
   if (releaseDetails.dataset.blocked === "true") {
     event.preventDefault();
@@ -364,7 +379,8 @@ releaseDetails.querySelector("summary").addEventListener("click", (event) => {
 });
 keyProgram.onchange = planOptions;
 keyPlan.onchange = updateKeyCost;
-keyMode.onchange = updateKeyCost;
+keyMode.onchange = syncKeyMode;
+testDuration.onchange = updateKeyCost;
 userSearch.oninput = () => userOptions(userSearch.value);
 licenseSearch.oninput = renderLicenses;
 document
@@ -375,57 +391,66 @@ document
   );
 programForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (!programForm.reportValidity() || !validateProductChoices()) return;
+  if (!programForm.reportValidity()) return;
+  const installer = programForm.elements.installer.files[0];
+  const cover = programForm.elements.cover.files[0];
+  if (cover && cover.size > 5 * 1024 * 1024) {
+    programState.className = "muted error";
+    programState.textContent = "รูปปกต้องไม่เกิน 5 MB";
+    programForm.elements.cover.focus();
+    return;
+  }
+  if (installer && installer.size > 95 * 1024 * 1024) {
+    programState.className = "muted error";
+    programState.textContent = "ไฟล์ติดตั้งต้องไม่เกิน 95 MB";
+    programForm.elements.installer.focus();
+    return;
+  }
   saveProgram.disabled = true;
   programState.className = "muted";
-  programState.textContent = "กำลังสร้างโปรแกรม…";
-  const f = new FormData(programForm),
-    b = Object.fromEntries(f);
-  if (!retryProductOptions.hidden) b.product_id = "";
-  b.plans = [
-    {
-      plan_code: "lifetime",
-      name: "ตลอดชีพ",
-      price: 0,
-      product_id: b.lifetime_product_id,
-    },
-    {
-      plan_code: "monthly",
-      name: "รายเดือน",
-      price: 0,
-      product_id: b.monthly_product_id,
-    },
-    {
-      plan_code: "yearly",
-      name: "รายปี",
-      price: 0,
-      product_id: b.yearly_product_id,
-    },
-  ];
-  if (!retryProductOptions.hidden) b.plans.forEach((plan) => { plan.product_id = ""; });
+  programState.textContent = "กำลังสร้างแอป ตะกร้าขาย และไฟล์เวอร์ชันแรก…";
+  const body = new FormData(programForm);
+  const appCode = `vbot-${Date.now().toString(36)}`;
+  const prices = {
+    monthly: body.get("price_30d"),
+    yearly: body.get("price_1y"),
+    lifetime: body.get("price_lifetime"),
+  };
+  const hasOffer = Object.values(prices).some(Boolean);
+  body.set("code", appCode);
+  body.set("plans", JSON.stringify([
+    { plan_code:"monthly", name:"คีย์ 30 วัน", price:prices.monthly || null },
+    { plan_code:"yearly", name:"คีย์ 1 ปี", price:prices.yearly || null },
+    { plan_code:"lifetime", name:"คีย์ตลอดชีพ", price:prices.lifetime || null },
+  ]));
+  body.delete("price_30d");
+  body.delete("price_1y");
+  body.delete("price_lifetime");
   try {
     const r = await fetch("/api/admin/vision7/programs", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(b),
+        body,
       }),
       d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || `สร้างโปรแกรมไม่สำเร็จ (${r.status})`);
-    programState.textContent = "สร้างโปรแกรมแล้ว";
+    if (!r.ok) throw new Error(d.error || `สร้างแอปไม่สำเร็จ (${r.status})`);
+    programState.textContent = hasOffer ? "สร้างแอปและเตรียมแพ็กเกจขายแล้ว" : "บันทึกแอปเป็นร่างแล้ว";
     programForm.reset();
     programDialog.close();
     await load();
   } catch (error) {
     programState.className = "muted error";
-    programState.textContent = error.message || "สร้างโปรแกรมไม่สำเร็จ";
+    programState.textContent = error.message || "สร้างแอปไม่สำเร็จ";
   } finally {
     saveProgram.disabled = false;
   }
 };
-programForm.querySelectorAll("[data-product-select]").forEach((x) => x.addEventListener("change", validateProductChoices));
 programForm.elements.platform_type.addEventListener("change", (e) => {
-  platformHelp.textContent = ({windows:"โปรแกรมติดตั้งบน Windows",mac:"โปรแกรมติดตั้งบน macOS",web:"ใช้งานผ่านเว็บเบราว์เซอร์","cross-platform":"ไฟล์หรือบัญชีเดียวรองรับหลายระบบ",veasy:"APK กลาง ไม่ฝังคีย์ · ลูกค้ากรอกคีย์ใน Settings · 1 คีย์ต่อ 1 ร้าน"})[e.target.value];
+  platformHelp.textContent = ({android:"แอป VBot สำหรับติดตั้งบน Android",windows:"โปรแกรมติดตั้งบน Windows",mac:"โปรแกรมติดตั้งบน macOS",web:"ใช้งานผ่านเว็บเบราว์เซอร์","cross-platform":"ไฟล์หรือบัญชีเดียวรองรับหลายระบบ",veasy:"V Easy · 1 คีย์ = 1 ร้าน · ลูกค้ากรอกคีย์ใน Settings"})[e.target.value];
 });
+programForm.querySelectorAll('[name^="price_"]').forEach((input) => input.addEventListener("input", () => {
+  const selected = [...programForm.querySelectorAll('[name^="price_"]')].filter((x) => x.value).map((x) => ({price_30d:"30 วัน",price_1y:"1 ปี",price_lifetime:"ตลอดชีพ"})[x.name]);
+  programPreview.textContent = selected.length ? `พร้อมสร้างตะกร้าขาย: ${selected.join(" · ")}` : "เว้นราคาทั้งหมดเพื่อบันทึกเป็นร่าง หรือใส่ราคาอย่างน้อย 1 แบบเพื่อเปิดขาย";
+}));
 keyForm.onsubmit = async (e) => {
   e.preventDefault();
   if (keyMode.value === "customer" && !keyPlan.value) return alert("คีย์ลูกค้าต้องเลือกแพ็กเกจก่อน เพื่อแสดงค่าใช้จ่ายให้ถูกต้อง");
@@ -437,7 +462,7 @@ keyForm.onsubmit = async (e) => {
     );
   if (
     !confirm(
-      `ยืนยันออกคีย์ให้ ${selectedUser?.name || "ลูกค้า"}\nโปรแกรม ${selectedProgram?.product_title || selectedProgram?.code || "-"}${selectedProgram?.platform_type === "veasy" ? "\nV Easy: คีย์นี้จะผูกได้ 1 ร้าน" : ""}`,
+      `${keyMode.value === "test" ? `ยืนยันออกคีย์ทดสอบ ${testDuration.options[testDuration.selectedIndex].text} · ไม่มีค่าใช้จ่าย` : `ยืนยันออกคีย์ให้ ${selectedUser?.name || "ลูกค้า"}`}\nโปรแกรม ${selectedProgram?.product_title || selectedProgram?.code || "-"}${selectedProgram?.platform_type === "veasy" ? "\nV Easy: คีย์นี้จะผูกได้ 1 ร้าน" : ""}`,
     )
   )
     return;

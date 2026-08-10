@@ -84,7 +84,10 @@
     "release:stamp-assets": "node scripts/release-stamp-assets.mjs",
     "test:v014103": "node scripts/test-v014103.mjs",
     "test:v014104": "node scripts/test-v014104.mjs",
-    "test:v014105": "node scripts/test-v014105.mjs"
+    "test:v014105": "node scripts/test-v014105.mjs",
+    "test:v014106": "node scripts/test-v014106.mjs",
+    "test:v014107": "node scripts/test-v014107.mjs",
+    "test:v014108": "node scripts/test-v014108.mjs && node scripts/test-v014108-veasy-shop-binding.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",
