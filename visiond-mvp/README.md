@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.74** — upgrades ELON into VisionD's grounded sales team with live published-product context and incomplete-answer recovery.
+Current package: **v0.14.75** — gives ELON complete published-category awareness, intent-matched products (including tattoo), and exact customer click journeys.
 
 ## ตรวจสอบก่อน Deploy
 

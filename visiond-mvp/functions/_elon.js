@@ -37,6 +37,12 @@ export const ELON_KNOWLEDGE=`ข้อมูลมาตรฐานของ Vi
 - ความน่าเชื่อถือ: ลูกค้าตรวจรายละเอียด ราคา และภาพตัวอย่างก่อนซื้อได้ การซื้อถูกผูกกับบัญชี และติดตามสถานะได้ในหน้า "ของฉัน" หากต้องการความช่วยเหลือสามารถติดต่อเจ้าหน้าที่ VisionD ผ่านหน้าติดต่อ
 - ELON คือทีมขายและผู้ช่วยลูกค้าของ VisionD มีหน้าที่ค้นหาความต้องการ แนะนำตัวเลือกที่เหมาะ อธิบายประโยชน์และขั้นตอนซื้อ ตอบข้อกังวลอย่างตรงไปตรงมา และชวนลูกค้าไปขั้นตอนถัดไปโดยไม่กดดัน
 - สินค้าดิจิทัล: ค้นหา/เลือกสินค้า ใส่รถเข็น ชำระเงิน ส่งสลิป แล้วติดตามสถานะในหน้า "ของฉัน" เมื่อปลดล็อกแล้วจึงดาวน์โหลดไฟล์ได้
+- วิธีเลือกสินค้า: จากหน้าแรกกด "สินค้าดิจิทัล" หรือ "เลือกซื้อสินค้า" → ใช้ช่องค้นหาหรือเลือกหมวด → กดชื่อสินค้าหรือ "ดูสินค้า" เพื่อเปิดรายละเอียดและภาพตัวอย่าง
+- วิธีซื้อชิ้นเดียว: ในหน้ารายละเอียดกด "ซื้อสินค้านี้" ระบบจะพาไปตะกร้า → ตรวจรายการ → กด "ชำระเงิน" → เข้าสู่ระบบหรือสมัครสมาชิกถ้ายังไม่ได้เข้า → โอนตามข้อมูลที่แสดง → เลือกไฟล์สลิปและกดอัปโหลด
+- วิธีซื้อหลายชิ้น: กด "ใส่รถเข็น" ในแต่ละรายการ → เปิดเมนู "รถเข็น" → ตรวจจำนวนและส่วนลดที่ระบบแสดง → กด "ชำระเงิน"
+- วิธีรับไฟล์: หลังสลิปได้รับอนุมัติ เปิด "ของฉัน" → "สินค้าของฉัน" → เลือกสินค้าที่ปลดล็อก → กด "ดาวน์โหลด" สำหรับไฟล์ที่พร้อมใช้งาน
+- วิธีซื้อและเรียนคอร์ส: เปิด "คอร์สออนไลน์" → เลือกคอร์ส → กดซื้อ → ชำระและอัปโหลดสลิป → เมื่อปลดล็อกแล้วเปิด "ของฉัน" → "คอร์สเรียนของฉัน" → เลือกคอร์สเพื่อเริ่มหรือเรียนต่อ
+- วิธีตรวจออเดอร์: เปิด "ของฉัน" แล้วดูสถานะคำสั่งซื้อหรือการแจ้งเตือน หากสลิปไม่ผ่านให้เปิดออเดอร์เดิมและส่งสลิปใหม่ตามข้อความบนหน้า
 - คอร์สเรียน: เมื่อชำระและปลดล็อกแล้ว เข้าเรียนจาก "คอร์สเรียนของฉัน" ระบบบันทึกความคืบหน้าการเรียน
 - สิทธิ์ลงขายคอร์สออนไลน์: ราคาปกติ 999 บาท ราคาโปรโมชัน 499 บาทต่อ 1 สิทธิ์ ซื้อ 1 ชิ้นได้รับ 1 เครดิต และใช้สร้างตะกร้าคอร์สได้ 1 ตะกร้า ระยะเวลาแก้ไข 30 วันเริ่มนับจากวันสร้างตะกร้าสำเร็จ ไม่ใช่วันซื้อ สิทธิ์ไม่ร่วมส่วนลดรวมตะกร้า เครดิตไม่แลกเงินสดและไม่คืน ยกเว้นระบบใช้งานไม่ได้จริงภายใน 7 วันและ VisionD ตรวจสอบแล้ว
 - ผู้ขายคอร์ส: ตั้งค่าบัญชีรับเงินและ EasySlip API ของตนเอง สร้างคอร์สร่าง เพิ่มวิดีโอ PDF สไลด์หรือไฟล์ประกอบเป็นตอน แล้วเผยแพร่ตามขั้นตอน เจ้าของคอร์สรับยอดขายเต็มโดยระบบไม่หักเปอร์เซ็นต์ตามเงื่อนไขปัจจุบัน
@@ -290,7 +296,22 @@ export async function elonMemberContext(env,userId,verifiedRole=''){
   return {authenticated:true,can_use_seller_vision5:bossFrontendAccess||Boolean(Number(row?.can_use_seller_vision5||0))};
 }
 
-export async function elonPublicSalesContext(env,pageContext={}){
+const SALES_INTENTS=[
+  {patterns:['รอยสัก','แบบสัก','tattoo'],terms:['รอยสัก','แบบสัก','tattoo']},
+  {patterns:['แบบฝึกหัด','worksheet'],terms:['แบบฝึกหัด','worksheet']},
+  {patterns:['ระบายสี','coloring'],terms:['ระบายสี','coloring']},
+  {patterns:['เกมเสริม','เกมเด็ก','development game'],terms:['เกมเสริม','development-game']},
+  {patterns:['คอร์ส','เรียนออนไลน์'],terms:['คอร์ส','online-course']},
+  {patterns:['สิทธิ์ขายคอร์ส','ลงขายคอร์ส'],terms:['สิทธิ์ลงขายคอร์ส','resale-rights']}
+];
+export const elonSalesSearchTerms=message=>{
+  const text=String(message||'').normalize('NFKC').toLowerCase();
+  const known=SALES_INTENTS.filter(item=>item.patterns.some(pattern=>text.includes(pattern))).flatMap(item=>item.terms);
+  const words=text.split(/[^\u0E00-\u0E7Fa-z0-9-]+/i).filter(word=>word.length>=3&&word.length<=40);
+  return [...new Set([...known,...words])].slice(0,8);
+};
+
+export async function elonPublicSalesContext(env,pageContext={},message=''){
   const slug=cleanId(pageContext.product_slug);
   const current=slug?await env.DB.prepare(`SELECT p.slug,p.title,p.short_description,p.price,p.category,p.file_type,p.pages,c.name category_label
     FROM products p LEFT JOIN categories c ON c.slug=p.category
@@ -299,12 +320,31 @@ export async function elonPublicSalesContext(env,pageContext={}){
     FROM products p LEFT JOIN categories c ON c.slug=p.category
     WHERE p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product'
     ORDER BY CASE WHEN p.category='resale-rights' THEN 0 ELSE 1 END,p.updated_at DESC,p.id DESC LIMIT 12`).all();
+  const categories=await env.DB.prepare(`SELECT p.category,COALESCE(c.name,p.category) name,COUNT(*) product_count
+    FROM products p LEFT JOIN categories c ON c.slug=p.category
+    WHERE p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product'
+    GROUP BY p.category,COALESCE(c.name,p.category) ORDER BY c.sort_order,p.category`).all();
+  const terms=elonSalesSearchTerms(message);
+  let matches=[];
+  if(terms.length){
+    const clauses=terms.map(()=>`(lower(p.title) LIKE ? OR lower(COALESCE(p.short_description,'')) LIKE ? OR lower(p.slug) LIKE ? OR lower(p.category) LIKE ? OR lower(COALESCE(c.name,'')) LIKE ?)`).join(' OR ');
+    const bindings=terms.flatMap(term=>Array(5).fill(`%${term}%`));
+    matches=(await env.DB.prepare(`SELECT p.slug,p.title,p.short_description,p.price,p.category,p.file_type,p.pages,c.name category_label
+      FROM products p LEFT JOIN categories c ON c.slug=p.category
+      WHERE p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product' AND (${clauses})
+      ORDER BY p.updated_at DESC,p.id DESC LIMIT 20`).bind(...bindings).all()).results||[];
+  }
   const present=item=>item?{
     slug:cleanId(item.slug),title:cleanText(item.title,160),summary:cleanText(item.short_description,300),
     price_baht:Number(item.price||0)/100,category:cleanText(item.category_label||item.category,80),
     file_type:cleanText(item.file_type,60),pages:Math.max(0,Number(item.pages||0))
   }:null;
-  return {current_product:present(current),available_products:(rows.results||[]).map(present)};
+  return {
+    current_product:present(current),
+    catalog_categories:(categories.results||[]).map(item=>({slug:cleanId(item.category),name:cleanText(item.name,80),product_count:Number(item.product_count||0)})),
+    matching_products:matches.map(present),
+    latest_products:(rows.results||[]).map(present)
+  };
 }
 
 const boundedInt=(value,fallback,min,max)=>{const parsed=Number.parseInt(String(value??''),10);return Number.isFinite(parsed)?Math.max(min,Math.min(max,parsed)):fallback};

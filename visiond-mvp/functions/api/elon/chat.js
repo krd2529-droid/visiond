@@ -56,7 +56,7 @@ export async function onRequestPost(ctx){
   if(!provider)return json({error:'ELON ยังไม่ได้ตั้งค่าระบบ AI กรุณาติดต่อเจ้าหน้าที่ VisionD'},503,noStore);
   if(!(await enforceElonGlobalBudget(ctx.env)))return json({error:'ELON พักการตอบชั่วคราวเพื่อความปลอดภัย กรุณาลองใหม่ภายหลัง'},429,{...noStore,'retry-after':'3600'});
   const history=(await loadElonProviderHistory(ctx.env,conversation.id,auth.user.id,ELON_HISTORY_LIMIT)).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':safeElonOutput(item.content,ctx.env,memberContext)}));
-  const salesContext=await elonPublicSalesContext(ctx.env,pageContext);
+  const salesContext=await elonPublicSalesContext(ctx.env,pageContext,message);
   const systemPrompt=elonSystemPrompt(memberContext,pageContext,salesContext);
   let providerResult,rawAnswer;
   try{

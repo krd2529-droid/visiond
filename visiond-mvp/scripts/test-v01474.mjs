@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {elonSystemPrompt,isIncompleteElonAnswer} from '../functions/_elon.js';
 const read=path=>fs.readFileSync(path,'utf8');
-assert.equal(read('VERSION.txt').trim(),'v0.14.74');
+assert.ok(Number(read('VERSION.txt').trim().split('.').pop())>=74);
 const prompt=elonSystemPrompt({authenticated:true,can_use_seller_vision5:false},{path:'/',title:'หน้าแรก'},{available_products:[{slug:'worksheet-001',title:'แบบฝึกหัด',price_baht:39}]});
 assert.match(prompt,/ทีมขายและผู้ช่วยลูกค้า/);
 assert.match(prompt,/worksheet-001/);
