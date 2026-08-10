@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.78** — makes ELON Web a storefront sales team for Guests and logged-in customers while preserving the physical ELON Web/ELON V7 D1 split.
+Current package: **v0.14.79** — red-team hardens ELON Web and adds separate Boss toggles for ELON Web and the reserved ELON V7 system on their physically separate D1 databases.
 
 ## ตรวจสอบก่อน Deploy
 

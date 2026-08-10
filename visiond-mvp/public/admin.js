@@ -91,7 +91,7 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "promotion") loadPromotionSettings();
       if (btn.dataset.adminTab === "settings") loadPaymentSettings();
       if (btn.dataset.adminTab === "users") loadUsers();
-      if (btn.dataset.adminTab === "elon") loadElonConversations();
+      if (btn.dataset.adminTab === "elon") { loadElonControls(); loadElonConversations(); }
       if (btn.dataset.adminTab === "health") loadSystemHealth();
       if (btn.dataset.adminTab === "trash") loadTrash();
     }),
@@ -1336,6 +1336,22 @@ async function loadUnlockHistory() {
 }
 
 let elonSelectedConversation = "";
+const elonWebToggle=document.getElementById('elonWebEnabled'),elonV7Toggle=document.getElementById('elonV7Enabled'),elonControlMessage=document.getElementById('elonControlMessage');
+async function loadElonControls(){
+  if(viewer?.role!=='boss'){document.getElementById('elonControlCard')?.setAttribute('hidden','');return}
+  const response=await fetch('/api/admin/elon-controls',{cache:'no-store'}),data=await response.json().catch(()=>({}));
+  if(!response.ok){elonControlMessage.textContent=data.error||'โหลดสวิตช์ ELON ไม่สำเร็จ';return}
+  for(const [toggle,item] of [[elonWebToggle,data.items?.web],[elonV7Toggle,data.items?.v7]]){toggle.checked=item?.enabled===true;toggle.disabled=item?.configured!==true;toggle.title=item?.configured===true?'':`ยังไม่ได้ตั้งฐาน ${toggle===elonWebToggle?'ELON_WEB_DB':'ELON_V7_DB'}`}
+  elonControlMessage.textContent='ELON เว็บและ ELON V7 แยกฐานและแยกสวิตช์เรียบร้อย';
+}
+async function changeElonControl(target,toggle){
+  toggle.disabled=true;elonControlMessage.textContent='กำลังบันทึก…';
+  const response=await fetch('/api/admin/elon-controls',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({target,enabled:toggle.checked})}),data=await response.json().catch(()=>({}));
+  if(!response.ok){toggle.checked=!toggle.checked;elonControlMessage.textContent=data.error||'บันทึกไม่สำเร็จ'}else{elonControlMessage.textContent=`${target==='web'?'ELON เว็บ':'ELON V7'} ${toggle.checked?'เปิดแล้ว':'ปิดแล้ว'}`}
+  await loadElonControls();
+}
+if(elonWebToggle)elonWebToggle.onchange=()=>changeElonControl('web',elonWebToggle);
+if(elonV7Toggle)elonV7Toggle.onchange=()=>changeElonControl('v7',elonV7Toggle);
 let elonSearchTimer = null;
 let elonPage = 1;
 let elonItems = [];

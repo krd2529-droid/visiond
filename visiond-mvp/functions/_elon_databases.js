@@ -33,3 +33,19 @@ export async function ensureElonV7Boundary(env){
   ]);
   return db;
 }
+
+export async function isElonWebEnabled(env){
+  const db=await ensureElonWebSchema(env),row=await db.prepare("SELECT value FROM elon_web_settings WHERE key='enabled'").first();
+  return row?String(row.value)==='1':true;
+}
+
+export async function isElonV7Enabled(env){
+  const db=await ensureElonV7Boundary(env),row=await db.prepare("SELECT value FROM elon_v7_settings WHERE key='enabled'").first();
+  return row?String(row.value)==='1':false;
+}
+
+export async function setElonEnabled(env,target,enabled){
+  const web=target==='web',db=web?await ensureElonWebSchema(env):await ensureElonV7Boundary(env),table=web?'elon_web_settings':'elon_v7_settings';
+  await db.prepare(`INSERT INTO ${table}(key,value,updated_at) VALUES('enabled',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(enabled?'1':'0').run();
+  return enabled;
+}

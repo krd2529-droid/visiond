@@ -3,13 +3,14 @@ import {ensureDatabase} from '../../_schema.js';
 import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonPublicSalesContext,elonSystemPrompt,enforceElonGlobalBudget,enforceElonRateLimit,isIncompleteElonAnswer,purgeExpiredElonData,safeElonOutput,safeElonProviderOutput,sanitizeElonContext} from '../../_elon.js';
 import {createElonConversation,loadElonMessages,loadElonProviderHistory,ownElonConversation,persistElonExchange} from '../../_elon-member-store.js';
 import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
-import {ensureElonWebSchema} from '../../_elon_databases.js';
+import {ensureElonWebSchema,isElonWebEnabled} from '../../_elon_databases.js';
 
 const noStore={'cache-control':'no-store'};
 const validConversationId=value=>/^ew_[a-f0-9-]{20,64}$/i.test(String(value||''))?String(value):'';
 
 export async function onRequestGet(ctx){
   const auth=await requireUser(ctx);if(auth.error)return auth.error;
+  if(!await isElonWebEnabled(ctx.env))return json({error:'ELON เว็บปิดให้บริการชั่วคราว'},503,noStore);
   await ensureDatabase(ctx.env);await ensureElonWebSchema(ctx.env);await purgeExpiredElonData(ctx.env);
   const memberContext=await elonMemberContext(ctx.env,auth.user.id,auth.user.role);
   const conversationId=validConversationId(new URL(ctx.request.url).searchParams.get('conversation_id'));
@@ -17,12 +18,13 @@ export async function onRequestGet(ctx){
   const conversation=await ownElonConversation(ctx.env,conversationId,auth.user.id);
   if(!conversation)return json({error:'ไม่พบบทสนทนานี้'},404,noStore);
   const rows=await loadElonMessages(ctx.env,conversationId,auth.user.id,50);
-  const messages=rows.reverse().map(item=>{const parsed=parseContext(item.page_context);return {...item,content:item.role==='user'&&containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกเพื่อความปลอดภัย]':safeElonOutput(item.content,ctx.env,memberContext),page_context:contextContainsExternalLink(parsed,ctx.env)?{blocked_external_link:true}:parsed}});
+  const messages=rows.reverse().map(item=>{const parsed=parseContext(item.page_context);return {...item,content:item.role==='user'?(containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกเพื่อความปลอดภัย]':safeElonOutput(item.content,ctx.env,memberContext)):safeElonProviderOutput(item.content,ctx.env,{}),page_context:contextContainsExternalLink(parsed,ctx.env)?{blocked_external_link:true}:parsed}});
   return json({conversation:{...conversation,title:containsExternalLink(conversation.title,ctx.env)?'ลิงก์ภายนอกถูกบล็อก':conversation.title},messages},200,noStore);
 }
 
 export async function onRequestPost(ctx){
   const auth=await requireUser(ctx);if(auth.error)return auth.error;
+  if(!await isElonWebEnabled(ctx.env))return json({error:'ELON เว็บปิดให้บริการชั่วคราว'},503,noStore);
   await ensureDatabase(ctx.env);await ensureElonWebSchema(ctx.env);await purgeExpiredElonData(ctx.env);
   const body=await ctx.request.json().catch(()=>null);
   if(!body||typeof body.message!=='string')return json({error:'กรุณาพิมพ์คำถาม'},400,noStore);
@@ -56,8 +58,8 @@ export async function onRequestPost(ctx){
   const provider=selectElonProvider(ctx.env);
   if(!provider)return json({error:'ELON ยังไม่ได้ตั้งค่าระบบ AI กรุณาติดต่อเจ้าหน้าที่ VisionD'},503,noStore);
   if(!(await enforceElonGlobalBudget(ctx.env)))return json({error:'ELON พักการตอบชั่วคราวเพื่อความปลอดภัย กรุณาลองใหม่ภายหลัง'},429,{...noStore,'retry-after':'3600'});
-  const history=(await loadElonProviderHistory(ctx.env,conversation.id,auth.user.id,ELON_HISTORY_LIMIT)).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':safeElonOutput(item.content,ctx.env,memberContext)}));
   const salesContext=await elonPublicSalesContext(ctx.env,pageContext,message);
+  const history=(await loadElonProviderHistory(ctx.env,conversation.id,auth.user.id,ELON_HISTORY_LIMIT)).reverse().map(item=>({role:item.role,content:containsExternalLink(item.content,ctx.env)?'[ลิงก์ภายนอกถูกบล็อกและไม่นำส่งให้ AI]':item.role==='assistant'?safeElonProviderOutput(item.content,ctx.env,salesContext):safeElonOutput(item.content,ctx.env,memberContext)}));
   const systemPrompt=elonSystemPrompt(memberContext,pageContext,salesContext);
   let providerResult,rawAnswer;
   try{

@@ -2033,6 +2033,13 @@
           <div id="usersTable"></div>
         </section>
         <section id="elonPanel" class="elon-admin-panel" hidden>
+          <div class="card" id="elonControlCard">
+            <h2>เปิด–ปิด ELON แยกแต่ละระบบ</h2>
+            <p>แต่ละตัวใช้ฐานข้อมูลคนละชุด การปิดตัวหนึ่งไม่กระทบอีกตัว</p>
+            <label><input id="elonWebEnabled" type="checkbox" /> ELON เว็บ — ทีมขายหน้าร้าน</label>
+            <label><input id="elonV7Enabled" type="checkbox" /> ELON V7 — ระบบ Vision 7 (ค่าเริ่มต้นปิด)</label>
+            <p id="elonControlMessage" class="form-message" role="status"></p>
+          </div>
           <div class="section-head">
             <div>
               <p class="eyebrow">VISION 6 · ELON AI SUPPORT</p>

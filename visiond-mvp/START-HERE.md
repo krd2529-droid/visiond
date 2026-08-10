@@ -1,11 +1,11 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.78**
+เวอร์ชันปัจจุบัน: **v0.14.79**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
-2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.78-ELON-WEB-GUEST-CUSTOMER-SALES.md`
+2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.79-ELON-REDTEAM-CONTROLS.md`
 3. Requirement ปัจจุบัน: `requirements-ledger.json`
 4. Roadmap ปัจจุบัน: `work-history/visiond/roadmap/VISIOND-ROADMAP.md`
 5. กติกาแพต: `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`

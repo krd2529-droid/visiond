@@ -1,0 +1,1 @@
+{"capture_id":"elon-independent-controls-v1","event_case":"Independent ELON controls","intake_complete":true,"items":[{"source_id":"SRC-040","requirement_id":"EC-ELON-CONTROL-001","atomic":true,"text":"เพิ่มปุ่มเปิด/ปิดอีลอนแต่ละตัวจากหลังบ้าน","acceptance":"Boss เห็นสวิตช์ ELON Web และ ELON V7 แยกกัน การเปิดปิดบันทึกในฐานของตัวเอง ตัวหนึ่งไม่กระทบอีกตัว ELON V7 เริ่มต้นปิด"}]}

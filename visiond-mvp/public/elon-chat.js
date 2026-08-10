@@ -7,6 +7,7 @@
   const API = '/api/elon/chat';
   const PUBLIC_API = '/api/elon/public-chat';
   const AUTH_API = '/api/auth/me';
+  const STATUS_API = '/api/elon/status';
   const STORAGE_PREFIX = 'visiond_elon_conversation_id';
   // Fail closed: ELON is a member-facing helper, so it may mount only on an
   // explicitly reviewed frontend surface. A newly added internal page never
@@ -312,6 +313,7 @@
 
   async function start() {
     if (!frontendSurface(location.pathname)) return;
+    try { const statusResponse=await fetch(STATUS_API,{cache:'no-store',headers:{Accept:'application/json'}}),status=await statusResponse.json(); if(!status.enabled)return; } catch (_) { return; }
     try {
       const response = await fetch(AUTH_API, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
       const data = response.ok ? await response.json().catch(() => null) : null;

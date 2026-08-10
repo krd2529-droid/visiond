@@ -3,7 +3,7 @@ import {ensureDatabase} from '../../_schema.js';
 import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_LOGIN_REQUIRED_REFUSAL,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonPublicSalesContext,elonSystemPrompt,enforceElonGlobalBudget,enforceGuestElonRateLimit,isIncompleteElonAnswer,purgeExpiredElonData,safeElonProviderOutput,sanitizeElonContext} from '../../_elon.js';
 import {createElonConversation,loadElonProviderHistory,ownElonConversation,persistElonExchange} from '../../_elon-member-store.js';
 import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
-import {ensureElonWebSchema} from '../../_elon_databases.js';
+import {ensureElonWebSchema,isElonWebEnabled} from '../../_elon_databases.js';
 
 const headers={'cache-control':'no-store'};
 const validId=value=>/^ew_[a-f0-9-]{20,64}$/i.test(String(value||''))?String(value):'';
@@ -14,6 +14,7 @@ async function guestSubject(request){
 }
 
 export async function onRequestPost(ctx){
+  if(!await isElonWebEnabled(ctx.env))return json({error:'ELON เว็บปิดให้บริการชั่วคราว'},503,headers);
   await ensureDatabase(ctx.env);await ensureElonWebSchema(ctx.env);await purgeExpiredElonData(ctx.env);
   const body=await ctx.request.json().catch(()=>null),message=String(body?.message||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim();
   if(!message)return json({error:'กรุณาพิมพ์คำถาม'},400,headers);
