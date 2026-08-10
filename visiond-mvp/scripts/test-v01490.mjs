@@ -15,6 +15,6 @@ for(const link of ['/digital-products.html','/courses.html','course-selling-righ
 for(const seo of ['rel="canonical"','application/ld+json','og:title','twitter:card'])assert.ok(html.includes(seo),`missing ${seo}`);
 assert.match(catalog,/classList\.add\("vds-card", "vds-card--product"\)/);
 assert.match(catalog,/data-add-cart/);assert.match(catalog,/itemCount >= 30/);assert.match(catalog,/course-selling-rights/);assert.match(catalog,/promotion_percent/);
-for(const check of ['focus-visible','prefers-reduced-motion','max-width:420px','min-height:44px','--vd-page','--vd-ai-midnight'])assert.ok(css.includes(check),`missing ${check}`);
+for(const check of ['focus-visible','prefers-reduced-motion','max-width:420px','min-height:44px','--vd-ai-midnight'])assert.ok(css.includes(check),`missing ${check}`);
 assert.equal((css.match(/{/g)||[]).length,(css.match(/}/g)||[]).length);
 console.log('v0.14.90 Storefront Home Modern AI adoption passed');

@@ -6,5 +6,5 @@ for(const id of ['loginPageForm','registerPageForm','pageAuthMsg'])assert.ok(log
 for(const id of ['hubSidebar','dashOverview','dashOrders','dashDownloads','dashboardOrders','dashboardDownloads','dashLogout'])assert.ok(dashboard.includes(id),`dashboard ${id}`);
 for(const contract of ['/api/orders','dashboardDownloads','download-tile','product.html?slug='])assert.ok(md.includes(contract),`member ${contract}`);
 assert.match(hub,/ซื้อสิทธิ์ก่อนเพื่อรับเครดิต/);assert.match(hub,/1 เครดิตสร้างร่างตะกร้าคอร์ส 1 ใบ/);
-for(const rule of ['min-height:44px','focus-visible','max-width:760px','--vd-ai-midnight','--vd-page'])assert.ok(member.includes(rule),`css ${rule}`);assert.equal((member.match(/{/g)||[]).length,(member.match(/}/g)||[]).length);
+for(const rule of ['min-height:44px','focus-visible','max-width:760px','--vd-ai-midnight'])assert.ok(member.includes(rule),`css ${rule}`);assert.equal((member.match(/{/g)||[]).length,(member.match(/}/g)||[]).length);
 console.log('v0.14.93 Member journey passed; promo intent governed by latest correction');

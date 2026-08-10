@@ -6,7 +6,6 @@
 .auth-box :is(input,select){min-height:44px;border-color:var(--vd-border-strong);border-radius:var(--vd-radius-sm)}
 .auth-box :is(input,select):focus{outline:0;border-color:var(--vd-primary);box-shadow:0 0 0 4px rgba(10,186,181,.15)}
 .auth-message{min-height:24px;color:var(--vd-primary-active);font-weight:800}
-.dashboard-shell{background:var(--vd-page)}
 .member-sidebar{border-color:var(--vd-border);background:var(--vd-ai-midnight);box-shadow:var(--vd-shadow-md)}
 .hub-nav button,.hub-nav a{min-height:44px;border-radius:var(--vd-radius-sm)}
 .hub-nav button.active{background:var(--vd-primary);color:var(--vd-ai-midnight)}
