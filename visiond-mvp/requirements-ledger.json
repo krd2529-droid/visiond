@@ -158,6 +158,8 @@
     {"id":"B1-113-ERROR-JSON-001","source":"Activation API ภายในล้มต้องคืน JSON พร้อม CORS รหัสคงที่และ request ID ไม่กลายเป็นข้อความ DNS SSL CORS กำกวม","status":"DONE-VERIFIED","evidence":["functions/api/vision7/_middleware.js","scripts/test-v014113-b1.mjs"]},
     {"id":"B1-113-RETRY-FIELDS-001","source":"เปิดใช้งานไม่ผ่านต้องไม่ล้างรหัสผ่านและ V Easy Key เพื่อให้กดลองใหม่ได้โดยไม่บันทึกลงเครื่องถาวร","status":"DONE-VERIFIED","evidence":["scripts/test-v014113-b1.mjs"]},
     {"id":"B1-113-ACTIONABLE-ERROR-001","source":"แอปต้องแยกข้อผิดพลาดเน็ต ระบบ บัญชี คีย์ ร้าน เครื่องและ rate limit พร้อมแสดง request ID เมื่อระบบขัดข้อง","status":"DONE-VERIFIED","evidence":["scripts/test-v014113-b1.mjs"]},
-    {"id":"B1-113-DEVICE-QA-001","source":"ต้อง Deploy Web v0.14.113 ก่อนติดตั้ง APK v1.0.12 และยืนยัน activation จริงบน Redmi","status":"PENDING","evidence":["scripts/test-v014113-b1.mjs","work-history/visiond/patch-history/PATCH-v0.14.113-B1-ACTIVATION-ERROR-LOCK.md"]}
+    {"id":"B1-113-DEVICE-QA-001","source":"ต้อง Deploy Web v0.14.113 ก่อนติดตั้ง APK v1.0.12 และยืนยัน activation จริงบน Redmi","status":"PENDING","evidence":["scripts/test-v014113-b1.mjs","work-history/visiond/patch-history/PATCH-v0.14.113-B1-ACTIVATION-ERROR-LOCK.md"]},
+    {"id":"B1-114-SIMPLE-REQUEST-001","source":"Activation จาก APK ต้องเลี่ยง OPTIONS preflight ที่ WebView บล็อก โดยยังส่ง credential ใน JSON POST body เท่านั้น","status":"DONE-VERIFIED","evidence":["scripts/test-v014114-b1.mjs"]},
+    {"id":"B1-114-DEVICE-QA-001","source":"ต้อง Deploy Web v0.14.114 ก่อนติดตั้ง APK v1.0.13 และยืนยัน activation จริงบน Redmi","status":"PENDING","evidence":["scripts/test-v014114-b1.mjs","work-history/visiond/patch-history/PATCH-v0.14.114-B1-ACTIVATION-SIMPLE-REQUEST.md"]}
   ]
 }
