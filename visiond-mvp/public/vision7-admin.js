@@ -108,6 +108,41 @@ function renderLicenses() {
       .join("") || '<p class="muted">ไม่พบคีย์</p>';
   bindLicenseActions();
 }
+let productOptions = [];
+function productLabel(x) {
+  const price = `${(Number(x.price) || 0).toLocaleString("th-TH")} บาท`;
+  const status = x.status === "published" ? "เปิดขาย" : "แบบร่าง—ลูกค้ายังซื้อไม่ได้";
+  return `#${x.id} · ${x.title} · ${x.slug} · ${price} · ${status}${x.binding_program ? ` · ใช้แล้วกับ ${x.binding_program}` : ""}`;
+}
+function fillProductSelects() {
+  document.querySelectorAll("[data-product-select]").forEach((select) => {
+    const chosen = select.value;
+    select.replaceChildren(new Option("— ไม่ผูกตะกร้าสินค้า —", ""));
+    productOptions.forEach((x) => {
+      const option = new Option(productLabel(x), String(x.id));
+      option.disabled = Boolean(x.binding_program);
+      select.add(option);
+    });
+    select.value = chosen;
+  });
+  saveProgram.disabled = false;
+}
+function validateProductChoices() {
+  const selects = [...programForm.querySelectorAll("[data-product-select]")];
+  selects.forEach((x) => x.classList.remove("field-error"));
+  const selected = selects.filter((x) => x.value);
+  const duplicate = selected.find((x, i) => selected.some((y, j) => j !== i && y.value === x.value));
+  if (duplicate) {
+    selected.filter((x) => x.value === duplicate.value).forEach((x) => x.classList.add("field-error"));
+    programState.className = "muted error";
+    programState.textContent = `สินค้า #${duplicate.value} เลือกซ้ำหลายช่อง กรุณาเลือกสินค้าแยกกัน`;
+    return false;
+  }
+  const names = {lifetime_product_id:"ตลอดชีพ",monthly_product_id:"รายเดือน 30 วัน",yearly_product_id:"รายปี 365 วัน"};
+  const linked = selected.filter((x) => names[x.name]).map((x) => names[x.name]);
+  programPreview.textContent = linked.length ? `เปิดขายอัตโนมัติ: ${linked.join(" · ")} · ช่องว่างยังออกคีย์โดยแอดมินได้` : "ยังไม่ได้ผูกตะกร้าขาย · แอดมินยังออกคีย์ทั้ง 3 แบบได้";
+  return true;
+}
 async function load() {
   const [p, l, r, u] = await Promise.all([
       fetch("/api/admin/vision7/programs"),
@@ -124,6 +159,8 @@ async function load() {
     return;
   }
   programs = pd.items || [];
+  productOptions = pd.product_options || [];
+  fillProductSelects();
   users = ud.items || [];
   window.__licenses = ld.items || [];
   encryptionReady = ld.encryption_ready === true;
@@ -236,6 +273,7 @@ newProgram.onclick = () => {
   programState.textContent = "";
   programState.className = "muted";
   programDialog.showModal();
+  programForm.elements.code.focus();
 };
 newKey.onclick = () => {
   if (!encryptionReady)
@@ -258,7 +296,7 @@ document
   );
 programForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (!programForm.reportValidity()) return;
+  if (!programForm.reportValidity() || !validateProductChoices()) return;
   saveProgram.disabled = true;
   programState.className = "muted";
   programState.textContent = "กำลังสร้างโปรแกรม…";
@@ -299,11 +337,14 @@ programForm.onsubmit = async (e) => {
   } catch (error) {
     programState.className = "muted error";
     programState.textContent = error.message || "สร้างโปรแกรมไม่สำเร็จ";
-    alert(programState.textContent);
   } finally {
     saveProgram.disabled = false;
   }
 };
+programForm.querySelectorAll("[data-product-select]").forEach((x) => x.addEventListener("change", validateProductChoices));
+programForm.elements.platform_type.addEventListener("change", (e) => {
+  platformHelp.textContent = ({windows:"โปรแกรมติดตั้งบน Windows",mac:"โปรแกรมติดตั้งบน macOS",web:"ใช้งานผ่านเว็บเบราว์เซอร์","cross-platform":"ไฟล์หรือบัญชีเดียวรองรับหลายระบบ",veasy:"APK กลาง ไม่ฝังคีย์ · ลูกค้ากรอกคีย์ใน Settings · 1 คีย์ต่อ 1 ร้าน"})[e.target.value];
+});
 keyForm.onsubmit = async (e) => {
   e.preventDefault();
   const selectedUser = users.find(

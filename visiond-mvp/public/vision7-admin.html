@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Vision 7 Control</title>
-    <link rel="stylesheet" href="/vision7.css?v=01473" />
+    <link rel="stylesheet" href="/vision7.css?v=014101" />
   </head>
   <body>
     <header class="top">
@@ -79,8 +79,8 @@
     <dialog id="programDialog">
       <form id="programForm">
         <h2>เพิ่มโปรแกรม</h2>
-        <label>รหัสโปรแกรม<input name="code" required /></label
-        ><label>Product ID (ไม่บังคับ)<input name="product_id" type="number" min="1" /></label
+        <label>รหัสโปรแกรม (Program Code)<input name="code" required maxlength="50" pattern="[a-z0-9_-]+" placeholder="เช่น veasy หรือ vision-bridge" autocomplete="off" autocapitalize="none" spellcheck="false" /><small>รหัสภายในและ API · ใช้อักษรอังกฤษเล็ก ตัวเลข - หรือ _ · ห้ามซ้ำ</small></label
+        ><label>สินค้าหลักของโปรแกรม (ไม่บังคับ)<select name="product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>ใช้ดึงชื่อและรูปมาแสดงเท่านั้น · ไม่ใช่ตะกร้าที่ใช้ออกคีย์อัตโนมัติ</small></label
         ><label
           >แพลตฟอร์ม<select name="platform_type">
             <option value="windows">Windows</option>
@@ -88,15 +88,16 @@
             <option value="web">Web</option>
             <option value="cross-platform">Cross-platform</option>
             <option value="veasy">V Easy · 1 คีย์ต่อ 1 ร้าน</option>
-          </select></label
-        ><label>เวอร์ชัน<input name="current_version" value="1.0.0" /></label>
-        <h3>Product ID ของแพ็กเกจขาย</h3>
-        <label>ตลอดชีพ<input name="lifetime_product_id" type="number" min="1" /></label
-        ><label>รายเดือน<input name="monthly_product_id" type="number" min="1" /></label
-        ><label>รายปี<input name="yearly_product_id" type="number" min="1" /></label
+          </select><small id="platformHelp">โปรแกรมติดตั้งบน Windows</small></label
+        ><label>เวอร์ชันเริ่มต้น<input name="current_version" value="1.0.0" required maxlength="40" pattern="[0-9]+(\.[0-9]+){0,3}([+-][A-Za-z0-9.-]+)?" placeholder="เช่น 1.0.0" spellcheck="false" /><small>รองรับ เช่น 1.0, 1.0.0 หรือ 1.0.0-beta.1</small></label>
+        <fieldset class="package-fieldset"><legend>เชื่อมตะกร้าสินค้ากับอายุคีย์</legend><p class="muted package-intro">เมื่อลูกค้าชำระตะกร้าที่เลือกสำเร็จ ระบบจะออกหรือต่ออายุคีย์อัตโนมัติ · เว้นว่างได้หากออกคีย์โดยแอดมินเท่านั้น</p>
+        <div class="package-grid"><label>แพ็กเกจตลอดชีพ<select name="lifetime_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>คีย์ไม่มีวันหมดอายุ</small></label
+        ><label>แพ็กเกจรายเดือน<select name="monthly_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>อายุคีย์ 30 วันต่อการซื้อหรือต่ออายุ 1 ครั้ง</small></label
+        ><label>แพ็กเกจรายปี<select name="yearly_product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>อายุคีย์ 365 วันต่อการซื้อหรือต่ออายุ 1 ครั้ง</small></label></div></fieldset>
+        <div id="programPreview" class="program-preview" aria-live="polite">ยังไม่ได้ผูกตะกร้าขาย · แอดมินยังออกคีย์ทั้ง 3 แบบได้</div>
         ><p id="programState" class="muted" role="status" aria-live="polite"></p
         ><button type="button" data-close="programDialog">ยกเลิก</button
-        ><button id="saveProgram" type="submit">บันทึก</button>
+        ><button id="saveProgram" type="submit">สร้างโปรแกรมและแพ็กเกจ</button>
       </form>
     </dialog>
     <dialog id="keyDialog">

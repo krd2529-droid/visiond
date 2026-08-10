@@ -164,6 +164,13 @@ label {
   gap: 5px;
   margin: 9px 0;
 }
+label small,.package-intro{color:#627086;line-height:1.45}
+.package-fieldset{border:1px solid #bdc8d8;border-radius:12px;margin:16px 0;padding:14px}
+.package-fieldset legend{font-weight:800;padding:0 7px}
+.package-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.program-preview{padding:12px;border-radius:10px;background:#e9f8f6;color:#075f5b;font-weight:700;margin:12px 0}
+select.field-error{border:2px solid #b91c1c;background:#fff2f2}
+@media(max-width:700px){.package-grid{grid-template-columns:1fr}dialog{width:96%}}
 .release {
   margin: 14px 0;
   padding: 14px;

@@ -14,8 +14,25 @@ export async function onRequestGet(ctx) {
   const rows = await ctx.env.DB.prepare(
     `SELECT p.*,x.title product_title,(SELECT json_group_array(json_object('id',q.id,'code',q.plan_code,'name',q.name,'price',q.price,'duration_days',q.duration_days,'product_id',q.product_id,'active',q.active)) FROM vision7_plans q WHERE q.program_id=p.id) plans FROM vision7_programs p LEFT JOIN products x ON x.id=p.product_id ORDER BY p.updated_at DESC`,
   ).all();
-  return json({ items: rows.results || [] });
+  const options = await ctx.env.DB.prepare(
+    `SELECT x.id,x.title,x.slug,x.price,x.status,x.category,
+      CASE WHEN p.id IS NOT NULL THEN 'program' WHEN q.id IS NOT NULL THEN 'plan' ELSE NULL END binding_type,
+      COALESCE(p.code,v.code) binding_program
+     FROM products x
+     LEFT JOIN vision7_programs p ON p.product_id=x.id
+     LEFT JOIN vision7_plans q ON q.product_id=x.id
+     LEFT JOIN vision7_programs v ON v.id=q.program_id
+     WHERE x.deleted_at IS NULL ORDER BY x.id DESC`,
+  ).all();
+  return json({ items: rows.results || [], product_options: options.results || [] });
 }
+
+const optionalProductId = (value) => {
+  if (value === "" || value === null || value === undefined) return null;
+  if ((typeof value !== "string" && typeof value !== "number") || !/^[1-9]\d*$/.test(String(value))) return NaN;
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : NaN;
+};
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   await ensureVision7Schema(ctx.env);
@@ -30,10 +47,12 @@ export async function onRequestPost(ctx) {
   if (!code || !version)
     return json({ error: "รหัสโปรแกรมหรือเวอร์ชันไม่ถูกต้อง" }, 400);
   const plans = (Array.isArray(b.plans) ? b.plans : [])
-      .map((p) => ({ ...p, plan_code: validPlanCode(p.plan_code), product_id: Number(p.product_id) || null }))
+      .map((p) => ({ ...p, plan_code: validPlanCode(p.plan_code), product_id: optionalProductId(p.product_id) }))
       .filter((p) => p.plan_code),
-    productId = Number(b.product_id) || null,
+    productId = optionalProductId(b.product_id),
     productIds = [productId, ...plans.map((p) => p.product_id)].filter(Boolean);
+  if ([productId, ...plans.map((p) => p.product_id)].some(Number.isNaN))
+    return json({ error: "Product ID ต้องเป็นเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป หรือเว้นว่าง" }, 400);
   if (new Set(productIds).size !== productIds.length)
     return json({ error: "Product ID ของโปรแกรมและแพ็กเกจห้ามซ้ำกัน" }, 400);
   if (productIds.length) {
@@ -42,6 +61,14 @@ export async function onRequestPost(ctx) {
     ).bind(...productIds).all();
     if ((found.results || []).length !== productIds.length)
       return json({ error: "มี Product ID ที่ไม่พบในระบบ กรุณาตรวจเลขสินค้าอีกครั้ง" }, 400);
+    const used = await ctx.env.DB.prepare(
+      `SELECT product_id,program_code FROM (
+        SELECT p.product_id,p.code program_code FROM vision7_programs p WHERE p.product_id IS NOT NULL
+        UNION ALL
+        SELECT q.product_id,p.code program_code FROM vision7_plans q JOIN vision7_programs p ON p.id=q.program_id WHERE q.product_id IS NOT NULL
+      ) WHERE product_id IN (${productIds.map(() => "?").join(",")}) LIMIT 1`,
+    ).bind(...productIds).first();
+    if (used) return json({ error: `Product ID #${used.product_id} ถูกผูกกับโปรแกรม ${used.program_code} แล้ว` }, 409);
   }
   let id = null;
   try {
