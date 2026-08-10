@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.63
+Current build: v0.14.65
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -26,6 +26,12 @@ Current QA-only patch: `v0.14.55` — Webhook hardening, Source-to-Ledger covera
 `v0.14.62 IMPLEMENTED` — Large Bugfix: เก็บเอกสารรุ่นเก่าที่ต่างจาก archive ไว้กู้คืน, บังคับเพดานเครื่อง Vision 7 แบบ atomic, reclaim Meta Webhook ที่ค้าง, นำ Account renderer เก่าที่ไม่ใช้และเสี่ยง injection ออก และตรวจ Patch Ledger ต่อเนื่องทุกเวอร์ชัน
 
 `v0.14.63 IMPLEMENTED` — Vision 7 Key Center: เปิดทางเข้าจาก Admin, ตรวจ Secret, แสดงสรุปและยืนยันก่อนออกคีย์, รองรับโปรแกรม V Easy และเตรียมสถานะ `unbound` รอผูกร้านจริงในแพตถัดไป
+
+`v0.14.64 IMPLEMENTED` — Account + Key Ownership: โปรแกรมล็อกอินบัญชี VisionD, App Session Token เก็บแบบ hash, ผูก Session กับเครื่อง และ Activation ตรวจคีย์ว่าเป็นของบัญชีเดียวกัน
+
+`v0.14.65 IMPLEMENTED` — ผูก V Easy 1 คีย์ต่อ 1 ร้าน พร้อมตรวจเจ้าของภายใน Account + License + Shop + Facebook Page ID และกันคีย์/Page ซ้ำด้วย Unique Constraint
+
+`v0.14.66 NEXT` — Runtime/Chat Lock, message/order idempotency และ account-switch isolation
 
 `v0.14.64 NEXT EVENT CASE` — V Easy Account + Key Ownership: บังคับล็อกอิน VisionD, session owner ต้องตรงกับเจ้าของคีย์ และเตรียม session/device token ที่เพิกถอนได้
 

@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.63** — visible Vision 7 Key Center with encryption readiness, operator confirmation, V Easy program type and unbound one-key/one-shop preparation.
+Current package: **v0.14.65** — V Easy one-key/one-shop binding with account, license, shop and Meta Page ownership chain.
 
 ## ตรวจสอบก่อน Deploy
 

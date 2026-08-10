@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.65",
+  "tasks":[
+    {"id":"P1465-001","scope":"DATABASE","source_instruction":"สร้างร้าน V Easy ที่ผูกกับบัญชี คีย์ และ Facebook Page","status":"DONE-VERIFIED","evidence":["migrations/0027_veasy_shop_binding.sql","functions/_veasy_shop.js"]},
+    {"id":"P1465-002","scope":"SECURITY","source_instruction":"บังคับ 1 คีย์ V Easy ใช้ได้ 1 ร้านเท่านั้น","status":"DONE-VERIFIED","evidence":["migrations/0027_veasy_shop_binding.sql","functions/api/vision7/shops/bind.js"]},
+    {"id":"P1465-003","scope":"SECURITY","source_instruction":"Facebook Page เดียวห้ามผูกข้ามร้าน","status":"DONE-VERIFIED","evidence":["migrations/0027_veasy_shop_binding.sql","functions/api/vision7/shops/bind.js"]},
+    {"id":"P1465-004","scope":"SECURITY","source_instruction":"ตรวจ Account License Shop และ Page เป็นสายเจ้าของเดียวกันทุกครั้ง","status":"DONE-VERIFIED","evidence":["functions/_veasy_shop.js","functions/api/vision7/shops/index.js"]},
+    {"id":"P1465-005","scope":"FEATURE","source_instruction":"ผูกซ้ำร้านเดิมได้แบบ idempotent แต่เปลี่ยนไปสร้างร้านสองไม่ได้","status":"DONE-VERIFIED","evidence":["functions/api/vision7/shops/bind.js","scripts/test-v01465.mjs"]},
+    {"id":"P1465-006","scope":"QA","source_instruction":"ปิดเฉพาะงานผูกร้านและเก็บ Runtime lock ไว้แพตถัดไปโดยไม่ให้งานหลุด","status":"DONE-VERIFIED","evidence":["requirements-ledger.json","scripts/test-v01465.mjs","work-history/visiond/qa-history/QA-v0.14.65-VEASY-SHOP-BINDING.md"]}
+  ]
+}

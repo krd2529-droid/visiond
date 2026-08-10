@@ -25,8 +25,8 @@
     {"id":"EC-ADS-003","source":"production Ads API ingestion at campaign, adset and creative levels","status":"DONE-VERIFIED","evidence":["functions/_meta_ads.js","functions/api/admin/meta-ads-sync.js","public/ads-center.js","scripts/test-v01459.mjs"]},
     {"id":"VE-KEYCENTER-001","source":"Vision 7 keys must be issued from a visible admin center","status":"DONE-VERIFIED","evidence":["public/admin.html","public/vision7-admin.html","functions/api/admin/vision7/licenses.js","scripts/test-v01463.mjs"]},
     {"id":"VE-AUTH-001","source":"V Easy must require VisionD user login and session ownership","status":"DONE-VERIFIED","evidence":["functions/_vision7_auth.js","functions/api/vision7/auth/login.js","functions/api/vision7/activate.js","scripts/test-v01464.mjs"]},
-    {"id":"VE-LICENSE-001","source":"one V Easy key binds to exactly one shop","status":"DONE-VERIFIED","evidence":["migrations/0027_veasy_shop_binding.sql","functions/api/vision7/shops/bind.js","scripts/test-v01465.mjs"]},
-    {"id":"VE-SHOP-001","source":"account key shop and Facebook Page must share one owner","status":"DONE-VERIFIED","evidence":["functions/_veasy_shop.js","functions/api/vision7/shops/bind.js","functions/api/vision7/shops/index.js","scripts/test-v01465.mjs"]},
+    {"id":"VE-LICENSE-001","source":"one V Easy key binds to exactly one shop","status":"PENDING","evidence":["migrations/0025_vision7_key_center.sql"]},
+    {"id":"VE-SHOP-001","source":"account key shop and Facebook Page must share one owner","status":"PENDING","evidence":[]},
     {"id":"VE-RUNTIME-001","source":"one shop has one active bot worker and one worker per conversation","status":"PENDING","evidence":[]},
     {"id":"VE-IDEMPOTENCY-001","source":"duplicate messages and duplicate chat orders must be blocked","status":"PENDING","evidence":[]},
     {"id":"VE-ISOLATION-001","source":"switching accounts must never expose the previous shop chats or orders","status":"PENDING","evidence":[]}

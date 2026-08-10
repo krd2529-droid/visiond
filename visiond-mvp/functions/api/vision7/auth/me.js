@@ -1,0 +1,2 @@
+import {json} from '../../../_lib.js';import {ensureDatabase} from '../../../_schema.js';import {requireVision7User} from '../../../_vision7_auth.js';
+export async function onRequestGet(ctx){await ensureDatabase(ctx.env);const auth=await requireVision7User(ctx);if(auth.error)return auth.error;return json({ok:true,user:{id:auth.user.id,username:auth.user.username,name:auth.user.name,email:auth.user.email}},200,{'cache-control':'no-store'});}
