@@ -1,0 +1,8 @@
+VISIOND - วางทับแล้ว Deploy
+
+โครงสร้าง Cloudflare Pages:
+Root directory: visiond-mvp
+Build command: เว้นว่าง
+Build output directory: public
+
+ไฟล์นี้ตั้งใจไม่มี wrangler.toml เพื่อไม่ให้ค่าฐานข้อมูลตัวอย่างขัดขวางการ Deploy หน้าเว็บ

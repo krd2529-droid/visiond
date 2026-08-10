@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "phase": 1,
+  "current_version": "v0.14.60",
+  "policy": "copy-and-verify; keep root originals until phase 2",
+  "files": [
+    {
+      "source": "PATCH-v0.14.39-ELON-MAXIMUM-HARDENING.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.39-ELON-MAXIMUM-HARDENING.md"
+    },
+    {
+      "source": "PATCH-v0.14.40-BOSS-FRONTEND-SELLER-ACCESS.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.40-BOSS-FRONTEND-SELLER-ACCESS.md"
+    },
+    {
+      "source": "PATCH-v0.14.41-ANDROID-MOBILE-DRAWER.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.41-ANDROID-MOBILE-DRAWER.md"
+    },
+    {
+      "source": "PATCH-v0.14.42-MOBILE-FRONTEND-FULL-AUDIT.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.42-MOBILE-FRONTEND-FULL-AUDIT.md"
+    },
+    {
+      "source": "PATCH-v0.14.43-FIRST-ORDER-NUDGE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.43-FIRST-ORDER-NUDGE.md"
+    },
+    {
+      "source": "PATCH-v0.14.44-CUSTOMER-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.44-CUSTOMER-INTELLIGENCE.md"
+    },
+    {
+      "source": "PATCH-v0.14.45-ADS-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.45-ADS-INTELLIGENCE.md"
+    },
+    {
+      "source": "PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md"
+    },
+    {
+      "source": "PATCH-v0.14.47-CONVERSION-PRODUCT-DEMAND-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.47-CONVERSION-PRODUCT-DEMAND-INTELLIGENCE.md"
+    },
+    {
+      "source": "PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md"
+    },
+    {
+      "source": "PATCH-v0.14.49-PERSONALIZED-PRODUCT-ENGINE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.49-PERSONALIZED-PRODUCT-ENGINE.md"
+    },
+    {
+      "source": "PATCH-v0.14.50-COMMERCE-CONVERSION-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.50-COMMERCE-CONVERSION-INTELLIGENCE.md"
+    },
+    {
+      "source": "PATCH-v0.14.51-VISION7-ELON-PAGE-FOUNDATION.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.51-VISION7-ELON-PAGE-FOUNDATION.md"
+    },
+    {
+      "source": "PATCH-v0.14.52-VISION7-ORDER-FULFILLMENT-QA-ROADMAP.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.52-VISION7-ORDER-FULFILLMENT-QA-ROADMAP.md"
+    },
+    {
+      "source": "PATCH-v0.14.53-REQUIREMENT-LEDGER-META-WEBHOOK.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.53-REQUIREMENT-LEDGER-META-WEBHOOK.md"
+    },
+    {
+      "source": "PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md"
+    },
+    {
+      "source": "PATCH-v0.14.55-QA-HARDENING-SOURCE-COVERAGE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.55-QA-HARDENING-SOURCE-COVERAGE.md"
+    },
+    {
+      "source": "PATCH-v0.14.56-VISION7-RELEASE-DELIVERY.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.56-VISION7-RELEASE-DELIVERY.md"
+    },
+    {
+      "source": "PATCH-v0.14.57-VISION7-OPERATOR-CONTROL.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.57-VISION7-OPERATOR-CONTROL.md"
+    },
+    {
+      "source": "PATCH-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.58-PAGE-SALES-GROUNDED-AI.md"
+    },
+    {
+      "source": "PATCH-v0.14.59-META-ADS-API-EVENT-CASE-COMPLETE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.59-META-ADS-API-EVENT-CASE-COMPLETE.md"
+    },
+    {
+      "source": "PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md"
+    },
+    {
+      "source": "QA-v0.14.52-PATCH-SMOKE-CHECK.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.52-PATCH-SMOKE-CHECK.md"
+    },
+    {
+      "source": "QA-v0.14.53-COVERAGE-AND-WEBHOOK.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.53-COVERAGE-AND-WEBHOOK.md"
+    },
+    {
+      "source": "QA-v0.14.54-PATCH-COVERAGE.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.54-PATCH-COVERAGE.md"
+    },
+    {
+      "source": "QA-v0.14.55-QA-HARDENING.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.55-QA-HARDENING.md"
+    },
+    {
+      "source": "QA-v0.14.56-VISION7-RELEASE-DELIVERY.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.56-VISION7-RELEASE-DELIVERY.md"
+    },
+    {
+      "source": "QA-v0.14.57-VISION7-OPERATOR-CONTROL.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.57-VISION7-OPERATOR-CONTROL.md"
+    },
+    {
+      "source": "QA-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.58-PAGE-SALES-GROUNDED-AI.md"
+    },
+    {
+      "source": "QA-v0.14.59-META-ADS-EVENT-CASE-COMPLETE.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.59-META-ADS-EVENT-CASE-COMPLETE.md"
+    },
+    {
+      "source": "QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md"
+    },
+    {
+      "source": "JARVIS-PATCH-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md"
+    },
+    {
+      "source": "PATCH-WORK-LEDGER-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/PATCH-WORK-LEDGER-PROTOCOL.md"
+    },
+    {
+      "source": "REQUIREMENT-LAYER2-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/REQUIREMENT-LAYER2-PROTOCOL.md"
+    },
+    {
+      "source": "REQUIREMENT-LEDGER-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/REQUIREMENT-LEDGER-PROTOCOL.md"
+    },
+    {
+      "source": "CUSTOMER-DATA-ANALYSIS.md",
+      "archive": "work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md"
+    },
+    {
+      "source": "VISIOND-MARKETING-PLAN.md",
+      "archive": "work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md"
+    },
+    {
+      "source": "VISIOND-ROADMAP.md",
+      "archive": "work-history/visiond/roadmap/VISIOND-ROADMAP.md"
+    },
+    {
+      "source": "DEPLOY-NOW.txt",
+      "archive": "work-history/visiond/setup-and-operations/DEPLOY-NOW.txt"
+    },
+    {
+      "source": "GEMINI_SETUP.txt",
+      "archive": "work-history/visiond/setup-and-operations/GEMINI_SETUP.txt"
+    },
+    {
+      "source": "META_ADS_SETUP.md",
+      "archive": "work-history/visiond/setup-and-operations/META_ADS_SETUP.md"
+    },
+    {
+      "source": "PREDEPLOY_CHECK.md",
+      "archive": "work-history/visiond/setup-and-operations/PREDEPLOY_CHECK.md"
+    },
+    {
+      "source": "SECURITY_SETUP.txt",
+      "archive": "work-history/visiond/setup-and-operations/SECURITY_SETUP.txt"
+    },
+    {
+      "source": "VISION3_SETUP.txt",
+      "archive": "work-history/visiond/setup-and-operations/VISION3_SETUP.txt"
+    },
+    {
+      "source": "VISION5_BACKUP.md",
+      "archive": "work-history/visiond/setup-and-operations/VISION5_BACKUP.md"
+    },
+    {
+      "source": "VISION6_ELON_SETUP.md",
+      "archive": "work-history/visiond/setup-and-operations/VISION6_ELON_SETUP.md"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+VISIOND SECURITY V1
+
+ระบบที่เปิดอัตโนมัติหลังดีพลอย
+- จำกัดการลองเข้าสู่ระบบ สมัครสมาชิก สร้างออเดอร์ และดาวน์โหลด
+- พัก IP ที่ส่งคำขอมากผิดปกติ
+- ป้องกันคำสั่งจากเว็บไซต์อื่น
+- เพิ่ม Security Headers
+- บันทึกเหตุการณ์เข้าสู่ระบบและการดาวน์โหลดที่ถูกปฏิเสธ
+- รหัสผ่านใหม่ใช้ PBKDF2 และบัญชีเก่าอัปเกรดอัตโนมัติเมื่อเข้าสู่ระบบสำเร็จ
+
+เปิดช่องยืนยันว่าไม่ใช่บอท (Cloudflare Turnstile)
+1. Cloudflare Dashboard > Turnstile > Add widget
+2. เพิ่ม Hostname: visiondonline.com
+3. Pages > VisionD > Settings > Variables and Secrets
+4. เพิ่ม TURNSTILE_SITE_KEY เป็น Variable
+5. เพิ่ม TURNSTILE_SECRET_KEY เป็น Secret (Encrypt)
+6. เพิ่ม ELON_OPENAI_API_KEY หรือ ELON_GEMINI_API_KEY เป็น Secret แยกเฉพาะ ELON
+7. ตั้ง ELON_MEMBER_DAILY_LIMIT=100 และ ELON_GLOBAL_DAILY_LIMIT=1000
+8. ห้ามเปิด ELON_ALLOW_SHARED_PROVIDER_KEYS ใน production
+6. ดีพลอยใหม่หนึ่งครั้ง
+
+ถ้ายังไม่ใส่คีย์ เว็บใช้งานได้ตามปกติ และระบบป้องกันส่วนอื่นยังทำงาน
