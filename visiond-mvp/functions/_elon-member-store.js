@@ -6,9 +6,10 @@ export async function ownElonConversation(env,id,userId,activeOnly=false){
   return db.prepare(`SELECT id,title,status,created_at,COALESCE((SELECT MAX(activity.created_at) FROM elon_web_messages activity WHERE activity.conversation_id=c.id),c.created_at) updated_at,ended_at FROM elon_web_conversations c WHERE id=? AND subject_id=? AND datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_web_messages m WHERE m.conversation_id=c.id),c.created_at))>=datetime('now','-60 days')${activeOnly?" AND status='active'":''}`).bind(id,subjectId).first();
 }
 
-export async function createElonConversation(env,userId,title){
+export async function createElonConversation(env,userId,title,subjectType='member'){
   const db=elonWebDb(env),id=`ew_${crypto.randomUUID()}`,subjectId=String(userId);
-  await db.prepare("INSERT INTO elon_web_conversations(id,subject_type,subject_id,title,status) VALUES(?,'member',?,?,'active')").bind(id,subjectId,title).run();
+  const type=subjectType==='guest'?'guest':'member';
+  await db.prepare("INSERT INTO elon_web_conversations(id,subject_type,subject_id,title,status) VALUES(?,?,?,?,'active')").bind(id,type,subjectId,title).run();
   return {id,title,status:'active'};
 }
 

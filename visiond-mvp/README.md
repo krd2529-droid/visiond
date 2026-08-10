@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.77** — hard-splits ELON Web and ELON V7 into separate D1 bindings, migrations, namespaces and storage boundaries with no Web fallback to the main database.
+Current package: **v0.14.78** — makes ELON Web a storefront sales team for Guests and logged-in customers while preserving the physical ELON Web/ELON V7 D1 split.
 
 ## ตรวจสอบก่อน Deploy
 

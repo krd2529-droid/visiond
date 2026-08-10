@@ -135,17 +135,13 @@
 
     const welcome = authenticated
       ? 'สวัสดีครับ ผม ELON AI ทีมขาย VisionD บอกสิ่งที่กำลังหา งบประมาณ หรือปัญหาที่อยากแก้ได้เลย ผมช่วยแนะนำสินค้าและพาไปขั้นตอนซื้อให้ครับ'
-      : 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD กรุณาสมัครสมาชิกหรือเข้าสู่ระบบก่อน จึงจะสามารถถามคำถามกับ ELON ได้ครับ';
+      : 'สวัสดีครับ ผม ELON AI ทีมขาย VisionD ถามสินค้า ราคา วิธีซื้อ หรือบอกสิ่งที่กำลังหาได้เลยครับ ใช้งานแบบผู้เยี่ยมชมได้ทันที';
     addMessage(messages, 'bot', welcome);
     if (authenticated) {
       renderQuick(quick, input, composer);
       loadHistory(messages, welcome);
     } else {
-      reset.hidden = true;
-      input.disabled = true;
-      input.placeholder = 'สมัครสมาชิกหรือเข้าสู่ระบบก่อนใช้งาน ELON';
-      send.disabled = true;
-      quick.replaceChildren();
+      renderQuick(quick, input, composer);
       const registerLink = el('a', 'elon-guest-register', 'สมัครสมาชิก');
       registerLink.href = '/register.html';
       const loginLink = el('a', 'elon-guest-login', 'เข้าสู่ระบบ');
@@ -157,7 +153,7 @@
       panel.hidden = !open;
       launcher.hidden = open;
       launcher.setAttribute('aria-expanded', String(open));
-      if (open && authenticated) setTimeout(() => input.focus(), 30);
+      if (open) setTimeout(() => input.focus(), 30);
     }
     launcher.addEventListener('click', () => setOpen(true));
     close.addEventListener('click', () => { setOpen(false); launcher.focus(); });
@@ -191,10 +187,6 @@
     });
     composer.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!authenticated) {
-        location.href = '/register.html';
-        return;
-      }
       const value = input.value.trim();
       if (!value || isSending) return;
       input.value = '';
@@ -333,12 +325,16 @@
           conversationId = readStoredConversation();
         }
       }
+      if (!authenticated) {
+        storageKey = `${STORAGE_PREFIX}:guest`;
+        conversationId = readStoredConversation();
+      }
       mount().hidden = false;
     } catch (_) {
-      // Authentication lookup failure fails closed to the registration gate.
+      // Auth lookup failure remains a safe anonymous storefront session.
       authenticated = false;
-      storageKey = '';
-      conversationId = '';
+      storageKey = `${STORAGE_PREFIX}:guest`;
+      conversationId = readStoredConversation();
       mount().hidden = false;
     }
   }

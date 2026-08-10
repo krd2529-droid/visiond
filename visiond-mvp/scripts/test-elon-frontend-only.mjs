@@ -120,14 +120,15 @@ const elonSource=readFileSync(new URL('../functions/_elon.js',import.meta.url),'
 const publicChatSource=readFileSync(new URL('../functions/api/elon/public-chat.js',import.meta.url),'utf8');
 assert.match(chatSource,/blockedRestricted[\s\S]{0,1800}redactedMessage[\s\S]{0,800}persistElonExchange\(/,'blocked requests must persist a placeholder instead of the raw question');
 assert.match(chatSource,/safeElonOutput\(item\.content[\s\S]{0,300}memberContext\)/,'stored history must be filtered again on read');
-assert.match(chatSource,/rawAnswer=extractProviderText[\s\S]{0,1200}safeElonOutput\(rawAnswer,ctx\.env,memberContext\)/,'provider output must be filtered before persistence');
+assert.match(chatSource,/rawAnswer=extractProviderText[\s\S]{0,1200}safeElonProviderOutput\(rawAnswer,ctx\.env,salesContext\)/,'provider output must pass the dedicated DLP filter before persistence');
 assert.doesNotMatch(elonSource,/memberContext\.(?:pending_orders|unlocked_products|available_course_credits|owned_courses|enrolled_courses|is_staff)/,'AI prompt must not receive account counts or staff status');
 assert.doesNotMatch(elonSource,/\)\s+pending_orders|\)\s+unlocked_products|\)\s+available_course_credits|\)\s+owned_courses|\)\s+enrolled_courses|\)\s+is_staff/,'ELON member query must not fetch unnecessary account counts or staff status');
 assert.match(elonSource,/return \{authenticated:true,can_use_seller_vision5:bossFrontendAccess\|\|Boolean/,'ELON member context must collapse Boss access into the seller eligibility boolean');
 assert.doesNotMatch(elonSource,/return \{[^}]*role/,'ELON member context must never return the verified Boss role to the provider');
 assert.match(chatSource,/elonMemberContext\(ctx\.env,auth\.user\.id,auth\.user\.role\)/,'member handler must derive frontend entitlement from the verified session role');
-assert.match(publicChatSource,/สมัครสมาชิกหรือเข้าสู่ระบบก่อน/,'guest must be directed to register or sign in');
-assert.doesNotMatch(publicChatSource,/env\.DB|ensureDatabase|requireUser|currentUser|persistElon|elon_conversations|elon_messages|requestElonProvider|selectElonProvider/,'guest endpoint must have no database, session, persistence, or AI provider access');
+assert.match(publicChatSource,/ELON_LOGIN_REQUIRED_REFUSAL/,'guest private-account questions must require sign in');
+assert.match(publicChatSource,/elonPublicSalesContext[\s\S]*requestElonProvider/,'guest must receive published-catalog sales answers');
+assert.doesNotMatch(publicChatSource,/requireUser|currentUser|elonMemberContext/,'guest endpoint must never load a member session or account context');
 assert.doesNotMatch(chatSource,/env\.DB\.prepare|env\.DB\.batch/,'member chat handler must use the owner-scoped store gateway instead of direct database queries');
 
 const guest={authenticated:false,can_use_seller_vision5:false};

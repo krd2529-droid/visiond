@@ -7,11 +7,11 @@ const widget=readFileSync(new URL('../public/elon-chat.js',import.meta.url),'utf
 assert.match(widget,/const FRONTEND_SURFACES = new Set/,'widget must use an explicit frontend allowlist');
 assert.match(widget,/if \(!frontendSurface\(location\.pathname\)\) return/,'unknown routes must fail closed before authentication or mount');
 assert.match(widget,/authenticated = Boolean\(user/,'widget must distinguish an authenticated member from a guest');
-assert.match(widget,/const PUBLIC_API = '\/api\/elon\/public-chat'/,'guest must use the database-free public endpoint');
+assert.match(widget,/const PUBLIC_API = '\/api\/elon\/public-chat'/,'guest must use the isolated public sales endpoint');
 assert.match(widget,/const chatApi = \(\) => authenticated \? API : PUBLIC_API/,'widget must route member and guest requests separately');
-assert.match(widget,/Authentication lookup failure fails closed to the registration gate/,'auth lookup failure must fail closed');
+assert.match(widget,/Auth lookup failure remains a safe anonymous storefront session/,'auth lookup failure must remain anonymous');
 assert.match(widget,/if \(authenticated && previousId\)/,'guest reset must not call conversation-history APIs');
-assert.match(widget,/input\.disabled = true/,'guest input must be disabled');
+assert.doesNotMatch(widget,/input\.disabled = true/,'guest input must stay enabled for storefront sales');
 assert.match(widget,/registerLink\.href = '\/register\.html'/,'guest widget must link directly to registration');
 
 const html=[];

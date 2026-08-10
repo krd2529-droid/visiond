@@ -1,6 +1,6 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const read=path=>fs.readFileSync(path,'utf8');
-assert.equal(read('VERSION.txt').trim(),'v0.14.77');
+assert.ok(Number(read('VERSION.txt').trim().split('.').at(-1))>=77);
 const bindings=read('wrangler.toml.example');assert.match(bindings,/binding = "ELON_WEB_DB"/);assert.match(bindings,/binding = "ELON_V7_DB"/);
 const boundary=read('functions/_elon_databases.js');assert.match(boundary,/if\(!env\.ELON_WEB_DB\)throw/);assert.match(boundary,/if\(!env\.ELON_V7_DB\)throw/);assert.doesNotMatch(boundary,/env\.DB\s*\|\||\?\?\s*env\.DB/);
 const store=read('functions/_elon-member-store.js');assert.match(store,/elonWebDb\(env\)/);assert.doesNotMatch(store,/env\.DB/);assert.match(store,/`ew_\$\{crypto\.randomUUID\(\)\}`/);

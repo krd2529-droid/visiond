@@ -1,6 +1,6 @@
 import {json,requireUser} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
-import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonPublicSalesContext,elonSystemPrompt,enforceElonGlobalBudget,enforceElonRateLimit,isIncompleteElonAnswer,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
+import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonPublicSalesContext,elonSystemPrompt,enforceElonGlobalBudget,enforceElonRateLimit,isIncompleteElonAnswer,purgeExpiredElonData,safeElonOutput,safeElonProviderOutput,sanitizeElonContext} from '../../_elon.js';
 import {createElonConversation,loadElonMessages,loadElonProviderHistory,ownElonConversation,persistElonExchange} from '../../_elon-member-store.js';
 import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
 import {ensureElonWebSchema} from '../../_elon_databases.js';
@@ -70,7 +70,7 @@ export async function onRequestPost(ctx){
     if(isIncompleteElonAnswer(rawAnswer))rawAnswer='ขออภัยครับ คำตอบเมื่อสักครู่ส่งมาไม่ครบ กรุณาถาม ELON อีกครั้งหนึ่ง หรือเลือกคำถามแนะนำด้านล่างได้เลยครับ';
   }
   catch(error){console.error('ELON_RESPONSE_FAILED',String(error?.message||'AI_PROVIDER_ERROR').slice(0,120));try{await persistError(ctx.env,conversation.id,auth.user.id,message,pageContext)}catch{}return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore)}
-  const answer=safeElonOutput(rawAnswer,ctx.env,memberContext);
+  const answer=safeElonProviderOutput(rawAnswer,ctx.env,salesContext);
   if(!answer){try{await persistError(ctx.env,conversation.id,auth.user.id,message,pageContext)}catch{}return json({error:'ELON ตอบไม่ได้ชั่วคราว กรุณาลองใหม่อีกครั้ง'},502,noStore)}
   await persistElonExchange(ctx.env,conversation.id,auth.user.id,message,answer,pageContext);
   return json({conversation_id:conversation.id,message:{role:'assistant',content:answer},usage:providerResult.usage},200,noStore);

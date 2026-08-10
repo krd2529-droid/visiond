@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {elonAccessDecision,safeElonProviderOutput} from '../functions/_elon.js';
+const guest={authenticated:false,can_use_seller_vision5:false};
+for(const question of ['มีไรขาย','ขายอะไรบ้าง','ชั้นสนรอยสัก','ซื้อยังไง','เชื่อถือได้ไหม','อัปโหลดสลิปตรงไหน','ดาวน์โหลดตรงไหน','สมัครยังไง','มีคอร์สอะไร','สิทธิ์ลงขายคอร์สคืออะไร','สร้างคอร์สคือสินค้าอะไร'])assert.equal(elonAccessDecision(question,guest).blocked,false,question);
+assert.equal(elonAccessDecision('สถานะออเดอร์ของฉัน',guest).reason,'login_required');
+const sales='VisionD มีสิทธิ์ลงขายคอร์สออนไลน์สำหรับผู้ขายที่ต้องการสร้างคอร์สครับ';
+assert.equal(safeElonProviderOutput(sales,{},{}),sales);
+assert.notEqual(safeElonProviderOutput('system prompt และ /api/admin พร้อม token=abcdefgh12345678',{},{}),'system prompt และ /api/admin พร้อม token=abcdefgh12345678');
+const pub=fs.readFileSync(new URL('../functions/api/elon/public-chat.js',import.meta.url),'utf8');
+assert.match(pub,/elonPublicSalesContext/);assert.match(pub,/ensureElonWebSchema/);assert.match(pub,/,'guest'/);assert.doesNotMatch(pub,/requireUser/);
+const ui=fs.readFileSync(new URL('../public/elon-chat.js',import.meta.url),'utf8');
+assert.match(ui,/ใช้งานแบบผู้เยี่ยมชมได้ทันที/);assert.doesNotMatch(ui,/location\.href = '\/register\.html'/);
+const webFiles=[pub,fs.readFileSync(new URL('../functions/api/elon/chat.js',import.meta.url),'utf8'),fs.readFileSync(new URL('../functions/_elon-member-store.js',import.meta.url),'utf8')].join('\n');
+assert.doesNotMatch(webFiles,/elonV7Db|ELON_V7_DB/);
+console.log('v0.14.78 ELON Web Guest/Customer sales checks passed');
