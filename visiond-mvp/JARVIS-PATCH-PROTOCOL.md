@@ -31,3 +31,10 @@ If an Event Case cannot safely finish in one patch, mark it `CONTINUE NEXT PATCH
 Roadmap work rotates across major tracks so one track cannot monopolize releases: Growth/Data → Commerce/Conversion → Product/Production → Course/Creator → Security/QA → Marketing, then repeat. Production evidence, security, payment or auth risk may override rotation.
 
 After every patch report: Event Case completed/remaining; Event Roadmap completed/remaining; data signals; exact recommended next patch order.
+
+
+## EVENT CASE STATUS REPORTING
+After EVERY patch, the delivery report MUST end with exactly one clear Event Case state:
+- `EVENT CASE: เสร็จทั้งหมดแล้ว — พร้อมรับ Event Case ใหม่`
+- `EVENT CASE: ยังไม่เสร็จ — ต้องแพตต่อ`
+If unfinished, list every remaining Event Case item and make continuation the next-patch priority. Never mark a case complete because only one subtask shipped.

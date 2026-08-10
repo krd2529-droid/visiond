@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.49
+Current build: v0.14.50
 Owner protocol: JARVIS / J
 
 ## Operating rule
@@ -21,8 +21,8 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 ## Phase 2 — Conversion intelligence
 - IMPLEMENTED — v0.14.47: Conversion + Product Demand Intelligence; groups numbered product series into families, distinguishes premade stock from demand-driven production, and recommends PRODUCE / TEST / HOLD from observed views/cart/checkout/paid data.
 - NEEDS DEPLOY/VALIDATION — validate family recommendations against production traffic and sales; low exposure must not be treated as low demand.
-- Proposed — conversion diagnostics for Product View → Add Cart → Checkout → Paid.
-- Proposed — compare new vs returning visitors and first purchase behavior without exposing PII.
+- IMPLEMENTED — v0.14.50 Commerce/Conversion Intelligence: diagnoses Product View → Add Cart → Checkout → Paid leakage and reports new vs returning buyers without exposing PII.
+- NEEDS DEPLOY/VALIDATION — use production traffic to confirm the actual bottleneck; diagnostics refuse to name a bottleneck until a stage has a minimum evidence base.
 
 ## Phase 2B — Guest acquisition
 - IMPLEMENTED — v0.14.48: unique anonymous visitor identity per browser/device, guest → member history claim, guest signup/first-bill gift notice, and automatic first-paid-order digital gift with no Boss action.
@@ -59,11 +59,11 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 
 ### EVENT ROADMAP rotation
 - IMPLEMENTED — Growth/Data: v0.14.49 Personalized Product Engine.
-- NEXT — Commerce/Conversion: diagnose Product View → Cart → Checkout → Paid leakage.
-- WAITING — Product/Production: strengthen demand-driven production queue from family exposure and paid evidence.
+- IMPLEMENTED — Commerce/Conversion: v0.14.50 funnel leakage diagnostics + new/returning buyer mix.
+- NEXT — Product/Production: strengthen demand-driven production queue from family exposure and paid evidence.
 - WAITING — Course/Creator.
 - WAITING — Security/QA.
 - WAITING — Marketing: smart promo/retarget after recommendation baseline.
 
 ## Current next decision
-Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior. Analyze `recommendation_view → recommendation_click → add_to_cart → purchase`. Unless production data or a new Event Case overrides it, rotate next to Commerce/Conversion diagnostics. Continue Product Family production decisions from exposure/cart/paid evidence, never inventory count alone.
+Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior. Analyze `recommendation_view → recommendation_click → add_to_cart → purchase`. Commerce/Conversion diagnostics are now implemented in v0.14.50. Deploy and validate with real traffic. Unless production data or a new Event Case overrides it, rotate next to Product/Production Intelligence: turn family exposure/cart/paid evidence into an ordered production queue, never inventory count alone.

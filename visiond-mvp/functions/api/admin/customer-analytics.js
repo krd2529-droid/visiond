@@ -9,6 +9,34 @@ export async function onRequestGet(ctx){
   const events=(await ctx.env.DB.prepare(`SELECT event_type,COUNT(*) count,COUNT(DISTINCT COALESCE(CAST(user_id AS TEXT),visitor_key)) people FROM customer_events WHERE created_at>=datetime('now',?) GROUP BY event_type`).bind(since).all()).results||[];
   const map=Object.fromEntries(events.map(x=>[x.event_type,{events:n(x.count),people:n(x.people)}]));
   const paid=await ctx.env.DB.prepare(`SELECT COUNT(*) orders,COUNT(DISTINCT user_id) buyers,COALESCE(SUM(total),0) revenue FROM orders WHERE status='paid' AND updated_at>=datetime('now',?)`).bind(since).first();
+  const funnelPeople=await ctx.env.DB.prepare(`SELECT
+    COUNT(DISTINCT CASE WHEN event_type='product_view' THEN COALESCE(CAST(user_id AS TEXT),visitor_key) END) product_view,
+    COUNT(DISTINCT CASE WHEN event_type='add_to_cart' THEN COALESCE(CAST(user_id AS TEXT),visitor_key) END) add_to_cart,
+    COUNT(DISTINCT CASE WHEN event_type='checkout_start' THEN COALESCE(CAST(user_id AS TEXT),visitor_key) END) checkout_start
+    FROM customer_events WHERE created_at>=datetime('now',?)`).bind(since).first();
+  const buyerMix=await ctx.env.DB.prepare(`WITH first_paid AS (
+      SELECT user_id,MIN(updated_at) first_paid_at FROM orders WHERE status='paid' AND user_id IS NOT NULL GROUP BY user_id
+    ), active AS (
+      SELECT DISTINCT user_id FROM orders WHERE status='paid' AND user_id IS NOT NULL AND updated_at>=datetime('now',?)
+    )
+    SELECT
+      COUNT(CASE WHEN fp.first_paid_at>=datetime('now',?) THEN 1 END) new_buyers,
+      COUNT(CASE WHEN fp.first_paid_at<datetime('now',?) THEN 1 END) returning_buyers
+    FROM active a JOIN first_paid fp ON fp.user_id=a.user_id`).bind(since,since,since).first();
+  const fp={view:n(funnelPeople?.product_view),cart:n(funnelPeople?.add_to_cart),checkout:n(funnelPeople?.checkout_start),paid:n(paid?.buyers)};
+  const rates={
+    view_to_cart:fp.view?fp.cart/fp.view:0,
+    cart_to_checkout:fp.cart?fp.checkout/fp.cart:0,
+    checkout_to_paid:fp.checkout?fp.paid/fp.checkout:0,
+    view_to_paid:fp.view?fp.paid/fp.view:0
+  };
+  const stages=[
+    {key:'view_to_cart',label:'ดูสินค้า → ใส่ตะกร้า',rate:rates.view_to_cart,from:fp.view,to:fp.cart},
+    {key:'cart_to_checkout',label:'ใส่ตะกร้า → Checkout',rate:rates.cart_to_checkout,from:fp.cart,to:fp.checkout},
+    {key:'checkout_to_paid',label:'Checkout → ชำระสำเร็จ',rate:rates.checkout_to_paid,from:fp.checkout,to:fp.paid}
+  ].filter(x=>x.from>=5);
+  const bottleneck=stages.length?[...stages].sort((a,b)=>a.rate-b.rate)[0]:null;
+
   const guestIdentity=await ctx.env.DB.prepare(`SELECT
     COUNT(DISTINCT CASE WHEN user_id IS NULL THEN visitor_key END) anonymous_visitors,
     COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN user_id END) identified_users,
@@ -36,5 +64,5 @@ export async function onRequestGet(ctx){
   for(const x of products){const key=x.family.toLocaleLowerCase('th-TH');if(!families.has(key))families.set(key,{family:x.family,category:x.category,products:0,max_series:0,views:0,carts:0,checkouts:0,purchases:0,revenue:0,premade:0,demand_driven:0});const f=families.get(key);f.products++;f.max_series=Math.max(f.max_series,x.series);f.views+=x.views;f.carts+=x.carts;f.checkouts+=x.checkouts;f.purchases+=x.purchases;f.revenue+=x.revenue;x.inventory_origin==='demand_driven'?f.demand_driven++:f.premade++}
   const productFamilies=[...families.values()].map(f=>{const cartRate=f.views?f.carts/f.views:0,purchaseRate=f.views?f.purchases/f.views:0;let recommendation='HOLD',reason='ข้อมูลการเข้าดูยังไม่พอ';if(f.views>=20&&f.purchases>=3){recommendation='PRODUCE';reason='มีทั้งความสนใจและยอดซื้อรองรับ'}else if(f.views>=30&&f.carts>=3&&!f.purchases){recommendation='TEST';reason='สนใจ/ใส่ตะกร้า แต่ยังไม่เกิดยอดซื้อ ควรแก้ข้อเสนอหรือ Checkout ก่อนผลิตหนัก'}else if(f.views>=30&&cartRate<0.03){recommendation='HOLD';reason='มี Exposure แต่ Add to Cart ต่ำ'}return {...f,cart_rate:cartRate,purchase_rate:purchaseRate,recommendation,reason,next_series:f.max_series+1}}).sort((a,b)=>b.purchases-a.purchases||b.carts-a.carts||b.views-a.views);
   const journeys=(await ctx.env.DB.prepare(`SELECT e.user_id,u.name,u.username,MAX(e.created_at) last_seen,COUNT(*) events,GROUP_CONCAT(DISTINCT e.event_type) event_types FROM customer_events e JOIN users u ON u.id=e.user_id WHERE e.created_at>=datetime('now',?) GROUP BY e.user_id ORDER BY last_seen DESC LIMIT 20`).bind(since).all()).results||[];
-  return json({days,events:map,guest_identity:{anonymous_visitors:n(guestIdentity?.anonymous_visitors),identified_users:n(guestIdentity?.identified_users),linked_events:n(guestIdentity?.linked_events)},purchase:{orders:n(paid?.orders),buyers:n(paid?.buyers),revenue:n(paid?.revenue)},products:products.slice(0,20),product_families:productFamilies.slice(0,30),journeys});
+  return json({days,events:map,guest_identity:{anonymous_visitors:n(guestIdentity?.anonymous_visitors),identified_users:n(guestIdentity?.identified_users),linked_events:n(guestIdentity?.linked_events)},purchase:{orders:n(paid?.orders),buyers:n(paid?.buyers),revenue:n(paid?.revenue)},conversion:{people:fp,rates,bottleneck,buyer_mix:{new_buyers:n(buyerMix?.new_buyers),returning_buyers:n(buyerMix?.returning_buyers)}},products:products.slice(0,20),product_families:productFamilies.slice(0,30),journeys});
 }
