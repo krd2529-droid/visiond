@@ -70,7 +70,7 @@ function planOptions() {
   const veasy = program?.platform_type === "veasy";
   keyBindingPreview.hidden = !veasy;
   keyBindingPreview.textContent = veasy
-    ? "คีย์ V Easy นี้จะอยู่สถานะ ‘รอผูกร้าน’ และผูกได้ 1 ร้านหลังระบบ Shop Binding เปิดใช้งาน"
+    ? "คีย์ V Easy นี้ออกแยกจาก APK · เริ่มสถานะ ‘รอผูกร้าน’ ลูกค้านำไปกรอกใน Settings และผูกได้ 1 ร้าน"
     : "";
 }
 function userOptions(q = "") {

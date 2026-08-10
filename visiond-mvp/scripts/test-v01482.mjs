@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-assert.equal(fs.readFileSync('VERSION.txt','utf8').trim(),'v0.14.82');
+const [,major,minor,patch]=fs.readFileSync('VERSION.txt','utf8').trim().match(/^v(\d+)\.(\d+)\.(\d+)$/)||[];
+assert.ok(Number(major)===0&&Number(minor)===14&&Number(patch)>=82,'v0.14.82 capability must remain in later patches');
 const handoff=fs.readFileSync('work-history/visiond/patch-history/PATCH-v0.14.82-B1-PRODUCT-DIALOG-EXIT.md','utf8');
 assert.match(handoff,/V-Easy-v1\.0\.6-product-dialog-exit-source\.zip/);
 assert.match(handoff,/V-Easy-v1\.0\.6-product-dialog-exit-debug\.apk/);
