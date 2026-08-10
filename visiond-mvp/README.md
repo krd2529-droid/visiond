@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.67** — post-close QA hardening that binds every V Easy conversation to its owning shop before a worker lease can be issued.
+Current package: **v0.14.68** — restores the missing Vision 7 Key Center entry in the main Admin and corrects the false-positive requirement evidence.
 
 ## ตรวจสอบก่อน Deploy
 

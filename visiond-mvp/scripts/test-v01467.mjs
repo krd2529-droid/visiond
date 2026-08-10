@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';
 const read=file=>fs.readFileSync(file,'utf8'),checks=[];const check=(name,fn)=>{try{fn();checks.push(true);console.log(`PASS ${name}`)}catch(error){checks.push(false);console.error(`FAIL ${name}: ${error.message}`)}};
-check('version',()=>assert.equal(read('VERSION.txt').trim(),'v0.14.67'));
+check('version',()=>{const match=read('VERSION.txt').trim().match(/^v0\.14\.(\d+)$/);assert.ok(match&&Number(match[1])>=67)});
 check('conversation belongs to shop',()=>{const sql=read('migrations/0029_veasy_conversation_isolation.sql');assert.match(sql,/PRIMARY KEY\(shop_id,id\)/);assert.match(sql,/FOREIGN KEY\(shop_id\)/)});
 check('participant unique only inside shop',()=>assert.match(read('migrations/0029_veasy_conversation_isolation.sql'),/UNIQUE\(shop_id,platform,participant_hash\)/));
 check('participant identity stored hashed',()=>{const api=read('functions/api/vision7/runtime/register-conversation.js'),sql=read('migrations/0029_veasy_conversation_isolation.sql');assert.match(api,/participantHash=await sha256/);assert.match(sql,/participant_hash/);assert.doesNotMatch(sql,/participant_ref|participant_id TEXT/)});
@@ -10,5 +10,5 @@ check('participant hash never returned',()=>assert.match(read('functions/api/vis
 check('conversation lease checks shop registry',()=>{const core=read('functions/_veasy_runtime.js');assert.match(core,/SELECT id FROM veasy_conversations WHERE shop_id=\? AND id=\?/);assert.match(core,/VEASY_CONVERSATION_NOT_OWNED/)});
 check('message and order claims still require lease',()=>{assert.match(read('functions/api/vision7/runtime/message-claim.js'),/verifyConversationLease/);assert.match(read('functions/api/vision7/runtime/order-claim.js'),/verifyConversationLease/)});
 check('requirements remain complete',()=>{const ledger=JSON.parse(read('requirements-ledger.json'));assert.ok(ledger.requirements.every(x=>x.status==='DONE-VERIFIED'))});
-check('migration sequence',()=>{const files=fs.readdirSync('migrations').filter(x=>/^\d{4}_.*\.sql$/.test(x)).sort();assert.equal(files.at(-1).slice(0,4),'0029')});
+check('migration sequence',()=>{const files=fs.readdirSync('migrations').filter(x=>/^\d{4}_.*\.sql$/.test(x)).sort();assert.ok(Number(files.at(-1).slice(0,4))>=29)});
 const failed=checks.filter(x=>!x).length;console.log(`v0.14.67 RESULT: total=${checks.length} passed=${checks.length-failed} failed=${failed}`);if(failed)process.exit(1);
