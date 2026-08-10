@@ -1,4 +1,5 @@
 import("/facebook-chat.js?v=01195");
+const bundlePromoImage=document.querySelector('.cart-promo-gif');if(bundlePromoImage){bundlePromoImage.src='/assets/visiond-bundle-promo.gif?v=01494';bundlePromoImage.classList.add('cart-promo-banner')}
 if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=01336">');
 if(!document.querySelector('#rights-quantity-style'))document.head.insertAdjacentHTML('beforeend','<style id="rights-quantity-style">.rights-quantity{display:grid;gap:4px;color:#315f5b;font-size:11px;font-weight:900}.rights-quantity input{width:76px;padding:8px;border:1px solid #39aaa4;border-radius:8px;text-align:center;font-weight:900}</style>');
 const money = (n) =>
@@ -119,6 +120,11 @@ function render() {
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
+  cartItems.querySelectorAll('.cart-product').forEach(card=>card.classList.add('vds-card','vds-card--product'));
+  cartItems.querySelectorAll('[data-remove]').forEach(button=>{button.classList.add('vds-btn','vds-btn--danger','vds-btn--small');const title=button.closest('.cart-product')?.querySelector('h2')?.textContent?.trim()||'สินค้า';button.setAttribute('aria-label',`ลบ ${title} ออกจากตะกร้า`)});
+  cartItems.querySelectorAll('.rights-quantity').forEach(label=>label.classList.add('vds-field'));
+  cartItems.querySelector('.cart-empty')?.classList.add('vds-card','vds-card--status');
+  cartItems.querySelector('.cart-empty a')?.classList.add('vds-btn','vds-btn--primary');
   document
     .querySelectorAll("[data-remove]")
     .forEach(
@@ -130,6 +136,14 @@ function render() {
   checkoutButton.disabled = !items.length;
 }
 checkoutButton.onclick = checkout;
+closeCheckout.setAttribute('aria-label','ปิดหน้าชำระเงิน');
+slipMessage.setAttribute('role','status');
+slipMessage.setAttribute('aria-live','polite');
+document.querySelector('.cart-summary')?.classList.add('vds-card','vds-card--information');
+checkoutButton.classList.remove('primary','wide');checkoutButton.classList.add('vds-btn','vds-btn--primary','vds-btn--large','vds-btn--wide');
+document.querySelector('.cart-summary>a')?.classList.add('vds-btn','vds-btn--secondary','vds-btn--wide');
+copyAccountButton.classList.add('vds-btn','vds-btn--tonal','vds-btn--small');
+slipForm.querySelector('button[type="submit"]')?.classList.add('vds-btn','vds-btn--primary','vds-btn--large','vds-btn--wide');
 function resetActiveOrder() {
   activeOrder = null;
   slipForm.reset();

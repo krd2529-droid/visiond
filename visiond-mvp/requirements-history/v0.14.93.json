@@ -74,12 +74,11 @@
     {"id":"EC-UI-PURCHASE-SPECIAL-001","source":"สิทธิ์ Vision 5 ต้องซื้อก่อนและ 1 เครดิตสร้างร่างหนึ่งใบ","status":"DONE-VERIFIED","evidence":["public/course-rights-product.js","scripts/test-v01491.mjs"]},
     {"id":"EC-UI-PURCHASE-RESPONSIVE-001","source":"เส้นทางซื้อใช้ได้บนคอม Android และ iPhone","status":"DONE-VERIFIED","evidence":["public/purchase-modern-ai.css","scripts/test-v01491.mjs"]},
     {"id":"EC-UI-PRODUCT-ACTION-COLOR-001","source":"ปุ่มดูสินค้าห้ามดูเป็นสีดำ ให้ใช้พื้นขาว ขอบเขียว และตัวอักษรเขียวดำ","status":"DONE-VERIFIED","evidence":["public/home-modern-ai.css","public/purchase-modern-ai.css","work-history/visiond/roadmap/VISIOND-ROADMAP.md","scripts/test-v01492.mjs"]},
-    {"id":"EC-UI-BUNDLE-STATIC-001","source":"แบนเนอร์โปรจัดชุดไม่ต้องสลับภาพ ให้แสดง 5/10/20/30 ในภาพเดียว","status":"DONE-VERIFIED","evidence":["work-history/visiond/patch-history/PATCH-v0.14.94-RESTORE-ANIMATED-PROMO.md","scripts/test-v01494.mjs"]},
+    {"id":"EC-UI-BUNDLE-STATIC-001","source":"แบนเนอร์โปรจัดชุดไม่ต้องสลับภาพ ให้แสดง 5/10/20/30 ในภาพเดียว","status":"DONE-VERIFIED","evidence":["public/cart.js","public/assets/visiond-bundle-promo-v2.png","scripts/test-v01493.mjs"]},
     {"id":"EC-UI-MEMBER-AUTH-001","source":"หน้าเข้าสู่ระบบและสมัครสมาชิกใช้ธีม Modern AI Commerce เดียวกัน","status":"DONE-VERIFIED","evidence":["public/login.html","public/register.html","public/member-modern-ai.css","scripts/test-v01493.mjs"]},
     {"id":"EC-UI-MEMBER-DASHBOARD-001","source":"Dashboard สมาชิกใช้ surfaces navigation และ focus จาก Design System","status":"DONE-VERIFIED","evidence":["public/dashboard.html","public/my-hub.css","public/member-modern-ai.css","scripts/test-v01493.mjs"]},
     {"id":"EC-UI-MEMBER-DOWNLOADS-001","source":"สินค้าที่ซื้อ คำสั่งซื้อและทางเข้าดาวน์โหลดต้องคงข้อมูลและลิงก์เดิม","status":"DONE-VERIFIED","evidence":["public/member-dashboard.js","public/member-modern-ai.css","scripts/test-v01493.mjs"]},
     {"id":"EC-UI-MEMBER-RIGHTS-COPY-001","source":"ข้อความ Dashboard ต้องใช้กฎ Vision 5 แบบซื้อสิทธิ์ก่อนสร้างร่าง","status":"DONE-VERIFIED","evidence":["public/my-hub.js","scripts/test-v01493.mjs"]},
-    {"id":"EC-UI-MEMBER-RESPONSIVE-001","source":"Member journey ต้องใช้ได้บนคอม Android และ iPhone","status":"DONE-VERIFIED","evidence":["public/member-modern-ai.css","scripts/test-v01493.mjs"]},
-    {"id":"EC-UI-BUNDLE-ANIMATED-001","source":"แบนเนอร์ GIF โปรจัดชุดต้องสลับภาพและวนซ้ำต่อ","status":"DONE-VERIFIED","evidence":["public/cart.js","public/assets/visiond-bundle-promo.gif","scripts/test-v01494.mjs"]}
+    {"id":"EC-UI-MEMBER-RESPONSIVE-001","source":"Member journey ต้องใช้ได้บนคอม Android และ iPhone","status":"DONE-VERIFIED","evidence":["public/member-modern-ai.css","scripts/test-v01493.mjs"]}
   ]
 }
