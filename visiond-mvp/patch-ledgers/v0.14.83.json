@@ -1,0 +1,1 @@
+{"patch":"v0.14.83","tasks":[{"id":"P1483-001","scope":"FEATURE","source_instruction":"V Easy saves and reloads live products from its owned shop","status":"DONE-VERIFIED","evidence":["scripts/test-v01483.mjs","work-history/visiond/patch-history/PATCH-v0.14.83-B1-LIVE-PRODUCT-SYNC.md"]}]}

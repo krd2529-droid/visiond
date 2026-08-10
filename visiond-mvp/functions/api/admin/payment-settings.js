@@ -32,6 +32,8 @@ export async function onRequestPut(ctx){
   if(!['0','1'].includes(accepting))return json({error:'สถานะรับคำสั่งซื้อไม่ถูกต้อง'},400);
   const requestedAutoVerify=String(form.get('vision3_auto_verify')??(old.vision3_auto_verify?'1':'0'));
   if(!['0','1'].includes(requestedAutoVerify))return json({error:'สถานะตรวจสลิปอัตโนมัติไม่ถูกต้อง'},400);
+  const requestedRightsAutoVerify=String(form.get('vision5_rights_auto_verify')??(old.vision5_rights_auto_verify?'1':'0'));
+  if(!['0','1'].includes(requestedRightsAutoVerify))return json({error:'สถานะ EasySlip ตะกร้าสิทธิ์ไม่ถูกต้อง'},400);
   const rawMessage=String(form.get('payment_message')||'').trim();
   if(rawMessage.length>500)return json({error:'ข้อความหลังส่งสลิปต้องไม่เกิน 500 ตัวอักษร'},400);
 
@@ -51,6 +53,7 @@ export async function onRequestPut(ctx){
     company_account_number:profiles.company.account_number,
     accepting_orders:accepting,
     vision3_auto_verify:auth.user.role==='boss'?requestedAutoVerify:(old.vision3_auto_verify?'1':'0'),
+    vision5_rights_auto_verify:auth.user.role==='boss'?requestedRightsAutoVerify:(old.vision5_rights_auto_verify?'1':'0'),
     payment_message:rawMessage
   };
 
@@ -68,6 +71,7 @@ export async function onRequestPut(ctx){
   try{
     await ensureSettings(ctx.env);
     const statements=Object.entries(values).map(([key,value])=>ctx.env.DB.prepare(`INSERT INTO settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(key,String(value??'')));
+    if(auth.user.role==='boss'&&old.vision5_rights_auto_verify!==(requestedRightsAutoVerify==='1'))statements.push(ctx.env.DB.prepare("INSERT INTO user_activity_log(user_id,event_type,path,metadata) VALUES(?,'vision5_rights_easyslip_toggled','/admin',?)").bind(auth.user.id,JSON.stringify({enabled:requestedRightsAutoVerify==='1'})));
     await ctx.env.DB.batch(statements);
   }catch{
     if(newQrKey)await ctx.env.FILES.delete(newQrKey).catch(()=>{});

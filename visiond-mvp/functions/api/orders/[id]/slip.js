@@ -37,12 +37,12 @@ export async function onRequestPost(ctx){
   const paymentSettings=await loadPaymentSettings(ctx.env);
   const rightsOrder=await ctx.env.DB.prepare("SELECT 1 found FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND p.category='resale-rights' LIMIT 1").bind(order.id).first();
   let apiKey='',tokenError='';
-  try{apiKey=order.course_owner_user_id?await loadSellerToken(ctx.env,order.course_owner_user_id):rightsOrder?await loadSellerToken(ctx.env,auth.user.id):String(ctx.env.EASYSLIP_API_KEY||'')}catch(error){tokenError=String(error?.message||'TOKEN_DECRYPT_FAILED')}
-  const autoEnabled=(order.course_owner_user_id||rightsOrder)?Boolean(apiKey):paymentSettings.vision3_auto_verify&&Boolean(apiKey);
+  try{apiKey=order.course_owner_user_id?await loadSellerToken(ctx.env,order.course_owner_user_id):rightsOrder?(paymentSettings.vision5_rights_auto_verify?await loadSellerToken(ctx.env,auth.user.id):''):String(ctx.env.EASYSLIP_API_KEY||'')}catch(error){tokenError=String(error?.message||'TOKEN_DECRYPT_FAILED')}
+  const autoEnabled=order.course_owner_user_id?Boolean(apiKey):rightsOrder?paymentSettings.vision5_rights_auto_verify&&Boolean(apiKey):paymentSettings.vision3_auto_verify&&Boolean(apiKey);
   if(!autoEnabled){
-    const code=tokenError==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'TOKEN_ENCRYPTION_NOT_CONFIGURED':tokenError?'TOKEN_DECRYPT_FAILED':order.course_owner_user_id?'SELLER_API_NOT_CONFIGURED':rightsOrder?'BUYER_API_NOT_CONFIGURED':paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
+    const code=tokenError==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'TOKEN_ENCRYPTION_NOT_CONFIGURED':tokenError?'TOKEN_DECRYPT_FAILED':order.course_owner_user_id?'SELLER_API_NOT_CONFIGURED':rightsOrder?(paymentSettings.vision5_rights_auto_verify?'BUYER_API_NOT_CONFIGURED':'VISION5_RIGHTS_MANUAL_MODE'):paymentSettings.vision3_auto_verify?'API_NOT_CONFIGURED':'VISION3_MANUAL_MODE';
     await ctx.env.DB.prepare("UPDATE orders SET slip_verification_status='manual',slip_verification_code=? WHERE id=?").bind(code,order.id).run();
-    return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว ระบบส่งให้เจ้าของคอร์สตรวจเอง เนื่องจาก API ของเจ้าของคอร์สไม่พร้อม':rightsOrder?'กรุณาตั้งค่า EasySlip API ของคุณเอง แล้วส่งสลิปใหม่อีกครั้ง':'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
+    return json({ok:true,auto_approved:false,message:order.course_owner_user_id?'รับสลิปแล้ว ระบบส่งให้เจ้าของคอร์สตรวจเอง เนื่องจาก API ของเจ้าของคอร์สไม่พร้อม':rightsOrder?(paymentSettings.vision5_rights_auto_verify?'EasySlip ไม่พร้อม ระบบส่งสลิปให้ Boss ตรวจแทนแล้ว':'รับสลิปแล้ว กำลังรอ Boss ตรวจและอนุมัติสิทธิ์'):'รับสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ'});
   }
   try{
     const verifyForm=new FormData();verifyForm.set('image',file,file.name||`slip.${ext}`);verifyForm.set('remark',order.order_no);verifyForm.set('matchAccount','true');verifyForm.set('matchAmount',(Number(order.total)/100).toFixed(2));verifyForm.set('checkDuplicate','true');

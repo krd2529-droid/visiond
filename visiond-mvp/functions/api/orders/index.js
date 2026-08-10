@@ -80,8 +80,10 @@ export async function onRequestPost(ctx) {
     if(!renewal)return json({error:'คีย์นี้ไม่สามารถต่ออายุด้วยแพ็กเกจที่เลือก'},409);
   }
   if(orderedResults.some(product=>product.category==='resale-rights')){
-    let buyerApi='';try{buyerApi=await loadSellerToken(ctx.env,a.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
-    if(buyerApi.length<20)return json({error:'กรุณาบันทึก EasySlip API ของคุณเองในหน้าสิทธิ์ลงขายคอร์สก่อนสั่งซื้อ'},409);
+    if(payment.vision5_rights_auto_verify){
+      let buyerApi='';try{buyerApi=await loadSellerToken(ctx.env,a.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
+      if(buyerApi.length<20)return json({error:'กรุณาบันทึก EasySlip API ของคุณเองในหน้าสิทธิ์ลงขายคอร์สก่อนสั่งซื้อ'},409);
+    }
   }
   const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
   if(sellerItems.length && (orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);

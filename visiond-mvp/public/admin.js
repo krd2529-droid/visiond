@@ -1140,6 +1140,10 @@ async function loadPaymentSettings() {
     const box=document.createElement('div');box.className='settings-status';box.innerHTML='<div><b>Vision 3 ตรวจสลิปอัตโนมัติ</b><small>ปิดแล้วลูกค้ายังอัปโหลดสลิปได้ แต่ Boss/Admin ต้องตรวจและปลดล็อกด้วยคน</small></div><label class="switch-line"><input name="vision3_auto_verify" type="checkbox" value="1"><span>เปิด Vision 3</span></label>';
     paymentSettingsForm.querySelector('.payment-account-switch').before(box);
   }
+  if(!paymentSettingsForm.elements.vision5_rights_auto_verify){
+    const box=document.createElement('div');box.className='settings-status vision5-rights-switch';box.innerHTML='<div><b>EasySlip ตะกร้าสิทธิ์ Vision 5</b><small>เปิด: ตรวจอัตโนมัติก่อน · ปิด: ส่งสลิปให้ Boss อนุมัติเพื่อให้งานเดินต่อ</small></div><label class="switch-line"><input name="vision5_rights_auto_verify" type="checkbox" value="1"><span>เปิด EasySlip</span></label>';
+    paymentSettingsForm.querySelector('.payment-account-switch').before(box);
+  }
   paymentSettingsForm.elements.active_account.value = p.active_account || "personal";
   paymentSettingsForm.elements.personal_bank_name.value = profiles.personal?.bank_name || "ธนาคารกรุงศรีอยุธยา";
   paymentSettingsForm.elements.personal_account_name.value = profiles.personal?.account_name || "รัฐสิทธิ ดำรงรถการ";
@@ -1153,6 +1157,8 @@ async function loadPaymentSettings() {
     p.accepting_orders !== false;
   paymentSettingsForm.elements.vision3_auto_verify.checked = p.vision3_auto_verify !== false;
   paymentSettingsForm.elements.vision3_auto_verify.disabled = viewer?.role !== "boss";
+  paymentSettingsForm.elements.vision5_rights_auto_verify.checked = p.vision5_rights_auto_verify !== false;
+  paymentSettingsForm.elements.vision5_rights_auto_verify.disabled = viewer?.role !== "boss";
   paymentSettingsForm.elements.payment_message.value = p.payment_message || "";
   currentQr.innerHTML = p.qr_url
     ? `<img src="${esc(p.qr_url)}" alt="QR ชำระเงิน"><small>QR ที่ใช้งานอยู่ในขณะนี้</small>`
@@ -1193,6 +1199,7 @@ async function savePaymentSettings(e) {
     paymentSettingsForm.elements.accepting_orders.checked ? "1" : "0",
   );
   fd.set("vision3_auto_verify",paymentSettingsForm.elements.vision3_auto_verify.checked ? "1" : "0");
+  fd.set("vision5_rights_auto_verify",paymentSettingsForm.elements.vision5_rights_auto_verify.checked ? "1" : "0");
   const r = await fetch("/api/admin/payment-settings", {
     method: "PUT",
     body: fd,
@@ -1217,10 +1224,17 @@ async function loadOrders() {
       .map((o) => {
         const waiting = o.status === "awaiting_payment";
         const review = !o.vision5_managed && o.status === "pending_review" && o.slip_url && o.slip_verification_status === "manual";
+        const rightsReview = o.boss_can_review_rights === true;
+        const slipWarning = o.has_resale_rights && o.slip_verification_code && o.slip_verification_code !== "VISION5_RIGHTS_MANUAL_MODE"
+          ? `<div class="order-wait-note rejected"><b>⚠️ EasySlip ส่งเข้าตรวจโดย Boss</b><span>รหัส ${esc(o.slip_verification_code)} — ตรวจยอด ชื่อบัญชี และรายการซ้ำก่อนอนุมัติ</span></div>` : "";
         const actionMarkup = o.vision5_managed
           ? `<div class="order-wait-note"><b>ออเดอร์ Vision 5 — VisionD อนุมัติแทนไม่ได้</b><span>${esc(o.vision5_reason || "จัดการผ่านระบบ Vision 5")}</span></div>`
+          : rightsReview
+          ? `${slipWarning}<div class="order-wait-note"><b>ตะกร้าสิทธิ์ — รอ Boss ตัดสินใจ</b><span>อนุมัติแล้วระบบจะเพิ่ม ${Number(o.item_count)||0} เครดิตเพียงครั้งเดียว</span></div><div class="actions review-actions"><button class="primary" data-act="approve" data-rights="1" data-id="${o.id}">✓ Boss อนุมัติและเพิ่มเครดิต</button><button class="danger" data-act="reject" data-rights="1" data-id="${o.id}">✕ ปฏิเสธสลิป</button></div>`
           : review
           ? `<div class="actions review-actions"><button class="primary" data-act="approve" data-id="${o.id}">✓ อนุมัติและปลดล็อกไฟล์</button><button class="danger" data-act="reject" data-id="${o.id}">✕ ไม่อนุมัติสลิป</button></div>`
+          : o.has_resale_rights && o.status === "pending_review"
+            ? `<div class="order-wait-note"><b>ตะกร้าสิทธิ์ — เฉพาะ Boss ตรวจได้</b><span>${esc(o.vision5_reason || "รอ Boss ตรวจสลิป")}</span></div>`
           : waiting
             ? '<div class="order-wait-note"><b>ยังไม่ต้องตรวจสอบ</b><span>ลูกค้ายังไม่ได้ส่งสลิป ระบบจะแสดงปุ่มอนุมัติหลังได้รับสลิปแล้ว</span></div>'
             : '<div class="order-wait-note rejected"><b>สลิปไม่ผ่าน</b><span>กำลังรอลูกค้าส่งสลิปใหม่</span></div>';
@@ -1229,7 +1243,7 @@ async function loadOrders() {
       .join("") || "<p>ยังไม่มีคำสั่งซื้อ</p>";
   document
     .querySelectorAll("[data-act]")
-    .forEach((b) => (b.onclick = () => act(b.dataset.id, b.dataset.act)));
+    .forEach((b) => (b.onclick = () => act(b.dataset.id, b.dataset.act, b.dataset.rights === "1")));
   const selected=()=>[...document.querySelectorAll('[data-order-select]:checked')].map(input=>Number(input.dataset.orderSelect));
   const syncSelected=()=>{const count=selected().length;selectedOrderCount.textContent=`เลือกแล้ว ${count} ออเดอร์`;clearSelectedOrders.disabled=count===0;document.querySelectorAll('[data-order-select]').forEach(input=>input.closest('.order-admin-card')?.classList.toggle('order-selected',input.checked))};
   document.querySelectorAll('[data-order-select]').forEach(input=>input.onchange=syncSelected);
@@ -1246,23 +1260,22 @@ async function clearOldOrders(mode,ids){
   alert(data.error||data.message||'ล้างออเดอร์เรียบร้อย');
   if(response.ok)await loadOrders();else button.disabled=false;
 }
-async function act(id, action) {
-  const note =
-    prompt(
-      action === "approve"
-        ? "หมายเหตุการอนุมัติ (ไม่บังคับ)"
-        : "เหตุผลที่ปฏิเสธ",
-    ) || "";
+async function act(id, action, rights = false) {
+  if(rights&&!confirm(action === "approve" ? "เปิดดูสลิปและตรวจยอดเงิน ชื่อบัญชี และเวลาแล้วใช่ไหม?\nยืนยันเพิ่มเครดิตตะกร้าสิทธิ์ให้ลูกค้า" : "เปิดดูสลิปแล้วใช่ไหม?\nยืนยันปฏิเสธและให้ลูกค้าส่งสลิปใหม่"))return;
+  const entered=prompt(action === "approve" ? (rights ? "หมายเหตุการอนุมัติของ Boss" : "หมายเหตุการอนุมัติ (ไม่บังคับ)") : "เหตุผลที่ปฏิเสธ","");
+  if(entered===null)return;
+  const note=entered.trim();
+  if(rights&&action==="reject"&&!note)return alert("กรุณาระบุเหตุผลที่ปฏิเสธสลิป");
   const r = await fetch("/api/admin/orders/" + id + "/" + action, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ note }),
+    body: JSON.stringify({ note, confirmed: rights }),
   });
   const d = await r.json();
   if (!r.ok) return alert(d.error);
   returnAdminHome(
     action === "approve"
-      ? "อนุมัติคำสั่งซื้อเรียบร้อย"
+      ? (d.message || "อนุมัติคำสั่งซื้อเรียบร้อย")
       : "บันทึกการไม่อนุมัติเรียบร้อย",
   );
 }
