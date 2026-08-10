@@ -51,6 +51,7 @@
     {"version":"v0.14.107","file":"requirements-history/v0.14.107.json","sha256":"bdc65b590681bf8c9888f47c30a5f16300c34d51d13f5277c5575d0cfb10a26b"},
     {"version":"v0.14.108","file":"requirements-history/v0.14.108.json","sha256":"77b8c50967b0fd522213d3b9b92e0d44c984a10fe6cf5c848b7f36600d4431a4"},
     {"version":"v0.14.109","file":"requirements-history/v0.14.109.json","sha256":"513e8d06e09f011d8fb918bd033c552b827343b18bf82bf1fa0bbc2b460c0ff0"},
-    {"version":"v0.14.110","file":"requirements-history/v0.14.110.json","sha256":"0386b949793dc526d9a171eb19b7a782f8cd1c7cb63626d76a9fd22cb61787c0"}
+    {"version":"v0.14.110","file":"requirements-history/v0.14.110.json","sha256":"0386b949793dc526d9a171eb19b7a782f8cd1c7cb63626d76a9fd22cb61787c0"},
+    {"version":"v0.14.111","file":"requirements-history/v0.14.111.json","sha256":"b83a4e73dc49cffd22f940a0f6113766da191c3e309638009e8391a1ca27a5de"}
   ]
 }
