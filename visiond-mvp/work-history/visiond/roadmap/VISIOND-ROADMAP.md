@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.96
+Current build: v0.14.97
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -73,7 +73,7 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 3. IMPLEMENTED v0.14.91 — Purchase journey: catalog, product detail, cart, checkout, payment and slip upload adopt shared UI while preserving commerce contracts.
 4. IMPLEMENTED v0.14.93 / CORRECTED v0.14.94 — Member journey: login, registration, dashboard, purchased files and downloads adopt the shared system; bundle promotion remains an animated four-frame GIF and must keep looping.
 5. IMPLEMENTED v0.14.95 — Course journey: courses, Vision 5 seller, course baskets, lessons and learner progress adopt the shared components while preserving the original Tiffany page gradient.
-6. IMPLEMENTED v0.14.96 — Product systems: Vision 4, Vision 7 and V Easy web surfaces adopt the shared components and approved gradient without changing APK/B1.
+6. IMPLEMENTED v0.14.96 / HOTFIXED v0.14.97 — Product systems complete; the homepage and cart now both load the approved animated four-frame looping bundle GIF instead of the stale static banner.
 7. NEXT — Operations: Admin, reports, products, members, orders, payment, ELON and Danger Zone.
 8. Full UI QA — desktop, Android and iPhone; contrast, focus, overflow, stale CSS and full regression.
 9. Conditional stabilization only — use only if legacy CSS collisions or production validation reveal defects; no new visual features.

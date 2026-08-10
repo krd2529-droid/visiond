@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';
 const cart=fs.readFileSync('public/cart.js','utf8'),login=fs.readFileSync('public/login.html','utf8'),register=fs.readFileSync('public/register.html','utf8'),hub=fs.readFileSync('public/my-hub.js','utf8'),dashboard=fs.readFileSync('public/dashboard.html','utf8'),member=fs.readFileSync('public/member-modern-ai.css','utf8'),md=fs.readFileSync('public/member-dashboard.js','utf8');
-assert.match(cart,/visiond-bundle-promo\.(?:gif|png)\?v=0149[34]/);assert.ok(fs.existsSync('public/assets/visiond-bundle-promo.gif'));
+assert.match(cart,/visiond-bundle-promo\.gif\?v=0149\d/);assert.ok(fs.existsSync('public/assets/visiond-bundle-promo.gif'));
 for(const html of [login,register]){assert.match(html,/member-modern-ai\.css\?v=01493/);assert.match(html,/vds-card/);assert.match(html,/vds-btn--primary/)}
 for(const id of ['loginPageForm','registerPageForm','pageAuthMsg'])assert.ok(login.includes(id)||register.includes(id));
 for(const id of ['hubSidebar','dashOverview','dashOrders','dashDownloads','dashboardOrders','dashboardDownloads','dashLogout'])assert.ok(dashboard.includes(id),`dashboard ${id}`);
