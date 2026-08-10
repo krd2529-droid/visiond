@@ -1,0 +1,9 @@
+{
+  "capture_id":"admin-ads-key-feedback-v1",
+  "event_case":"Admin Ads Center + Vision 7 Key Feedback",
+  "intake_complete":true,
+  "items":[
+    {"source_id":"SRC-028","requirement_id":"EC-ADS-004","atomic":true,"text":"ศูนย์โฆษณาต้องมีปุ่มอยู่ในหลังบ้าน","acceptance":"เมนูหลัก Admin มีทางเข้า Ads Center และหน้า Vision 7 ไม่มีทางเข้าซ้ำ"},
+    {"source_id":"SRC-029","requirement_id":"VE-KEYCENTER-002","atomic":true,"text":"ปุ่มออกคีย์กดแล้วต้องไม่เงียบ","acceptance":"เมื่อ Secret ไม่พร้อม ปุ่มแจ้งชื่อ Secret ความยาวขั้นต่ำ และให้ Deploy ใหม่"}
+  ]
+}

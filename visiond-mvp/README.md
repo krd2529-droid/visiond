@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.68** — restores the missing Vision 7 Key Center entry in the main Admin and corrects the false-positive requirement evidence.
+Current package: **v0.14.71** — repairs Vision 4 combined-product creation feedback and automatically selects the required three previews.
 
 ## ตรวจสอบก่อน Deploy
 

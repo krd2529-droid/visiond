@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';
 const read=file=>fs.readFileSync(file,'utf8'),checks=[];const check=(name,fn)=>{try{fn();checks.push(true);console.log(`PASS ${name}`)}catch(error){checks.push(false);console.error(`FAIL ${name}: ${error.message}`)}};
-check('version',()=>assert.equal(read('VERSION.txt').trim(),'v0.14.68'));
+check('version is v0.14.68 or newer',()=>{const match=read('VERSION.txt').trim().match(/^v0\.14\.(\d+)$/);assert.ok(match);assert.ok(Number(match[1])>=68)});
 check('admin entry has real destination',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/href=\\?"\/vision7-admin\.html/);assert.match(middleware,/Vision 7<br>ออกคีย์/)});
 check('entry injected into admin tabs',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/\.on\('\.admin-tabs'/);assert.match(middleware,/element\.append\(VISION7_ADMIN_ENTRY/)});
 check('both admin routes covered',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/pathname==='\/admin'/);assert.match(middleware,/pathname==='\/admin\.html'/)});

@@ -31,8 +31,6 @@
     {"id":"VE-IDEMPOTENCY-001","source":"duplicate messages and duplicate chat orders must be blocked","status":"DONE-VERIFIED","evidence":["migrations/0028_veasy_runtime_guards.sql","functions/api/vision7/runtime/message-claim.js","functions/api/vision7/runtime/order-claim.js","scripts/test-v01466.mjs"]},
     {"id":"VE-ISOLATION-001","source":"switching accounts must never expose the previous shop chats or orders","status":"DONE-VERIFIED","evidence":["functions/api/vision7/auth/context.js","functions/api/vision7/auth/logout.js","functions/_veasy_runtime.js","scripts/test-v01466.mjs"]},
     {"id":"EC-ADS-004","source":"Ads Center entry must be visible in the main Admin, not inside Vision 7 Key Center","status":"DONE-VERIFIED","evidence":["functions/_middleware.js","public/vision7-admin.html","scripts/test-v01469.mjs"]},
-    {"id":"VE-KEYCENTER-002","source":"blocked key issuance must explain the exact missing encryption Secret instead of silently ignoring the click","status":"DONE-VERIFIED","evidence":["public/vision7-admin.js","scripts/test-v01469.mjs"]},
-    {"id":"EC-ADS-005","source":"Ads Center must remain in the main Admin and any stale Vision 7 duplicate must be removed at runtime","status":"DONE-VERIFIED","evidence":["functions/_middleware.js","public/vision7-admin.html","scripts/test-v01470.mjs"]},
-    {"id":"EC-V4-001","source":"Vision 4 combined-product creation must auto-select three previews and expose any blocking error beside the create button","status":"DONE-VERIFIED","evidence":["public/admin.html","public/vision4-bundle.js","scripts/test-v01471.mjs"]}
+    {"id":"VE-KEYCENTER-002","source":"blocked key issuance must explain the exact missing encryption Secret instead of silently ignoring the click","status":"DONE-VERIFIED","evidence":["public/vision7-admin.js","scripts/test-v01469.mjs"]}
   ]
 }

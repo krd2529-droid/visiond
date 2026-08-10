@@ -129,7 +129,7 @@ async function load() {
   encryptionState.textContent = encryptionReady
     ? "พร้อมออกคีย์ · ระบบเข้ารหัส VISION7_LICENSE_ENCRYPTION_KEY ทำงานแล้ว"
     : "ยังออกคีย์ไม่ได้ · กรุณาตั้ง Cloudflare Secret: VISION7_LICENSE_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร";
-  newKey.disabled = !encryptionReady;
+  newKey.setAttribute("aria-disabled", String(!encryptionReady));
   const summary = ld.summary || {};
   keySummary.innerHTML = [
     ["คีย์ทั้งหมด", summary.total],
@@ -232,7 +232,12 @@ async function showHistory(id) {
 }
 newProgram.onclick = () => programDialog.showModal();
 newKey.onclick = () => {
-  if (!encryptionReady) return alert("ยังไม่ได้ตั้ง Secret เข้ารหัสคีย์");
+  if (!encryptionReady)
+    return alert(
+      "ยังออกคีย์ไม่ได้\nกรุณาตั้ง Cloudflare Secret: VISION7_LICENSE_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร แล้ว Deploy ใหม่",
+    );
+  if (!programs.length)
+    return alert("ยังไม่มีโปรแกรม กรุณากด ‘เพิ่มโปรแกรม’ ก่อนออกคีย์");
   issuedKey.hidden = true;
   keyDialog.showModal();
 };
