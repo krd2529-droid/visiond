@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="robots" content="noindex,nofollow" />
     <title>เข้าสู่ระบบ V Easy · VisionD</title>
-    <link rel="stylesheet" href="/veasy/login.css?v=01476" />
+    <link rel="stylesheet" href="/veasy/login.css?v=014115" />
   </head>
   <body>
     <main class="login-shell">
       <section class="login-card">
         <p class="brand">VISIOND · V EASY</p>
-        <h1>เชื่อมบัญชีและคีย์</h1>
-        <p>ใช้ ID หรืออีเมล พร้อมรหัสผ่านและคีย์ V Easy ที่ออกจากหลังบ้าน Vision 7</p>
+        <h1>กำลังเปิดใช้งาน V Easy</h1>
+        <p id="handoffHelp">VisionD จะตรวจข้อมูลอย่างปลอดภัย แล้วกลับเข้าแอปให้อัตโนมัติ</p>
         <form id="veasyLoginForm">
           <label>ID หรืออีเมล<input name="login" autocomplete="username" required /></label>
           <label>รหัสผ่าน<input name="password" type="password" autocomplete="current-password" required /></label>
-          <label>คีย์ V Easy<input name="key" autocomplete="off" required /></label>
+          <label>คีย์ V Easy<input name="key" type="password" autocomplete="off" required /></label>
+          <label>ชื่อร้านครั้งแรก<input name="shop_name" minlength="2" required /></label>
           <button id="loginSubmit" type="submit">ตรวจบัญชีและคีย์</button>
           <p id="loginState" role="status" aria-live="polite"></p>
         </form>
@@ -37,6 +38,6 @@
         </section>
       </section>
     </main>
-    <script src="/veasy/login.js?v=01476" type="module"></script>
+    <script src="/veasy/login.js?v=014115" type="module"></script>
   </body>
 </html>
