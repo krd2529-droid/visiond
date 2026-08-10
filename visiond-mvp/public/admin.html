@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/admin-categories.css?v=01398" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
-    <link rel="stylesheet" href="/admin-navigation.css?v=01431" />
+    <link rel="stylesheet" href="/admin-navigation.css?v=01488" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
     <style>
       .v3-review-section {
@@ -997,41 +997,21 @@
             ><span>ตรวจคอร์ส<br />ผู้ขาย</span></a
           >
         </div>
-        <details class="admin-more-nav">
-          <summary>
-            <span aria-hidden="true">☰</span> เพิ่มเติม — รายงาน การขาย สมาชิก
-            และตั้งค่าระบบ
-          </summary>
-          <div class="admin-more-grid">
-            <div class="admin-more-group">
-              <b>รายงานและการขาย</b
-              ><button data-admin-tab="overview">📊 ภาพรวมกำไร</button
-              ><button data-admin-tab="sales">📈 รายงานยอดขาย</button
-              ><button data-admin-tab="promotion">🏷️ โปรโมชั่น</button>
-            </div>
-            <div class="admin-more-group">
-              <b>คลังและสมาชิก</b
-              ><button data-admin-tab="categories">🗂️ หมวดหมู่</button
-              ><button data-admin-tab="users">👥 สมาชิกและระดับไอดี</button>
-            </div>
-            <div class="admin-more-group">
-              <b>ระบบและชำระเงิน</b
-              ><button data-admin-tab="settings">⚙️ ตั้งค่าชำระเงิน</button
-              ><button data-admin-tab="elon">🤖 ELON AI Support</button
-              ><button class="boss-only-danger" data-admin-tab="health">
-                🩺 System Health</button
-              ><a class="admin-more-link" href="/course-integrity.html"
-                >🛡️ ตรวจ Integrity</a
-              >
-            </div>
-            <div class="admin-more-group admin-danger-group boss-only-danger">
-              <b>BOSS · DANGER ZONE</b
-              ><button class="danger-link" data-admin-tab="trash">
-                🗑️ ถังขยะ / ลบถาวร</button
-              ><small>ลบถาวรและล้างออเดอร์ได้เฉพาะ Boss</small>
-            </div>
+        <section class="admin-menu-board" aria-label="เมนูจัดการหลังบ้านทั้งหมด">
+          <h2>เมนูจัดการทั้งหมด</h2>
+          <div class="admin-all-grid">
+            <button data-admin-tab="overview"><span aria-hidden="true">📊</span><b>ภาพรวมกำไร</b></button>
+            <button data-admin-tab="sales"><span aria-hidden="true">📈</span><b>รายงานยอดขาย</b></button>
+            <button data-admin-tab="promotion"><span aria-hidden="true">🏷️</span><b>โปรโมชั่น</b></button>
+            <button data-admin-tab="categories"><span aria-hidden="true">🗂️</span><b>หมวดหมู่</b></button>
+            <button data-admin-tab="users"><span aria-hidden="true">👥</span><b>สมาชิกและระดับไอดี</b></button>
+            <button data-admin-tab="settings"><span aria-hidden="true">⚙️</span><b>ตั้งค่าชำระเงิน</b></button>
+            <button data-admin-tab="elon"><span aria-hidden="true">🤖</span><b>ELON AI Support</b></button>
+            <button class="boss-only-danger" data-admin-tab="health"><span aria-hidden="true">🩺</span><b>System Health</b></button>
+            <a class="admin-more-link" href="/course-integrity.html"><span aria-hidden="true">🛡️</span><b>ตรวจ Integrity</b></a>
+            <button class="danger-link boss-only-danger" data-admin-tab="trash"><span aria-hidden="true">🗑️</span><b>ถังขยะ / ลบถาวร</b><small>BOSS ONLY</small></button>
           </div>
-        </details>
+        </section>
         <section id="vision3Panel" hidden>
           <div class="section-head">
             <div>
