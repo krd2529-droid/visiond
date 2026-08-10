@@ -204,6 +204,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
 /* VisionD v0.2.3 — member login and registration */
 .topbar .signup-link{padding:9px 15px;border-radius:999px;background:#fff;color:var(--tiffany-dark);box-shadow:0 8px 24px rgba(4,78,76,.18)}
 .topbar .signup-link:hover{background:var(--tiffany-soft);color:var(--tiffany-deep)}
+.topbar,.topbar nav,.topbar nav a,.topbar nav button{font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif}.topbar nav a,.topbar nav button{font-size:13px;font-weight:800;line-height:1.25}.topbar nav .nav-course-basket{border-color:rgba(255,255,255,.52);background:#fff;color:#086b66}
 .hero-login-card{position:relative;overflow:hidden;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.65);padding:30px;border-radius:26px;box-shadow:0 28px 70px rgba(4,78,76,.20)}
 .hero-login-card:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,var(--tiffany-soft),rgba(10,186,181,.08));right:-78px;top:-88px}
 .hero-login-card>*{position:relative}

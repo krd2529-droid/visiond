@@ -36,6 +36,7 @@
     {"version":"v0.14.92","file":"requirements-history/v0.14.92.json","sha256":"0798d3b5601756e3cd65e958f01296e0c1467ffebb9cb2a1fb9bcfc5b929d4f6"},
     {"version":"v0.14.93","file":"requirements-history/v0.14.93.json","sha256":"e72ac85a155d2bd34cc0c546077b71e60d46c3986e38b2bc53b6a3ce7345265d"},
     {"version":"v0.14.94","file":"requirements-history/v0.14.94.json","sha256":"d29bb4146091f2d34e517f363bc268bc5dafbdb44b04c9516128704a764aac9a"},
-    {"version":"v0.14.95","file":"requirements-history/v0.14.95.json","sha256":"27100995f2c262404b009be04d51d8d3b147e085595a9917016ecd7ab72a8238"}
+    {"version":"v0.14.95","file":"requirements-history/v0.14.95.json","sha256":"27100995f2c262404b009be04d51d8d3b147e085595a9917016ecd7ab72a8238"},
+    {"version":"v0.14.96","file":"requirements-history/v0.14.96.json","sha256":"3cbdb2993c710fd937d88965ccac379486b1e06bb71d5b90c977dcb5582ef5a7"}
   ]
 }

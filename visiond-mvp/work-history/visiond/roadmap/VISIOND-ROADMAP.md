@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.95
+Current build: v0.14.96
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -58,6 +58,7 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 - Storefront product actions must use white surfaces, Tiffany borders and AI Midnight text. Solid black or black-looking product buttons are forbidden; AI Midnight solid fill is reserved for clearly dominant primary actions only.
 - Gradients belong only on hero, primary AI actions and explicitly approved promotional surfaces. Ordinary cards use clean surfaces, thin borders and light shadows.
 - Preserve VisionD's original Tiffany-to-white page background gradient. UI adoption may modernize components but must not replace the approved legacy page gradient with a flat page color or a dark full-page background.
+- Storefront top navigation must use one shared Thai font, weight, size and spacing across pages. Keep “สร้างตะกร้าคอร์ส” immediately after “สินค้าดิจิทัล” and route it to the Vision 5 seller flow.
 
 ### Component limits
 - Buttons: AI Primary, Secondary, Tonal, Text, Promotion, Danger — only 6 semantic families.
@@ -72,8 +73,8 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 3. IMPLEMENTED v0.14.91 — Purchase journey: catalog, product detail, cart, checkout, payment and slip upload adopt shared UI while preserving commerce contracts.
 4. IMPLEMENTED v0.14.93 / CORRECTED v0.14.94 — Member journey: login, registration, dashboard, purchased files and downloads adopt the shared system; bundle promotion remains an animated four-frame GIF and must keep looping.
 5. IMPLEMENTED v0.14.95 — Course journey: courses, Vision 5 seller, course baskets, lessons and learner progress adopt the shared components while preserving the original Tiffany page gradient.
-6. NEXT — Product systems: Vision 4, Vision 7 and V Easy web surfaces.
-7. Operations — Admin, reports, products, members, orders, payment, ELON and Danger Zone.
+6. IMPLEMENTED v0.14.96 — Product systems: Vision 4, Vision 7 and V Easy web surfaces adopt the shared components and approved gradient without changing APK/B1.
+7. NEXT — Operations: Admin, reports, products, members, orders, payment, ELON and Danger Zone.
 8. Full UI QA — desktop, Android and iPhone; contrast, focus, overflow, stale CSS and full regression.
 9. Conditional stabilization only — use only if legacy CSS collisions or production validation reveal defects; no new visual features.
 
