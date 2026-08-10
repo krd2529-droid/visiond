@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');let pass=0,fail=0;
 const check=(name,ok)=>{console.log(`${ok?'PASS':'FAIL'} ${name}`);ok?pass++:fail++};
-const api=read('functions/api/recommendations.js'),event=read('functions/api/analytics/event.js'),ui=read('public/personalized-products.js'),road=read('VISIOND-ROADMAP.md'),protocol=read('JARVIS-PATCH-PROTOCOL.md');
+const api=read('functions/api/recommendations.js'),event=read('functions/api/analytics/event.js'),ui=read('public/personalized-products.js'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md'),protocol=read('work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md');
 check('recommendations support user or hashed visitor',api.includes('visitorKeyFromRequest')&&api.includes("user_id=?")&&api.includes("visitor_key=?"));
 check('30-day interest window',api.includes('-30 days'));
 check('family/category ranking',api.includes('family_key')&&api.includes('p.category===i.category'));

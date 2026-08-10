@@ -1,7 +1,7 @@
 # JARVIS Patch Protocol — VisionD
 
 When a VisionD ZIP is received with `J` or `เจ`:
-1. Read VERSION, latest PATCH note, VISIOND-ROADMAP, VISIOND-MARKETING-PLAN and CUSTOMER-DATA-ANALYSIS.
+1. Read `VERSION.txt`, `START-HERE.md`, the latest note in `work-history/visiond/patch-history/`, `work-history/visiond/roadmap/VISIOND-ROADMAP.md`, `work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md`, and `work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md`.
 2. Inspect available aggregate customer/business data before choosing work. Never invent production findings when data is unavailable.
 3. Preserve security boundaries, especially Boss/Admin/User/Guest and Elon isolation.
 4. Implement the selected patch with minimal regression surface.

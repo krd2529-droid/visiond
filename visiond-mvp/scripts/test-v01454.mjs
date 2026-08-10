@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const read=p=>fs.readFileSync(p,'utf8'),sender=read('functions/_meta_sender.js'),api=read('functions/api/admin/elon-page/[id]/send.js'),cron=read('functions/api/internal/meta-outbox.js'),schema=read('migrations/0020_elon_page_outbox.sql'),road=read('VISIOND-ROADMAP.md'),ledger=JSON.parse(read('requirements-ledger.json'));let fail=0;
+const read=p=>fs.readFileSync(p,'utf8'),sender=read('functions/_meta_sender.js'),api=read('functions/api/admin/elon-page/[id]/send.js'),cron=read('functions/api/internal/meta-outbox.js'),schema=read('migrations/0020_elon_page_outbox.sql'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md'),ledger=JSON.parse(read('requirements-ledger.json'));let fail=0;
 const checks=[
  ['version',Number(read('VERSION.txt').trim().split('.').at(-1))>=54],
  ['layer2 snapshot recheck',fs.existsSync('scripts/requirement-layer2-recheck.mjs')&&road.includes('ตัวกันงานหลุดชั้นที่ 2')],

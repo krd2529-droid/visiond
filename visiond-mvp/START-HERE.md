@@ -1,24 +1,24 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.60**
+เวอร์ชันปัจจุบัน: **v0.14.61**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
-2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md`
+2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.61-DOCUMENT-HISTORY-PHASE2.md`
 3. Requirement ปัจจุบัน: `requirements-ledger.json`
-4. Roadmap ปัจจุบัน: `VISIOND-ROADMAP.md`
-5. กติกาแพต: `JARVIS-PATCH-PROTOCOL.md`
+4. Roadmap ปัจจุบัน: `work-history/visiond/roadmap/VISIOND-ROADMAP.md`
+5. กติกาแพต: `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`
 
 ## กฎความถูกต้อง
 
 - เอกสารรุ่นใหม่มีสิทธิ์แทนที่ข้อมูลรุ่นเก่าเมื่อขัดแย้งกัน
-- เอกสารใน `work-history/visiond/` เป็นสำเนาจัดหมวดสำหรับค้นย้อนหลังและ Regression
-- ระยะที่ 1 ยังเก็บเอกสารต้นฉบับไว้ที่รากโครงการเพื่อไม่ให้สคริปต์เดิมพัง
-- ห้ามลบหรือย้ายต้นฉบับจนกว่า Phase 2 จะตรวจจุดอ้างอิงและ Regression ผ่านทั้งหมด
+- เอกสารใน `work-history/visiond/` เป็นตำแหน่งหลักสำหรับค้นย้อนหลังและ Regression
+- ไฟล์เอกสารเก่าที่ค้างอยู่รากโครงการจากการแตก ZIP ทับ ให้รัน `npm run docs:migrate`
+- บน Windows สามารถดับเบิลคลิก `APPLY-DOCUMENT-MIGRATION.cmd`
 - ให้รัน `npm run docs:history-check` ก่อนส่งแพตถัดไป
 
 ## สถานะการย้าย
 
 - Phase 1: คัดลอกและตรวจความตรงกัน — เสร็จใน v0.14.60
-- Phase 2: เปลี่ยนจุดอ้างอิง ทดสอบ แล้วเก็บต้นฉบับออก — ยังไม่ดำเนินการ
+- Phase 2: เปลี่ยนจุดอ้างอิงและเก็บต้นฉบับออกอย่างปลอดภัย — เสร็จใน v0.14.61

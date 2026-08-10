@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');let fails=0;
-const order=read('functions/api/orders/index.js'),grant=read('functions/_orders.js'),fulfill=read('functions/_vision7_orders.js'),crypto=read('functions/_vision7_license_crypto.js'),schema=read('functions/_vision7_schema.js'),road=read('VISIOND-ROADMAP.md'),mine=read('functions/api/vision7/my-programs.js');
+const order=read('functions/api/orders/index.js'),grant=read('functions/_orders.js'),fulfill=read('functions/_vision7_orders.js'),crypto=read('functions/_vision7_license_crypto.js'),schema=read('functions/_vision7_schema.js'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md'),mine=read('functions/api/vision7/my-programs.js');
 const checks=[
  ['version',Number(read('VERSION.txt').trim().split('.').at(-1))>=52],
  ['QA every patch',road.includes('Every patch — mandatory Patch Smoke Check')],

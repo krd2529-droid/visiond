@@ -3,7 +3,7 @@ const read=p=>fs.readFileSync(p,'utf8');
 const api=read('functions/api/admin/customer-analytics.js');
 const admin=read('public/admin.js');
 const html=read('public/admin.html');
-const road=read('VISIOND-ROADMAP.md');
+const road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
 const checks=[
  ['conversion payload',api.includes('conversion:{people:fp,rates,bottleneck')],
  ['view/cart rate',api.includes('view_to_cart')],

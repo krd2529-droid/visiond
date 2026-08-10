@@ -1,192 +1,340 @@
 {
-  "schema_version": 1,
-  "phase": 1,
-  "current_version": "v0.14.60",
-  "policy": "copy-and-verify; keep root originals until phase 2",
+  "schema_version": 2,
+  "phase": 2,
+  "current_version": "v0.14.61",
+  "policy": "archive-authoritative; remove legacy root only when SHA-256 matches archive or a recorded legacy version",
   "files": [
     {
-      "source": "PATCH-v0.14.39-ELON-MAXIMUM-HARDENING.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.39-ELON-MAXIMUM-HARDENING.md"
+      "legacy_root": "PATCH-v0.14.39-ELON-MAXIMUM-HARDENING.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.39-ELON-MAXIMUM-HARDENING.md",
+      "accepted_legacy_sha256": [
+        "35ee6118e7070020aae99ce6b813e41049c41f40f0e08013b0286323cb968175"
+      ]
     },
     {
-      "source": "PATCH-v0.14.40-BOSS-FRONTEND-SELLER-ACCESS.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.40-BOSS-FRONTEND-SELLER-ACCESS.md"
+      "legacy_root": "PATCH-v0.14.40-BOSS-FRONTEND-SELLER-ACCESS.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.40-BOSS-FRONTEND-SELLER-ACCESS.md",
+      "accepted_legacy_sha256": [
+        "6479b371f9785784b9cf452163b4c0c64af0fde795908f6b9951470d52f7267e"
+      ]
     },
     {
-      "source": "PATCH-v0.14.41-ANDROID-MOBILE-DRAWER.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.41-ANDROID-MOBILE-DRAWER.md"
+      "legacy_root": "PATCH-v0.14.41-ANDROID-MOBILE-DRAWER.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.41-ANDROID-MOBILE-DRAWER.md",
+      "accepted_legacy_sha256": [
+        "b8dd78a3a0e74a4410b95c4d73fa76e99c5f50469af338b69709818d4b266d0a"
+      ]
     },
     {
-      "source": "PATCH-v0.14.42-MOBILE-FRONTEND-FULL-AUDIT.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.42-MOBILE-FRONTEND-FULL-AUDIT.md"
+      "legacy_root": "PATCH-v0.14.42-MOBILE-FRONTEND-FULL-AUDIT.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.42-MOBILE-FRONTEND-FULL-AUDIT.md",
+      "accepted_legacy_sha256": [
+        "dd7b302355f29534fa5d3901952fa69daa821c8add3f165bcda6b652527b33f5"
+      ]
     },
     {
-      "source": "PATCH-v0.14.43-FIRST-ORDER-NUDGE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.43-FIRST-ORDER-NUDGE.md"
+      "legacy_root": "PATCH-v0.14.43-FIRST-ORDER-NUDGE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.43-FIRST-ORDER-NUDGE.md",
+      "accepted_legacy_sha256": [
+        "fe748cb72db0557c5ace6342a31adf3931c5f3d6d9758f4cf24aa17d97930496"
+      ]
     },
     {
-      "source": "PATCH-v0.14.44-CUSTOMER-INTELLIGENCE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.44-CUSTOMER-INTELLIGENCE.md"
+      "legacy_root": "PATCH-v0.14.44-CUSTOMER-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.44-CUSTOMER-INTELLIGENCE.md",
+      "accepted_legacy_sha256": [
+        "c5b881256b0f791520fab7d0a7bd3dfca67cf4fbfd2362ac297ecd32528dc984"
+      ]
     },
     {
-      "source": "PATCH-v0.14.45-ADS-INTELLIGENCE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.45-ADS-INTELLIGENCE.md"
+      "legacy_root": "PATCH-v0.14.45-ADS-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.45-ADS-INTELLIGENCE.md",
+      "accepted_legacy_sha256": [
+        "ce87e861fd1800e873c7079ddd950ad1faabe511d61112bbb51d84eb41a5a6c5"
+      ]
     },
     {
-      "source": "PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md"
+      "legacy_root": "PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md",
+      "accepted_legacy_sha256": [
+        "637a11d6bb8d0b435494de0d952b151ea4065a49779b506e299127fe5ad1239e"
+      ]
     },
     {
-      "source": "PATCH-v0.14.47-CONVERSION-PRODUCT-DEMAND-INTELLIGENCE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.47-CONVERSION-PRODUCT-DEMAND-INTELLIGENCE.md"
+      "legacy_root": "PATCH-v0.14.47-CONVERSION-PRODUCT-DEMAND-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.47-CONVERSION-PRODUCT-DEMAND-INTELLIGENCE.md",
+      "accepted_legacy_sha256": [
+        "f380456d30b579d20cd27285c90b6da742e88b8e8a9d13c80ab14272c66a5885"
+      ]
     },
     {
-      "source": "PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md"
+      "legacy_root": "PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md",
+      "accepted_legacy_sha256": [
+        "4754765451c7e53c4896921983b5e8b8c02b323d1fc8d05e43ae9cc7bc61f431"
+      ]
     },
     {
-      "source": "PATCH-v0.14.49-PERSONALIZED-PRODUCT-ENGINE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.49-PERSONALIZED-PRODUCT-ENGINE.md"
+      "legacy_root": "PATCH-v0.14.49-PERSONALIZED-PRODUCT-ENGINE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.49-PERSONALIZED-PRODUCT-ENGINE.md",
+      "accepted_legacy_sha256": [
+        "475491466165d0a1c27a44b8ed7877eb63f463c6ca3a94b4bc5af1d08fe4e5a8"
+      ]
     },
     {
-      "source": "PATCH-v0.14.50-COMMERCE-CONVERSION-INTELLIGENCE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.50-COMMERCE-CONVERSION-INTELLIGENCE.md"
+      "legacy_root": "PATCH-v0.14.50-COMMERCE-CONVERSION-INTELLIGENCE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.50-COMMERCE-CONVERSION-INTELLIGENCE.md",
+      "accepted_legacy_sha256": [
+        "17920c819278c0080a76c03499ba7a7d3feca310b9c303ff2529f791e26931a4"
+      ]
     },
     {
-      "source": "PATCH-v0.14.51-VISION7-ELON-PAGE-FOUNDATION.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.51-VISION7-ELON-PAGE-FOUNDATION.md"
+      "legacy_root": "PATCH-v0.14.51-VISION7-ELON-PAGE-FOUNDATION.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.51-VISION7-ELON-PAGE-FOUNDATION.md",
+      "accepted_legacy_sha256": [
+        "c1571e980fb96a0687afab14790c4b6b4a8efa7fd650df5555a90f81adb18c44"
+      ]
     },
     {
-      "source": "PATCH-v0.14.52-VISION7-ORDER-FULFILLMENT-QA-ROADMAP.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.52-VISION7-ORDER-FULFILLMENT-QA-ROADMAP.md"
+      "legacy_root": "PATCH-v0.14.52-VISION7-ORDER-FULFILLMENT-QA-ROADMAP.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.52-VISION7-ORDER-FULFILLMENT-QA-ROADMAP.md",
+      "accepted_legacy_sha256": [
+        "04655e0bbd6dd5d1603cb3eda417f2ef7d428ce67ef9ba9e5f570c19bf8ff27f"
+      ]
     },
     {
-      "source": "PATCH-v0.14.53-REQUIREMENT-LEDGER-META-WEBHOOK.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.53-REQUIREMENT-LEDGER-META-WEBHOOK.md"
+      "legacy_root": "PATCH-v0.14.53-REQUIREMENT-LEDGER-META-WEBHOOK.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.53-REQUIREMENT-LEDGER-META-WEBHOOK.md",
+      "accepted_legacy_sha256": [
+        "b62331960ab2842124d2927a06921b6409800abecdf2d9cd224aeb2269681746"
+      ]
     },
     {
-      "source": "PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md"
+      "legacy_root": "PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md",
+      "accepted_legacy_sha256": [
+        "ff29a10a46c95de44b8e690cb30ccba8f7c476a61b7ba54fb3148ca186a9e4b0"
+      ]
     },
     {
-      "source": "PATCH-v0.14.55-QA-HARDENING-SOURCE-COVERAGE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.55-QA-HARDENING-SOURCE-COVERAGE.md"
+      "legacy_root": "PATCH-v0.14.55-QA-HARDENING-SOURCE-COVERAGE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.55-QA-HARDENING-SOURCE-COVERAGE.md",
+      "accepted_legacy_sha256": [
+        "1f84664a2b001da75be28389ac416ffb790749b4c3df9c2c6983b9c547808545"
+      ]
     },
     {
-      "source": "PATCH-v0.14.56-VISION7-RELEASE-DELIVERY.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.56-VISION7-RELEASE-DELIVERY.md"
+      "legacy_root": "PATCH-v0.14.56-VISION7-RELEASE-DELIVERY.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.56-VISION7-RELEASE-DELIVERY.md",
+      "accepted_legacy_sha256": [
+        "25d320cd1907b957576900e64b44127ab779a192c4b85f76514a8864a3ec770e"
+      ]
     },
     {
-      "source": "PATCH-v0.14.57-VISION7-OPERATOR-CONTROL.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.57-VISION7-OPERATOR-CONTROL.md"
+      "legacy_root": "PATCH-v0.14.57-VISION7-OPERATOR-CONTROL.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.57-VISION7-OPERATOR-CONTROL.md",
+      "accepted_legacy_sha256": [
+        "09570e96507b7f67722865a07e27b82978418aad06c6a58049cea536b5afa2f7"
+      ]
     },
     {
-      "source": "PATCH-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.58-PAGE-SALES-GROUNDED-AI.md"
+      "legacy_root": "PATCH-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
+      "accepted_legacy_sha256": [
+        "8f43cf43a9ac682e98e6ea4e89b91e866da6a7fc85c286dc140614903149aab8"
+      ]
     },
     {
-      "source": "PATCH-v0.14.59-META-ADS-API-EVENT-CASE-COMPLETE.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.59-META-ADS-API-EVENT-CASE-COMPLETE.md"
+      "legacy_root": "PATCH-v0.14.59-META-ADS-API-EVENT-CASE-COMPLETE.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.59-META-ADS-API-EVENT-CASE-COMPLETE.md",
+      "accepted_legacy_sha256": [
+        "a5f5f5065e9add10d2733777e295b64405e25adbbfd41a3924eee76378a9540e"
+      ]
     },
     {
-      "source": "PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
-      "archive": "work-history/visiond/patch-history/PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md"
+      "legacy_root": "PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
+      "accepted_legacy_sha256": [
+        "81907c513df83444ec3aa822c44ef311de8c3b321b18b6aea0c77cc055d0c126"
+      ]
     },
     {
-      "source": "QA-v0.14.52-PATCH-SMOKE-CHECK.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.52-PATCH-SMOKE-CHECK.md"
+      "legacy_root": "PATCH-v0.14.61-DOCUMENT-HISTORY-PHASE2.md",
+      "archive": "work-history/visiond/patch-history/PATCH-v0.14.61-DOCUMENT-HISTORY-PHASE2.md",
+      "accepted_legacy_sha256": []
     },
     {
-      "source": "QA-v0.14.53-COVERAGE-AND-WEBHOOK.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.53-COVERAGE-AND-WEBHOOK.md"
+      "legacy_root": "QA-v0.14.52-PATCH-SMOKE-CHECK.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.52-PATCH-SMOKE-CHECK.md",
+      "accepted_legacy_sha256": [
+        "a9b5a75e198c8a756b2f7e6249abe9e5b7d15d49bdbc8a526ae6c805acffd0b5"
+      ]
     },
     {
-      "source": "QA-v0.14.54-PATCH-COVERAGE.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.54-PATCH-COVERAGE.md"
+      "legacy_root": "QA-v0.14.53-COVERAGE-AND-WEBHOOK.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.53-COVERAGE-AND-WEBHOOK.md",
+      "accepted_legacy_sha256": [
+        "482eea814661b5bdcdef5ecbd09b470176e857afaea663909314fe3ca5b150b0"
+      ]
     },
     {
-      "source": "QA-v0.14.55-QA-HARDENING.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.55-QA-HARDENING.md"
+      "legacy_root": "QA-v0.14.54-PATCH-COVERAGE.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.54-PATCH-COVERAGE.md",
+      "accepted_legacy_sha256": [
+        "0d41ac9be16fcde6ce81dfcf156f7314b4cb502431f0b94b2da4584890dc1faf"
+      ]
     },
     {
-      "source": "QA-v0.14.56-VISION7-RELEASE-DELIVERY.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.56-VISION7-RELEASE-DELIVERY.md"
+      "legacy_root": "QA-v0.14.55-QA-HARDENING.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.55-QA-HARDENING.md",
+      "accepted_legacy_sha256": [
+        "f7a45d85a44185f8a7bb2a6cd59707e259c59c682a57a2c83c6582b3d9c19bdc"
+      ]
     },
     {
-      "source": "QA-v0.14.57-VISION7-OPERATOR-CONTROL.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.57-VISION7-OPERATOR-CONTROL.md"
+      "legacy_root": "QA-v0.14.56-VISION7-RELEASE-DELIVERY.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.56-VISION7-RELEASE-DELIVERY.md",
+      "accepted_legacy_sha256": [
+        "f47ba9677e32e1bf5f54b5e081cc6ee48b1d3c2264bad5a1ed1907a54587b953"
+      ]
     },
     {
-      "source": "QA-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.58-PAGE-SALES-GROUNDED-AI.md"
+      "legacy_root": "QA-v0.14.57-VISION7-OPERATOR-CONTROL.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.57-VISION7-OPERATOR-CONTROL.md",
+      "accepted_legacy_sha256": [
+        "db7a0ec77f5beebb53b0fb6eb8ace20d88007613d8b1f6eae6efdc1575117c76"
+      ]
     },
     {
-      "source": "QA-v0.14.59-META-ADS-EVENT-CASE-COMPLETE.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.59-META-ADS-EVENT-CASE-COMPLETE.md"
+      "legacy_root": "QA-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.58-PAGE-SALES-GROUNDED-AI.md",
+      "accepted_legacy_sha256": [
+        "a48100e2eabed550de7e09856f2b11ffecfaadd066228aa41bebad9aa65d3a99"
+      ]
     },
     {
-      "source": "QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
-      "archive": "work-history/visiond/qa-history/QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md"
+      "legacy_root": "QA-v0.14.59-META-ADS-EVENT-CASE-COMPLETE.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.59-META-ADS-EVENT-CASE-COMPLETE.md",
+      "accepted_legacy_sha256": [
+        "64037dbfa8c43e873ee7420888df7d3968e970af993aa4821fdfa5666b6bab2a"
+      ]
     },
     {
-      "source": "JARVIS-PATCH-PROTOCOL.md",
-      "archive": "work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md"
+      "legacy_root": "QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md",
+      "accepted_legacy_sha256": [
+        "0e7283669ae7b759c828abff5316242e7bc0bb3d50db1673e02935b7710a8405"
+      ]
     },
     {
-      "source": "PATCH-WORK-LEDGER-PROTOCOL.md",
-      "archive": "work-history/visiond/protocols/PATCH-WORK-LEDGER-PROTOCOL.md"
+      "legacy_root": "QA-v0.14.61-DOCUMENT-HISTORY-PHASE2.md",
+      "archive": "work-history/visiond/qa-history/QA-v0.14.61-DOCUMENT-HISTORY-PHASE2.md",
+      "accepted_legacy_sha256": []
     },
     {
-      "source": "REQUIREMENT-LAYER2-PROTOCOL.md",
-      "archive": "work-history/visiond/protocols/REQUIREMENT-LAYER2-PROTOCOL.md"
+      "legacy_root": "JARVIS-PATCH-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md",
+      "accepted_legacy_sha256": [
+        "77949da71438b439c825697396227b9697e1dd258edcf5c4ff6fff18b7426bd8"
+      ]
     },
     {
-      "source": "REQUIREMENT-LEDGER-PROTOCOL.md",
-      "archive": "work-history/visiond/protocols/REQUIREMENT-LEDGER-PROTOCOL.md"
+      "legacy_root": "PATCH-WORK-LEDGER-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/PATCH-WORK-LEDGER-PROTOCOL.md",
+      "accepted_legacy_sha256": [
+        "26a1b3d8328aaaf3bad4db258c0388b2b1d9473bb7b76319700af8b97e9f85c4"
+      ]
     },
     {
-      "source": "CUSTOMER-DATA-ANALYSIS.md",
-      "archive": "work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md"
+      "legacy_root": "REQUIREMENT-LAYER2-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/REQUIREMENT-LAYER2-PROTOCOL.md",
+      "accepted_legacy_sha256": [
+        "0c8f812a5774f738715dc38b1bcd5054b25956c281e5e4130179fc423bb4d422"
+      ]
     },
     {
-      "source": "VISIOND-MARKETING-PLAN.md",
-      "archive": "work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md"
+      "legacy_root": "REQUIREMENT-LEDGER-PROTOCOL.md",
+      "archive": "work-history/visiond/protocols/REQUIREMENT-LEDGER-PROTOCOL.md",
+      "accepted_legacy_sha256": [
+        "9e3cdcb1917f17497bd5977a7db9c590446abef272088e63b723a4da4d20363e"
+      ]
     },
     {
-      "source": "VISIOND-ROADMAP.md",
-      "archive": "work-history/visiond/roadmap/VISIOND-ROADMAP.md"
+      "legacy_root": "CUSTOMER-DATA-ANALYSIS.md",
+      "archive": "work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md",
+      "accepted_legacy_sha256": [
+        "bead84bc7e91c551c16a9878d913a818c07826144b26759c36d649aba30b61c9"
+      ]
     },
     {
-      "source": "DEPLOY-NOW.txt",
-      "archive": "work-history/visiond/setup-and-operations/DEPLOY-NOW.txt"
+      "legacy_root": "VISIOND-MARKETING-PLAN.md",
+      "archive": "work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md",
+      "accepted_legacy_sha256": [
+        "a6cc62adf065c23d8735fdcc8b858f40f8cf5a7bb7c573c579786fc7e386fa42"
+      ]
     },
     {
-      "source": "GEMINI_SETUP.txt",
-      "archive": "work-history/visiond/setup-and-operations/GEMINI_SETUP.txt"
+      "legacy_root": "VISIOND-ROADMAP.md",
+      "archive": "work-history/visiond/roadmap/VISIOND-ROADMAP.md",
+      "accepted_legacy_sha256": [
+        "332b121efbd43f84774b8c72c3b48b78d42143720f8ec9b1ada7f305e7aa90f9"
+      ]
     },
     {
-      "source": "META_ADS_SETUP.md",
-      "archive": "work-history/visiond/setup-and-operations/META_ADS_SETUP.md"
+      "legacy_root": "DEPLOY-NOW.txt",
+      "archive": "work-history/visiond/setup-and-operations/DEPLOY-NOW.txt",
+      "accepted_legacy_sha256": [
+        "ec66dc2767b54f21362d87d48be9fbbe2ecd5203594f987d13566970ad9f50a2"
+      ]
     },
     {
-      "source": "PREDEPLOY_CHECK.md",
-      "archive": "work-history/visiond/setup-and-operations/PREDEPLOY_CHECK.md"
+      "legacy_root": "GEMINI_SETUP.txt",
+      "archive": "work-history/visiond/setup-and-operations/GEMINI_SETUP.txt",
+      "accepted_legacy_sha256": [
+        "396f441d3436164459001a01111919b06708047c0c339847049798b32e89b3db"
+      ]
     },
     {
-      "source": "SECURITY_SETUP.txt",
-      "archive": "work-history/visiond/setup-and-operations/SECURITY_SETUP.txt"
+      "legacy_root": "META_ADS_SETUP.md",
+      "archive": "work-history/visiond/setup-and-operations/META_ADS_SETUP.md",
+      "accepted_legacy_sha256": [
+        "28dfd78647eabf9dcd96ebb79424be2a1b90c676ad48c4f3ce6623234b147b3a"
+      ]
     },
     {
-      "source": "VISION3_SETUP.txt",
-      "archive": "work-history/visiond/setup-and-operations/VISION3_SETUP.txt"
+      "legacy_root": "PREDEPLOY_CHECK.md",
+      "archive": "work-history/visiond/setup-and-operations/PREDEPLOY_CHECK.md",
+      "accepted_legacy_sha256": [
+        "765e6a47d573142559f3982ee8f36d0f41ebed588c075144604bbe68289ce8bf"
+      ]
     },
     {
-      "source": "VISION5_BACKUP.md",
-      "archive": "work-history/visiond/setup-and-operations/VISION5_BACKUP.md"
+      "legacy_root": "SECURITY_SETUP.txt",
+      "archive": "work-history/visiond/setup-and-operations/SECURITY_SETUP.txt",
+      "accepted_legacy_sha256": [
+        "fa7ad046ac2792e6c178f305ff446a23bb4978ac91db12cba684d461a2480f39"
+      ]
     },
     {
-      "source": "VISION6_ELON_SETUP.md",
-      "archive": "work-history/visiond/setup-and-operations/VISION6_ELON_SETUP.md"
+      "legacy_root": "VISION3_SETUP.txt",
+      "archive": "work-history/visiond/setup-and-operations/VISION3_SETUP.txt",
+      "accepted_legacy_sha256": [
+        "25be5c6a3bce73c29be775fa90fb305bf625558c1d0fac7bb6b9acd9cc2404e6"
+      ]
+    },
+    {
+      "legacy_root": "VISION5_BACKUP.md",
+      "archive": "work-history/visiond/setup-and-operations/VISION5_BACKUP.md",
+      "accepted_legacy_sha256": [
+        "6bd518df703e7899083ca1f2b1b4ee9e9443944d4f3058ff3312f0c0ccbc56d4"
+      ]
+    },
+    {
+      "legacy_root": "VISION6_ELON_SETUP.md",
+      "archive": "work-history/visiond/setup-and-operations/VISION6_ELON_SETUP.md",
+      "accepted_legacy_sha256": [
+        "7ec15b14fc685b35699229740093a3c75eaf13d0a278f31958a00df50e01ebac"
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');
-const api=read('functions/api/admin/customer-analytics.js'),admin=read('public/admin.js'),html=read('public/admin.html'),road=read('VISIOND-ROADMAP.md');
+const api=read('functions/api/admin/customer-analytics.js'),admin=read('public/admin.js'),html=read('public/admin.html'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
 const checks=[
  ['conversion payload',api.includes('conversion:{people:fp,rates,bottleneck')],
  ['view/cart rate',api.includes('view_to_cart')],

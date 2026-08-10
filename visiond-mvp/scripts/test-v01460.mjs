@@ -12,10 +12,13 @@ if (!fs.existsSync(manifestPath)) fail('missing history manifest');
 else {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   for (const item of manifest.files) {
-    if (!fs.existsSync(item.source)) { fail(`missing source ${item.source}`); continue; }
     if (!fs.existsSync(item.archive)) { fail(`missing archive ${item.archive}`); continue; }
-    if (hash(item.source) !== hash(item.archive)) fail(`content mismatch ${item.source}`);
-    else pass(`${item.source} -> ${item.archive}`);
+    const source = item.source || item.legacy_root;
+    if (source && fs.existsSync(source)) {
+      const accepted = new Set([hash(item.archive), ...(item.accepted_legacy_sha256 || [])]);
+      if (!accepted.has(hash(source))) fail(`unrecognized legacy content ${source}`);
+      else pass(`${source} is safely archived`);
+    } else pass(`${item.archive} exists`);
   }
 }
 

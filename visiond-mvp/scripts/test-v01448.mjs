@@ -7,7 +7,7 @@ const register=read('functions/api/auth/register.js');
 const login=read('functions/api/auth/login.js');
 const client=read('public/analytics.js');
 const adminApi=read('functions/api/admin/customer-analytics.js');
-const roadmap=read('VISIOND-ROADMAP.md');
+const roadmap=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
 const checks=[
  ['guest cookie UUID is hashed', analytics.includes("visiond-view-v2")&&analytics.includes('claimVisitorHistory')],
  ['registration claims guest history', register.includes('claimVisitorHistory')&&register.includes('signup_complete')],

@@ -1,5 +1,5 @@
 import fs from 'node:fs';import {metaEventTime} from '../functions/_meta_messenger.js';
-const read=p=>fs.readFileSync(p,'utf8'),api=read('functions/api/meta/messenger.js'),worker=read('functions/_meta_messenger.js'),schema=read('migrations/0021_meta_webhook_qa_hardening.sql'),road=read('VISIOND-ROADMAP.md');
+const read=p=>fs.readFileSync(p,'utf8'),api=read('functions/api/meta/messenger.js'),worker=read('functions/_meta_messenger.js'),schema=read('migrations/0021_meta_webhook_qa_hardening.sql'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
 const actual=metaEventTime(1767225600000,1767229200000);const checks=[
  ['version',Number(read('VERSION.txt').trim().split('.').pop())>=55],
  ['utf8 byte limit',api.includes('TextEncoder().encode(raw).byteLength')],

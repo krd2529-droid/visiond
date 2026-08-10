@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');
-const schema=read('functions/_schema.js'),api=read('functions/api/admin/customer-analytics.js'),admin=read('public/admin.js'),roadmap=read('VISIOND-ROADMAP.md');
+const schema=read('functions/_schema.js'),api=read('functions/api/admin/customer-analytics.js'),admin=read('public/admin.js'),roadmap=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
 const checks=[
  ['inventory origin schema',schema.includes('inventory_origin')&&schema.includes('premade_stock')],
  ['family fields',schema.includes('family_key')&&schema.includes('series_no')],

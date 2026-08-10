@@ -2,7 +2,7 @@
 
 ## ตรวจสอบก่อน Deploy
 
-รัน `npm run predeploy:check` เพื่อตรวจ Cloudflare config/bindings, placeholder, migrations, Functions imports, HTML assets, cache version และ ID ซ้ำ โดยไม่อ่านหรือแสดง Secret ดูรายละเอียดใน `PREDEPLOY_CHECK.md`
+รัน `npm run predeploy:check` เพื่อตรวจ Cloudflare config/bindings, placeholder, migrations, Functions imports, HTML assets, cache version และ ID ซ้ำ โดยไม่อ่านหรือแสดง Secret ดูรายละเอียดใน `work-history/visiond/setup-and-operations/PREDEPLOY_CHECK.md`
 
 ## v0.14.38 — ELON Database Air-gap and Permanent Blacklist
 
@@ -239,7 +239,7 @@
 - จำกัด ELON ไม่ให้อนุมัติสลิป เพิ่มเครดิต เปลี่ยน Role หรือเข้าถึง Secret
 - ปฏิเสธลิงก์ภายนอกก่อนเรียก AI อนุญาตเฉพาะ VisionD, `developer.easyslip.com` และ `api.easyslip.com` ของ Vision 5 พร้อมกรอง URL อื่นจากคำตอบทุกครั้ง
 - เก็บ OpenAI/Gemini API key ฝั่ง Cloudflare Function และตั้งค่าผ่าน Secret เท่านั้น
-- ดูวิธีตั้งค่าที่ `VISION6_ELON_SETUP.md`
+- ดูวิธีตั้งค่าที่ `work-history/visiond/setup-and-operations/VISION6_ELON_SETUP.md`
 
 ## v0.14.14 — จัดโครงสร้าง UI หน้าบ้านและหลังบ้านใหม่
 
@@ -709,11 +709,11 @@ UPDATE users SET role='boss' WHERE lower(email)=lower('อีเมลเจ้�
 
 # v0.14.46 — Living Roadmap + Customer Data Protocol
 
-- เพิ่ม `VISIOND-ROADMAP.md`, `VISIOND-MARKETING-PLAN.md`, `CUSTOMER-DATA-ANALYSIS.md` และ `JARVIS-PATCH-PROTOCOL.md` ลงในแพตช์เพื่อส่งต่อบริบทงานให้ทีม J ทุกครั้ง
+- เพิ่ม `work-history/visiond/roadmap/VISIOND-ROADMAP.md`, `work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md`, `work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md` และ `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md` ลงในแพตช์เพื่อส่งต่อบริบทงานให้ทีม J ทุกครั้ง
 - ทุกแพตช์ถัดไปต้องวิเคราะห์ข้อมูลลูกค้า/ธุรกิจแบบ aggregate เท่าที่มีจริงก่อนตัดสินใจลำดับงาน และห้ามเดาผล production เมื่อไม่มีข้อมูล
 - แยกสถานะ Implemented / Deployed / Validated เพื่อไม่ถือว่าโค้ดเสร็จเท่ากับผลธุรกิจสำเร็จ
 - หลังทุกแพตช์ต้องอัปเดต Roadmap, Marketing Plan, Data Analysis และบอกงานที่เหลือกับแพตช์ถัดไป
 
 
 ## Current patch
-v0.14.48 — Guest Identity + Automatic First-Order Gift. See `PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md`, `VISIOND-ROADMAP.md`, and `VISIOND-MARKETING-PLAN.md`.
+v0.14.48 — Guest Identity + Automatic First-Order Gift. See `work-history/visiond/patch-history/PATCH-v0.14.48-GUEST-IDENTITY-FIRST-ORDER-GIFT.md`, `work-history/visiond/roadmap/VISIOND-ROADMAP.md`, and `work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md`.

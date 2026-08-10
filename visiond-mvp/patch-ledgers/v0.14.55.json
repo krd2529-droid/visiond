@@ -3,6 +3,6 @@
 {"id":"P1455-002","scope":"QA","source_instruction":"เพิ่ม Source-to-Ledger Recheck กันงานหลุดก่อนเข้า Ledger","status":"DONE-VERIFIED","evidence":["scripts/source-to-ledger-recheck.mjs","source-captures/elon-page-vision7-v1.json"]},
 {"id":"P1455-003","scope":"SECURITY","source_instruction":"วัด Meta payload เป็น UTF-8 byte และบังคับ META_PAGE_ID","status":"DONE-VERIFIED","evidence":["functions/api/meta/messenger.js","functions/_meta_messenger.js"]},
 {"id":"P1455-004","scope":"BUG","source_instruction":"ใช้ timestamp เหตุการณ์จริงและป้องกัน event เก่าทับเวลาล่าสุด","status":"DONE-VERIFIED","evidence":["functions/_meta_messenger.js","migrations/0021_meta_webhook_qa_hardening.sql"]},
-{"id":"P1455-005","scope":"QA","source_instruction":"ซ่อม regression และรันรวมทุกชุด","status":"DONE-VERIFIED","evidence":["scripts/test-all-regressions.mjs","QA-v0.14.55-QA-HARDENING.md"]},
-{"id":"P1455-006","scope":"DOC","source_instruction":"ปรับ Roadmap จำกัดขนาดแพตและแยก QA-only","status":"DONE-VERIFIED","evidence":["VISIOND-ROADMAP.md"]}
+{"id":"P1455-005","scope":"QA","source_instruction":"ซ่อม regression และรันรวมทุกชุด","status":"DONE-VERIFIED","evidence":["scripts/test-all-regressions.mjs","work-history/visiond/qa-history/QA-v0.14.55-QA-HARDENING.md"]},
+{"id":"P1455-006","scope":"DOC","source_instruction":"ปรับ Roadmap จำกัดขนาดแพตและแยก QA-only","status":"DONE-VERIFIED","evidence":["work-history/visiond/roadmap/VISIOND-ROADMAP.md"]}
 ]}

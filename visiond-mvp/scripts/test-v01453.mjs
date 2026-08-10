@@ -4,7 +4,7 @@ globalThis.crypto??=webcrypto;
 import {verifyMetaSignature,withinMetaReplyWindow} from '../functions/_meta_messenger.js';
 const read=p=>fs.readFileSync(p,'utf8'),raw='{"object":"page","entry":[]}',secret='meta-app-secret-for-test-only-123456';
 const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']),sig=[...new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(raw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-const ledger=JSON.parse(read('requirements-ledger.json')),webhook=read('functions/api/meta/messenger.js'),core=read('functions/_meta_messenger.js'),schema=read('migrations/0019_elon_page_meta_webhook.sql'),road=read('VISIOND-ROADMAP.md');let fail=0;
+const ledger=JSON.parse(read('requirements-ledger.json')),webhook=read('functions/api/meta/messenger.js'),core=read('functions/_meta_messenger.js'),schema=read('migrations/0019_elon_page_meta_webhook.sql'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');let fail=0;
 const checks=[
  ['version',Number(read('VERSION.txt').trim().split('.').at(-1))>=53],
  ['valid signature accepted',await verifyMetaSignature(secret,raw,`sha256=${sig}`)],

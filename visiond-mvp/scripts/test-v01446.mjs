@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');
 const version=read('VERSION.txt');
-const roadmap=read('VISIOND-ROADMAP.md');
-const marketing=read('VISIOND-MARKETING-PLAN.md');
-const data=read('CUSTOMER-DATA-ANALYSIS.md');
-const protocol=read('JARVIS-PATCH-PROTOCOL.md');
-const patch=read('PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md');
+const roadmap=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
+const marketing=read('work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md');
+const data=read('work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md');
+const protocol=read('work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md');
+const patch=read('work-history/visiond/patch-history/PATCH-v0.14.46-LIVING-ROADMAP-DATA-PROTOCOL.md');
 const checks=[
  ['version bumped',version.includes('v0.14.46')],
  ['roadmap living handoff',/IMPLEMENTED/i.test(roadmap)&&/DEPLOYED/i.test(roadmap)&&/VALIDATED/i.test(roadmap)],

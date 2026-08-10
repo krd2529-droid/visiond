@@ -1,5 +1,5 @@
 {"patch":"v0.14.59","source_base":"v0.14.58","patch_type":"FEATURE-high-risk","tasks":[
-{"id":"P1459-001","scope":"SECURITY","source_instruction":"เชื่อม Meta Ads API แบบ read-only ด้วย Secret และจำกัดช่วงซิงก์","status":"DONE-VERIFIED","evidence":["functions/_meta_ads.js","functions/api/admin/meta-ads-sync.js","META_ADS_SETUP.md"]},
+{"id":"P1459-001","scope":"SECURITY","source_instruction":"เชื่อม Meta Ads API แบบ read-only ด้วย Secret และจำกัดช่วงซิงก์","status":"DONE-VERIFIED","evidence":["functions/_meta_ads.js","functions/api/admin/meta-ads-sync.js","work-history/visiond/setup-and-operations/META_ADS_SETUP.md"]},
 {"id":"P1459-002","scope":"DATABASE","source_instruction":"เก็บ Campaign Ad Set Ad Creative และ Insight รายวันแบบ upsert กันข้อมูลซ้ำ","status":"DONE-VERIFIED","evidence":["migrations/0024_meta_ads_api_ingestion.sql","functions/_meta_ads.js"]},
 {"id":"P1459-003","scope":"UI","source_instruction":"หน้าโฆษณาซิงก์ API และแสดงสถานะ Spend Impression Click CTR ROAS โดยไม่ยุ่งแดชบอร์ดรายได้","status":"DONE-VERIFIED","evidence":["functions/api/admin/ads-center.js","public/ads-center.html","public/ads-center.js","scripts/test-v01459.mjs"]}
 ]}

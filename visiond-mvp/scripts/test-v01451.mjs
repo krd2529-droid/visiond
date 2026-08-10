@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8'),has=p=>fs.existsSync(p);let fail=0;
-const schema=read('migrations/0017_vision7_elon_page_foundation.sql'),runtime=read('functions/_schema.js')+read('functions/_vision7_schema.js'),activate=read('functions/api/vision7/activate.js'),trial=read('functions/api/vision7/trial.js'),road=read('VISIOND-ROADMAP.md');
+const schema=read('migrations/0017_vision7_elon_page_foundation.sql'),runtime=read('functions/_schema.js')+read('functions/_vision7_schema.js'),activate=read('functions/api/vision7/activate.js'),trial=read('functions/api/vision7/trial.js'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
 const checks=[
  ['version',Number(read('VERSION.txt').trim().split('.').at(-1))>=51],
  ['migration + runtime schema',schema.includes('vision7_licenses')&&schema.includes('elon_page_conversations')&&runtime.includes('vision7_licenses')],
