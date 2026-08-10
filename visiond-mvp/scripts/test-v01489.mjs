@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const css=fs.readFileSync('public/visiond-design-system.css','utf8');
+const behavior=fs.readFileSync('public/visiond-design-system.js','utf8');
+const htmlFiles=fs.readdirSync('public').filter(file=>file.endsWith('.html'));
+const styled=htmlFiles.filter(file=>fs.readFileSync(`public/${file}`,'utf8').includes('href="/style.css'));
+assert.equal(styled.length,25);
+for(const file of styled){const html=fs.readFileSync(`public/${file}`,'utf8');assert.match(html,/visiond-design-system\.css\?v=01489/,`${file} missing design system CSS`);assert.match(html,/visiond-design-system\.js\?v=01489/,`${file} missing design system behavior`)}
+for(const token of ['--vd-ai-midnight','--vd-primary','--vd-page','--vd-surface','--vd-promotion','--vd-danger','--vd-focus','--vd-space-1','--vd-radius-sm','--vd-shadow-sm','--vd-font-body'])assert.ok(css.includes(token),`missing ${token}`);
+for(const kind of ['primary','secondary','tonal','text','promotion','danger'])assert.match(css,new RegExp(`\\.vds-btn--${kind}\\b`));
+for(const size of ['large','small'])assert.match(css,new RegExp(`\\.vds-btn--${size}\\b`));
+for(const card of ['hero','feature','product','information','status'])assert.match(css,new RegExp(`\\.vds-card--${card}\\b`));
+for(const state of [':hover',':active',':focus-visible',':disabled','aria-disabled','aria-pressed','aria-selected'])assert.ok(css.includes(state),`missing ${state}`);
+assert.match(css,/min-height:44px/);
+assert.match(css,/prefers-reduced-motion:reduce/);
+assert.match(css,/forced-colors:active/);
+assert.match(css,/@media\(max-width:620px\).*\.vds-btn--small\{min-height:44px\}/s);
+assert.match(behavior,/preventDefault/);assert.match(behavior,/stopImmediatePropagation/);assert.match(behavior,/tabindex/);assert.match(behavior,/MutationObserver/);
+assert.doesNotMatch(css,/\.vd-(?:grid|card)\b/);
+assert.equal((css.match(/{/g)||[]).length,(css.match(/}/g)||[]).length);
+console.log('v0.14.89 Modern AI Commerce design foundation passed');

@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.68
+Current build: v0.14.89
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -46,6 +46,40 @@ Status: `IMPLEMENTED` = code exists, `DEPLOYED` = production deploy confirmed, `
 
 ## North star
 Build VisionD into a low-manual-work digital commerce platform where products/courses can be published, sold, paid, delivered, measured, and improved from customer behavior data.
+
+## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
+
+Direction approved by Boss: use a professional AI-commerce visual language based on commerce-first clarity similar to Shopify Polaris, soft tonal surfaces similar to Material 3, and VisionD's own Tiffany identity. Do not mix unrelated template styles or overuse glassmorphism.
+
+### Brand rules
+- Core identity: AI Midnight `#062F2D`, Tiffany Primary `#0ABAB5`, Tiffany Hover `#078E89`, Tiffany Glow `#5FE0DA`.
+- Neutral surfaces: Page `#F4FAF9`, Card `#FFFFFF`, Border `#CFE3E1`, Main text `#102F2D`, Secondary text `#607674`.
+- Gold is reserved for promotion/money-making emphasis; red is reserved for danger/error; LINE and Facebook colors are reserved for their own contact buttons.
+- Gradients belong only on hero, primary AI actions and explicitly approved promotional surfaces. Ordinary cards use clean surfaces, thin borders and light shadows.
+
+### Component limits
+- Buttons: AI Primary, Secondary, Tonal, Text, Promotion, Danger — only 6 semantic families.
+- Button sizes: Large, Standard, Small. Critical mobile actions must be at least 44px high.
+- Cards: AI Hero, Feature, Product, Information, Status — only 5 semantic families.
+- Every component must share tokenized hover, active, focus, selected and disabled states.
+- New pages must reuse the system. Creating one-off button colors, radii or card shadows is forbidden unless Boss approves a named exception.
+
+### Delivery sequence — expected 8 patches, safety ceiling 9
+1. IMPLEMENTED v0.14.89 — Design foundation: `visiond-design-system.css`, semantic color/spacing/type/radius/shadow tokens, six buttons and five cards.
+2. NEXT — Storefront home: Hero, Vision 5 rights, V-Learning, recommended products, categories and contact.
+3. Purchase journey — catalog, product detail, cart, checkout, payment and slip upload.
+4. Member journey — login, registration, account, dashboard, purchased files and downloads.
+5. Course journey — courses, Vision 5 seller, course baskets, lessons and learner progress.
+6. Product systems — Vision 4, Vision 7 and V Easy web surfaces.
+7. Operations — Admin, reports, products, members, orders, payment, ELON and Danger Zone.
+8. Full UI QA — desktop, Android and iPhone; contrast, focus, overflow, stale CSS and full regression.
+9. Conditional stabilization only — use only if legacy CSS collisions or production validation reveal defects; no new visual features.
+
+### Release gates
+- Visual identity is clearly changed after patch 2.
+- Customer purchase flow is ready for production validation after patch 3.
+- The roadmap is complete only after patch 8 passes full UI QA; patch 9 is contingency, not automatic scope.
+- Event Case still has priority. When an urgent Event Case interrupts this roadmap, resume from the first unfinished UI patch without skipping its verification gate.
 
 ## Phase 1 — Data foundation
 - IMPLEMENTED — v0.14.44 Customer Intelligence: first-party events, funnel, journey, authoritative backend purchase.
