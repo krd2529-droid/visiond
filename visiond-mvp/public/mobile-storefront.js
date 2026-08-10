@@ -1,6 +1,6 @@
 import('/notification-bell.js?v=01443');
 (()=>{
-  const MOBILE='(max-width: 760px)';
+  const MOBILE='(max-width: 800px)';
   const init=()=>{
     const header=document.querySelector('.topbar'),nav=header?.querySelector(':scope > nav');
     if(!header||!nav||header.classList.contains('mobile-nav-ready'))return;

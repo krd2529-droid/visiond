@@ -1,4 +1,4 @@
-import('/i18n.js?v=01331');
+import('/i18n.js?v=014100');
 (()=>{
   const PAGE_URL=window.VISIOND_FACEBOOK_PAGE_URL||'https://m.me/61592882337230';
   const LINE_URL=window.VISIOND_LINE_URL||'https://lin.ee/RJZwr1p';

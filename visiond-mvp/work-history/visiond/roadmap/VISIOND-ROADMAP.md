@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.99
+Current build: v0.14.100
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -58,7 +58,7 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 - Storefront product actions must use white surfaces, Tiffany borders and AI Midnight text. Solid black or black-looking product buttons are forbidden; AI Midnight solid fill is reserved for clearly dominant primary actions only.
 - Gradients belong only on hero, primary AI actions and explicitly approved promotional surfaces. Ordinary cards use clean surfaces, thin borders and light shadows.
 - Preserve VisionD's original Tiffany-to-white page background gradient. UI adoption may modernize components but must not replace the approved legacy page gradient with a flat page color or a dark full-page background.
-- Storefront top navigation must use one shared Thai font, weight, size and spacing across pages. Keep “สร้างตะกร้าคอร์ส” immediately after “สินค้าดิจิทัล” and route it to the Vision 5 seller flow. Desktop uses an intentional two-tier header: brand plus account utilities on top, then a centered full-width primary menu below; accidental flex wrapping is forbidden.
+- Storefront top navigation must use one shared Thai font, weight, size and spacing across pages. Keep “สร้างตะกร้าคอร์ส” immediately after “สินค้าดิจิทัล” and route it to the Vision 5 seller flow. Desktop uses a canonical two-tier header: brand plus account utilities on top, then a centered full-width primary menu below. Header layout must not depend on `:has()`, nested layout wrappers, stale asset keys or runtime injected button CSS.
 
 ### Component limits
 - Buttons: AI Primary, Secondary, Tonal, Text, Promotion, Danger — only 6 semantic families.

@@ -29,7 +29,7 @@ assert.match(slip,/WHERE id=\? AND user_id=\?/);assert.match(slip,/file\.size>4\
 console.log('PASS order/slip/download ownership guards');
 
 const drawerPages=['index','digital-products','product','cart','courses','login','register','forgot-password','about','blog','bots','contact','course-rights-terms','privacy','terms'];
-for(const page of drawerPages){const html=read(`public/${page}.html`);assert.match(html,/mobile-storefront\.css\?v=01442/);assert.match(html,/mobile-storefront\.js\?v=01442/);assert.match(html,/<header class="topbar"/)}
+for(const page of drawerPages){const html=read(`public/${page}.html`);assert.match(html,/mobile-storefront\.css\?v=014(?:42|100)/);assert.match(html,/mobile-storefront\.js\?v=014(?:42|100)/);assert.match(html,/<header class="topbar"/)}
 const mobile=read('public/mobile-storefront.js'),mobileCss=read('public/mobile-storefront.css');for(const token of ["event.key==='Escape'","event.key!=='Tab'","returnFocus.focus()","setAttribute('aria-expanded','true')"])assert.ok(mobile.includes(token));
 console.log('PASS mobile drawer integration and keyboard contract');
 assert.match(mobileCss,/\.mobile-nav-open \.topbar\.mobile-nav-ready\{z-index:10022!important\}/,'open drawer stacking context must stay above its backdrop on Android');

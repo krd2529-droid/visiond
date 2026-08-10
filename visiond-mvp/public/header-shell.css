@@ -1,0 +1,17 @@
+/* Canonical VisionD storefront header. Loaded with its own release key. */
+@media(min-width:801px){
+  .topbar.header-shell-ready{min-height:0;padding:0 max(24px,calc((100% - 1180px)/2));display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:68px 50px;column-gap:26px;align-items:center;background:linear-gradient(105deg,#043f3d 0%,#067b77 55%,#0abab5 100%);border-bottom:3px solid #062f2d;box-shadow:0 10px 30px #062f2d2e}
+  .topbar.header-shell-ready>.brand{grid-column:1;grid-row:1;font-size:25px;align-self:center}
+  .topbar.header-shell-ready>.header-utility{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:flex-end;gap:9px;min-width:0}
+  .topbar.header-shell-ready>nav{grid-column:1/-1;grid-row:2;width:auto;max-width:none;min-width:0;align-self:stretch;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;padding:6px 0;border-top:1px solid #ffffff2e;background:#062f2d24;overflow-x:auto;scrollbar-width:none}
+  .topbar.header-shell-ready>nav::-webkit-scrollbar{display:none}
+  .topbar.header-shell-ready>nav>a,.topbar.header-shell-ready>nav>button{display:inline-flex;align-items:center;justify-content:center;min-width:max-content;min-height:38px;padding:8px 13px;border:1px solid transparent;border-radius:10px;color:#fff;font:800 13px/1.2 "Noto Sans Thai","Leelawadee UI",Tahoma,sans-serif}
+  .topbar.header-shell-ready>nav>a:hover,.topbar.header-shell-ready>nav>button:hover{border-color:#ffffff55;background:#ffffff16;color:#fff}
+  .topbar.header-shell-ready>nav>.nav-home-link{border-color:#ffffff70;background:#fff;color:#075f5b}
+  .topbar.header-shell-ready>nav>.nav-course-basket{border-color:#79ded8;background:#dffffc;color:#075f5b}
+  .topbar.header-shell-ready>.header-utility :is(.nav-cart-action,.nav-admin-link,.nav-member-account,.nav-logout){box-sizing:border-box!important;width:auto!important;min-width:124px!important;height:44px!important;min-height:44px!important;margin:0!important;padding:8px 11px!important;border:1px solid #ffffff48!important;border-radius:12px!important;background:#ffffff12!important;color:#fff!important;box-shadow:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;font:900 12px/1 "Noto Sans Thai","Leelawadee UI",Tahoma,sans-serif!important}
+  .topbar.header-shell-ready>.header-utility :is(.nav-cart-action,.nav-admin-link,.nav-member-account,.nav-logout):hover{background:#ffffff25!important;transform:none!important}
+  .topbar.header-shell-ready>.header-utility .vd-language-switcher{height:36px;box-sizing:border-box}
+  .topbar.header-shell-ready>.header-utility .vd-notification-bell{position:relative;flex:0 0 44px;width:44px;height:44px}
+}
+@media(max-width:800px){.topbar.header-shell-ready>.header-utility{display:none!important}}
