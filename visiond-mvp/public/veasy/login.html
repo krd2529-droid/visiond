@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="robots" content="noindex,nofollow" />
     <title>เข้าสู่ระบบ V Easy · VisionD</title>
-    <link rel="stylesheet" href="/veasy/login.css?v=01472" />
+    <link rel="stylesheet" href="/veasy/login.css?v=01473" />
   </head>
   <body>
     <main class="login-shell">
@@ -23,10 +23,20 @@
         <section id="loginSuccess" class="success" hidden>
           <b>เชื่อมบัญชีและคีย์สำเร็จ</b>
           <p id="loginOwner"></p>
-          <p>ขั้นถัดไปคือผูกคีย์นี้กับร้านเดียวในแอป V Easy</p>
+          <div id="shopList"></div>
+          <form id="shopBindForm" hidden>
+            <h2>ผูกคีย์กับร้าน</h2>
+            <label>ชื่อร้าน<input name="shop_name" required minlength="2" /></label>
+            <label>Facebook Page ID<input name="meta_page_id" inputmode="numeric" pattern="[0-9]{5,40}" required /></label>
+            <label>ชื่อเพจ (ไม่บังคับ)<input name="meta_page_name" /></label>
+            <button id="bindSubmit" type="submit">ผูก 1 คีย์กับร้านนี้</button>
+            <p id="bindState" role="status" aria-live="polite"></p>
+          </form>
+          <button id="returnToApp" type="button" hidden>เข้าใช้งาน V Easy</button>
+          <button id="logoutApp" class="secondary" type="button">ออกจากระบบ</button>
         </section>
       </section>
     </main>
-    <script src="/veasy/login.js?v=01472" type="module"></script>
+    <script src="/veasy/login.js?v=01473" type="module"></script>
   </body>
 </html>

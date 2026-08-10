@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {elonSystemPrompt,isIncompleteElonAnswer} from '../functions/_elon.js';
+const read=path=>fs.readFileSync(path,'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.74');
+const prompt=elonSystemPrompt({authenticated:true,can_use_seller_vision5:false},{path:'/',title:'หน้าแรก'},{available_products:[{slug:'worksheet-001',title:'แบบฝึกหัด',price_baht:39}]});
+assert.match(prompt,/ทีมขายและผู้ช่วยลูกค้า/);
+assert.match(prompt,/worksheet-001/);
+assert.match(prompt,/ห้ามตอบเป็นเศษประโยค/);
+assert.equal(isIncompleteElonAnswer('VisionD เป็นแพลต'),true);
+assert.equal(isIncompleteElonAnswer('VisionD จำหน่ายสินค้าดิจิทัลและคอร์สออนไลน์ครับ'),false);
+const chat=read('functions/api/elon/chat.js');
+assert.match(chat,/elonPublicSalesContext/);
+assert.match(chat,/if\(isIncompleteElonAnswer\(rawAnswer\)\)/);
+assert.match(read('functions/_elon-provider.js'),/max_output_tokens:900/);
+assert.match(read('public/elon-chat.js'),/ทีมขาย VisionD/);
+assert.equal(JSON.parse(read('requirements-ledger.json')).requirements.find(item=>item.id==='EC-ELON-001')?.status,'DONE-VERIFIED');
+console.log('v0.14.74 ELON sales quality hotfix passed');

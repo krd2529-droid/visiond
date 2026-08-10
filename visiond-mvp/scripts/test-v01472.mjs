@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';
 const read=file=>fs.readFileSync(file,'utf8'),checks=[];const check=(name,fn)=>{try{fn();checks.push(true);console.log(`PASS ${name}`)}catch(error){checks.push(false);console.error(`FAIL ${name}: ${error.message}`)}};
-check('version',()=>assert.equal(read('VERSION.txt').trim(),'v0.14.72'));
-check('program form is explicit submit form',()=>{const h=read('public/vision7-admin.html');assert.match(h,/id="programForm"/);assert.doesNotMatch(h,/method="dialog"/);assert.match(h,/id="programState"/);assert.match(h,/vision7-admin\.js\?v=01472/)});
+check('version is not older than patch',()=>assert.ok(Number(read('VERSION.txt').trim().replace(/\D/g,''))>=1472));
+check('program form is explicit submit form',()=>{const h=read('public/vision7-admin.html');assert.match(h,/id="programForm"/);assert.doesNotMatch(h,/method="dialog"/);assert.match(h,/id="programState"/);assert.match(h,/vision7-admin\.js\?v=0147[23]/)});
 check('program submit never fails silently',()=>{const j=read('public/vision7-admin.js');assert.match(j,/programForm\.onsubmit/);assert.match(j,/reportValidity/);assert.match(j,/programState\.textContent/);assert.match(j,/finally/)});
 check('program api validates products and rolls back',()=>{const a=read('functions/api/admin/vision7/programs.js');assert.match(a,/Product ID ที่ไม่พบ/);assert.match(a,/DELETE FROM vision7_programs WHERE id=\?/);assert.match(a,/VISION7_PROGRAM_CREATE_FAILED/)});
 check('key UI reports progress and errors',()=>{const j=read('public/vision7-admin.js');assert.match(j,/กำลังออกคีย์/);assert.match(j,/ออกคีย์ไม่สำเร็จ \(\$\{r\.status\}\)/);assert.match(j,/คัดลอกอัตโนมัติไม่ได้/)});

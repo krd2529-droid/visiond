@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.72** — repairs B1 Vision 7 program/key creation with visible errors, ownership checks, and rollback of partial records.
+Current package: **v0.14.74** — upgrades ELON into VisionD's grounded sales team with live published-product context and incomplete-answer recovery.
 
 ## ตรวจสอบก่อน Deploy
 

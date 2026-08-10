@@ -26,7 +26,7 @@ async function requestOpenAI(provider,input,fetchImpl,signalFactory){
   const response=await fetchImpl('https://api.openai.com/v1/responses',{
     method:'POST',
     headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},
-    body:JSON.stringify({model:provider.model,instructions:input.systemPrompt,input:[...input.history,{role:'user',content:input.message}],max_output_tokens:500,store:false}),
+    body:JSON.stringify({model:provider.model,instructions:input.systemPrompt,input:[...input.history,{role:'user',content:input.message}],max_output_tokens:900,store:false}),
     signal:signalFactory()
   });
   if(!response.ok)throw new Error(`OPENAI_HTTP_${response.status}`);
@@ -45,7 +45,7 @@ async function requestGemini(provider,input,fetchImpl,signalFactory){
     body:JSON.stringify({
       systemInstruction:{parts:[{text:input.systemPrompt}]},
       contents,
-      generationConfig:{maxOutputTokens:500}
+      generationConfig:{maxOutputTokens:900,temperature:0.35}
     }),
     signal:signalFactory()
   });

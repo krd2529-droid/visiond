@@ -96,13 +96,13 @@
     panel.id = 'elon-chat-panel';
     panel.hidden = true;
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'ELON AI ผู้ช่วย VisionD');
+    panel.setAttribute('aria-label', 'ELON AI ทีมขาย VisionD');
     const header = el('header', 'elon-header');
     const identity = el('div', 'elon-identity');
     const avatar = el('span', 'elon-avatar', 'E');
     avatar.setAttribute('aria-hidden', 'true');
     const headingBox = el('div');
-    headingBox.append(el('strong', '', 'ELON AI'), el('small', '', 'ผู้ช่วย VisionD'));
+    headingBox.append(el('strong', '', 'ELON AI'), el('small', '', 'ทีมขาย VisionD'));
     identity.append(avatar, headingBox);
     const controls = el('div', 'elon-controls');
     const reset = el('button', '', 'แชทใหม่');
@@ -128,13 +128,13 @@
     send.type = 'submit';
     composer.append(input, send);
     const footer = el('div', 'elon-footer');
-    footer.append('ELON ตอบเฉพาะเรื่อง VisionD · ', makeLineLink());
+    footer.append('ELON ทีมขายและผู้ช่วยลูกค้า VisionD · ', makeLineLink());
     panel.append(header, messages, quick, composer, footer);
     root.append(panel, launcher);
     document.body.append(root);
 
     const welcome = authenticated
-      ? 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD ผมตอบเฉพาะข้อมูลของบัญชีคุณและการใช้งานที่คุณมีสิทธิ์เข้าถึงเท่านั้นครับ'
+      ? 'สวัสดีครับ ผม ELON AI ทีมขาย VisionD บอกสิ่งที่กำลังหา งบประมาณ หรือปัญหาที่อยากแก้ได้เลย ผมช่วยแนะนำสินค้าและพาไปขั้นตอนซื้อให้ครับ'
       : 'สวัสดีครับ ผม ELON AI ผู้ช่วยของ VisionD กรุณาสมัครสมาชิกหรือเข้าสู่ระบบก่อน จึงจะสามารถถามคำถามกับ ELON ได้ครับ';
     addMessage(messages, 'bot', welcome);
     if (authenticated) {
