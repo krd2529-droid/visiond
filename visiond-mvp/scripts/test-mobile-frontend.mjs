@@ -31,8 +31,8 @@ assert.match(elonCss,/body\.mobile-nav-open \.elon-chat,body\.lesson-menu-open \
 
 for(const page of ['how-to-choose-tattoo-design','popular-tattoo-styles','tattoo-design-pdf-for-artists']){
   const source=read(`public/blog/${page}.html`);
-  assert.match(source,/mobile-storefront\.css\?v=01442/);
-  assert.match(source,/mobile-storefront\.js\?v=01442/);
+  assert.match(source,/mobile-storefront\.css\?v=014\d+/);
+  assert.match(source,/mobile-storefront\.js\?v=014\d+/);
 }
 
 assert.match(read('public/cart-catalog.css'),/min-height:44px/,'catalog action targets must be at least 44px');

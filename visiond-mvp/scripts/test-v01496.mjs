@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';
 const css=fs.readFileSync('public/product-systems-modern-ai.css','utf8'),admin=fs.readFileSync('public/admin.html','utf8'),v7h=fs.readFileSync('public/vision7-admin.html','utf8'),v7=fs.readFileSync('public/vision7-admin.js','utf8'),veH=fs.readFileSync('public/veasy/login.html','utf8'),ve=fs.readFileSync('public/veasy/login.js','utf8'),v4=fs.readFileSync('public/vision4-bundle.js','utf8');
-assert.match(admin,/product-systems-modern-ai\.css\?v=01496/);assert.match(fs.readFileSync('public/vision7.css','utf8'),/product-systems-modern-ai\.css\?v=01496/);assert.match(fs.readFileSync('public/veasy/login.css','utf8'),/product-systems-modern-ai\.css\?v=01496/);
+assert.match(admin,/product-systems-modern-ai\.css\?v=014\d+/);assert.match(fs.readFileSync('public/vision7.css','utf8'),/product-systems-modern-ai\.css\?v=014\d+/);assert.match(fs.readFileSync('public/veasy/login.css','utf8'),/product-systems-modern-ai\.css\?v=014\d+/);
 for(const id of ['v4BundleWorkspace','v4BundleMessage','bundleProductPicker','bundlePreviewGallery'])assert.ok(admin.includes(id),`v4 ${id}`);
 for(const id of ['keySummary','newProgram','newKey','releaseForm','programDialog','keyDialog','historyDialog'])assert.ok(v7h.includes(id),`v7 ${id}`);
 for(const endpoint of ['/api/admin/vision7/programs','/api/admin/vision7/licenses','/api/admin/vision7/releases'])assert.ok(v7.includes(endpoint),`v7 ${endpoint}`);

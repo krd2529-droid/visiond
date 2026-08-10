@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.101
+Current build: v0.14.102
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -128,6 +128,9 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 QA is a permanent Event Roadmap track. It does not need a new Event Case unless an urgent defect is found.
 
 ### Every patch — mandatory Patch Smoke Check
+- Run `npm run release:stamp-assets` before tests and ZIP delivery. `VERSION.txt` is the only cache identity; frontend HTML and first-party imports must never carry mixed manual cache versions.
+- Every frontend page and Boss mobile preview route must load the canonical `frontend-theme.css` last: page background Tiffany-to-white only; actions use Tiffany/white/pale Tiffany and never a dark green or black fill except approved semantic/social surfaces.
+- Animated promotional GIF integrity is permanent: four distinct frames, infinite loop, fresh runtime request on homepage and cart, and a cache-revalidation policy for mutable GIF/JS/CSS assets.
 - Build, imports, changed APIs and changed pages must pass before ZIP delivery.
 - Test the roles affected by the patch and the nearest legacy flow that shares its API or database tables.
 - Test the affected surface on desktop and mobile; Android/iPhone routes must be included when the change touches customer-facing UI.
@@ -174,6 +177,7 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.102 canonical frontend contract: 26 customer-facing pages use one Tiffany-to-white background and one non-dark action system; product cards, deep member/course pages and Boss mobile preview inherit it. Automated release stamping and revalidation remove mixed cache keys; the approved four-frame promo GIF is forced fresh and loops on homepage/cart.
 - IMPLEMENTED — v0.14.101 Vision 7 Product Mapping: เลือกสินค้าจริงสำหรับข้อมูลโปรแกรมและแพ็กเกจตลอดชีพ/30 วัน/365 วัน แยกหน้าที่ชัด ตรวจ ID ซ้ำ และยังสร้างโปรแกรมเพื่อออกคีย์ทดสอบโดยไม่ผูกตะกร้าได้.
 - COMPLETE — establish two-queue patch protocol and rotating roadmap tracks.
 - IMPLEMENTED FOUNDATION — v0.14.51 Vision 7 licensing: program/plan/license/device/trial/history schema and APIs; 3 devices per key; account binding; customer device reset; separate member/admin pages.

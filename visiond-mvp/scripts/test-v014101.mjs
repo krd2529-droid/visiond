@@ -8,5 +8,5 @@ for(const token of ["product_options","แบบร่าง—ลูกค้�
 for(const token of ["optionalProductId","Number.isSafeInteger","Product ID ต้องเป็นเลขจำนวนเต็ม","UNION ALL","duration_days"])assert.ok(api.includes(token),token);
 assert.match(api,/p\.plan_code === "lifetime" \? null : p\.plan_code === "monthly" \? 30 : 365/);
 for(const id of ["EC-V7-PRODUCT-SELECT-001","EC-V7-PRODUCT-PURPOSE-001","EC-V7-PACKAGE-DURATION-001","EC-V7-MANUAL-KEY-TEST-001","EC-V7-PRODUCT-VALIDATION-001"])assert.equal(ledger.requirements.find(x=>x.id===id)?.status,"DONE-VERIFIED",id);
-assert.equal(read("VERSION.txt").trim(),"v0.14.101");
+assert.ok(Number(read("VERSION.txt").trim().split(".").at(-1))>=101);
 console.log("v0.14.101 Vision 7 product package mapping passed");

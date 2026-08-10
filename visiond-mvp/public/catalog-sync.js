@@ -1,6 +1,6 @@
-import("/facebook-chat.js?v=01195");
-import("/mouse-ui.js?v=01210");
-import('/nav-account.js?v=014100');
+import("/facebook-chat.js?v=014102");
+import("/mouse-ui.js?v=014102");
+import('/nav-account.js?v=014102');
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
@@ -8,7 +8,7 @@ import('/nav-account.js?v=014100');
   if (!grid) return;
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.querySelector("#vd-catalog-slider-style")?.remove();
-  if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=01336">');
+  if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014102">');
   document.head.insertAdjacentHTML(
     "beforeend",
     "<style id=\"vd-catalog-slider-style\">.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover-slider{isolation:isolate!important;touch-action:pan-y;user-select:none}.vd-cover-slider>a{position:relative!important;z-index:1!important}.vd-cover img[hidden]{display:none!important}.vd-image-total{position:absolute;z-index:20;right:8px;bottom:8px;padding:7px 10px;border:2px solid rgba(255,255,255,.9);border-radius:999px;background:#087d77;color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.24);font-size:12px;font-weight:900}.vd-cover-slider .vd-image-total{bottom:34px}.vd-cover-slider>.vd-slide-prev,.vd-cover-slider>.vd-slide-next{position:absolute!important;z-index:50!important;top:50%!important;transform:translateY(-50%)!important;display:grid!important;place-items:center!important;width:42px!important;height:52px!important;margin:0!important;padding:0!important;border:2px solid rgba(255,255,255,.95)!important;border-radius:50%!important;background:#087d77!important;color:#fff!important;box-shadow:0 4px 14px rgba(0,0,0,.28)!important;font-size:29px!important;font-weight:900!important;line-height:1!important;cursor:pointer!important;pointer-events:auto!important;visibility:visible!important;opacity:1!important}.vd-cover-slider>.vd-slide-prev{left:8px!important}.vd-cover-slider>.vd-slide-next{right:8px!important}.vd-slide-count{position:absolute;z-index:20;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:rgba(7,63,61,.8);color:#fff;font-size:9px;font-weight:900}@media(max-width:560px){.vd-cover-slider>.vd-slide-prev,.vd-cover-slider>.vd-slide-next{width:38px!important;height:46px!important;font-size:26px!important}.vd-cover-slider>.vd-slide-prev{left:5px!important}.vd-cover-slider>.vd-slide-next{right:5px!important}}</style>",
@@ -440,4 +440,4 @@ import('/nav-account.js?v=014100');
       grid.innerHTML = '<div class="product-loading"><b>โหลดแคตตาล็อกไม่สำเร็จ</b><p>การเชื่อมต่อใช้เวลานาน กรุณากดลองใหม่</p><button type="button" onclick="location.reload()">ลองโหลดอีกครั้ง</button></div>';
     });
 })();
-import("/nav-account.js?v=014100").then((module) => module.initAccountNav());
+import("/nav-account.js?v=014102").then((module) => module.initAccountNav());

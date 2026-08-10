@@ -5,7 +5,7 @@ const behavior=fs.readFileSync('public/visiond-design-system.js','utf8');
 const htmlFiles=fs.readdirSync('public').filter(file=>file.endsWith('.html'));
 const styled=htmlFiles.filter(file=>fs.readFileSync(`public/${file}`,'utf8').includes('href="/style.css'));
 assert.equal(styled.length,25);
-for(const file of styled){const html=fs.readFileSync(`public/${file}`,'utf8');assert.match(html,/visiond-design-system\.css\?v=01489/,`${file} missing design system CSS`);assert.match(html,/visiond-design-system\.js\?v=01489/,`${file} missing design system behavior`)}
+for(const file of styled){const html=fs.readFileSync(`public/${file}`,'utf8');assert.match(html,/visiond-design-system\.css\?v=014\d+/,`${file} missing design system CSS`);assert.match(html,/visiond-design-system\.js\?v=014\d+/,`${file} missing design system behavior`)}
 for(const token of ['--vd-ai-midnight','--vd-primary','--vd-page','--vd-surface','--vd-promotion','--vd-danger','--vd-focus','--vd-space-1','--vd-radius-sm','--vd-shadow-sm','--vd-font-body'])assert.ok(css.includes(token),`missing ${token}`);
 for(const kind of ['primary','secondary','tonal','text','promotion','danger'])assert.match(css,new RegExp(`\\.vds-btn--${kind}\\b`));
 for(const size of ['large','small'])assert.match(css,new RegExp(`\\.vds-btn--${size}\\b`));
