@@ -17,8 +17,13 @@ export const safeVersion=value=>/^\d+(?:\.\d+){0,3}(?:[-+][a-z0-9.-]+)?$/i.test(
 export async function issueLicense(env,{userId,programId,planId=null,orderId=null,status='active',maxDevices=3,source='admin',note='',createdBy=null,expiresAt=null}={}){
   const random=crypto.getRandomValues(new Uint8Array(18)),raw=`VD7-${b64url(random).toUpperCase()}`,id=crypto.randomUUID(),hash=await hashLicenseKey(raw),ciphertext=await encryptVision7Key(env,raw),last4=raw.slice(-4);
   await env.DB.prepare(`INSERT INTO vision7_licenses(id,key_hash,key_ciphertext,key_last4,user_id,program_id,plan_id,order_id,status,expires_at,max_devices,source,note,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,hash,ciphertext,last4,userId,programId,planId,orderId,status,expiresAt,Math.max(1,Math.min(50,Number(maxDevices)||3)),clean(source,40),clean(note,300),createdBy).run();
-  await licenseEvent(env,id,createdBy,'issued',{source,status,max_devices:maxDevices,order_id:orderId||null});
-  return {id,key:raw,key_last4:last4};
+  try {
+    await licenseEvent(env,id,createdBy,'issued',{source,status,max_devices:maxDevices,order_id:orderId||null});
+    return {id,key:raw,key_last4:last4};
+  } catch (error) {
+    await env.DB.prepare('DELETE FROM vision7_licenses WHERE id=?').bind(id).run().catch(()=>{});
+    throw error;
+  }
 }
 
 export async function licenseEvent(env,licenseId,actorUserId,eventType,detail={}){

@@ -89,31 +89,32 @@ export async function onRequestPost(ctx) {
         new Date(Date.now() + Number(p.duration_days) * 86400000),
       );
   }
-  const out = await issueLicense(ctx.env, {
-    userId,
-    programId,
-    planId,
-    status: "active",
-    maxDevices: Number(program.max_devices) || 3,
-    source: "admin",
-    note: text(b.note),
-    createdBy: a.user.id,
-    expiresAt,
-  });
-  const bindingState = bindingStateForProgram(program.platform_type);
-  await ctx.env.DB.prepare(
-    "UPDATE vision7_licenses SET binding_state=? WHERE id=?",
-  )
-    .bind(bindingState, out.id)
-    .run();
-  await licenseEvent(ctx.env, out.id, a.user.id, "binding_state_initialized", {
-    binding_state: bindingState,
-    platform_type: program.platform_type,
-  });
-  return json(
-    { ok: true, license: { ...out, binding_state: bindingState } },
-    201,
-  );
+  let out = null;
+  try {
+    out = await issueLicense(ctx.env, {
+      userId,
+      programId,
+      planId,
+      status: "active",
+      maxDevices: Number(program.max_devices) || 3,
+      source: "admin",
+      note: text(b.note),
+      createdBy: a.user.id,
+      expiresAt,
+    });
+    const bindingState = bindingStateForProgram(program.platform_type);
+    await ctx.env.DB.prepare(
+      "UPDATE vision7_licenses SET binding_state=? WHERE id=?",
+    ).bind(bindingState, out.id).run();
+    await licenseEvent(ctx.env, out.id, a.user.id, "binding_state_initialized", {
+      binding_state: bindingState,
+      platform_type: program.platform_type,
+    });
+    return json({ ok: true, license: { ...out, binding_state: bindingState } }, 201);
+  } catch (error) {
+    if (out?.id) await ctx.env.DB.prepare("DELETE FROM vision7_licenses WHERE id=?").bind(out.id).run().catch(() => {});
+    return json({ error: "ออกคีย์ไม่สำเร็จ ระบบไม่ได้บันทึกคีย์ครึ่งรายการ", code: "VISION7_LICENSE_ISSUE_FAILED" }, 500);
+  }
 }
 export async function onRequestPatch(ctx) {
   await ensureDatabase(ctx.env);

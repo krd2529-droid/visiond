@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Vision 7 Control</title>
-    <link rel="stylesheet" href="/vision7.css" />
+    <link rel="stylesheet" href="/vision7.css?v=01472" />
   </head>
   <body>
     <header class="top">
@@ -77,10 +77,10 @@
       </section>
     </main>
     <dialog id="programDialog">
-      <form method="dialog">
+      <form id="programForm">
         <h2>เพิ่มโปรแกรม</h2>
         <label>รหัสโปรแกรม<input name="code" required /></label
-        ><label>Product ID<input name="product_id" type="number" /></label
+        ><label>Product ID (ไม่บังคับ)<input name="product_id" type="number" min="1" /></label
         ><label
           >แพลตฟอร์ม<select name="platform_type">
             <option value="windows">Windows</option>
@@ -91,11 +91,12 @@
           </select></label
         ><label>เวอร์ชัน<input name="current_version" value="1.0.0" /></label>
         <h3>Product ID ของแพ็กเกจขาย</h3>
-        <label>ตลอดชีพ<input name="lifetime_product_id" type="number" /></label
-        ><label>รายเดือน<input name="monthly_product_id" type="number" /></label
-        ><label>รายปี<input name="yearly_product_id" type="number" /></label
-        ><button value="cancel">ยกเลิก</button
-        ><button id="saveProgram" value="default">บันทึก</button>
+        <label>ตลอดชีพ<input name="lifetime_product_id" type="number" min="1" /></label
+        ><label>รายเดือน<input name="monthly_product_id" type="number" min="1" /></label
+        ><label>รายปี<input name="yearly_product_id" type="number" min="1" /></label
+        ><p id="programState" class="muted" role="status" aria-live="polite"></p
+        ><button type="button" data-close="programDialog">ยกเลิก</button
+        ><button id="saveProgram" type="submit">บันทึก</button>
       </form>
     </dialog>
     <dialog id="keyDialog">
@@ -132,6 +133,6 @@
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js" type="module"></script>
+    <script src="/vision7-admin.js?v=01472" type="module"></script>
   </body>
 </html>

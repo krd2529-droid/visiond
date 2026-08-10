@@ -28,6 +28,8 @@ const esc = (s) =>
   releases = document.querySelector("#releases"),
   newProgram = document.querySelector("#newProgram"),
   newKey = document.querySelector("#newKey"),
+  programForm = document.querySelector("#programForm"),
+  programState = document.querySelector("#programState"),
   saveProgram = document.querySelector("#saveProgram"),
   keyForm = document.querySelector("#keyForm"),
   encryptionState = document.querySelector("#encryptionState"),
@@ -230,7 +232,11 @@ async function showHistory(id) {
   historyContent.innerHTML = `<p><b>${esc(d.license.user_name)}</b> · ${esc(d.license.program_code)} · ${esc(d.license.key_masked)}</p><h3>เหตุการณ์</h3>${d.events.map((x) => `<p><b>${esc(x.event_type)}</b> · ${esc(x.created_at)}<br><small>${esc(x.actor_name || "ระบบ")} · ${esc(x.detail)}</small></p>`).join("") || "<p>ไม่มีประวัติ</p>"}<h3>อุปกรณ์</h3>${d.devices.map((x) => `<p>${esc(x.device_name || x.platform || "อุปกรณ์")} · ${esc(x.last_seen_at)}${x.revoked_at ? " · ปิดแล้ว" : ""}</p>`).join("") || "<p>ไม่มีอุปกรณ์</p>"}`;
   historyDialog.showModal();
 }
-newProgram.onclick = () => programDialog.showModal();
+newProgram.onclick = () => {
+  programState.textContent = "";
+  programState.className = "muted";
+  programDialog.showModal();
+};
 newKey.onclick = () => {
   if (!encryptionReady)
     return alert(
@@ -250,9 +256,13 @@ document
     (b) =>
       (b.onclick = () => document.querySelector("#" + b.dataset.close).close()),
   );
-saveProgram.onclick = async (e) => {
+programForm.onsubmit = async (e) => {
   e.preventDefault();
-  const f = new FormData(programDialog.querySelector("form")),
+  if (!programForm.reportValidity()) return;
+  saveProgram.disabled = true;
+  programState.className = "muted";
+  programState.textContent = "กำลังสร้างโปรแกรม…";
+  const f = new FormData(programForm),
     b = Object.fromEntries(f);
   b.plans = [
     {
@@ -274,15 +284,25 @@ saveProgram.onclick = async (e) => {
       product_id: b.yearly_product_id,
     },
   ];
-  const r = await fetch("/api/admin/vision7/programs", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(b),
-    }),
-    d = await r.json();
-  if (!r.ok) return alert(d.error || "บันทึกไม่สำเร็จ");
-  programDialog.close();
-  load();
+  try {
+    const r = await fetch("/api/admin/vision7/programs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(b),
+      }),
+      d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `สร้างโปรแกรมไม่สำเร็จ (${r.status})`);
+    programState.textContent = "สร้างโปรแกรมแล้ว";
+    programForm.reset();
+    programDialog.close();
+    await load();
+  } catch (error) {
+    programState.className = "muted error";
+    programState.textContent = error.message || "สร้างโปรแกรมไม่สำเร็จ";
+    alert(programState.textContent);
+  } finally {
+    saveProgram.disabled = false;
+  }
 };
 keyForm.onsubmit = async (e) => {
   e.preventDefault();
@@ -299,19 +319,29 @@ keyForm.onsubmit = async (e) => {
   )
     return;
   issueKeySubmit.disabled = true;
-  const b = Object.fromEntries(new FormData(keyForm)),
-    r = await fetch("/api/admin/vision7/licenses", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(b),
-    }),
-    d = await r.json();
-  issueKeySubmit.disabled = false;
-  if (!r.ok) return alert(d.error || "ออกคีย์ไม่สำเร็จ");
-  issuedKey.hidden = false;
-  issuedKey.innerHTML = `คีย์ใหม่ (แสดงรอบนี้): <code>${esc(d.license.key)}</code> <button type="button" id="copyIssued">คัดลอก</button>`;
-  copyIssued.onclick = () => navigator.clipboard.writeText(d.license.key);
-  load();
+  issueKeySubmit.textContent = "กำลังออกคีย์…";
+  try {
+    const b = Object.fromEntries(new FormData(keyForm)),
+      r = await fetch("/api/admin/vision7/licenses", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(b),
+      }),
+      d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `ออกคีย์ไม่สำเร็จ (${r.status})`);
+    issuedKey.hidden = false;
+    issuedKey.innerHTML = `คีย์ใหม่ (แสดงรอบนี้): <code>${esc(d.license.key)}</code> <button type="button" id="copyIssued">คัดลอก</button>`;
+    copyIssued.onclick = async () => {
+      try { await navigator.clipboard.writeText(d.license.key); copyIssued.textContent = "คัดลอกแล้ว"; }
+      catch { alert("คัดลอกอัตโนมัติไม่ได้ กรุณากดค้างที่คีย์แล้วคัดลอก"); }
+    };
+    await load();
+  } catch (error) {
+    alert(error.message || "ออกคีย์ไม่สำเร็จ");
+  } finally {
+    issueKeySubmit.disabled = false;
+    issueKeySubmit.textContent = "ออกคีย์";
+  }
 };
 releaseForm.onsubmit = async (e) => {
   e.preventDefault();

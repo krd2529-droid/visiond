@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>เข้าสู่ระบบ V Easy · VisionD</title>
+    <link rel="stylesheet" href="/veasy/login.css?v=01472" />
+  </head>
+  <body>
+    <main class="login-shell">
+      <section class="login-card">
+        <p class="brand">VISIOND · V EASY</p>
+        <h1>เชื่อมบัญชีและคีย์</h1>
+        <p>ใช้ ID หรืออีเมล พร้อมรหัสผ่านและคีย์ V Easy ที่ออกจากหลังบ้าน Vision 7</p>
+        <form id="veasyLoginForm">
+          <label>ID หรืออีเมล<input name="login" autocomplete="username" required /></label>
+          <label>รหัสผ่าน<input name="password" type="password" autocomplete="current-password" required /></label>
+          <label>คีย์ V Easy<input name="key" autocomplete="off" required /></label>
+          <button id="loginSubmit" type="submit">ตรวจบัญชีและคีย์</button>
+          <p id="loginState" role="status" aria-live="polite"></p>
+        </form>
+        <section id="loginSuccess" class="success" hidden>
+          <b>เชื่อมบัญชีและคีย์สำเร็จ</b>
+          <p id="loginOwner"></p>
+          <p>ขั้นถัดไปคือผูกคีย์นี้กับร้านเดียวในแอป V Easy</p>
+        </section>
+      </section>
+    </main>
+    <script src="/veasy/login.js?v=01472" type="module"></script>
+  </body>
+</html>

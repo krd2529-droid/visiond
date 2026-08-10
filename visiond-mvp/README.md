@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.71** — repairs Vision 4 combined-product creation feedback and automatically selects the required three previews.
+Current package: **v0.14.72** — repairs B1 Vision 7 program/key creation with visible errors, ownership checks, and rollback of partial records.
 
 ## ตรวจสอบก่อน Deploy
 
