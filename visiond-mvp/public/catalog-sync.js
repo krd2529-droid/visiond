@@ -246,6 +246,11 @@ import('/nav-account.js?v=01411');
           )
           .join(""),
       );
+      grid.querySelectorAll(".vd-card").forEach((card) => {
+        card.classList.add("vds-card", "vds-card--product");
+        card.querySelector("[data-add-cart]")?.classList.add("vds-btn", "vds-btn--small", "vds-btn--promotion");
+        card.querySelector(".vd-card-actions a")?.classList.add("vds-btn", "vds-btn--small", "vds-btn--secondary");
+      });
       grid.querySelectorAll(".vd-cover-slider").forEach((slider) => {
         slider.querySelectorAll(".vd-slide-prev").forEach((button, index) => { if (index) button.remove(); });
         slider.querySelectorAll(".vd-slide-next").forEach((button, index) => { if (index) button.remove(); });

@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.89
+Current build: v0.14.90
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -66,8 +66,8 @@ Direction approved by Boss: use a professional AI-commerce visual language based
 
 ### Delivery sequence — expected 8 patches, safety ceiling 9
 1. IMPLEMENTED v0.14.89 — Design foundation: `visiond-design-system.css`, semantic color/spacing/type/radius/shadow tokens, six buttons and five cards.
-2. NEXT — Storefront home: Hero, Vision 5 rights, V-Learning, recommended products, categories and contact.
-3. Purchase journey — catalog, product detail, cart, checkout, payment and slip upload.
+2. IMPLEMENTED v0.14.90 — Storefront home: Hero, Vision 5 rights, V-Learning, recommended products, categories and contact adopt the shared system while preserving commerce hooks.
+3. NEXT — Purchase journey: catalog, product detail, cart, checkout, payment and slip upload.
 4. Member journey — login, registration, account, dashboard, purchased files and downloads.
 5. Course journey — courses, Vision 5 seller, course baskets, lessons and learner progress.
 6. Product systems — Vision 4, Vision 7 and V Easy web surfaces.
