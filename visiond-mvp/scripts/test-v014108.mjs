@@ -2,18 +2,20 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 const read=(path)=>fs.readFileSync(path,"utf8");
 const html=read("public/vision7-admin.html"),js=read("public/vision7-admin.js"),api=read("functions/api/admin/vision7/programs.js"),schema=read("functions/_vision7_schema.js"),download=read("functions/api/vision7/apps/[code]/download.js"),activate=read("functions/api/vision7/auth/veasy-activate.js"),shops=read("functions/api/vision7/shops/index.js"),ledger=read("requirements-ledger.json");
-assert.equal(read("VERSION.txt").trim(),"v0.14.108");
+assert.ok(Number(read("VERSION.txt").trim().split(".").at(-1))>=108);
 for(const token of ['id="programForm"','enctype="multipart/form-data"','name="name"','name="description"','name="cover"','name="installer"','name="platform_type"','name="current_version"','name="price_30d"','name="price_1y"','name="price_lifetime"','ว่าง = ไม่ขาย'])assert.ok(html.includes(token),`form contract: ${token}`);
 for(const token of ['new FormData(programForm)','body.set("plans"','/api/admin/vision7/programs','method: "POST"','price:prices.monthly || null','price:prices.yearly || null','price:prices.lifetime || null'])assert.ok(js.includes(token),`client contract: ${token}`);
 for(const token of ['includes("multipart/form-data")','ctx.request.formData()','requireAdmin(ctx)','app_name','app_description','cover_url','cover.size > 5 * 1024 * 1024','installer.size > 95 * 1024 * 1024','crypto.subtle.digest("SHA-256"','INSERT INTO vision7_releases','DELETE FROM vision7_programs','ctx.env.FILES.delete(coverKey)','ctx.env.FILES.delete(installerKey)'])assert.ok(api.includes(token),`server contract: ${token}`);
-for(const token of ["baht <= 0","Math.round(baht * 100)","offer_price=NULL"])assert.ok(api.includes(token),`offer contract: ${token}`);
+for(const token of ["baht < 0","baht > 0 ? Math.round(baht * 100) : null","offer_price=NULL"])assert.ok(api.includes(token),`offer contract: ${token}`);
 assert.ok(schema.includes("addColumn(env,'vision7_plans','offer_price','INTEGER')"),"nullable offer field");
 assert.ok(schema.includes("price INTEGER NOT NULL DEFAULT 0"),"legacy licensing price remains compatible");
 assert.ok(!schema.includes("offer_price','INTEGER NOT NULL"),"blank offer must remain null, not zero");
-for(const token of ["vision7_programs p","p.active=1","r.status='published'","ctx.env.FILES.get","cache-control\", \"public"])assert.ok(download.includes(token),`free download: ${token}`);
-assert.ok(!download.includes("requireVision7User"),"free installer download must not require a key");
+// v0.14.109 superseded the temporary public-download decision. Keep the v0.14.108
+// foundation regression aligned with the current security policy.
+for(const token of ["vision7_programs","active=1","r.status='published'","ctx.env.FILES.get","requireVision7User","user_id=?","refreshLicenseExpiry"])assert.ok(download.includes(token),`owned installer: ${token}`);
 assert.ok(activate.includes("p.platform_type='veasy'"),"V Easy activation scope");
 assert.ok(shops.includes("p.platform_type='veasy'"),"V Easy shop scope");
 assert.ok(html.includes('<option value="android">VBot · Android APK</option>')&&html.includes('<option value="veasy">V Easy · 1 คีย์ = 1 ร้าน</option>'),"platform distinction");
 for(const id of ["EC-VBOT-FREE-DRAFT-001","EC-VBOT-APP-ASSETS-001","EC-VBOT-NULL-OFFER-001","EC-VBOT-ATOMIC-CREATE-001","EC-VBOT-LICENSE-COMPAT-001","EC-VBOT-FREE-DOWNLOAD-001","EC-VBOT-VEASY-SHOP-SCOPE-001"])assert.ok(ledger.includes(`\"id\":\"${id}\"`),id);
+assert.ok(ledger.includes('"id":"EC-VBOT-FREE-DOWNLOAD-001"')&&ledger.includes('"status":"REMOVED-BY-BOSS"'),"superseded public download is retained as history");
 console.log("v0.14.108 VBot marketplace foundation contract passed");

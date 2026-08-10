@@ -2,6 +2,7 @@ import { json, requireAdmin } from "../../../_lib.js";
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureVision7Schema } from "../../../_vision7_schema.js";
 import { safeVersion, validPlanCode } from "../../../_vision7.js";
+import { rollbackVision7KeyProducts, syncVision7KeyProducts } from "../../../_vision7_key_storefront.js";
 const text = (v, n = 120) =>
   String(v || "")
     .trim()
@@ -99,7 +100,7 @@ export async function onRequestPost(ctx) {
     ).bind(...productIds).first();
     if (used) return json({ error: `Product ID #${used.product_id} ถูกผูกกับโปรแกรม ${used.program_code} แล้ว` }, 409);
   }
-  let id = null, coverKey = "", installerKey = "";
+  let id = null, coverKey = "", installerKey = "", createdKeyProductIds = [];
   try {
     if (cover instanceof File && cover.size) {
       const ext = cover.type === "image/png" ? "png" : cover.type === "image/webp" ? "webp" : "jpg";
@@ -117,10 +118,11 @@ export async function onRequestPost(ctx) {
       if (p.price === "" || p.price === null || p.price === undefined) await ctx.env.DB.prepare("UPDATE vision7_plans SET offer_price=NULL WHERE program_id=? AND plan_code=?").bind(id,p.plan_code).run();
       else {
         const baht = Number(p.price);
-        if (!Number.isFinite(baht) || baht <= 0 || baht > 10000000) throw new Error("VISION7_OFFER_PRICE_INVALID");
-        await ctx.env.DB.prepare("UPDATE vision7_plans SET offer_price=? WHERE program_id=? AND plan_code=?").bind(Math.round(baht * 100),id,p.plan_code).run();
+        if (!Number.isFinite(baht) || baht < 0 || baht > 10000000) throw new Error("VISION7_OFFER_PRICE_INVALID");
+        await ctx.env.DB.prepare("UPDATE vision7_plans SET offer_price=? WHERE program_id=? AND plan_code=?").bind(baht > 0 ? Math.round(baht * 100) : null,id,p.plan_code).run();
       }
     }
+    ({ createdProductIds: createdKeyProductIds } = await syncVision7KeyProducts(ctx.env, id));
     if (installer instanceof File && installer.size) {
       const bytes = await installer.arrayBuffer();
       const sha256 = hex(await crypto.subtle.digest("SHA-256", bytes));
@@ -130,11 +132,13 @@ export async function onRequestPost(ctx) {
     }
     return json({ ok: true, id }, 201);
   } catch (error) {
+    if (Array.isArray(error?.createdProductIds)) createdKeyProductIds = error.createdProductIds;
     if (id) await ctx.env.DB.prepare("DELETE FROM vision7_programs WHERE id=?").bind(id).run().catch(() => {});
+    await rollbackVision7KeyProducts(ctx.env, createdKeyProductIds);
     if (coverKey) await ctx.env.FILES.delete(coverKey).catch(() => {});
     if (installerKey) await ctx.env.FILES.delete(installerKey).catch(() => {});
     const message = String(error?.message || "");
-    if (message.includes("VISION7_OFFER_PRICE_INVALID")) return json({ error: "ราคาคีย์ต้องมากกว่า 0 บาท หรือเว้นว่างไว้ก่อน" }, 400);
+    if (message.includes("VISION7_OFFER_PRICE_INVALID")) return json({ error: "ราคาคีย์ต้องไม่ติดลบและไม่เกิน 10,000,000 บาท" }, 400);
     if (message.includes("UNIQUE")) return json({ error: "รหัสโปรแกรมหรือ Product ID นี้ถูกใช้งานแล้ว" }, 409);
     if (message.includes("FOREIGN KEY")) return json({ error: "Product ID ไม่ถูกต้องหรือไม่มีอยู่ในระบบ" }, 400);
     return json({ error: "สร้างโปรแกรมไม่สำเร็จ กรุณาลองใหม่", code: "VISION7_PROGRAM_CREATE_FAILED" }, 500);

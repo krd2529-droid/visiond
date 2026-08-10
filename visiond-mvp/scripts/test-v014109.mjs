@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";import fs from "node:fs";
+const read=p=>fs.readFileSync(p,"utf8"),html=read("public/bots.html"),ui=read("public/bots-storefront.js"),cart=read("public/cart.js"),list=read("functions/api/vision7/apps/index.js"),detail=read("functions/api/vision7/apps/[code]/index.js"),download=read("functions/api/vision7/apps/[code]/download.js"),sync=read("functions/_vision7_key_storefront.js"),orders=read("functions/api/orders/index.js"),fulfill=read("functions/_vision7_orders.js"),activate=read("functions/api/vision7/auth/veasy-activate.js"),ledger=read("requirements-ledger.json");
+assert.equal(read("VERSION.txt").trim(),"v0.14.109");
+assert.ok(html.includes(">VBot</a>")&&html.includes("/bots-storefront.js"),"canonical VBot one-level storefront");
+for(const token of ["/api/vision7/apps","product_slug","add","cart","30 วัน","1 ปี","ตลอดชีพ"])assert.ok(ui.includes(token)||html.includes(token),`storefront UI ${token}`);
+assert.ok(ui.includes("/api/vision7/apps")&&!ui.includes("/api/vision7/programs"),"storefront must consume filtered customer offers API");
+for(const token of ["data-vbot-plan","เลือกอายุคีย์","vbot_offers","vision7-key","1 คีย์ = 1 ร้าน"])assert.ok(cart.includes(token),`cart duration selector ${token}`);
+for(const forbidden of ["test','trial","คีย์ทดสอบ"])assert.ok(!ui.includes(forbidden),`storefront must not expose ${forbidden}`);
+for(const api of [list,detail])for(const token of ["q.offer_price>0","q.active=1","x.status='published'","x.product_kind='vision7-key'","app_name","app_description","cover_url","monthly","yearly","lifetime"])assert.ok(api.includes(token),`public API ${token}`);
+for(const api of [list,detail])assert.ok(/plan_code\s+IN\s*\([^)]*monthly[^)]*yearly[^)]*lifetime[^)]*\)/i.test(api),"public API must allowlist customer plan codes");
+assert.ok(!detail.includes("installer_download_url")&&!detail.includes("object_key"),"public detail must not expose installer access");
+for(const token of ["requireVision7User","user_id=?","r.status='published'","active=1","refreshLicenseExpiry","active","trial"])assert.ok(download.includes(token),`owned installer ${token}`);
+for(const token of ["category='vbot-key'","product_kind='vision7-key'","positive ? Number(offer.offer_price) : 0",'status = positive',"UPDATE vision7_plans SET product_id"])assert.ok(sync.includes(token),`key product ${token}`);
+for(const token of ["VISION7_KEY_OFFER_PRICE_MISMATCH","Number(product.price)!==Number(product.vision7_offer_price)","p.product_kind==='vision7-key'","promotion_percent:0","p.product_kind!=='vision7-key'"])assert.ok(orders.includes(token),`order guard ${token}`);
+for(const token of ["vision7_order_fulfillments","order_item_id","issued"])assert.ok(fulfill.includes(token),`idempotent fulfillment ${token}`);
+assert.ok(activate.includes("p.platform_type='veasy'"),"one key one shop stays V Easy only");
+for(const id of ["EC-VBOT-STORE-LIST-001","EC-VBOT-STORE-DETAIL-001","EC-VBOT-POSITIVE-OFFER-001","EC-VBOT-PAID-INSTALLER-001","EC-VBOT-KEY-PRODUCT-001","EC-VBOT-KEY-ORDER-001","EC-VBOT-STOREFRONT-VEASY-001"])assert.ok(ledger.includes(`\"id\":\"${id}\"`),id);
+console.log("v0.14.109 VBot key storefront contract passed");

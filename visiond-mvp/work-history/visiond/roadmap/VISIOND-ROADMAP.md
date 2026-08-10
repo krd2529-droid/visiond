@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.108
+Current build: v0.14.109
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -49,8 +49,8 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 
 ## Permanent VBot Marketplace Roadmap
 
-1. IMPLEMENTED v0.14.108 — Free app draft foundation: one multipart form creates app identity, cover, first installer release and three duration plans. The installer is free to download; customers pay for keys. Blank offer prices remain `NULL` in satang and customer offers must be positive; creation never consumes Vision 5 rights or credits. One-key-one-shop binding applies only to V Easy.
-2. NEXT — Storefront basket: publish only explicitly enabled offers with a valid positive price and downloadable release. A draft, `NULL` price and zero price must never become the same state.
+1. IMPLEMENTED v0.14.108 / DOWNLOAD POLICY SUPERSEDED v0.14.109 — Free app draft foundation: one multipart form creates app identity, cover, first installer release and three duration plans. Creation consumes no rights or credits. The earlier public-free-download decision was removed by Boss: installer access now unlocks only with an approved owned key purchase.
+2. IMPLEMENTED v0.14.109 — VBot one-level storefront: canonical nav is `VBot`; bots.html shows app listing/detail and paid key baskets backed by real `vbot-key` / `vision7-key` products. Only positive active offers publish; NULL/zero/draft stay hidden. Approved purchase unlocks both the owned license key and installer download; pre-purchase access is forbidden.
 3. NEXT — Paid entitlement: a paid order grants the matching customer download and issues exactly one key per purchased quantity, idempotently.
 4. NEXT — Key ledger: keep test keys and customer keys visibly separate while all issued keys remain auditable in the existing Vision 7 ledger.
 5. NEXT — Marketplace QA: test duplicate submit, partial D1/R2 failure, missing/unsupported files, stale release, expired/suspended key, refund/revoke policy, cross-account access and Android/mobile flow.
@@ -190,6 +190,7 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.109 VBot Key Storefront: เมนู VBot เปิดหน้ารวม/รายละเอียดระดับเดียว ตะกร้าขายเฉพาะคีย์ 30 วัน/1 ปี/ตลอดชีพที่ราคาเป็นบวก ใช้ product จริงและตรวจราคาซ้ำก่อน order; เมื่ออนุมัติจึงปลดทั้งคีย์และดาวน์โหลดตัวติดตั้ง โดยกฎ 1 คีย์ = 1 ร้านยังเป็น V Easy เท่านั้น.
 - IMPLEMENTED — v0.14.108 VBot Marketplace Foundation: Boss สร้างร่างแอปฟรีจากชื่อ รายละเอียด ปก ตัวติดตั้ง แพลตฟอร์มและเวอร์ชัน; ราคาเสนอขายคีย์แต่ละอายุเว้นว่างเป็น NULL ได้; ใช้ Program/Plan/Release/License เดิมและล้างงานค้างเมื่อสร้างไม่สำเร็จ. ขั้นถัดไปคือ storefront basket, paid entitlement/download และ key fulfillment โดยห้ามเปิดขายร่างที่ยังไม่มีราคา.
 - IMPLEMENTED — v0.14.107 Key Mode Clarity: คีย์ทดสอบเหลือเพียงแอปและอายุ 30 วัน/1 ปี/ตลอดอายุโดยใช้บัญชี Boss อัตโนมัติ; คีย์ลูกค้าจึงค่อยแสดงลูกค้า แพ็กเกจและราคา; ข้อมูลปกติไม่ใช้กล่องเหลือง.
 - IMPLEMENTED — v0.14.106 Complete License Ledger: ตารางทุกคีย์เรียง ลูกค้า → แอป/เลขคีย์ → แพ็กเกจ/อายุ → ค่าใช้จ่าย → วันที่ออก → ผู้ออก → สถานะ → จัดการ, เก็บต้นทุน ณ วันออก และคีย์ทดสอบข้อมูลไม่ครบยังทำงานได้.

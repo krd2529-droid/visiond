@@ -56,7 +56,8 @@ export async function onRequestPost(ctx) {
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
     `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
-      (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 LIMIT 1) vision7_plan_id
+      (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
+      (SELECT q.offer_price FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')<>'member'`,
   )
@@ -71,6 +72,7 @@ export async function onRequestPost(ctx) {
   const repeated=new Set(requestedSlugs.filter((slug,index,list)=>list.indexOf(slug)!==index));
   if([...repeated].some(slug=>{const p=bySlug.get(slug);return p?.category!=='resale-rights'&&!p?.vision7_plan_id}))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์สและโปรแกรม Vision 7'},409);
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
+  if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
   const hasVision7=orderedResults.some(product=>product.vision7_plan_id);
   if(hasVision7&&!vision7LicenseEncryptionConfigured(ctx.env))return json({error:'Vision 7 ยังไม่ได้ตั้งค่า Secret เข้ารหัสคีย์ กรุณาติดต่อผู้ดูแลระบบ',code:'VISION7_LICENSE_ENCRYPTION_NOT_CONFIGURED'},503);
   const renewLicenseId=String(b.renew_license_id||'').trim();
@@ -116,9 +118,9 @@ export async function onRequestPost(ctx) {
       );
     }
   }
-  const promotion=await loadPromotion(ctx.env),pricedResults=applyPromotion(orderedResults,promotion),
+  const promotion=await loadPromotion(ctx.env),normalProducts=orderedResults.filter(p=>p.product_kind!=='vision7-key'),promotedById=new Map(applyPromotion(normalProducts,promotion).map(p=>[Number(p.id),p])),pricedResults=orderedResults.map(p=>p.product_kind==='vision7-key'?{...p,original_price:p.price,sale_price:p.price,promotion_percent:0}:promotedById.get(Number(p.id))),
     subtotal = pricedResults.reduce((sum, p) => sum + Number(p.sale_price), 0),
-    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&(!p.product_kind||p.product_kind==='product')),
+    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&p.product_kind!=='vision7-key'&&(!p.product_kind||p.product_kind==='product')),
     discountableCount = discountableItems.length,
     discountRate =
       discountableCount >= 30

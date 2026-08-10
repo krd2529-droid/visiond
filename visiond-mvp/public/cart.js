@@ -1,7 +1,7 @@
-import("/facebook-chat.js?v=014108");
+import("/facebook-chat.js?v=014109");
 const bundlePromoImage=document.querySelector('.cart-promo-gif');if(bundlePromoImage){bundlePromoImage.src=`/assets/visiond-bundle-promo.gif?motion=${Date.now()}`;bundlePromoImage.classList.add('cart-promo-banner')}
-if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014108">');
-if(!document.querySelector('#rights-quantity-style'))document.head.insertAdjacentHTML('beforeend','<style id="rights-quantity-style">.rights-quantity{display:grid;gap:4px;color:#315f5b;font-size:11px;font-weight:900}.rights-quantity input{width:76px;padding:8px;border:1px solid #39aaa4;border-radius:8px;text-align:center;font-weight:900}</style>');
+if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014109">');
+if(!document.querySelector('#rights-quantity-style'))document.head.insertAdjacentHTML('beforeend','<style id="rights-quantity-style">.rights-quantity,.vbot-key-choice{display:grid;gap:4px;color:#315f5b;font-size:12px;font-weight:900}.rights-quantity input{width:76px;padding:8px;border:1px solid #39aaa4;border-radius:8px;text-align:center;font-weight:900}.vbot-key-choice{max-width:330px;margin:10px 0}.vbot-key-choice select{width:100%;min-height:44px;padding:9px 11px;border:1px solid #39aaa4;border-radius:10px;background:#fff;color:#063d3b;font:inherit}</style>');
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (v) =>
@@ -47,8 +47,11 @@ const saveCart = (items) => {
 async function refreshCartPrices(){
   if(!getCart().length)return;
   try{
-    const [productsResponse,coursesResponse]=await Promise.all([fetch('/api/products',{cache:'no-store'}),fetch('/api/courses',{cache:'no-store'})]);if(!productsResponse.ok||!coursesResponse.ok)return;
-    const [products,courses]=await Promise.all([productsResponse.json(),coursesResponse.json()]),available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,product_kind:'course',category:'online-course'}))],bySlug=new Map(available.map(item=>[item.slug,item])),before=getCart(),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return [];return [{...item,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,category:product.category,category_label:product.category_label,product_kind:product.product_kind,course_origin:product.course_origin,pages:product.pages??product.lesson_count,cover_url:product.cover_url||item.cover_url}]});
+    const [productsResponse,coursesResponse,vbotResponse]=await Promise.all([fetch('/api/products',{cache:'no-store'}),fetch('/api/courses',{cache:'no-store'}),fetch('/api/vision7/apps',{cache:'no-store'})]);if(!productsResponse.ok||!coursesResponse.ok||!vbotResponse.ok)return;
+    const [products,courses,vbot]=await Promise.all([productsResponse.json(),coursesResponse.json(),vbotResponse.json()]);
+    const publicPlans=new Set(['monthly','yearly','lifetime']),vbotOffers=[];
+    for(const app of vbot.items||[]){let offers=app.offers||[];if(typeof offers==='string'){try{offers=JSON.parse(offers)}catch{offers=[]}}offers=(Array.isArray(offers)?offers:[]).filter(offer=>publicPlans.has(String(offer.code||offer.plan_code))&&Number(offer.price)>0&&offer.product_slug&&Number(offer.product_id)>0).map(offer=>({id:Number(offer.product_id),slug:offer.product_slug,title:`${app.name||app.code} · คีย์ ${offer.name||''}`,price:Number(offer.price),cover_url:app.cover_url,category:'vbot-key',category_label:'โปรแกรม VBot พร้อมคีย์',product_kind:'vision7-key',vision7_plan_id:Number(offer.id),vbot_plan_code:String(offer.code||offer.plan_code),vbot_duration_days:offer.duration_days,vbot_app_code:app.code,vbot_platform_type:app.platform_type}));for(const offer of offers)vbotOffers.push({...offer,vbot_offers:offers})}
+    const available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,product_kind:'course',category:'online-course'})),...vbotOffers],bySlug=new Map(available.map(item=>[item.slug,item])),before=getCart(),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return [];return [{...item,...product,id:product.id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,cover_url:product.cover_url||item.cover_url}]});
     if(fresh.length!==before.length)resetActiveOrder();
     localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
     if(fresh.length!==before.length)alert(`นำสินค้า ${before.length-fresh.length} รายการออกจากตะกร้าแล้ว เพราะสินค้าปิดขายหรือถูกลบ`);
@@ -81,11 +84,13 @@ copyAccountButton.onclick = async () => {
   }
   setTimeout(() => (copyAccountButton.textContent = "คัดลอกเลขบัญชี"), 1800);
 };
+const vbotDuration=(offer)=>offer.vbot_plan_code==='monthly'||Number(offer.vbot_duration_days)===30?'30 วัน':offer.vbot_plan_code==='yearly'||Number(offer.vbot_duration_days)===365?'1 ปี':offer.vbot_plan_code==='lifetime'||offer.vbot_duration_days==null?'ตลอดชีพ':offer.title?.split('· คีย์ ')[1]||'แพ็กเกจคีย์';
+const vbotControls=(item,index)=>item.product_kind==='vision7-key'?`<label class="vbot-key-choice">เลือกอายุคีย์<select data-vbot-plan="${index}">${(item.vbot_offers||[item]).map(offer=>`<option value="${Number(offer.vision7_plan_id)}" ${Number(offer.vision7_plan_id)===Number(item.vision7_plan_id)?'selected':''}>${esc(vbotDuration(offer))} · ${money(offer.price)}</option>`).join('')}</select></label>${item.vbot_platform_type==='veasy'?'<small class="cart-no-promo-note">V Easy · 1 คีย์ = 1 ร้าน</small>':''}<strong class="cart-no-promo-note">รับไฟล์ติดตั้งและคีย์หลังอนุมัติการชำระเงิน · ไม่ร่วมส่วนลดหลายตะกร้า</strong>`:'';
 function render() {
   const items = getCart(),
     itemCount=items.reduce((sum,x)=>sum+(Number(x.quantity)||1),0),
     subtotal = items.reduce((sum, x) => sum + Number(x.price || 0)*(Number(x.quantity)||1), 0),
-    discountableItems = items.filter((item) => item.category !== "resale-rights" && item.slug !== "course-selling-rights" && (!item.product_kind || item.product_kind === "product")),
+    discountableItems = items.filter((item) => item.category !== "resale-rights" && item.category !== "vbot-key" && item.product_kind !== "vision7-key" && item.slug !== "course-selling-rights" && (!item.product_kind || item.product_kind === "product")),
     discountableCount = discountableItems.length,
     discountableSubtotal = discountableItems.reduce((sum, x) => sum + Number(x.price || 0), 0),
     rate = discountRate(discountableCount),
@@ -116,7 +121,7 @@ function render() {
     ? items
         .map(
           (p, i) =>
-            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights'||p.product_kind==='course'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':p.product_kind==='course'?`คอร์ส V-Learning • ${esc(p.pages || '-')} EP`:'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${p.category==='resale-rights'||p.slug==='course-selling-rights'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด · ไม่คืนเงิน เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</strong>':p.product_kind==='course'?'<strong class="cart-no-promo-note">คอร์สไม่ร่วมโปรส่วนลดหลายตะกร้า</strong>':''}<a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>ได้รับ ${Number(p.quantity)||1} เครดิต · รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
+            `<article class="cart-product${p.category==='resale-rights'||p.slug==='course-selling-rights'||p.product_kind==='course'||p.product_kind==='vision7-key'?' no-bundle-discount':''}"><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt="รูป ${esc(p.title)}"><div><small>${esc(p.category_label || p.category || "ไฟล์ดิจิทัล")}</small><h2>${esc(p.title)}</h2><p>${p.product_kind==='vision7-key'?'โปรแกรม VBot พร้อมคีย์ตามอายุที่เลือก':p.category==='resale-rights'||p.slug==='course-selling-rights'?'1 ชิ้น = 1 เครดิตสำหรับเปิดตะกร้าคอร์ส 1 ตะกร้า':p.product_kind==='course'?`คอร์ส V-Learning • ${esc(p.pages || '-')} EP`:'ไฟล์ดิจิทัลพร้อมดาวน์โหลด • '+esc(p.pages || '-')+' แผ่น'}</p>${vbotControls(p,i)}${p.category==='resale-rights'||p.slug==='course-selling-rights'?'<strong class="cart-no-promo-note">ไม่ร่วมโปรส่วนลด · ไม่คืนเงิน เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</strong>':p.product_kind==='course'?'<strong class="cart-no-promo-note">คอร์สไม่ร่วมโปรส่วนลดหลายตะกร้า</strong>':''}<a href="${p.product_kind==='vision7-key'?`/bots.html?app=${encodeURIComponent(p.vbot_app_code||'')}`:`/product.html?slug=${encodeURIComponent(p.slug)}`}">ดูรายละเอียด</a></div><div class="cart-product-price">${Number(p.promotion_percent)>0?`<span class="vd-promo-price"><del>${money(p.original_price)}</del><strong>${money(p.price)}</strong></span>`:`<b>${money(p.price)}</b>`}${p.category==='resale-rights'||p.slug==='course-selling-rights'?`<label class="rights-quantity">จำนวนสิทธิ์<input data-rights-quantity="${i}" type="number" min="1" max="30" value="${Number(p.quantity)||1}"></label><small>ได้รับ ${Number(p.quantity)||1} เครดิต · รวม ${money(Number(p.price)*(Number(p.quantity)||1))}</small>`:''}<button data-remove="${i}" type="button">ลบออกจากตะกร้า</button></div></article>`,
         )
         .join("")
     : `<div class="cart-empty"><b>ตะกร้ายังว่าง</b><p>เลือกสินค้าที่ชอบ แล้วเพิ่มลงตะกร้าได้เลย</p><a class="primary" href="/digital-products.html">เลือกดูสินค้า</a></div>`;
@@ -133,6 +138,7 @@ function render() {
           saveCart(items.filter((_, i) => i !== Number(b.dataset.remove)))),
     );
   document.querySelectorAll('[data-rights-quantity]').forEach(input=>input.onchange=()=>{const next=[...items],index=Number(input.dataset.rightsQuantity),otherCount=next.reduce((sum,item,i)=>sum+(i===index?0:Number(item.quantity)||1),0);next[index].quantity=Math.min(30-otherCount,Math.max(1,Number(input.value)||1));saveCart(next)});
+  document.querySelectorAll('[data-vbot-plan]').forEach(select=>select.onchange=()=>{const next=[...items],index=Number(select.dataset.vbotPlan),current=next[index],offer=(current.vbot_offers||[]).find(value=>Number(value.vision7_plan_id)===Number(select.value));if(!offer)return;next[index]={...current,...offer,quantity:1,vbot_offers:current.vbot_offers,original_price:Number(offer.price),promotion_percent:0};saveCart(next)});
   checkoutButton.disabled = !items.length;
 }
 checkoutButton.onclick = checkout;
@@ -294,4 +300,4 @@ async function removeUnavailableCartItems() {
 }
 render();
 (async()=>{await removeUnavailableCartItems();await refreshCartPrices()})();
-import("/nav-account.js?v=014108").then((module) => module.initAccountNav());
+import("/nav-account.js?v=014109").then((module) => module.initAccountNav());

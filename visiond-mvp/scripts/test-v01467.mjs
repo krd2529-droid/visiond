@@ -9,6 +9,6 @@ check('registration detects identity conflict',()=>{const api=read('functions/ap
 check('participant hash never returned',()=>assert.match(read('functions/api/vision7/runtime/register-conversation.js'),/delete row\.participant_hash/));
 check('conversation lease checks shop registry',()=>{const core=read('functions/_veasy_runtime.js');assert.match(core,/SELECT id FROM veasy_conversations WHERE shop_id=\? AND id=\?/);assert.match(core,/VEASY_CONVERSATION_NOT_OWNED/)});
 check('message and order claims still require lease',()=>{assert.match(read('functions/api/vision7/runtime/message-claim.js'),/verifyConversationLease/);assert.match(read('functions/api/vision7/runtime/order-claim.js'),/verifyConversationLease/)});
-check('requirements remain complete',()=>{const ledger=JSON.parse(read('requirements-ledger.json'));assert.ok(ledger.requirements.every(x=>x.status==='DONE-VERIFIED'))});
+check('requirements remain complete',()=>{const ledger=JSON.parse(read('requirements-ledger.json'));assert.ok(ledger.requirements.every(x=>['DONE-VERIFIED','REMOVED-BY-BOSS'].includes(x.status)))});
 check('migration sequence',()=>{const files=fs.readdirSync('migrations').filter(x=>/^\d{4}_.*\.sql$/.test(x)).sort();assert.ok(Number(files.at(-1).slice(0,4))>=29)});
 const failed=checks.filter(x=>!x).length;console.log(`v0.14.67 RESULT: total=${checks.length} passed=${checks.length-failed} failed=${failed}`);if(failed)process.exit(1);
