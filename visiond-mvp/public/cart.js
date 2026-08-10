@@ -186,6 +186,7 @@ async function checkout() {
       throw new Error(d.error || "สร้างคำสั่งซื้อไม่สำเร็จ");
     }
     activeOrder = { ...d, cart_signature: cartSignature(items) };
+    window.visiondTrack?.("checkout_start",{metadata:{value:Number(d.total)||0}});
     window.visiondPixel?.track("InitiateCheckout", {
       content_ids: (d.items || []).map((item) => String(item.id || item.slug)),
       content_type: "product",
@@ -231,7 +232,8 @@ slipForm.onsubmit = async (e) => {
       body: fd,
     });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || "ส่งสลิปไม่สำเร็จ");
+    if (!r.ok) { window.visiondTrack?.("payment_failed"); throw new Error(d.error || "ส่งสลิปไม่สำเร็จ"); }
+    window.visiondTrack?.("payment_submit",{metadata:{value:Number(order.total)||0}});
     localStorage.removeItem("vd_cart");
     const learningOrder = isVLearningOrder(order);
     slipMessage.textContent = d.auto_approved

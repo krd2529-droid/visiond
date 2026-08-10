@@ -40,6 +40,7 @@ async function submitAuth(form,endpoint,loadingText){
     });
     const data=await response.json().catch(()=>({}));
     if(!response.ok) throw new Error(data.error||`เซิร์ฟเวอร์เข้าสู่ระบบขัดข้อง (${response.status}) กรุณาลองใหม่`);
+    window.visiondTrack?.(form.id==='registerPageForm'?'signup_complete':'login_success');
     const destination=returnTo();
     sessionStorage.removeItem('vd_return_to');
     location.href=destination;
@@ -58,6 +59,7 @@ document.querySelector('#loginPageForm')?.addEventListener('submit',event=>{
 
 document.querySelector('#registerPageForm')?.addEventListener('submit',event=>{
   event.preventDefault();
+  window.visiondTrack?.('signup_start');
   submitAuth(event.currentTarget,'/api/auth/register','กำลังสมัครสมาชิก…');
 });
 

@@ -83,7 +83,7 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       Object.entries(panels).forEach(
         ([name, panel]) => (panel.hidden = name !== btn.dataset.adminTab),
       );
-      if (btn.dataset.adminTab === "overview") loadProfitDashboard();
+      if (btn.dataset.adminTab === "overview") { loadProfitDashboard(); loadAdsIntelligence(); }
       if (btn.dataset.adminTab === "products") loadProducts();
       if (btn.dataset.adminTab === "categories") loadCategories();
       if (btn.dataset.adminTab === "orders") loadOrders();
@@ -947,6 +947,8 @@ function formatBytes(n) {
 }
 async function loadProfitDashboard() {
   loadVisitorStats();
+loadCustomerAnalytics();
+  loadAdsIntelligence();
   profitDailyTable.innerHTML = "<p>กำลังคำนวณยอดขายและค่าแอด…</p>";
   const params = new URLSearchParams({
       from: profitDateFrom.value,
@@ -977,6 +979,31 @@ async function loadProfitDashboard() {
       }),
   );
 }
+
+async function loadCustomerAnalytics(){
+  const funnel=document.querySelector('#customerFunnel'),products=document.querySelector('#customerProductPerformance'),journeys=document.querySelector('#customerJourneys');if(!funnel||!products||!journeys)return;
+  const r=await fetch('/api/admin/customer-analytics?days=30',{cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok){funnel.innerHTML=`<p>${esc(d.error||'โหลด Customer Intelligence ไม่สำเร็จ')}</p>`;return}
+  const num=v=>new Intl.NumberFormat('th-TH').format(Number(v)||0),people=k=>Number(d.events?.[k]?.people)||0;
+  const steps=[['เข้าหน้าเว็บ','landing_view'],['ดูสินค้า','product_view'],['ใส่ตะกร้า','add_to_cart'],['Checkout','checkout_start']];
+  funnel.innerHTML=steps.map(([label,key],i)=>{const value=people(key),prev=i?people(steps[i-1][1]):0,rate=prev?Math.round(value/prev*100):0;return `<article><small>${label}</small><b>${num(value)}</b><em>${i?rate+'% จากขั้นก่อน':'ผู้ใช้/ผู้ชมไม่ซ้ำ'}</em></article>`}).join('')+`<article><small>ซื้อสำเร็จ</small><b>${num(d.purchase?.buyers)}</b><em>${num(d.purchase?.orders)} ออเดอร์ · ${money(d.purchase?.revenue)}</em></article>`;
+  products.innerHTML='<h4>สินค้าใน Funnel</h4>'+((d.products||[]).map(x=>`<div class="ci-row"><span><b>${esc(x.title)}</b><small>ดู ${num(x.views)} · ใส่ตะกร้า ${num(x.carts)}</small></span><strong>${x.views?Math.round(Number(x.carts||0)/Number(x.views)*100):0}%</strong></div>`).join('')||'<p>ยังไม่มีข้อมูล</p>');
+  journeys.innerHTML='<h4>Customer Journey ล่าสุด</h4>'+((d.journeys||[]).map(x=>`<div class="ci-row"><span><b>${esc(x.name||x.username||x.email)}</b><small>${esc(String(x.event_types||'').split(',').join(' → '))}</small></span><strong>${num(x.events)}</strong></div>`).join('')||'<p>ยังไม่มี Journey ของสมาชิก</p>');
+}
+async function loadAdsIntelligence(){
+  const summary=document.querySelector('#adsIntelligenceSummary'),table=document.querySelector('#adsIntelligenceTable');if(!summary||!table)return;
+  const from=profitDateFrom?.value||'',to=profitDateTo?.value||'',r=await fetch(`/api/admin/ad-intelligence?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,{cache:'no-store'}),d=await r.json().catch(()=>({}));
+  if(!r.ok){table.innerHTML=`<p>${esc(d.error||'โหลด Ads Intelligence ไม่สำเร็จ')}</p>`;return}
+  const x=d.summary||{},roas=x.roas==null?'—':Number(x.roas).toFixed(2)+'x',profit=Number(x.profit)||0;
+  summary.innerHTML=`<article><small>ค่าแอดระดับ Campaign</small><b>${money(x.spend)}</b></article><article><small>ยอดขาย Attribution</small><b>${money(x.revenue)}</b></article><article><small>กำไรหลังหักแอด</small><b class="${profit>=0?'positive':'negative'}">${profit<0?'-':''}${money(Math.abs(profit))}</b></article><article><small>ROAS</small><b>${roas}</b></article><article><small>Attributed Orders</small><b>${Number(x.orders)||0}</b></article>`;
+  const rows=(d.performance||[]).map(item=>`<div class="ads-performance-row"><span><b>${esc(item.campaign||'(ไม่มี campaign)')}</b><small>${esc(item.source||'direct')}${item.creative?' · '+esc(item.creative):''}</small></span><b>${money(item.spend)}</b><b>${money(item.revenue)}</b><b>${Number(item.orders)||0}</b><b>${item.roas==null?'—':Number(item.roas).toFixed(2)+'x'}</b><b class="${Number(item.profit)>=0?'positive':'negative'}">${Number(item.profit)<0?'-':''}${money(Math.abs(Number(item.profit)||0))}</b></div>`).join('');
+  const spend=(d.spend||[]).map(item=>`<div class="ads-spend-item"><span><b>${esc(item.campaign)}</b><small>${esc(item.spend_date)} · ${esc(item.platform)}${item.creative?' · '+esc(item.creative):''}</small></span><strong>${money(item.cost)}</strong><button type="button" data-delete-campaign-cost="${Number(item.id)||0}">ลบ</button></div>`).join('');
+  table.innerHTML=`<div class="ads-performance-row head"><span>Campaign / Creative</span><b>Spend</b><b>Revenue</b><b>Orders</b><b>ROAS</b><b>กำไร</b></div>${rows||'<p>ยังไม่มีข้อมูล Campaign ที่จับคู่ได้</p>'}<div class="ads-spend-list"><h4>ค่าแอดที่บันทึก</h4>${spend||'<p>ยังไม่มีค่าแอดระดับ Campaign</p>'}</div>`;
+  table.querySelectorAll('[data-delete-campaign-cost]').forEach(btn=>btn.onclick=async()=>{if(!confirm('ลบค่าแอดรายการนี้?'))return;const rr=await fetch('/api/admin/ad-intelligence?id='+encodeURIComponent(btn.dataset.deleteCampaignCost),{method:'DELETE'}),dd=await rr.json().catch(()=>({}));if(!rr.ok)return alert(dd.error||'ลบไม่สำเร็จ');loadAdsIntelligence()});
+}
+async function saveCampaignAdCost(event){
+  event.preventDefault();const form=event.currentTarget,button=form.querySelector('button[type="submit"]'),message=document.querySelector('#campaignAdCostMessage'),body=Object.fromEntries(new FormData(form).entries());button.disabled=true;if(message)message.textContent='กำลังบันทึก…';const r=await fetch('/api/admin/ad-intelligence',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));button.disabled=false;if(!r.ok){if(message){message.textContent=d.error||'บันทึกไม่สำเร็จ';message.classList.add('error')}return}if(message){message.textContent='บันทึกเรียบร้อย';message.classList.remove('error')}loadAdsIntelligence();
+}
+
 async function loadVisitorStats() {
   const summary = document.querySelector("#visitorStatsSummary"),
     productsBox = document.querySelector("#topViewedProducts");
@@ -1424,3 +1451,8 @@ showAdminNotice();
 init();
 import('/mouse-ui.js?v=01205');
 import('/i18n.js?v=01331');
+
+document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
+
+const campaignAdCostForm=document.querySelector('#campaignAdCostForm');if(campaignAdCostForm){campaignAdCostForm.elements.spend_date.value=new Date().toISOString().slice(0,10);campaignAdCostForm.addEventListener('submit',saveCampaignAdCost)}
+document.querySelector('#refreshAdsIntelligence')?.addEventListener('click',loadAdsIntelligence);

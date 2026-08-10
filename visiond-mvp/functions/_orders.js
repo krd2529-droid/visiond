@@ -11,5 +11,9 @@ export async function grantOrder(env, order, actor = {}) {
   const statusIndex=statements.length;statements.push(env.DB.prepare("UPDATE orders SET status='paid',admin_note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending_review'").bind(actor.note || '', order.id));
   const results=await env.DB.batch(statements),claimed=Number(results[statusIndex]?.meta?.changes)||0;
   if(!claimed)return 0;
+  try{
+    const attribution=await env.DB.prepare(`SELECT visitor_key,source,medium,campaign,content,referrer FROM customer_events WHERE user_id=? AND event_type<>'purchase' AND (source<>'' OR campaign<>'' OR content<>'') AND created_at>=datetime('now','-30 days') ORDER BY created_at DESC,id DESC LIMIT 1`).bind(order.user_id).first();
+    await env.DB.prepare(`INSERT INTO customer_events(visitor_key,user_id,event_type,path,order_id,source,medium,campaign,content,referrer,metadata) VALUES(?,?,'purchase','/checkout',?,?,?,?,?,?,?)`).bind(attribution?.visitor_key||null,order.user_id,order.id,attribution?.source||'',attribution?.medium||'',attribution?.campaign||'',attribution?.content||'',attribution?.referrer||'',JSON.stringify({total:Number(order.total)||0,attribution_window_days:30})).run();
+  }catch{}
   return grantIndexes.reduce((sum,index)=>sum+(Number(results[index]?.meta?.changes)||0),0);
 }

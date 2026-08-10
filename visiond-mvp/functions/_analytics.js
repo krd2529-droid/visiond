@@ -71,5 +71,6 @@ export async function maintainAnalyticsRetention(env){
   const removed=await env.DB.prepare(`DELETE FROM page_views WHERE id IN
     (SELECT id FROM page_views WHERE aggregated_at IS NOT NULL AND viewed_at<datetime('now',?) ORDER BY id LIMIT ?)`)
     .bind(`-${RAW_RETENTION_DAYS} days`,BATCH_SIZE).run();
-  return {retention_days:RAW_RETENTION_DAYS,backfilled,removed:number(removed?.meta?.changes),more_backfill:backfilled===BATCH_SIZE};
+  const customerEventsRemoved=await env.DB.prepare(`DELETE FROM customer_events WHERE id IN (SELECT id FROM customer_events WHERE created_at<datetime('now',?) ORDER BY id LIMIT ?)` ).bind(`-${RAW_RETENTION_DAYS} days`,BATCH_SIZE).run();
+  return {retention_days:RAW_RETENTION_DAYS,backfilled,removed:number(removed?.meta?.changes),customer_events_removed:number(customerEventsRemoved?.meta?.changes),more_backfill:backfilled===BATCH_SIZE};
 }
