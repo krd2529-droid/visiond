@@ -91,7 +91,9 @@
     "test:v014109": "node scripts/test-v014109.mjs && node scripts/test-v014109-vbot-key-storefront.mjs && node scripts/test-v014109-licensed-installer-download.mjs && node scripts/test-v014109-test-data-cleanup.mjs",
     "test:v014110": "node scripts/test-v014110-b1.mjs",
     "test:v014111-backend": "node scripts/test-v014111-backend.mjs",
-    "test:v014111": "node scripts/test-v014111-b1.mjs"
+    "test:v014111-pages-cors": "node scripts/test-v014111-pages-cors.mjs",
+    "test:v014111": "node scripts/test-v014111-b1.mjs",
+    "test:v014112": "node scripts/test-v014112-b1.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

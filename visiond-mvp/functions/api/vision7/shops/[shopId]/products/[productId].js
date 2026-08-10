@@ -20,6 +20,7 @@ export async function onRequestPatch(ctx){
   ])}catch{return json({error:'SKU หรือชื่อ URL ซ้ำกับสินค้าในร้าน',code:'VEASY_PRODUCT_CONFLICT'},409,noStore)}
   return json({ok:true,item:await owned(ctx.env,current.shop_id,current.id,auth.user.id)},200,noStore);
 }
+export const onRequestPut=onRequestPatch;
 
 export async function onRequestDelete(ctx){
   await ensureDatabase(ctx.env);await ensureVEasyShopSchema(ctx.env);const auth=await requireVision7User(ctx);if(auth.error)return auth.error;

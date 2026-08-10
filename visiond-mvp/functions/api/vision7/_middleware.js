@@ -4,6 +4,8 @@ const ALLOWED_PATHS=[
   '/api/vision7/auth/me',
   '/api/vision7/auth/logout',
   '/api/vision7/auth/veasy-device',
+  '/api/vision7/mobile-health',
+  '/api/vision7/mobile-events',
   '/api/vision7/shops/',
   '/api/vision7/runtime/'
 ];
@@ -14,7 +16,7 @@ const corsHeaders=request=>{
   return {
     'access-control-allow-origin':origin,
     'access-control-allow-methods':'GET,POST,PATCH,DELETE,OPTIONS',
-    'access-control-allow-headers':'authorization,content-type,idempotency-key,x-vision7-device-id',
+    'access-control-allow-headers':'accept,authorization,content-type,idempotency-key,x-veasy-app-version,x-vision7-device-id',
     'access-control-max-age':'600',
     'vary':'Origin'
   };

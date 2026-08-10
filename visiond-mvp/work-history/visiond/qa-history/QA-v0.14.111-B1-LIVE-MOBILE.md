@@ -6,7 +6,7 @@
 - Product edit plus safe delete/hide.
 - Bot readiness/start/stop and LINE/Facebook handoff.
 - Persistent, deduplicated and paginated action queue with urgent pinning and reminder intervals.
-- Source/APK version, archive and signature integrity.
+- Web/APK delivery integrity plus private Source version and reproducible-build checks.
 
 ## Redmi Note 14 Pro+ 5G — pending Boss smoke
 1. Install v1.0.10 and activate with the real V Easy key.
