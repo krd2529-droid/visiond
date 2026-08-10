@@ -1,6 +1,7 @@
 {
   "snapshots": [
     {"version":"v0.14.53","file":"requirements-history/v0.14.53.json","sha256":"5b621de940c1eac5a283bbfb59fc575c8dbad29600775d6c89de0f285843049a"},
-    {"version":"v0.14.54","file":"requirements-history/v0.14.54.json","sha256":"24bc4c0c087c8da734ee8f1bf40d6e6319011f9dce52b999bb82ecfffcf84cc3"}
+    {"version":"v0.14.54","file":"requirements-history/v0.14.54.json","sha256":"24bc4c0c087c8da734ee8f1bf40d6e6319011f9dce52b999bb82ecfffcf84cc3"},
+    {"version":"v0.14.59","file":"requirements-history/v0.14.59.json","sha256":"22b7ee3e33e5f8076467b1ac328f50ea3be66a0424c0e90983bad5c3a964327f"}
   ]
 }

@@ -22,6 +22,6 @@
     {"id":"EC-EP-006","source":"reply sending with encrypted Page token and retry queue","status":"DONE-VERIFIED","evidence":["functions/_meta_sender.js","functions/api/internal/meta-outbox.js","migrations/0020_elon_page_outbox.sql"]},
     {"id":"EC-ADS-001","source":"Ads Center is separate from existing income dashboard","status":"DONE-VERIFIED","evidence":["public/ads-center.html","functions/api/admin/ads-center.js"]},
     {"id":"EC-ADS-002","source":"ad advice: continue, observe, adjust or stop","status":"DONE-VERIFIED","evidence":["functions/api/admin/ads-center.js","public/ads-center.js"]},
-    {"id":"EC-ADS-003","source":"production Ads API ingestion at campaign, adset and creative levels","status":"PENDING","evidence":[]}
+    {"id":"EC-ADS-003","source":"production Ads API ingestion at campaign, adset and creative levels","status":"DONE-VERIFIED","evidence":["functions/_meta_ads.js","functions/api/admin/meta-ads-sync.js","public/ads-center.js","scripts/test-v01459.mjs"]}
   ]
 }

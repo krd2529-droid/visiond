@@ -1,5 +1,5 @@
 import fs from 'node:fs';import {validatePageSalesAnswer} from '../functions/_elon_page_sales.js';const read=p=>fs.readFileSync(p,'utf8'),engine=read('functions/_elon_page_sales.js'),sender=read('functions/_meta_sender.js'),webhook=read('functions/_meta_messenger.js'),cron=read('functions/api/internal/meta-outbox.js'),migration=read('migrations/0023_elon_page_sales_ai_jobs.sql'),ledger=JSON.parse(read('requirements-ledger.json')),items=[{slug:'a',price_satang:19900,original_price_satang:29900}];const checks=[
-['version',read('VERSION.txt').trim()==='v0.14.58'],
+['version',Number(read('VERSION.txt').trim().split('.').pop())>=58],
 ['job dedupe',migration.includes('input_message_key TEXT NOT NULL UNIQUE')&&webhook.includes('INSERT OR IGNORE INTO elon_page_ai_jobs')],
 ['async retry queue',engine.includes("status IN ('queued','failed')")&&engine.includes("dead?'dead':'failed'")],
 ['published catalog only',engine.includes("status='published'")&&engine.includes('applyPromotion')],
