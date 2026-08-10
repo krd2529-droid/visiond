@@ -1,8 +1,8 @@
 {
   "patch":"v0.14.67",
   "tasks":[
-    {"id":"P1467-001","scope":"BUG","source_instruction":"ตรวจ QA หลังปิด Event Case และจับช่องข้อมูลบทสนทนาข้ามร้าน","status":"DONE-VERIFIED","evidence":["migrations/0029_veasy_conversation_isolation.sql","scripts/test-v01467.mjs"]},
-    {"id":"P1467-002","scope":"DATABASE","source_instruction":"แยกทะเบียนบทสนทนาตามร้านและห้าม participant ซ้ำภายในร้าน","status":"DONE-VERIFIED","evidence":["migrations/0029_veasy_conversation_isolation.sql","functions/_veasy_runtime.js"]},
+    {"id":"P1467-001","scope":"BUG","source_instruction":"ตรวจ QA หลังปิด Event Case และจับช่องข้อมูลบทสนทนาข้ามร้าน","status":"DONE-VERIFIED","evidence":["migrations/0032_veasy_conversation_isolation.sql","scripts/test-v01467.mjs"]},
+    {"id":"P1467-002","scope":"DATABASE","source_instruction":"แยกทะเบียนบทสนทนาตามร้านและห้าม participant ซ้ำภายในร้าน","status":"DONE-VERIFIED","evidence":["migrations/0032_veasy_conversation_isolation.sql","functions/_veasy_runtime.js"]},
     {"id":"P1467-003","scope":"SECURITY","source_instruction":"เก็บตัวระบุลูกค้าแพลตฟอร์มแบบ hash และไม่คืนค่าออก API","status":"DONE-VERIFIED","evidence":["functions/api/vision7/runtime/register-conversation.js","scripts/test-v01467.mjs"]},
     {"id":"P1467-004","scope":"SECURITY","source_instruction":"ลงทะเบียนบทสนทนาได้เฉพาะเครื่องที่ถือ Runtime Lease ของร้าน","status":"DONE-VERIFIED","evidence":["functions/api/vision7/runtime/register-conversation.js"]},
     {"id":"P1467-005","scope":"BUG","source_instruction":"ห้าม Conversation Lease ใช้รหัสแชทที่ไม่ได้เป็นของร้าน","status":"DONE-VERIFIED","evidence":["functions/_veasy_runtime.js","scripts/test-v01467.mjs"]},

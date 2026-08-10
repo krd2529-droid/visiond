@@ -15,6 +15,9 @@ export async function ensureVEasyShopSchema(env){
       SELECT 1 FROM vision7_licenses l JOIN vision7_programs p ON p.id=l.program_id
       WHERE l.id=NEW.license_id AND l.user_id=NEW.user_id AND lower(p.platform_type)='veasy'
     ) BEGIN SELECT RAISE(ABORT,'VEASY_LICENSE_REQUIRED'); END`).run();
+  await env.DB.prepare(`UPDATE vision7_licenses SET binding_state='unbound',updated_at=CURRENT_TIMESTAMP
+    WHERE binding_state='not_required' AND EXISTS(SELECT 1 FROM vision7_programs p WHERE p.id=vision7_licenses.program_id AND lower(p.platform_type)='veasy')
+      AND NOT EXISTS(SELECT 1 FROM veasy_shops s WHERE s.license_id=vision7_licenses.id)`).run();
   const columns=(await env.DB.prepare('PRAGMA table_info(veasy_shops)').all()).results||[];
   if(!columns.some(column=>column.name==='plan_limit'))await env.DB.prepare('ALTER TABLE veasy_shops ADD COLUMN plan_limit INTEGER NOT NULL DEFAULT 20').run();
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS veasy_categories (id TEXT PRIMARY KEY,shop_id TEXT NOT NULL,name TEXT NOT NULL,slug TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(shop_id) REFERENCES veasy_shops(id) ON DELETE CASCADE,UNIQUE(shop_id,slug))`).run();

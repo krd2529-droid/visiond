@@ -88,7 +88,8 @@
     "test:v014106": "node scripts/test-v014106.mjs",
     "test:v014107": "node scripts/test-v014107.mjs",
     "test:v014108": "node scripts/test-v014108.mjs && node scripts/test-v014108-veasy-shop-binding.mjs",
-    "test:v014109": "node scripts/test-v014109.mjs && node scripts/test-v014109-vbot-key-storefront.mjs && node scripts/test-v014109-licensed-installer-download.mjs && node scripts/test-v014109-test-data-cleanup.mjs"
+    "test:v014109": "node scripts/test-v014109.mjs && node scripts/test-v014109-vbot-key-storefront.mjs && node scripts/test-v014109-licensed-installer-download.mjs && node scripts/test-v014109-test-data-cleanup.mjs",
+    "test:v014110": "node scripts/test-v014110-b1.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

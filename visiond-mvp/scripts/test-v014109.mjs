@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";import fs from "node:fs";
 const read=p=>fs.readFileSync(p,"utf8"),html=read("public/bots.html"),ui=read("public/bots-storefront.js"),cart=read("public/cart.js"),list=read("functions/api/vision7/apps/index.js"),detail=read("functions/api/vision7/apps/[code]/index.js"),download=read("functions/api/vision7/apps/[code]/download.js"),sync=read("functions/_vision7_key_storefront.js"),orders=read("functions/api/orders/index.js"),fulfill=read("functions/_vision7_orders.js"),activate=read("functions/api/vision7/auth/veasy-activate.js"),ledger=read("requirements-ledger.json");
-assert.equal(read("VERSION.txt").trim(),"v0.14.109");
+assert.ok(Number(read("VERSION.txt").trim().split(".").at(-1))>=109);
 assert.ok(html.includes(">VBot</a>")&&html.includes("/bots-storefront.js"),"canonical VBot one-level storefront");
 for(const token of ["/api/vision7/apps","product_slug","add","cart","30 วัน","1 ปี","ตลอดชีพ"])assert.ok(ui.includes(token)||html.includes(token),`storefront UI ${token}`);
 assert.ok(ui.includes("/api/vision7/apps")&&!ui.includes("/api/vision7/programs"),"storefront must consume filtered customer offers API");

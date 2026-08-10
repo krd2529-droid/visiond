@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.109
+Current build: v0.14.110
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -190,6 +190,7 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IN PROGRESS — v0.14.110 B1 Three-output: VisionD Web v0.14.110, V Easy Source v1.0.9 และ signed APK v1.0.9 ต้องส่งพร้อมกัน; ปิดงานเมื่อผ่าน form parity, API/session cross-contract, generic credential-free APK, artifact integrity และบันทึก smoke test บน Redmi Note 14 Pro+ 5G เท่านั้น.
 - IMPLEMENTED — v0.14.109 VBot Key Storefront: เมนู VBot เปิดหน้ารวม/รายละเอียดระดับเดียว ตะกร้าขายเฉพาะคีย์ 30 วัน/1 ปี/ตลอดชีพที่ราคาเป็นบวก ใช้ product จริงและตรวจราคาซ้ำก่อน order; เมื่ออนุมัติจึงปลดทั้งคีย์และดาวน์โหลดตัวติดตั้ง โดยกฎ 1 คีย์ = 1 ร้านยังเป็น V Easy เท่านั้น.
 - IMPLEMENTED — v0.14.108 VBot Marketplace Foundation: Boss สร้างร่างแอปฟรีจากชื่อ รายละเอียด ปก ตัวติดตั้ง แพลตฟอร์มและเวอร์ชัน; ราคาเสนอขายคีย์แต่ละอายุเว้นว่างเป็น NULL ได้; ใช้ Program/Plan/Release/License เดิมและล้างงานค้างเมื่อสร้างไม่สำเร็จ. ขั้นถัดไปคือ storefront basket, paid entitlement/download และ key fulfillment โดยห้ามเปิดขายร่างที่ยังไม่มีราคา.
 - IMPLEMENTED — v0.14.107 Key Mode Clarity: คีย์ทดสอบเหลือเพียงแอปและอายุ 30 วัน/1 ปี/ตลอดอายุโดยใช้บัญชี Boss อัตโนมัติ; คีย์ลูกค้าจึงค่อยแสดงลูกค้า แพ็กเกจและราคา; ข้อมูลปกติไม่ใช้กล่องเหลือง.
