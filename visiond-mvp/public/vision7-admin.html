@@ -4,15 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Vision 7 Control</title>
-    <link rel="stylesheet" href="/vision7.css?v=014101" />
+    <link rel="stylesheet" href="/vision7.css?v=014104" />
   </head>
-  <body>
+  <body class="v7-admin">
     <header class="top">
       <b>Vision 7 Control</b><a href="/admin.html">กลับหน้าผู้ดูแล</a>
     </header>
     <main class="wrap">
-      <h1>ศูนย์คีย์โปรแกรม VisionD</h1><p class="notice">คีย์สร้างแยกจากไฟล์ติดตั้ง · APK V Easy เป็นไฟล์กลางและไม่ฝังคีย์ลูกค้า</p>
-      <p id="encryptionState" class="key-center-state">
+      <div class="key-center-heading"><div><small>VISION 7 CONTROL</small><h1>ศูนย์คีย์โปรแกรม VisionD</h1><p>สร้างโปรแกรม ออกคีย์ทดสอบ และเผยแพร่ไฟล์กลางตามลำดับ</p></div></div>
+      <ol id="keyWorkflow" class="key-workflow" aria-label="ลำดับการตั้งค่า Vision 7">
+        <li data-workflow-step="program"><span>1</span><div><b>เพิ่มโปรแกรม</b><small>กำหนดแพลตฟอร์มและแพ็กเกจ</small></div></li>
+        <li data-workflow-step="key"><span>2</span><div><b>ออกคีย์ทดสอบ</b><small>ผูกบัญชีและเลือกอายุคีย์</small></div></li>
+        <li data-workflow-step="release"><span>3</span><div><b>เผยแพร่ตัวติดตั้ง</b><small>APK หรือไฟล์กลางสำหรับลูกค้า</small></div></li>
+      </ol>
+      <p id="nextAction" class="next-action" role="status">กำลังตรวจขั้นตอนถัดไป…</p>
+      <p class="notice">คีย์สร้างแยกจากไฟล์ติดตั้ง · APK V Easy เป็นไฟล์กลางและไม่ฝังคีย์ลูกค้า</p>
+      <p id="encryptionState" class="key-center-state" role="status" aria-live="polite">
         กำลังตรวจความพร้อมระบบเข้ารหัสคีย์…
       </p>
       <section
@@ -20,25 +27,27 @@
         class="summary-grid"
         aria-label="สรุประบบคีย์"
       ></section>
-      <div class="bar">
-        <button id="newProgram">เพิ่มโปรแกรม</button
-        ><button id="newKey">ออกคีย์</button>
+      <div class="bar primary-actions">
+        <button id="newProgram">＋ เพิ่มโปรแกรมแรก</button
+        ><button id="newKey" class="secondary-action" disabled>🔑 ออกคีย์ทดสอบ</button>
       </div>
-      <section class="grid">
-        <article class="card">
-          <h2>โปรแกรม</h2>
+      <section class="key-workspace">
+        <article id="programWorkspace" class="card program-panel">
+          <header class="card-heading"><div><small>STEP 1</small><h2>โปรแกรม</h2></div><button type="button" class="compact-action" data-open-program>＋ เพิ่ม</button></header>
           <div id="programs"></div>
         </article>
-        <article class="card">
-          <h2>จัดการคีย์</h2>
-          <input
+        <article id="licenseWorkspace" class="card license-panel">
+          <header class="card-heading"><div><small>STEP 2</small><h2>จัดการคีย์</h2></div></header>
+          <label class="search-label" for="licenseSearch">ค้นหาคีย์</label><input
             id="licenseSearch"
+            type="search"
             placeholder="ค้นหาชื่อ อีเมล โปรแกรม หรือท้ายคีย์"
           />
           <div id="licenses"></div>
         </article>
-        <article class="card">
-          <h2>เผยแพร่ APK/ตัวติดตั้ง (แยกจากการออกคีย์)</h2><p class="muted">ใช้ไฟล์กลางสำหรับลูกค้าทุกคน การอัปเดตไม่ต้องออกคีย์ใหม่</p>
+        <details id="releaseDetails" class="card release-panel">
+          <summary><span><small>STEP 3</small><b>เผยแพร่ APK/ตัวติดตั้ง</b><em>แยกจากการออกคีย์ · เปิดเมื่อต้องการลงเวอร์ชันใหม่</em></span><strong>เปิดแบบฟอร์ม</strong></summary>
+          <div class="release-content"><p class="muted">ใช้ไฟล์กลางสำหรับลูกค้าทุกคน การอัปเดตไม่ต้องออกคีย์ใหม่</p>
           <form id="releaseForm">
             <label
               >โปรแกรม<select
@@ -70,15 +79,15 @@
                 type="file"
                 required /></label
             ><button type="submit">อัปโหลดและเผยแพร่</button>
-            <p id="releaseState" class="muted"></p>
+            <p id="releaseState" class="muted" role="status" aria-live="polite"></p>
           </form>
-          <div id="releases"></div>
-        </article>
+          <div id="releases"></div></div>
+        </details>
       </section>
     </main>
-    <dialog id="programDialog">
+    <dialog id="programDialog" aria-labelledby="programDialogTitle">
       <form id="programForm">
-        <h2>เพิ่มโปรแกรม</h2>
+        <h2 id="programDialogTitle">เพิ่มโปรแกรม</h2>
         <label>รหัสโปรแกรม (Program Code)<input name="code" required maxlength="50" pattern="[a-z0-9_-]+" placeholder="เช่น veasy หรือ vision-bridge" autocomplete="off" autocapitalize="none" spellcheck="false" /><small>รหัสภายในและ API · ใช้อักษรอังกฤษเล็ก ตัวเลข - หรือ _ · ห้ามซ้ำ</small></label
         ><label>สินค้าหลักของโปรแกรม (ไม่บังคับ)<select name="product_id" data-product-select><option value="">กำลังโหลดสินค้า…</option></select><small>ใช้ดึงชื่อและรูปมาแสดงเท่านั้น · ไม่ใช่ตะกร้าที่ใช้ออกคีย์อัตโนมัติ</small></label
         ><label
@@ -100,9 +109,9 @@
         ><button id="saveProgram" type="submit">สร้างโปรแกรมและแพ็กเกจ</button>
       </form>
     </dialog>
-    <dialog id="keyDialog">
+    <dialog id="keyDialog" aria-labelledby="keyDialogTitle">
       <form id="keyForm">
-        <h2>ออกคีย์ใหม่</h2>
+        <h2 id="keyDialogTitle">ออกคีย์ใหม่</h2>
         <label
           >ค้นหาลูกค้า<input
             id="userSearch"
@@ -127,13 +136,13 @@
         ><button id="issueKeySubmit" type="submit">ออกคีย์</button>
       </form>
     </dialog>
-    <dialog id="historyDialog">
+    <dialog id="historyDialog" aria-labelledby="historyDialogTitle">
       <section>
-        <h2>ประวัติคีย์</h2>
+        <h2 id="historyDialogTitle">ประวัติคีย์</h2>
         <div id="historyContent"></div>
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js?v=01473" type="module"></script>
+    <script src="/vision7-admin.js?v=014104" type="module"></script>
   </body>
 </html>

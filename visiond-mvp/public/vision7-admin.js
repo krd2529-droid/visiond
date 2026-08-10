@@ -35,10 +35,13 @@ const esc = (s) =>
   encryptionState = document.querySelector("#encryptionState"),
   keySummary = document.querySelector("#keySummary"),
   keyBindingPreview = document.querySelector("#keyBindingPreview"),
-  issueKeySubmit = document.querySelector("#issueKeySubmit");
+  issueKeySubmit = document.querySelector("#issueKeySubmit"),
+  nextAction = document.querySelector("#nextAction"),
+  releaseDetails = document.querySelector("#releaseDetails");
 let programs = [],
   users = [],
-  encryptionReady = false;
+  encryptionReady = false,
+  licenseFilter = "all";
 const plans = (p) => {
   try {
     return typeof p.plans === "string" ? JSON.parse(p.plans) : p.plans || [];
@@ -92,18 +95,24 @@ function userOptions(q = "") {
 }
 function renderLicenses() {
   const q = licenseSearch.value.trim().toLowerCase();
+  const effectiveStatus = (x) => x.status === "active" && x.expires_at && Date.parse(String(x.expires_at).replace(" ", "T") + (String(x.expires_at).includes("Z") ? "" : "Z")) <= Date.now() ? "expired" : x.status;
+  const matchesFilter = (x) => licenseFilter === "all" ||
+    (licenseFilter === "active" && effectiveStatus(x) === "active") ||
+    (licenseFilter === "expired" && effectiveStatus(x) === "expired") ||
+    (licenseFilter === "unbound" && x.platform_type === "veasy" && x.binding_state === "unbound") ||
+    (licenseFilter === "devices" && Number(x.active_devices) > 0);
   licensesEl.innerHTML =
     window.__licenses
       .filter(
         (x) =>
-          !q ||
+          matchesFilter(x) && (!q ||
           `${x.user_name} ${x.email} ${x.program_title} ${x.program_code} ${x.key_last4}`
             .toLowerCase()
-            .includes(q),
+            .includes(q)),
       )
       .map(
         (x) =>
-          `<section class="license-row"><p><b>${esc(x.user_name)}</b> · ${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title || x.program_code)}<br><code>${esc(x.key_masked)}</code> · <span class="status">${esc(x.status)}</span> · ${Number(x.active_devices)}/${Number(x.max_devices) || 3} เครื่อง<br><small>${esc(x.plan_name || "ไม่กำหนดแพ็กเกจ")} · หมดอายุ ${esc(x.expires_at || "ไม่หมดอายุ")}</small>${x.platform_type === "veasy" && x.binding_state === "unbound" ? '<br><span class="binding-unbound">รอผูกร้าน · 1 คีย์ต่อ 1 ร้าน</span>' : ""}</p><div class="bar"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended" ? `<button data-status="active" data-id="${x.id}">เปิดคืน</button>` : `<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></section>`,
+          `<section class="license-row"><div><b>${esc(x.user_name)}</b> · ${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title || x.program_code)}<br><code>${esc(x.key_masked)}</code> · <span class="status">${esc(effectiveStatus(x))}</span> · ${Number(x.active_devices)}/${Number(x.max_devices) || 3} เครื่อง<br><small>${esc(x.plan_name || "ไม่กำหนดแพ็กเกจ")} · หมดอายุ ${esc(x.expires_at || "ไม่หมดอายุ")}</small>${x.platform_type === "veasy" && x.binding_state === "unbound" ? '<br><span class="binding-unbound">รอผูกร้าน · 1 คีย์ต่อ 1 ร้าน</span>' : ""}</div><div class="bar"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended" ? `<button data-status="active" data-id="${x.id}">เปิดคืน</button>` : `<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></section>`,
       )
       .join("") || '<p class="muted">ไม่พบคีย์</p>';
   bindLicenseActions();
@@ -169,37 +178,55 @@ async function load() {
     ? "พร้อมออกคีย์ · ระบบเข้ารหัส VISION7_LICENSE_ENCRYPTION_KEY ทำงานแล้ว"
     : "ยังออกคีย์ไม่ได้ · กรุณาตั้ง Cloudflare Secret: VISION7_LICENSE_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร";
   newKey.setAttribute("aria-disabled", String(!encryptionReady));
-  const summary = ld.summary || {};
+  const rows = window.__licenses;
+  const isExpired = (x) => x.status === "expired" || (x.status === "active" && x.expires_at && Date.parse(String(x.expires_at).replace(" ", "T") + (String(x.expires_at).includes("Z") ? "" : "Z")) <= Date.now());
+  const summary = {total:rows.length,active:rows.filter((x)=>x.status === "active" && !isExpired(x)).length,expired:rows.filter(isExpired).length,unbound_veasy:rows.filter((x)=>x.platform_type === "veasy" && x.binding_state === "unbound").length,active_devices:rows.reduce((n,x)=>n+Number(x.active_devices||0),0)};
   keySummary.innerHTML = [
-    ["คีย์ทั้งหมด", summary.total],
-    ["กำลังใช้งาน", summary.active],
-    ["หมดอายุ", summary.expired],
-    ["V Easy รอผูกร้าน", summary.unbound_veasy],
-    ["เครื่อง Active", summary.active_devices],
+    ["all", "คีย์ทั้งหมด", summary.total],
+    ["active", "กำลังใช้งาน", summary.active],
+    ["expired", "หมดอายุ", summary.expired],
+    ["unbound", "V Easy รอผูกร้าน", summary.unbound_veasy],
+    ["devices", "เครื่อง Active", summary.active_devices],
   ]
     .map(
-      ([label, value]) =>
-        `<article class="summary-card"><small>${esc(label)}</small><b>${Number(value) || 0}</b></article>`,
+      ([filter, label, value]) =>
+        `<button type="button" class="summary-card" data-license-filter="${filter}" aria-pressed="${filter === licenseFilter}"><small>${esc(label)}</small><b>${Number(value) || 0}</b></button>`,
     )
     .join("");
+  keySummary.querySelectorAll("[data-license-filter]").forEach((button) => button.onclick = () => { licenseFilter = button.dataset.licenseFilter; renderLicenses(); keySummary.querySelectorAll("[data-license-filter]").forEach((x)=>x.setAttribute("aria-pressed", String(x === button))); });
   programsEl.innerHTML =
     programs
       .map(
         (x) =>
-          `<p><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><br>${esc(x.code)} · v${esc(x.current_version)} · ${Number(x.max_devices) || 3} เครื่อง</p>`,
+          `<section class="program-row"><div><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><code>${esc(x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/3 แพ็กเกจขาย</span></div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button><button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button></div></section>`,
       )
-      .join("") || "ยังไม่มีโปรแกรม";
+      .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
   programOptions(keyProgram);
   userOptions();
   planOptions();
+  const hasPrograms = programs.length > 0;
+  newProgram.textContent = hasPrograms ? "＋ เพิ่มโปรแกรม" : "＋ เพิ่มโปรแกรมแรก";
+  newKey.toggleAttribute("disabled", !hasPrograms);
+  newKey.setAttribute("aria-disabled", String(!hasPrograms || !encryptionReady));
+  releaseDetails.dataset.blocked = String(!hasPrograms);
+  releaseForm.querySelectorAll("input,select,textarea,button").forEach((x)=>x.disabled=!hasPrograms);
+  nextAction.textContent = !hasPrograms ? "ขั้นถัดไป: สร้างโปรแกรมแรกก่อนออกคีย์" : !rows.length ? "ขั้นถัดไป: ออกคีย์ทดสอบให้โปรแกรมที่สร้างแล้ว" : "ระบบพร้อมใช้งาน · เพิ่มรีลีสใหม่เมื่อมี APK หรือตัวติดตั้งเวอร์ชันใหม่";
+  document.querySelectorAll("[data-workflow-step]").forEach((x)=>x.classList.remove("current","complete"));
+  const workflow = document.querySelectorAll("[data-workflow-step]");
+  workflow[0].classList.add(hasPrograms ? "complete" : "current");
+  if(hasPrograms) workflow[1].classList.add(rows.length ? "complete" : "current");
+  if(hasPrograms && rows.length) workflow[2].classList.add("current");
+  programsEl.querySelectorAll("[data-first-program]").forEach((x)=>x.onclick=openProgramDialog);
+  programsEl.querySelectorAll("[data-issue-program]").forEach((x)=>x.onclick=()=>openKeyDialog(x.dataset.issueProgram));
+  programsEl.querySelectorAll("[data-release-program]").forEach((x)=>x.onclick=()=>{releaseProgram.value=x.dataset.releaseProgram;releaseDetails.open=true;releaseDetails.scrollIntoView({behavior:"smooth",block:"start"});});
   renderLicenses();
   releases.innerHTML =
     (rd.items || [])
       .slice(0, 10)
       .map(
         (x) =>
-          `<p><b>${esc(x.program_code)} v${esc(x.version)}</b>${x.mandatory ? " · บังคับอัปเดต" : ""}<br><small>${esc(x.file_name)} · SHA-256 ${esc(x.sha256)}</small></p>`,
+          `<section class="release-row"><b>${esc(x.program_code)} v${esc(x.version)}</b>${x.mandatory ? " · บังคับอัปเดต" : ""}<small>${esc(x.file_name)}</small><details><summary>ดู SHA-256</summary><code>${esc(x.sha256)}</code></details></section>`,
       )
       .join("") || '<p class="muted">ยังไม่มีรีลีส</p>';
 }
@@ -269,22 +296,33 @@ async function showHistory(id) {
   historyContent.innerHTML = `<p><b>${esc(d.license.user_name)}</b> · ${esc(d.license.program_code)} · ${esc(d.license.key_masked)}</p><h3>เหตุการณ์</h3>${d.events.map((x) => `<p><b>${esc(x.event_type)}</b> · ${esc(x.created_at)}<br><small>${esc(x.actor_name || "ระบบ")} · ${esc(x.detail)}</small></p>`).join("") || "<p>ไม่มีประวัติ</p>"}<h3>อุปกรณ์</h3>${d.devices.map((x) => `<p>${esc(x.device_name || x.platform || "อุปกรณ์")} · ${esc(x.last_seen_at)}${x.revoked_at ? " · ปิดแล้ว" : ""}</p>`).join("") || "<p>ไม่มีอุปกรณ์</p>"}`;
   historyDialog.showModal();
 }
-newProgram.onclick = () => {
+function openProgramDialog() {
   programState.textContent = "";
   programState.className = "muted";
   programDialog.showModal();
   programForm.elements.code.focus();
-};
-newKey.onclick = () => {
+}
+function openKeyDialog(programId) {
   if (!encryptionReady)
     return alert(
       "ยังออกคีย์ไม่ได้\nกรุณาตั้ง Cloudflare Secret: VISION7_LICENSE_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร แล้ว Deploy ใหม่",
     );
   if (!programs.length)
     return alert("ยังไม่มีโปรแกรม กรุณากด ‘เพิ่มโปรแกรม’ ก่อนออกคีย์");
+  if (programId) keyProgram.value = String(programId);
+  planOptions();
   issuedKey.hidden = true;
   keyDialog.showModal();
-};
+}
+newProgram.onclick = openProgramDialog;
+document.querySelectorAll("[data-open-program]").forEach((x)=>x.onclick=openProgramDialog);
+newKey.onclick = () => openKeyDialog();
+releaseDetails.querySelector("summary").addEventListener("click", (event) => {
+  if (releaseDetails.dataset.blocked === "true") {
+    event.preventDefault();
+    nextAction.textContent = "ต้องสร้างโปรแกรมก่อน จึงจะเผยแพร่ APK หรือตัวติดตั้งได้";
+  }
+});
 keyProgram.onchange = planOptions;
 userSearch.oninput = () => userOptions(userSearch.value);
 licenseSearch.oninput = renderLicenses;

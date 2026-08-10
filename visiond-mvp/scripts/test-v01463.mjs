@@ -11,7 +11,7 @@ check('V Easy program option',()=>{const html=read('public/vision7-admin.html'),
 check('V Easy binding state prepared',()=>{const migration=read('migrations/0025_vision7_key_center.sql'),core=read('functions/_vision7_key_center.js'),api=read('functions/api/admin/vision7/licenses.js');assert.match(migration,/binding_state/);assert.match(core,/platformType.*===.*veasy.*unbound/);assert.match(api,/binding_state_initialized/)});
 check('license duration remains day based',()=>assert.match(read('functions/api/admin/vision7/licenses.js'),/duration_days\) \* 86400000/));
 check('user lookup includes username',()=>assert.match(read('public/vision7-admin.js'),/x\.username/));
-check('mobile key center',()=>{const css=read('public/vision7.css');assert.match(css,/@media \(max-width: 650px\)/);assert.match(css,/summary-grid[\s\S]*repeat\(2/)});
+check('mobile key center',()=>{const css=read('public/vision7.css');assert.match(css,/@media\s*\(max-width:\s*(650|760)px\)/);assert.match(css,/summary-grid[\s\S]*repeat\(2/)});
 check('new requirements captured atomically',()=>{const source=JSON.parse(read('source-captures/vision7-veasy-key-center-v1.json')),ledger=JSON.parse(read('requirements-ledger.json')),historical=JSON.parse(read('requirements-history/v0.14.63.json'));assert.equal(source.items.length,7);for(const item of source.items)assert.ok(ledger.requirements.some(x=>x.id===item.requirement_id));assert.equal(historical.requirements.find(x=>x.id==='VE-KEYCENTER-001').status,'DONE-VERIFIED');assert.equal(historical.requirements.find(x=>x.id==='VE-LICENSE-001').status,'PENDING')});
 check('migration sequence',()=>{const files=fs.readdirSync('migrations').filter(x=>/^\d{4}_.*\.sql$/.test(x)).sort();assert.ok(Number(files.at(-1).slice(0,4))>=25)});
 

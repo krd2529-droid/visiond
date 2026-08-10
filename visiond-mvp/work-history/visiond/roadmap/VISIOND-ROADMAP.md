@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.102
+Current build: v0.14.104
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -180,6 +180,7 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.104 Vision 7 Guided Control: หลังบ้านแสดงลำดับ เพิ่มโปรแกรม → ออกคีย์ทดสอบ → เผยแพร่ตัวติดตั้ง, มี empty state ที่บอกงานถัดไป, ปุ่มรายโปรแกรม, ตัวกรองคีย์จริง และพับแบบฟอร์ม APK ไว้จนกว่าจะใช้งาน.
 - IMPLEMENTED — v0.14.103 Deep Frontend Parity: ลูกศรแคตตาล็อก Tiffany 44px, วลีลดเหลือ 499 บาทสีแดงทั้งชุด และหน้าลึก Digital Products/Product/Bots ผูก Header, GIF, chat และ Boss mobile preview เป็น contract ถาวร.
 - IMPLEMENTED — v0.14.102 canonical frontend contract: 26 customer-facing pages use one Tiffany-to-white background and one non-dark action system; product cards, deep member/course pages and Boss mobile preview inherit it. Automated release stamping and revalidation remove mixed cache keys; the approved four-frame promo GIF is forced fresh and loops on homepage/cart.
 - IMPLEMENTED — v0.14.101 Vision 7 Product Mapping: เลือกสินค้าจริงสำหรับข้อมูลโปรแกรมและแพ็กเกจตลอดชีพ/30 วัน/365 วัน แยกหน้าที่ชัด ตรวจ ID ซ้ำ และยังสร้างโปรแกรมเพื่อออกคีย์ทดสอบโดยไม่ผูกตะกร้าได้.
