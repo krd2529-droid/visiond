@@ -52,11 +52,11 @@ assert.equal(db.prepare("SELECT COUNT(*) total FROM courses c JOIN products p ON
 
 // Lock the production contracts that implement the simulated flow.
 const read=file=>fs.readFileSync(file,'utf8');
-const grant=read('functions/_orders.js'),publish=read('functions/api/course-seller/[id]/publish.js');
+const grant=read('functions/_orders.js'),create=read('functions/api/course-seller/index.js'),publish=read('functions/api/course-seller/[id]/publish.js');
 const approve=read('functions/api/admin/course-seller-reviews/[id].js'),access=read('functions/_courses.js');
 const orderApi=read('functions/api/orders/index.js');
 assert.match(grant,/source_order_item_id/);assert.match(grant,/status='pending_review'/);
-assert.match(publish,/basket_binding_locked=1/);assert.match(publish,/used_course_id=\?/);
+assert.match(create,/basket_binding_locked/);assert.match(create,/used_course_id=/);assert.match(publish,/ไม่หักเครดิตซ้ำ/);
 assert.match(approve,/productStatus:'published'/);assert.match(access,/FROM entitlements WHERE user_id=\? AND product_id=\?/);
 assert.match(orderApi,/c\.id seller_course_id/);
 console.log('v0.14.86 Vision 5 two-account rights-to-learning E2E passed');

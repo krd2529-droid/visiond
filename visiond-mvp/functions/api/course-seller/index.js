@@ -82,7 +82,7 @@ export async function onRequestGet(ctx) {
     credit: 1,
   }));
   const courses = await ctx.env.DB.prepare(
-    `SELECT c.id,c.license_entitlement_id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,c.teacher_name,c.contact_info,c.platform_tags,c.learner_level,c.expected_episodes,c.review_status,c.review_note,c.edit_expires_at,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id),0) planned_lesson_count,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id AND TRIM(COALESCE(l.title,''))<>'' AND (l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id))),0) lesson_count FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL ORDER BY c.id DESC`,
+    `SELECT c.id,c.license_entitlement_id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,c.teacher_name,c.contact_info,c.platform_tags,c.learner_level,c.expected_episodes,c.review_status,c.review_note,c.submitted_at,c.edit_expires_at,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id),0) planned_lesson_count,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id AND TRIM(COALESCE(l.title,''))<>'' AND (l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id))),0) lesson_count FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL ORDER BY c.id DESC`,
   )
     .bind(auth.user.id)
     .all();
@@ -104,7 +104,7 @@ export async function onRequestGet(ctx) {
   const items = courses.results || [],
     saleItems = sales.results || [],
     issueItems = issues.results || [],
-    freeDrafts = items.filter((x) => x.license_entitlement_id === null);
+    assignedDrafts = items.filter((x) => x.license_entitlement_id !== null);
   return json(
     {
       payment_profile: profile,
@@ -117,8 +117,8 @@ export async function onRequestGet(ctx) {
         amount: Number(salesTotal?.amount) || 0,
         orders: Number(salesTotal?.orders) || 0,
       },
-      course_draft_limit: 3,
-      course_draft_count: freeDrafts.length,
+      course_draft_limit: null,
+      course_draft_count: assignedDrafts.length,
       credit_balance: licenses.filter((x) => x.available).length,
     },
     200,
@@ -129,16 +129,17 @@ export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   const auth = await requireUser(ctx);
   if (auth.error) return auth.error;
-  const count = await ctx.env.DB.prepare(
-    `SELECT COUNT(*) total FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_origin='seller_rights' AND c.license_entitlement_id IS NULL AND p.deleted_at IS NULL`,
+  const credit = await ctx.env.DB.prepare(
+    "SELECT id FROM course_right_credits WHERE user_id=? AND active=1 AND used_course_id IS NULL ORDER BY id LIMIT 1",
   )
     .bind(auth.user.id)
     .first();
-  if (Number(count?.total) >= 3)
+  if (!credit)
     return json(
       {
-        error:
-          "สร้างคอร์สร่างฟรีครบ 3 คอร์สแล้ว กรุณาเลือกคอร์สไปผูกตะกร้าก่อน",
+        error: "ต้องมีเครดิตอย่างน้อย 1 แต้มก่อนสร้างร่างตะกร้าคอร์ส",
+        credit_required: true,
+        buy_url: "/product.html?slug=course-selling-rights",
       },
       409,
     );
@@ -229,9 +230,9 @@ export async function onRequestPost(ctx) {
       : "beginner",
     planJson = JSON.stringify(plan);
   try {
-    const statements = [
+    const bindingId = -Number(credit.id), statements = [
       ctx.env.DB.prepare(
-        `INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) SELECT ?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course' WHERE (SELECT COUNT(*) FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_origin='seller_rights' AND c.license_entitlement_id IS NULL AND p.deleted_at IS NULL)<3`,
+        `INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) SELECT ?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course' WHERE EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
       ).bind(
         slug,
         title,
@@ -241,25 +242,33 @@ export async function onRequestPost(ctx) {
         coverUrl,
         JSON.stringify([coverUrl]),
         episodes,
+        credit.id,
         auth.user.id,
       ),
       ctx.env.DB.prepare(
-        `INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin) SELECT id,?,?,0,'online_course',0,?,NULL,NULL,?,?,?,?,'draft','seller_rights' FROM products WHERE slug=?`,
+        `INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin,basket_binding_locked,basket_bound_at) SELECT id,?,?,0,'online_course',30,?,?,NULL,?,?,?,?,'draft','seller_rights',1,CURRENT_TIMESTAMP FROM products WHERE slug=? AND EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
       ).bind(
         short,
         teacher,
         auth.user.id,
+        bindingId,
         contact,
         JSON.stringify(tags),
         level,
         episodes,
         slug,
+        credit.id,
+        auth.user.id,
       ),
+      ctx.env.DB.prepare(
+        `UPDATE course_right_credits SET active=0,used_at=CURRENT_TIMESTAMP,used_course_id=(SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?) WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL AND EXISTS(SELECT 1 FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?)`,
+      ).bind(slug,auth.user.id,bindingId,credit.id,auth.user.id,slug,auth.user.id,bindingId),
       ctx.env.DB.prepare(
         `INSERT INTO course_lessons(course_id,title,description,sort_order,duration_seconds) SELECT c.id,json_extract(ep.value,'$.title'),json_extract(ep.value,'$.description'),(CAST(ep.key AS INTEGER)+1)*10,CAST(json_extract(ep.value,'$.duration_seconds') AS INTEGER) FROM courses c JOIN products p ON p.id=c.product_id CROSS JOIN json_each(?) ep WHERE p.slug=? AND c.owner_user_id=?`,
       ).bind(planJson, slug, auth.user.id),
     ];
-    await ctx.env.DB.batch(statements);
+    const results=await ctx.env.DB.batch(statements);
+    if(!results[0].meta.changes||!results[1].meta.changes||!results[2].meta.changes)throw new Error("CREDIT_ASSIGNMENT_CONFLICT");
     const course = await ctx.env.DB.prepare(
       "SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=?",
     )
@@ -272,14 +281,15 @@ export async function onRequestPost(ctx) {
         id: course.id,
         slug,
         episode_count: episodes,
-        message: `สร้างคอร์สร่างและเตรียม ${episodes} EP แล้ว ยังไม่หักเครดิต`,
+        credit_used: 1,
+        message: `สร้างร่างตะกร้าคอร์สและเตรียม ${episodes} EP แล้ว หัก 1 เครดิตเรียบร้อย`,
       },
       201,
     );
   } catch (error) {
     await ctx.env.FILES.delete(coverKey).catch(() => {});
     return json(
-      { error: "สร้างคอร์สร่างไม่สำเร็จหรือสร้างคอร์สร่างฟรีครบ 3 คอร์สแล้ว" },
+      { error: "สร้างร่างตะกร้าคอร์สไม่สำเร็จ เครดิตไม่ถูกหัก กรุณาลองใหม่" },
       409,
     );
   }
