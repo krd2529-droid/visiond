@@ -25,7 +25,13 @@ const corsHeaders=request=>{
 export async function onRequest(ctx){
   const headers=corsHeaders(ctx.request);
   if(ctx.request.method==='OPTIONS')return headers?new Response(null,{status:204,headers}):new Response(null,{status:403,headers:{'cache-control':'no-store'}});
-  const response=await ctx.next();
+  let response;
+  try{response=await ctx.next()}
+  catch(error){
+    const requestId=crypto.randomUUID();
+    console.error('VISION7_MOBILE_API_INTERNAL_ERROR',{requestId,path:new URL(ctx.request.url).pathname,error:error?.stack||String(error)});
+    response=new Response(JSON.stringify({error:'ระบบเปิดใช้งานขัดข้อง กรุณาลองใหม่ หากยังไม่สำเร็จให้แจ้งรหัสนี้กับ Boss',code:'VISION7_MOBILE_API_INTERNAL_ERROR',request_id:requestId}),{status:500,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+  }
   if(!headers)return response;
   const output=new Response(response.body,response);
   for(const [key,value] of Object.entries(headers))output.headers.set(key,value);

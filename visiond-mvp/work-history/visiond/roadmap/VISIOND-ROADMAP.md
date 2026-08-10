@@ -1,11 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.110
+Current build: v0.14.113
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
 
+- ก่อนเริ่มแพตทุกครั้ง J ต้องประกาศให้ Boss ชัดเจนว่าแพตนั้นต้องใช้ไฟล์ต้นทาง `1 ไฟล์` หรือ `2 ไฟล์` พร้อมระบุชื่อไฟล์ที่ต้องการครบถ้วน แล้วรอ Boss ยืนยัน/ส่งไฟล์ก่อนเริ่มแก้ ห้ามเดาจากไฟล์เก่าเอง ยกเว้น Boss ระบุชัดว่าทีมมีไฟล์ล่าสุดแล้วและอนุญาตให้ต่อแพตได้ทันที
+- งาน B1 ส่งมอบให้ Boss เพียง 2 ไฟล์: VisionD Web ZIP และ V Easy APK; Source มือถือเก็บ Private แบบ versioned ภายในทีมเพื่อ build/recheck และห้ามใช้การแกะ APK เป็น Source
 - รับคำสั่งเข้า Event Case และ Requirement Ledger ได้ไม่จำกัด แต่งานผลิตต่อแพตต้องจำกัด
 - หนึ่งแพตทำหนึ่งระบบหลัก งานปกติ 3–7 งานย่อยแบบ atomic
 - แพตเสี่ยงสูงที่แตะเงิน สิทธิ์ ความปลอดภัย ฐานข้อมูล หรือ API ภายนอก ทำ 1–3 งานย่อย
@@ -190,7 +192,8 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
-- IN PROGRESS — v0.14.112 B1 Production CORS Lock: Production v0.14.111 ไม่มี mobile-health จริงและไม่อนุญาต header ที่ APK ส่ง จึงบล็อกก่อนตรวจคีย์. รอบนี้เพิ่ม health/events routes, ทดสอบ compiled Pages Router ด้วย Origin null, ทำ APK v1.0.11 backward-compatible และล็อกสัญญา bot/product ให้ตรง. ต้อง Deploy Web ก่อนติดตั้ง APK และปิดงานหลัง Redmi แสดง ONLINE + activation จริง.
+- IN PROGRESS — v0.14.113 B1 Activation Error Lock: Redmi ยืนยัน Mobile API ONLINE แล้ว แต่ Activation POST ล้มเหลวและแอปล้างรหัสผ่าน/คีย์ทุกครั้ง. รอบนี้บังคับ middleware คืน JSON+CORS พร้อม request ID เมื่อ API ภายใน throw, แสดงสาเหตุแบบ actionable และเก็บค่าที่กรอกไว้ในหน่วยความจำเมื่อผิดพลาด. ต้อง Deploy Web ก่อนติดตั้ง APK และปิดงานหลัง activation จริงผ่าน.
+- IMPLEMENTED — v0.14.112 B1 Production CORS Lock: Redmi ยืนยัน Mobile API ONLINE จริงแล้ว; health/CORS outage ปิดเฉพาะส่วนการเชื่อมต่อ แต่ activation ถูกยกต่อเป็น v0.14.113.
 - IN PROGRESS — v0.14.111 B1 Live Mobile Operations: แก้ APK เชื่อม API, ยกเลิกออเดอร์ยังไม่จ่าย, แก้/ลบสินค้า, เปิดหยุดบอทและสลับ LINE/Facebook; ศูนย์แจ้งเตือนปักงานด่วน ใช้พื้นที่เหลือวางงานทั่วไป แบ่งล้นเป็นหน้า 2/3/4 และเตือนซ้ำแบบไม่ดังรัว. กฎส่งมอบถาวรคือ Boss รับเพียง Web ZIP + APK; Source มือถือเก็บ Private แยกเวอร์ชันและสำรองในทีมเจเพื่อ build/recheck เท่านั้น ห้ามแกะ APK เป็นฐานพัฒนา. ปิดได้หลังส่งสองไฟล์และ Boss smoke บน Redmi.
 - IN PROGRESS — v0.14.110 B1 Three-output: VisionD Web v0.14.110, V Easy Source v1.0.9 และ signed APK v1.0.9 ต้องส่งพร้อมกัน; ปิดงานเมื่อผ่าน form parity, API/session cross-contract, generic credential-free APK, artifact integrity และบันทึก smoke test บน Redmi Note 14 Pro+ 5G เท่านั้น.
 - IMPLEMENTED — v0.14.109 VBot Key Storefront: เมนู VBot เปิดหน้ารวม/รายละเอียดระดับเดียว ตะกร้าขายเฉพาะคีย์ 30 วัน/1 ปี/ตลอดชีพที่ราคาเป็นบวก ใช้ product จริงและตรวจราคาซ้ำก่อน order; เมื่ออนุมัติจึงปลดทั้งคีย์และดาวน์โหลดตัวติดตั้ง โดยกฎ 1 คีย์ = 1 ร้านยังเป็น V Easy เท่านั้น.
