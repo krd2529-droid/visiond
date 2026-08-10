@@ -1,5 +1,5 @@
 import fs from 'node:fs';const read=p=>fs.readFileSync(p,'utf8'),api=read('functions/api/admin/vision7/licenses.js'),history=read('functions/api/admin/vision7/licenses/[id]/history.js'),html=read('public/vision7-admin.html'),ui=read('public/vision7-admin.js'),ledger=JSON.parse(read('requirements-ledger.json'));const checks=[
-['version',read('VERSION.txt').trim()==='v0.14.57'],
+['version',Number(read('VERSION.txt').trim().split('.').pop())>=57],
 ['admin auth',api.includes('requireAdmin')&&history.includes('requireAdmin')],
 ['issue validation',api.includes("SELECT id FROM users WHERE id=?")&&api.includes("SELECT id FROM vision7_programs WHERE id=? AND active=1")],
 ['encrypted issue gate',api.includes('vision7LicenseEncryptionConfigured')&&api.includes('issueLicense')],

@@ -44,6 +44,7 @@ export async function ingestMetaWebhook(env,payload){
         await env.DB.batch([
           env.DB.prepare(`INSERT INTO elon_page_conversations(id,participant_hash,participant_ref,participant_ciphertext,status,last_customer_message_at,updated_at,expires_at) VALUES(?,?,?,?,'bot_active',?,CURRENT_TIMESTAMP,datetime('now','+60 days')) ON CONFLICT(participant_hash) DO UPDATE SET participant_ciphertext=excluded.participant_ciphertext,last_customer_message_at=CASE WHEN elon_page_conversations.last_customer_message_at IS NULL OR excluded.last_customer_message_at>elon_page_conversations.last_customer_message_at THEN excluded.last_customer_message_at ELSE elon_page_conversations.last_customer_message_at END,updated_at=CURRENT_TIMESTAMP,expires_at=datetime('now','+60 days')`).bind(conversationId,participantHash,'',ciphertext,eventAt),
           env.DB.prepare(`INSERT INTO elon_page_messages(conversation_id,platform_message_id,role,content,mode,metadata,created_at) VALUES(?,?,'customer',?,'page_sales',?,?)`).bind(conversationId,messageId||eventKey,content,metadata,eventAt),
+          env.DB.prepare(`INSERT OR IGNORE INTO elon_page_ai_jobs(id,input_message_key,conversation_id) VALUES(?,?,?)`).bind(crypto.randomUUID(),messageId||eventKey,conversationId),
           env.DB.prepare(`UPDATE elon_page_webhook_events SET conversation_id=?,status='processed',processed_at=CURRENT_TIMESTAMP,error_code='' WHERE event_key=?`).bind(conversationId,eventKey)
         ]);
         accepted++;
