@@ -25,7 +25,7 @@ const adminHtml=fs.readFileSync(new URL('../public/admin.html',import.meta.url),
 const widget=fs.readFileSync(new URL('../public/elon-chat.js',import.meta.url),'utf8');
 assert.match(controls,/role!=='boss'/);assert.match(controls,/setElonEnabled/);
 assert.match(databases,/elon_web_settings/);assert.match(databases,/elon_v7_settings/);assert.match(databases,/return row\?String\(row\.value\)==='1':true/);assert.match(databases,/return row\?String\(row\.value\)==='1':false/);
-assert.match(adminHtml,/ELON เว็บ — ทีมขายหน้าร้าน/);assert.match(adminHtml,/ELON V7 — ระบบ Vision 7/);
+assert.match(adminHtml,/id="elonWebEnabled"/);assert.match(adminHtml,/id="elonV7Enabled"/);assert.match(adminHtml,/ELON เว็บ/);assert.match(adminHtml,/ELON V7/);
 assert.match(chat,/isElonWebEnabled/);assert.match(pub,/isElonWebEnabled/);
 assert.match(widget,/STATUS_API/);assert.match(widget,/if\(!status\.enabled\)return/);
 const core=fs.readFileSync(new URL('../functions/_elon.js',import.meta.url),'utf8');

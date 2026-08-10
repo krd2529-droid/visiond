@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.80** — fixes promotion settings so two, three or more categories remain enabled together instead of each new selection replacing the previous category.
+Current package: **v0.14.81** — replaces the broken full-width ELON checkboxes with responsive independent control cards and clear on/off/database states.
 
 ## ตรวจสอบก่อน Deploy
 

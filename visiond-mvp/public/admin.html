@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/admin-products.css?v=013270" />
     <link rel="stylesheet" href="/admin-payment.css?v=01444" />
     <link rel="stylesheet" href="/promotion.css?v=01336" />
+    <link rel="stylesheet" href="/elon-controls.css?v=01481" />
     <link rel="stylesheet" href="/admin-categories.css?v=01398" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
@@ -2033,11 +2034,12 @@
           <div id="usersTable"></div>
         </section>
         <section id="elonPanel" class="elon-admin-panel" hidden>
-          <div class="card" id="elonControlCard">
-            <h2>เปิด–ปิด ELON แยกแต่ละระบบ</h2>
-            <p>แต่ละตัวใช้ฐานข้อมูลคนละชุด การปิดตัวหนึ่งไม่กระทบอีกตัว</p>
-            <label><input id="elonWebEnabled" type="checkbox" /> ELON เว็บ — ทีมขายหน้าร้าน</label>
-            <label><input id="elonV7Enabled" type="checkbox" /> ELON V7 — ระบบ Vision 7 (ค่าเริ่มต้นปิด)</label>
+          <div class="elon-control-card" id="elonControlCard">
+            <div class="elon-control-head"><div><span class="elon-control-icon" aria-hidden="true">⚡</span><div><p class="eyebrow">ELON CONTROL CENTER</p><h2>ควบคุม ELON แยกแต่ละระบบ</h2></div></div><small>ฐานข้อมูลแยกอิสระ · ปิดตัวหนึ่งไม่กระทบอีกตัว</small></div>
+            <div class="elon-control-grid">
+              <article class="elon-system-card" id="elonWebControl" data-state="off"><div class="elon-system-copy"><span class="elon-system-mark" aria-hidden="true">🌐</span><div><h3>ELON เว็บ</h3><p>ทีมขายหน้าร้าน VisionD สำหรับ Guest และลูกค้า</p><b class="elon-state-label" id="elonWebState">กำลังตรวจสอบ…</b></div></div><label class="elon-toggle"><input id="elonWebEnabled" type="checkbox" /><span aria-hidden="true"></span><em>เปิดหรือปิด ELON เว็บ</em></label></article>
+              <article class="elon-system-card" id="elonV7Control" data-state="off"><div class="elon-system-copy"><span class="elon-system-mark" aria-hidden="true">🧠</span><div><h3>ELON V7</h3><p>ผู้ช่วยเฉพาะระบบ Vision 7 · ค่าเริ่มต้นปิด</p><b class="elon-state-label" id="elonV7State">กำลังตรวจสอบ…</b></div></div><label class="elon-toggle"><input id="elonV7Enabled" type="checkbox" /><span aria-hidden="true"></span><em>เปิดหรือปิด ELON V7</em></label></article>
+            </div>
             <p id="elonControlMessage" class="form-message" role="status"></p>
           </div>
           <div class="section-head">

@@ -1340,11 +1340,12 @@ async function loadUnlockHistory() {
 
 let elonSelectedConversation = "";
 const elonWebToggle=document.getElementById('elonWebEnabled'),elonV7Toggle=document.getElementById('elonV7Enabled'),elonControlMessage=document.getElementById('elonControlMessage');
+function paintElonControl(toggle,item){const web=toggle===elonWebToggle,card=document.getElementById(web?'elonWebControl':'elonV7Control'),label=document.getElementById(web?'elonWebState':'elonV7State'),configured=item?.configured===true;toggle.checked=configured&&item?.enabled===true;toggle.disabled=!configured;card.dataset.state=!configured?'disabled':toggle.checked?'on':'off';label.textContent=!configured?`ยังไม่ได้ตั้งฐาน ${web?'ELON_WEB_DB':'ELON_V7_DB'}`:toggle.checked?'● เปิดใช้งานอยู่':'○ ปิดใช้งานอยู่';toggle.title=configured?'':label.textContent}
 async function loadElonControls(){
   if(viewer?.role!=='boss'){document.getElementById('elonControlCard')?.setAttribute('hidden','');return}
   const response=await fetch('/api/admin/elon-controls',{cache:'no-store'}),data=await response.json().catch(()=>({}));
   if(!response.ok){elonControlMessage.textContent=data.error||'โหลดสวิตช์ ELON ไม่สำเร็จ';return}
-  for(const [toggle,item] of [[elonWebToggle,data.items?.web],[elonV7Toggle,data.items?.v7]]){toggle.checked=item?.enabled===true;toggle.disabled=item?.configured!==true;toggle.title=item?.configured===true?'':`ยังไม่ได้ตั้งฐาน ${toggle===elonWebToggle?'ELON_WEB_DB':'ELON_V7_DB'}`}
+  for(const [toggle,item] of [[elonWebToggle,data.items?.web],[elonV7Toggle,data.items?.v7]])paintElonControl(toggle,item);
   elonControlMessage.textContent='ELON เว็บและ ELON V7 แยกฐานและแยกสวิตช์เรียบร้อย';
 }
 async function changeElonControl(target,toggle){
