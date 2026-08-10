@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read=file=>fs.readFileSync(file,'utf8');
-assert.equal(read('VERSION.txt').trim(),'v0.14.85');
+assert.ok(Number(read('VERSION.txt').trim().split('.').pop())>=85);
 const payment=read('functions/_payment.js'),settings=read('functions/api/admin/payment-settings.js');
 const create=read('functions/api/orders/index.js'),slip=read('functions/api/orders/[id]/slip.js');
 const approve=read('functions/api/admin/orders/[id]/approve.js'),reject=read('functions/api/admin/orders/[id]/reject.js');

@@ -189,7 +189,7 @@ export async function onRequestGet(ctx) {
   const byOrder=new Map();
   if(results.length){
     const ids=results.map(order=>Number(order.id));
-    const lines=(await ctx.env.DB.prepare(`SELECT oi.order_id,oi.product_id id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม') title,p.product_kind,p.category,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id IN (${ids.map(()=>'?').join(',')}) GROUP BY oi.order_id,oi.product_id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม'),p.product_kind,p.category,oi.price ORDER BY oi.order_id DESC,MIN(oi.id)`).bind(...ids).all()).results||[];
+    const lines=(await ctx.env.DB.prepare(`SELECT oi.order_id,oi.product_id id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม') title,p.product_kind,p.category,c.id seller_course_id,oi.price,COUNT(*) quantity,SUM(oi.price) line_total FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id LEFT JOIN courses c ON c.product_id=oi.product_id AND c.course_type='online_course' WHERE oi.order_id IN (${ids.map(()=>'?').join(',')}) GROUP BY oi.order_id,oi.product_id,p.slug,COALESCE(oi.product_title,p.title,'สินค้าเดิม'),p.product_kind,p.category,c.id,oi.price ORDER BY oi.order_id DESC,MIN(oi.id)`).bind(...ids).all()).results||[];
     for(const item of lines){const items=byOrder.get(Number(item.order_id))||[];items.push(item);byOrder.set(Number(item.order_id),items)}
   }
   for (const o of results) {
