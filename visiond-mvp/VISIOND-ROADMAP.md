@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-10
-Current build: v0.14.48
+Current build: v0.14.49
 Owner protocol: JARVIS / J
 
 ## Operating rule
@@ -29,7 +29,8 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 - NEEDS DEPLOY/VALIDATION — verify separate browsers do not collapse into one guest, measure guest notice → signup → paid uplift, and confirm exactly-one gift idempotency.
 
 ## Phase 3 — Personalization + retargeting
-- NEXT — v0.14.49: interest profile + related-product engine for anonymous/member visitors, using recent product-family interest.
+- IMPLEMENTED — v0.14.49: privacy-minimized 30-day interest profile + related-product engine for anonymous/member visitors, prioritizing unseen products in the same Product Family then adjacent category products.
+- NEEDS DEPLOY/VALIDATION — measure recommendation impression → click → cart → paid uplift before enabling more aggressive personalized popups.
 - Proposed — smart related-product/promo surfaces with frequency caps; measure recommendation impression → click → cart → purchase.
 - Proposed — production queue should extend winning families sequentially (same base title, next set number) and mark those new sets `demand_driven`.
 
@@ -51,5 +52,18 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 3. A feature is not `VALIDATED` merely because tests/build pass.
 4. When this roadmap is completed, J drafts the next phase automatically and clearly marks it proposed for Boss review.
 
+## Event queues
+### EVENT CASE
+- COMPLETE — establish two-queue patch protocol and rotating roadmap tracks.
+- No carried Event Case after v0.14.49.
+
+### EVENT ROADMAP rotation
+- IMPLEMENTED — Growth/Data: v0.14.49 Personalized Product Engine.
+- NEXT — Commerce/Conversion: diagnose Product View → Cart → Checkout → Paid leakage.
+- WAITING — Product/Production: strengthen demand-driven production queue from family exposure and paid evidence.
+- WAITING — Course/Creator.
+- WAITING — Security/QA.
+- WAITING — Marketing: smart promo/retarget after recommendation baseline.
+
 ## Current next decision
-Deploy v0.14.48 and validate guest separation + first-paid gift with real traffic. Analyze `guest_gift_view → guest_gift_click → signup_complete → paid → first_order_gift_granted`. Unless production data exposes a more urgent conversion/payment issue, proceed with v0.14.49 Personalized Product Engine. Continue Product Family production decisions from exposure/cart/paid evidence, never inventory count alone.
+Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior. Analyze `recommendation_view → recommendation_click → add_to_cart → purchase`. Unless production data or a new Event Case overrides it, rotate next to Commerce/Conversion diagnostics. Continue Product Family production decisions from exposure/cart/paid evidence, never inventory count alone.

@@ -78,3 +78,10 @@ Next marketing work:
 - DEPLOY/VALIDATE — measure guest notice impression → click → signup → first paid.
 - NEXT — personalize related digital products by Product Family and recent interest.
 - NEXT — use aggregate Product Family demand to decide which numbered sets to produce next.
+
+
+## v0.14.49 Personalized merchandising
+- Recommendation surface now uses recent first-party Product Family/category interest for anonymous and signed-in visitors.
+- Do not enable aggressive personalized popup frequency until recommendation CTR/cart/paid uplift is observed in production.
+- Measure: recommendation_view, recommendation_click, downstream add_to_cart, purchase and revenue.
+- Production decision remains family-level: premade stock count is not demand evidence; exposure and paid conversion decide whether to extend the next numbered set.

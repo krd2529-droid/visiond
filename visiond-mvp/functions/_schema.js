@@ -123,6 +123,7 @@ async function initializeDatabase(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_user_time ON customer_events(user_id,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_visitor_time ON customer_events(visitor_key,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_product_time ON customer_events(product_id,created_at DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_interest ON customer_events(visitor_key,user_id,event_type,created_at DESC,product_id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ad_campaign_costs_date ON ad_campaign_costs(spend_date DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ad_campaign_costs_campaign ON ad_campaign_costs(platform,campaign,spend_date DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_terms_acceptances_user ON user_terms_acceptances(user_id,accepted_at DESC)').run();

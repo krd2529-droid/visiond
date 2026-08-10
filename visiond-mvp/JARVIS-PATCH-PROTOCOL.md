@@ -21,3 +21,13 @@ Never collapse unauthenticated visitors into one `guest` identity. Use the platf
 
 ## First-order gift rule
 The automatic digital gift is granted only after an authoritative paid first customer order, exactly once, from backend logic. System gift orders must be identifiable and excluded from revenue. Analyze its real conversion uplift before expanding the incentive.
+
+## Event queue rule (v0.14.49+)
+Every patch has two ordered queues.
+1. `EVENT CASE` — Boss-inserted/ad-hoc work. Always execute first.
+2. `EVENT ROADMAP` — planned work. Use remaining safe patch capacity only after Event Case is complete.
+If an Event Case cannot safely finish in one patch, mark it `CONTINUE NEXT PATCH`, state the exact remaining scope at delivery, and keep it ahead of all roadmap work. Never let unfinished cases silently pile up.
+
+Roadmap work rotates across major tracks so one track cannot monopolize releases: Growth/Data → Commerce/Conversion → Product/Production → Course/Creator → Security/QA → Marketing, then repeat. Production evidence, security, payment or auth risk may override rotation.
+
+After every patch report: Event Case completed/remaining; Event Roadmap completed/remaining; data signals; exact recommended next patch order.

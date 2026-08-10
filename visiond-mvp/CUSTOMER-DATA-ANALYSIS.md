@@ -50,3 +50,7 @@ Required metrics after deploy:
 - Product Family interest before signup and resulting first purchase/gift category
 
 Do not interpret one browser/device as one human across all devices. The technical identity is intentionally browser/device scoped unless the visitor later authenticates.
+
+
+## v0.14.49 analysis requirement
+The recommendation engine derives interest from the last 30 days of product_view/add_to_cart/checkout_start events. Analyze aggregate recommendation impressions, clicks, cart and paid outcomes by Product Family. No production database is bundled with this patch, so current winner/loser families are UNKNOWN until deployed evidence exists.
