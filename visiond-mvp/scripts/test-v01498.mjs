@@ -5,4 +5,4 @@ for(const item of ['nav-cart-action','nav-admin-link','nav-member-account','cour
 assert.match(i18n,/nav-utility-group/);assert.match(i18n,/VisionDSyncNavGroups/);
 for(const rule of [':has(>.nav-primary-group)','justify-content:flex-end','max-width:1100px'])assert.ok(css.includes(rule),rule);
 for(const rule of ['nav-primary-group','nav-utility-group','display:contents'])assert.ok(mobile.includes(rule),rule);
-assert.equal(fs.readFileSync('VERSION.txt','utf8').trim(),'v0.14.98');console.log('v0.14.98 deterministic two-row storefront navigation passed');
+assert.match(fs.readFileSync('VERSION.txt','utf8').trim(),/^v0\.14\.(?:9[89]|[1-9]\d{2,})$/);console.log('v0.14.98 deterministic two-row storefront navigation passed');
