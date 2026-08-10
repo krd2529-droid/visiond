@@ -3,13 +3,14 @@ import {ensureDatabase} from '../../_schema.js';
 import {ELON_EXTERNAL_LINK_REFUSAL,ELON_HISTORY_LIMIT,ELON_MAX_MESSAGE_LENGTH,ELON_PERSONAL_DATA_REFUSAL,ELON_RESTRICTED_REFUSAL,ELON_SECRET_REFUSAL,containsExternalLink,containsProtectedPersonalData,containsSensitiveToken,contextContainsExternalLink,elonAccessDecision,elonMemberContext,elonPublicSalesContext,elonSystemPrompt,enforceElonGlobalBudget,enforceElonRateLimit,isIncompleteElonAnswer,purgeExpiredElonData,safeElonOutput,sanitizeElonContext} from '../../_elon.js';
 import {createElonConversation,loadElonMessages,loadElonProviderHistory,ownElonConversation,persistElonExchange} from '../../_elon-member-store.js';
 import {extractProviderText,requestElonProvider,selectElonProvider} from '../../_elon-provider.js';
+import {ensureElonWebSchema} from '../../_elon_databases.js';
 
 const noStore={'cache-control':'no-store'};
-const validConversationId=value=>/^[a-f0-9-]{20,64}$/i.test(String(value||''))?String(value):'';
+const validConversationId=value=>/^ew_[a-f0-9-]{20,64}$/i.test(String(value||''))?String(value):'';
 
 export async function onRequestGet(ctx){
   const auth=await requireUser(ctx);if(auth.error)return auth.error;
-  await ensureDatabase(ctx.env);await purgeExpiredElonData(ctx.env);
+  await ensureDatabase(ctx.env);await ensureElonWebSchema(ctx.env);await purgeExpiredElonData(ctx.env);
   const memberContext=await elonMemberContext(ctx.env,auth.user.id,auth.user.role);
   const conversationId=validConversationId(new URL(ctx.request.url).searchParams.get('conversation_id'));
   if(!conversationId)return json({error:'ไม่พบรหัสบทสนทนา'},400,noStore);
@@ -22,7 +23,7 @@ export async function onRequestGet(ctx){
 
 export async function onRequestPost(ctx){
   const auth=await requireUser(ctx);if(auth.error)return auth.error;
-  await ensureDatabase(ctx.env);await purgeExpiredElonData(ctx.env);
+  await ensureDatabase(ctx.env);await ensureElonWebSchema(ctx.env);await purgeExpiredElonData(ctx.env);
   const body=await ctx.request.json().catch(()=>null);
   if(!body||typeof body.message!=='string')return json({error:'กรุณาพิมพ์คำถาม'},400,noStore);
   const message=body.message.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'').trim();

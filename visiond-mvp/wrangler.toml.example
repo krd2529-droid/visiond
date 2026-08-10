@@ -7,6 +7,16 @@ binding = "DB"
 database_name = "visiond-db"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
+[[d1_databases]]
+binding = "ELON_WEB_DB"
+database_name = "visiond-elon-web-db"
+database_id = "REPLACE_WITH_ELON_WEB_D1_DATABASE_ID"
+
+[[d1_databases]]
+binding = "ELON_V7_DB"
+database_name = "visiond-elon-v7-db"
+database_id = "REPLACE_WITH_ELON_V7_D1_DATABASE_ID"
+
 [[r2_buckets]]
 binding = "FILES"
 bucket_name = "visiond-files"

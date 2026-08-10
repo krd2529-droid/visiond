@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {ELON_KNOWLEDGE,elonSalesSearchTerms,elonSystemPrompt} from '../functions/_elon.js';
 const read=path=>fs.readFileSync(path,'utf8');
-assert.equal(read('VERSION.txt').trim(),'v0.14.75');
+assert.ok(Number(read('VERSION.txt').trim().split('.').pop())>=75);
 const tattooTerms=elonSalesSearchTerms('ชั้นสนรอยสัก');
 assert.ok(tattooTerms.includes('รอยสัก'));
 assert.ok(tattooTerms.includes('แบบสัก'));

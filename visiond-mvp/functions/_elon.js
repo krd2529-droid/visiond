@@ -1,3 +1,5 @@
+import {elonWebDb} from './_elon_databases.js';
+
 export const ELON_MAX_MESSAGE_LENGTH=1200;
 export const ELON_HISTORY_LIMIT=12;
 export const ELON_RATE_LIMIT_PER_MINUTE=12;
@@ -350,10 +352,11 @@ export async function elonPublicSalesContext(env,pageContext={},message=''){
 const boundedInt=(value,fallback,min,max)=>{const parsed=Number.parseInt(String(value??''),10);return Number.isFinite(parsed)?Math.max(min,Math.min(max,parsed)):fallback};
 const usageWindow=(kind)=>kind==='minute'?new Date(Math.floor(Date.now()/60000)*60000).toISOString():new Date().toISOString().slice(0,10);
 async function incrementUsage(env,key,kind,limit){
+  const db=elonWebDb(env);
   const windowStart=usageWindow(kind);
-  await env.DB.prepare(`INSERT INTO elon_usage_limits(rate_key,window_start,hits) VALUES(?,?,1)
+  await db.prepare(`INSERT INTO elon_web_usage_limits(rate_key,window_start,hits) VALUES(?,?,1)
     ON CONFLICT(rate_key,window_start) DO UPDATE SET hits=hits+1`).bind(key,windowStart).run();
-  const row=await env.DB.prepare('SELECT hits FROM elon_usage_limits WHERE rate_key=? AND window_start=?').bind(key,windowStart).first();
+  const row=await db.prepare('SELECT hits FROM elon_web_usage_limits WHERE rate_key=? AND window_start=?').bind(key,windowStart).first();
   return Number(row?.hits||0)<=limit;
 }
 
@@ -368,11 +371,13 @@ export async function enforceGuestElonRateLimit(env,request){
 }
 
 export async function enforceElonRateLimit(env,userId){
+  const db=elonWebDb(env);
   const windowStart=new Date(Math.floor(Date.now()/60000)*60000).toISOString();
-  await env.DB.prepare(`INSERT INTO elon_rate_limits(user_id,window_start,hits) VALUES(?,?,1)
-    ON CONFLICT(user_id,window_start) DO UPDATE SET hits=hits+1`).bind(userId,windowStart).run();
-  const row=await env.DB.prepare('SELECT hits FROM elon_rate_limits WHERE user_id=? AND window_start=?').bind(userId,windowStart).first();
-  if(Math.random()<0.02)await env.DB.prepare("DELETE FROM elon_rate_limits WHERE window_start<datetime('now','-1 day')").run();
+  const subjectId=String(userId);
+  await db.prepare(`INSERT INTO elon_web_rate_limits(subject_id,window_start,hits) VALUES(?,?,1)
+    ON CONFLICT(subject_id,window_start) DO UPDATE SET hits=hits+1`).bind(subjectId,windowStart).run();
+  const row=await db.prepare('SELECT hits FROM elon_web_rate_limits WHERE subject_id=? AND window_start=?').bind(subjectId,windowStart).first();
+  if(Math.random()<0.02)await db.prepare("DELETE FROM elon_web_rate_limits WHERE window_start<datetime('now','-1 day')").run();
   if(Number(row?.hits||0)>ELON_RATE_LIMIT_PER_MINUTE)return false;
   const memberDaily=boundedInt(env.ELON_MEMBER_DAILY_LIMIT,100,10,1000);
   return incrementUsage(env,`member:day:${userId}`,'day',memberDaily);
@@ -386,16 +391,16 @@ export async function enforceElonGlobalBudget(env){
 // Runs at most hourly from ELON traffic. Deletes expired conversations from
 // their last real message first, then trims messages outside the audit window.
 export async function purgeExpiredElonData(env,{force=false}={}){
-  const marker=await env.DB.prepare("SELECT value FROM settings WHERE key='elon_last_retention_purge'").first();
+  const db=elonWebDb(env),marker=await db.prepare("SELECT value FROM elon_web_settings WHERE key='elon_last_retention_purge'").first();
   const lastRun=Date.parse(String(marker?.value||''));
   if(!force&&Number.isFinite(lastRun)&&Date.now()-lastRun<ELON_PURGE_INTERVAL_MS)return false;
   const now=new Date().toISOString();
-  await env.DB.batch([
-    env.DB.prepare(`DELETE FROM elon_conversations WHERE datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_messages m WHERE m.conversation_id=elon_conversations.id),created_at))<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
-    env.DB.prepare(`DELETE FROM elon_messages WHERE datetime(created_at)<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
-    env.DB.prepare("DELETE FROM elon_rate_limits WHERE window_start<datetime('now','-1 day')"),
-    env.DB.prepare("DELETE FROM elon_usage_limits WHERE window_start<date('now','-2 days')"),
-    env.DB.prepare("INSERT INTO settings(key,value,updated_at) VALUES('elon_last_retention_purge',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(now)
+  await db.batch([
+    db.prepare(`DELETE FROM elon_web_conversations WHERE datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_web_messages m WHERE m.conversation_id=elon_web_conversations.id),created_at))<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
+    db.prepare(`DELETE FROM elon_web_messages WHERE datetime(created_at)<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
+    db.prepare("DELETE FROM elon_web_rate_limits WHERE window_start<datetime('now','-1 day')"),
+    db.prepare("DELETE FROM elon_web_usage_limits WHERE window_start<date('now','-2 days')"),
+    db.prepare("INSERT INTO elon_web_settings(key,value,updated_at) VALUES('elon_last_retention_purge',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(now)
   ]);
   return true;
 }

@@ -16,6 +16,8 @@
     {"version":"v0.14.72","file":"requirements-history/v0.14.72.json","sha256":"b453d466ba3a365ebfba26bcf1ac53de8e19176fe5148679a49a66039926a696"},
     {"version":"v0.14.73","file":"requirements-history/v0.14.73.json","sha256":"5f6bad2705e2507c148a6eb239fb4e5e074c46d8c37b1604ae00e0472749a8b6"},
     {"version":"v0.14.74","file":"requirements-history/v0.14.74.json","sha256":"cb7cb93e5601ea26009e0b6f62709075183ae7fde1f597050d16f7d2f42ce5d8"},
-    {"version":"v0.14.75","file":"requirements-history/v0.14.75.json","sha256":"0c057efa37280a0c2ccc73467c25f8f197a901b711dd6b3c02c990e9948ef49c"}
+    {"version":"v0.14.75","file":"requirements-history/v0.14.75.json","sha256":"0c057efa37280a0c2ccc73467c25f8f197a901b711dd6b3c02c990e9948ef49c"},
+    {"version":"v0.14.76","file":"requirements-history/v0.14.76.json","sha256":"e9c011fb871b2a8aa7a4ee99da4c2e9882b5de57a2f0616c5486d562dee39539"},
+    {"version":"v0.14.77","file":"requirements-history/v0.14.77.json","sha256":"bd81bbb6ac52ac13b2da693ab41b5f46a0615032b4cd6a73b4f7dc4e9a485abd"}
   ]
 }

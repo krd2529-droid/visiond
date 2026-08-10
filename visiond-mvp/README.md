@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.75** — gives ELON complete published-category awareness, intent-matched products (including tattoo), and exact customer click journeys.
+Current package: **v0.14.77** — hard-splits ELON Web and ELON V7 into separate D1 bindings, migrations, namespaces and storage boundaries with no Web fallback to the main database.
 
 ## ตรวจสอบก่อน Deploy
 

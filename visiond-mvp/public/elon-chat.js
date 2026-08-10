@@ -25,7 +25,7 @@
   let authenticated = false;
   const chatApi = () => authenticated ? API : PUBLIC_API;
 
-  const validConversationId = (value) => /^[a-f0-9-]{20,64}$/i.test(String(value || '')) ? String(value) : '';
+  const validConversationId = (value) => /^ew_[a-f0-9-]{20,64}$/i.test(String(value || '')) ? String(value) : '';
   function frontendSurface(pathname) {
     let path = String(pathname || '/').toLowerCase().replace(/\/{2,}/g, '/');
     if (path.length > 1) path = path.replace(/\/$/, '').replace(/\.html$/, '');
