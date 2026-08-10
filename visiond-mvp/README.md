@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.79** — red-team hardens ELON Web and adds separate Boss toggles for ELON Web and the reserved ELON V7 system on their physically separate D1 databases.
+Current package: **v0.14.80** — fixes promotion settings so two, three or more categories remain enabled together instead of each new selection replacing the previous category.
 
 ## ตรวจสอบก่อน Deploy
 

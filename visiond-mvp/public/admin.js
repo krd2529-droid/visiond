@@ -1163,24 +1163,27 @@ async function loadPromotionSettings(){
   promotionSettingsMessage.textContent='กำลังโหลดโปรโมชั่น…';
   const r=await fetch('/api/admin/promotion-settings',{cache:'no-store'}),d=await r.json().catch(()=>({}));
   if(!r.ok){promotionSettingsMessage.textContent=d.error||'โหลดโปรโมชั่นไม่สำเร็จ';return}
-  const item=d.item||{},select=promotionSettingsForm.elements.scope;
-  select.innerHTML='<option value="all">ทุกหมวดสินค้า</option>'+((d.categories||[]).map(category=>`<option value="${esc(category.slug)}">${esc(category.name)} (${Number(category.product_count)||0} สินค้า)</option>`).join(''));
+  const item=d.item||{},selected=new Set(item.scopes||[item.scope||'all']),options=document.getElementById('promotionCategoryOptions');
+  options.innerHTML=(d.categories||[]).map(category=>`<label><input name="promotion_scope" type="checkbox" value="${esc(category.slug)}" ${selected.has(category.slug)?'checked':''}/> ${esc(category.name)} (${Number(category.product_count)||0} สินค้า)</label>`).join('');
+  const allBox=promotionSettingsForm.querySelector('[name="promotion_scope"][value="all"]');allBox.checked=selected.has('all');
+  const syncScopes=event=>{if(event?.target===allBox&&allBox.checked)options.querySelectorAll('input').forEach(input=>input.checked=false);else if(event?.target!==allBox&&event?.target?.checked)allBox.checked=false};
+  promotionSettingsForm.querySelectorAll('[name="promotion_scope"]').forEach(input=>input.onchange=syncScopes);
   promotionSettingsForm.elements.enabled.checked=item.enabled===true;
-  select.value=item.scope||'all';
   promotionSettingsForm.elements.percent.value=item.percent||10;
-  promotionSettingsMessage.textContent=item.enabled?`กำลังลด ${item.percent}% สำหรับ ${item.scope==='all'?'ทุกหมวด':'หมวดที่เลือก'}`:'โปรโมชั่นปิดอยู่';
+  promotionSettingsMessage.textContent=item.enabled?`กำลังลด ${item.percent}% สำหรับ ${selected.has('all')?'ทุกหมวด':`${selected.size} หมวดที่เลือก`}`:'โปรโมชั่นปิดอยู่';
   const first=d.first_order||{},stats=first.stats||{};firstOrderPromotionForm.elements.enabled.checked=first.enabled!==false;
   firstOrderPromotionStats.innerHTML=`<article><small>ติดตามแล้ว</small><b>${Number(stats.tracked_users)||0}</b></article><article><small>ได้รับข้อความสะกิด</small><b>${Number(stats.teased_users)||0}</b></article><article><small>ได้รับสิทธิ์</small><b>${Number(stats.granted_users)||0}</b></article><article><small>ใช้สิทธิ์</small><b>${Number(stats.used_users)||0}</b></article>`;
   firstOrderPromotionMessage.textContent=first.enabled!==false?'โปรลูกค้าใหม่เปิดอยู่':'โปรลูกค้าใหม่ปิดอยู่';
 }
 async function savePromotionSettings(event){
   event.preventDefault();promotionSettingsMessage.textContent='กำลังบันทึก…';
-  const body={enabled:promotionSettingsForm.elements.enabled.checked,scope:promotionSettingsForm.elements.scope.value,percent:Number(promotionSettingsForm.elements.percent.value),first_order_enabled:firstOrderPromotionForm.elements.enabled.checked};
+  const scopes=[...promotionSettingsForm.querySelectorAll('[name="promotion_scope"]:checked')].map(input=>input.value);if(!scopes.length){promotionSettingsMessage.textContent='กรุณาเลือกอย่างน้อย 1 หมวดสินค้า';return}
+  const body={enabled:promotionSettingsForm.elements.enabled.checked,scopes,percent:Number(promotionSettingsForm.elements.percent.value),first_order_enabled:firstOrderPromotionForm.elements.enabled.checked};
   const r=await fetch('/api/admin/promotion-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));
   if(!r.ok){promotionSettingsMessage.textContent=d.error||'บันทึกโปรโมชั่นไม่สำเร็จ';return}
   returnAdminHome(body.enabled?`เปิดโปรโมชั่นลด ${body.percent}% แล้ว`:'ปิดโปรโมชั่นแล้ว');
 }
-async function saveFirstOrderPromotion(event){event.preventDefault();firstOrderPromotionMessage.textContent='กำลังบันทึก…';const body={enabled:promotionSettingsForm.elements.enabled.checked,scope:promotionSettingsForm.elements.scope.value,percent:Number(promotionSettingsForm.elements.percent.value),first_order_enabled:firstOrderPromotionForm.elements.enabled.checked};const r=await fetch('/api/admin/promotion-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok){firstOrderPromotionMessage.textContent=d.error||'บันทึกไม่สำเร็จ';return}returnAdminHome(body.first_order_enabled?'เปิดโปรโมชั่นลูกค้าใหม่แล้ว':'ปิดโปรโมชั่นลูกค้าใหม่แล้ว')}
+async function saveFirstOrderPromotion(event){event.preventDefault();firstOrderPromotionMessage.textContent='กำลังบันทึก…';const scopes=[...promotionSettingsForm.querySelectorAll('[name="promotion_scope"]:checked')].map(input=>input.value);if(!scopes.length){firstOrderPromotionMessage.textContent='กรุณาเลือกหมวดโปรโมชั่นหลักอย่างน้อย 1 หมวด';return}const body={enabled:promotionSettingsForm.elements.enabled.checked,scopes,percent:Number(promotionSettingsForm.elements.percent.value),first_order_enabled:firstOrderPromotionForm.elements.enabled.checked};const r=await fetch('/api/admin/promotion-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok){firstOrderPromotionMessage.textContent=d.error||'บันทึกไม่สำเร็จ';return}returnAdminHome(body.first_order_enabled?'เปิดโปรโมชั่นลูกค้าใหม่แล้ว':'ปิดโปรโมชั่นลูกค้าใหม่แล้ว')}
 async function savePaymentSettings(e) {
   e.preventDefault();
   settingsMessage.textContent = "กำลังบันทึก…";

@@ -1811,11 +1811,11 @@
               >
             </div>
             <div class="form-two">
-              <label
-                >สินค้าที่ร่วมโปรโมชั่น<select name="scope">
-                  <option value="all">ทุกหมวดสินค้า</option>
-                </select></label
-              >
+              <fieldset class="promotion-category-picker">
+                <legend>หมวดสินค้าที่ร่วมโปรโมชั่น (เลือกพร้อมกันได้หลายหมวด)</legend>
+                <label><input name="promotion_scope" type="checkbox" value="all" /> ทุกหมวดสินค้า</label>
+                <div id="promotionCategoryOptions"></div>
+              </fieldset>
               <label
                 >ส่วนลด (%)<input
                   name="percent"
