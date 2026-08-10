@@ -1,6 +1,8 @@
 import { json, requireUser, statusLabel } from "../../_lib.js";
 import { loadPaymentSettings, publicPaymentSettings } from "../../_payment.js";
 import { ensureDatabase } from "../../_schema.js";
+import { ensureVision7Schema } from "../../_vision7_schema.js";
+import { vision7LicenseEncryptionConfigured } from "../../_vision7_license_crypto.js";
 import { rateLimit } from "../../_security.js";
 import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {loadSellerToken} from '../../_seller_token.js';
@@ -15,6 +17,7 @@ async function ensureStarterProducts(env, slugs) {
 }
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
+  await ensureVision7Schema(ctx.env);
   const a = await requireUser(ctx);
   if (a.error) return a.error;
   if (a.user.role !== "boss") {
@@ -52,7 +55,8 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
+      (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 LIMIT 1) vision7_plan_id
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')<>'member'`,
   )
@@ -65,8 +69,16 @@ export async function onRequestPost(ctx) {
     );
   const bySlug=new Map(results.map(product=>[product.slug,product]));
   const repeated=new Set(requestedSlugs.filter((slug,index,list)=>list.indexOf(slug)!==index));
-  if([...repeated].some(slug=>bySlug.get(slug)?.category!=='resale-rights'))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์ส'},409);
+  if([...repeated].some(slug=>{const p=bySlug.get(slug);return p?.category!=='resale-rights'&&!p?.vision7_plan_id}))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์สและโปรแกรม Vision 7'},409);
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
+  const hasVision7=orderedResults.some(product=>product.vision7_plan_id);
+  if(hasVision7&&!vision7LicenseEncryptionConfigured(ctx.env))return json({error:'Vision 7 ยังไม่ได้ตั้งค่า Secret เข้ารหัสคีย์ กรุณาติดต่อผู้ดูแลระบบ',code:'VISION7_LICENSE_ENCRYPTION_NOT_CONFIGURED'},503);
+  const renewLicenseId=String(b.renew_license_id||'').trim();
+  if(renewLicenseId){
+    if(orderedResults.length!==1||!orderedResults[0].vision7_plan_id)return json({error:'การต่ออายุต้องเลือกแพ็กเกจ Vision 7 ครั้งละ 1 รายการ'},400);
+    const renewal=await ctx.env.DB.prepare(`SELECT l.id FROM vision7_licenses l JOIN vision7_plans old_plan ON old_plan.id=l.plan_id JOIN vision7_plans new_plan ON new_plan.id=? WHERE l.id=? AND l.user_id=? AND l.program_id=new_plan.program_id AND old_plan.plan_code<>'lifetime' AND new_plan.plan_code<>'lifetime'`).bind(orderedResults[0].vision7_plan_id,renewLicenseId,a.user.id).first();
+    if(!renewal)return json({error:'คีย์นี้ไม่สามารถต่ออายุด้วยแพ็กเกจที่เลือก'},409);
+  }
   if(orderedResults.some(product=>product.category==='resale-rights')){
     let buyerApi='';try{buyerApi=await loadSellerToken(ctx.env,a.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
     if(buyerApi.length<20)return json({error:'กรุณาบันทึก EasySlip API ของคุณเองในหน้าสิทธิ์ลงขายคอร์สก่อนสั่งซื้อ'},409);
@@ -76,7 +88,7 @@ export async function onRequestPost(ctx) {
   if(sellerItems.some(product=>!Number.isFinite(Number(product.price))||Number(product.price)<100))return json({error:'คอร์สจากผู้ขายต้องมีราคาอย่างน้อย 1 บาท กรุณาแจ้งผู้ขายให้แก้ราคา'},409);
   if(sellerItems.some(product=>Number(product.course_owner_user_id)===Number(a.user.id)))return json({error:'ไม่สามารถซื้อคอร์สของบัญชีตนเองได้'},409);
   for (const product of results) {
-    if(product.category==='resale-rights')continue;
+    if(product.category==='resale-rights'||product.vision7_plan_id)continue;
     const entitlement = await ctx.env.DB.prepare(
       "SELECT id FROM entitlements WHERE user_id=? AND product_id=? AND active=1 LIMIT 1",
     )
@@ -130,7 +142,7 @@ export async function onRequestPost(ctx) {
       "-" +
       Math.floor(Math.random() * 90 + 10);
   const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
-  const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights').map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
+  const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
   const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount)
     SELECT ?,?,?,?,?,?,?,?,?,?,?,?
     WHERE ?='[]' OR NOT EXISTS(
@@ -138,7 +150,7 @@ export async function onRequestPost(ctx) {
       WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
       AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
     )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,guardJson,a.user.id,guardJson)];
-  for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price) SELECT id,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,orderNo,a.user.id));
+  for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price,vision7_renew_license_id) SELECT id,?,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,renewLicenseId||null,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
   const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);
   if(firstOrderDiscount>0)await ctx.env.DB.batch([

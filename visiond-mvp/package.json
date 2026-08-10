@@ -24,7 +24,18 @@
     "test:v01447": "node scripts/test-v01447.mjs",
     "test:v01448": "node scripts/test-v01448.mjs",
     "test:v01449": "node scripts/test-v01449.mjs",
-    "test:v01450": "node scripts/test-v01450.mjs"
+    "test:v01450": "node scripts/test-v01450.mjs",
+    "test:v01451": "node scripts/test-v01451.mjs",
+    "test:v01452": "node scripts/test-v01452.mjs",
+    "test:v01453": "node scripts/test-v01453.mjs",
+    "requirements:check": "node scripts/requirement-coverage-check.mjs",
+    "requirements:close": "node scripts/requirement-coverage-check.mjs --close-event-case",
+    "requirements:recheck": "node scripts/requirement-layer2-recheck.mjs",
+    "patch:coverage": "node scripts/patch-coverage-recheck.mjs",
+    "test:v01454": "node scripts/test-v01454.mjs",
+    "test:v01455": "node scripts/test-v01455.mjs",
+    "test:regression-all": "node scripts/test-all-regressions.mjs",
+    "requirements:source-recheck": "node scripts/source-to-ledger-recheck.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

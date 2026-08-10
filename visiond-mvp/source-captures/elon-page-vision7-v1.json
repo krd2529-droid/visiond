@@ -1,0 +1,27 @@
+{
+  "capture_id":"elon-page-vision7-v1",
+  "event_case":"ELON Page + Vision 7",
+  "intake_complete":true,
+  "items":[
+    {"source_id":"SRC-001","requirement_id":"EC-V7-001","atomic":true,"text":"หนึ่งคีย์ใช้พร้อมกันได้ 3 เครื่อง","acceptance":"จำกัดอุปกรณ์พร้อมใช้งาน 3 เครื่อง"},
+    {"source_id":"SRC-002","requirement_id":"EC-V7-002","atomic":true,"text":"คีย์ผูกเจ้าของและเครื่อง","acceptance":"ตรวจบัญชีเจ้าของและ fingerprint เครื่อง"},
+    {"source_id":"SRC-003","requirement_id":"EC-V7-003","atomic":true,"text":"ย้ายเครื่องได้ทันทีโดยลูกค้ารีเซ็ตเครื่องเก่าเอง","acceptance":"มี self-service deactivate"},
+    {"source_id":"SRC-004","requirement_id":"EC-V7-004","atomic":true,"text":"มีหลายประเภทอายุคีย์ตามโปรแกรม","acceptance":"รองรับ lifetime monthly yearly"},
+    {"source_id":"SRC-005","requirement_id":"EC-V7-005","atomic":true,"text":"ทดลอง 1 วัน จำกัดไอดีละ 1 สิทธิ์ต่อโปรแกรม","acceptance":"24 ชั่วโมงและ unique account-program"},
+    {"source_id":"SRC-006","requirement_id":"EC-V7-006","atomic":true,"text":"หมดอายุแล้วเปิดไม่ได้","acceptance":"ปฏิเสธ license หมดอายุ"},
+    {"source_id":"SRC-007","requirement_id":"EC-V7-007","atomic":true,"text":"ตรวจคีย์ทุกครั้งที่ใช้งาน","acceptance":"online validation ทุก session"},
+    {"source_id":"SRC-008","requirement_id":"EC-V7-008","atomic":true,"text":"ซื้อหลายชุดต้องแยกคีย์ และต่ออายุคีย์ที่เลือก","acceptance":"แยก license ตามจำนวนและ renewal target"},
+    {"source_id":"SRC-009","requirement_id":"EC-V7-009","atomic":true,"text":"ลูกค้าดูคีย์และเครื่องของตนได้","acceptance":"หน้า my programs ปลอดภัย"},
+    {"source_id":"SRC-010","requirement_id":"EC-V7-010","atomic":true,"text":"ส่งตัวติดตั้งและอัปเดตโปรแกรม","acceptance":"installer/update delivery"},
+    {"source_id":"SRC-011","requirement_id":"EC-V7-011","atomic":true,"text":"หลังบ้านจัดการออก ต่อ ระงับ และดูประวัติคีย์","acceptance":"operator forms ครบ"},
+    {"source_id":"SRC-012","requirement_id":"EC-EP-001","atomic":true,"text":"อีลอนเพจเป็นนักขายและแยกจากอีลอนสมาชิก","acceptance":"PAGE_SALES isolation"},
+    {"source_id":"SRC-013","requirement_id":"EC-EP-002","atomic":true,"text":"ส่งต่อแชทให้คนดูแลได้","acceptance":"human handoff queue"},
+    {"source_id":"SRC-014","requirement_id":"EC-EP-003","atomic":true,"text":"เชื่อม Meta webhook อย่างปลอดภัย ไม่รับซ้ำและปกปิดตัวตน","acceptance":"signature dedupe encryption"},
+    {"source_id":"SRC-015","requirement_id":"EC-EP-004","atomic":true,"text":"ตอบข้อความตามกรอบ Meta 24 ชั่วโมง","acceptance":"outbound blocked outside window"},
+    {"source_id":"SRC-016","requirement_id":"EC-EP-005","atomic":true,"text":"อีลอนเพจขายจากข้อมูลสินค้า ราคา และนโยบายจริง","acceptance":"grounded PAGE_SALES AI"},
+    {"source_id":"SRC-017","requirement_id":"EC-EP-006","atomic":true,"text":"ส่งตอบด้วย Page token ที่เข้ารหัสและมี retry","acceptance":"secure token and retry outbox"},
+    {"source_id":"SRC-018","requirement_id":"EC-ADS-001","atomic":true,"text":"หน้าโฆษณาแยก ไม่ยุ่งแดชบอร์ดรายได้เดิม","acceptance":"separate Ads Center"},
+    {"source_id":"SRC-019","requirement_id":"EC-ADS-002","atomic":true,"text":"วิเคราะห์และแนะนำว่าแอดควรไปต่อหรือหยุด","acceptance":"continue observe adjust stop advice"},
+    {"source_id":"SRC-020","requirement_id":"EC-ADS-003","atomic":true,"text":"รับข้อมูลแอดระดับแคมเปญ กลุ่ม และชิ้นงานจริง","acceptance":"production Ads API ingestion"}
+  ]
+}

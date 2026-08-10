@@ -1,0 +1,16 @@
+{
+  "patch":"v0.14.54",
+  "source_base":"v0.14.53",
+  "tasks":[
+    {"id":"P1454-001","scope":"QA","source_instruction":"เพิ่มโรดแมพรีเช็คตัวกันงานหลุดชั้นที่ 2 สำหรับงานทุกอย่างในแพต","status":"DONE-VERIFIED","evidence":["scripts/patch-coverage-recheck.mjs","PATCH-WORK-LEDGER-PROTOCOL.md"]},
+    {"id":"P1454-002","scope":"QA","source_instruction":"ตรวจ Requirement ข้ามแพตจาก Snapshot ที่แก้ย้อนหลังไม่ได้","status":"DONE-VERIFIED","evidence":["scripts/requirement-layer2-recheck.mjs","requirements-history/index.json"]},
+    {"id":"P1454-003","scope":"DOC","source_instruction":"เพิ่มกฎตัวกันงานหลุดชั้นที่ 2 ลง Roadmap","status":"DONE-VERIFIED","evidence":["VISIOND-ROADMAP.md"]},
+    {"id":"P1454-004","scope":"FEATURE","source_instruction":"ทำแพต Event Case ถัดไปต่อ","status":"DONE-VERIFIED","evidence":["functions/_meta_sender.js","functions/api/admin/elon-page/[id]/send.js"]},
+    {"id":"P1454-005","scope":"SECURITY","source_instruction":"บังคับกฎตอบกลับ Meta ภายใน 24 ชั่วโมง","status":"DONE-VERIFIED","evidence":["functions/_meta_sender.js","scripts/test-v01454.mjs"]},
+    {"id":"P1454-006","scope":"SECURITY","source_instruction":"เก็บ Page token อย่างปลอดภัยและไม่ลงฐานข้อมูล","status":"DONE-VERIFIED","evidence":["functions/_meta_sender.js","wrangler.toml.example"]},
+    {"id":"P1454-007","scope":"FEATURE","source_instruction":"เพิ่มคิว Retry และป้องกันส่งข้อความซ้ำ","status":"DONE-VERIFIED","evidence":["migrations/0020_elon_page_outbox.sql","functions/api/internal/meta-outbox.js"]},
+    {"id":"P1454-008","scope":"DATABASE","source_instruction":"เพิ่ม schema รองรับ Meta outbox ทั้งระบบใหม่และระบบอัปเกรด","status":"DONE-VERIFIED","evidence":["migrations/0020_elon_page_outbox.sql","functions/_vision7_schema.js"]},
+    {"id":"P1454-009","scope":"QA","source_instruction":"ทดสอบงานทั้งหมดก่อนส่งแพต","status":"DONE-VERIFIED","evidence":["scripts/test-v01454.mjs","QA-v0.14.54-PATCH-COVERAGE.md"]},
+    {"id":"P1454-010","scope":"DOC","source_instruction":"อัปเดต Requirement Ledger และรายงานงานที่ยังเหลือ","status":"DONE-VERIFIED","evidence":["requirements-ledger.json","PATCH-v0.14.54-LAYER2-RECHECK-META-OUTBOX.md"]}
+  ]
+}
