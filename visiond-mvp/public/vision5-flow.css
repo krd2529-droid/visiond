@@ -33,9 +33,9 @@
 }
 .vision5-step {
   padding: 12px 9px;
-  border: 1px solid #b8dedb;
+  border: 1px solid #50b895;
   border-radius: 12px;
-  background: #fff;
+  background: #e9fff5;
   text-align: center;
 }
 .vision5-step span {
@@ -63,7 +63,7 @@
 }
 .vision5-step.current {
   outline: 3px solid rgba(10, 186, 181, 0.2);
-  border-color: #07928b;
+  border-color: #50b895;
 }
 .vision5-next-action {
   margin: 13px 0 0;

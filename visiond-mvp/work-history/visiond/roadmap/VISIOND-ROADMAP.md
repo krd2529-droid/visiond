@@ -248,3 +248,8 @@ EVENT CASE: ยังไม่เสร็จ — ต้องแพตต่อ
 
 ## Current next decision
 Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior. Analyze `recommendation_view → recommendation_click → add_to_cart → purchase`. Commerce/Conversion diagnostics are now implemented in v0.14.50. Deploy and validate with real traffic. Unless production data or a new Event Case overrides it, rotate next to Product/Production Intelligence: turn family exposure/cart/paid evidence into an ordered production queue, never inventory count alone.
+# v0.14.129 — Vision 5 Unified Step Colors (IMPLEMENTED)
+
+- ทำสีพื้น สีขอบ และวงเลขของขั้นตอน 1–2–3 ให้เป็นชุดเดียวกัน
+- คงสถานะขั้นปัจจุบันด้วย focus outline โดยไม่ทำสีพื้นแตกต่าง
+- เพิ่ม regression test และ cache identity `014129`
