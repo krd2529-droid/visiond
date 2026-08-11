@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.133
+Current build: v0.14.134
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -277,3 +277,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - มือถือกลับเป็นคอลัมน์เดียวตามลำดับอ่าน ไม่เกิดช่องว่างหรือช่องกรอกหล่นกลางกล่อง
 - เปลี่ยน CTA ท้าย EP เป็น `เผยแพร่และรอตรวจสอบ` โดยไม่แก้ค่าเดิมของชื่อคอร์ส
 - แก้ปุ่ม `แก้ไข EP` ให้เปิดฟอร์มที่เติมข้อมูลเดิม โฟกัสชื่อ EP และไม่ถูก CSS Grid ทับสถานะ hidden
+
+# v0.14.134 — Course Basket Interaction QA (IMPLEMENTED)
+
+- เพิ่ม runtime contract จำลองข้อมูลจริง ตรวจคลิกแก้ไข EP แล้วเปิดฟอร์ม เติม ID/ชื่อ/รายละเอียดเดิม เลื่อนและโฟกัสได้
+- ตรวจบันทึก EP ส่ง `PUT` ไป lesson ที่เลือก และเผยแพร่ส่ง `POST` ไปตะกร้าที่ถูกต้อง
+- อัปเดต regression inventory จากหน้าเก่า `course-seller.html` เป็น `course-center.html` หลังนำเส้นทางเก่าออก

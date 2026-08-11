@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
-const html = read('public/course-seller.html');
+const html = read('public/course-center.html');
 const js = read('public/course-seller.js');
 const api = read('functions/api/course-seller/index.js');
 const publishApi = read('functions/api/course-seller/[id]/publish.js');

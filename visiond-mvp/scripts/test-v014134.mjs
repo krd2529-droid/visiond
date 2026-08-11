@@ -1,0 +1,40 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+
+assert.equal(fs.readFileSync('VERSION.txt','utf8').trim(),'v0.14.134');
+const classSet=()=>{const set=new Set();return{add:(...v)=>v.forEach(x=>set.add(x)),remove:(...v)=>v.forEach(x=>set.delete(x)),contains:v=>set.has(v)}};
+const field=(value='')=>({value,checked:false,disabled:false,readOnly:false,files:[],focus(){this.focused=true},click(){this.clicked=true}});
+const submit=field(),editButton={dataset:{editEpisode:'22'},disabled:false},deleteButton={dataset:{deleteEpisode:'22'},disabled:false};
+const episodeElements={lesson_id:field(),title:field(),description:field(),duration_seconds:field('0'),video:field(),documents:field()};
+const episodeForm={hidden:true,classList:classSet(),elements:episodeElements,reset(){for(const value of Object.values(episodeElements))value.value=''},removeAttribute(name){if(name==='hidden')this.hidden=false},querySelector(selector){if(selector==='button[type="submit"]'||selector==="button[type=\"submit\"]")return submit;return null},scrollIntoView(){this.scrolled=true}};
+const platformInputs=[];
+const formElements={title:field(),teacher_name:field(),short_description:field(),description:field(),price_baht:field(),learner_level:field('all'),contact_info:field(),platform_other:field()};
+const form={elements:formElements,querySelectorAll(selector){return selector==='[name="platform_tags"]'?platformInputs:[]},querySelector(){return submit}};
+const episodeList={innerHTML:'',querySelectorAll(selector){if(selector==='[data-edit-episode]')return[editButton];if(selector==='[data-delete-episode]')return[deleteButton];return[]}};
+const publishButton={disabled:true,textContent:'เผยแพร่และรอตรวจสอบ'},publishHelp={textContent:''},publishMessage={textContent:''},episodeMessage={textContent:''},episodeTitle={textContent:''},addEpisode={disabled:false},cancelEpisode={},basketHelp={textContent:''};
+const coverInput=field(),coverImg={src:''},coverPreview={querySelector:()=>coverImg};
+const map=new Map([['#courseBasketEditForm',form],['#courseBasketEditMessage',{textContent:''}],['#basketEpisodeForm',episodeForm],['#basketEpisodeList',episodeList],['#basketEpisodeMessage',episodeMessage],['#basketEpisodeFormTitle',episodeTitle],['#basketAddEpisode',addEpisode],['#basketCancelEpisode',cancelEpisode],['#basketPublish',publishButton],['#basketPublishHelp',publishHelp],['#basketPublishMessage',publishMessage],['#basketEpisodeHelp',basketHelp]]);
+const requests=[];
+const jsonResponse=(body,ok=true)=>({ok,status:ok?200:400,json:async()=>body});
+async function fetchMock(url,options={}){requests.push([String(url),options.method||'GET']);if(String(url).endsWith('/lessons'))return jsonResponse({editable:true,items:[{id:22,title:'EP เดิม',description:'รายละเอียดเดิม',duration_seconds:90,has_video:1,has_pdf:0,file_count:0,files:[]}]});if(String(url).endsWith('/publish'))return jsonResponse({message:'ส่งแล้ว'});if(options.method==='PUT')return jsonResponse({message:'บันทึกแล้ว'});return jsonResponse({item:{id:7,title:'ชื่อคอร์สเดิม',teacher_name:'ผู้สอนเดิม',short_description:'สั้น',description:'เต็ม',price:99900,contact_info:'LINE',cover_url:'/cover.webp',platform_tags:'[]'},content_locked:false,editable:true});}
+class MockFormData { constructor(source){this.source=source} }
+const context={console,URLSearchParams,FormData:MockFormData,fetch:fetchMock,confirm:()=>true,requestAnimationFrame:cb=>cb(),location:{search:'?id=7',href:''},document:{querySelector:s=>map.get(s)},editPlatformTags:{innerHTML:''},editCoverPreview:coverPreview,editCoverInput:coverInput,changeEditCover:{},restoreEditCover:{},editExpiry:{textContent:''},URL:{createObjectURL:()=>'',revokeObjectURL:()=>{}},setTimeout,clearTimeout};
+vm.runInNewContext(fs.readFileSync('public/course-basket-edit.js','utf8'),context,{filename:'course-basket-edit.js'});
+await new Promise(resolve=>setTimeout(resolve,20));
+assert.equal(formElements.title.value,'ชื่อคอร์สเดิม','existing course title not prefilled');
+assert.equal(editButton.disabled,false,'edit EP unexpectedly disabled');
+editButton.onclick();
+assert.equal(episodeForm.hidden,false,'edit EP did not open editor');
+assert.equal(episodeElements.lesson_id.value,22,'edit EP id not populated');
+assert.equal(episodeElements.title.value,'EP เดิม','edit EP title not populated');
+assert.equal(episodeElements.description.value,'รายละเอียดเดิม','edit EP description not populated');
+assert.equal(episodeElements.title.focused,true,'edit EP title was not focused');
+assert.equal(episodeForm.scrolled,true,'edit EP editor was not brought into view');
+assert.equal(publishButton.disabled,false,'ready EP did not enable publish action');
+await episodeForm.onsubmit({preventDefault(){},submitter:submit});
+assert(requests.some(([url,method])=>url.endsWith('/lessons/22')&&method==='PUT'),'edit EP did not send PUT to exact lesson');
+await publishButton.onclick();
+assert(requests.some(([url,method])=>url.endsWith('/publish')&&method==='POST'),'publish action did not POST');
+assert.equal(publishButton.textContent,'เผยแพร่แล้ว · รอตรวจสอบ');
+console.log('v0.14.134 EP edit/save/publish interaction contract PASS');

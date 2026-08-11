@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(path, "utf8");
 const css = read("public/vision5-flow.css");
 const js = read("public/course-seller.js");
-const html = read("public/course-seller.html");
+const html = read("public/course-center.html");
 
 assert.equal(read("VERSION.txt").trim(), "v0.14.129");
 assert.match(css, /\.vision5-step\s*\{[\s\S]*?border:\s*1px solid #50b895;[\s\S]*?background:\s*#e9fff5;/);

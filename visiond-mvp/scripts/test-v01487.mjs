@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read=file=>fs.readFileSync(file,'utf8');
-const html=read('public/course-seller.html');
+const html=read('public/course-center.html');
 const ui=read('public/course-seller.js');
 const css=read('public/course-seller.css');
 const create=read('functions/api/course-seller/index.js');

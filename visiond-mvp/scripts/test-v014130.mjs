@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(path, "utf8");
 const sharedNav = read("public/shared-nav.js");
 const home = read("public/index.html");
-const seller = read("public/course-seller.html");
+const seller = read("public/course-center.html");
 const hub = read("public/my-hub.js");
 const account = read("public/nav-account.js");
 const sellerCss = read("public/course-seller.css");

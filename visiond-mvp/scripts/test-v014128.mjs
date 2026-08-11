@@ -2,7 +2,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 const read = (file) =>
   fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
-const html = read("public/course-seller.html"),
+const html = read("public/course-center.html"),
   editHtml = read("public/course-basket-edit.html"),
   js = read("public/course-seller.js"),
   editJs = read("public/course-basket-edit.js"),

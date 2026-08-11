@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
-const html=read('public/course-seller.html'),seller=read('public/course-seller.js'),css=read('public/course-seller.css');
+const html=read('public/course-center.html'),seller=read('public/course-seller.js'),css=read('public/course-seller.css');
 const admin=read('public/admin.js'),adminHtml=read('public/admin.html'),userApi=read('functions/api/admin/users/[id].js'),testUserApi=read('functions/api/admin/users/test-user.js');
 assert.equal(read('VERSION.txt').trim(),'v0.14.127');
 assert.match(html,/role="switch"/);assert.match(html,/slip-mode-switch/);assert.match(css,/input:checked\+i/);

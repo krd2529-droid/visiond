@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014133');
+import('/facebook-chat.js?v=014134');
 document.addEventListener('DOMContentLoaded',async()=>{
   const year=document.querySelector('[data-year]');
   if(year)year.textContent=new Date().getFullYear();
@@ -9,6 +9,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
     nav.innerHTML=links.map(([className,href,label])=>{const target=href.replace(/\.html$/,'');const current=path===target;return `<a${className?` class="${className}"`:''} href="${href}"${current?' aria-current="page"':''}>${label}</a>`}).join('')+'<a id="navLogin" href="/login.html">เข้าสู่ระบบ</a><a id="navRegister" class="signup-link" href="/register.html">สมัครสมาชิก</a><a class="cart-nav" href="/cart.html"><span aria-hidden="true">🛒</span> รถเข็น <b data-cart-count>0</b></a>';
   }
   try{const items=JSON.parse(localStorage.getItem('vd_cart')||'[]'),count=(Array.isArray(items)?items:[]).reduce((sum,item)=>sum+(Number(item?.quantity)||1),0);document.querySelectorAll('[data-cart-count]').forEach(x=>x.textContent=Math.min(30,count))}catch{}
-  await import('/nav-account.js?v=014133');
+  await import('/nav-account.js?v=014134');
 });
-import('/i18n.js?v=014133');
+import('/i18n.js?v=014134');

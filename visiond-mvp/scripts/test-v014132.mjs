@@ -13,6 +13,6 @@ assert(privateApi.includes('requireCourseAccess'),'EP detail API must remain pro
 assert(!publicApi.includes('l.title')&&!publicApi.includes('video_key')&&!publicApi.includes('file_name'),'public listing leaks EP contents');
 assert(orders.includes('INSERT OR IGNORE INTO entitlements'),'paid course entitlement grant missing');
 assert(basket.includes('id="basketPublish"')&&basketJs.includes('/publish`'),'inline EP manager publish action missing');
-assert(!fs.existsSync('public/course-seller.html'),'obsolete course-seller page must not remain');
+assert(!fs.existsSync('public/course-center.html'),'obsolete course-seller page must not remain');
 assert(fs.existsSync('public/course-center.html')&&read('public/shared-nav.js').includes("'/course-center'"),'course center route missing');
 console.log('v0.14.132 course public detail, EP lock, publish and route checks passed');

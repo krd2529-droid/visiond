@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(p,'utf8');
 assert.equal(read('VERSION.txt').trim(),'v0.14.123');
-const html=read('public/course-seller.html'),ui=read('public/course-seller.js'),payment=read('functions/api/course-seller/payment-profile.js'),slipApi=read('functions/api/course-seller/slip-api.js'),slip=read('functions/api/orders/[id]/slip.js'),publish=read('functions/api/course-seller/[id]/publish.js'),schema=read('functions/_schema.js');
+const html=read('public/course-center.html'),ui=read('public/course-seller.js'),payment=read('functions/api/course-seller/payment-profile.js'),slipApi=read('functions/api/course-seller/slip-api.js'),slip=read('functions/api/orders/[id]/slip.js'),publish=read('functions/api/course-seller/[id]/publish.js'),schema=read('functions/_schema.js');
 assert.match(html,/QR รับเงิน \(ไม่บังคับ\)/);
 assert.doesNotMatch(html,/name="payment_qr"[^>]+required/);
 for(const bank of ['กสิกรไทย','กรุงไทย','กรุงเทพ','ไทยพาณิชย์','กรุงศรีอยุธยา','ทหารไทยธนชาต','ออมสิน','ธ\.ก\.ส\.','ธอส\.','เกียรตินาคินภัทร','CIMB Thai','UOB','LH Bank','ไทยเครดิต','ธนาคารอิสลาม'])assert.match(html,new RegExp(bank));

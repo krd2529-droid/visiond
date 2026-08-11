@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
-const html=read('public/course-seller.html');
+const html=read('public/course-center.html');
 const seller=read('public/course-seller.js');
 const dates=read('public/course-license-dates.js');
 const css=read('public/course-seller.css');
