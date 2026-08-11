@@ -476,8 +476,9 @@ td {
 }
 .seller-course-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(0, 250px));
+  justify-content: start;
+  gap: 18px;
 }
 .seller-course-card {
   display: flex !important;
@@ -490,9 +491,10 @@ td {
 }
 .seller-course-card > img {
   width: 100%;
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  background: #e8faf8;
+  height: 320px;
+  object-fit: contain;
+  background: #fff;
+  border-bottom: 1px solid #aeb9bd;
 }
 .seller-course-card-body {
   display: grid;
@@ -774,8 +776,8 @@ td {
   }
   .seller-course-card > img {
     width: 100%;
-    height: auto;
-    min-height: 180px;
+    height: min(78vw, 320px);
+    min-height: 230px;
   }
   .seller-course-card .seller-basket-actions > * {
     min-height: 48px;

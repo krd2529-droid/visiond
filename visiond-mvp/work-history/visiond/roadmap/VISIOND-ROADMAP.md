@@ -253,3 +253,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ทำสีพื้น สีขอบ และวงเลขของขั้นตอน 1–2–3 ให้เป็นชุดเดียวกัน
 - คงสถานะขั้นปัจจุบันด้วย focus outline โดยไม่ทำสีพื้นแตกต่าง
 - เพิ่ม regression test และ cache identity `014129`
+# v0.14.130 — Course Management Center Naming (IMPLEMENTED)
+
+- รวมชื่อทางเข้าของผู้ขายคอร์สเป็น `ศูนย์จัดการคอร์ส`
+- รักษา `/course-seller.html` เป็น canonical route เดิม
+- แยกชื่อศูนย์ออกจาก CTA `+ สร้างตะกร้าคอร์ส`
