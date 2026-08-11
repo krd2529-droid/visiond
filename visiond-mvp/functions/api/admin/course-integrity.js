@@ -12,10 +12,18 @@ async function sampleEventCase(env){
   const ready=items.filter(x=>x.event_case_ready).length;
   return {checked_at:new Date().toISOString(),healthy:items.every(x=>x.healthy),issues:items.filter(x=>!x.healthy).length,course_issues:items.filter(x=>!x.healthy).length,system_issues:0,checks:{credit_mismatches:[],unlock_log_mismatches:[],nonpaid_entitlements:[],orphan_orders:[]},items,event_case:{sample:'user1 / Vision 5 test',total:items.length,ready,pending:items.length-ready,complete:items.length>0&&ready===items.length,items}};
 }
+function eventCaseTimeout(){
+  return {checked_at:new Date().toISOString(),healthy:false,issues:1,course_issues:0,system_issues:1,checks:{credit_mismatches:[],unlock_log_mismatches:[],nonpaid_entitlements:[],orphan_orders:[]},items:[],event_case:{sample:'user1 / Vision 5 test',total:0,ready:0,pending:1,complete:false,items:[],timed_out:true},warning:'EVENT_CASE_QUERY_TIMEOUT'};
+}
 export async function onRequestGet(ctx) {
-  await ensureDatabase(ctx.env);
   const auth = await requireAdmin(ctx); if (auth.error) return auth.error;
-  if(new URL(ctx.request.url).searchParams.get('event_case')==='1')return json(await sampleEventCase(ctx.env),200,{'cache-control':'no-store'});
+  if(new URL(ctx.request.url).searchParams.get('event_case')==='1'){
+    // This is a read-only production gate. Running the full schema initializer
+    // before it made the diagnostic endpoint wait on hundreds of DDL checks.
+    const result=await Promise.race([sampleEventCase(ctx.env),new Promise(resolve=>setTimeout(()=>resolve(eventCaseTimeout()),5000))]);
+    return json(result,result.warning?503:200,{'cache-control':'no-store'});
+  }
+  await ensureDatabase(ctx.env);
   const rows = await ctx.env.DB.prepare(`
     WITH paid AS (
       SELECT seller_course_id course_id,COUNT(*) paid_orders,

@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.158
+Current build: v0.14.159
+
+# v0.14.159 — Integrity Timeout Recovery (IMPLEMENTED)
+- ด่านอ่านอย่างเดียวของ user1 ข้ามตัวตรวจ schema ขนาดใหญ่ที่ทำให้ Production รอไม่จบ
+- API หยุดรอภายใน 5 วินาทีและหน้าเว็บหยุดรอภายใน 8 วินาที พร้อมแสดงข้อผิดพลาดแทนการหมุนค้าง
 
 # v0.14.158 — Focused user1 Gate (IMPLEMENTED)
 - แยก query เฉพาะ user1/บัญชีทดสอบ ไม่สแกน Integrity ทั้งระบบ และยังอ่านอย่างเดียว

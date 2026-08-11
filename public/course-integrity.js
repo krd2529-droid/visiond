@@ -4,8 +4,25 @@
   async function load() {
     auditSummary.textContent = 'กำลังตรวจ…';
     eventCaseSummary.textContent = 'กำลังตรวจตะกร้าตัวอย่าง…';
-    const response = await fetch('/api/admin/course-integrity?event_case=1', { cache: 'no-store' }), data = await response.json().catch(() => ({}));
-    if (!response.ok) { auditSummary.textContent = data.error || 'ตรวจไม่สำเร็จ'; return; }
+    const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 8000);
+    let response, data;
+    try {
+      response = await fetch('/api/admin/course-integrity?event_case=1', { cache: 'no-store', signal: controller.signal });
+      data = await response.json().catch(() => ({}));
+    } catch (error) {
+      auditSummary.className = 'audit-bad';
+      auditSummary.textContent = error?.name === 'AbortError' ? 'ตรวจไม่สำเร็จภายใน 8 วินาที — API ยังตอบช้า' : 'เชื่อมต่อระบบตรวจไม่สำเร็จ';
+      eventCaseSummary.className = 'audit-card bad';
+      eventCaseSummary.textContent = 'Event Case ยังไม่ผ่าน กรุณากดตรวจใหม่หรือตรวจฐานข้อมูล';
+      return;
+    } finally { clearTimeout(timeout); }
+    if (!response.ok) {
+      auditSummary.className = 'audit-bad';
+      auditSummary.textContent = data.warning === 'EVENT_CASE_QUERY_TIMEOUT' ? 'ฐานข้อมูลตอบช้าเกิน 5 วินาที' : (data.error || 'ตรวจไม่สำเร็จ');
+      eventCaseSummary.className = 'audit-card bad';
+      eventCaseSummary.textContent = 'Event Case ยังไม่ผ่าน — ระบบหยุดรอแล้วและไม่ค้างหน้าจอ';
+      return;
+    }
     auditSummary.className = data.healthy ? 'audit-ok' : 'audit-bad';
     auditSummary.textContent = data.healthy ? 'ข้อมูลทุกตะกร้าตรงกัน' : `พบความผิดปกติ ${Number(data.issues) || 0} รายการ`;
     const eventCase = data.event_case || {};

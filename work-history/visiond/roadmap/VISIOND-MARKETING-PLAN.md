@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.158
+Current build: v0.14.159
+
+## v0.14.159 bounded production proof
+- Keep the sample conversion gate responsive and visibly fail closed before expanding V-Learning ads.
 
 ## v0.14.158 focused sample proof
 - Validate only the sample V5 conversion before campaign expansion.
