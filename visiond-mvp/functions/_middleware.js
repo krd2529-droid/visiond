@@ -8,11 +8,17 @@ export const VISION7_ADMIN_ENTRY='<a class="admin-tab-link vision7-key-link" hre
 export const ADS_CENTER_ADMIN_ENTRY='<a class="admin-tab-link ads-center-link" href="/ads-center.html" data-ads-center-admin-entry><span class="admin-tab-icon" aria-hidden="true">📣</span><span>ศูนย์<br>โฆษณา</span></a>';
 export const isAdminHtmlPath=pathname=>pathname==='/admin'||pathname==='/admin.html';
 export const isVision7AdminHtmlPath=pathname=>pathname==='/vision7-admin'||pathname==='/vision7-admin.html';
+const trustedMobileOrigins=new Set(['null','capacitor://localhost','http://localhost']);
+const mobileMutationPaths=['/api/vision7/auth/veasy-activate','/api/vision7/auth/logout','/api/vision7/auth/veasy-device','/api/vision7/shops/','/api/vision7/runtime/'];
+const isScopedMobileMutation=(pathname,origin)=>trustedMobileOrigins.has(origin||'')&&mobileMutationPaths.some(path=>pathname===path||pathname.startsWith(path));
 export async function onRequest(ctx){
   const request=ctx.request,url=new URL(request.url),method=request.method.toUpperCase();
   if(url.pathname.startsWith('/api/')&&['POST','PUT','PATCH','DELETE'].includes(method)){
     const origin=request.headers.get('origin');
-    if(origin&&new URL(origin).origin!==url.origin)return new Response(JSON.stringify({error:'คำขอจากเว็บไซต์อื่นถูกปฏิเสธ'}),{status:403,headers:{'content-type':'application/json'}});
+    if(origin&&!isScopedMobileMutation(url.pathname,origin)){
+      let originUrl=null;try{originUrl=new URL(origin).origin}catch{}
+      if(originUrl!==url.origin)return new Response(JSON.stringify({error:'คำขอจากเว็บไซต์อื่นถูกปฏิเสธ'}),{status:403,headers:{'content-type':'application/json'}});
+    }
   }
   let response=await ctx.next();
   const responseType=String(response.headers.get('content-type')||'').toLowerCase();

@@ -142,6 +142,21 @@ export async function onRequestPatch(ctx) {
     .bind(id)
     .first();
   if (!license) return json({ error: "ไม่พบคีย์" }, 404);
+  if (action === "reset_devices") {
+    const devices = (await ctx.env.DB.prepare("SELECT id,device_hash FROM vision7_license_devices WHERE license_id=? AND revoked_at IS NULL").bind(id).all()).results || [];
+    const hashes = [...new Set(devices.map((device) => String(device.device_hash || "")).filter(Boolean))];
+    const owner = await ctx.env.DB.prepare("SELECT user_id FROM vision7_licenses WHERE id=?").bind(id).first();
+    const shops = (await ctx.env.DB.prepare("SELECT id FROM veasy_shops WHERE license_id=?").bind(id).all().catch(() => ({ results: [] }))).results || [];
+    const statements = [ctx.env.DB.prepare("UPDATE vision7_license_devices SET revoked_at=CURRENT_TIMESTAMP WHERE license_id=? AND revoked_at IS NULL").bind(id)];
+    for (const hash of hashes) statements.push(ctx.env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND device_hash=? AND revoked_at IS NULL").bind(owner.user_id, hash));
+    for (const shop of shops) {
+      statements.push(ctx.env.DB.prepare("DELETE FROM veasy_runtime_leases WHERE shop_id=?").bind(shop.id));
+      statements.push(ctx.env.DB.prepare("DELETE FROM veasy_conversation_leases WHERE shop_id=?").bind(shop.id));
+    }
+    if (statements.length) await ctx.env.DB.batch(statements);
+    await licenseEvent(ctx.env, id, a.user.id, "device_slots_reset_by_operator", { revoked_devices: devices.length, shop_preserved: true, reason: text(b.note) || "test_slot_reset" });
+    return json({ ok: true, revoked_devices: devices.length, active_devices: 0, key_preserved: true, shop_preserved: true });
+  }
   if (action === "status") {
     const status = validLicenseStatus(b.status);
     if (!status) return json({ error: "สถานะไม่ถูกต้อง" }, 400);

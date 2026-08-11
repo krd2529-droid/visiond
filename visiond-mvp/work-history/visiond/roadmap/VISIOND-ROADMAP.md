@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.117
+Current build: v0.14.118
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -192,7 +192,8 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
-- IN PROGRESS — v0.14.117 B1 Shop Save + Notification Toggle: คง API บันทึกร้าน owner-scoped จาก v0.14.116; APK แสดงผลบันทึกใต้ปุ่มโดยตรง เพิ่มสวิตช์ศูนย์แจ้งเตือนที่ร้านของฉัน ค่าเริ่มต้นปิด และไม่ยอมให้หน้าค้าง 0 บัง UI. ต้อง Deploy Web ก่อน APK และยืนยันบน Redmi.
+- IN PROGRESS — v0.14.118 B1 Slug + Key Slot Reset: แก้ global middleware ให้ PATCH จาก APK Origin:null ผ่านเฉพาะ Vision7 mobile allowlist; เพิ่มปุ่มล้างสล็อตคีย์แบบคงคีย์/ร้าน/ประวัติและ revoke session; ตารางคีย์ไม่มีแถบเลื่อนแนวนอนและแปลงเป็นการ์ดบนจอแคบ. ต้อง Deploy Web ก่อน APK และยืนยันบน Redmi.
+- IMPLEMENTED — v0.14.117 B1 Shop Save + Notification Toggle: APK แสดงผลบันทึกใต้ปุ่มและมีสวิตช์ศูนย์แจ้งเตือน; v0.14.118 แก้ต้นเหตุ middleware ที่ขวาง PATCH.
 - IMPLEMENTED — v0.14.116 B1 Live Shop Profile: เพิ่ม endpoint ชื่อ/Slug ร้านที่ผูกกับคีย์จริง พร้อม owner scope และ unique slug; v0.14.117 รับช่วงทดสอบมือถือ.
 - IMPLEMENTED — v0.14.115 B1 Hosted Activation Handoff: Redmi ยืนยันการเปิดใช้งานและผูกร้านสำเร็จแล้ว; เหลือแก้ข้อมูลหน้าร้านใน v0.14.116.
 - SUPERSEDED — v0.14.114 B1 Activation Simple Request: simple POST ยังถูก Redmi WebView ตัดก่อนถึง API จึงแทนด้วย hosted activation ใน v0.14.115.

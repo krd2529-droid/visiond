@@ -10,6 +10,11 @@ export async function onRequestPatch(ctx){
   const current=await owned(ctx.env,ctx.params.shopId,auth.user.id);if(!current)return json({error:'ไม่พบร้านที่เป็นเจ้าของ',code:'VEASY_SHOP_NOT_OWNED'},404,noStore);
   const body=await ctx.request.json().catch(()=>({})),name=cleanShopName(body.name),slug=cleanCatalogSlug(body.slug);
   if(name.length<2||slug.length<2)return json({error:'กรุณากรอกชื่อร้านและ Slug อย่างน้อย 2 ตัวอักษร',code:'VEASY_SHOP_PROFILE_INVALID'},400,noStore);
-  try{await ctx.env.DB.prepare('UPDATE veasy_shops SET name=?,slug=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?').bind(name,slug,current.id,auth.user.id).run()}catch{return json({error:'Slug ร้านนี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น',code:'VEASY_SHOP_SLUG_CONFLICT'},409,noStore)}
+  try{await ctx.env.DB.prepare('UPDATE veasy_shops SET name=?,slug=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?').bind(name,slug,current.id,auth.user.id).run()}catch(error){
+    const detail=String(error?.message||error),requestId=crypto.randomUUID();
+    if (/unique|idx_veasy_shop_slug/i.test(detail)) return json({error:'Slug ร้านนี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น',code:'VEASY_SHOP_SLUG_CONFLICT'},409,noStore);
+    console.error('VEASY_SHOP_PROFILE_SAVE_FAILED',{requestId,shopId:current.id,error:detail});
+    return json({error:'บันทึกข้อมูลร้านไม่สำเร็จ กรุณาแจ้งรหัสนี้กับ Boss',code:'VEASY_SHOP_PROFILE_SAVE_FAILED',request_id:requestId},500,noStore);
+  }
   return json({ok:true,item:{id:current.id,name,slug,status:current.status},storefront_path:`/veasy/${slug}/หมวด/สินค้า`},200,noStore);
 }

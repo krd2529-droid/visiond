@@ -141,6 +141,10 @@ function renderLicenses() {
   const ageLabel = (x) => { let days=x.duration_days;if(x.issuance_type==="test"&&x.expires_at&&x.starts_at)days=Math.round((Date.parse(String(x.expires_at).replace(" ","T")+"Z")-Date.parse(String(x.starts_at).replace(" ","T")+"Z"))/86400000);return days==null?"ตลอดอายุ":Number(days)===30?"30 วัน":Number(days)===365?"1 ปี":`${Number(days)} วัน`;};
   const dateLabel = (value) => value ? new Intl.DateTimeFormat("th-TH",{dateStyle:"short",timeStyle:"short"}).format(new Date(String(value).replace(" ","T")+"Z")) : "-";
   licensesEl.innerHTML = filtered.length ? `<div class="license-table-wrap"><table class="license-table"><thead><tr><th>ลูกค้า</th><th>แอป / เลขคีย์</th><th>แพ็กเกจ / อายุคีย์</th><th>ค่าใช้จ่าย</th><th>วันที่ออก</th><th>ผู้ออก</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${filtered.map((x)=>`<tr><td><b>#${Number(x.user_id)}</b><br>${esc(x.user_name)}<br><small>${esc(x.email||"")}</small></td><td><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title||x.program_code)}</b><br><code>${esc(x.key_masked)}</code></td><td>${esc(x.plan_name||"ไม่กำหนดแพ็กเกจ")}<br><b>${ageLabel(x)}</b></td><td><b>${Number(x.display_cost||0).toLocaleString("th-TH")} บาท</b><br><small>${x.issuance_type === "test" ? "คีย์ทดสอบ" : x.order_id ? "จากออเดอร์" : "คีย์ลูกค้า"}</small></td><td>${dateLabel(x.created_at)}</td><td>${esc(x.issuer_name||"ระบบ")}</td><td><span class="status">${esc(effectiveStatus(x))}</span><br><small>${Number(x.active_devices)}/${Number(x.max_devices)||3} เครื่อง</small>${x.platform_type === "veasy"&&x.binding_state === "unbound"?'<br><span class="binding-unbound">รอผูกร้าน</span>':""}</td><td><div class="license-actions"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended"?`<button data-status="active" data-id="${x.id}">เปิดคืน</button>`:`<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">ไม่พบคีย์</p>';
+  for (const license of filtered) if (Number(license.active_devices) > 0) {
+    const historyButton = licensesEl.querySelector(`[data-history="${CSS.escape(String(license.id))}"]`), resetButton = document.createElement("button");
+    resetButton.type = "button";resetButton.className = "danger";resetButton.dataset.resetSlots = license.id;resetButton.dataset.deviceCount = String(license.active_devices);resetButton.textContent = `ล้างสล็อตคีย์ (${license.active_devices})`;historyButton?.before(resetButton);
+  }
   bindLicenseActions();
 }
 let productOptions = [];
@@ -336,6 +340,16 @@ function bindLicenseActions() {
   document
     .querySelectorAll("[data-history]")
     .forEach((b) => (b.onclick = () => showHistory(b.dataset.history)));
+  document.querySelectorAll("[data-reset-slots]").forEach((button) => button.onclick = async () => {
+    const count = Number(button.dataset.deviceCount || 0);
+    if (!confirm(`ล้างสล็อตคีย์ ${count} เครื่องใช่ไหม?\n\nคีย์ ร้าน เจ้าของ อายุคีย์ ออเดอร์ และประวัติจะไม่ถูกลบ`)) return;
+    button.disabled = true;button.textContent = "กำลังล้างสล็อต…";
+    try {
+      const response = await fetch("/api/admin/vision7/licenses", {method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:button.dataset.resetSlots,action:"reset_devices",note:"Boss cleared test device slots"})}), data = await response.json();
+      if (!response.ok) throw new Error(data.error || "ล้างสล็อตคีย์ไม่สำเร็จ");
+      alert(`ล้างสล็อตคีย์แล้ว ${Number(data.revoked_devices || 0)} เครื่อง · คีย์และร้านยังอยู่`);await load();
+    } catch (error) { alert(error.message);button.disabled = false;button.textContent = `ล้างสล็อตคีย์ (${count})`; }
+  });
 }
 async function showHistory(id) {
   const r = await fetch(
