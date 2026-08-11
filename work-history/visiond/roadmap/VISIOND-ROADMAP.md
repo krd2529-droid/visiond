@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.154
+Current build: v0.14.155
+
+# v0.14.155 — user1 Boss Review Path (IMPLEMENTED)
+
+- เปิดเส้นทางให้ Boss ตรวจสลิป manual ของบัญชีทดสอบ Vision 5 จากหลังบ้านได้ตาม Backend ที่มีอยู่แล้ว
+- คงตะกร้าตัวอย่างของ `user1` และใช้การอนุมัติแบบ idempotent ไม่ปลดล็อกซ้ำ
+- อนุญาตตะกร้าที่ Boss ขอแก้ไขส่งเผยแพร่กลับมาตรวจใหม่ได้
 
 # v0.14.154 — Event Case Stability Gate (IMPLEMENTED)
 

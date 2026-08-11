@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.154
+Current build: v0.14.155
+
+## v0.14.155 sample-basket conversion verification
+- Unblock the Boss-reviewed test purchase so the advertised V-Learning path can be verified through learner access before further ad expansion.
 
 ## v0.14.154 V5 Event Case protection
 - Preserve `user1` and the sample basket while validating the live V5 acquisition-to-learning path.

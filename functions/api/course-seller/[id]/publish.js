@@ -103,7 +103,7 @@ export async function onRequestPost(ctx) {
   try {
     const results = await ctx.env.DB.batch([
       ctx.env.DB.prepare(
-        "UPDATE courses SET edit_expires_at=COALESCE(edit_expires_at,?),license_edit_days=30,contact_info=?,payment_bank_name=?,payment_account_name=?,payment_account_number=?,payment_qr_url=?,review_status='pending',review_note='',submitted_at=CURRENT_TIMESTAMP,active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND license_entitlement_id=? AND basket_binding_locked=1 AND review_status IN ('draft','rejected')",
+        "UPDATE courses SET edit_expires_at=COALESCE(edit_expires_at,?),license_edit_days=30,contact_info=?,payment_bank_name=?,payment_account_name=?,payment_account_number=?,payment_qr_url=?,review_status='pending',review_note='',submitted_at=CURRENT_TIMESTAMP,active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND license_entitlement_id=? AND basket_binding_locked=1 AND review_status IN ('draft','changes_requested')",
       ).bind(
         expires,
         contact,

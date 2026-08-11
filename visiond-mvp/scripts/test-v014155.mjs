@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const read = path => readFile(path, 'utf8');
+assert.equal((await read('VERSION.txt')).trim(), 'v0.14.155');
+assert.match(await read('public/index.html'), /WEB v0\.14\.155/);
+assert.match(await read('public/admin.html'), /ADMIN v0\.14\.155/);
+const orders = await read('functions/api/admin/orders.js');
+const admin = await read('public/admin.js');
+const approve = await read('functions/api/admin/orders/[id]/approve.js');
+const publish = await read('functions/api/course-seller/[id]/publish.js');
+assert.match(orders, /LEFT JOIN users owner ON owner\.id=o\.course_owner_user_id/);
+assert.match(orders, /boss_can_review_vision5_test/);
+assert.match(orders, /vision5_test_account\) === 1/);
+assert.ok(admin.indexOf('const actionMarkup = testSellerReview') < admin.indexOf(': o.vision5_managed'), 'test seller action must win before generic Vision 5 block');
+assert.match(admin, /data-test-seller="1"/);
+assert.match(admin, /Boss อนุมัติและปลดล็อกคอร์ส/);
+assert.match(admin, /confirmed: bossManual/);
+assert.match(admin, /คงตะกร้าตัวอย่างเดิม/);
+assert.match(approve, /testSeller&&a\.user\.role!==['"]boss['"]/);
+assert.match(approve, /method:testSeller\?'boss_test_seller_slip_approval'/);
+assert.match(publish, /review_status IN \('draft','changes_requested'\)/);
+assert.doesNotMatch(publish, /review_status IN \('draft','rejected'\)/);
+console.log('v0.14.155 user1 Vision 5 Boss review path: PASS');

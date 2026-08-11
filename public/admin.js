@@ -1238,9 +1238,12 @@ async function loadOrders() {
         const waiting = o.status === "awaiting_payment";
         const review = !o.vision5_managed && o.status === "pending_review" && o.slip_url && o.slip_verification_status === "manual";
         const rightsReview = o.boss_can_review_rights === true;
+        const testSellerReview = o.boss_can_review_vision5_test === true;
         const slipWarning = o.has_resale_rights && o.slip_verification_code && o.slip_verification_code !== "VISION5_RIGHTS_MANUAL_MODE"
           ? `<div class="order-wait-note rejected"><b>⚠️ EasySlip ส่งเข้าตรวจโดย Boss</b><span>รหัส ${esc(o.slip_verification_code)} — ตรวจยอด ชื่อบัญชี และรายการซ้ำก่อนอนุมัติ</span></div>` : "";
-        const actionMarkup = o.vision5_managed
+        const actionMarkup = testSellerReview
+          ? `<div class="order-wait-note"><b>บัญชีทดสอบ Vision 5 — รอ Boss ตรวจ</b><span>อนุมัติแล้วระบบจะปลดล็อกคอร์สให้ผู้ซื้อ โดยไม่แก้หรือลบตะกร้าตัวอย่าง</span></div><div class="actions review-actions"><button class="primary" data-act="approve" data-test-seller="1" data-id="${o.id}">✓ Boss อนุมัติและปลดล็อกคอร์ส</button></div>`
+          : o.vision5_managed
           ? `<div class="order-wait-note"><b>ออเดอร์ Vision 5 — VisionD อนุมัติแทนไม่ได้</b><span>${esc(o.vision5_reason || "จัดการผ่านระบบ Vision 5")}</span></div>`
           : rightsReview
           ? `${slipWarning}<div class="order-wait-note"><b>ตะกร้าสิทธิ์ — รอ Boss ตัดสินใจ</b><span>อนุมัติแล้วระบบจะเพิ่ม ${Number(o.item_count)||0} เครดิตเพียงครั้งเดียว</span></div><div class="actions review-actions"><button class="primary" data-act="approve" data-rights="1" data-id="${o.id}">✓ Boss อนุมัติและเพิ่มเครดิต</button><button class="danger" data-act="reject" data-rights="1" data-id="${o.id}">✕ ปฏิเสธสลิป</button></div>`
@@ -1256,7 +1259,7 @@ async function loadOrders() {
       .join("") || "<p>ยังไม่มีคำสั่งซื้อ</p>";
   document
     .querySelectorAll("[data-act]")
-    .forEach((b) => (b.onclick = () => act(b.dataset.id, b.dataset.act, b.dataset.rights === "1")));
+    .forEach((b) => (b.onclick = () => act(b.dataset.id, b.dataset.act, b.dataset.rights === "1", b.dataset.testSeller === "1")));
   const selected=()=>[...document.querySelectorAll('[data-order-select]:checked')].map(input=>Number(input.dataset.orderSelect));
   const syncSelected=()=>{const count=selected().length;selectedOrderCount.textContent=`เลือกแล้ว ${count} ออเดอร์`;clearSelectedOrders.disabled=count===0;document.querySelectorAll('[data-order-select]').forEach(input=>input.closest('.order-admin-card')?.classList.toggle('order-selected',input.checked))};
   document.querySelectorAll('[data-order-select]').forEach(input=>input.onchange=syncSelected);
@@ -1273,16 +1276,17 @@ async function clearOldOrders(mode,ids){
   alert(data.error||data.message||'ล้างออเดอร์เรียบร้อย');
   if(response.ok)await loadOrders();else button.disabled=false;
 }
-async function act(id, action, rights = false) {
-  if(rights&&!confirm(action === "approve" ? "เปิดดูสลิปและตรวจยอดเงิน ชื่อบัญชี และเวลาแล้วใช่ไหม?\nยืนยันเพิ่มเครดิตตะกร้าสิทธิ์ให้ลูกค้า" : "เปิดดูสลิปแล้วใช่ไหม?\nยืนยันปฏิเสธและให้ลูกค้าส่งสลิปใหม่"))return;
-  const entered=prompt(action === "approve" ? (rights ? "หมายเหตุการอนุมัติของ Boss" : "หมายเหตุการอนุมัติ (ไม่บังคับ)") : "เหตุผลที่ปฏิเสธ","");
+async function act(id, action, rights = false, testSeller = false) {
+  const bossManual = rights || testSeller;
+  if(bossManual&&!confirm(testSeller ? "เปิดดูสลิปของบัญชีทดสอบแล้วใช่ไหม?\nยืนยันปลดล็อกคอร์สให้ผู้ซื้อโดยคงตะกร้าตัวอย่างเดิม" : action === "approve" ? "เปิดดูสลิปและตรวจยอดเงิน ชื่อบัญชี และเวลาแล้วใช่ไหม?\nยืนยันเพิ่มเครดิตตะกร้าสิทธิ์ให้ลูกค้า" : "เปิดดูสลิปแล้วใช่ไหม?\nยืนยันปฏิเสธและให้ลูกค้าส่งสลิปใหม่"))return;
+  const entered=prompt(action === "approve" ? (bossManual ? "หมายเหตุการอนุมัติของ Boss" : "หมายเหตุการอนุมัติ (ไม่บังคับ)") : "เหตุผลที่ปฏิเสธ","");
   if(entered===null)return;
   const note=entered.trim();
   if(rights&&action==="reject"&&!note)return alert("กรุณาระบุเหตุผลที่ปฏิเสธสลิป");
   const r = await fetch("/api/admin/orders/" + id + "/" + action, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ note, confirmed: rights }),
+    body: JSON.stringify({ note, confirmed: bossManual }),
   });
   const d = await r.json();
   if (!r.ok) return alert(d.error);
