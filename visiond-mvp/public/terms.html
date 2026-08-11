@@ -4,7 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ข้อกำหนดการใช้งาน | VisionD Online</title>
-    <link rel="stylesheet" href="/style.css?v=014109" /><link rel="stylesheet" href="/visiond-design-system.css?v=014109">
+    <meta name="description" content="ข้อกำหนดการใช้ VisionD Online V Easy และการเชื่อม LINE Official Account Facebook Messenger และ API ทางการ" />
+    <link rel="canonical" href="https://visiondonline.com/terms.html" />
+    <link rel="stylesheet" href="/style.css?v=014119" />
+    <link rel="stylesheet" href="/visiond-design-system.css?v=014119" />
     <style>
       main {
         max-width: 860px;
@@ -30,8 +33,10 @@
         font-weight: 700;
       }
     </style>
-    <link rel="stylesheet" href="/mobile-storefront.css?v=014109" />
-  <link rel="stylesheet" href="/frontend-theme.css?v=014109"></head>
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014119" />
+    <link rel="stylesheet" href="/frontend-theme.css?v=014119" />
+    <link rel="stylesheet" href="/header-shell.css?v=014119" />
+  </head>
   <body class="vd-frontend">
     <header class="topbar">
       <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
@@ -41,9 +46,7 @@
       </nav>
     </header>
     <main>
-      <p class="version">
-        เวอร์ชัน 2026-08-10-v1 · ปรับปรุงล่าสุด 10 สิงหาคม 2569
-      </p>
+      <p class="version">เวอร์ชัน 2026-08-11-v2 · ปรับปรุงล่าสุด 11 สิงหาคม 2569</p>
       <h1>ข้อกำหนดการใช้งาน</h1>
       <p>
         ข้อกำหนดนี้ใช้กับการสมัครบัญชีและการใช้เว็บไซต์ VisionD Online
@@ -71,6 +74,24 @@
         เผยแพร่เนื้อหาที่ผิดกฎหมาย หรือละเมิดสิทธิของผู้อื่น VisionD
         อาจจำกัดการใช้งานที่สร้างความเสียหายต่อระบบหรือผู้ใช้รายอื่น
       </p>
+      <h2>การใช้ V Easy และระบบอัตโนมัติ</h2>
+      <ul>
+        <li>เจ้าของร้านต้องมีสิทธิ์ดูแล LINE Official Account, Facebook Page หรือบัญชีภายนอกที่นำมาเชื่อม</li>
+        <li>เจ้าของร้านรับผิดชอบสินค้า ราคา สต็อก เงื่อนไขขาย การจัดส่ง ภาษี การคืนเงิน และข้อความที่ส่งจากร้าน</li>
+        <li>AI เป็นเครื่องมือช่วยและอาจผิดพลาด เจ้าของร้านต้องตรวจเรื่องสำคัญและรับช่วงเมื่อระบบแจ้งเตือน</li>
+        <li>คำสั่งซื้อเก็บเงินปลายทางและกรณีนอกขอบเขตต้องได้รับการอนุมัติตามขั้นตอนของร้าน</li>
+      </ul>
+      <h2>กฎของแพลตฟอร์มภายนอก</h2>
+      <p>การเชื่อม LINE, Facebook หรือบริการอื่นต้องใช้ API, Webhook, OAuth, Token และสิทธิ์ที่แพลตฟอร์มอนุญาตเท่านั้น ผู้ใช้ต้องปฏิบัติตามข้อกำหนด นโยบายข้อมูล โควตาข้อความ การตรวจสอบแอป และข้อจำกัดของแต่ละแพลตฟอร์ม</p>
+      <ul>
+        <li>ห้ามใช้รหัสผ่านส่วนบุคคล คุกกี้ เซสชัน การดัก Token หรือโปรแกรมกดหน้าจอเพื่ออ่านข้อความหรือส่งข้อความแทน API ทางการ</li>
+        <li>ห้ามส่งสแปม หลอกลวง ปลอมตัว รบกวนผู้ใช้ หรือส่งโฆษณาโดยไม่มีฐานสิทธิและความยินยอมที่เหมาะสม</li>
+        <li>ห้ามรวมข้อมูลผู้ใช้ข้ามร้าน ข้าม Provider หรือข้ามแพลตฟอร์มเพื่อสร้างโปรไฟล์โดยไม่ได้รับอนุญาต</li>
+        <li>ห้ามเปิดเผย Channel Secret, Access Token, App Secret หรือข้อมูลรับรอง หากสงสัยว่ารั่วต้องเพิกถอนและออกใหม่ทันที</li>
+      </ul>
+      <p>หากแพลตฟอร์มระงับ Token, Webhook, Page, Channel หรือสิทธิ์ API จากเหตุที่อยู่นอกการควบคุมของ VisionD บริการส่วนนั้นอาจหยุดทำงานจนกว่าเจ้าของบัญชีจะแก้ไขกับแพลตฟอร์มต้นทาง</p>
+      <h2>การยุติการเชื่อมต่อ</h2>
+      <p>เจ้าของร้านสามารถหยุดบอทหรือขอยกเลิกการเชื่อมต่อได้ และควรปิด Use webhook พร้อมเพิกถอน Token ใน LINE Developers Console หรือ Meta for Developers เมื่อเลิกใช้ถาวร การยกเลิกไม่ลบประวัติคำสั่งซื้อหรือหลักฐานที่จำเป็นโดยอัตโนมัติ</p>
       <h2>การเปลี่ยนแปลงบริการ</h2>
       <p>
         รายละเอียดบริการอาจเปลี่ยนเพื่อแก้ข้อผิดพลาด เพิ่มความปลอดภัย
@@ -84,6 +105,9 @@
         <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a>
       </p>
     </main>
-    <script src="/mobile-storefront.js?v=014109" defer></script>
-  <script src="/visiond-design-system.js?v=014109" defer></script></body>
+    <script src="/shared-nav.js?v=014119"></script>
+    <script src="/header-shell.js?v=014119" defer></script>
+    <script src="/mobile-storefront.js?v=014119" defer></script>
+    <script src="/visiond-design-system.js?v=014119" defer></script>
+  </body>
 </html>

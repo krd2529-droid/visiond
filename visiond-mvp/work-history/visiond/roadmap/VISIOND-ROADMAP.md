@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.118
+Current build: v0.14.119
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -60,6 +60,8 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 Compatibility rule: extend the existing Vision 7 Program → Plan → Release → License chain. Do not create a parallel VBot key engine and do not repurpose `vision7_plans.price`; marketplace selling price is the nullable `offer_price` field.
 
 ## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
+
+- IMPLEMENTED — v0.14.119 Canonical Primary Navigation + Platform Policies: หน้าแรก สินค้าดิจิทัล V-Learning และ VBot ใช้เมนูหลักและ Header กลางชุดเดียว, active state ตามหน้าจริง, cache identity ใหม่ และ Privacy/Terms ครอบคลุม LINE, Meta/Facebook, Webhook, API, AI, Secret/Token และข้อห้ามใช้ UI automation/session interception.
 
 Direction approved by Boss: use a professional AI-commerce visual language based on commerce-first clarity similar to Shopify Polaris, soft tonal surfaces similar to Material 3, and VisionD's own Tiffany identity. Do not mix unrelated template styles or overuse glassmorphism.
 
