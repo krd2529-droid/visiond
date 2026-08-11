@@ -1,13 +1,15 @@
 import {json} from '../../../_lib.js';
 import {decryptChannelValue,lineSignatureValid} from '../../../_channel_crypto.js';
 import {cleanWebhookProvider} from '../../../_webhook_hub.js';
+import {processLineEvent} from '../../../_veasy_line_ai.js';
 
 const out=(data,status)=>json(data,status,{'cache-control':'no-store'});
 async function find(ctx){
   const provider=cleanWebhookProvider(ctx.params.provider),publicId=String(ctx.params.publicId||'');
   if(!provider||!/^wh_[a-f0-9]{48}$/.test(publicId))return null;
-  return ctx.env.DB.prepare(`SELECT e.id,e.status,e.adapter_state,c.secret_ciphertext
+  return ctx.env.DB.prepare(`SELECT e.id,e.shop_id,e.status,e.adapter_state,s.name shop_name,c.secret_ciphertext,c.token_ciphertext
     FROM veasy_webhook_endpoints e
+    JOIN veasy_shops s ON s.id=e.shop_id
     LEFT JOIN veasy_channel_credentials c ON c.shop_id=e.shop_id AND c.provider=e.provider
     WHERE e.provider=? AND e.public_id=?`).bind(provider,publicId).first();
 }
@@ -36,7 +38,7 @@ export async function onRequestPost(ctx){
   if(x.status!=='active'||x.adapter_state!=='ready')return out({error:'ลิงก์ถูกสร้างแล้ว แต่ Provider Adapter ยังไม่พร้อมรับข้อความ',code:'WEBHOOK_PROVIDER_NOT_CONNECTED'},503);
   const statements=[ctx.env.DB.prepare("UPDATE veasy_webhook_endpoints SET received_count=received_count+?,last_event_at=CURRENT_TIMESTAMP WHERE id=?").bind(events.length,x.id)];
   for(const e of events.slice(0,100))statements.push(ctx.env.DB.prepare("INSERT OR IGNORE INTO veasy_webhook_events(id,endpoint_id,request_id,external_event_id,signature_status,processing_status,event_type) VALUES(?,?,?,?, 'valid','received',?)").bind(crypto.randomUUID(),x.id,`${requestId}:${crypto.randomUUID()}`,String(e.webhookEventId||''),String(e.type||'')));
-  ctx.waitUntil(ctx.env.DB.batch(statements).catch(()=>{}));
+  ctx.waitUntil((async()=>{await ctx.env.DB.batch(statements);for(const event of events.slice(0,100))await processLineEvent(ctx.env,x,event)})().catch(error=>console.error('VEASY_LINE_BATCH_FAILED',String(error?.message||error).slice(0,100))));
   return out({ok:true},200);
 }
 export async function onRequestGet(){return out({error:'Method not allowed'},405)}

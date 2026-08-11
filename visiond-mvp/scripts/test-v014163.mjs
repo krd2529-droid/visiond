@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(path,'utf8'),hook=read('functions/hooks/v1/[provider]/[publicId].js'),ai=read('functions/_veasy_line_ai.js'),line=read('functions/api/vision7/shops/[shopId]/line-connection.js'),schema=read('functions/_veasy_runtime.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.163');
+const mirror='visiond-mvp/functions/hooks/v1/[provider]/[publicId].js';assert.equal(hook,fs.existsSync(mirror)?read(mirror):hook);
+assert.match(hook,/ctx\.waitUntil\(\(async\(\)=>/);assert.match(hook,/processLineEvent/);assert.match(hook,/token_ciphertext/);
+assert.match(ai,/event\?\.message\?\.type!=='text'/);assert.match(ai,/INSERT OR IGNORE INTO veasy_message_claims/);assert.match(ai,/state\?\.state!=='running'/);
+assert.match(ai,/VEASY_GEMINI_API_KEY/);assert.match(ai,/VEASY_OPENAI_API_KEY/);assert.match(ai,/api\.line\.me\/v2\/bot\/message\/reply/);
+assert.match(ai,/WHERE shop_id=\? AND status='active'/);assert.match(ai,/ห้ามแต่งราคา สต็อก โปรโมชั่น/);
+assert.match(schema,/veasy_chat_messages/);assert.match(line,/veasyAiProviderStatus/);assert.match(line,/veasy_channels\(shop_id,platform,status,external_id\)/);
+assert.ok(fs.existsSync('migrations/0039_veasy_line_ai_messages.sql'));
+console.log('PASS v0.14.163 V Easy LINE AI reply pipeline');

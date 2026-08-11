@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
-Updated: 2026-08-10
-Current build: v0.14.48
+Updated: 2026-08-11
+Current build: v0.14.163
+
+## v0.14.163 LINE sales gate
+- Validate one grounded LINE AI reply before using LINE as a promoted sales channel.
 
 ## Positioning
 VisionD is a platform for digital products and online courses, with a creator path for people who want to sell their own course. Keep the storefront message simple: buy digital products, learn online, or create/sell a course.

@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.162
+Current build: v0.14.163
+
+# v0.14.163 — V Easy LINE AI Reply (IMPLEMENTED)
+- ซิงก์ผล LINE Verify เข้าสถานะช่องทาง `connected`
+- รับข้อความ LINE แบบ background, กัน redelivery ตอบซ้ำ และแยกข้อมูลตามร้าน
+- ใช้สินค้าเฉพาะร้านเป็นบริบท AI แล้วตอบผ่าน LINE Reply API เมื่อบอท `running`
+- Event Case รอ Deploy และข้อความ LINE จริง 1 ข้อความก่อนเปลี่ยนเป็น VALIDATED
 
 # v0.14.162 — LINE Verify Fast Path (IMPLEMENTED)
 - รวม endpoint และ Channel Secret เป็น D1 query เดียว

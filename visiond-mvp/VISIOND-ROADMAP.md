@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
-Updated: 2026-08-10
-Current build: v0.14.59
+Updated: 2026-08-11
+Current build: v0.14.163
+
+## v0.14.163 — V Easy LINE AI Reply
+- LINE webhook ตอบด้วย AI จากสินค้าเฉพาะร้านและกัน redelivery ตอบซ้ำ
+- รอทดสอบข้อความจริงหลัง Deploy ก่อนปิด Event Case
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
