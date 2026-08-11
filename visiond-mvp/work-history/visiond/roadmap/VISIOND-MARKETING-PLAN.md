@@ -1,7 +1,11 @@
 # VisionD Marketing Plan — Living Growth Plan
 
-Updated: 2026-08-10
-Current build: v0.14.48
+Updated: 2026-08-11
+Current build: v0.14.148
+
+## v0.14.148 course presentation
+- Standardize seller upload previews and course detail covers to the same portrait frame as catalog cards.
+- Preserve published seller courses in the owner center so creators can continue editing lessons and monitoring sales.
 
 ## Positioning
 VisionD is a platform for digital products and online courses, with a creator path for people who want to sell their own course. Keep the storefront message simple: buy digital products, learn online, or create/sell a course.

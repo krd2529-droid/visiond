@@ -608,6 +608,8 @@ td {
 .course-cover-preview {
   display: grid;
   gap: 8px;
+  width: 250px;
+  max-width: 100%;
   margin: 10px 0 0;
 }
 .course-cover-preview[hidden] {
@@ -615,12 +617,13 @@ td {
 }
 .course-cover-preview img {
   display: block;
-  width: 100%;
-  aspect-ratio: 16/9;
-  object-fit: cover;
+  width: 250px;
+  max-width: 100%;
+  height: 290px;
+  object-fit: contain;
   border: 1px solid #8edbd6;
   border-radius: 14px;
-  background: #e8faf8;
+  background: #fff;
 }
 .course-cover-preview figcaption {
   display: grid;

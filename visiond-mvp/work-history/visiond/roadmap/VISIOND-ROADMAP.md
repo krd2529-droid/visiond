@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.147
+Current build: v0.14.148
+
+# v0.14.148 — Course Detail, Cover Input, and Published Ownership (IMPLEMENTED)
+
+- หน้ารายละเอียดและตัวอย่างรูปอัปโหลดใช้กรอบ 250 × 290 แบบเดียวกับแคตตาล็อก โดยแนะนำไฟล์ 1000 × 1160 px ไม่เกิน 8 MB
+- หน้ารายละเอียดคอร์สโหลดแถบหัวมาตรฐานและ cache identity เดียวกัน เพื่อตัดปุ่มเล็ก/รูปแบบเก่าที่ชนกัน
+- “คอร์สของฉัน” คืนคอร์สที่ผู้ใช้เป็นเจ้าของโดยตรงหรือมีเครดิตต้นทางผูกกับคอร์สนั้น รวมคอร์สที่อนุมัติและเผยแพร่แล้ว
 
 # v0.14.147 — Course Cover Digital Card Ratio (IMPLEMENTED)
 
