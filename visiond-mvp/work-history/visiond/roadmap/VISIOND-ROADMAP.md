@@ -1,7 +1,20 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.134
+Current build: v0.14.136
+
+# v0.14.136 — Visible Web Version (IMPLEMENTED)
+
+- แสดง `WEB v0.14.136` บนหน้าเว็บไซต์หลัก
+- แสดง `ADMIN v0.14.136` บนหลังบ้าน
+- ใช้ badge ขนาดกะทัดรัด รองรับ desktop และ mobile
+
+# v0.14.135 — Canonical Header Actions Hotfix (IMPLEMENTED)
+
+- ให้ `shared-nav` ล้าง utility actions ชุดเก่าก่อนสร้าง navigation ชุดกลาง
+- เมื่อเข้าสู่ระบบ ล้างปุ่ม Login/Register และ account actions ซ้ำทั่วทั้ง header ไม่จำกัดเฉพาะ `<nav>`
+- บังคับให้ Cart, Account, Admin, Course Center และ Logout เหลือ action ละหนึ่งปุ่ม
+- bump cache identity ของ shared navigation และ account navigation ทุกหน้าที่ใช้งาน
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)

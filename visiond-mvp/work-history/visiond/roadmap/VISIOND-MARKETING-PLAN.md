@@ -85,3 +85,12 @@ Next marketing work:
 - Do not enable aggressive personalized popup frequency until recommendation CTR/cart/paid uplift is observed in production.
 - Measure: recommendation_view, recommendation_click, downstream add_to_cart, purchase and revenue.
 - Production decision remains family-level: premade stock count is not demand evidence; exposure and paid conversion decide whether to extend the next numbered set.
+# v0.14.135 — Header Trust/Conversion Guard
+
+- ปุ่มเข้าสู่ระบบ สมัครสมาชิก รถเข็น และบัญชีต้องมีอย่างละหนึ่ง เพื่อไม่ให้ผู้ซื้อสับสนก่อนเริ่ม checkout
+- เก็บ funnel เดิม `view → add-to-cart → checkout → purchase` โดยแพตนี้ไม่เพิ่ม event ซ้ำและไม่เปลี่ยนข้อมูลลูกค้า
+- หลัง deploy ตรวจหน้าแรกทั้ง Guest/Member/Boss ภาษา TH/EN ก่อนยิงแคมเปญ เพื่อยืนยันว่าปุ่ม conversion ไม่ซ้ำ
+# v0.14.136 — Release Visibility
+
+- เลขเวอร์ชันที่มองเห็นช่วยให้ Boss ยืนยัน release ก่อนตรวจ funnel หรือเริ่มแคมเปญ
+- เวอร์ชันไม่มี PII และไม่เพิ่ม analytics event จึงไม่ทำให้ตัวเลข view → purchase ซ้ำ
