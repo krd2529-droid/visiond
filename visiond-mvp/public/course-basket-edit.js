@@ -8,6 +8,9 @@
     episodeTitle = document.querySelector("#basketEpisodeFormTitle"),
     addEpisode = document.querySelector("#basketAddEpisode"),
     cancelEpisode = document.querySelector("#basketCancelEpisode"),
+    publishButton = document.querySelector("#basketPublish"),
+    publishHelp = document.querySelector("#basketPublishHelp"),
+    publishMessage = document.querySelector("#basketPublishMessage"),
     names = [
       "Shopee",
       "TikTok",
@@ -43,7 +46,25 @@
     episodeForm.querySelector('button[type="submit"]').textContent = "บันทึก EP";
     episodeMessage.textContent = "";
     episodeForm.hidden = !show;
+    episodeForm.classList.remove("is-editing");
     if (show) episodeForm.elements.title.focus();
+  }
+
+  function openEpisodeEditor(episode) {
+    const index = episodes.findIndex((entry) => String(entry.id) === String(episode.id));
+    episodeForm.hidden = false;
+    episodeForm.removeAttribute("hidden");
+    episodeForm.classList.add("is-editing");
+    episodeTitle.textContent = `แก้ไข EP.${index + 1}`;
+    episodeForm.elements.lesson_id.value = episode.id;
+    episodeForm.elements.title.value = episode.title || "";
+    episodeForm.elements.description.value = episode.description || "";
+    episodeForm.elements.duration_seconds.value = Number(episode.duration_seconds) || 0;
+    episodeForm.querySelector('button[type="submit"]').textContent = "บันทึกการแก้ไข EP";
+    requestAnimationFrame(() => {
+      episodeForm.scrollIntoView({ behavior: "auto", block: "center" });
+      episodeForm.elements.title.focus({ preventScroll: true });
+    });
   }
 
   function renderEpisodes() {
@@ -53,14 +74,7 @@
     episodeList.querySelectorAll("[data-edit-episode]").forEach((button) => button.onclick = () => {
       const episode = episodes.find((entry) => String(entry.id) === button.dataset.editEpisode);
       if (!episode) return;
-      episodeForm.hidden = false;
-      episodeTitle.textContent = `แก้ไข EP.${episodes.indexOf(episode) + 1}`;
-      episodeForm.elements.lesson_id.value = episode.id;
-      episodeForm.elements.title.value = episode.title || "";
-      episodeForm.elements.description.value = episode.description || "";
-      episodeForm.elements.duration_seconds.value = Number(episode.duration_seconds) || 0;
-      episodeForm.querySelector('button[type="submit"]').textContent = "บันทึกการแก้ไข EP";
-      episodeForm.scrollIntoView({ behavior: "smooth", block: "start" });
+      openEpisodeEditor(episode);
     });
     episodeList.querySelectorAll("[data-delete-episode]").forEach((button) => button.onclick = async () => {
       if (!confirm("ลบ EP และไฟล์ทั้งหมดใช่ไหม")) return;
@@ -70,6 +84,13 @@
       if (!confirm("ลบไฟล์ประกอบนี้ใช่ไหม")) return;
       await episodeAction(`/api/course-seller/${id}/lessons/${button.dataset.lesson}/files/${button.dataset.deleteFile}`, { method: "DELETE" });
     });
+    const ready = episodes.length > 0 && episodes.every((episode) => episode.has_video || episode.has_pdf || Number(episode.file_count) > 0);
+    publishButton.disabled = !ready || !episodesEditable;
+    publishHelp.textContent = ready
+      ? `พร้อมเผยแพร่ ${episodes.length} EP · เมื่อส่งแล้วจะรอ Boss อนุมัติก่อนเปิดขาย`
+      : episodes.length
+        ? "ยังมี EP ที่ไม่มีวิดีโอหรือไฟล์ประกอบ กรุณาเพิ่มสื่อให้ครบก่อนส่ง"
+        : "ต้องมีอย่างน้อย 1 EP และทุก EP ต้องมีวิดีโอหรือไฟล์ประกอบ";
   }
 
   async function loadEpisodes() {
@@ -116,6 +137,30 @@
       );
     } finally {
       button.disabled = false;
+    }
+  };
+  publishButton.onclick = async () => {
+    if (publishButton.disabled || !item) return;
+    if (!confirm("ส่งตะกร้าคอร์สนี้ให้ Boss ตรวจอนุมัติก่อนเปิดขายใช่ไหม? หลังมียอดขาย เนื้อหา EP จะถูกล็อก")) return;
+    publishButton.disabled = true;
+    publishMessage.textContent = "กำลังส่งเผยแพร่…";
+    try {
+      const response = await fetch(`/api/course-seller/${id}/publish`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ price_baht: Number(item.price) / 100, contact_info: item.contact_info, confirm_permanent: true }),
+      });
+      const data = await response.json().catch(() => ({}));
+      publishMessage.textContent = data.error || data.message || (response.ok ? "ส่งเผยแพร่แล้ว" : "ส่งเผยแพร่ไม่สำเร็จ");
+      if (data.payment_profile_required) return void (location.href = "/course-center#paymentProfilePanel");
+      if (data.slip_api_required) return void (location.href = "/course-center#slipApiPanel");
+      if (response.ok) {
+        publishHelp.textContent = "ส่งแล้ว · กำลังรอ Boss ตรวจอนุมัติก่อนเปิดขาย";
+        publishButton.textContent = "เผยแพร่แล้ว · รอตรวจสอบ";
+        return;
+      }
+    } finally {
+      if (publishButton.textContent !== "เผยแพร่แล้ว · รอตรวจสอบ") publishButton.disabled = false;
     }
   };
   function showCover(url) {

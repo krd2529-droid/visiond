@@ -649,6 +649,28 @@ td {
 .course-cover-upload {
   align-self: start;
 }
+.course-basket-form {
+  align-items: start;
+}
+.course-basket-form > label {
+  align-content: start;
+}
+.course-basket-form .course-cover-upload {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+}
+.course-basket-form .course-basket-title {
+  grid-column: 2;
+  grid-row: 1;
+}
+.course-basket-form .course-basket-teacher {
+  grid-column: 2;
+  grid-row: 2;
+}
+.course-basket-form .course-basket-summary {
+  grid-column: 2;
+  grid-row: 3;
+}
 .course-cover-preview {
   display: grid;
   gap: 8px;
@@ -713,6 +735,13 @@ td {
   border: 1px solid #8edbd6;
   border-radius: 16px;
   background: #f4fdfc;
+}
+.seller-lesson-editor[hidden] {
+  display: none !important;
+}
+.seller-lesson-editor.is-editing {
+  outline: 3px solid #0abab5;
+  outline-offset: 3px;
 }
 .seller-lesson-list {
   display: grid;
@@ -810,6 +839,13 @@ td {
   }
   .course-cover-preview figcaption {
     grid-template-columns: 1fr;
+  }
+  .course-basket-form .course-cover-upload,
+  .course-basket-form .course-basket-title,
+  .course-basket-form .course-basket-teacher,
+  .course-basket-form .course-basket-summary {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
 .seller-api-link {

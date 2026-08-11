@@ -21,7 +21,7 @@ const esc = (v) =>
 let state;
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014131">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014133">',
 );
 document
   .querySelector(".seller-hero")
@@ -194,7 +194,7 @@ function render(data) {
 async function load() {
   const r = await fetch("/api/course-seller", { cache: "no-store" });
   if (r.status === 401) {
-    sessionStorage.setItem("vd_return_to", "/course-seller.html?vision5=1");
+    sessionStorage.setItem("vd_return_to", "/course-center?vision5=1");
     location.href = "/login.html";
     return;
   }
@@ -516,7 +516,7 @@ publishForm.onsubmit = async (e) => {
   if (r.ok) {
     alert(d.message);
     publishPanel.hidden = true;
-    history.replaceState(null, "", "/course-seller.html");
+    history.replaceState(null, "", "/course-center");
     sellerLessonManager.dataset.autoOpened = "";
     await load();
   }

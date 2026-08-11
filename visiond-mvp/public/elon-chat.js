@@ -14,7 +14,7 @@
   // inherits the widget merely because someone copied the script tag.
   const FRONTEND_SURFACES = new Set([
     '/', '/about', '/account', '/blog', '/bots', '/cart', '/contact',
-    '/course-basket-edit', '/course-rights-terms', '/course-seller', '/courses',
+    '/course-basket-edit', '/course-rights-terms', '/course-center', '/courses',
     '/dashboard', '/digital-products', '/forgot-password', '/index', '/learn',
     '/login', '/my-courses', '/product', '/register', '/reset-password'
   ]);

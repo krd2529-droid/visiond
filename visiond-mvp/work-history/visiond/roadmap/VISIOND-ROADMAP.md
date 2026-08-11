@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.128
+Current build: v0.14.133
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -253,13 +253,27 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ทำสีพื้น สีขอบ และวงเลขของขั้นตอน 1–2–3 ให้เป็นชุดเดียวกัน
 - คงสถานะขั้นปัจจุบันด้วย focus outline โดยไม่ทำสีพื้นแตกต่าง
 - เพิ่ม regression test และ cache identity `014129`
-# v0.14.130 — Course Management Center Naming (IMPLEMENTED)
+# v0.14.130 — Course Management Center Naming (SUPERSEDED BY v0.14.132)
 
 - รวมชื่อทางเข้าของผู้ขายคอร์สเป็น `ศูนย์จัดการคอร์ส`
-- รักษา `/course-seller.html` เป็น canonical route เดิม
+- เปลี่ยนเส้นทางหน้าผู้ใช้เป็น `/course-center` และนำหน้าเก่าที่ไม่ใช้แล้วออกใน v0.14.132
 - แยกชื่อศูนย์ออกจาก CTA `+ สร้างตะกร้าคอร์ส`
 # v0.14.131 — Course Basket Inline EP Manager (IMPLEMENTED)
 
 - รวมข้อมูลตะกร้าคอร์สและรายการ EP ในหน้าแก้ไขเดียว
 - ใช้ API EP เดิมและคง content lock หลังมีผู้ซื้อ
 - ปรับชื่อฟิลด์หลักเป็น `ชื่อคอร์ส`
+
+# v0.14.132 — Course Public Detail + EP Lock (IMPLEMENTED)
+
+- ใช้ `/course-center` เป็นเส้นทางเดียวของ `ศูนย์จัดการคอร์ส` และไม่เก็บหน้า `/course-seller.html` เก่า
+- เพิ่มหน้ารายละเอียดคอร์สก่อนซื้อที่แสดงข้อมูลขายและจำนวน EP แต่ไม่เปิดชื่อ EP วิดีโอ หรือไฟล์ประกอบ
+- หลังชำระและได้รับสิทธิ์ แสดงเปอร์เซ็นต์ ความคืบหน้า และปุ่มเริ่มเรียน/เรียนต่อ โดยใช้ API EP ที่ตรวจ entitlement เดิม
+- รวมปุ่ม `ส่งเผยแพร่ให้ Boss ตรวจ` ไว้ท้ายรายการ EP ในหน้าแก้ไขตะกร้าคอร์ส
+
+# v0.14.133 — Course Basket Form Layout (IMPLEMENTED)
+
+- จัดรูปปกไว้คอลัมน์ซ้าย และเรียงชื่อคอร์ส ผู้สอน คำอธิบายสั้นทางขวาโดยช่องกรอกไม่ยืดตามความสูงรูป
+- มือถือกลับเป็นคอลัมน์เดียวตามลำดับอ่าน ไม่เกิดช่องว่างหรือช่องกรอกหล่นกลางกล่อง
+- เปลี่ยน CTA ท้าย EP เป็น `เผยแพร่และรอตรวจสอบ` โดยไม่แก้ค่าเดิมของชื่อคอร์ส
+- แก้ปุ่ม `แก้ไข EP` ให้เปิดฟอร์มที่เติมข้อมูลเดิม โฟกัสชื่อ EP และไม่ถูก CSS Grid ทับสถานะ hidden

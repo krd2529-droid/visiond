@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+const read=(path)=>fs.readFileSync(path,'utf8'),assert=(ok,message)=>{if(!ok)throw new Error(message)};
+assert(read('VERSION.txt').trim()==='v0.14.132','VERSION must be v0.14.132');
+const detailHtml=read('public/course.html'),detail=read('public/course-detail.js'),courses=read('public/courses.js'),cart=read('public/cart.js'),basket=read('public/course-basket-edit.html'),basketJs=read('public/course-basket-edit.js'),publicApi=read('functions/api/courses/index.js'),privateApi=read('functions/api/courses/[id].js'),orders=read('functions/_orders.js');
+assert(detailHtml.includes('/course-detail.js?v=014132'),'course detail page missing current JS');
+assert(detail.includes('fetch("/api/courses"')&&!detail.includes('fetch(`/api/courses/${'),'public detail must use aggregate API only');
+assert(detail.includes('EP ถูกล็อกก่อนซื้อ')&&detail.includes('course.owned'),'detail must separate locked and owned states');
+assert(detail.includes('course_id: course.id')&&detail.includes('id: course.product_id'),'detail cart identity incomplete');
+assert(detail.includes('progress_percent')&&detail.includes('/learn.html?course='),'owned progress/learn action missing');
+assert(courses.includes('/course.html?id=${c.id}')&&courses.includes('course_id:c.id'),'course listing detail/cart link missing');
+assert(cart.includes('course_id:course.id')&&cart.includes('/course.html?id=${encodeURIComponent(p.course_id'),'cart course id/details lost');
+assert(privateApi.includes('requireCourseAccess'),'EP detail API must remain protected');
+assert(!publicApi.includes('l.title')&&!publicApi.includes('video_key')&&!publicApi.includes('file_name'),'public listing leaks EP contents');
+assert(orders.includes('INSERT OR IGNORE INTO entitlements'),'paid course entitlement grant missing');
+assert(basket.includes('id="basketPublish"')&&basketJs.includes('/publish`'),'inline EP manager publish action missing');
+assert(!fs.existsSync('public/course-seller.html'),'obsolete course-seller page must not remain');
+assert(fs.existsSync('public/course-center.html')&&read('public/shared-nav.js').includes("'/course-center'"),'course center route missing');
+console.log('v0.14.132 course public detail, EP lock, publish and route checks passed');

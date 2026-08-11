@@ -33,7 +33,7 @@ export async function initAccountNav(){
     account.href='/dashboard.html';
     nav.querySelectorAll('#navMember,.member-nav-status').forEach(link=>link.remove());
     account.innerHTML=`<span class="nav-member-dot"></span><span><b>บัญชีของฉัน</b></span><em>${esc(roleLabel[user.role]||user.role)}</em>`;
-    const ownerBadge=user.is_course_owner?Object.assign(document.createElement('a'),{className:'course-owner-badge',href:'/course-seller.html',textContent:'ศูนย์จัดการคอร์ส'}):null;
+    const ownerBadge=user.is_course_owner?Object.assign(document.createElement('a'),{className:'course-owner-badge',href:'/course-center',textContent:'ศูนย์จัดการคอร์ส'}):null;
     const isStaff=['boss','admin'].includes(user.role);
     let adminLink=nav.querySelector('.nav-admin-link');
     if(isStaff&&!adminLink)adminLink=nav.querySelector('a[href="/admin"],a[href="/admin.html"]');
