@@ -11,7 +11,7 @@ export async function onRequestGet(ctx){
   const auth=await requireVision7User(ctx);if(auth.error)return auth.error;
   const shop=await ownedShop(ctx.env,ctx.params.shopId,auth.user.id);
   if(!shop)return json({error:'ไม่พบร้านที่เป็นเจ้าของ',code:'VEASY_SHOP_NOT_OWNED'},404,noStore);
-  const rows=await ctx.env.DB.prepare(`SELECT p.id,p.sku,p.slug,p.name,c.name category,p.short_description shortDescription,p.description,p.specifications,p.warranty,p.shipping_detail shippingDetail,p.price,p.stock,p.status,p.created_at createdAt FROM veasy_products p JOIN veasy_categories c ON c.id=p.category_id AND c.shop_id=p.shop_id WHERE p.shop_id=? AND p.status!='hidden' ORDER BY p.created_at DESC`).bind(shop.id).all();
+  const rows=await ctx.env.DB.prepare(`SELECT p.id,p.sku,p.slug,p.name,c.name category,p.short_description shortDescription,p.description,p.specifications,p.warranty,p.shipping_detail shippingDetail,p.price,p.stock,p.status,p.cover_image_key coverImageKey,CASE WHEN p.cover_image_key!='' THEN '/api/vision7/product-images/'||p.id ELSE '' END coverImageUrl,p.created_at createdAt FROM veasy_products p JOIN veasy_categories c ON c.id=p.category_id AND c.shop_id=p.shop_id WHERE p.shop_id=? AND p.status!='hidden' ORDER BY p.created_at DESC`).bind(shop.id).all();
   return json({items:rows.results||[],plan_limit:shop.plan_limit},200,noStore);
 }
 
