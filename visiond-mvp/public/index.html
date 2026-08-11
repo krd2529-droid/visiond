@@ -371,52 +371,6 @@
         color: #ffe7a1;
         font-weight: 900;
       }
-      .home-contact-section {
-        max-width: 1180px;
-        margin: 20px auto 70px;
-        padding: 38px;
-        border-radius: 28px;
-        background: #eafffd;
-        border: 1px solid #8bd3ce;
-        text-align: center;
-        box-sizing: border-box;
-      }
-      .home-contact-section h2 {
-        margin: 6px 0 10px;
-        font-size: 34px;
-      }
-      .home-contact-section p {
-        color: #496d6a;
-      }
-      .home-contact-actions {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 22px;
-      }
-      .home-contact-actions a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 50px;
-        padding: 0 22px;
-        border-radius: 13px;
-        font-weight: 900;
-      }
-      .home-contact-actions .line {
-        background: #06c755;
-        color: #fff;
-      }
-      .home-contact-actions .facebook {
-        background: #0866ff;
-        color: #fff;
-      }
-      .home-contact-actions .support {
-        border: 2px solid #087d77;
-        color: #087d77;
-        background: #fff;
-      }
       @media (max-width: 900px) {
         .vd-grid {
           grid-template-columns: repeat(2, 250px) !important;
@@ -455,10 +409,6 @@
           width: 100%;
           box-sizing: border-box;
         }
-        .home-contact-section {
-          margin: 20px 12px 50px;
-          padding: 26px 18px;
-        }
       }
       @media (max-width: 560px) {
         .vd-catalog-wrap {
@@ -493,7 +443,7 @@
     <script src="/meta-pixel.js?v=014134"></script>
     <link rel="stylesheet" href="/elon-chat.css?v=014134" />
     <link rel="stylesheet" href="/mobile-storefront.css?v=014134" />
-    <link rel="stylesheet" href="/home-modern-ai.css?v=014141" />
+    <link rel="stylesheet" href="/home-modern-ai.css?v=014144" />
     <link rel="stylesheet" href="/header-shell.css?v=014134" />
     <link rel="stylesheet" href="/frontend-theme.css?v=014134" />
   </head>
@@ -526,31 +476,15 @@
           >รถเข็น <b data-cart-count>0</b></a
         >
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันเว็บไซต์ VisionD">WEB v0.14.142</span>
+      <span class="visiond-build-version" title="เวอร์ชันเว็บไซต์ VisionD">WEB v0.14.144</span>
     </header>
 
     <main>
-      <section class="hero vds-card vds-card--hero home-ai-hero">
-        <div>
-          <p class="eyebrow">VISIOND DIGITAL PRODUCT LIBRARY</p>
-          <h1>คลังสินค้าดิจิทัล<br />พร้อมใช้และดาวน์โหลด</h1>
-          <p class="hero-description">
-            รวมไฟล์ดิจิทัลหลากหลายประเภท ทั้งแบบฝึกหัด เกมเสริมพัฒนาการ
-            ภาพระบายสี แบบรอยสัก เอกสารและแบบฟอร์มพร้อมใช้ ดูตัวอย่างก่อนซื้อ
-            แล้วดาวน์โหลดจากบัญชีสมาชิกได้หลังอนุมัติ
-          </p>
-          <div class="hero-keywords" aria-label="บริการหลักของ VisionD">
-            <span>แบบฝึกหัด</span><span>เกมเสริมพัฒนาการ</span
-            ><span>ภาพระบายสี</span><span>แบบรอยสัก</span
-            ><span>เอกสารพร้อมใช้</span>
-          </div>
-          <div class="home-purchase-actions">
-            <a
-              class="vds-btn vds-btn--large vds-btn--promotion"
-              href="/digital-products.html"
-              >เลือกดูสินค้าดิจิทัล</a
-            >
-          </div>
+      <section class="hero vds-card vds-card--hero home-ai-hero home-vlearning-preview" aria-label="ระบบ V-Learning สำหรับคอร์สออนไลน์">
+        <img src="/assets/vlearning-home-preview-v014144.png" alt="ระบบ V-Learning สำหรับคอร์สออนไลน์ จ่ายครั้งเดียว รับยอดขายเต็มไม่หักเปอร์เซ็นต์" width="1729" height="910" fetchpriority="high" />
+        <div class="home-vlearning-preview-action">
+          <div><strong>เริ่มเรียนกับ VisionD V-Learning</strong><span>เลือกคอร์ส ชำระเงิน และปลดล็อก EP ในบัญชีของคุณ</span></div>
+          <a class="vds-btn vds-btn--large vds-btn--primary" href="#courses">ดูคอร์สที่เปิดเรียน</a>
         </div>
       </section>
 
@@ -605,24 +539,8 @@
       </section>
 
       <section id="courses" class="home-course-catalog home-ai-section" aria-labelledby="homeCourseCatalogTitle">
-        <div class="home-course-intro">
-          <div class="showcase-copy">
-          <p class="eyebrow">ONLINE COURSES FOR LEARNERS</p>
-          <h2 id="homeCourseCatalogTitle">ระบบ V-Learning</h2>
-          <p>
-            พื้นที่สำหรับผู้เรียนโดยเฉพาะ รวมบทเรียนด้าน AI การสร้างคอนเทนต์
-            การตลาดออนไลน์ และการพัฒนาระบบดิจิทัล
-          </p>
-          </div>
-          <div class="showcase-panel">
-          <strong>เรียนได้ทุกที่</strong>
-          <span
-            >บทเรียน วิดีโอ เอกสาร
-            และไฟล์ประกอบการเรียนจะรวมอยู่ในบัญชีของลูกค้า
-            โดยไม่แสดงตะกร้าสิทธิ์ขายคอร์สในรายการนี้</span
-          >
-          </div>
-        </div>
+        <p class="eyebrow dark">V-LEARNING COURSE CATALOG</p>
+        <h2 id="homeCourseCatalogTitle">ค้นหาคอร์สที่ต้องการเรียน</h2>
         <div class="vd-home-search home-course-search vds-card vds-card--information" role="search">
           <label class="home-search-label" for="homeCourseSearch">ค้นหาคอร์สจากชื่อ ผู้สอน หรือแพลตฟอร์ม</label>
           <input id="homeCourseSearch" type="search" placeholder="ค้นหาชื่อคอร์ส ผู้สอน Shopee TikTok AI หรือหัวข้อที่สนใจ" autocomplete="off" aria-label="ค้นหาคอร์ส">
@@ -670,36 +588,6 @@
         <div class="vd-grid"></div>
       </section>
 
-      <section
-        class="home-contact-section home-ai-section vds-card vds-card--information"
-        aria-labelledby="homeContactTitle"
-      >
-        <p class="eyebrow dark">CONTACT VISIOND</p>
-        <h2 id="homeContactTitle">สอบถามก่อนสั่งซื้อได้ทุกหมวด</h2>
-        <p>
-          สอบถามสินค้าดิจิทัล คอร์สเรียน สิทธิ์ลงขายคอร์สออนไลน์
-          หรือการใช้งานเว็บไซต์ ทีมงาน VisionD พร้อมช่วยตรวจสอบให้
-        </p>
-        <div class="home-contact-actions">
-          <a
-            class="line vds-btn vds-btn--large"
-            href="https://lin.ee/RJZwr1p"
-            target="_blank"
-            rel="noopener"
-            >ติดต่อ LINE</a
-          ><a
-            class="facebook vds-btn vds-btn--large"
-            href="https://m.me/61592882337230"
-            target="_blank"
-            rel="noopener"
-            >แชทเพจ Facebook</a
-          ><a
-            class="support vds-btn vds-btn--large vds-btn--secondary"
-            href="/contact.html"
-            >ช่องทางติดต่อทั้งหมด</a
-          >
-        </div>
-      </section>
     </main>
 
     <script src="/app.js?v=014134"></script>
