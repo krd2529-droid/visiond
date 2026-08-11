@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.161
+Current build: v0.14.162
+
+## v0.14.162 LINE activation gate
+- Require a successful LINE Verify before enabling Use webhook and testing one real message.
 
 ## v0.14.161 V-Learning and LINE continuity
 - Keep both the sample V5 conversion gate and LINE OA verify path in the same production baseline before sending more campaign traffic.

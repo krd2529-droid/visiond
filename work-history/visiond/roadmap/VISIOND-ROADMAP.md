@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.161
+Current build: v0.14.162
+
+# v0.14.162 — LINE Verify Fast Path (IMPLEMENTED)
+- รวม endpoint และ Channel Secret เป็น D1 query เดียว
+- ให้คำขอ LINE ที่ลายเซ็นถูกต้องและ `events: []` ผ่านก่อนเงื่อนไข active/ready
+- ย้ายการบันทึกอีเวนต์จริงไป `waitUntil` เพื่อคืน HTTP 200 ก่อนงานเขียนฐานข้อมูล
 
 # v0.14.161 — Integrity + LINE Baseline Merge (IMPLEMENTED)
 - รวม Integrity 159 และ LINE Webhook 160 เป็นฐานเดียวทั้ง Root และ `visiond-mvp`
