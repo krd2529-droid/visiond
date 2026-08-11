@@ -138,7 +138,8 @@
     "test:v014156": "node scripts/test-v014156.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs",
     "test:v014157": "node scripts/test-v014157.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs",
     "test:v014158": "node scripts/test-v014158.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs",
-    "test:v014159": "node scripts/test-v014159.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs"
+    "test:v014159": "node scripts/test-v014159.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs",
+    "test:v014161": "node scripts/test-v014161.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

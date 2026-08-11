@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.159
+Current build: v0.14.161
+
+# v0.14.161 — Integrity + LINE Baseline Merge (IMPLEMENTED)
+- รวม Integrity 159 และ LINE Webhook 160 เป็นฐานเดียวทั้ง Root และ `visiond-mvp`
+- เปลี่ยน cache key ของหน้า Course Integrity เป็น 161 เพื่อบังคับใช้ timeout/fallback รุ่นล่าสุด
+- เก็บการตรวจลายเซ็น LINE และตอบ Verify ที่ `events: []` ทันทีโดยไม่เรียก schema initializer
 
 # v0.14.159 — Integrity Timeout Recovery (IMPLEMENTED)
 - ด่านอ่านอย่างเดียวของ user1 ข้ามตัวตรวจ schema ขนาดใหญ่ที่ทำให้ Production รอไม่จบ
@@ -443,11 +448,3 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่ม runtime contract จำลองข้อมูลจริง ตรวจคลิกแก้ไข EP แล้วเปิดฟอร์ม เติม ID/ชื่อ/รายละเอียดเดิม เลื่อนและโฟกัสได้
 - ตรวจบันทึก EP ส่ง `PUT` ไป lesson ที่เลือก และเผยแพร่ส่ง `POST` ไปตะกร้าที่ถูกต้อง
 - อัปเดต regression inventory จากหน้าเก่า `course-seller.html` เป็น `course-center.html` หลังนำเส้นทางเก่าออก
-
-# v0.14.160 — LINE Webhook Verify Timeout (IMPLEMENTED)
-
-- ย้ายการสร้าง/ตรวจ schema ออกจาก webhook hot path เพื่อไม่ให้ LINE Verify รอคำสั่ง D1 ชุดใหญ่
-- คงการตรวจลายเซ็น HMAC-SHA256 จาก raw body ก่อนรับคำขอ
-- เมื่อคำขอที่ตรวจลายเซ็นแล้วมี `events: []` ให้ตอบ `HTTP 200` ทันที
-- ไม่เปลี่ยน Webhook URL, Channel Secret, Channel Access Token หรือ APK
-- หลัง Deploy ให้กด Verify และเปิด Use webhook เมื่อ Verify ผ่าน

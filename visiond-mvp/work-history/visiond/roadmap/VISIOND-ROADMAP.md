@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.159
+Current build: v0.14.161
+
+# v0.14.161 — Integrity + LINE Baseline Merge (IMPLEMENTED)
+- รวม Integrity 159 และ LINE Webhook 160 เป็นฐานเดียวทั้ง Root และ `visiond-mvp`
+- เปลี่ยน cache key ของหน้า Course Integrity เป็น 161 เพื่อบังคับใช้ timeout/fallback รุ่นล่าสุด
+- เก็บการตรวจลายเซ็น LINE และตอบ Verify ที่ `events: []` ทันทีโดยไม่เรียก schema initializer
 
 # v0.14.159 — Integrity Timeout Recovery (IMPLEMENTED)
 - ด่านอ่านอย่างเดียวของ user1 ข้ามตัวตรวจ schema ขนาดใหญ่ที่ทำให้ Production รอไม่จบ

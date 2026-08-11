@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.159
+Current build: v0.14.161
+
+## v0.14.161 V-Learning and LINE continuity
+- Keep both the sample V5 conversion gate and LINE OA verify path in the same production baseline before sending more campaign traffic.
 
 ## v0.14.159 bounded production proof
 - Keep the sample conversion gate responsive and visibly fail closed before expanding V-Learning ads.
@@ -185,9 +188,3 @@ Next marketing work:
 
 - ทำให้ภาพปกคอร์สและสินค้าดิจิทัลมีพื้นที่นำเสนอเท่ากัน ลดความรู้สึกว่าคอร์สเป็นการ์ดรองหรือรูปถูกย่อผิดสัดส่วน
 - คงเส้นทาง `course view → checkout → purchase` และ event เดิมทั้งหมด ไม่เพิ่มการเก็บข้อมูลลูกค้า
-
-# v0.14.160 — LINE Conversation Reliability
-
-- ให้ LINE OA เชื่อมต่อได้เสถียรก่อนใช้ริชเมนูและข้อความขาย V-Learning
-- ไม่เปลี่ยนข้อความโฆษณา ราคา โปรโมชัน หรือการเก็บข้อมูลลูกค้าในแพตนี้
-- จุดตรวจหลัง Deploy: LINE Verify ผ่าน → เปิด Use webhook → ทดสอบข้อความจริง 1 ข้อความ
