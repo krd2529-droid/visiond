@@ -1,0 +1,15 @@
+{
+  "version": "0.14.160",
+  "event_case": "LINE_WEBHOOK_VERIFY_TIMEOUT",
+  "status": "implemented_ready_for_live_verify",
+  "files_changed": [
+    "functions/hooks/v1/[provider]/[publicId].js"
+  ],
+  "coverage": [
+    "remove_schema_provisioning_from_hot_path",
+    "verify_raw_body_signature",
+    "immediate_200_for_empty_events",
+    "preserve_live_event_persistence"
+  ],
+  "apk_required": false
+}

@@ -443,3 +443,11 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่ม runtime contract จำลองข้อมูลจริง ตรวจคลิกแก้ไข EP แล้วเปิดฟอร์ม เติม ID/ชื่อ/รายละเอียดเดิม เลื่อนและโฟกัสได้
 - ตรวจบันทึก EP ส่ง `PUT` ไป lesson ที่เลือก และเผยแพร่ส่ง `POST` ไปตะกร้าที่ถูกต้อง
 - อัปเดต regression inventory จากหน้าเก่า `course-seller.html` เป็น `course-center.html` หลังนำเส้นทางเก่าออก
+
+# v0.14.160 — LINE Webhook Verify Timeout (IMPLEMENTED)
+
+- ย้ายการสร้าง/ตรวจ schema ออกจาก webhook hot path เพื่อไม่ให้ LINE Verify รอคำสั่ง D1 ชุดใหญ่
+- คงการตรวจลายเซ็น HMAC-SHA256 จาก raw body ก่อนรับคำขอ
+- เมื่อคำขอที่ตรวจลายเซ็นแล้วมี `events: []` ให้ตอบ `HTTP 200` ทันที
+- ไม่เปลี่ยน Webhook URL, Channel Secret, Channel Access Token หรือ APK
+- หลัง Deploy ให้กด Verify และเปิด Use webhook เมื่อ Verify ผ่าน
