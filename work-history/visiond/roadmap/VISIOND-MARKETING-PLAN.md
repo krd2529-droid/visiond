@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.164
+Current build: v0.14.165
+
+## v0.14.165 activation consistency
+- Do not expose sellers to repeated credential entry; verified LINE state must persist across app restarts.
 
 ## v0.14.164 LINE reliability gate
 - A failed AI reply must remain diagnosable before any LINE campaign traffic is added.

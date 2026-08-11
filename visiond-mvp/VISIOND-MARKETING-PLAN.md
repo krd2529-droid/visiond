@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.164
+Current build: v0.14.165
+
+## v0.14.165 activation consistency
+- Preserve verified LINE state across app restarts without re-entering secrets.
 
 ## v0.14.164 LINE reliability gate
 - Require diagnosable AI and webhook readiness before LINE promotion.

@@ -1,7 +1,10 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.164
+Current build: v0.14.165
+
+## v0.14.165 — LINE Status Self-Heal
+- ซ่อมสถานะหน้าแชตจากผล Verify จริงอัตโนมัติ
 
 ## v0.14.164 — V Easy LINE Diagnostics
 - เก็บข้อความก่อนเรียก AI และบล็อกการเริ่มบอทเมื่อ AI/LINE ยังไม่พร้อม
