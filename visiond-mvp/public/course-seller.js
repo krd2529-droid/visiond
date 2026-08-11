@@ -78,7 +78,7 @@ function render(data) {
     paymentProfileForm.hidden = false;
   } else {
     paymentProfileForm.hidden = true;
-    paymentProfileStatus.innerHTML = `<div class="payment-profile-summary"><b>${esc(profile.bank_name || "-")} · ${esc(profile.account_name || "-")}</b><strong>${profile.status === "approved" ? "อนุมัติแล้ว" : profile.status === "pending" ? "รอตรวจ" : "ไม่ผ่าน"}</strong><button id="editPaymentProfile" type="button">แก้ไขบัญชีรับเงิน</button></div>`;
+    paymentProfileStatus.innerHTML = `<div class="payment-profile-summary"><b>${esc(profile.bank_name || "-")} · ${esc(profile.account_name || "-")}</b><strong>พร้อมรับเงิน</strong><button id="editPaymentProfile" type="button">แก้ไขบัญชีรับเงิน</button></div>`;
     editPaymentProfile.onclick = () => {
       paymentProfileForm.elements.bank_name.value = profile.bank_name || "";
       paymentProfileForm.elements.account_name.value =

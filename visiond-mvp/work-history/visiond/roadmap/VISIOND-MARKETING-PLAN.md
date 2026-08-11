@@ -94,3 +94,8 @@ Next marketing work:
 
 - เลขเวอร์ชันที่มองเห็นช่วยให้ Boss ยืนยัน release ก่อนตรวจ funnel หรือเริ่มแคมเปญ
 - เวอร์ชันไม่มี PII และไม่เพิ่ม analytics event จึงไม่ทำให้ตัวเลข view → purchase ซ้ำ
+# v0.14.137 — Seller Activation Friction Reduction
+
+- ลดจุดหลุดของเจ้าของคอร์สระหว่างตั้งค่ารับเงิน → เผยแพร่ โดยไม่เพิ่มขั้นรออนุมัติบัญชี
+- ไม่เปลี่ยน event funnel และไม่ส่งข้อมูลชื่อบัญชีเข้า analytics
+- หลัง deploy ติดตามอัตรา `course draft → publish → approved` เทียบก่อนแพต
