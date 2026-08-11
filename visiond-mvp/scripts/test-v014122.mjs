@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(file,'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.122');
+const api=read('functions/api/vision7/shops/[shopId]/line-connection.js');
+const health=read('functions/api/admin/system-health.js');
+const config=read('wrangler.toml.example');
+for(const token of ['setup_required','CHANNEL_ENCRYPTION_NOT_CONFIGURED','retryable:true','ไม่ต้องออก LINE Token ใหม่','ข้อมูลที่กรอกยังอยู่'])assert.ok(api.includes(token),token);
+assert.match(api,/onRequestPost[\s\S]+channelEncryptionReady/);
+assert.match(health,/channel_encryption/);
+assert.match(health,/VISIOND_CHANNEL_ENCRYPTION_KEY/);
+assert.match(config,/VISIOND_CHANNEL_ENCRYPTION_KEY/);
+assert.doesNotMatch(api,/secret_ciphertext\s*:/);
+assert.doesNotMatch(api,/token_ciphertext\s*:/);
+console.log('v0.14.122 LINE setup hardening PASS');

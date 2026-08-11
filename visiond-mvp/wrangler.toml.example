@@ -45,4 +45,5 @@ RESET_EMAIL_FROM = "VisionD <no-reply@example.com>"
 # เพิ่ม ELON_CLEANUP_TOKEN เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร ห้ามใส่คีย์จริงในไฟล์นี้
 # เพิ่ม ANALYTICS_CLEANUP_TOKEN เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร สำหรับงานสรุป/ล้าง page views รายวัน
 # เพิ่ม VISION5_TOKEN_ENCRYPTION_KEY เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร และห้ามเปลี่ยนหลังเริ่มใช้งาน
+# เพิ่ม VISIOND_CHANNEL_ENCRYPTION_KEY เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร สำหรับ LINE/Facebook V Easy และห้ามเปลี่ยนหลังเริ่มใช้งาน
 # เพิ่ม RESEND_API_KEY เป็น Secret เพื่อเปิดระบบลืมรหัสผ่าน (ต้องยืนยันโดเมนผู้ส่งใน Resend)

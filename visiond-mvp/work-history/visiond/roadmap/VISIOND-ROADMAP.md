@@ -197,6 +197,7 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.122 B1 LINE Setup Hardening: Boss System Health ตรวจ `VISIOND_CHANNEL_ENCRYPTION_KEY` ก่อนลูกค้ากรอก, API บอกวิธีแก้ตรงจุดและไม่ให้ Token หาย/ต้องออกใหม่; รอ Deploy และ smoke LINE จริงบน Redmi.
 - IN PROGRESS — v0.14.118 B1 Slug + Key Slot Reset: แก้ global middleware ให้ PATCH จาก APK Origin:null ผ่านเฉพาะ Vision7 mobile allowlist; เพิ่มปุ่มล้างสล็อตคีย์แบบคงคีย์/ร้าน/ประวัติและ revoke session; ตารางคีย์ไม่มีแถบเลื่อนแนวนอนและแปลงเป็นการ์ดบนจอแคบ. ต้อง Deploy Web ก่อน APK และยืนยันบน Redmi.
 - IMPLEMENTED — v0.14.117 B1 Shop Save + Notification Toggle: APK แสดงผลบันทึกใต้ปุ่มและมีสวิตช์ศูนย์แจ้งเตือน; v0.14.118 แก้ต้นเหตุ middleware ที่ขวาง PATCH.
 - IMPLEMENTED — v0.14.116 B1 Live Shop Profile: เพิ่ม endpoint ชื่อ/Slug ร้านที่ผูกกับคีย์จริง พร้อม owner scope และ unique slug; v0.14.117 รับช่วงทดสอบมือถือ.

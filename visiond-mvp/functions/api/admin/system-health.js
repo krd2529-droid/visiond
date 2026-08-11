@@ -1,5 +1,6 @@
 import {json,requireAdmin} from '../../_lib.js';
 import {sellerTokenEncryptionConfigured} from '../../_seller_token.js';
+import {channelEncryptionReady} from '../../_channel_crypto.js';
 
 const noStore={'cache-control':'private, no-store'};
 const present=value=>Boolean(String(value||'').trim());
@@ -13,6 +14,7 @@ export async function onRequestGet(ctx){
   required.push(check('db','ฐานข้อมูล D1',true,'เชื่อม D1 binding ชื่อ DB'));
   required.push(check('files','คลังไฟล์ R2',Boolean(ctx.env.FILES),'เชื่อม R2 binding ชื่อ FILES'));
   required.push(check('vision5_encryption','การเข้ารหัส API ผู้ขาย Vision 5',sellerTokenEncryptionConfigured(ctx.env),'เพิ่ม Secret VISION5_TOKEN_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร'));
+  required.push(check('channel_encryption','การเข้ารหัส LINE/Facebook ของ V Easy',channelEncryptionReady(ctx.env),'เพิ่ม Secret VISIOND_CHANNEL_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร แล้ว Redeploy'));
   const requiredTables=['users','sessions','products','orders','order_items','entitlements','courses','course_lessons','course_progress','settings','verified_slips','order_slip_evidence','elon_conversations','elon_messages','password_reset_tokens','page_views','analytics_daily'];
   const requiredIndexes=['idx_users_username','idx_password_reset_user','idx_password_reset_expiry','idx_course_progress_user_course','idx_elon_messages_conversation_created','idx_page_views_time'];
   try{
