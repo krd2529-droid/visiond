@@ -1,0 +1,10 @@
+{
+  "patch":"v0.14.69",
+  "tasks":[
+    {"id":"P1469-001","scope":"UI","source_instruction":"นำปุ่มศูนย์โฆษณาไปไว้ในเมนูหลังบ้าน","status":"DONE-VERIFIED","evidence":["functions/_middleware.js","scripts/test-v01469.mjs"]},
+    {"id":"P1469-002","scope":"UI","source_instruction":"เอาทางเข้าศูนย์โฆษณาที่ปนอยู่หน้า Vision 7 ออก","status":"DONE-VERIFIED","evidence":["public/vision7-admin.html","scripts/test-v01469.mjs"]},
+    {"id":"P1469-003","scope":"BUG","source_instruction":"ปุ่มออกคีย์ต้องไม่กดแล้วเงียบเมื่อ Secret ยังไม่พร้อม","status":"DONE-VERIFIED","evidence":["public/vision7-admin.js","scripts/test-v01469.mjs"]},
+    {"id":"P1469-004","scope":"QA","source_instruction":"ตรวจ Regression และงานหลุดหลังย้ายทางเข้า","status":"DONE-VERIFIED","evidence":["scripts/test-v01469.mjs","work-history/visiond/qa-history/QA-v0.14.69-ADMIN-ADS-KEY-FEEDBACK.md"]},
+    {"id":"P1469-005","scope":"DOC","source_instruction":"เก็บเอกสารแพตและ QA ใน work-history โดยไม่ทำรากแพตรก","status":"DONE-VERIFIED","evidence":["work-history/visiond/patch-history/PATCH-v0.14.69-ADMIN-ADS-KEY-FEEDBACK.md","work-history/visiond/qa-history/QA-v0.14.69-ADMIN-ADS-KEY-FEEDBACK.md"]}
+  ]
+}

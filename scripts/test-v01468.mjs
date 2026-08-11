@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+const read=file=>fs.readFileSync(file,'utf8'),checks=[];const check=(name,fn)=>{try{fn();checks.push(true);console.log(`PASS ${name}`)}catch(error){checks.push(false);console.error(`FAIL ${name}: ${error.message}`)}};
+check('version is v0.14.68 or newer',()=>{const match=read('VERSION.txt').trim().match(/^v0\.14\.(\d+)$/);assert.ok(match);assert.ok(Number(match[1])>=68)});
+check('admin entry has real destination',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/href=\\?"\/vision7-admin\.html/);assert.match(middleware,/Vision 7<br>ออกคีย์/)});
+check('entry injected into admin tabs',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/\.on\('\.admin-tabs'/);assert.match(middleware,/element\.append\(VISION7_ADMIN_ENTRY/)});
+check('both admin routes covered',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/pathname==='\/admin'/);assert.match(middleware,/pathname==='\/admin\.html'/)});
+check('only GET HTML is transformed',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/method==='GET'/);assert.match(middleware,/responseType\.includes\('text\/html'\)/)});
+check('destination page exists',()=>{const html=read('public/vision7-admin.html');assert.match(html,/id="keyForm"/);assert.match(html,/Vision 7/)});
+check('reopened requirement has corrected evidence',()=>{const ledger=JSON.parse(read('requirements-ledger.json')),item=ledger.requirements.find(x=>x.id==='VE-KEYCENTER-001');assert.equal(item.status,'DONE-VERIFIED');assert.match(item.reopened_reason,/v0\.14\.67/);assert.ok(item.evidence.includes('functions/_middleware.js'));assert.ok(item.evidence.includes('scripts/test-v01468.mjs'))});
+check('old weak evidence removed',()=>{const item=JSON.parse(read('requirements-ledger.json')).requirements.find(x=>x.id==='VE-KEYCENTER-001');assert.ok(!item.evidence.includes('public/admin.html'));assert.ok(!item.evidence.includes('scripts/test-v01463.mjs'))});
+check('all requirements remain tracked after correction',()=>assert.ok(JSON.parse(read('requirements-ledger.json')).requirements.every(x=>['DONE-VERIFIED','REMOVED-BY-BOSS','PENDING'].includes(x.status))));
+const failed=checks.filter(x=>!x).length;console.log(`v0.14.68 RESULT: total=${checks.length} passed=${checks.length-failed} failed=${failed}`);if(failed)process.exit(1);

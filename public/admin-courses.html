@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>จัดการคอร์ส | VisionD</title>
+    <link rel="stylesheet" href="/style.css?v=01414" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
+    <link rel="stylesheet" href="/course.css?v=013140" />
+    <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/admin.html">VISIOND <small>ADMIN</small></a>
+      <nav>
+        <a href="/admin.html">← หลังบ้านหลัก</a
+        ><a href="/courses.html" target="_blank">ดูหน้าขายคอร์ส</a>
+      </nav>
+    </header>
+    <main class="course-admin-shell">
+      <div class="course-toolbar">
+        <div>
+          <p class="eyebrow">ONLINE COURSE</p>
+          <h1>จัดการคอร์สออนไลน์</h1>
+          <p>สร้างคอร์ส กำหนดราคา และแนบคลิปหรือสไลด์ PDF แยกเป็นรายบท</p>
+        </div>
+      </div>
+      <div class="course-admin-grid">
+        <section class="course-admin-card">
+          <h2>สร้างคอร์สใหม่</h2>
+          <form id="courseForm" class="course-admin-form">
+            <label
+              >หมวดคอร์ส<select name="course_type">
+                <option value="online_course">คอร์สออนไลน์</option>
+                <option value="resale_rights">สิทธิ์ลงขายคอร์สออนไลน์</option>
+              </select></label
+            >
+            <label>ระยะเวลาแก้ไขของสิทธิ์<select name="license_edit_days"><option value="30">30 วัน (แพ็กเกจ 499)</option><option value="365">1 ปี (แพ็กเกจ 999)</option><option value="0">ตลอดอายุระบบ (แพ็กเกจ 1,499)</option></select></label>
+            <label>ชื่อคอร์ส<input name="title" required /></label
+            ><label>คำโปรย<input name="short_description" /></label
+            ><label
+              >รายละเอียด<textarea
+                name="description"
+                rows="4"
+              ></textarea></label
+            ><label>ชื่อผู้สอน<input name="teacher_name" /></label
+            ><label
+              >ราคา (บาท)<input
+                name="price_baht"
+                type="number"
+                min="0"
+                step="1"
+                required /></label
+            ><label
+              >รูปปก (คอร์ส 16:9 / สิทธิ์ลงขายคอร์สออนไลน์แนวตั้ง 4:5)<input
+                name="cover"
+                type="file"
+                accept="image/jpeg,image/png,image/webp" /></label
+            ><label
+              ><input name="active" type="checkbox" checked />
+              เปิดขายทันที</label
+            ><button class="primary" type="submit">สร้างคอร์ส</button>
+            <p id="courseMessage"></p>
+          </form>
+        </section>
+        <section class="course-admin-card">
+          <h2>คอร์สที่มีอยู่</h2>
+          <div id="adminCourseList" class="admin-course-list">
+            <p>กำลังโหลด…</p>
+          </div>
+        </section>
+      </div>
+      <section class="course-admin-card"><div class="course-toolbar"><div><p class="eyebrow">SELLER REVIEW</p><h2>ตรวจตะกร้าคอร์สจากสิทธิ์</h2><p>ตะกร้าบริษัทไม่เข้าคิวนี้และไม่ใช้เครดิต</p><p><a class="primary" href="/course-integrity.html">ตรวจสลิป–ออเดอร์–สิทธิ์เรียน</a></p></div><div class="review-toolbar-actions"><button id="autoReviewSellerCourses" class="primary" type="button">อนุมัติคอร์สอัตโนมัติ</button><button id="refreshSellerReviews" type="button">โหลดใหม่</button></div></div><p id="autoReviewSellerCoursesState" class="review-auto-state" role="status" aria-live="polite">ระบบจะตรวจเฉพาะตะกร้าสถานะรอตรวจ รายการไม่ผ่านจะส่งกลับแก้ไขและไม่วนตรวจซ้ำ</p><h3>บัญชีรับเงินรอตรวจ</h3><div id="sellerPaymentReviews" class="admin-course-list"><p>กำลังโหลด…</p></div><h3>ตะกร้าคอร์สรอตรวจ</h3><div id="sellerCourseReviews" class="admin-course-list"><p>กำลังโหลด…</p></div></section>
+      <section id="lessonManager" class="course-admin-card" hidden>
+        <div class="course-toolbar">
+          <div>
+            <small>จัดการบทเรียนของ</small>
+            <h2 id="lessonCourseTitle"></h2>
+          </div>
+          <button id="closeLessons" type="button">ปิด</button>
+        </div>
+        <form id="lessonForm" class="course-admin-form">
+          <input name="course_id" type="hidden" /><label
+            >ชื่อบทเรียน<input name="title" required /></label
+          ><label
+            >คำอธิบายบท<textarea name="description" rows="3"></textarea></label
+          ><label
+            >ความยาวโดยประมาณ (วินาที)<input
+              name="duration_seconds"
+              type="number"
+              min="0" /></label
+          ><label
+            >คลิป MP4/WEBM ไม่เกิน 200 MB<input
+              name="video"
+              type="file"
+              accept="video/mp4,video/webm" /></label
+          ><label
+            >สไลด์ PDF ไม่เกิน 100 MB<input
+              name="pdf"
+              type="file"
+              accept="application/pdf" /></label
+          ><button class="primary" type="submit">เพิ่มบทเรียน</button>
+          <p id="lessonMessage"></p>
+        </form>
+        <div id="lessonList"></div>
+      </section>
+    </main>
+    <script src="/admin-courses.js?v=01430"></script><script src="/course-review-admin.js?v=014142"></script>
+  <script src="/visiond-design-system.js?v=01489" defer></script></body>
+</html>

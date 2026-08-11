@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.64",
+  "tasks":[
+    {"id":"P1464-001","scope":"DATABASE","source_instruction":"สร้าง Session สำหรับโปรแกรม Vision 7 แยกจากคุกกี้เว็บและผูกกับบัญชีและเครื่อง","status":"DONE-VERIFIED","evidence":["migrations/0026_vision7_app_sessions.sql","functions/_vision7_auth.js"]},
+    {"id":"P1464-002","scope":"SECURITY","source_instruction":"V Easy ต้องล็อกอินด้วยไอดีหรืออีเมลและรหัสผ่าน VisionD","status":"DONE-VERIFIED","evidence":["functions/api/vision7/auth/login.js","scripts/test-v01464.mjs"]},
+    {"id":"P1464-003","scope":"SECURITY","source_instruction":"App Session ต้องผูกกับเครื่องเดิมและหมดอายุหรือยกเลิกได้","status":"DONE-VERIFIED","evidence":["functions/_vision7_auth.js","functions/api/vision7/auth/logout.js"]},
+    {"id":"P1464-004","scope":"SECURITY","source_instruction":"เปิดใช้งานคีย์ได้เฉพาะบัญชีเจ้าของคีย์ที่ล็อกอินอยู่","status":"DONE-VERIFIED","evidence":["functions/api/vision7/activate.js","scripts/test-v01464.mjs"]},
+    {"id":"P1464-005","scope":"FEATURE","source_instruction":"โปรแกรมตรวจบัญชีที่ล็อกอินและเรียกดูสิทธิ์ของบัญชีเดียวกันได้","status":"DONE-VERIFIED","evidence":["functions/api/vision7/auth/me.js","functions/api/vision7/my-programs.js"]},
+    {"id":"P1464-006","scope":"QA","source_instruction":"ตรวจย้อนงาน Account และ Key Ownership โดยไม่ประกาศงานผูกร้านว่าเสร็จล่วงหน้า","status":"DONE-VERIFIED","evidence":["requirements-ledger.json","scripts/test-v01464.mjs","work-history/visiond/qa-history/QA-v0.14.64-ACCOUNT-KEY-OWNERSHIP.md"]}
+  ]
+}

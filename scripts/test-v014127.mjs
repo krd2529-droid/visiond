@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/course-center.html'),seller=read('public/course-seller.js'),css=read('public/course-seller.css');
+const admin=read('public/admin.js'),adminHtml=read('public/admin.html'),userApi=read('functions/api/admin/users/[id].js'),testUserApi=read('functions/api/admin/users/test-user.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.127');
+assert.match(html,/role="switch"/);assert.match(html,/slip-mode-switch/);assert.match(css,/input:checked\+i/);
+assert.match(html,/sellerCoverPreview/);assert.match(seller,/URL\.createObjectURL/);assert.match(seller,/5\*1024\*1024/);
+assert.doesNotMatch(html,/>ระดับผู้เรียน</);assert.match(html,/name="learner_level" type="hidden" value="all"/);
+assert.match(seller,/seller-course-meta/);assert.match(seller,/แก้ไขล่าสุด/);assert.match(css,/minmax\(300px,1fr\)/);
+assert.match(html,/>\+ สร้าง EP เพิ่ม</);assert.match(html,/sellerLessonForm[^>]+hidden/);assert.match(seller,/addSellerLesson\.onclick/);assert.match(seller,/sellerLessonForm\.hidden=false/);
+assert.match(admin,/<option value="test"/);assert.match(admin,/แก้ไขทั้งแถว/);assert.match(admin,/บันทึกใหม่/);assert.match(admin,/method:'PATCH'/);
+assert.match(userApi,/requireBoss/);assert.match(userApi,/admin_user_profile_updated/);assert.match(userApi,/target_user_id/);assert.match(userApi,/old\.role==='boss'/);
+assert.match(userApi,/accountType==='test'\)name='รัฐสิทธิ ดำรงรถการ'/);assert.match(userApi,/is_test_user=\?,vision5_test_account=0/);
+assert.match(testUserApi,/VALUES\(\?,\?,\?,\?,\?,'user',1,0\)/);
+assert.match(adminHtml,/admin\.js\?v=014127/);assert.match(html,/course-seller\.js\?v=014127/);
+assert.match(read('work-history/visiond/roadmap/VISIOND-ROADMAP.md'),/v0\.14\.127.*Vision 5/i);
+console.log('v0.14.127 Vision 5 seller UI and test-user management PASS');

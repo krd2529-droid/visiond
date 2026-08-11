@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+const read=p=>fs.readFileSync(p,'utf8');let pass=0,fail=0;
+const check=(name,ok)=>{console.log(`${ok?'PASS':'FAIL'} ${name}`);ok?pass++:fail++};
+const api=read('functions/api/recommendations.js'),event=read('functions/api/analytics/event.js'),ui=read('public/personalized-products.js'),road=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md'),protocol=read('work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md');
+check('recommendations support user or hashed visitor',api.includes('visitorKeyFromRequest')&&api.includes("user_id=?")&&api.includes("visitor_key=?"));
+check('30-day interest window',api.includes("-30 days"));
+check('family/category ranking',api.includes('family_key')&&api.includes('p.category===i.category'));
+check('owned products excluded',api.includes('entitlements')&&api.includes('ownedSet'));
+check('recommendation events allowlisted',event.includes("'recommendation_view'")&&event.includes("'recommendation_click'"));
+check('recommendation UI has session cap',ui.includes('sessionStorage')&&ui.includes('vd_recommendation_seen_v1'));
+check('event queues documented',protocol.includes('EVENT CASE')&&protocol.includes('EVENT ROADMAP')&&road.includes('EVENT ROADMAP rotation'));
+check('version updated',read('VERSION.txt').trim()==='v0.14.49');
+console.log(`RESULT ${pass} PASS / ${fail} FAIL`);process.exit(fail?1:0);

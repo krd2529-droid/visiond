@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const root=process.cwd(),mobile=path.resolve(root,'../V-Easy-v1.0.9-work');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8'),mread=p=>fs.readFileSync(path.join(mobile,p),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.114');
+assert.equal(JSON.parse(mread('package.json')).version,'1.0.13');
+const runtime=mread('public/android-runtime.js'),server=read('functions/api/vision7/auth/veasy-activate.js'),middleware=read('functions/api/vision7/_middleware.js');
+assert.match(runtime,/method:'POST',mode:'cors',headers:\{'content-type':'text\/plain;charset=UTF-8'\}/);
+assert.doesNotMatch(runtime,/veasy-activate[^;]+content-type':'application\/json/);
+assert.match(runtime,/app_version:'1\.0\.13'/);
+assert.match(server,/ctx\.request\.json\(\)/);
+assert.match(middleware,/access-control-allow-origin/);
+assert.match(mread('public/app.js'),/ข้อมูลที่กรอกยังอยู่ กดลองใหม่ได้/);
+console.log('v0.14.114 / V Easy v1.0.13 simple activation request passed');

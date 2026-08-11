@@ -1,0 +1,9 @@
+name = "visiond-maintenance"
+main = "src/index.js"
+compatibility_date = "2026-08-10"
+
+[triggers]
+crons = ["17 18 * * *"] # 01:17 Asia/Bangkok, daily
+
+# APP_ORIGIN and both cleanup tokens are configured with `wrangler secret put`.
+# This deployable config intentionally contains no site origin or credentials.

@@ -1,0 +1,74 @@
+{
+  "patch": "v0.14.101",
+  "tasks": [
+    {
+      "id": "P14101-001",
+      "scope": "UI",
+      "source_instruction": "Replace ambiguous Product ID inputs with real product selections and helpers",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "public/vision7-admin.html",
+        "public/vision7-admin.js"
+      ]
+    },
+    {
+      "id": "P14101-002",
+      "scope": "FEATURE",
+      "source_instruction": "Map lifetime monthly and yearly sale baskets to fixed key durations",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "public/vision7-admin.html",
+        "functions/api/admin/vision7/programs.js"
+      ]
+    },
+    {
+      "id": "P14101-003",
+      "scope": "FEATURE",
+      "source_instruction": "Keep all three manual plans when sale basket mappings are empty",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "public/vision7-admin.js",
+        "functions/api/admin/vision7/programs.js"
+      ]
+    },
+    {
+      "id": "P14101-004",
+      "scope": "BUG",
+      "source_instruction": "Block duplicate and globally reused Product IDs",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "public/vision7-admin.js",
+        "functions/api/admin/vision7/programs.js"
+      ]
+    },
+    {
+      "id": "P14101-005",
+      "scope": "SECURITY",
+      "source_instruction": "Strictly validate positive integer or null Product IDs server side",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "functions/api/admin/vision7/programs.js"
+      ]
+    },
+    {
+      "id": "P14101-006",
+      "scope": "QA",
+      "source_instruction": "Verify key test compatibility product mappings validation and durations",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "scripts/test-v014101.mjs"
+      ]
+    },
+    {
+      "id": "P14101-007",
+      "scope": "DOC",
+      "source_instruction": "Capture requirements roadmap history and release handoff",
+      "status": "DONE-VERIFIED",
+      "evidence": [
+        "requirements-ledger.json",
+        "source-captures/vision7-product-package-mapping-v1.json",
+        "work-history/visiond/roadmap/VISIOND-ROADMAP.md"
+      ]
+    }
+  ]
+}

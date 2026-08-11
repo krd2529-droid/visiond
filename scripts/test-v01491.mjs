@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+const productHtml=fs.readFileSync('public/product.html','utf8'),product=fs.readFileSync('public/product.js','utf8'),cartHtml=fs.readFileSync('public/cart.html','utf8'),cart=fs.readFileSync('public/cart.js','utf8'),catalog=fs.readFileSync('public/catalog-sync.js','utf8'),css=fs.readFileSync('public/purchase-modern-ai.css','utf8'),rights=fs.readFileSync('public/course-rights-product.js','utf8');
+assert.match(fs.readFileSync('public/personalized-products.css','utf8'),/purchase-modern-ai\.css\?v=014\d+/);assert.match(fs.readFileSync('public/checkout.css','utf8'),/purchase-modern-ai\.css\?v=014\d+/);
+for(const id of ['productPage','buyNowButton','addProductToCart','downloadBox','paymentDialog','closePayment','productSlipForm','productSlipInput','productSlipMessage'])assert.ok(productHtml.includes(id)||product.includes(id),`product ${id}`);
+for(const id of ['cartItems','cartQty','cartSubtotal','cartDiscountLabel','cartDiscount','cartNextDiscount','cartTotal','checkoutButton','checkoutDialog','closeCheckout','slipForm','slipInput','slipMessage'])assert.ok(cartHtml.includes(id)||cart.includes(id),`cart ${id}`);
+for(const invariant of ['vd_cart','itemCount >= 30','course-selling-rights','promotion_percent'])assert.ok(product.includes(invariant)||cart.includes(invariant)||catalog.includes(invariant),`missing ${invariant}`);
+for(const endpoint of ['/api/products/','/api/orders','/slip','/api/downloads/product/'])assert.ok(product.includes(endpoint)||cart.includes(endpoint),`missing ${endpoint}`);
+for(const token of ['vds-card--product','vds-btn--primary','vds-btn--promotion','vds-btn--danger','aria-live','aria-label'])assert.ok(product.includes(token)||productHtml.includes(token)||cart.includes(token),`missing ${token}`);
+assert.match(productHtml,/accept="image\/jpeg,image\/png,image\/webp"/);assert.match(cartHtml,/accept="image\/jpeg,image\/png,image\/webp"/);
+for(const tier of ['5','10','20','30'])assert.ok(cart.includes(tier));assert.match(cart,/sessionStorage\.setItem\("vd_return_to"/);assert.match(cart,/cartSignature/);assert.match(cart,/auto_approved/);
+assert.match(rights,/ซื้อสิทธิ์และรับเครดิตหลังตรวจสลิป/);assert.match(rights,/ใช้ 1 เครดิตกรอกข้อมูลร่างตะกร้าคอร์ส/);assert.match(rights,/หากไม่ผ่านระบบคืนเครดิต/);assert.match(rights,/ซื้อสิทธิ์นี้/);
+for(const rule of ['min-height:44px','focus-visible','max-width:560px','prefers-reduced-motion','--vd-ai-midnight'])assert.ok(css.includes(rule),`css ${rule}`);assert.equal((css.match(/{/g)||[]).length,(css.match(/}/g)||[]).length);
+console.log('v0.14.91 Purchase journey Modern AI adoption passed');

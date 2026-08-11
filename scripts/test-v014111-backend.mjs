@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+const read=file=>fs.readFileSync(file,'utf8');
+const cors=read('functions/api/vision7/_middleware.js'),schema=read('functions/_veasy_shop.js'),product=read('functions/api/vision7/shops/[shopId]/products/[productId].js'),cancel=read('functions/api/vision7/shops/[shopId]/orders/[orderId]/cancel.js'),bot=read('functions/api/vision7/shops/[shopId]/bot.js'),migration=read('migrations/0033_veasy_live_operations.sql'),health=read('functions/api/vision7/mobile-health.js'),events=read('functions/api/vision7/mobile-events.js');
+for(const token of ["'null'","capacitor://localhost",'/api/vision7/mobile-health','x-veasy-app-version','authorization,content-type,idempotency-key',"method==='OPTIONS'",'status:403'])assert.ok(cors.includes(token),`CORS ${token}`);
+for(const token of ['mobile_api','server_time','x-veasy-app-version'])assert.ok(health.includes(token),`health ${token}`);
+for(const token of ['requireAppSession','limit<1||limit>50','no_customer_pii','JOIN veasy_shops','s.user_id=?','projection'])assert.ok(events.includes(token),`events ${token}`);
+for(const token of ['veasy_orders','veasy_order_items','veasy_channels','veasy_bot_state','veasy_audit_log'])assert.ok(schema.includes(token)&&migration.includes(token),`schema ${token}`);
+for(const token of ['product_updated','product_hidden_with_history','product_deleted','ORDER_HISTORY_PRESERVED','NOT EXISTS(SELECT 1 FROM veasy_order_items'])assert.ok(product.includes(token),`product ${token}`);
+assert.ok(product.includes('onRequestPut=onRequestPatch'),'mobile PUT contract');
+for(const token of ["pending_payment","payment_review","cod_pending","packing","status==='cancelled'",'cancellation_token','stock_released_at',"payment_status!='paid'","fulfillment_status NOT IN ('shipped','delivered')",'VEASY_ORDER_NOT_CANCELLABLE','order_cancelled'])assert.ok(cancel.includes(token),`cancel ${token}`);
+for(const token of ['NO_CONNECTED_CHANNEL','VEASY_BOT_NOT_READY','human_handoff','DELETE FROM veasy_conversation_leases','DELETE FROM veasy_runtime_leases','bot_state_changed'])assert.ok(bot.includes(token),`bot ${token}`);
+assert.ok(!/CANCELLABLE=\[[^\]]*'paid'/.test(cancel)&&!/CANCELLABLE=\[[^\]]*'shipped'/.test(cancel),'paid/shipped must never be cancellable');
+console.log('v0.14.111 backend contracts passed');

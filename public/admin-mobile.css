@@ -1,0 +1,415 @@
+/* v0.14.30 — Control Center responsive and keyboard-safe layout */
+:where(.admin-wrap, .course-admin-shell, main) {
+  box-sizing: border-box;
+}
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #f1b92b !important;
+  outline-offset: 3px;
+}
+.sales-report-table,
+.profit-daily-wrap,
+.user-table {
+  scrollbar-color: #07928b #e8f5f4;
+  scrollbar-width: thin;
+}
+.sales-report-table:focus-visible,
+.profit-daily-wrap:focus-visible,
+.user-table:focus-visible {
+  outline: 3px solid #f1b92b;
+  outline-offset: 2px;
+}
+.sales-page-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+.sales-page-controls button {
+  min-height: 42px;
+  padding: 9px 14px;
+}
+.danger-zone {
+  background: #fff !important;
+  border-style: dashed !important;
+}
+.danger-zone .danger,
+.danger-link,
+.admin-wrap button.danger,
+.bulk-delete-products {
+  background: #fff !important;
+  color: #8f3232 !important;
+  border: 1px solid #d8aaaa !important;
+  box-shadow: none !important;
+}
+.danger-zone .danger:not(:disabled):hover,
+.danger-link:hover,
+.admin-wrap button.danger:hover,
+.bulk-delete-products:hover {
+  background: #fff1f1 !important;
+}
+@media (max-width: 1040px) {
+  .admin-wrap {
+    padding: 26px 16px 70px;
+  }
+  .admin-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x proximity;
+    padding: 2px 2px 12px !important;
+  }
+  .admin-tabs:after {
+    content: "เลื่อนดูเมนู →";
+    position: sticky;
+    right: 0;
+    align-self: flex-end;
+    min-width: max-content;
+    padding: 5px 8px;
+    border-radius: 99px;
+    background: #063f3ddd;
+    color: #fff;
+    font-size: 10px;
+  }
+  .admin-tabs > button,
+  .admin-tabs > a.admin-tab-link {
+    flex: 0 0 118px !important;
+    min-height: 88px !important;
+    scroll-snap-align: start;
+  }
+  .admin-more-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .product-admin-layout {
+    display: block;
+  }
+  #productEditor.product-editor {
+    position: fixed !important;
+    z-index: 1201;
+    inset: auto 0 0;
+    max-height: min(88dvh, 820px);
+    overflow: auto;
+    border-radius: 22px 22px 0 0 !important;
+    padding: 20px max(16px, env(safe-area-inset-right))
+      calc(20px + env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left)) !important;
+    transform: translateY(110%);
+    visibility: hidden;
+    transition:
+      transform 0.2s ease,
+      visibility 0.2s;
+  }
+  .product-editor-active #productEditor.product-editor {
+    transform: none;
+    visibility: visible;
+  }
+  .product-editor-active {
+    overflow: hidden;
+  }
+  .product-editor-active:before {
+    content: "";
+    position: fixed;
+    z-index: 1200;
+    inset: 0;
+    background: #062f2c99;
+  }
+  .editor-head {
+    position: sticky;
+    z-index: 3;
+    top: -20px;
+    margin: -20px -4px 4px;
+    padding: 18px 4px 12px;
+    background: #fff;
+    border-bottom: 1px solid #d6e9e7;
+  }
+  .editor-head > button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .sales-row,
+  .profit-row {
+    min-width: 0;
+  }
+  .sales-head,
+  .profit-head,
+  .user-head {
+    display: none !important;
+  }
+  .sales-report-table,
+  .profit-daily-wrap,
+  .user-table {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .sales-row:not(.sales-head) {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 14px;
+    border: 1px solid #c6e0de;
+    border-radius: 14px;
+    background: #fff;
+  }
+  .sales-row:not(.sales-head) > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .sales-row:not(.sales-head) > time:before {
+    content: "วันเวลา · ";
+    font-weight: 900;
+  }
+  .sales-row:not(.sales-head) > div:nth-child(2) {
+    grid-column: 1/-1;
+  }
+  .sales-row:not(.sales-head) > span:nth-child(5):before {
+    content: "ผู้อนุมัติ · ";
+    font-weight: 900;
+  }
+  .sales-page-controls {
+    grid-column: 1/-1;
+  }
+  .profit-row:not(.profit-head) {
+    grid-template-columns: 1fr 1fr;
+    min-width: 0;
+    margin: 10px 0;
+    padding: 14px;
+    border: 1px solid #c6e0de;
+    border-radius: 14px;
+    background: #fff;
+  }
+  .profit-row:not(.profit-head) > *:first-child {
+    grid-column: 1/-1;
+  }
+  .profit-total {
+    border-width: 2px !important;
+  }
+  .user-row:not(.user-head) {
+    min-width: 0;
+    grid-template-columns: 1fr 1fr;
+    margin: 10px 0;
+    padding: 14px;
+    border: 1px solid #cfe6e4;
+    border-radius: 14px;
+    background: #fff;
+  }
+  .user-row:not(.user-head) > div:first-child,
+  .user-row:not(.user-head) > .user-manage-actions {
+    grid-column: 1/-1;
+  }
+  .user-manage-actions > select,
+  .user-manage-actions > button {
+    min-height: 42px;
+  }
+  .elon-admin-layout {
+    grid-template-columns: 1fr;
+  }
+  .elon-transcript {
+    position: static;
+    max-height: 70dvh;
+  }
+  .order-clear-toolbar {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .order-clear-toolbar .danger {
+    font-size: 12px;
+    padding: 9px 11px;
+  }
+  .course-admin-shell {
+    margin: 20px auto;
+    padding: 0 14px 60px;
+  }
+  .course-admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .course-admin-card {
+    padding: 16px;
+  }
+  .admin-course-item {
+    grid-template-columns: 1fr;
+  }
+  .lesson-admin-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .course-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .course-toolbar > button {
+    min-height: 42px;
+  }
+}
+@media (max-width: 600px) {
+  .admin-wrap {
+    padding: 18px 10px 60px;
+  }
+  .admin-hero h1,
+  .section-head h2 {
+    overflow-wrap: anywhere;
+  }
+  .section-head {
+    display: grid !important;
+  }
+  .section-head > button,
+  .section-head > a {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .admin-tabs > button,
+  .admin-tabs > a.admin-tab-link {
+    flex-basis: 104px !important;
+    font-size: 12px !important;
+  }
+  .admin-more-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-two,
+  .sales-filter-bar,
+  .sales-summary,
+  .profit-summary,
+  .elon-stats {
+    grid-template-columns: 1fr !important;
+  }
+  .product-admin-card,
+  .product-admin-card:has(.product-select-box) {
+    grid-template-columns: 62px minmax(0, 1fr) !important;
+    padding: 11px;
+  }
+  .product-admin-card img {
+    width: 62px;
+    height: 72px;
+  }
+  .product-admin-card > button,
+  .product-card-downloads {
+    grid-column: 1/-1;
+  }
+  .sales-row:not(.sales-head),
+  .profit-row:not(.profit-head),
+  .user-row:not(.user-head) {
+    grid-template-columns: 1fr;
+  }
+  .sales-row:not(.sales-head) > *,
+  .profit-row:not(.profit-head) > *,
+  .user-row:not(.user-head) > * {
+    grid-column: 1 !important;
+  }
+  .sales-page-controls {
+    flex-wrap: wrap;
+  }
+  .sales-page-controls button {
+    flex: 1;
+  }
+  .order-admin-card {
+    padding: 14px !important;
+  }
+  .order-admin-items > span {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+  .order-admin-items em {
+    grid-column: 2;
+  }
+  .elon-filter-bar {
+    display: grid;
+  }
+  .elon-filter-bar label {
+    min-width: 0;
+  }
+  .elon-transcript-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .elon-message {
+    max-width: 94%;
+  }
+  .v3-review-card,
+  .v3-review-draft {
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+  }
+  .v3-review-card > button,
+  .v3-review-actions,
+  .v3-draft-detail {
+    grid-column: 1/-1;
+  }
+  .v3-draft-images {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .v3-draft-detail dl {
+    grid-template-columns: 1fr;
+  }
+  .product-bulk-bar {
+    justify-content: stretch;
+  }
+  .product-bulk-bar button {
+    flex: 1;
+  }
+  .danger-zone .danger {
+    width: 100%;
+    flex: none;
+  }
+  .course-admin-shell {
+    padding-inline: 10px;
+  }
+  .course-admin-card {
+    padding: 13px;
+  }
+  .course-admin-form button,
+  .course-toolbar > a,
+  .course-toolbar > button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .audit-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .v4-edit-shell {
+    padding: 15px !important;
+  }
+  .v4-buttons {
+    display: grid !important;
+  }
+  .v4-buttons > * {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .v4-previews:after {
+    content: "เลื่อนดูรูป →";
+    position: sticky;
+    right: 0;
+    height: max-content;
+    padding: 5px 7px;
+    border-radius: 99px;
+    background: #063f3ddd;
+    color: #fff;
+    font-size: 10px;
+  }
+}
+@media (max-width: 360px) {
+  .admin-wrap {
+    padding-inline: 8px;
+  }
+  .admin-tabs > button,
+  .admin-tabs > a.admin-tab-link {
+    flex-basis: 96px !important;
+  }
+  #productEditor.product-editor {
+    padding-inline: 12px !important;
+  }
+  .sales-summary article,
+  .profit-summary article {
+    padding: 14px;
+  }
+  .topbar {
+    padding-inline: 10px !important;
+  }
+  .topbar .brand {
+    font-size: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #productEditor.product-editor {
+    transition: none !important;
+  }
+}

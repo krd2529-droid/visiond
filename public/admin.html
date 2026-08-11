@@ -1,0 +1,2165 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>VisionD Control Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css?v=014136" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
+    <link rel="stylesheet" href="/course-owner-badge.css?v=01369" />
+    <link rel="stylesheet" href="/admin-products.css?v=013270" />
+    <link rel="stylesheet" href="/admin-payment.css?v=01444" />
+    <link rel="stylesheet" href="/promotion.css?v=01336" />
+    <link rel="stylesheet" href="/elon-controls.css?v=01481" />
+    <link rel="stylesheet" href="/admin-categories.css?v=01398" />
+    <link rel="stylesheet" href="/vision2.css?v=01333" />
+    <link rel="stylesheet" href="/vision3.css?v=01343" />
+    <link rel="stylesheet" href="/admin-navigation.css?v=01488" />
+    <link rel="stylesheet" href="/admin-mobile.css?v=014127" />
+    <style>
+      .v3-review-section {
+        display: grid;
+        gap: 12px;
+        margin-top: 24px;
+        padding: 18px;
+        border: 1px solid #a9d9d5;
+        border-radius: 18px;
+        background: #f8fffe;
+      }
+      .admin-event-list{margin-top:16px;border:1px solid #b9dfdc;border-radius:16px;background:#fff;overflow:hidden}
+      .admin-event-list table{width:100%;border-collapse:collapse}
+      .admin-event-list th,.admin-event-list td{padding:12px;text-align:left;border-bottom:1px solid #e2efee;vertical-align:top}
+      .admin-event-list th{background:#e8f8f6;color:#064b48}
+      .admin-event-list td small{display:block;color:#587573;margin-top:4px}
+      .admin-event-list code{font-size:12px;overflow-wrap:anywhere}
+      .v3-review-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        align-items: center;
+      }
+      .v3-review-head h3,
+      .v3-review-head p {
+        margin: 0;
+      }
+      .v3-review-head p {
+        margin-top: 5px;
+        color: #617c79;
+        font-size: 12px;
+      }
+      .v3-review-head button,
+      .v3-review-card button {
+        padding: 8px 11px;
+        border: 1px solid #0a928b;
+        border-radius: 9px;
+        background: #fff;
+        color: #08756f;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .v3-review-grid {
+        display: grid;
+        gap: 9px;
+      }
+      .v3-review-card {
+        display: grid;
+        grid-template-columns: 66px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 11px;
+        border: 1px solid #c6e1df;
+        border-radius: 13px;
+        background: #fff;
+      }
+      .v3-review-card img {
+        width: 58px;
+        height: 68px;
+        object-fit: contain;
+        border-radius: 8px;
+        background: #eaf8f7;
+      }
+      .v3-review-card b,
+      .v3-review-card small {
+        display: block;
+      }
+      .v3-review-card small {
+        margin-top: 4px;
+        color: #617c79;
+      }
+      .v3-low-content {
+        border-color: #e4bd6e;
+        background: #fffaf0;
+      }
+      .v3-low-content .v3-review-card {
+        border-color: #ead4a6;
+      }
+      .v3-low-icon {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 12px;
+        background: #fff0c9;
+        font-size: 25px;
+      }
+      .product-bulk-bar {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin: 12px 0;
+        padding: 12px;
+        border: 1px solid #acd7d3;
+        border-radius: 13px;
+        background: #f4fffe;
+      }
+      .product-bulk-bar button {
+        padding: 9px 12px;
+        border: 1px solid #07928b;
+        border-radius: 9px;
+        background: #fff;
+        color: #08756f;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .product-bulk-bar b {
+        margin-right: auto;
+        color: #075f5b;
+      }
+      .product-bulk-bar .bulk-delete-products {
+        border-color: #b83232;
+        background: #b83232;
+        color: #fff;
+      }
+      .product-bulk-bar .bulk-delete-products:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .product-select-box {
+        display: grid;
+        place-items: center;
+      }
+      .product-select-box input {
+        width: 22px;
+        height: 22px;
+        accent-color: #078f88;
+        cursor: pointer;
+      }
+      .product-admin-card:has(.product-select-box) {
+        grid-template-columns: 34px 92px minmax(0, 1fr) auto;
+      }
+      .product-admin-card.bulk-selected {
+        border-color: #078f88;
+        box-shadow: 0 0 0 2px rgba(7, 143, 136, 0.15);
+      }
+      .v3-review-actions {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .v3-review-draft {
+        grid-template-columns: 66px 1fr auto;
+      }
+      .v3-draft-detail {
+        grid-column: 1/-1;
+        padding: 15px;
+        border-top: 1px solid #c6e1df;
+      }
+      .v3-draft-images {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 160px));
+        gap: 10px;
+        margin-bottom: 13px;
+      }
+      .v3-draft-images img {
+        width: 100%;
+        height: 180px;
+        object-fit: contain;
+        border: 1px solid #c6e1df;
+        background: #fff;
+      }
+      .v3-draft-detail dl {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+      .v3-draft-detail dl div {
+        padding: 9px;
+        border-radius: 9px;
+        background: #eaf8f7;
+      }
+      .v3-draft-detail dt {
+        font-size: 10px;
+        color: #617c79;
+      }
+      .v3-draft-detail dd {
+        margin: 4px 0 0;
+        font-weight: 900;
+      }
+      .v3-draft-detail p {
+        line-height: 1.6;
+      }
+      .v3-open-original {
+        display: inline-block;
+        padding: 10px 13px;
+        border-radius: 9px;
+        background: #087f79;
+        color: #fff;
+        font-weight: 900;
+      }
+      .v3-no-file {
+        color: #b83232;
+      }
+      @media (max-width: 620px) {
+        .product-admin-card:has(.product-select-box) {
+          grid-template-columns: 30px 72px minmax(0, 1fr);
+        }
+        .product-admin-card:has(.product-select-box) > button {
+          grid-column: 2/-1;
+        }
+        .v3-review-draft {
+          grid-template-columns: 58px 1fr;
+        }
+        .v3-review-actions {
+          grid-column: 1/-1;
+          justify-content: flex-start;
+        }
+        .v3-draft-detail dl {
+          grid-template-columns: 1fr 1fr;
+        }
+        .v3-draft-images img {
+          height: 120px;
+        }
+      }
+      .v4-bundle-select {
+        display: grid;
+        place-items: center;
+      }
+      .v4-bundle-select input {
+        width: 23px;
+        height: 23px;
+        accent-color: #078f88;
+      }
+      .v4-bundle-toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .v4-bundle-toolbar button {
+        padding: 10px 14px !important;
+        background: #078f88 !important;
+        color: #fff !important;
+      }
+      .v4-bundle-workspace {
+        display: grid;
+        gap: 15px;
+        padding: 18px;
+        border: 2px solid #07928b;
+        border-radius: 16px;
+        background: #fff;
+      }
+      .v4-bundle-workspace[hidden] {
+        display: none;
+      }
+      .v4-sample-picker {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .v4-sample-choice {
+        position: relative;
+        display: grid;
+        gap: 6px;
+        padding: 9px;
+        border: 2px solid #c7e1df;
+        border-radius: 11px;
+      }
+      .v4-sample-choice:has(input:checked) {
+        border-color: #078f88;
+        background: #eafffc;
+      }
+      .v4-sample-choice img {
+        width: 100%;
+        height: 180px;
+        object-fit: contain;
+      }
+      .v4-sample-choice input {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 23px;
+        height: 23px;
+        accent-color: #078f88;
+      }
+      .v4-manual-form {
+        display: grid;
+        gap: 12px;
+      }
+      .v4-manual-form label {
+        display: grid;
+        gap: 6px;
+        font-weight: 800;
+      }
+      .v4-manual-form input,
+      .v4-manual-form select,
+      .v4-manual-form textarea {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 11px;
+        border: 1px solid #b7d9d6;
+        border-radius: 9px;
+        font: inherit;
+      }
+      .v4-form-two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .v4-bundle-message {
+        font-weight: 800;
+        color: #08756f;
+      }
+      @media (max-width: 620px) {
+        .v4-sample-picker,
+        .v4-form-two {
+          grid-template-columns: 1fr;
+        }
+        .v4-sample-choice img {
+          height: 220px;
+        }
+      }
+      .product-admin-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin: 18px 0 4px;
+      }
+      .product-admin-pagination[hidden] {
+        display: none;
+      }
+      .product-admin-pagination button {
+        min-width: 40px;
+        padding: 9px 11px;
+        border: 1px solid #07928b;
+        border-radius: 9px;
+        background: #fff;
+        color: #08756f;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .product-admin-pagination button.active {
+        background: #087f79;
+        color: #fff;
+      }
+      .product-admin-pagination button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .product-admin-pagination span {
+        color: #617c79;
+        font-weight: 900;
+      }
+
+      .ads-intelligence-card {
+        margin: 18px 0;
+        padding: 18px;
+        border: 1px solid #c6e1df;
+        border-radius: 16px;
+        background: #fff;
+      }
+      .ads-intelligence-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 16px;
+      }
+      .ads-performance-row {
+        display: grid;
+        grid-template-columns: minmax(160px, 1.6fr) repeat(
+            5,
+            minmax(72px, 0.7fr)
+          );
+        gap: 8px;
+        align-items: center;
+        padding: 10px 8px;
+        border-bottom: 1px solid #e3efee;
+      }
+      .ads-performance-row small {
+        display: block;
+        color: #617c79;
+      }
+      .ads-performance-row.head {
+        font-size: 12px;
+        color: #617c79;
+        font-weight: 900;
+        background: #f3fbfa;
+        border-radius: 9px;
+      }
+      .ads-performance-row .positive,
+      .ads-intelligence-card .positive {
+        color: #08756f;
+      }
+      .ads-performance-row .negative,
+      .ads-intelligence-card .negative {
+        color: #b83232;
+      }
+      .ads-spend-list {
+        margin-top: 14px;
+      }
+      .ads-spend-item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        align-items: center;
+        padding: 8px;
+        border-top: 1px solid #e3efee;
+      }
+      .ads-spend-item button {
+        border: 1px solid #d7aaaa;
+        background: #fff;
+        color: #a22;
+        padding: 6px 9px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      @media (max-width: 900px) {
+        .ads-intelligence-grid {
+          grid-template-columns: 1fr;
+        }
+        .ads-performance-row {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ads-performance-row.head {
+          display: none;
+        }
+        .ads-performance-row > span:first-child {
+          grid-column: 1/-1;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="/product-systems-modern-ai.css?v=01496" />
+</head>
+  <body>
+    <style>
+      .bundle-launch {
+        padding: 11px 15px;
+        border: 1px solid #08756f;
+        background: #e9faf8;
+        color: #08756f;
+        border-radius: 12px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .bundle-builder {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border: 2px solid #0abab5;
+        border-radius: 15px;
+        background: #effcfb;
+      }
+      .bundle-builder > p {
+        margin: 0;
+        color: #486e6b;
+        font-size: 12px;
+      }
+      .bundle-size {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .bundle-size label {
+        display: flex;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        padding: 9px 11px;
+        background: #fff;
+        border-radius: 10px;
+      }
+      .bundle-size input,
+      .bundle-pick input {
+        width: auto;
+      }
+      .bundle-size strong {
+        margin-left: auto;
+        color: #08756f;
+      }
+      .bundle-product-picker {
+        display: grid;
+        gap: 8px;
+        max-height: 330px;
+        overflow-y: auto;
+      }
+      .bundle-pick {
+        display: grid;
+        grid-template-columns: auto 54px 1fr;
+        gap: 9px;
+        align-items: center;
+        padding: 8px;
+        background: #fff;
+        border: 1px solid #c8e2df;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .bundle-pick img {
+        width: 54px;
+        height: 62px;
+        object-fit: contain;
+        background: #edf8f7;
+        border-radius: 7px;
+      }
+      .bundle-pick span {
+        display: grid;
+        gap: 2px;
+      }
+      .bundle-pick small {
+        color: #66817f;
+      }
+      .bundle-pick:has(input:checked) {
+        border-color: #078b85;
+        box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.13);
+      }
+      .product-thumbs {
+        overflow-x: auto;
+        justify-content: flex-start;
+      }
+      .product-search-bar {
+        display: grid;
+        grid-template-columns: auto minmax(220px, 520px) auto;
+        gap: 12px;
+        align-items: center;
+        margin: 16px 0;
+        padding: 14px 16px;
+        border: 1px solid #bfe1de;
+        border-radius: 16px;
+        background: #f5fffe;
+      }
+      .product-search-bar label {
+        font-weight: 900;
+        color: #075e5a;
+      }
+      .product-search-bar input {
+        min-width: 0;
+        padding: 12px 14px;
+        border: 1px solid #89ccc7;
+        border-radius: 11px;
+        background: #fff;
+        font: inherit;
+      }
+      .product-search-bar input:focus {
+        outline: 3px solid rgba(10, 186, 181, 0.14);
+        border-color: #0abab5;
+      }
+      .product-search-bar small {
+        color: #557976;
+        font-weight: 800;
+      }
+      .product-card-downloads {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .product-download-action,
+      .product-download-unavailable {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        box-sizing: border-box;
+        padding: 7px 10px;
+        border-radius: 9px;
+        font-size: 11px;
+        font-weight: 900;
+        text-decoration: none;
+      }
+      .product-download-action {
+        border: 1px solid #0abab5;
+        background: #eafffd;
+        color: #076a65;
+      }
+      .product-download-action:hover {
+        background: #0a918b;
+        color: #fff;
+      }
+      .product-download-unavailable {
+        border: 1px dashed #b7cfcd;
+        color: #78908e;
+        background: #f5f9f9;
+      }
+      @media (max-width: 720px) {
+        .product-search-bar {
+          grid-template-columns: 1fr;
+        }
+        .product-search-bar small {
+          justify-self: start;
+        }
+        .product-card-downloads {
+          grid-column: 1/-1;
+        }
+      }
+    </style>
+    <style>
+      .product-editor [hidden],
+      .bundle-builder[hidden],
+      .product-preview-fields[hidden] {
+        display: none !important;
+      }
+      .preview-export-bar {
+        display: flex;
+        align-items: end;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 0 0 16px;
+        padding: 14px;
+        border: 1px solid #b9dfdc;
+        border-radius: 14px;
+        background: #effaf9;
+      }
+      .preview-export-bar label {
+        display: grid;
+        gap: 5px;
+        min-width: min(330px, 100%);
+        font-weight: 900;
+      }
+      .preview-export-bar select {
+        min-height: 43px;
+      }
+      .preview-export-bar small {
+        width: 100%;
+        color: #55706e;
+      }
+      .preview-export-bar button:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+    </style>
+    <style>
+      .bundle-preview-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+      }
+      .bundle-preview-head span {
+        color: #08756f;
+        font-weight: 900;
+      }
+      .bundle-preview-gallery {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 7px;
+        max-height: 360px;
+        overflow: auto;
+        padding: 8px;
+        border: 1px solid #a9d8d4;
+        border-radius: 10px;
+        background: #fff;
+      }
+      .bundle-preview-gallery figure {
+        display: grid;
+        gap: 3px;
+        margin: 0;
+        padding: 4px;
+        border: 1px solid #d0e7e5;
+        border-radius: 7px;
+      }
+      .bundle-preview-gallery img {
+        width: 100%;
+        aspect-ratio: 3/4;
+        object-fit: contain;
+        background: #eef8f7;
+      }
+      .bundle-preview-gallery figcaption {
+        font-size: 8px;
+        color: #55726f;
+        text-align: center;
+      }
+      @media (max-width: 700px) {
+        .admin-event-list table,.admin-event-list tbody,.admin-event-list tr,.admin-event-list td{display:block;width:100%}
+        .admin-event-list thead{display:none}.admin-event-list tr{padding:9px 12px;border-bottom:1px solid #cde4e2}
+        .admin-event-list td{display:grid;grid-template-columns:105px 1fr;gap:8px;border:0;padding:5px 0}
+        .admin-event-list td::before{content:attr(data-label);font-weight:900;color:#08756f}
+        .bundle-preview-gallery {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+    </style>
+    <style>
+      .trash-grid {
+        display: grid;
+        gap: 10px;
+      }
+      .trash-card {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        align-items: center;
+        padding: 14px;
+        border: 1px solid #b8dcd8;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .trash-card > div {
+        display: grid;
+        gap: 4px;
+      }
+      .trash-card small {
+        color: #607b78;
+      }
+      .trash-card button {
+        padding: 8px 11px;
+        border: 1px solid #078f88;
+        border-radius: 8px;
+        background: #fff;
+        color: #078f88;
+        font-weight: 900;
+      }
+      .trash-card button.danger {
+        border-color: #b33333;
+        color: #b33333;
+      }
+      @media (max-width: 650px) {
+        .trash-card {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+    </style>
+    <style>
+      .mobile-preview-launcher {
+        position: fixed;
+        z-index: 80;
+        left: 18px;
+        top: 50%;
+        display: grid;
+        place-items: center;
+        gap: 5px;
+        width: 82px;
+        min-height: 82px;
+        padding: 10px 7px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 18px;
+        background: linear-gradient(145deg, #073f3d, #078b85);
+        color: #fff;
+        box-shadow: 0 14px 34px rgba(3, 61, 58, 0.28);
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1.25;
+        transform: translateY(-50%);
+      }
+      .mobile-preview-launcher span {
+        font-size: 25px;
+      }
+      .mobile-preview-launcher[hidden],
+      .mobile-preview-shell[hidden] {
+        display: none;
+      }
+      .mobile-preview-shell {
+        position: fixed;
+        z-index: 120;
+        inset: 0;
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) auto;
+        background: rgba(3, 39, 37, 0.72);
+        backdrop-filter: blur(5px);
+      }
+      .mobile-preview-dismiss {
+        min-width: 0;
+        cursor: zoom-out;
+      }
+      .mobile-preview-panel {
+        width: min(490px, 100vw);
+        height: 100vh;
+        padding: 14px;
+        overflow: auto;
+        background: #e8f8f6;
+        box-shadow: -18px 0 55px rgba(0, 0, 0, 0.25);
+      }
+      .mobile-preview-toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 9px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .mobile-preview-toolbar label {
+        display: grid;
+        gap: 5px;
+        font-weight: 900;
+      }
+      .mobile-preview-actions {
+        display: flex;
+        gap: 7px;
+        align-self: end;
+      }
+      .mobile-preview-actions button,
+      .mobile-preview-actions a {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid #87c9c4;
+        border-radius: 11px;
+        background: #fff;
+        color: #075e5a;
+        font-weight: 900;
+      }
+      .mobile-preview-device {
+        width: 390px;
+        max-width: 100%;
+        margin: auto;
+        padding: 10px;
+        border: 5px solid #123b39;
+        border-radius: 38px;
+        background: #123b39;
+        box-shadow: 0 20px 45px rgba(0, 61, 57, 0.25);
+      }
+      .mobile-preview-speaker {
+        width: 74px;
+        height: 6px;
+        margin: 0 auto 9px;
+        border-radius: 99px;
+        background: #7ba09d;
+      }
+      .mobile-preview-device iframe {
+        display: block;
+        width: 100%;
+        height: min(780px, calc(100vh - 160px));
+        min-height: 560px;
+        border: 0;
+        border-radius: 25px;
+        background: #fff;
+      }
+      @media (max-width: 1320px) {
+        .mobile-preview-launcher {
+          left: 8px;
+          width: 68px;
+        }
+      }
+      @media (max-width: 760px) {
+        .mobile-preview-launcher {
+          left: 10px;
+          top: auto;
+          bottom: 82px;
+          width: 64px;
+          min-height: 64px;
+          transform: none;
+        }
+        .mobile-preview-launcher span {
+          font-size: 20px;
+        }
+        .mobile-preview-shell {
+          grid-template-columns: 1fr;
+        }
+        .mobile-preview-dismiss {
+          display: none;
+        }
+        .mobile-preview-panel {
+          width: 100vw;
+          padding: 10px;
+        }
+        .mobile-preview-device iframe {
+          height: calc(100vh - 145px);
+          min-height: 480px;
+        }
+      }
+    </style>
+    <header class="topbar">
+      <a class="brand" href="/">VISIOND <small>CONTROL</small></a>
+      <nav>
+        <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
+      </nav>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.149</span>
+    </header>
+    <button
+      id="mobilePreviewLauncher"
+      class="mobile-preview-launcher"
+      type="button"
+      hidden
+    >
+      <span aria-hidden="true">📱</span>มุมมองมือถือ
+    </button>
+    <section
+      id="mobilePreviewShell"
+      class="mobile-preview-shell"
+      hidden
+      aria-label="มุมมองเว็บไซต์บนมือถือ"
+    >
+      <button
+        class="mobile-preview-dismiss"
+        type="button"
+        aria-label="ปิดมุมมองมือถือ"
+      ></button>
+      <aside class="mobile-preview-panel">
+        <div class="mobile-preview-toolbar">
+          <label
+            >เลือกหน้าที่ต้องการตรวจ<select id="mobilePreviewRoute">
+              <optgroup label="หน้าบ้าน">
+                <option value="/">หน้าหลัก</option>
+                <option value="/digital-products">สินค้าดิจิทัล</option>
+                <option value="/cart">รถเข็น</option>
+                <option value="/login.html">เข้าสู่ระบบ</option>
+                <option value="/register.html">สมัครสมาชิก</option>
+                <option value="/dashboard.html">บัญชีและสินค้าของฉัน</option>
+                <option value="/courses.html">คอร์สเรียน</option>
+                <option value="/bots.html">VBot</option>
+                <option value="/blog.html">บทความ</option>
+                <option value="/about.html">เกี่ยวกับเรา</option>
+              </optgroup>
+              <optgroup label="หลังบ้าน">
+                <option value="/admin?mobile_preview=1&preview_tab=overview">
+                  ภาพรวมกำไร
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=products">
+                  จัดการสินค้า
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=categories">
+                  หมวดหมู่
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=orders">
+                  ออเดอร์และสลิป
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=sales">
+                  รายงานยอดขาย
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=promotion">
+                  โปรโมชั่น
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=settings">
+                  ตั้งค่าชำระเงิน
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=users">
+                  สมาชิกและระดับไอดี
+                </option>
+                <option value="/admin?mobile_preview=1&preview_tab=trash">
+                  ถังขยะ
+                </option>
+              </optgroup>
+            </select></label
+          >
+          <div class="mobile-preview-actions">
+            <button id="mobilePreviewReload" type="button" title="โหลดใหม่">
+              ↻</button
+            ><a
+              id="mobilePreviewNewTab"
+              href="/"
+              target="_blank"
+              rel="noopener"
+              title="เปิดหน้าเต็ม"
+              >↗</a
+            ><button id="mobilePreviewClose" type="button" title="ปิด">
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="mobile-preview-device">
+          <div class="mobile-preview-speaker"></div>
+          <iframe
+            id="mobilePreviewFrame"
+            title="ตัวอย่างหน้าเว็บขนาดมือถือ"
+            loading="lazy"
+          ></iframe>
+        </div>
+      </aside>
+    </section>
+    <main class="admin-wrap">
+      <section class="admin-hero">
+        <div>
+          <p class="eyebrow">VISIOND CONTROL CENTER</p>
+          <h1>หลังบ้าน VisionD</h1>
+          <p id="adminIdentity">กำลังตรวจสอบสิทธิ์…</p>
+        </div>
+        <div class="permission-legend">
+          <span class="role-badge boss">Boss</span
+          ><span>ทุกระบบและการกำหนดสิทธิ์</span
+          ><span class="role-badge admin">Admin</span
+          ><span>สินค้า ออเดอร์ และตรวจสลิป</span>
+        </div>
+      </section>
+      <div id="accessDenied"></div>
+      <section id="adminPanel" hidden>
+        <div class="admin-tabs" aria-label="งานหลักหลังบ้าน">
+          <button class="active" data-admin-tab="orders">
+            <span class="admin-tab-icon" aria-hidden="true">🧾</span
+            ><span>ออเดอร์<br />และสลิป</span>
+          </button>
+          <button data-admin-tab="vision3">
+            <span class="admin-tab-icon" aria-hidden="true">🧺</span
+            ><span>Vision 4<br />สร้างหลายตะกร้า</span>
+          </button>
+          <button data-admin-tab="products">
+            <span class="admin-tab-icon" aria-hidden="true">🛍️</span
+            ><span>จัดการสินค้า</span>
+          </button>
+          <a
+            class="admin-tab-link course-tab-link"
+            href="/admin-courses.html#sellerReview"
+            ><span class="admin-tab-icon" aria-hidden="true">🎓</span
+            ><span>ตรวจคอร์ส<br />ผู้ขาย</span></a
+          >
+        </div>
+        <section class="admin-menu-board" aria-label="เมนูจัดการหลังบ้านทั้งหมด">
+          <h2>เมนูจัดการทั้งหมด</h2>
+          <div class="admin-all-grid">
+            <button data-admin-tab="overview"><span aria-hidden="true">📊</span><b>ภาพรวมกำไร</b></button>
+            <button data-admin-tab="sales"><span aria-hidden="true">📈</span><b>รายงานยอดขาย</b></button>
+            <button data-admin-tab="promotion"><span aria-hidden="true">🏷️</span><b>โปรโมชั่น</b></button>
+            <button data-admin-tab="categories"><span aria-hidden="true">🗂️</span><b>หมวดหมู่</b></button>
+            <button data-admin-tab="users"><span aria-hidden="true">👥</span><b>สมาชิกและระดับไอดี</b></button>
+            <button data-admin-tab="events"><span aria-hidden="true">🕘</span><b>ดูเหตุการณ์วันนี้</b></button>
+            <button data-admin-tab="settings"><span aria-hidden="true">⚙️</span><b>ตั้งค่าชำระเงิน</b></button>
+            <button data-admin-tab="elon"><span aria-hidden="true">🤖</span><b>ELON AI Support</b></button>
+            <button class="boss-only-danger" data-admin-tab="health"><span aria-hidden="true">🩺</span><b>System Health</b></button>
+            <a class="admin-more-link" href="/course-integrity.html"><span aria-hidden="true">🛡️</span><b>ตรวจ Integrity</b></a>
+            <a class="admin-more-link" href="/webhook-hub.html"><span aria-hidden="true">🔗</span><b>Webhook Hub</b></a>
+            <button class="danger-link boss-only-danger" data-admin-tab="trash"><span aria-hidden="true">🗑️</span><b>ถังขยะ / ลบถาวร</b><small>BOSS ONLY</small></button>
+          </div>
+        </section>
+        <section id="vision3Panel" hidden>
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">VISION 4 AUTO MULTI-PRODUCT DRAFT</p>
+              <h2>โยนหลายไฟล์ → สร้างร่างหลายตะกร้าอัตโนมัติ</h2>
+              <p>
+                หนึ่งไฟล์สร้างหนึ่งตะกร้า รับ PDF, ZIP ที่มี PDF หรือ ZIP ที่มี
+                JPG/PNG/WEBP พร้อมกันสูงสุด 30 ไฟล์
+              </p>
+            </div>
+          </div>
+          <section class="v3-batch-card">
+            <label class="v3-drop"
+              ><b>เลือกไฟล์สินค้า 1–30 ไฟล์ เพื่อสร้างหลายตะกร้า</b
+              ><input
+                id="v3BatchFiles"
+                type="file"
+                accept=".zip,.pdf,application/pdf,application/zip,application/x-zip-compressed"
+                multiple
+              /><small
+                >ไฟล์ละไม่เกิน 1 GB · 1 ไฟล์ = 1 ตะกร้า · ระบบบันทึกเป็นร่างให้
+                Boss ตรวจ</small
+              ></label
+            >
+            <div class="v3-rules">
+              <span>✍ ต้องเขียน → แบบฝึกหัด</span
+              ><span>🧩 ไม่ต้องเขียน → เกม</span
+              ><span>🎲 สุ่ม SAMPLE 3 รูป</span><span>💰 หน้าละ 1 บาท</span>
+            </div>
+            <button id="v3OpenPending" type="button">
+              📦 ไฟล์เนื้อหาน้อยที่เก็บไว้ <b id="v3PendingCount">0</b>
+            </button>
+            <button id="v3StartBatch" class="primary" type="button">
+              เริ่ม Vision 4 สร้างร่างหลายตะกร้า
+            </button>
+            <p id="v3BatchStatus"></p>
+          </section>
+          <section id="v3BatchQueue" class="v3-batch-queue">
+            <div class="v3-empty">ยังไม่มีไฟล์ในคิว</div>
+          </section>
+          <section class="v3-review-section">
+            <div class="v3-review-head">
+              <div>
+                <h3>รอ Boss ตรวจ</h3>
+                <p>
+                  ร่างอยู่เฉพาะ Vision 4 เมื่อตรวจผ่านจึงย้ายไปหน้าสินค้าปกติ
+                </p>
+              </div>
+              <button id="v3RefreshReview" type="button">โหลดใหม่</button>
+            </div>
+            <div id="v3ReviewQueue" class="v3-review-grid">
+              <div class="v3-empty">กำลังโหลดร่าง...</div>
+            </div>
+          </section>
+          <section
+            id="v3PendingSection"
+            class="v3-review-section v3-low-content"
+          >
+            <div class="v3-review-head">
+              <div>
+                <h3>เนื้อหาน้อย — รอรวมชุดอื่น</h3>
+                <p>
+                  ติ๊กเลือกหลายไฟล์เพื่อรวมเป็น PDF เดียว
+                  แล้วกรอกตะกร้าเองจนเสร็จ
+                </p>
+              </div>
+              <div class="v4-bundle-toolbar">
+                <b id="v4BundleSelectedCount">เลือกแล้ว 0 ไฟล์</b
+                ><button id="v4StartBundle" type="button">
+                  รวมไฟล์ที่เลือก
+                </button>
+              </div>
+            </div>
+            <div id="v3PendingQueue" class="v3-review-grid">
+              <div class="v3-empty">กำลังโหลดไฟล์...</div>
+            </div>
+            <section id="v4BundleWorkspace" class="v4-bundle-workspace" hidden>
+              <div>
+                <h3>สร้างตะกร้าจากไฟล์ที่รวม</h3>
+                <p id="v4BundleMessage" class="v4-bundle-message">
+                  กำลังเตรียมไฟล์…
+                </p>
+              </div>
+              <div>
+                <b>เลือกรูปตัวอย่างให้ครบ 3 รูป</b>
+                <div id="v4SamplePicker" class="v4-sample-picker"></div>
+              </div>
+              <form id="v4ManualProductForm" class="v4-manual-form">
+                <label>ชื่อสินค้า<input name="title" required /></label>
+                <div class="v4-form-two">
+                  <label
+                    >หมวดหมู่<select name="category" required></select></label
+                  ><label
+                    >ประเภทไฟล์<input name="file_type" value="PDF" readonly
+                  /></label>
+                </div>
+                <div class="v4-form-two">
+                  <label
+                    >ราคา (บาท)<input
+                      name="price"
+                      type="number"
+                      min="0"
+                      step="1"
+                      required /></label
+                  ><label
+                    >จำนวนหน้า<input
+                      name="pages"
+                      type="number"
+                      min="1"
+                      readonly
+                  /></label>
+                </div>
+                <label
+                  >คำอธิบายสั้น<input
+                    name="short_description"
+                    required /></label
+                ><label
+                  >รายละเอียดสินค้า<textarea
+                    name="description"
+                    rows="5"
+                    required
+                  ></textarea></label
+                ><button id="v4CreateProduct" class="primary" type="submit">
+                  สร้างสินค้าและเปิดขายทันที
+                </button>
+                <p
+                  id="v4CreateState"
+                  class="v4-bundle-message"
+                  role="status"
+                  aria-live="polite"
+                ></p>
+              </form>
+            </section>
+          </section>
+        </section>
+        <section id="eventsPanel" hidden>
+          <div class="section-head"><div><p class="eyebrow">DAILY ACTIVITY</p><h2>เหตุการณ์ในแต่ละวัน</h2><p>ดูว่าใครกดอะไร ที่หน้าไหน โดยไม่บันทึกรหัสผ่าน Token หรือข้อมูลที่กรอก</p></div></div>
+          <form id="eventFilterForm" class="profit-filter">
+            <label>วันที่<input id="eventDate" type="date" required></label>
+            <label>ผู้ใช้<input id="eventUser" type="search" placeholder="ชื่อ ยูส หรืออีเมล"></label>
+            <label>พื้นที่<select id="eventArea"><option value="">ทุกพื้นที่</option><option value="storefront">หน้าร้าน</option><option value="course">ศูนย์จัดการคอร์ส</option><option value="vbot">VBot</option><option value="admin">หลังบ้าน</option></select></label>
+            <label>ประเภท<select id="eventType"><option value="">ทุกประเภท</option></select></label>
+            <button class="primary" type="submit">ดูเหตุการณ์</button>
+          </form>
+          <div id="eventSummary" class="profit-summary"></div>
+          <div id="eventTable" class="admin-event-list" role="region" aria-live="polite"><p>เลือกวันที่แล้วกดดูเหตุการณ์</p></div>
+        </section>
+        <section id="overviewPanel" hidden>
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">BUSINESS DASHBOARD</p>
+              <h2>ยอดขาย กำไร–ขาดทุน</h2>
+              <p>
+                เลือกดูช่วงวันได้อิสระ และบันทึกค่าโฆษณา Facebook รายวันด้วยมือ
+              </p>
+            </div>
+          </div>
+          <form id="profitFilterForm" class="profit-filter">
+            <label
+              >ตั้งแต่วันที่<input
+                id="profitDateFrom"
+                type="date"
+                required /></label
+            ><label
+              >ถึงวันที่<input id="profitDateTo" type="date" required /></label
+            ><button class="primary" type="submit">คำนวณช่วงนี้</button>
+          </form>
+          <div id="profitSummary" class="profit-summary">
+            <article><small>ยอดขาย</small><b>—</b></article>
+            <article><small>ค่าแอด Facebook</small><b>—</b></article>
+            <article><small>กำไร / ขาดทุน</small><b>—</b></article>
+            <article><small>ROAS รวม</small><b>—</b></article>
+            <article><small>ออเดอร์รวม</small><b>—</b></article>
+          </div>
+          <section class="visitor-stats-card">
+            <div class="section-head">
+              <div>
+                <h3>สถิติผู้เข้าชมเว็บไซต์</h3>
+                <p>ไม่นับการเปิดหน้าเดิมซ้ำจากเครื่องเดียวกันภายใน 30 นาที</p>
+              </div>
+            </div>
+            <div id="visitorStatsSummary" class="visitor-stats-summary">
+              <article><small>ผู้เข้าชมทั้งหมด</small><b>—</b></article>
+              <article><small>วันนี้</small><b>—</b></article>
+              <article><small>ผู้ชมไม่ซ้ำ</small><b>—</b></article>
+            </div>
+            <div id="topViewedProducts" class="top-viewed-products">
+              <p>กำลังโหลดสถิติ…</p>
+            </div>
+          </section>
+          <section class="customer-intelligence-card">
+            <div class="section-head">
+              <div>
+                <h3>Customer Intelligence</h3>
+                <p>
+                  Funnel ลูกค้า 30 วันล่าสุด · ใช้เฉพาะเหตุการณ์ธุรกิจที่จำเป็น
+                </p>
+              </div>
+              <button
+                id="refreshCustomerAnalytics"
+                type="button"
+                class="secondary-button"
+              >
+                รีเฟรช
+              </button>
+            </div>
+            <div id="customerFunnel" class="customer-funnel">
+              <p>กำลังโหลด Funnel…</p>
+            </div>
+            <div id="conversionDiagnostics" class="conversion-diagnostics">
+              <p>กำลังวิเคราะห์จุดรั่วของ Funnel…</p>
+            </div>
+            <div class="customer-intelligence-grid">
+              <div id="customerProductPerformance"><p>กำลังโหลดสินค้า…</p></div>
+              <div id="customerJourneys">
+                <p>กำลังโหลด Customer Journey…</p>
+              </div>
+            </div>
+            <div
+              id="productDemandIntelligence"
+              class="product-demand-intelligence"
+            >
+              <p>กำลังวิเคราะห์ Product Family…</p>
+            </div>
+          </section>
+          <section class="ads-intelligence-card">
+            <div class="section-head">
+              <div>
+                <h3>Ads Intelligence</h3>
+                <p>
+                  ผูกค่าแอดระดับ Campaign / Creative กับยอดซื้อจริงจาก
+                  First-party attribution
+                </p>
+              </div>
+              <button
+                id="refreshAdsIntelligence"
+                type="button"
+                class="secondary-button"
+              >
+                รีเฟรช
+              </button>
+            </div>
+            <div id="adsIntelligenceSummary" class="customer-funnel">
+              <p>กำลังโหลด Ads Intelligence…</p>
+            </div>
+            <div class="ads-intelligence-grid">
+              <form id="campaignAdCostForm" class="ad-cost-card">
+                <h3>ลงค่าแอดระดับ Campaign</h3>
+                <label
+                  >วันที่<input name="spend_date" type="date" required
+                /></label>
+                <label
+                  >แพลตฟอร์ม<select name="platform">
+                    <option value="facebook">Facebook / Meta</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="google">Google</option>
+                    <option value="other">อื่น ๆ</option>
+                  </select></label
+                >
+                <label
+                  >Campaign / utm_campaign<input
+                    name="campaign"
+                    maxlength="160"
+                    placeholder="เช่น course-rights-aug"
+                    required
+                /></label>
+                <label
+                  >Ad set<input
+                    name="adset"
+                    maxlength="160"
+                    placeholder="ไม่บังคับ"
+                /></label>
+                <label
+                  >Creative / utm_content<input
+                    name="creative"
+                    maxlength="160"
+                    placeholder="เช่น video-a"
+                /></label>
+                <label
+                  >ค่าแอด (บาท)<input
+                    name="cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                /></label>
+                <label
+                  >หมายเหตุ<input
+                    name="note"
+                    maxlength="300"
+                    placeholder="ไม่บังคับ"
+                /></label>
+                <button class="primary" type="submit">บันทึก Campaign</button>
+                <p id="campaignAdCostMessage" class="form-message"></p>
+              </form>
+              <div>
+                <h3>Campaign / Creative Performance</h3>
+                <div id="adsIntelligenceTable"><p>กำลังโหลดข้อมูล…</p></div>
+              </div>
+            </div>
+          </section>
+          <div class="profit-layout">
+            <form id="adCostForm" class="ad-cost-card">
+              <h3>ลงค่าแอด Facebook</h3>
+              <label
+                >วันที่<input
+                  id="adSpendDate"
+                  name="spend_date"
+                  type="date"
+                  required /></label
+              ><label
+                >ค่าแอด (บาท)<input
+                  name="facebook_cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="เช่น 500"
+                  required /></label
+              ><label
+                >หมายเหตุ<input
+                  name="note"
+                  placeholder="เช่น แคมเปญระบายสีไดโนเสาร์" /></label
+              ><button class="primary" type="submit">บันทึกค่าแอดวันนี้</button>
+              <p id="adCostMessage" class="form-message"></p>
+            </form>
+            <div class="profit-daily-wrap">
+              <h3>สรุปรายวัน</h3>
+              <div id="profitDailyTable"><p>กำลังโหลดข้อมูล…</p></div>
+            </div>
+          </div>
+        </section>
+        <section id="productsPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>สินค้าและไฟล์ดาวน์โหลด</h2>
+              <p>
+                เพิ่มสินค้า อัปโหลดรูปปก และแนบ PDF/ZIP
+                ให้ลูกค้าดาวน์โหลดหลังอนุมัติ
+              </p>
+            </div>
+            <div class="section-actions">
+              <button class="vision2-launch" id="vision2Button" type="button">
+                ✦ สร้างสินค้าด้วย Vision 2</button
+              ><button class="primary" id="newProductButton" type="button">
+                + เพิ่มสินค้าเอง
+              </button>
+            </div>
+          </div>
+          <div class="preview-export-bar">
+            <label
+              >ดาวน์โหลดรูปตัวอย่างตามหมวด<select id="previewExportCategory">
+                <option value="">ทุกหมวด</option>
+              </select></label
+            ><label
+              >เลือกชุดรูป (ชุดละไม่เกิน 80 รูป)<select id="previewExportBatch">
+                <option value="1">ชุดที่ 1</option>
+              </select></label
+            ><button
+              class="primary"
+              id="downloadCategoryPreviews"
+              type="button"
+            >
+              ดาวน์โหลดชุดที่เลือก</button
+            ><small id="previewExportMessage"
+              >ใช้ได้เฉพาะ Boss และ Admin · เลือกหมวดและชุดที่ต้องการ · ZIP
+              ไม่มีโฟลเดอร์ซ้อน</small
+            >
+          </div>
+          <div class="product-search-bar">
+            <label for="productSearchInput">ค้นหาตะกร้า</label>
+            <input
+              id="productSearchInput"
+              type="search"
+              placeholder="พิมพ์ชื่อสินค้า เลขสินค้า Slug หรือหมวด"
+              autocomplete="off"
+            />
+            <small id="productSearchCount">กำลังโหลดรายการสินค้า…</small>
+          </div>
+          <div class="product-bulk-bar">
+            <b id="bulkProductCount">เลือกแล้ว 0 ตะกร้า</b>
+            <button id="bulkClearProducts" type="button">ยกเลิกการเลือก</button>
+            <button
+              id="bulkDeleteProducts"
+              class="bulk-delete-products"
+              type="button"
+              disabled
+            >
+              ลบตะกร้าที่เลือก
+            </button>
+          </div>
+          <div class="product-admin-layout">
+            <div>
+              <div id="productAdminList" class="product-admin-list"></div>
+              <nav
+                id="productAdminPagination"
+                class="product-admin-pagination"
+                aria-label="หน้ารายการสินค้า"
+              ></nav>
+            </div>
+            <form id="productEditor" class="product-editor">
+              <input type="hidden" name="id" />
+              <div class="editor-head">
+                <div>
+                  <small>PRODUCT EDITOR</small>
+                  <h3 id="editorTitle">เพิ่มสินค้าใหม่</h3>
+                </div>
+                <button type="button" id="closeEditor">×</button>
+              </div>
+              <label
+                >ชื่อสินค้า<input
+                  name="title"
+                  required
+                  placeholder="เช่น ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 5"
+              /></label>
+              <div class="form-two">
+                <label
+                  >Slug อัตโนมัติ<input
+                    name="slug"
+                    readonly
+                    placeholder="เลือกหมวดแล้วระบบจะแสดง เช่น tattoo-001"
+                  /><small
+                    >ระบบสร้างจากหมวดหมู่และเรียงเลขให้อัตโนมัติ</small
+                  ></label
+                ><label
+                  >หมวดหมู่<select
+                    name="category"
+                    id="productCategorySelect"
+                    required
+                  ></select
+                ></label>
+              </div>
+              <div class="form-two">
+                <label
+                  >ประเภทไฟล์<select name="file_type">
+                    <option>PDF</option>
+                    <option>ZIP</option>
+                    <option>JPG/PNG</option>
+                    <option>ชุดรวมหลายประเภท</option>
+                  </select></label
+                ><label
+                  >สถานะ<select name="status">
+                    <option value="published">เปิดขาย</option>
+                    <option value="draft">แบบร่าง</option>
+                  </select></label
+                >
+              </div>
+              <div class="form-two">
+                <label
+                  >ราคา (บาท)<input
+                    name="price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="199"
+                    required /></label
+                ><label
+                  >จำนวนแผ่น<input
+                    name="pages"
+                    type="number"
+                    min="1"
+                    value="200"
+                /></label>
+              </div>
+              <label
+                >คำอธิบายสั้น<input
+                  name="short_description"
+                  placeholder="ชุดระบายสีไดโนเสาร์ · 200 แผ่น" /></label
+              ><label
+                >รายละเอียดสินค้า<textarea
+                  name="description"
+                  rows="4"
+                  placeholder="รายละเอียดไฟล์ ขนาด และสิ่งที่ลูกค้าจะได้รับ"
+                ></textarea>
+              </label>
+              <section id="bundleBuilder" class="bundle-builder" hidden>
+                <input type="hidden" name="bundle_mode" value="0" /><b
+                  >เลือกตะกร้าที่ลงขายแล้วมาจัดชุด</b
+                >
+                <p>
+                  ระบบดึงรูปตัวอย่าง 3 รูปจากทุกตะกร้า: ชุด 5 ตะกร้าได้ 15 รูป
+                  และชุด 10 ตะกร้าได้ 30 รูป พร้อมเชื่อม PDF ทุกชุด
+                </p>
+                <div class="bundle-size">
+                  <label
+                    ><input type="radio" name="bundle_size" value="5" checked />
+                    ชุด 5 ตะกร้า</label
+                  ><label
+                    ><input type="radio" name="bundle_size" value="10" /> ชุด 10
+                    ตะกร้า</label
+                  ><strong id="bundleSelectedCount">เลือกแล้ว 0/5</strong>
+                </div>
+                <div
+                  id="bundleProductPicker"
+                  class="bundle-product-picker"
+                ></div>
+                <div class="bundle-preview-head">
+                  <b>รูปสไลด์ที่ดึงมา</b
+                  ><span id="bundlePreviewCount">0 รูป</span>
+                </div>
+                <div id="bundlePreviewGallery" class="bundle-preview-gallery">
+                  <small>เลือกรายการด้านบนเพื่อดูรูปตัวอย่าง</small>
+                </div>
+              </section>
+              <section class="product-preview-fields">
+                <b>รูปสินค้าและรูปตัวอย่าง 3 รูป</b
+                ><small
+                  >รูปที่ 1
+                  เป็นทั้งรูปปกในแคตตาล็อกและรูปตัวอย่างแรกในหน้าสินค้า</small
+                ><label class="file-drop"
+                  >รูปที่ 1 · รูปปกและรูปตัวอย่าง<input
+                    name="cover"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                  /><span class="selected-upload-actions"
+                    ><button
+                      type="button"
+                      class="upload-selected-file"
+                      data-upload-selected="cover"
+                      disabled
+                    >
+                      อัปโหลดรูปปก</button
+                    ><button
+                      type="button"
+                      class="clear-selected-upload"
+                      data-clear-upload="cover"
+                      hidden
+                    >
+                      ลบรูปที่เลือก
+                    </button></span
+                  ><small>JPG, PNG หรือ WEBP ไม่เกิน 5 MB</small></label
+                >
+                <div class="form-two">
+                  <label class="file-drop"
+                    >รูปตัวอย่างที่ 2<input
+                      name="preview_2"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                    /><span class="selected-upload-actions"
+                      ><button
+                        type="button"
+                        class="upload-selected-file"
+                        data-upload-selected="preview_2"
+                        disabled
+                      >
+                        อัปโหลดรูปนี้</button
+                      ><button
+                        type="button"
+                        class="clear-selected-upload"
+                        data-clear-upload="preview_2"
+                        hidden
+                      >
+                        ลบรูปที่เลือก
+                      </button></span
+                    ><small>ไม่เกิน 5 MB</small></label
+                  ><label class="file-drop"
+                    >รูปตัวอย่างที่ 3<input
+                      name="preview_3"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                    /><span class="selected-upload-actions"
+                      ><button
+                        type="button"
+                        class="upload-selected-file"
+                        data-upload-selected="preview_3"
+                        disabled
+                      >
+                        อัปโหลดรูปนี้</button
+                      ><button
+                        type="button"
+                        class="clear-selected-upload"
+                        data-clear-upload="preview_3"
+                        hidden
+                      >
+                        ลบรูปที่เลือก
+                      </button></span
+                    ><small>ไม่เกิน 5 MB</small></label
+                  >
+                </div>
+                <div
+                  id="existingProductImages"
+                  class="existing-product-images"
+                ></div>
+              </section>
+              <label class="file-drop"
+                >ไฟล์สำหรับลูกค้าดาวน์โหลด<input
+                  name="product_file"
+                  type="file"
+                  accept="application/pdf,application/zip"
+                /><span class="selected-upload-actions"
+                  ><button
+                    type="button"
+                    class="upload-selected-file"
+                    data-upload-selected="product_file"
+                    disabled
+                  >
+                    อัปโหลดไฟล์ PDF/ZIP นี้</button
+                  ><button
+                    type="button"
+                    class="clear-selected-upload"
+                    data-clear-upload="product_file"
+                    hidden
+                  >
+                    ลบไฟล์ PDF/ZIP ที่เลือก
+                  </button></span
+                ><small
+                  >PDF หรือ ZIP ไม่เกิน 100 MB · สินค้าละ 1 ไฟล์ ·
+                  อัปโหลดใหม่จะแทนไฟล์เดิม</small
+                ></label
+              >
+              <label
+                >ชื่อไฟล์ที่แสดง<input
+                  name="file_label"
+                  value="ไฟล์สินค้าฉบับเต็ม"
+              /></label>
+              <div id="existingFiles" class="existing-files"></div>
+              <p id="productFormMessage" class="form-message"></p>
+              <div class="editor-actions">
+                <button class="primary" type="submit">บันทึกสินค้า</button
+                ><button
+                  class="secondary"
+                  id="editProductWithVision2"
+                  type="button"
+                  hidden
+                >
+                  แก้รูปและ PDF จาก ZIP</button
+                ><button
+                  class="danger boss-only-danger"
+                  id="deleteProductButton"
+                  type="button"
+                  hidden
+                >
+                  ลบสินค้า
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+        <section id="categoriesPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>จัดการหมวดหมู่สินค้า</h2>
+              <p>สร้างและจัดการหมวดหมู่ พร้อมกำหนดประเภทไฟล์เริ่มต้น</p>
+            </div>
+            <div class="editor-actions">
+              <button class="primary" id="newCategoryButton" type="button">
+                + เพิ่มหมวดสินค้า
+              </button>
+            </div>
+          </div>
+          <div class="category-admin-layout">
+            <div id="categoryAdminList" class="category-admin-list"></div>
+            <form id="categoryEditor" class="product-editor">
+              <input type="hidden" name="id" />
+              <div class="editor-head">
+                <div>
+                  <small>CATEGORY EDITOR</small>
+                  <h3 id="categoryEditorTitle">เพิ่มหมวดใหม่</h3>
+                </div>
+              </div>
+              <label
+                >ชื่อหมวดภาษาไทย<input
+                  name="name"
+                  required
+                  placeholder="เช่น สัตว์ทะเล" /></label
+              ><label
+                >รหัสหมวดภาษาอังกฤษ<input
+                  name="slug"
+                  required
+                  placeholder="sea-animals" /></label
+              ><label
+                >อยู่ใต้หมวด<select
+                  name="parent_slug"
+                  id="parentCategorySelect"
+                >
+                  <option value="">— หมวดหลัก —</option>
+                </select></label
+              >
+              <div class="form-two">
+                <label
+                  >ประเภทไฟล์เริ่มต้น<select name="file_type">
+                    <option>PDF</option>
+                    <option>ZIP</option>
+                    <option>JPG/PNG</option>
+                    <option>ชุดรวมหลายประเภท</option>
+                  </select></label
+                ><label
+                  >ลำดับ<input name="sort_order" type="number" value="0"
+                /></label>
+              </div>
+              <label class="check-line"
+                ><input name="active" type="checkbox" checked />
+                เปิดใช้งานหมวดนี้</label
+              >
+              <p id="categoryFormMessage" class="form-message"></p>
+              <div class="editor-actions">
+                <button class="primary" type="submit">บันทึกหมวด</button
+                ><button
+                  class="danger"
+                  id="deleteCategoryButton"
+                  type="button"
+                  hidden
+                >
+                  ลบหมวด
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+        <section id="ordersPanel">
+          <div class="section-head">
+            <div>
+              <h2>คำสั่งซื้อและตรวจสลิป</h2>
+              <p>
+                ปุ่มอนุมัติจะแสดงเฉพาะคำสั่งซื้อที่ลูกค้าส่งสลิปแล้วเท่านั้น
+              </p>
+            </div>
+            <div class="order-clear-toolbar danger-zone boss-only-danger">
+              <span class="danger-zone-label">BOSS · DANGER ZONE</span
+              ><b id="selectedOrderCount">เลือกแล้ว 0 ออเดอร์</b
+              ><button
+                id="clearSelectedOrders"
+                class="danger"
+                type="button"
+                disabled
+              >
+                ล้างที่เลือก</button
+              ><button id="clearAllOrders" class="danger" type="button">
+                ล้างออเดอร์ทั้งหมด
+              </button>
+            </div>
+          </div>
+          <div id="adminOrders"></div>
+        </section>
+        <section id="salesPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>รายงานยอดขายสินค้า</h2>
+              <p>เก็บราคาที่ขายจริง รูปสลิป ลูกค้า วันเวลา และผู้อนุมัติ</p>
+            </div>
+            <button id="exportSalesCsv" class="primary" type="button">
+              ดาวน์โหลด CSV
+            </button>
+          </div>
+          <div class="sales-filter-bar">
+            <label>ตั้งแต่วันที่<input id="salesDateFrom" type="date" /></label
+            ><label>ถึงวันที่<input id="salesDateTo" type="date" /></label
+            ><label
+              >ประเภทรายการ<select id="salesTypeFilter">
+                <option value="all">ทั้งหมด</option>
+                <option value="slip_sale">ยอดขายที่มีสลิป</option>
+                <option value="manual">ปลดล็อกโดยตรง</option>
+              </select></label
+            ><button id="applySalesFilter" type="button">แสดงรายงาน</button>
+          </div>
+          <div id="salesSummary" class="sales-summary"></div>
+          <div id="salesProductSummary" class="sales-product-summary"></div>
+          <div
+            id="salesReportTable"
+            class="sales-report-table"
+            tabindex="0"
+            role="region"
+            aria-label="รายงานยอดขาย เลื่อนแนวนอนได้เมื่อพื้นที่ไม่พอ"
+          >
+            <p>กำลังโหลดรายงาน…</p>
+          </div>
+        </section>
+        <section id="promotionPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>โปรโมชั่นและส่วนลด</h2>
+              <p>เปิดป้ายโปรโมชั่น เลือกหมวดสินค้า และกำหนดเปอร์เซ็นต์ส่วนลด</p>
+            </div>
+          </div>
+          <form
+            id="promotionSettingsForm"
+            class="payment-settings-card promotion-settings-card"
+          >
+            <div class="settings-status">
+              <div>
+                <b>ป้ายโปรโมชั่นหน้าแคตตาล็อก</b
+                ><small
+                  >แสดงป้ายส่วนลด ราคาปกติขีดฆ่า และราคาขายใหม่
+                  พร้อมคิดราคาลดตอนสร้างออเดอร์จริง</small
+                >
+              </div>
+              <label class="switch-line"
+                ><input name="enabled" type="checkbox" value="1" /><span
+                  >เปิดโปรโมชั่น</span
+                ></label
+              >
+            </div>
+            <div class="form-two">
+              <fieldset class="promotion-category-picker">
+                <legend>หมวดสินค้าที่ร่วมโปรโมชั่น (เลือกพร้อมกันได้หลายหมวด)</legend>
+                <label><input name="promotion_scope" type="checkbox" value="all" /> ทุกหมวดสินค้า</label>
+                <div id="promotionCategoryOptions"></div>
+              </fieldset>
+              <label
+                >ส่วนลด (%)<input
+                  name="percent"
+                  type="number"
+                  min="1"
+                  max="90"
+                  step="1"
+                  value="10"
+                  required
+              /></label>
+            </div>
+            <p id="promotionSettingsMessage" class="form-message"></p>
+            <div class="editor-actions">
+              <button class="primary" type="submit">บันทึกโปรโมชั่น</button
+              ><a
+                class="secondary-button"
+                href="/digital-products"
+                target="_blank"
+                >ดูหน้าแคตตาล็อก</a
+              >
+            </div>
+          </form>
+          <form
+            id="firstOrderPromotionForm"
+            class="payment-settings-card promotion-settings-card"
+          >
+            <div class="settings-status">
+              <div>
+                <b>🎁 โปรโมชั่นกระตุ้นการซื้อครั้งแรก</b
+                ><small
+                  >ล็อกอินครั้งที่ 2 แจ้งเตือน และครั้งที่ 3 ลดอัตโนมัติ 50%
+                  สูงสุด 200 บาท เมื่อยอดสินค้าที่ร่วมรายการ 399 บาทขึ้นไป ภายใน
+                  2 ชั่วโมง</small
+                >
+              </div>
+              <label class="switch-line"
+                ><input name="enabled" type="checkbox" value="1" checked /><span
+                  >เปิดโปรโมชั่นหลอกหลอน</span
+                ></label
+              >
+            </div>
+            <p>
+              <strong>ไม่รวม:</strong> สิทธิ์ลงขายคอร์สออนไลน์
+              และไม่นำยอดสินค้านี้มารวมขั้นต่ำ
+            </p>
+            <div id="firstOrderPromotionStats" class="sales-summary"></div>
+            <p id="firstOrderPromotionMessage" class="form-message"></p>
+            <div class="editor-actions">
+              <button class="primary" type="submit">
+                บันทึกสถานะโปรลูกค้าใหม่
+              </button>
+            </div>
+          </form>
+        </section>
+        <section id="settingsPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>ตั้งค่าการชำระเงิน</h2>
+              <p>Boss เลือกบัญชีรับโอนที่ต้องการให้ลูกค้าเห็นได้ทันที</p>
+            </div>
+          </div>
+          <form id="paymentSettingsForm" class="payment-settings-card">
+            <div class="settings-status">
+              <div>
+                <b>สถานะรับคำสั่งซื้อ</b
+                ><small>ปิดชั่วคราวได้เมื่อต้องการหยุดรับยอด</small>
+              </div>
+              <label class="switch-line"
+                ><input
+                  name="accepting_orders"
+                  type="checkbox"
+                  value="1"
+                  checked
+                /><span>เปิดรับคำสั่งซื้อ</span></label
+              >
+            </div>
+            <fieldset class="payment-account-switch">
+              <legend>บัญชีที่กำลังใช้รับโอน</legend>
+              <label
+                ><input
+                  type="radio"
+                  name="active_account"
+                  value="personal"
+                  checked
+                /><span
+                  ><b>บัญชีส่วนตัว</b
+                  ><small>กรุงศรี · รัฐสิทธิ ดำรงรถการ</small></span
+                ></label
+              ><label
+                ><input
+                  type="radio"
+                  name="active_account"
+                  value="company"
+                /><span
+                  ><b>บัญชีบริษัท</b
+                  ><small>ใช้ข้อมูลบัญชีบริษัทด้านล่าง</small></span
+                ></label
+              >
+            </fieldset>
+            <div class="payment-profile-card">
+              <h3>บัญชีส่วนตัว</h3>
+              <div class="form-two">
+                <label
+                  >ชื่อธนาคาร<input name="personal_bank_name" required /></label
+                ><label
+                  >เลขบัญชี<input name="personal_account_number" required
+                /></label>
+              </div>
+              <label
+                >ชื่อบัญชี<input name="personal_account_name" required
+              /></label>
+            </div>
+            <div class="payment-profile-card">
+              <h3>บัญชีบริษัท</h3>
+              <div class="form-two">
+                <label
+                  >ชื่อธนาคาร<input name="company_bank_name" required /></label
+                ><label
+                  >เลขบัญชี<input name="company_account_number" required
+                /></label>
+              </div>
+              <label
+                >ชื่อบัญชี<input name="company_account_name" required
+              /></label>
+            </div>
+            <label class="file-drop"
+              >อัปโหลดรูป QR ชำระเงิน<input
+                name="qr"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              /><small>JPG, PNG หรือ WEBP ไม่เกิน 5 MB</small></label
+            >
+            <div id="currentQr" class="current-qr"></div>
+            <label
+              >ข้อความหลังลูกค้าส่งสลิป<textarea
+                name="payment_message"
+                rows="3"
+                placeholder="ส่งสลิปแล้ว กรุณารอแอดมินตรวจสอบ"
+              ></textarea>
+            </label>
+            <p id="settingsMessage" class="form-message"></p>
+            <div class="editor-actions">
+              <button class="primary" type="submit">บันทึกและสลับบัญชี</button
+              ><a class="secondary-button" href="/cart.html" target="_blank"
+                >ทดลองดูหน้าชำระเงิน</a
+              >
+            </div>
+          </form>
+        </section>
+        <section id="usersPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>สมาชิกและระดับไอดี</h2>
+              <p>
+                Boss และ Admin ปลดล็อกสินค้าให้ลูกค้าได้
+                ส่วนการเปลี่ยนระดับทำได้เฉพาะ Boss
+              </p>
+            </div>
+          </div>
+          <form id="manualUnlockForm" class="manual-unlock-card">
+            <div>
+              <small>MANUAL UNLOCK</small>
+              <h3>ปลดล็อกสินค้าให้ลูกค้า</h3>
+              <p>
+                บันทึกราคาขายจริงและสลิปไว้ในประวัติ
+                เพื่อใช้ตรวจสอบและทำรายงานยอดขาย
+              </p>
+            </div>
+            <div class="form-two">
+              <label class="customer-select-field"
+                ><span>บัญชีลูกค้า</span>
+                <div class="customer-select-control">
+                  <span class="customer-select-icon" aria-hidden="true">👤</span
+                  ><select
+                    name="user_id"
+                    id="unlockUserSelect"
+                    required
+                  ></select></div></label
+              ><label
+                >สินค้าที่ต้องการปลดล็อก<select
+                  name="product_id"
+                  id="unlockProductSelect"
+                  required
+                ></select
+              ></label>
+            </div>
+            <div class="form-two">
+              <label
+                >ราคาขายจริงรวม (บาท)<input
+                  name="sale_price"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="เว้นว่างได้ — ลงราคาภายหลัง" /></label
+              ><label class="file-drop compact-slip-drop"
+                >ช่องเก็บสลิปโอนเงิน<input
+                  name="slip"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                /><small
+                  >เว้นว่างได้ · JPG, PNG หรือ WEBP ไม่เกิน 10 MB</small
+                ></label
+              >
+            </div>
+            <label
+              >หมายเหตุ<input
+                name="note"
+                placeholder="เช่น ลูกค้าชำระผ่านช่องทางอื่น"
+            /></label>
+            <p id="manualUnlockMessage" class="form-message"></p>
+            <button class="primary" type="submit">
+              บันทึกการขายและปลดล็อก
+            </button>
+          </form>
+          <div id="usersTable"></div>
+        </section>
+        <section id="elonPanel" class="elon-admin-panel" hidden>
+          <div class="elon-control-card" id="elonControlCard">
+            <div class="elon-control-head"><div><span class="elon-control-icon" aria-hidden="true">⚡</span><div><p class="eyebrow">ELON CONTROL CENTER</p><h2>ควบคุม ELON แยกแต่ละระบบ</h2></div></div><small>ฐานข้อมูลแยกอิสระ · ปิดตัวหนึ่งไม่กระทบอีกตัว</small></div>
+            <div class="elon-control-grid">
+              <article class="elon-system-card" id="elonWebControl" data-state="off"><div class="elon-system-copy"><span class="elon-system-mark" aria-hidden="true">🌐</span><div><h3>ELON เว็บ</h3><p>ทีมขายหน้าร้าน VisionD สำหรับ Guest และลูกค้า</p><b class="elon-state-label" id="elonWebState">กำลังตรวจสอบ…</b></div></div><label class="elon-toggle"><input id="elonWebEnabled" type="checkbox" /><span aria-hidden="true"></span><em>เปิดหรือปิด ELON เว็บ</em></label></article>
+              <article class="elon-system-card" id="elonV7Control" data-state="off"><div class="elon-system-copy"><span class="elon-system-mark" aria-hidden="true">🧠</span><div><h3>ELON V7</h3><p>ผู้ช่วยเฉพาะระบบ Vision 7 · ค่าเริ่มต้นปิด</p><b class="elon-state-label" id="elonV7State">กำลังตรวจสอบ…</b></div></div><label class="elon-toggle"><input id="elonV7Enabled" type="checkbox" /><span aria-hidden="true"></span><em>เปิดหรือปิด ELON V7</em></label></article>
+            </div>
+            <p id="elonControlMessage" class="form-message" role="status"></p>
+          </div>
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">VISION 6 · ELON AI SUPPORT</p>
+              <h2>บทสนทนาผู้ช่วย VisionD</h2>
+              <p id="elonPrivacyNote">
+                เก็บประวัติ 60 วัน · Admin ดูภาพรวมได้
+                ส่วนบทสนทนาเต็มสงวนไว้สำหรับ Boss เพื่อคุ้มครองข้อมูลสมาชิก
+              </p>
+            </div>
+            <button id="refreshElonButton" class="primary" type="button">
+              รีเฟรช
+            </button>
+          </div>
+          <div id="elonStats" class="elon-stats" aria-live="polite">
+            <div><small>บทสนทนาทั้งหมด</small><b>—</b></div>
+            <div><small>กำลังใช้งาน</small><b>—</b></div>
+            <div><small>นอกขอบเขต</small><b>—</b></div>
+            <div><small>พบข้อผิดพลาด</small><b>—</b></div>
+          </div>
+          <div id="elonBossWorkspace" hidden>
+            <div class="elon-filter-bar">
+              <label
+                >ค้นหาสมาชิก<input
+                  id="elonSearchInput"
+                  type="search"
+                  placeholder="ชื่อ ไอดี หรืออีเมล" /></label
+              ><label
+                >สถานะ<select id="elonStatusFilter">
+                  <option value="">ทุกสถานะ</option>
+                  <option value="active">กำลังใช้งาน</option>
+                  <option value="ended">จบการสนทนา</option>
+                  <option value="archived">เก็บแล้ว</option>
+                  <option value="out_of_scope">นอกขอบเขต</option>
+                  <option value="error">ข้อผิดพลาด</option>
+                </select></label
+              >
+            </div>
+            <div class="elon-admin-layout">
+              <div>
+                <div class="elon-list-heading">
+                  <h3>บทสนทนาล่าสุด</h3>
+                  <span>เฉพาะสมาชิกที่เข้าสู่ระบบ</span>
+                </div>
+                <div id="elonConversationList" class="elon-conversation-list">
+                  <p>กำลังโหลดบทสนทนา…</p>
+                </div>
+                <button
+                  id="elonLoadMore"
+                  class="elon-load-more"
+                  type="button"
+                  hidden
+                >
+                  โหลดบทสนทนาเพิ่ม
+                </button>
+              </div>
+              <aside
+                id="elonTranscript"
+                class="elon-transcript"
+                aria-live="polite"
+              >
+                <div class="elon-transcript-empty">
+                  <span>🤖</span><b>เลือกบทสนทนาเพื่อเปิดอ่าน</b>
+                  <p>แสดงเวลาและหน้าเว็บ แต่ไม่แสดง API key หรือข้อมูลลับ</p>
+                </div>
+              </aside>
+            </div>
+          </div>
+          <div id="elonAdminRestricted" class="elon-empty" hidden>
+            Admin ดูได้เฉพาะจำนวนรวม บทสนทนาเต็มเปิดได้ด้วยบัญชี Boss เท่านั้น
+          </div>
+        </section>
+        <section id="healthPanel" class="system-health-panel" hidden>
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">BOSS · SYSTEM HEALTH</p>
+              <h2>ความพร้อมของระบบ</h2>
+              <p>
+                แสดงเฉพาะว่าตั้งค่าแล้วหรือยัง ระบบจะไม่ส่งหรือแสดงค่า Secret
+              </p>
+            </div>
+            <button id="refreshSystemHealth" class="primary" type="button">
+              ตรวจใหม่
+            </button>
+          </div>
+          <p id="systemHealthChecked" class="health-checked">ยังไม่ได้ตรวจ</p>
+          <div id="systemHealthContent"><p>กำลังตรวจสถานะระบบ…</p></div>
+        </section>
+        <section id="trashPanel" hidden>
+          <div class="section-head">
+            <div>
+              <h2>ถังขยะ</h2>
+              <p>
+                เก็บตะกร้า รูป และไฟล์ PDF/ZIP ที่ลบไว้ 30 วัน ก่อนล้างอัตโนมัติ
+              </p>
+            </div>
+            <button id="refreshTrashButton" class="primary" type="button">
+              รีเฟรช
+            </button>
+          </div>
+          <div id="trashList"><p>กำลังโหลดถังขยะ…</p></div>
+        </section>
+      </section>
+    </main>
+    <link rel="stylesheet" href="/vision2-font.css?v=01178" /><link
+      rel="stylesheet"
+      href="/vision2-character.css?v=01178"
+    /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
+    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014138"></script>
+    <script src="/vision2.js?v=013330"></script>
+    <script src="/vendor/pdf-lib.min.js?v=1171"></script>
+    <script src="/vision3.js?v=01351"></script>
+    <script src="/vision4-bundle.js?v=01471"></script>
+    <script src="/vision4-card-actions.js?v=01372"></script>
+  <script src="/visiond-design-system.js?v=01489" defer></script></body>
+</html>

@@ -1,0 +1,1 @@
+{"capture_id":"vision4-create-hotfix-v1","event_case":"Vision 4 urgent create-product hotfix","intake_complete":true,"items":[{"source_id":"SRC-031","requirement_id":"EC-V4-001","atomic":true,"text":"ปุ่มสร้างสินค้าและเปิดขายทันทีของ Vision 4 กดสร้างไม่ได้","acceptance":"เลือกภาพตัวอย่างสามรูปให้อัตโนมัติ กดแล้วแสดงสถานะข้างปุ่ม และแสดงข้อผิดพลาดจากทุกขั้นโดยไม่เงียบ"}]}

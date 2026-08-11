@@ -1,0 +1,10 @@
+.v2-jarvis-character,.v2-character-reference{background:#f2fbfa;border-style:dashed}
+.v2-jarvis-character>div:first-child,.v2-character-reference>div:first-child{display:grid;gap:4px}
+.v2-jarvis-character small,.v2-character-reference small{color:#587875}
+.v2-jarvis-character button{margin-top:22px;width:100%;padding:12px;border:0;border-radius:10px}
+#v2JarvisStatus{margin:8px 0 0;color:#087d78;font-size:12px;font-weight:800}
+#v2ReferencePreview{display:flex;align-items:center;gap:14px;padding:10px;border-radius:12px;background:#fff}
+#v2ReferencePreview:empty{display:none}
+#v2ReferencePreview img{border:1px solid #b8d6d3;border-radius:10px;background:#fff}
+textarea[name="topic"]{min-height:260px;line-height:1.55;resize:vertical}
+@media(max-width:760px){.v2-jarvis-character .v2-two{grid-template-columns:1fr}.v2-jarvis-character button{margin-top:0}}

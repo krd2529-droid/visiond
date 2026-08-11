@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>สมัครสมาชิก | VisionD Online</title>
+    <meta
+      name="description"
+      content="สมัครสมาชิก VisionD Online โดยตรง เพื่อซื้อและเข้าถึงสินค้าดิจิทัล คอร์สเรียน และโปรแกรมบอท"
+    />
+    <link rel="stylesheet" href="/style.css?v=014134" /><link rel="stylesheet" href="/visiond-design-system.css?v=014134">
+    <script src="/meta-pixel.js?v=014134"></script>
+    <link rel="stylesheet" href="/elon-chat.css?v=014134" />
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014134" />
+    <link rel="stylesheet" href="/member-modern-ai.css?v=014134" />
+  <link rel="stylesheet" href="/frontend-theme.css?v=014134"></head>
+  <body class="auth-page vd-frontend">
+    <header class="topbar">
+      <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
+      <nav>
+        <a class="nav-home-link" href="/">หน้าแรก</a>
+        <a href="/digital-products.html">สินค้า</a>
+        <a href="/courses.html">คอร์สเรียน</a>
+        <a href="/bots.html">VBot</a>
+        <a href="https://lin.ee/RJZwr1p" target="_blank" rel="noopener"
+          >ติดต่อ LINE</a
+        >
+      </nav>
+    </header>
+    <main class="auth-shell">
+      <section class="auth-promo vds-card vds-card--hero">
+        <p class="eyebrow">CREATE VISIOND ACCOUNT</p>
+        <h1>สมัครกับ VisionD โดยตรง</h1>
+        <p>
+          บัญชีของคุณใช้เก็บประวัติการซื้อ สินค้าที่ปลดล็อก คอร์สเรียน
+          และสิทธิ์ใช้งานโปรแกรมบอทในที่เดียว
+        </p>
+        <div class="auth-feature-list">
+          <span>✓ สินค้าของฉันและไฟล์ที่ซื้อแล้ว</span>
+          <span>✓ ประวัติคำสั่งซื้อและสถานะการชำระเงิน</span>
+          <span>✓ คอร์สและโปรแกรมบอทที่ได้รับสิทธิ์</span>
+          <span>✓ ติดต่อช่วยเหลือจากข้อมูลสมาชิกของคุณ</span>
+        </div>
+      </section>
+      <section class="auth-box vds-card vds-card--information">
+        <div class="auth-box-head">
+          <p class="eyebrow dark">REGISTER</p>
+          <h2>สมัครสมาชิก</h2>
+          <p>บัญชีใหม่จะเป็นระดับ User โดยอัตโนมัติ</p>
+        </div>
+        <form id="registerPageForm">
+          <div class="profile-grid register-name-grid">
+            <label
+              >ชื่อ
+              <input
+                name="firstName"
+                autocomplete="given-name"
+                placeholder="ชื่อจริง"
+                required
+              />
+            </label>
+            <label
+              >นามสกุล
+              <input
+                name="lastName"
+                autocomplete="family-name"
+                placeholder="นามสกุล"
+                required
+              />
+            </label>
+          </div>
+          <label
+            >ไอดีสมาชิก
+            <input
+              name="username"
+              autocomplete="username"
+              minlength="4"
+              maxlength="30"
+              pattern="[A-Za-z0-9._-]+"
+              placeholder="อังกฤษหรือตัวเลข อย่างน้อย 4 ตัว"
+              required
+            />
+          </label>
+          <label
+            >อีเมล
+            <input
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="name@example.com"
+              required
+            />
+          </label>
+          <label
+            >เบอร์โทรศัพท์
+            <input
+              name="phone"
+              type="tel"
+              autocomplete="tel-national"
+              inputmode="numeric"
+              placeholder="เช่น 0812345678"
+              pattern="0[0-9]{8,9}"
+              minlength="9"
+              maxlength="10"
+              required
+            />
+          </label>
+          <label
+            >รหัสผ่าน
+            <input
+              name="password"
+              type="password"
+              minlength="10"
+              autocomplete="new-password"
+              placeholder="อย่างน้อย 10 ตัว"
+              required
+            />
+          </label>
+          <label
+            >ยืนยันรหัสผ่าน
+            <input
+              name="confirmPassword"
+              type="password"
+              minlength="10"
+              autocomplete="new-password"
+              placeholder="กรอกรหัสผ่านอีกครั้ง"
+              required
+            />
+          </label>
+          <label class="check-line">
+            <input type="checkbox" name="termsAccepted" value="true" required />
+            ยอมรับ
+            <a href="/terms.html" target="_blank" rel="noopener"
+              >ข้อกำหนดการใช้งาน</a
+            >
+            และ
+            <a href="/privacy.html" target="_blank" rel="noopener"
+              >นโยบายความเป็นส่วนตัว</a
+            >
+          </label>
+          <button class="vds-btn vds-btn--primary vds-btn--large vds-btn--wide" type="submit">
+            สมัครสมาชิก VisionD
+          </button>
+        </form>
+        <p id="pageAuthMsg" class="auth-message" aria-live="polite"></p>
+        <div class="auth-divider"><span>มีบัญชีอยู่แล้ว</span></div>
+        <a class="vds-btn vds-btn--secondary vds-btn--wide" href="/login.html"
+          >เข้าสู่ระบบ</a
+        >
+      </section>
+    </main>
+    <script src="/security.js?v=014134"></script>
+    <script src="/member-auth.js?v=014134"></script>
+    <script src="/analytics.js?v=014138"></script><script src="/facebook-chat.js?v=014134"></script>
+    <script src="/elon-chat.js?v=014134" defer></script>
+    <script src="/mobile-storefront.js?v=014134" defer></script>
+  <script src="/visiond-design-system.js?v=014134" defer></script></body>
+</html>

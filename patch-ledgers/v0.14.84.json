@@ -1,0 +1,1 @@
+{"patch":"v0.14.84","tasks":[{"id":"P1484-001","scope":"FEATURE","source_instruction":"One generic V Easy APK activates in Settings with account and key","status":"DONE-VERIFIED","evidence":["scripts/test-v01484.mjs","work-history/visiond/patch-history/PATCH-v0.14.84-B1-GENERIC-APK-ACTIVATION.md"]}]}
