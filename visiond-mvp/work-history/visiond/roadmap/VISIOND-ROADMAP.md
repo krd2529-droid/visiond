@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.140
+Current build: v0.14.141
+
+# v0.14.141 — Course Card Digital Catalog Style (IMPLEMENTED)
+
+- การ์ดคอร์สหน้าแรกใช้โครงภาพ ข้อมูล ราคา และปุ่มแบบเดียวกับการ์ดสินค้าดิจิทัล
+- รูปปกคอร์สคงสัดส่วน 16:9 และแสดงภาพเดียวโดยไม่มีลูกศรสไลด์ ตัวนับรูป หรือภาพตัวอย่างหลายใบ
+- การ์ดคง action เดียว: ดูคอร์สและสั่งซื้อ หรือเข้าเรียนเมื่อผู้ใช้มีสิทธิ์
+- รองรับตาราง 4/2/1 คอลัมน์ตามขนาดหน้าจอ โดยมือถือคง touch target ขั้นต่ำ 44px
 
 # v0.14.140 — Home Catalog Cleanup and Course Search (IMPLEMENTED)
 
