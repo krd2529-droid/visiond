@@ -1,17 +1,7 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.165
-
-## v0.14.165 activation consistency
-- Do not expose sellers to repeated credential entry; verified LINE state must persist across app restarts.
-
-## v0.14.164 LINE reliability gate
-- A failed AI reply must remain diagnosable before any LINE campaign traffic is added.
-
-## v0.14.163 LINE sales reply gate
-- Do not promote the LINE sales channel until one real customer-style text receives a grounded product reply with the bot running.
-- Treat missing AI configuration, duplicate replies and cross-shop product context as release-blocking failures.
+Current build: v0.14.162
 
 ## v0.14.162 LINE activation gate
 - Require a successful LINE Verify before enabling Use webhook and testing one real message.

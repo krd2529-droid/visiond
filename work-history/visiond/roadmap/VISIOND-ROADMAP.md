@@ -1,20 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.165
-
-# v0.14.165 — LINE Status Self-Heal (IMPLEMENTED)
-- หน้าแชตซ่อมสถานะ LINE จากผล Verify จริงโดยไม่ให้กรอกข้อมูลลับซ้ำ
-
-# v0.14.164 — V Easy LINE Diagnostics (IMPLEMENTED)
-- เก็บข้อความขาเข้าก่อนเรียก AI และส่ง blocker สถานะ AI/LINE ให้โปรแกรมตรวจได้
-- รอ Production LINE reply จริงก่อน VALIDATED
-
-# v0.14.163 — V Easy LINE AI Reply (IMPLEMENTED)
-- ซิงก์ผล LINE Verify เข้าสถานะช่องทาง `connected`
-- รับข้อความ LINE แบบ background, กัน redelivery ตอบซ้ำ และแยกข้อมูลตามร้าน
-- ใช้สินค้าเฉพาะร้านเป็นบริบท AI แล้วตอบผ่าน LINE Reply API เมื่อบอท `running`
-- Event Case รอ Deploy และข้อความ LINE จริง 1 ข้อความก่อนเปลี่ยนเป็น VALIDATED
+Current build: v0.14.162
 
 # v0.14.162 — LINE Verify Fast Path (IMPLEMENTED)
 - รวม endpoint และ Channel Secret เป็น D1 query เดียว

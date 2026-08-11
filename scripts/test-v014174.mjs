@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const version=fs.readFileSync('VERSION.txt','utf8').trim();
+assert.equal(version,'0.14.174');
+const web=fs.readFileSync('public/index.html','utf8');
+const admin=fs.readFileSync('public/admin.html','utf8');
+assert.match(web,/WEB v0\.14\.174/);
+assert.match(admin,/ADMIN v0\.14\.174/);
+assert.doesNotMatch(web,/WEB v0\.14\.169/);
+assert.doesNotMatch(admin,/ADMIN v0\.14\.169/);
+const stamp=fs.readFileSync('scripts/release-stamp-assets.mjs','utf8');
+assert.match(stamp,/VERSION\.txt/);
+assert.match(stamp,/visiond-build-version/);
+console.log('PASS v0.14.174 single-source version display');

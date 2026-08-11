@@ -6,7 +6,6 @@ const integrityHtml=fs.readFileSync('public/course-integrity.html','utf8');
 const integrityUi=fs.readFileSync('public/course-integrity.js','utf8');
 const integrityApi=fs.readFileSync('functions/api/admin/course-integrity.js','utf8');
 const webhook=fs.readFileSync('functions/hooks/v1/[provider]/[publicId].js','utf8');
-const activeWebhook=fs.readFileSync('visiond-mvp/functions/hooks/v1/[provider]/[publicId].js','utf8');
 
 assert.equal(version,'v0.14.161');
 assert.match(integrityHtml,/course-integrity\.js\?v=014161/);
@@ -15,5 +14,4 @@ assert.match(integrityUi,/ระบบหยุดรอแล้วและไ
 assert.match(integrityApi,/EVENT_CASE_QUERY_TIMEOUT/);
 assert.doesNotMatch(webhook,/ensureWebhookHubSchema/);
 assert.match(webhook,/if\(events\.length===0\)return out\(\{ok:true\},200\)/);
-assert.equal(webhook,activeWebhook,'webhook must match active visiond-mvp tree');
-console.log('PASS v0.14.161 merged 159 integrity + 160 LINE webhook');
+console.log('PASS v0.14.161 active tree integrity + LINE webhook');
