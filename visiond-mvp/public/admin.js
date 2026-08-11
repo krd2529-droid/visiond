@@ -1320,13 +1320,33 @@ async function loadUsers() {
       })
       .join("");
   selectedProductCount.textContent = "เลือกแล้ว 0 รายการ";
-  usersTable.innerHTML = `${viewer.role==="boss"?"<div class=\"admin-user-toolbar\"><button id=\"createTestUser\" type=\"button\">+ สร้างยูสเทส</button><small>ชื่อกลาง: รัฐสิทธิ ดำรงรถการ · Username และอีเมลต้องไม่ซ้ำ</small></div>":""}<div class="user-table"><div class="user-row user-head"><b>สมาชิก</b><b>ไอดี</b><b>เบอร์โทร</b><b>ระดับ/สถานะ</b><b>จัดการ</b></div>${users.map((u) => `<div class="user-row"><div><b>${esc(u.name)}</b><small>${esc(u.email)}</small></div><span>${esc(u.username || "-")}</span><a href="tel:${esc(u.phone || "")}">${esc(u.phone || "ไม่ได้ระบุ")}</a><div class="user-status-stack"><span class="role-badge ${esc(u.role)}">${roleText[u.role] || esc(u.role)}</span>${Number(u.is_test_user)===1?"<span class=\"test-user-badge\">ยูสเทส</span>":""}<span class="course-credit-count">เครดิตคงเหลือ ${Number(u.course_credit_balance)||0}</span>${u.is_course_owner ? '<span class="course-owner-badge">เจ้าของคอร์ส</span>' : ''}</div><div class="user-manage-actions">${viewer.role === "boss" && u.role !== "boss" ? `<select data-role-id="${u.id}"><option value="user" ${["user", "customer"].includes(u.role) ? "selected" : ""}>User</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select><button data-save-role="${u.id}">บันทึก</button>` : '<span class="muted">ดูอย่างเดียว</span>'}${viewer.role==='boss'&&["user","customer"].includes(u.role)?`<button class="add-course-credit-button" data-add-course-credit="${u.id}" data-user-name="${esc(u.name||u.username||u.email)}">+ เพิ่มแต้มสิทธิ์</button>`:''}</div></div>`).join("")}</div>`;
-  document
-    .querySelectorAll("[data-save-role]")
-    .forEach((b) => (b.onclick = () => saveRole(b.dataset.saveRole)));
+  const userRow=u=>{const editable=viewer.role==='boss'&&u.role!=='boss',type=Number(u.is_test_user)===1?'test':u.role==='admin'?'admin':'user';return `<div class="user-row" data-user-row="${u.id}"><div><span data-user-view><b>${esc(u.name)}</b><small>${esc(u.email)}</small></span>${editable?`<span class="user-edit-fields" data-user-edit hidden><input name="name" value="${esc(u.name)}" aria-label="ชื่อ–นามสกุล"><input name="email" type="email" value="${esc(u.email)}" aria-label="อีเมล"></span>`:''}</div><span><span data-user-view>${esc(u.username||'-')}</span>${editable?`<input data-user-edit name="username" value="${esc(u.username||'')}" aria-label="Username" hidden>`:''}</span><span><a data-user-view href="tel:${esc(u.phone||'')}">${esc(u.phone||'ไม่ได้ระบุ')}</a>${editable?`<input data-user-edit name="phone" value="${esc(u.phone||'')}" inputmode="tel" aria-label="เบอร์โทร" hidden>`:''}</span><div class="user-status-stack"><span data-user-view class="role-badge ${esc(u.role)}">${type==='test'?'ยูสเทส':roleText[u.role]||esc(u.role)}</span>${Number(u.is_test_user)===1?'<span data-user-view class="test-user-badge">ยูสเทสระบบเว็บ</span>':''}${editable?`<select data-user-edit name="account_type" aria-label="ประเภทบัญชี" hidden><option value="user" ${type==='user'?'selected':''}>User</option><option value="test" ${type==='test'?'selected':''}>ยูสเทส</option><option value="admin" ${type==='admin'?'selected':''}>Admin</option></select>`:''}<span class="course-credit-count">เครดิตคงเหลือ ${Number(u.course_credit_balance)||0}</span>${u.is_course_owner?'<span class="course-owner-badge">เจ้าของคอร์ส</span>':''}</div><div class="user-manage-actions">${editable?`<button data-edit-user="${u.id}" type="button">แก้ไขทั้งแถว</button><button data-save-user="${u.id}" type="button" hidden>บันทึกใหม่</button><button data-cancel-user="${u.id}" type="button" hidden>ยกเลิก</button>`:'<span class="muted">ดูอย่างเดียว</span>'}${viewer.role==='boss'&&['user','customer'].includes(u.role)?`<button class="add-course-credit-button" data-add-course-credit="${u.id}" data-user-name="${esc(u.name||u.username||u.email)}">+ เพิ่มเครดิต</button>`:''}</div></div>`};
+  usersTable.innerHTML = `${viewer.role==="boss"?"<div class=\"admin-user-toolbar\"><button id=\"createTestUser\" type=\"button\">+ สร้างยูสเทส</button><small>ชื่อกลาง: รัฐสิทธิ ดำรงรถการ · Username และอีเมลต้องไม่ซ้ำ</small></div>":""}<div class="user-table"><div class="user-row user-head"><b>สมาชิก</b><b>Username</b><b>เบอร์โทร</b><b>ประเภท/เครดิต</b><b>จัดการ</b></div>${users.map(userRow).join('')}</div>`;
+  document.querySelectorAll('[data-edit-user]').forEach(button=>button.onclick=()=>toggleUserEdit(button.dataset.editUser,true));
+  document.querySelectorAll('[data-cancel-user]').forEach(button=>button.onclick=()=>loadUsers());
+  document.querySelectorAll('[data-save-user]').forEach(button=>button.onclick=()=>saveUserRow(button.dataset.saveUser));
   document.querySelector('#createTestUser')?.addEventListener('click',createTestUser);
   document.querySelectorAll('[data-add-course-credit]').forEach(button=>button.onclick=()=>addCourseCredits(button));
   loadUnlockHistory();
+}
+function toggleUserEdit(id,editing){
+  const row=document.querySelector(`[data-user-row="${id}"]`);if(!row)return;
+  row.classList.toggle('editing',editing);
+  row.querySelectorAll('[data-user-view]').forEach(element=>element.hidden=editing);
+  row.querySelectorAll('[data-user-edit]').forEach(element=>element.hidden=!editing);
+  row.querySelector('[data-edit-user]').hidden=editing;
+  row.querySelector('[data-save-user]').hidden=!editing;
+  row.querySelector('[data-cancel-user]').hidden=!editing;
+  if(editing)row.querySelector('[name="name"]')?.focus();
+}
+async function saveUserRow(id){
+  const row=document.querySelector(`[data-user-row="${id}"]`),button=row?.querySelector('[data-save-user]');if(!row||!button)return;
+  const value=name=>row.querySelector(`[name="${name}"]`)?.value||'',body={name:value('name'),email:value('email'),username:value('username'),phone:value('phone'),account_type:value('account_type')};
+  if(!confirm(`บันทึกข้อมูลใหม่ของ ${body.name||body.username} หรือไม่?`))return;
+  button.disabled=true;button.textContent='กำลังบันทึก…';
+  const response=await fetch(`/api/admin/users/${id}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),data=await response.json().catch(()=>({}));
+  if(!response.ok){alert(data.error||'บันทึกข้อมูลผู้ใช้ไม่สำเร็จ');button.disabled=false;button.textContent='บันทึกใหม่';return}
+  alert(data.message||'บันทึกข้อมูลผู้ใช้ใหม่แล้ว');await loadUsers();
 }
 async function createTestUser(){
   const username=prompt('Username ยูสเทส (อย่างน้อย 4 ตัว)','test-user-');if(username===null)return;

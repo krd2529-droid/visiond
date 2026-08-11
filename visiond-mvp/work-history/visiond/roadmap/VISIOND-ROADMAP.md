@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.126
+Current build: v0.14.127
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -61,6 +61,7 @@ Compatibility rule: extend the existing Vision 7 Program → Plan → Release �
 
 ## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
 
+- IMPLEMENTED — v0.14.127 Vision 5 Seller UI + Test User Management: สวิตช์ตรวจสลิปแบบเปิด–ปิด, Preview ปก, การ์ดตะกร้า responsive, EP progressive workspace, ตัดช่องระดับผู้เรียน, หลังบ้านเลือกยูสเทสและแก้ข้อมูลสมาชิกทั้งแถวแบบ Boss-only พร้อม Audit; ยูสเทสเป็นประเภท User ของระบบเว็บและไม่ใช่ Vision 5 test flag
 - IMPLEMENTED — v0.14.126 Vision 5 Navigation + Wording Cleanup: หน้า Vision 5 ใช้คำมาตรฐาน `ตะกร้าคอร์ส` / `ตะกร้าคอร์สของฉัน`, การ์ดใช้ปุ่ม `จัดการบทเรียนและ EP`, `แก้ไขตะกร้า`, `ส่งตรวจ`, และโหลด Header/Design assets ด้วย release cache identity เดียวกัน; ห้ามนำคำ `ร่างตะกร้า` หรือ asset key เก่ากลับมาในหน้าผู้ใช้
 - IMPLEMENTED — v0.14.119 Canonical Primary Navigation + Platform Policies: หน้าแรก สินค้าดิจิทัล V-Learning และ VBot ใช้เมนูหลักและ Header กลางชุดเดียว, active state ตามหน้าจริง, cache identity ใหม่ และ Privacy/Terms ครอบคลุม LINE, Meta/Facebook, Webhook, API, AI, Secret/Token และข้อห้ามใช้ UI automation/session interception.
 - IMPLEMENTED — v0.14.120 Webhook Hub Foundation: หลังบ้านออกลิงก์สุ่มแบบไม่เปิดเผย slug ร้าน, คัดลอก/พัก/เปิด/หมุน URL/ยกเลิก, แยกร้านและ Provider, เก็บประวัติแบบไม่เก็บ payload ดิบ และ fail-closed จนกว่าจะติดตั้ง adapter ตรวจลายเซ็นอย่างเป็นทางการ.
