@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.155
+Current build: v0.14.156
+
+# v0.14.156 — Production Event Gate (IMPLEMENTED)
+
+- ห้ามปิด Event Case จากตัวเลข 0=0=0; ต้องมีออเดอร์ paid จริง หลักฐานสลิป สิทธิ์เรียน และคอร์สเปิดขายครบ
+- แสดงผลเฉพาะตะกร้า `user1`/บัญชีทดสอบเป็นกล่องตรวจปิดเคสแบบอ่านอย่างเดียวในหน้า Integrity
 
 # v0.14.155 — user1 Boss Review Path (IMPLEMENTED)
 
