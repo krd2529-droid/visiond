@@ -26,38 +26,8 @@ async function putImage(env, file) {
   });
   return key;
 }
-function episodePlan(form) {
-  const expected = Number(form.get("expected_episodes"));
-  if (!Number.isInteger(expected) || expected < 1 || expected > 200)
-    throw new Error("EP_COUNT");
-  const raw = String(form.get("episodes_json") || "").trim();
-  if (!raw)
-    return Array.from({ length: expected }, (_, index) => ({
-      title: `EP.${index + 1}`,
-      description: "",
-      duration_seconds: 0,
-    }));
-  let items;
-  try {
-    items = JSON.parse(raw);
-  } catch {
-    throw new Error("EP_JSON");
-  }
-  if (!Array.isArray(items) || items.length !== expected)
-    throw new Error("EP_LENGTH");
-  return items.map((item, index) => {
-    const title = String(item?.title || "")
-        .trim()
-        .slice(0, 200),
-      description = String(item?.description || "")
-        .trim()
-        .slice(0, 5000),
-      duration = Number(item?.duration_seconds || 0);
-    if (!title) throw new Error(`EP_TITLE_${index + 1}`);
-    if (!Number.isInteger(duration) || duration < 0 || duration > 86400)
-      throw new Error(`EP_DURATION_${index + 1}`);
-    return { title, description, duration_seconds: duration };
-  });
+function episodePlan() {
+  return [{ title: "EP.1", description: "", duration_seconds: 0 }];
 }
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
@@ -68,8 +38,15 @@ export async function onRequestGet(ctx) {
   )
     .bind(auth.user.id)
     .first();
-  const tokenStatus=sellerTokenStatus(ctx.env,profile?.seller_slip_api_key);
-  if(profile){delete profile.seller_slip_api_key;profile.slip_api_configured=tokenStatus.configured?1:0;profile.slip_auto_verify=Number(profile.slip_auto_verify)===1?1:0;profile.test_account=Number(profile.test_account)===1?1:0;profile.token_encryption_configured=tokenStatus.encryption_configured;profile.token_requires_configuration=tokenStatus.requires_configuration}
+  const tokenStatus = sellerTokenStatus(ctx.env, profile?.seller_slip_api_key);
+  if (profile) {
+    delete profile.seller_slip_api_key;
+    profile.slip_api_configured = tokenStatus.configured ? 1 : 0;
+    profile.slip_auto_verify = Number(profile.slip_auto_verify) === 1 ? 1 : 0;
+    profile.test_account = Number(profile.test_account) === 1 ? 1 : 0;
+    profile.token_encryption_configured = tokenStatus.encryption_configured;
+    profile.token_requires_configuration = tokenStatus.requires_configuration;
+  }
   const credits = await ctx.env.DB.prepare(
     `SELECT cr.id credit_id,cr.active,cr.used_at,cr.granted_at,p.title license_title FROM course_right_credits cr JOIN products p ON p.id=cr.product_id WHERE cr.user_id=? ORDER BY cr.id DESC`,
   )
@@ -157,7 +134,7 @@ export async function onRequestPost(ctx) {
     return json({ error: "กรุณาระบุราคาขายอย่างน้อย 1 บาท" }, 400);
   let plan;
   try {
-    plan = episodePlan(form);
+    plan = episodePlan();
   } catch (error) {
     const code = String(error.message || "");
     return json(
@@ -230,45 +207,60 @@ export async function onRequestPost(ctx) {
       : "all",
     planJson = JSON.stringify(plan);
   try {
-    const bindingId = -Number(credit.id), statements = [
-      ctx.env.DB.prepare(
-        `INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) SELECT ?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course' WHERE EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
-      ).bind(
-        slug,
-        title,
-        short,
-        description,
-        draftPrice,
-        coverUrl,
-        JSON.stringify([coverUrl]),
-        episodes,
-        credit.id,
-        auth.user.id,
-      ),
-      ctx.env.DB.prepare(
-        `INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin,basket_binding_locked,basket_bound_at) SELECT id,?,?,0,'online_course',30,?,?,NULL,?,?,?,?,'draft','seller_rights',1,CURRENT_TIMESTAMP FROM products WHERE slug=? AND EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
-      ).bind(
-        short,
-        teacher,
-        auth.user.id,
-        bindingId,
-        contact,
-        JSON.stringify(tags),
-        level,
-        episodes,
-        slug,
-        credit.id,
-        auth.user.id,
-      ),
-      ctx.env.DB.prepare(
-        `UPDATE course_right_credits SET active=0,used_at=CURRENT_TIMESTAMP,used_course_id=(SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?) WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL AND EXISTS(SELECT 1 FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?)`,
-      ).bind(slug,auth.user.id,bindingId,credit.id,auth.user.id,slug,auth.user.id,bindingId),
-      ctx.env.DB.prepare(
-        `INSERT INTO course_lessons(course_id,title,description,sort_order,duration_seconds) SELECT c.id,json_extract(ep.value,'$.title'),json_extract(ep.value,'$.description'),(CAST(ep.key AS INTEGER)+1)*10,CAST(json_extract(ep.value,'$.duration_seconds') AS INTEGER) FROM courses c JOIN products p ON p.id=c.product_id CROSS JOIN json_each(?) ep WHERE p.slug=? AND c.owner_user_id=?`,
-      ).bind(planJson, slug, auth.user.id),
-    ];
-    const results=await ctx.env.DB.batch(statements);
-    if(!results[0].meta.changes||!results[1].meta.changes||!results[2].meta.changes)throw new Error("CREDIT_ASSIGNMENT_CONFLICT");
+    const bindingId = -Number(credit.id),
+      statements = [
+        ctx.env.DB.prepare(
+          `INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) SELECT ?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course' WHERE EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
+        ).bind(
+          slug,
+          title,
+          short,
+          description,
+          draftPrice,
+          coverUrl,
+          JSON.stringify([coverUrl]),
+          episodes,
+          credit.id,
+          auth.user.id,
+        ),
+        ctx.env.DB.prepare(
+          `INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin,basket_binding_locked,basket_bound_at) SELECT id,?,?,0,'online_course',30,?,?,NULL,?,?,?,?,'draft','seller_rights',1,CURRENT_TIMESTAMP FROM products WHERE slug=? AND EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
+        ).bind(
+          short,
+          teacher,
+          auth.user.id,
+          bindingId,
+          contact,
+          JSON.stringify(tags),
+          level,
+          episodes,
+          slug,
+          credit.id,
+          auth.user.id,
+        ),
+        ctx.env.DB.prepare(
+          `UPDATE course_right_credits SET active=0,used_at=CURRENT_TIMESTAMP,used_course_id=(SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?) WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL AND EXISTS(SELECT 1 FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?)`,
+        ).bind(
+          slug,
+          auth.user.id,
+          bindingId,
+          credit.id,
+          auth.user.id,
+          slug,
+          auth.user.id,
+          bindingId,
+        ),
+        ctx.env.DB.prepare(
+          `INSERT INTO course_lessons(course_id,title,description,sort_order,duration_seconds) SELECT c.id,json_extract(ep.value,'$.title'),json_extract(ep.value,'$.description'),(CAST(ep.key AS INTEGER)+1)*10,CAST(json_extract(ep.value,'$.duration_seconds') AS INTEGER) FROM courses c JOIN products p ON p.id=c.product_id CROSS JOIN json_each(?) ep WHERE p.slug=? AND c.owner_user_id=?`,
+        ).bind(planJson, slug, auth.user.id),
+      ];
+    const results = await ctx.env.DB.batch(statements);
+    if (
+      !results[0].meta.changes ||
+      !results[1].meta.changes ||
+      !results[2].meta.changes
+    )
+      throw new Error("CREDIT_ASSIGNMENT_CONFLICT");
     const course = await ctx.env.DB.prepare(
       "SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=?",
     )

@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.127
+Current build: v0.14.128
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -60,6 +60,8 @@ Build VisionD into a low-manual-work digital commerce platform where products/co
 Compatibility rule: extend the existing Vision 7 Program → Plan → Release → License chain. Do not create a parallel VBot key engine and do not repurpose `vision7_plans.price`; marketplace selling price is the nullable `offer_price` field.
 
 ## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
+
+- IMPLEMENTED — v0.14.128 Vision 5 Three-step Auto-EP Flow: ลดเส้นทางเจ้าของคอร์สเหลือ ซื้อสิทธิ์ → ตั้งค่ารับเงิน/ตรวจสลิป → สร้างคอร์ส/เพิ่ม EP/เผยแพร่; ตะกร้าเริ่ม 1 EP และนับ EP จริงอัตโนมัติ ไม่มีช่องกำหนดจำนวนล่วงหน้า พร้อมลิงก์ EasySlip ทางการ
 
 - IMPLEMENTED — v0.14.127 Vision 5 Seller UI + Test User Management: สวิตช์ตรวจสลิปแบบเปิด–ปิด, Preview ปก, การ์ดตะกร้า responsive, EP progressive workspace, ตัดช่องระดับผู้เรียน, หลังบ้านเลือกยูสเทสและแก้ข้อมูลสมาชิกทั้งแถวแบบ Boss-only พร้อม Audit; ยูสเทสเป็นประเภท User ของระบบเว็บและไม่ใช่ Vision 5 test flag
 - IMPLEMENTED — v0.14.126 Vision 5 Navigation + Wording Cleanup: หน้า Vision 5 ใช้คำมาตรฐาน `ตะกร้าคอร์ส` / `ตะกร้าคอร์สของฉัน`, การ์ดใช้ปุ่ม `จัดการบทเรียนและ EP`, `แก้ไขตะกร้า`, `ส่งตรวจ`, และโหลด Header/Design assets ด้วย release cache identity เดียวกัน; ห้ามนำคำ `ร่างตะกร้า` หรือ asset key เก่ากลับมาในหน้าผู้ใช้
