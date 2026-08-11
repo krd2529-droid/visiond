@@ -2,6 +2,12 @@
   const id = Number(new URLSearchParams(location.search).get("id")),
     form = document.querySelector("#courseBasketEditForm"),
     message = document.querySelector("#courseBasketEditMessage"),
+    episodeForm = document.querySelector("#basketEpisodeForm"),
+    episodeList = document.querySelector("#basketEpisodeList"),
+    episodeMessage = document.querySelector("#basketEpisodeMessage"),
+    episodeTitle = document.querySelector("#basketEpisodeFormTitle"),
+    addEpisode = document.querySelector("#basketAddEpisode"),
+    cancelEpisode = document.querySelector("#basketCancelEpisode"),
     names = [
       "Shopee",
       "TikTok",
@@ -21,8 +27,97 @@
         `<label><input type="checkbox" name="platform_tags" value="${x}"> ${x}</label>`,
     )
     .join("");
+  const esc = (value) =>
+    String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[char]);
   let item,
+    episodes = [],
+    episodesEditable = true,
     coverObjectUrl = "";
+
+  function resetEpisodeForm(show = false) {
+    episodeForm.reset();
+    episodeForm.elements.lesson_id.value = "";
+    episodeTitle.textContent = "สร้าง EP ใหม่";
+    episodeForm.querySelector('button[type="submit"]').textContent = "บันทึก EP";
+    episodeMessage.textContent = "";
+    episodeForm.hidden = !show;
+    if (show) episodeForm.elements.title.focus();
+  }
+
+  function renderEpisodes() {
+    episodeList.innerHTML = episodes.length
+      ? episodes.map((episode, index) => `<article class="seller-ep"><div class="seller-ep-number">${index + 1}</div><div><b>EP.${index + 1} · ${esc(episode.title)}</b><small>${episode.has_video ? "มีวิดีโอ" : ""}${episode.has_video && episode.file_count ? " · " : ""}${episode.file_count ? `ไฟล์ประกอบ ${episode.file_count} ไฟล์` : ""}${!episode.has_video && !episode.file_count ? "ยังไม่มีสื่อ" : ""}</small>${episode.description ? `<p>${esc(episode.description)}</p>` : ""}<div class="seller-file-list">${(episode.files || []).map((file) => `<span>${esc(file.file_name)} <button type="button" data-delete-file="${file.id}" data-lesson="${episode.id}" ${episodesEditable ? "" : "disabled"}>ลบไฟล์</button></span>`).join("")}</div></div><div class="seller-ep-actions"><button type="button" data-edit-episode="${episode.id}" ${episodesEditable ? "" : "disabled"}>แก้ไข EP</button><button type="button" data-delete-episode="${episode.id}" ${episodesEditable ? "" : "disabled"}>ลบ EP</button></div></article>`).join("")
+      : '<div class="seller-course-empty"><b>ยังไม่มี EP</b><p>กด “+ สร้าง EP เพิ่ม” เพื่อสร้างบทเรียนแรก</p></div>';
+    episodeList.querySelectorAll("[data-edit-episode]").forEach((button) => button.onclick = () => {
+      const episode = episodes.find((entry) => String(entry.id) === button.dataset.editEpisode);
+      if (!episode) return;
+      episodeForm.hidden = false;
+      episodeTitle.textContent = `แก้ไข EP.${episodes.indexOf(episode) + 1}`;
+      episodeForm.elements.lesson_id.value = episode.id;
+      episodeForm.elements.title.value = episode.title || "";
+      episodeForm.elements.description.value = episode.description || "";
+      episodeForm.elements.duration_seconds.value = Number(episode.duration_seconds) || 0;
+      episodeForm.querySelector('button[type="submit"]').textContent = "บันทึกการแก้ไข EP";
+      episodeForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    episodeList.querySelectorAll("[data-delete-episode]").forEach((button) => button.onclick = async () => {
+      if (!confirm("ลบ EP และไฟล์ทั้งหมดใช่ไหม")) return;
+      await episodeAction(`/api/course-seller/${id}/lessons/${button.dataset.deleteEpisode}`, { method: "DELETE" });
+    });
+    episodeList.querySelectorAll("[data-delete-file]").forEach((button) => button.onclick = async () => {
+      if (!confirm("ลบไฟล์ประกอบนี้ใช่ไหม")) return;
+      await episodeAction(`/api/course-seller/${id}/lessons/${button.dataset.lesson}/files/${button.dataset.deleteFile}`, { method: "DELETE" });
+    });
+  }
+
+  async function loadEpisodes() {
+    const response = await fetch(`/api/course-seller/${id}/lessons`, { cache: "no-store" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      episodeList.textContent = data.error || "โหลด EP ไม่สำเร็จ";
+      return;
+    }
+    episodes = Array.isArray(data.items) ? data.items : [];
+    episodesEditable = Boolean(data.editable) && !item?.content_locked;
+    addEpisode.disabled = !episodesEditable;
+    document.querySelector("#basketEpisodeHelp").textContent = episodesEditable
+      ? "สร้าง แก้ไข หรือลบ EP ได้จากหน้าเดียวกับข้อมูลตะกร้าคอร์ส"
+      : "เนื้อหา EP ถูกล็อกแล้ว เนื่องจากหมดเวลาแก้ไขหรือคอร์สมีผู้ซื้อ";
+    renderEpisodes();
+  }
+
+  async function episodeAction(url, options) {
+    episodeMessage.textContent = "กำลังบันทึก…";
+    const response = await fetch(url, options), data = await response.json().catch(() => ({}));
+    episodeMessage.textContent = data.error || data.message || (response.ok ? "บันทึกแล้ว" : "ดำเนินการไม่สำเร็จ");
+    if (response.ok) {
+      resetEpisodeForm(false);
+      await loadEpisodes();
+    }
+    return response.ok;
+  }
+
+  addEpisode.onclick = () => {
+    if (!episodesEditable) return;
+    resetEpisodeForm(true);
+    episodeForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  cancelEpisode.onclick = () => resetEpisodeForm(false);
+  episodeForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const button = event.submitter, lessonId = episodeForm.elements.lesson_id.value;
+    button.disabled = true;
+    try {
+      await episodeAction(
+        lessonId ? `/api/course-seller/${id}/lessons/${lessonId}` : `/api/course-seller/${id}/lessons`,
+        { method: lessonId ? "PUT" : "POST", body: new FormData(episodeForm) },
+      );
+    } finally {
+      button.disabled = false;
+    }
+  };
   function showCover(url) {
     editCoverPreview.querySelector("img").src =
       url || "/assets/product-placeholder.svg";
@@ -71,7 +166,7 @@
       message.textContent = data.error || "เปิดตะกร้าไม่สำเร็จ";
       return;
     }
-    item = data.item;
+    item = { ...data.item, content_locked: Boolean(data.content_locked) };
     showCover(item.cover_url);
     for (const [name, value] of Object.entries({
       title: item.title,
@@ -104,6 +199,7 @@
       message.textContent = "หมดระยะเวลาแก้ไขแล้ว";
       form.querySelector("button").disabled = true;
     }
+    await loadEpisodes();
   }
   form.onsubmit = async (event) => {
     event.preventDefault();
@@ -117,8 +213,8 @@
         }),
         data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "บันทึกไม่สำเร็จ");
-      message.textContent = data.message;
-      setTimeout(() => (location.href = "/course-seller.html"), 700);
+      message.textContent = data.message + " · ข้อมูล EP อยู่ด้านล่าง";
+      await load();
     } catch (error) {
       message.textContent = error.message;
       button.disabled = false;

@@ -258,3 +258,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - รวมชื่อทางเข้าของผู้ขายคอร์สเป็น `ศูนย์จัดการคอร์ส`
 - รักษา `/course-seller.html` เป็น canonical route เดิม
 - แยกชื่อศูนย์ออกจาก CTA `+ สร้างตะกร้าคอร์ส`
+# v0.14.131 — Course Basket Inline EP Manager (IMPLEMENTED)
+
+- รวมข้อมูลตะกร้าคอร์สและรายการ EP ในหน้าแก้ไขเดียว
+- ใช้ API EP เดิมและคง content lock หลังมีผู้ซื้อ
+- ปรับชื่อฟิลด์หลักเป็น `ชื่อคอร์ส`

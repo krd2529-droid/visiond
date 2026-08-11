@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>แก้ไขตะกร้าคอร์ส | VisionD</title>
-    <link rel="stylesheet" href="/style.css?v=014130" />
-    <link rel="stylesheet" href="/visiond-design-system.css?v=014130" />
-    <link rel="stylesheet" href="/course-seller.css?v=014130" />
-    <link rel="stylesheet" href="/elon-chat.css?v=014130" />
-    <link rel="stylesheet" href="/mobile-storefront.css?v=014130" />
-    <link rel="stylesheet" href="/frontend-theme.css?v=014130" />
+    <link rel="stylesheet" href="/style.css?v=014131" />
+    <link rel="stylesheet" href="/visiond-design-system.css?v=014131" />
+    <link rel="stylesheet" href="/course-seller.css?v=014131" />
+    <link rel="stylesheet" href="/elon-chat.css?v=014131" />
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014131" />
+    <link rel="stylesheet" href="/frontend-theme.css?v=014131" />
   </head>
   <body class="vd-frontend">
     <header class="topbar">
@@ -37,7 +37,7 @@
                 ><button id="restoreEditCover" type="button">ใช้รูปเดิม</button>
               </figcaption>
             </figure></label
-          ><label>ชื่อตะกร้าคอร์ส<input name="title" required /></label
+          ><label>ชื่อคอร์ส<input name="title" required /></label
           ><label>ชื่อผู้สอน<input name="teacher_name" required /></label
           ><label>คำอธิบายสั้น<input name="short_description" /></label
           ><label class="span2"
@@ -67,10 +67,33 @@
           <p id="courseBasketEditMessage" class="span2"></p>
         </form>
       </section>
+      <section id="basketEpisodeManager" class="seller-card seller-lesson-workspace">
+        <header class="seller-lesson-head">
+          <div>
+            <small>เนื้อหาภายในตะกร้าคอร์สนี้</small>
+            <h2>บทเรียนและ EP</h2>
+          </div>
+          <button id="basketAddEpisode" class="primary" type="button">+ สร้าง EP เพิ่ม</button>
+        </header>
+        <p id="basketEpisodeHelp">สร้าง แก้ไข หรือลบ EP ได้จากหน้าเดียวกับข้อมูลตะกร้าคอร์ส</p>
+        <form id="basketEpisodeForm" class="seller-form seller-lesson-editor" hidden>
+          <input name="lesson_id" type="hidden" />
+          <h3 id="basketEpisodeFormTitle" class="span2">สร้าง EP ใหม่</h3>
+          <label>ชื่อ EP<input name="title" required /></label>
+          <label>คำอธิบาย EP<textarea name="description" rows="3"></textarea></label>
+          <label>ความยาวโดยประมาณ (วินาที)<input name="duration_seconds" type="number" min="0" max="86400" value="0" /></label>
+          <label>วิดีโอ MP4/WEBM ไม่เกิน 200 MB<input name="video" type="file" accept="video/mp4,video/webm" /></label>
+          <label class="span2">ไฟล์ประกอบ เลือกได้หลายไฟล์<input name="documents" type="file" multiple /></label>
+          <button class="primary span2" type="submit">บันทึก EP</button>
+          <button id="basketCancelEpisode" class="secondary-button span2" type="button">ยกเลิก</button>
+          <p id="basketEpisodeMessage" class="span2" role="status" aria-live="polite"></p>
+        </form>
+        <div id="basketEpisodeList" class="seller-lesson-list"><p>กำลังโหลด EP…</p></div>
+      </section>
     </main>
-    <script src="/course-basket-edit.js?v=014130"></script>
-    <script src="/elon-chat.js?v=014130" defer></script>
-    <script src="/mobile-storefront.js?v=014130" defer></script>
-    <script src="/visiond-design-system.js?v=014130" defer></script>
+    <script src="/course-basket-edit.js?v=014131"></script>
+    <script src="/elon-chat.js?v=014131" defer></script>
+    <script src="/mobile-storefront.js?v=014131" defer></script>
+    <script src="/visiond-design-system.js?v=014131" defer></script>
   </body>
 </html>
