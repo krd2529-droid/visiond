@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.156
+Current build: v0.14.157
+
+# v0.14.157 — Integrity Query Performance (IMPLEMENTED)
+
+- แก้หน้า Integrity Production ที่ค้าง โดยรวมยอดฐานข้อมูลครั้งเดียวแทน query ซ้อนต่อคอร์ส
+- คงด่าน user1 แบบอ่านอย่างเดียวและไม่ลดเงื่อนไขการผ่าน Event Case
 
 # v0.14.156 — Production Event Gate (IMPLEMENTED)
 
