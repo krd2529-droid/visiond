@@ -1,7 +1,10 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.163
+Current build: v0.14.164
+
+## v0.14.164 — V Easy LINE Diagnostics
+- เก็บข้อความก่อนเรียก AI และบล็อกการเริ่มบอทเมื่อ AI/LINE ยังไม่พร้อม
 
 ## v0.14.163 — V Easy LINE AI Reply
 - LINE webhook ตอบด้วย AI จากสินค้าเฉพาะร้านและกัน redelivery ตอบซ้ำ

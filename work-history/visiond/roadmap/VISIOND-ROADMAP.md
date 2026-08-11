@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.163
+Current build: v0.14.164
+
+# v0.14.164 — V Easy LINE Diagnostics (IMPLEMENTED)
+- เก็บข้อความขาเข้าก่อนเรียก AI และส่ง blocker สถานะ AI/LINE ให้โปรแกรมตรวจได้
+- รอ Production LINE reply จริงก่อน VALIDATED
 
 # v0.14.163 — V Easy LINE AI Reply (IMPLEMENTED)
 - ซิงก์ผล LINE Verify เข้าสถานะช่องทาง `connected`

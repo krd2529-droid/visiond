@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.163
+Current build: v0.14.164
+
+## v0.14.164 LINE reliability gate
+- A failed AI reply must remain diagnosable before any LINE campaign traffic is added.
 
 ## v0.14.163 LINE sales reply gate
 - Do not promote the LINE sales channel until one real customer-style text receives a grounded product reply with the bot running.

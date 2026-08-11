@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.163
+Current build: v0.14.164
+
+## v0.14.164 LINE reliability gate
+- Require diagnosable AI and webhook readiness before LINE promotion.
 
 ## v0.14.163 LINE sales gate
 - Validate one grounded LINE AI reply before using LINE as a promoted sales channel.
