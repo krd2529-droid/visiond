@@ -1,7 +1,25 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.148
+Current build: v0.14.151
+
+# v0.14.151 — Cloudflare Active Tree Sync (IMPLEMENTED)
+
+- พบและยืนยันโครงเว็บซ้ำ: Repository root เป็น 150 แต่ `visiond-mvp` ที่ Cloudflare ใช้ยังเป็น 148
+- ซิงก์ Runtime ทั้งสองชุดเป็น 151 โดยยังไม่ลบ Active tree ระหว่างโฆษณา V5
+- เพิ่ม parity test และกำหนดให้การย้าย Cloudflare ไปใช้ราก/กักกันโครงซ้อนเป็น Cleanup phase แยก
+
+# v0.14.150 — Deploy-safe Course Center Repair (IMPLEMENTED)
+
+- ส่งแพตแบบ Delta ขนาดเล็กสำหรับ GitHub Web และล็อกเลข VERSION/WEB/ADMIN ให้ตรงกัน
+- แก้สวิตช์ตรวจสลิป, ตำแหน่งออเดอร์รออนุมัติหลัง PART 6 และยอดขายรวมที่ซ้ำ
+- ทำขนาดปก 8 MB ให้ตรงกันทุกจุด พร้อมแก้ลิงก์แจ้งเตือนเก่าและหลักฐาน QA
+
+# v0.14.149 — Course Center PART Order (IMPLEMENTED)
+
+- แยกหัวข้อการทำงานเป็น `PART 1–6` ไม่ปะปนกับเลข “3 ขั้นตอน Vision 5”
+- เรียงงานใหม่: เครดิต/สร้าง → บัญชีรับเงิน → ตรวจสลิป/รออนุมัติ → คอร์ส → EP/เผยแพร่ → ลูกค้า/ยอดขาย
+- ย้ายสรุปยอดขายไปไว้ด้านบนของตารางลูกค้าใน PART 6 และถอดกล่องสรุปที่ลอยซ้ำด้านบน
 
 # v0.14.148 — Course Detail, Cover Input, and Published Ownership (IMPLEMENTED)
 

@@ -28,26 +28,18 @@
     <main class="seller-shell">
       <section class="seller-hero">
         <div>
-          <p class="eyebrow">ส่วนที่ 1 · ระบบ Vision 5 สำหรับเจ้าของคอร์ส</p>
+          <p class="eyebrow">ระบบ Vision 5 สำหรับเจ้าของคอร์ส</p>
           <h1>ศูนย์จัดการคอร์ส</h1>
           <p>
             จัดการยอดขาย การรับเงิน คอร์ส ลูกค้า และสลิปจากที่เดียว
           </p>
         </div>
       </section>
-      <section id="salesOverviewPanel" class="seller-card seller-overview-card">
-        <p class="seller-section-number">ส่วนที่ 2</p>
-        <h2>สรุปยอดขาย</h2>
-        <div class="seller-summary">
-          <div><small>ยอดขายรวม</small><b id="salesTotal">0 บาท</b></div>
-          <div><small>ออเดอร์ชำระแล้ว</small><b id="salesCount">0</b></div>
-        </div>
-      </section>
       <section
         id="vision5CreditSummary"
         class="seller-card vision5-credit-summary"
       >
-        <p class="seller-section-number">ส่วนที่ 4</p>
+        <p class="seller-section-number">PART 1</p>
         <h2>สร้างคอร์ส / เติมเครดิต</h2>
         <div class="seller-create-actions">
           <button id="createCourseBasket" class="primary seller-create-credit-button" type="button">+ สร้างตะกร้าคอร์ส</button>
@@ -57,7 +49,7 @@
         <div id="licenseList">กำลังโหลด…</div>
       </section>
       <section id="paymentProfilePanel" class="seller-card">
-        <p class="seller-section-number">ส่วนที่ 3 · ตั้งค่ารับเงิน</p>
+        <p class="seller-section-number">PART 2</p>
         <h2>บัญชีรับเงินของเจ้าของคอร์ส</h2>
         <div id="paymentProfileStatus">กำลังตรวจสอบ…</div>
         <form id="paymentProfileForm" class="seller-form" hidden>
@@ -104,11 +96,11 @@
           <button class="primary span2" type="submit">
             บันทึกบัญชีรับเงิน
           </button>
-          <p id="paymentProfileMessage" class="span2"></p>
+          <p id="paymentProfileMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="slipApiPanel" class="seller-card">
-        <p class="seller-section-number">ส่วนที่ 3 · ตรวจสลิปอัตโนมัติ</p>
+        <p class="seller-section-number">PART 3</p>
         <h2>การตรวจสลิปของตะกร้าคอร์ส</h2>
         <p>
           เลือกได้ว่าจะตรวจและอนุมัติเอง หรือเปิด EasySlip API
@@ -126,7 +118,7 @@
               name="enabled"
               type="checkbox"
               role="switch"
-              aria-labelledby="slipSwitchTitle" /><i aria-hidden="true"></i
+              aria-labelledby="slipSwitchTitle" /><i aria-hidden="true"></i></label>
           <p id="slipManualHelp" class="span2 account-lock-warning">
             ปิดอยู่ · เจ้าของคอร์สต้องเปิดดูสลิปและอนุมัติเอง
           </p>
@@ -157,7 +149,7 @@
           <button class="primary span2" type="submit">
             บันทึกโหมดตรวจสลิป
           </button>
-          <p id="slipApiMessage" class="span2"></p>
+          <p id="slipApiMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="createPanel" class="seller-card" hidden>
@@ -261,11 +253,11 @@
           <button class="primary span2" type="submit">
             ใช้ 1 เครดิตและสร้างตะกร้าคอร์ส
           </button>
-          <p id="sellerMessage" class="span2"></p>
+          <p id="sellerMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="myCoursesPanel" class="seller-card seller-basket-catalog">
-        <p class="seller-section-number">ส่วนที่ 5</p>
+        <p class="seller-section-number">PART 4</p>
         <h2>คอร์สของฉัน</h2>
         <p class="account-lock-warning">
           ตะกร้าที่ยังไม่มียอดขายสามารถจัดการหรือลบพร้อมไฟล์ได้
@@ -280,6 +272,7 @@
         class="seller-card seller-lesson-workspace"
         hidden
       >
+        <p class="seller-section-number">PART 5</p>
         <header class="seller-lesson-head">
           <div>
             <small>บทเรียนของตะกร้า</small>
@@ -330,7 +323,7 @@
           >
             ยกเลิก
           </button>
-          <p id="sellerLessonMessage" class="span2"></p>
+          <p id="sellerLessonMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
         <div id="sellerLessonList" class="seller-lesson-list">
           <p>ยังไม่มีบทเรียน</p>
@@ -365,12 +358,16 @@
           ><button class="primary span2" type="submit">
             เผยแพร่ตะกร้าคอร์ส
           </button>
-          <p id="publishMessage" class="span2"></p>
+          <p id="publishMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="customerSalesPanel" class="seller-card">
-        <p class="seller-section-number">ส่วนที่ 6</p>
+        <p class="seller-section-number">PART 6</p>
         <h2>ตารางลูกค้า สลิปจริง และยอดขาย</h2>
+        <div class="seller-summary">
+          <div><small>ยอดขายรวม</small><b id="salesTotal">0 บาท</b></div>
+          <div><small>ออเดอร์ชำระแล้ว</small><b id="salesCount">0</b></div>
+        </div>
         <p class="account-lock-warning">
           <b>คุ้มครองข้อมูลผู้ซื้อ:</b> หน้านี้แสดงเฉพาะชื่อ–นามสกุลจากบัญชี
           VisionD เพื่อให้เจ้าของคอร์สตรวจสอบรายการซื้อ โดยไม่แสดงอีเมล เบอร์โทร
@@ -400,10 +397,9 @@
             </tbody>
           </table>
         </div>
-        <p class="seller-table-total">ยอดขายรวมทั้งหมด <b id="salesTableTotal">0 บาท</b></p>
       </section>
       <section id="pendingSlipPanel" class="seller-card">
-        <p class="seller-section-number">ส่วนที่ 3 · ออเดอร์รออนุมัติ</p>
+        <p class="seller-section-number">ต่อจาก PART 6</p>
         <h2>ออเดอร์รออนุมัติ</h2>
         <p>
           เจ้าของคอร์สรับผิดชอบ Token และโควต้า API ของตนเอง
@@ -441,7 +437,7 @@
     />
     <script src="/shared-nav.js?v=014135" defer></script>
     <script src="/header-shell.js?v=014134" defer></script>
-    <script src="/course-seller.js?v=014146"></script>
+    <script src="/course-seller.js?v=014150"></script>
     <script src="/course-draft-first-ep.js?v=014134"></script>
     <script src="/course-license-dates.js?v=014134"></script>
     <script src="/elon-chat.js?v=014134" defer></script>

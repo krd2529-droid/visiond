@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.150
+Current build: v0.14.151
+
+# v0.14.151 — Cloudflare Active Tree Sync (IMPLEMENTED)
+
+- พบและยืนยันโครงเว็บซ้ำ: Repository root เป็น 150 แต่ `visiond-mvp` ที่ Cloudflare ใช้ยังเป็น 148
+- ซิงก์ Runtime ทั้งสองชุดเป็น 151 โดยยังไม่ลบ Active tree ระหว่างโฆษณา V5
+- เพิ่ม parity test และกำหนดให้การย้าย Cloudflare ไปใช้ราก/กักกันโครงซ้อนเป็น Cleanup phase แยก
 
 # v0.14.150 — Deploy-safe Course Center Repair (IMPLEMENTED)
 

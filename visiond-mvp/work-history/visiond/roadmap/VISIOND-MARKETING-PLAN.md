@@ -1,7 +1,19 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.148
+Current build: v0.14.151
+
+## v0.14.151 V5 campaign continuity
+- Keep the currently configured Cloudflare tree live while synchronizing it to the approved release.
+- Verify the immutable Pages deployment shows 151 before relying on the custom domain during active V5 ads.
+
+## v0.14.150 creator operations reliability
+- Keep manual-approval orders beside customer revenue so creators can act without searching another section.
+- Prevent deploy-version ambiguity by verifying the immutable Pages URL before sending traffic to production.
+
+## v0.14.149 creator workflow clarity
+- Keep the three-step onboarding guide distinct from the six operational workspace parts.
+- Put paid-order totals beside the customer sales table so creators evaluate revenue in context.
 
 ## v0.14.148 course presentation
 - Standardize seller upload previews and course detail covers to the same portrait frame as catalog cards.

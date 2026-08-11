@@ -172,10 +172,10 @@
     if (!file) return showCover(item?.cover_url);
     if (
       !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-      file.size > 5 * 1024 * 1024
+      file.size > 8 * 1024 * 1024
     ) {
       editCoverInput.value = "";
-      message.textContent = "รูปปกต้องเป็น JPG, PNG หรือ WEBP และไม่เกิน 5 MB";
+      message.textContent = "รูปปกต้องเป็น JPG, PNG หรือ WEBP และไม่เกิน 8 MB";
       return;
     }
     if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl);

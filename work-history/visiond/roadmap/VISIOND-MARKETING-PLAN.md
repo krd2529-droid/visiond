@@ -1,7 +1,11 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.150
+Current build: v0.14.151
+
+## v0.14.151 V5 campaign continuity
+- Keep the currently configured Cloudflare tree live while synchronizing it to the approved release.
+- Verify the immutable Pages deployment shows 151 before relying on the custom domain during active V5 ads.
 
 ## v0.14.150 creator operations reliability
 - Keep manual-approval orders beside customer revenue so creators can act without searching another section.
