@@ -1,7 +1,10 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.157
+Current build: v0.14.158
+
+# v0.14.158 — Focused user1 Gate (IMPLEMENTED)
+- แยก query เฉพาะ user1/บัญชีทดสอบ ไม่สแกน Integrity ทั้งระบบ และยังอ่านอย่างเดียว
 
 # v0.14.157 — Integrity Query Performance (IMPLEMENTED)
 

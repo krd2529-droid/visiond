@@ -4,7 +4,7 @@
   async function load() {
     auditSummary.textContent = 'กำลังตรวจ…';
     eventCaseSummary.textContent = 'กำลังตรวจตะกร้าตัวอย่าง…';
-    const response = await fetch('/api/admin/course-integrity', { cache: 'no-store' }), data = await response.json().catch(() => ({}));
+    const response = await fetch('/api/admin/course-integrity?event_case=1', { cache: 'no-store' }), data = await response.json().catch(() => ({}));
     if (!response.ok) { auditSummary.textContent = data.error || 'ตรวจไม่สำเร็จ'; return; }
     auditSummary.className = data.healthy ? 'audit-ok' : 'audit-bad';
     auditSummary.textContent = data.healthy ? 'ข้อมูลทุกตะกร้าตรงกัน' : `พบความผิดปกติ ${Number(data.issues) || 0} รายการ`;

@@ -1,7 +1,10 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.157
+Current build: v0.14.158
+
+## v0.14.158 focused sample proof
+- Validate only the sample V5 conversion before campaign expansion.
 
 ## v0.14.157 reliable conversion proof
 - Make the production conversion audit responsive before accepting the sample funnel as campaign evidence.
