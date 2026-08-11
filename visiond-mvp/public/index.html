@@ -68,7 +68,7 @@
       }
     </script>
     <link rel="canonical" href="https://visiondonline.com/" />
-    <link rel="stylesheet" href="/style.css?v=014136" />
+    <link rel="stylesheet" href="/style.css?v=014140" />
     <link rel="stylesheet" href="/visiond-design-system.css?v=014134" />
     <link rel="stylesheet" href="/course-owner-badge.css?v=014134" />
     <link rel="stylesheet" href="/promotion.css?v=014134" />
@@ -493,7 +493,7 @@
     <script src="/meta-pixel.js?v=014134"></script>
     <link rel="stylesheet" href="/elon-chat.css?v=014134" />
     <link rel="stylesheet" href="/mobile-storefront.css?v=014134" />
-    <link rel="stylesheet" href="/home-modern-ai.css?v=014139" />
+    <link rel="stylesheet" href="/home-modern-ai.css?v=014140" />
     <link rel="stylesheet" href="/header-shell.css?v=014134" />
     <link rel="stylesheet" href="/frontend-theme.css?v=014134" />
   </head>
@@ -526,7 +526,7 @@
           >รถเข็น <b data-cart-count>0</b></a
         >
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันเว็บไซต์ VisionD">WEB v0.14.139</span>
+      <span class="visiond-build-version" title="เวอร์ชันเว็บไซต์ VisionD">WEB v0.14.140</span>
     </header>
 
     <main>
@@ -549,11 +549,6 @@
               class="vds-btn vds-btn--large vds-btn--promotion"
               href="/digital-products.html"
               >เลือกดูสินค้าดิจิทัล</a
-            >
-            <a
-              class="vds-btn vds-btn--large home-hero-secondary"
-              href="#digital-categories"
-              >เลือกตามหมวด</a
             >
           </div>
         </div>
@@ -609,37 +604,30 @@
         </div>
       </section>
 
-      <section
-        id="courses"
-        class="showcase-section home-ai-section vds-card vds-card--feature"
-      >
-        <div class="showcase-copy">
+      <section id="courses" class="home-course-catalog home-ai-section" aria-labelledby="homeCourseCatalogTitle">
+        <div class="home-course-intro">
+          <div class="showcase-copy">
           <p class="eyebrow">ONLINE COURSES FOR LEARNERS</p>
-          <h2>ระบบ V-Learning</h2>
+          <h2 id="homeCourseCatalogTitle">ระบบ V-Learning</h2>
           <p>
             พื้นที่สำหรับผู้เรียนโดยเฉพาะ รวมบทเรียนด้าน AI การสร้างคอนเทนต์
             การตลาดออนไลน์ และการพัฒนาระบบดิจิทัล
           </p>
-          <a
-            class="vds-btn vds-btn--large vds-btn--primary"
-            href="/courses.html"
-            >เลือกดูคอร์สเรียน</a
-          >
-        </div>
-        <div class="showcase-panel">
+          </div>
+          <div class="showcase-panel">
           <strong>เรียนได้ทุกที่</strong>
           <span
             >บทเรียน วิดีโอ เอกสาร
             และไฟล์ประกอบการเรียนจะรวมอยู่ในบัญชีของลูกค้า
             โดยไม่แสดงตะกร้าสิทธิ์ขายคอร์สในรายการนี้</span
           >
+          </div>
         </div>
-      </section>
-
-      <section class="home-course-catalog home-ai-section" aria-labelledby="homeCourseCatalogTitle">
-        <div class="vd-catalog-head">
-          <div><p class="eyebrow dark">V-LEARNING COURSE CATALOG</p><h2 id="homeCourseCatalogTitle">คอร์สออนไลน์ที่เปิดเรียน</h2><p>เลือกดูตะกร้าคอร์สที่ผ่านการตรวจและเปิดขายแล้ว ซื้อครั้งเดียวแล้วปลดล็อก EP ในบัญชีของคุณ</p></div>
-          <a class="vds-btn vds-btn--text" href="/courses.html">ดูคอร์สทั้งหมด →</a>
+        <div class="vd-home-search home-course-search vds-card vds-card--information" role="search">
+          <label class="home-search-label" for="homeCourseSearch">ค้นหาคอร์สจากชื่อ ผู้สอน หรือแพลตฟอร์ม</label>
+          <input id="homeCourseSearch" type="search" placeholder="ค้นหาชื่อคอร์ส ผู้สอน Shopee TikTok AI หรือหัวข้อที่สนใจ" autocomplete="off" aria-label="ค้นหาคอร์ส">
+          <button id="clearHomeCourseSearch" class="vds-btn vds-btn--tonal" type="button">ล้างคำค้นหา</button>
+          <small id="homeCourseSearchCount">กำลังโหลดคอร์ส…</small>
         </div>
         <div id="homeCourseCatalog" class="home-course-grid" aria-live="polite"><p>กำลังโหลดคอร์ส…</p></div>
       </section>
@@ -653,9 +641,6 @@
             <p class="eyebrow dark">RECOMMENDED DIGITAL PRODUCTS</p>
             <h2>สินค้าดิจิทัลแนะนำ</h2>
           </div>
-          <a class="vds-btn vds-btn--text" href="/digital-products.html"
-            >ดูสินค้าดิจิทัลทั้งหมด →</a
-          >
         </div>
         <div
           class="vd-home-search vds-card vds-card--information"
@@ -683,58 +668,6 @@
           >
         </div>
         <div class="vd-grid"></div>
-      </section>
-
-      <section
-        id="digital-categories"
-        class="digital-categories-section home-ai-section"
-      >
-        <div class="section-head category-title-row">
-          <div>
-            <p class="eyebrow">DIGITAL PRODUCT CATEGORIES</p>
-            <h2>เลือกประเภทสินค้าดิจิทัล</h2>
-            <p class="category-intro">
-              ค้นหาไฟล์พร้อมใช้ตามงานที่ต้องการ ระบบรองรับการเพิ่ม แก้ไข
-              และจัดเรียงหมวดในหลังบ้านภายหลัง
-            </p>
-          </div>
-        </div>
-        <div class="digital-category-grid">
-          <a
-            class="digital-category-card vds-card vds-card--feature"
-            href="/digital-products?category=tattoo"
-            ><span>01</span>
-            <h3>แบบรอยสัก</h3>
-            <p>รวมแบบรอยสักหลายแนว พร้อมภาพตัวอย่างก่อนเลือกซื้อ</p>
-            <b>ดูสินค้า →</b></a
-          >
-          <a
-            class="digital-category-card vds-card vds-card--feature"
-            href="/digital-products?category=coloring"
-            ><span>02</span>
-            <h3>แบบระบายสี</h3>
-            <p>ภาพระบายสีและกิจกรรมสร้างสรรค์ในรูปแบบไฟล์พร้อมพิมพ์</p>
-            <b>ดูสินค้า →</b></a
-          >
-          <a
-            class="digital-category-card vds-card vds-card--feature"
-            href="/digital-products?category=worksheet"
-            ><span>03</span>
-            <h3>แบบฝึกหัด</h3>
-            <p>
-              แบบฝึกเขียน ฝึกอ่าน ABC ตัวเลข และ Worksheet สำหรับการเรียนรู้
-            </p>
-            <b>ดูสินค้า →</b></a
-          >
-          <a
-            class="digital-category-card vds-card vds-card--feature"
-            href="/digital-products?category=development-game"
-            ><span>04</span>
-            <h3>เกมเสริมพัฒนาการ</h3>
-            <p>เกมเขาวงกต จับคู่ภาพ หาจุดต่าง ต่อจุด ฝึกสังเกต และฝึกสมาธิ</p>
-            <b>ดูสินค้า →</b></a
-          >
-        </div>
       </section>
 
       <section
@@ -771,9 +704,9 @@
 
     <script src="/app.js?v=014134"></script>
     <link rel="stylesheet" href="/cart-catalog.css?v=014134" />
-    <script src="/catalog-sync.js?v=014134"></script>
+    <script src="/catalog-sync.js?v=014140"></script>
     <script src="/home-course-rights.js?v=014134"></script>
-    <script src="/home-course-catalog.js?v=014139"></script>
+    <script src="/home-course-catalog.js?v=014140"></script>
     <script src="/course-owner-badge.js?v=014134"></script>
     <script src="/analytics.js?v=014138"></script>
     <script src="/promo-banner.js?v=014134"></script>
