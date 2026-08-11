@@ -130,7 +130,9 @@
     "test:v014148": "node scripts/test-v014148.mjs",
     "test:v014149": "node scripts/test-v014149.mjs",
     "test:v014150": "node scripts/test-v014150.mjs",
-    "test:v014151": "node scripts/test-v014151.mjs"
+    "test:v014151": "node scripts/test-v014151.mjs",
+    "test:v014152": "node scripts/test-v014152.mjs",
+    "test:v014153": "node scripts/test-v014153.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

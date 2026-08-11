@@ -1,13 +1,25 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.151
+Current build: v0.14.153
+
+# v0.14.153 — Overlay-only Patch Contract (IMPLEMENTED)
+
+- ทุกแพตใช้วิธีแตก ZIP แล้ววางทับอย่างเดียว ไม่มี PowerShell, CMD, ขั้นตอนลบ หรือการย้ายโฟลเดอร์
+- แก้ `visiond-mvp` ซึ่งเป็น Cloudflare Production tree โดยตรง และไม่เปลี่ยนการตั้งค่า Cloudflare
+- ไฟล์เก่าที่การวางทับลบไม่ได้ให้ค้างไว้ ตราบใดที่ไม่ถูก Runtime เรียกใช้และไม่ทำให้เว็บบั๊ก
+
+# v0.14.152 — Permanent Cloudflare Tree Lock (IMPLEMENTED)
+
+- ล็อก `visiond-mvp` เป็น Production tree ถาวร ห้ามย้าย เปลี่ยนชื่อ หรือลบ และไม่เปลี่ยน Cloudflare Root directory
+- การซ่อมแพตเว็บทุกครั้งต้องแก้/ทดสอบ `visiond-mvp` โดยตรง ส่วนไฟล์รากตรวจเป็นรายรายการก่อนกักกันหรือลบ
+- ยกเลิก Cleanup ที่ต้องรันคำสั่งเสริม ใช้แพตวางทับอย่างเดียวตามกฎ Boss
 
 # v0.14.151 — Cloudflare Active Tree Sync (IMPLEMENTED)
 
 - พบและยืนยันโครงเว็บซ้ำ: Repository root เป็น 150 แต่ `visiond-mvp` ที่ Cloudflare ใช้ยังเป็น 148
 - ซิงก์ Runtime ทั้งสองชุดเป็น 151 โดยยังไม่ลบ Active tree ระหว่างโฆษณา V5
-- เพิ่ม parity test และกำหนดให้การย้าย Cloudflare ไปใช้ราก/กักกันโครงซ้อนเป็น Cleanup phase แยก
+- เพิ่ม parity test และกำหนดให้ `visiond-mvp` เป็น Active tree ถาวร ส่วน Cleanup จำกัดเฉพาะไฟล์รอบนอกที่ตรวจแล้ว
 
 # v0.14.150 — Deploy-safe Course Center Repair (IMPLEMENTED)
 

@@ -1,7 +1,15 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.151
+Current build: v0.14.153
+
+## v0.14.153 zero-friction production patches
+- Use overlay-only releases during active V5 acquisition: no deletion scripts, folder moves, or Cloudflare changes.
+- Treat `visiond-mvp` as the only production target and verify its immutable Pages URL after each push.
+
+## v0.14.152 stable V5 production path
+- Keep `visiond-mvp` as the permanent Cloudflare production root throughout active V5 acquisition.
+- Cleanup must never change the production path; remove only verified obsolete files outside the active tree.
 
 ## v0.14.151 V5 campaign continuity
 - Keep the currently configured Cloudflare tree live while synchronizing it to the approved release.

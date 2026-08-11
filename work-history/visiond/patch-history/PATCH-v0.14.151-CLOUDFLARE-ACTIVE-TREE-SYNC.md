@@ -5,6 +5,6 @@
 - ยังไม่ลบโครงใดในแพตนี้ เพื่อลดความเสี่ยงเว็บล่มระหว่างโฆษณา V5
 - เพิ่ม parity test ป้องกันรากกับโครงใช้งานจริงต่างกันอีก
 
-## Next safe cleanup phase
+## Permanent production rule
 
-หลัง 151 ขึ้น Production และเส้นทาง V5 ผ่าน จึงเปลี่ยน Cloudflare Root directory จาก `visiond-mvp` ไป Repository root ก่อนกักกันโครงซ้อน การลบถาวรต้องเป็นแพตแยกหลังตรวจ Production แล้ว
+คง Cloudflare Root directory ที่ `visiond-mvp` ถาวร ทุกแพตต้องซ่อมและทดสอบโฟลเดอร์นี้โดยตรง การทำความสะอาด Repository ทำได้เฉพาะรอบนอกและต้องไม่เปลี่ยนการตั้งค่า Cloudflare
