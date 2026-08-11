@@ -101,10 +101,11 @@
     "test:v014119": "node scripts/test-v014119.mjs",
     "test:v014120": "node scripts/test-v014120.mjs",
     "test:v014121": "node scripts/test-v014121.mjs",
-    "test:v014122": "node scripts/test-v014122.mjs"
+    "test:v014122": "node scripts/test-v014122.mjs",
+    "test:v014123": "node scripts/test-v014123.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.28.0",
-    "@aws-sdk/client-s3": "^3.864.0"
+    "@aws-sdk/client-s3": "^3.864.0",
+    "wrangler": "^4.28.0"
   }
 }

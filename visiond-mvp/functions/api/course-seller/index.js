@@ -64,12 +64,12 @@ export async function onRequestGet(ctx) {
   const auth = await requireUser(ctx);
   if (auth.error) return auth.error;
   const profile = await ctx.env.DB.prepare(
-    `SELECT seller_bank_name bank_name,seller_account_name account_name,seller_account_number account_number,seller_payment_status status,seller_slip_api_key FROM users WHERE id=?`,
+    `SELECT seller_bank_name bank_name,seller_account_name account_name,seller_account_number account_number,seller_payment_status status,seller_slip_api_key,seller_slip_auto_verify slip_auto_verify,vision5_test_account test_account FROM users WHERE id=?`,
   )
     .bind(auth.user.id)
     .first();
   const tokenStatus=sellerTokenStatus(ctx.env,profile?.seller_slip_api_key);
-  if(profile){delete profile.seller_slip_api_key;profile.slip_api_configured=tokenStatus.configured?1:0;profile.token_encryption_configured=tokenStatus.encryption_configured;profile.token_requires_configuration=tokenStatus.requires_configuration}
+  if(profile){delete profile.seller_slip_api_key;profile.slip_api_configured=tokenStatus.configured?1:0;profile.slip_auto_verify=Number(profile.slip_auto_verify)===1?1:0;profile.test_account=Number(profile.test_account)===1?1:0;profile.token_encryption_configured=tokenStatus.encryption_configured;profile.token_requires_configuration=tokenStatus.requires_configuration}
   const credits = await ctx.env.DB.prepare(
     `SELECT cr.id credit_id,cr.active,cr.used_at,cr.granted_at,p.title license_title FROM course_right_credits cr JOIN products p ON p.id=cr.product_id WHERE cr.user_id=? ORDER BY cr.id DESC`,
   )
@@ -137,7 +137,7 @@ export async function onRequestPost(ctx) {
   if (!credit)
     return json(
       {
-        error: "ต้องมีเครดิตอย่างน้อย 1 แต้มก่อนสร้างร่างตะกร้าคอร์ส",
+        error: "ต้องมีอย่างน้อย 1 เครดิตก่อนสร้างร่างตะกร้าคอร์ส",
         credit_required: true,
         buy_url: "/product.html?slug=course-selling-rights",
       },

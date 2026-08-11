@@ -13,7 +13,7 @@ function showLicenseDates(){
     summary.className='credit-summary';
     licenseList.before(summary);
   }
-  summary.innerHTML=`<span><small>เครดิตสิทธิ์คงเหลือ</small><strong>${Number(state.credit_balance)||0} แต้ม</strong></span><span><small>ใช้เปิดตะกร้าแล้ว</small><strong>${Number(state.credit_used)||0} แต้ม</strong></span><p>1 เครดิต = เปิดตะกร้าคอร์สได้ 1 ตะกร้า · หักเครดิตเมื่อสร้างสำเร็จเท่านั้น · เครดิตสิทธิ์ไม่คืนเงินหรือแลกเป็นเงินสด เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</p>`;
+  summary.innerHTML=`<span><small>เครดิตคงเหลือ</small><strong>${Number(state.credit_balance)||0} เครดิต</strong></span><span><small>ใช้สร้างตะกร้าแล้ว</small><strong>${Number(state.credit_used)||0} เครดิต</strong></span><p>1 เครดิต = สร้างตะกร้าคอร์สได้ 1 ตะกร้า · หักเมื่อสร้างสำเร็จเท่านั้น · เครดิตไม่คืนเงินหรือแลกเป็นเงินสด เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</p>`;
   licenseList.querySelectorAll('.license-row').forEach((row,index)=>{
     const license=state.licenses[index];
     if(!license||row.querySelector('.license-dates'))return;

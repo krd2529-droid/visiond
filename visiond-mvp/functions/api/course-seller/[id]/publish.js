@@ -76,7 +76,7 @@ export async function onRequestPost(ctx) {
     );
   }
   const owner = await ctx.env.DB.prepare(
-    "SELECT seller_bank_name,seller_account_name,seller_account_number,seller_payment_status FROM users WHERE id=?",
+    "SELECT seller_bank_name,seller_account_name,seller_account_number,seller_payment_qr_url,seller_payment_status,seller_slip_auto_verify,vision5_test_account FROM users WHERE id=?",
   )
     .bind(auth.user.id)
     .first();
@@ -88,8 +88,8 @@ export async function onRequestPost(ctx) {
       },
       409,
     );
-  let sellerToken='';try{sellerToken=await loadSellerToken(ctx.env,auth.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
-  if (sellerToken.length < 20)
+  let sellerToken='';if(Number(owner.seller_slip_auto_verify)===1&&Number(owner.vision5_test_account)!==1)try{sellerToken=await loadSellerToken(ctx.env,auth.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
+  if (Number(owner.seller_slip_auto_verify)===1&&Number(owner.vision5_test_account)!==1&&sellerToken.length < 20)
     return json(
       {
         error: "กรุณาตั้งค่า EasySlip API ของคุณก่อนเผยแพร่",
@@ -99,7 +99,7 @@ export async function onRequestPost(ctx) {
     );
   const bindingId = Number(course.license_entitlement_id),
     expires = new Date(Date.now() + 30 * 86400000).toISOString(),
-    paymentQrUrl = `/api/course-seller/payment-qr/${bindingId}`;
+    paymentQrUrl = owner.seller_payment_qr_url?`/api/course-seller/payment-qr/${bindingId}`:'';
   try {
     const results = await ctx.env.DB.batch([
       ctx.env.DB.prepare(

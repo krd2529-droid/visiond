@@ -24,7 +24,7 @@ function syncSellerCreateButton(){
 }
 
 sellerCourseForm.addEventListener('submit',event=>{
-  const accepted=confirm('ยืนยันสร้างตะกร้าคอร์ส?\n\nเมื่อสร้างและอัปโหลดสำเร็จ ระบบจะหักเครดิตสิทธิ์ 1 แต้ม และเริ่มนับระยะเวลาแก้ไข 30 วัน\n\nหากสร้างไม่สำเร็จ ระบบจะไม่หักเครดิต ส่วนเครดิตที่ใช้สำเร็จแล้วจะไม่คืน');
+  const accepted=confirm('ยืนยันสร้างตะกร้าคอร์ส?\n\nเมื่อสร้างและอัปโหลดสำเร็จ ระบบจะหัก1 เครดิต และเริ่มนับระยะเวลาแก้ไข 30 วัน\n\nหากสร้างไม่สำเร็จ ระบบจะไม่หักเครดิต ส่วนเครดิตที่ใช้สำเร็จแล้วจะไม่คืน');
   if(!accepted){event.preventDefault();event.stopImmediatePropagation()}
 },true);
 
