@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { access, readFile, readdir, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -47,13 +48,37 @@ async function checkConfig() {
 }
 
 async function checkMigrations() {
-  const list = await files('migrations', file => /\/\d{4}_[^/]+\.sql$/.test(file));
+  let list = await files('migrations', file => /\/\d{4}_[^/]+\.sql$/.test(file));
   if (!list.length) return add('FAIL', 'Migrations', 'ไม่พบ migration');
+  const legacyAliases = [['migrations/0029_veasy_conversation_isolation.sql', 'migrations/0032_veasy_conversation_isolation.sql']];
+  const toleratedAliases = [];
+  for (const [legacy, canonical] of legacyAliases) {
+    if (!list.includes(legacy)) continue;
+    if (!list.includes(canonical)) return add('FAIL', 'Migrations', `พบไฟล์เก่า ${legacy} แต่ไม่พบไฟล์หลัก ${canonical}`);
+    const [oldBytes, canonicalBytes] = await Promise.all([readFile(path.join(root, legacy)), readFile(path.join(root, canonical))]);
+    if (!oldBytes.equals(canonicalBytes)) return add('FAIL', 'Migrations', `${legacy} เนื้อหาไม่ตรงกับ ${canonical}`);
+    list = list.filter(file => file !== legacy);
+    toleratedAliases.push(`${legacy} = ${canonical}`);
+  }
   const nums = list.map(file => Number(path.basename(file).slice(0, 4)));
-  const dupes = nums.filter((number, i) => nums.indexOf(number) !== i);
+  const groups = new Map();
+  for (const file of list) {
+    const number = Number(path.basename(file).slice(0, 4));
+    if (!groups.has(number)) groups.set(number, []);
+    groups.get(number).push(file);
+  }
+  const conflicting = [], identical = [];
+  for (const [number, group] of groups) {
+    if (group.length < 2) continue;
+    const hashes = new Set();
+    for (const file of group) hashes.add(createHash('sha256').update(await readFile(path.join(root, file))).digest('hex'));
+    (hashes.size === 1 ? identical : conflicting).push(number);
+  }
   const missing = [];
   for (let number = Math.min(...nums); number <= Math.max(...nums); number++) if (!nums.includes(number)) missing.push(number);
-  add(dupes.length || missing.length ? 'FAIL' : 'PASS', 'Migrations', dupes.length || missing.length ? `เลขซ้ำ: ${dupes.join(',') || '-'}; เลขขาด: ${missing.join(',') || '-'}` : `${list.length} ไฟล์ เรียงต่อเนื่อง ${nums[0]}–${nums.at(-1)}`);
+  add(conflicting.length || missing.length ? 'FAIL' : 'PASS', 'Migrations', conflicting.length || missing.length ? `เลขซ้ำแต่เนื้อหาต่างกัน: ${conflicting.join(',') || '-'}; เลขขาด: ${missing.join(',') || '-'}` : `${list.length} ไฟล์ ครบช่วง ${Math.min(...nums)}–${Math.max(...nums)}`);
+  if (identical.length) add('WARN', 'Migration duplicates', `พบเลขซ้ำที่เนื้อหาเหมือนกันทุกไบต์: ${identical.join(',')}`);
+  if (toleratedAliases.length) add('WARN', 'Legacy migration aliases', `${toleratedAliases.join('; ')} — ยอมรับเพื่อรองรับการวาง ZIP ทับโดยไม่ลบไฟล์`);
   for (const file of list) if ((await stat(path.join(root, file))).size === 0) add('FAIL', 'Migration file', `${file} เป็นไฟล์ว่าง`);
 }
 

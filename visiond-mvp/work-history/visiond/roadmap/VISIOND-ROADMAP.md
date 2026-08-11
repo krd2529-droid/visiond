@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.153
+Current build: v0.14.154
+
+# v0.14.154 — Event Case Stability Gate (IMPLEMENTED)
+
+- รองรับ migration เก่าที่เลขซ้ำเฉพาะเมื่อเนื้อหาเหมือนกันทุกไบต์ โดยไม่ต้องลบไฟล์ก่อนวางทับ
+- แยก historical snapshots ออกจาก forward-compatible regression contracts เพื่อตัดบั๊กปลอมแต่ยังบล็อกสัญญาปัจจุบันที่พัง
+- สงวน `user1` และตะกร้าตัวอย่างไว้สำหรับตรวจ Production จริง ห้ามลบ รีเซ็ต หรือสร้างทับ
+- คงกฎ `visiond-mvp` เป็น Production tree ถาวรและติดตั้งแบบวาง ZIP ทับอย่างเดียว
 
 # v0.14.153 — Overlay-only Patch Contract (IMPLEMENTED)
 

@@ -1,7 +1,11 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.153
+Current build: v0.14.154
+
+## v0.14.154 V5 Event Case protection
+- Preserve `user1` and the sample basket while validating the live V5 acquisition-to-learning path.
+- Treat production verification as the gate before any new campaign feature work.
 
 ## v0.14.153 zero-friction production patches
 - Use overlay-only releases during active V5 acquisition: no deletion scripts, folder moves, or Cloudflare changes.

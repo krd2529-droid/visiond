@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const read = path => readFile(path, 'utf8');
+assert.equal((await read('VERSION.txt')).trim(), 'v0.14.154');
+assert.match(await read('public/index.html'), /WEB v0\.14\.154/);
+assert.match(await read('public/admin.html'), /ADMIN v0\.14\.154/);
+const migrations = await read('scripts/predeploy-check.mjs');
+assert.match(migrations, /createHash\('sha256'\)/);
+assert.match(migrations, /hashes\.size === 1 \? identical : conflicting/);
+assert.match(migrations, /0029_veasy_conversation_isolation\.sql/);
+assert.match(migrations, /oldBytes\.equals\(canonicalBytes\)/);
+const runner = await read('scripts/test-all-regressions.mjs');
+assert.match(runner, /forward-compatible contracts/);
+assert.match(runner, /historical-release-snapshots/);
+assert.match(runner, /test-v01486-vision5-two-account-e2e\.mjs/);
+const eventCase = await read('work-history/visiond/patch-history/PATCH-v0.14.154-EVENT-CASE-STABILITY.md');
+assert.match(eventCase, /user1/);
+assert.match(eventCase, /ห้ามลบ รีเซ็ต หรือสร้างทับ/);
+assert.match(eventCase, /วางทับอย่างเดียว/);
+const cleanup = await read('scripts/test-v014109-test-data-cleanup.mjs');
+assert.doesNotMatch(eventCase, /test-v014109-test-data-cleanup\.mjs/);
+assert.match(cleanup, /VD-CREDIT-1786366955307-50BE/);
+console.log('v0.14.154 Event Case stability contracts: PASS');
