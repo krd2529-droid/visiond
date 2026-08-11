@@ -137,7 +137,7 @@ export async function onRequestPost(ctx) {
   if (!credit)
     return json(
       {
-        error: "ต้องมีอย่างน้อย 1 เครดิตก่อนสร้างร่างตะกร้าคอร์ส",
+        error: "ต้องมีอย่างน้อย 1 เครดิตก่อนสร้างตะกร้าคอร์ส",
         credit_required: true,
         buy_url: "/product.html?slug=course-selling-rights",
       },
@@ -282,14 +282,14 @@ export async function onRequestPost(ctx) {
         slug,
         episode_count: episodes,
         credit_used: 1,
-        message: `สร้างร่างตะกร้าคอร์สและเตรียม ${episodes} EP แล้ว หัก 1 เครดิตเรียบร้อย`,
+        message: `สร้างตะกร้าคอร์สและเตรียม ${episodes} EP แล้ว หัก 1 เครดิตเรียบร้อย`,
       },
       201,
     );
   } catch (error) {
     await ctx.env.FILES.delete(coverKey).catch(() => {});
     return json(
-      { error: "สร้างร่างตะกร้าคอร์สไม่สำเร็จ เครดิตไม่ถูกหัก กรุณาลองใหม่" },
+      { error: "สร้างตะกร้าคอร์สไม่สำเร็จ เครดิตไม่ถูกหัก กรุณาลองใหม่" },
       409,
     );
   }

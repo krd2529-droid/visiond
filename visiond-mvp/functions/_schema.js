@@ -72,6 +72,10 @@ async function initializeDatabase(env) {
   if (!columns.includes('seller_slip_api_updated_at')) await env.DB.prepare('ALTER TABLE users ADD COLUMN seller_slip_api_updated_at TEXT').run();
   if (!columns.includes('seller_slip_auto_verify')) await env.DB.prepare('ALTER TABLE users ADD COLUMN seller_slip_auto_verify INTEGER NOT NULL DEFAULT 0').run();
   if (!columns.includes('vision5_test_account')) await env.DB.prepare('ALTER TABLE users ADD COLUMN vision5_test_account INTEGER NOT NULL DEFAULT 0').run();
+  if (!columns.includes('is_test_user')) await env.DB.prepare('ALTER TABLE users ADD COLUMN is_test_user INTEGER NOT NULL DEFAULT 0').run();
+  await env.DB.prepare('UPDATE users SET is_test_user=1 WHERE vision5_test_account=1 AND is_test_user=0').run();
+  await env.DB.prepare("UPDATE users SET name='รัฐสิทธิ ดำรงรถการ' WHERE is_test_user=1 AND name<>'รัฐสิทธิ ดำรงรถการ'").run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_test_user ON users(is_test_user,id DESC)').run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_user_activity_user_time ON user_activity_log(user_id,created_at DESC)').run();

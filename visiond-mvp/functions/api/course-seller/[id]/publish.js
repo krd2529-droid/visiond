@@ -55,7 +55,7 @@ export async function onRequestPost(ctx) {
   if (!course) return json({ error: "ไม่พบคอร์สของคุณ" }, 404);
   if (course.license_entitlement_id === null || !course.basket_binding_locked)
     return json(
-      { error: "ร่างตะกร้าคอร์สนี้ไม่มีสิทธิ์ที่จองไว้ กรุณาติดต่อ VisionD" },
+      { error: "ตะกร้าคอร์สนี้ไม่มีสิทธิ์ที่จองไว้ กรุณาติดต่อ VisionD" },
       409,
     );
   const validation = await lessonValidation(
@@ -129,7 +129,7 @@ export async function onRequestPost(ctx) {
       course_id: course.id,
       edit_expires_at: expires,
       review_status: "pending",
-      message: "ส่งร่างตะกร้าคอร์สให้ Boss ตรวจแล้ว (ไม่หักเครดิตซ้ำ)",
+      message: "ส่งตะกร้าคอร์สให้ Boss ตรวจแล้ว (ไม่หักเครดิตซ้ำ)",
     });
   } catch (error) {
     return json(

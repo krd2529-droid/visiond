@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.121
+Current build: v0.14.126
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -61,6 +61,7 @@ Compatibility rule: extend the existing Vision 7 Program → Plan → Release �
 
 ## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
 
+- IMPLEMENTED — v0.14.126 Vision 5 Navigation + Wording Cleanup: หน้า Vision 5 ใช้คำมาตรฐาน `ตะกร้าคอร์ส` / `ตะกร้าคอร์สของฉัน`, การ์ดใช้ปุ่ม `จัดการบทเรียนและ EP`, `แก้ไขตะกร้า`, `ส่งตรวจ`, และโหลด Header/Design assets ด้วย release cache identity เดียวกัน; ห้ามนำคำ `ร่างตะกร้า` หรือ asset key เก่ากลับมาในหน้าผู้ใช้
 - IMPLEMENTED — v0.14.119 Canonical Primary Navigation + Platform Policies: หน้าแรก สินค้าดิจิทัล V-Learning และ VBot ใช้เมนูหลักและ Header กลางชุดเดียว, active state ตามหน้าจริง, cache identity ใหม่ และ Privacy/Terms ครอบคลุม LINE, Meta/Facebook, Webhook, API, AI, Secret/Token และข้อห้ามใช้ UI automation/session interception.
 - IMPLEMENTED — v0.14.120 Webhook Hub Foundation: หลังบ้านออกลิงก์สุ่มแบบไม่เปิดเผย slug ร้าน, คัดลอก/พัก/เปิด/หมุน URL/ยกเลิก, แยกร้านและ Provider, เก็บประวัติแบบไม่เก็บ payload ดิบ และ fail-closed จนกว่าจะติดตั้ง adapter ตรวจลายเซ็นอย่างเป็นทางการ.
 - IMPLEMENTED — v0.14.121 B1 LINE Official Adapter: บันทึก Secret/Token แบบ AES-GCM บนเซิร์ฟเวอร์, ทดสอบ Token กับ LINE Bot Info, ตรวจ X-Line-Signature จาก raw body, กัน webhookEventId ซ้ำ และตั้งค่า/คัดลอก Webhook URL จาก V Easy v1.0.18.
@@ -197,6 +198,8 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
+- IMPLEMENTED — v0.14.125 Global Test User Identity: เพิ่มสถานะยูสเทสระดับเว็บไซต์, Boss สร้างยูสเทสจากหลังบ้านได้โดยใช้ชื่อกลาง “รัฐสิทธิ ดำรงรถการ” ซ้ำได้หลายบัญชี ขณะที่ Username/อีเมลยังไม่ซ้ำ; บัญชีเก่าที่เป็น Vision 5 test ถูกย้ายและเปลี่ยนชื่ออัตโนมัติ.
+- IMPLEMENTED — v0.14.124 Vision 5 Credit Deduplication + Basket Catalog: สรุปเครดิตมีเจ้าของ UI เพียงชุดเดียวและล้าง markup เก่าที่ซ้ำ, เปลี่ยนพื้นที่งานเป็น “ตะกร้าคอร์สของฉัน” แบบแคตตาล็อกพร้อมปุ่มแก้ไข/จัดการ EP/ส่งตรวจ, และบัญชีรับเงินแก้ไขภายหลังได้โดยคง QR เดิมเมื่อไม่ได้อัปโหลดใหม่.
 - IMPLEMENTED — v0.14.123 Vision 5 Settings + Credit UI: ใช้คำว่าเครดิตทั้งหน้าและย้ายสรุปเครดิตไว้ถัดจากผัง 5 ขั้น, Header ใช้โครงเดียวกับหน้าหลัก, ธนาคารเป็นรายการมาตรฐานในไทย, QR ไม่บังคับ, EasySlip เปิด–ปิดได้โดยค่าเริ่มต้นปิด; บัญชีทดสอบที่ Boss ทำเครื่องหมายจะส่งสลิปให้ Boss อนุมัติเท่านั้น. กฎ Header/ปุ่มหน้าลึกยังอยู่ใน Permanent UI Theme และต้องคง parity บนมือถือ.
 - IMPLEMENTED — v0.14.122 B1 LINE Setup Hardening: Boss System Health ตรวจ `VISIOND_CHANNEL_ENCRYPTION_KEY` ก่อนลูกค้ากรอก, API บอกวิธีแก้ตรงจุดและไม่ให้ Token หาย/ต้องออกใหม่; รอ Deploy และ smoke LINE จริงบน Redmi.
 - IN PROGRESS — v0.14.118 B1 Slug + Key Slot Reset: แก้ global middleware ให้ PATCH จาก APK Origin:null ผ่านเฉพาะ Vision7 mobile allowlist; เพิ่มปุ่มล้างสล็อตคีย์แบบคงคีย์/ร้าน/ประวัติและ revoke session; ตารางคีย์ไม่มีแถบเลื่อนแนวนอนและแปลงเป็นการ์ดบนจอแคบ. ต้อง Deploy Web ก่อน APK และยืนยันบน Redmi.

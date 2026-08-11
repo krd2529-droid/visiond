@@ -1320,12 +1320,22 @@ async function loadUsers() {
       })
       .join("");
   selectedProductCount.textContent = "เลือกแล้ว 0 รายการ";
-  usersTable.innerHTML = `<div class="user-table"><div class="user-row user-head"><b>สมาชิก</b><b>ไอดี</b><b>เบอร์โทร</b><b>ระดับ/สถานะ</b><b>จัดการ</b></div>${users.map((u) => `<div class="user-row"><div><b>${esc(u.name)}</b><small>${esc(u.email)}</small></div><span>${esc(u.username || "-")}</span><a href="tel:${esc(u.phone || "")}">${esc(u.phone || "ไม่ได้ระบุ")}</a><div class="user-status-stack"><span class="role-badge ${esc(u.role)}">${roleText[u.role] || esc(u.role)}</span><span class="course-credit-count">แต้มสิทธิ์คงเหลือ ${Number(u.course_credit_balance)||0}</span>${u.is_course_owner ? '<span class="course-owner-badge">เจ้าของคอร์ส</span>' : ''}</div><div class="user-manage-actions">${viewer.role === "boss" && u.role !== "boss" ? `<select data-role-id="${u.id}"><option value="user" ${["user", "customer"].includes(u.role) ? "selected" : ""}>User</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select><button data-save-role="${u.id}">บันทึก</button>` : '<span class="muted">ดูอย่างเดียว</span>'}${viewer.role==='boss'&&["user","customer"].includes(u.role)?`<button class="add-course-credit-button" data-add-course-credit="${u.id}" data-user-name="${esc(u.name||u.username||u.email)}">+ เพิ่มแต้มสิทธิ์</button>`:''}</div></div>`).join("")}</div>`;
+  usersTable.innerHTML = `${viewer.role==="boss"?"<div class=\"admin-user-toolbar\"><button id=\"createTestUser\" type=\"button\">+ สร้างยูสเทส</button><small>ชื่อกลาง: รัฐสิทธิ ดำรงรถการ · Username และอีเมลต้องไม่ซ้ำ</small></div>":""}<div class="user-table"><div class="user-row user-head"><b>สมาชิก</b><b>ไอดี</b><b>เบอร์โทร</b><b>ระดับ/สถานะ</b><b>จัดการ</b></div>${users.map((u) => `<div class="user-row"><div><b>${esc(u.name)}</b><small>${esc(u.email)}</small></div><span>${esc(u.username || "-")}</span><a href="tel:${esc(u.phone || "")}">${esc(u.phone || "ไม่ได้ระบุ")}</a><div class="user-status-stack"><span class="role-badge ${esc(u.role)}">${roleText[u.role] || esc(u.role)}</span>${Number(u.is_test_user)===1?"<span class=\"test-user-badge\">ยูสเทส</span>":""}<span class="course-credit-count">เครดิตคงเหลือ ${Number(u.course_credit_balance)||0}</span>${u.is_course_owner ? '<span class="course-owner-badge">เจ้าของคอร์ส</span>' : ''}</div><div class="user-manage-actions">${viewer.role === "boss" && u.role !== "boss" ? `<select data-role-id="${u.id}"><option value="user" ${["user", "customer"].includes(u.role) ? "selected" : ""}>User</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select><button data-save-role="${u.id}">บันทึก</button>` : '<span class="muted">ดูอย่างเดียว</span>'}${viewer.role==='boss'&&["user","customer"].includes(u.role)?`<button class="add-course-credit-button" data-add-course-credit="${u.id}" data-user-name="${esc(u.name||u.username||u.email)}">+ เพิ่มแต้มสิทธิ์</button>`:''}</div></div>`).join("")}</div>`;
   document
     .querySelectorAll("[data-save-role]")
     .forEach((b) => (b.onclick = () => saveRole(b.dataset.saveRole)));
+  document.querySelector('#createTestUser')?.addEventListener('click',createTestUser);
   document.querySelectorAll('[data-add-course-credit]').forEach(button=>button.onclick=()=>addCourseCredits(button));
   loadUnlockHistory();
+}
+async function createTestUser(){
+  const username=prompt('Username ยูสเทส (อย่างน้อย 4 ตัว)','test-user-');if(username===null)return;
+  const email=prompt('อีเมลยูสเทส','');if(email===null)return;
+  const phone=prompt('เบอร์โทรศัพท์ไทย','');if(phone===null)return;
+  const password=prompt('รหัสผ่านอย่างน้อย 10 ตัว','');if(password===null)return;
+  if(!confirm(`สร้างยูสเทส ${username}\nชื่อ: รัฐสิทธิ ดำรงรถการ\nยืนยันหรือไม่?`))return;
+  const response=await fetch('/api/admin/users/test-user',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username,email,phone,password})}),data=await response.json().catch(()=>({}));
+  alert(data.error||data.message||'สร้างยูสเทสแล้ว');if(response.ok)await loadUsers();
 }
 async function addCourseCredits(button){
   const raw=prompt(`เพิ่มแต้มสิทธิ์ให้ ${button.dataset.userName}\nกรอกจำนวนแต้ม (1–100)`,`1`);if(raw===null)return;
