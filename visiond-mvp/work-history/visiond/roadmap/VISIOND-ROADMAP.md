@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.119
+Current build: v0.14.121
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -62,6 +62,9 @@ Compatibility rule: extend the existing Vision 7 Program → Plan → Release �
 ## Permanent UI Theme & Design System Roadmap — Modern AI Commerce
 
 - IMPLEMENTED — v0.14.119 Canonical Primary Navigation + Platform Policies: หน้าแรก สินค้าดิจิทัล V-Learning และ VBot ใช้เมนูหลักและ Header กลางชุดเดียว, active state ตามหน้าจริง, cache identity ใหม่ และ Privacy/Terms ครอบคลุม LINE, Meta/Facebook, Webhook, API, AI, Secret/Token และข้อห้ามใช้ UI automation/session interception.
+- IMPLEMENTED — v0.14.120 Webhook Hub Foundation: หลังบ้านออกลิงก์สุ่มแบบไม่เปิดเผย slug ร้าน, คัดลอก/พัก/เปิด/หมุน URL/ยกเลิก, แยกร้านและ Provider, เก็บประวัติแบบไม่เก็บ payload ดิบ และ fail-closed จนกว่าจะติดตั้ง adapter ตรวจลายเซ็นอย่างเป็นทางการ.
+- IMPLEMENTED — v0.14.121 B1 LINE Official Adapter: บันทึก Secret/Token แบบ AES-GCM บนเซิร์ฟเวอร์, ทดสอบ Token กับ LINE Bot Info, ตรวจ X-Line-Signature จาก raw body, กัน webhookEventId ซ้ำ และตั้งค่า/คัดลอก Webhook URL จาก V Easy v1.0.18.
+- NEXT — รับข้อความ LINE เข้ากล่องแชต V Easy, queue งานตอบกลับ, บอทนักขายและ handoff เจ้าของร้าน โดยทดสอบตามข้อจำกัด Messaging API จริง.
 
 Direction approved by Boss: use a professional AI-commerce visual language based on commerce-first clarity similar to Shopify Polaris, soft tonal surfaces similar to Material 3, and VisionD's own Tiffany identity. Do not mix unrelated template styles or overuse glassmorphism.
 

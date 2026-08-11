@@ -98,7 +98,9 @@
     "test:v014114": "node scripts/test-v014114-b1.mjs",
     "test:v014115": "node scripts/test-v014115-b1.mjs",
     "test:v014116": "node scripts/test-v014116-b1.mjs",
-    "test:v014119": "node scripts/test-v014119.mjs"
+    "test:v014119": "node scripts/test-v014119.mjs",
+    "test:v014120": "node scripts/test-v014120.mjs",
+    "test:v014121": "node scripts/test-v014121.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0",

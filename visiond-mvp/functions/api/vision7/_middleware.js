@@ -15,7 +15,7 @@ const corsHeaders=request=>{
   if(!ALLOWED_PATHS.some(path=>url.pathname===path||url.pathname.startsWith(path))||!origin||!ALLOWED_ORIGINS.has(origin))return null;
   return {
     'access-control-allow-origin':origin,
-    'access-control-allow-methods':'GET,POST,PATCH,DELETE,OPTIONS',
+    'access-control-allow-methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     'access-control-allow-headers':'accept,authorization,content-type,idempotency-key,x-veasy-app-version,x-vision7-device-id',
     'access-control-max-age':'600',
     'vary':'Origin'

@@ -11,9 +11,10 @@ export const isVision7AdminHtmlPath=pathname=>pathname==='/vision7-admin'||pathn
 const trustedMobileOrigins=new Set(['null','capacitor://localhost','http://localhost']);
 const mobileMutationPaths=['/api/vision7/auth/veasy-activate','/api/vision7/auth/logout','/api/vision7/auth/veasy-device','/api/vision7/shops/','/api/vision7/runtime/'];
 const isScopedMobileMutation=(pathname,origin)=>trustedMobileOrigins.has(origin||'')&&mobileMutationPaths.some(path=>pathname===path||pathname.startsWith(path));
+export const isIncomingWebhookPath=pathname=>/^\/hooks\/v1\/(line|facebook|easyslip|generic)\/wh_[a-f0-9]{48}$/.test(pathname);
 export async function onRequest(ctx){
   const request=ctx.request,url=new URL(request.url),method=request.method.toUpperCase();
-  if(url.pathname.startsWith('/api/')&&['POST','PUT','PATCH','DELETE'].includes(method)){
+  if(!isIncomingWebhookPath(url.pathname)&&url.pathname.startsWith('/api/')&&['POST','PUT','PATCH','DELETE'].includes(method)){
     const origin=request.headers.get('origin');
     if(origin&&!isScopedMobileMutation(url.pathname,origin)){
       let originUrl=null;try{originUrl=new URL(origin).origin}catch{}
