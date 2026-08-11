@@ -1,7 +1,7 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.115
+Current build: v0.14.117
 Owner protocol: JARVIS / J
 
 ## Patch Capacity / Quality Gate (บังคับตั้งแต่ v0.14.55)
@@ -192,7 +192,9 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 ## Event queues
 ### EVENT CASE
-- IN PROGRESS — v0.14.115 B1 Hosted Activation Handoff: Redmi ยืนยัน GET health ONLINE แต่ file-origin POST ยังไม่ถึง API จึงย้ายการตรวจบัญชี/คีย์ไปหน้า VisionD แบบ same-origin แล้วส่ง Session กลับ APK ด้วย state-bound one-time in-memory handoff. ต้อง Deploy Web ก่อนติดตั้ง APK และปิดเมื่อ activation จริงผ่าน.
+- IN PROGRESS — v0.14.117 B1 Shop Save + Notification Toggle: คง API บันทึกร้าน owner-scoped จาก v0.14.116; APK แสดงผลบันทึกใต้ปุ่มโดยตรง เพิ่มสวิตช์ศูนย์แจ้งเตือนที่ร้านของฉัน ค่าเริ่มต้นปิด และไม่ยอมให้หน้าค้าง 0 บัง UI. ต้อง Deploy Web ก่อน APK และยืนยันบน Redmi.
+- IMPLEMENTED — v0.14.116 B1 Live Shop Profile: เพิ่ม endpoint ชื่อ/Slug ร้านที่ผูกกับคีย์จริง พร้อม owner scope และ unique slug; v0.14.117 รับช่วงทดสอบมือถือ.
+- IMPLEMENTED — v0.14.115 B1 Hosted Activation Handoff: Redmi ยืนยันการเปิดใช้งานและผูกร้านสำเร็จแล้ว; เหลือแก้ข้อมูลหน้าร้านใน v0.14.116.
 - SUPERSEDED — v0.14.114 B1 Activation Simple Request: simple POST ยังถูก Redmi WebView ตัดก่อนถึง API จึงแทนด้วย hosted activation ใน v0.14.115.
 - IMPLEMENTED — v0.14.113 B1 Activation Error Lock: รักษาค่าที่กรอกเมื่อผิดพลาดและเพิ่ม error request ID; ปัญหา preflight ถูกยกต่อเป็น v0.14.114.
 - IMPLEMENTED — v0.14.112 B1 Production CORS Lock: Redmi ยืนยัน Mobile API ONLINE จริงแล้ว; health/CORS outage ปิดเฉพาะส่วนการเชื่อมต่อ แต่ activation ถูกยกต่อเป็น v0.14.113.
