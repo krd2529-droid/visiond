@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=file=>readFileSync(file,'utf8');
+const home=read('public/index.html'),catalog=read('public/home-course-catalog.js'),seller=read('public/course-seller.js'),api=read('functions/api/course-seller/index.js'),homeCss=read('public/home-modern-ai.css');
+assert.equal(read('VERSION.txt').trim(),'v0.14.139');
+assert.match(home,/id="courses"[\s\S]*home-course-catalog/);
+assert.match(home,/คอร์สออนไลน์ที่เปิดเรียน/);assert.match(home,/home-course-catalog\.js\?v=014139/);
+assert.doesNotMatch(home,/TATTOO RESOURCES FOR ARTISTS|คลังแบบรอยสักสำหรับค้นหาไอเดีย/);
+assert.doesNotMatch(read('public/style.css'),/\.tattoo-seo-section/);
+assert.match(catalog,/fetch\('\/api\/courses'/);assert.match(catalog,/product_status==='published'/);assert.match(catalog,/course_origin==='seller_rights'/);assert.match(catalog,/ซื้อคอร์ส/);
+assert.match(homeCss,/\.home-course-grid/);assert.match(homeCss,/@media\(max-width:760px\)[\s\S]*\.home-course-grid\{grid-template-columns:1fr\}/);
+assert.match(api,/has_payment_qr/);assert.match(seller,/บันทึกแล้ว ไม่ต้องกรอกเพิ่ม/);assert.match(seller,/paymentProfileForm\.hidden = false/);assert.doesNotMatch(seller,/editPaymentProfile\.onclick/);
+assert.match(home,/WEB v0\.14\.139/);assert.match(read('public/admin.html'),/ADMIN v0\.14\.139/);
+console.log('v0.14.139 Vision5 saved payout + home course catalog PASS');

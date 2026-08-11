@@ -34,7 +34,7 @@ export async function onRequestGet(ctx) {
   const auth = await requireUser(ctx);
   if (auth.error) return auth.error;
   const profile = await ctx.env.DB.prepare(
-    `SELECT seller_bank_name bank_name,seller_account_name account_name,seller_account_number account_number,seller_payment_status status,seller_slip_api_key,seller_slip_auto_verify slip_auto_verify,vision5_test_account test_account FROM users WHERE id=?`,
+    `SELECT seller_bank_name bank_name,seller_account_name account_name,seller_account_number account_number,seller_payment_status status,seller_slip_api_key,seller_slip_auto_verify slip_auto_verify,vision5_test_account test_account,CASE WHEN TRIM(COALESCE(seller_payment_qr_url,''))<>'' THEN 1 ELSE 0 END has_payment_qr FROM users WHERE id=?`,
   )
     .bind(auth.user.id)
     .first();
@@ -44,6 +44,7 @@ export async function onRequestGet(ctx) {
     profile.slip_api_configured = tokenStatus.configured ? 1 : 0;
     profile.slip_auto_verify = Number(profile.slip_auto_verify) === 1 ? 1 : 0;
     profile.test_account = Number(profile.test_account) === 1 ? 1 : 0;
+    profile.has_payment_qr = Number(profile.has_payment_qr) === 1 ? 1 : 0;
     profile.token_encryption_configured = tokenStatus.encryption_configured;
     profile.token_requires_configuration = tokenStatus.requires_configuration;
   }

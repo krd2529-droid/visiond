@@ -43,6 +43,7 @@ const panels = {
   promotion: promotionPanel,
   settings: settingsPanel,
   users: usersPanel,
+  events: eventsPanel,
   elon: elonPanel,
   health: healthPanel,
   trash: trashPanel,
@@ -91,11 +92,23 @@ document.querySelectorAll("[data-admin-tab]").forEach(
       if (btn.dataset.adminTab === "promotion") loadPromotionSettings();
       if (btn.dataset.adminTab === "settings") loadPaymentSettings();
       if (btn.dataset.adminTab === "users") loadUsers();
+      if (btn.dataset.adminTab === "events") loadDailyEvents();
       if (btn.dataset.adminTab === "elon") { loadElonControls(); loadElonConversations(); }
       if (btn.dataset.adminTab === "health") loadSystemHealth();
       if (btn.dataset.adminTab === "trash") loadTrash();
     }),
 );
+const eventLabels={ui_click:'กดปุ่ม/ลิงก์',landing_view:'เข้าหน้าเว็บ',product_view:'ดูสินค้า',course_view:'ดูคอร์ส',add_to_cart:'ใส่รถเข็น',remove_from_cart:'ลบจากรถเข็น',checkout_start:'เริ่มชำระเงิน',payment_submit:'ส่งหลักฐานชำระ',payment_failed:'ชำระไม่สำเร็จ',download:'ดาวน์โหลด',login_success:'เข้าสู่ระบบ',signup_complete:'สมัครสมาชิก'};
+const localDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok'}).format(new Date());
+async function loadDailyEvents(){
+  if(!eventDate.value)eventDate.value=localDate();eventTable.innerHTML='<p>กำลังโหลดเหตุการณ์…</p>';
+  const q=new URLSearchParams({date:eventDate.value});if(eventUser.value.trim())q.set('user',eventUser.value.trim());if(eventArea.value)q.set('area',eventArea.value);if(eventType.value)q.set('type',eventType.value);
+  const r=await fetch('/api/admin/daily-events?'+q,{cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok){eventTable.innerHTML=`<p>${esc(d.error||'โหลดเหตุการณ์ไม่สำเร็จ')}</p>`;return}
+  eventSummary.innerHTML=`<article><small>ทั้งหมด</small><b>${d.summary.total}</b></article><article><small>สมาชิก</small><b>${d.summary.members}</b></article><article><small>ผู้เยี่ยมชม</small><b>${d.summary.guests}</b></article><article><small>การกด</small><b>${d.summary.clicks}</b></article>`;
+  const selected=eventType.value;eventType.innerHTML='<option value="">ทุกประเภท</option>'+d.types.map(x=>`<option value="${esc(x)}">${esc(eventLabels[x]||x)}</option>`).join('');eventType.value=selected;
+  eventTable.innerHTML=d.items.length?`<table><thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>พื้นที่</th><th>เหตุการณ์</th><th>หน้า / สิ่งที่กด</th></tr></thead><tbody>${d.items.map(x=>`<tr><td data-label="เวลา">${esc(new Date(x.created_at+'Z').toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit'}))}</td><td data-label="ผู้ใช้">${x.user?`${esc(x.user.name||x.user.username)}<small>${esc(x.user.username||x.user.email)}</small>`:'ผู้เยี่ยมชม'}</td><td data-label="พื้นที่">${esc({storefront:'หน้าร้าน',course:'คอร์ส',vbot:'VBot',admin:'หลังบ้าน'}[x.area]||x.area)}</td><td data-label="เหตุการณ์">${esc(eventLabels[x.event_type]||x.event_type)}</td><td data-label="หน้า / สิ่งที่กด"><code>${esc(x.path)}</code>${x.target?`<small>${esc(x.target)}</small>`:''}</td></tr>`).join('')}</tbody></table>${d.limited?'<p>แสดง 300 เหตุการณ์ล่าสุดของวันที่เลือก</p>':''}`:'<p>วันนี้ยังไม่มีเหตุการณ์ตามตัวกรอง</p>';
+}
+eventFilterForm.onsubmit=e=>{e.preventDefault();loadDailyEvents()};
 newProductButton.onclick = () => {
   resetProductForm();
   document.body.classList.add("product-editor-active");

@@ -77,20 +77,12 @@ function render(data) {
       "<p>ยังไม่ได้ตั้งค่าบัญชีรับเงิน ตั้งภายหลังเมื่อต้องการเปิดตะกร้าได้</p>";
     paymentProfileForm.hidden = false;
   } else {
-    paymentProfileForm.hidden = true;
-    paymentProfileStatus.innerHTML = `<div class="payment-profile-summary"><b>${esc(profile.bank_name || "-")} · ${esc(profile.account_name || "-")}</b><strong>พร้อมรับเงิน</strong><button id="editPaymentProfile" type="button">แก้ไขบัญชีรับเงิน</button></div>`;
-    editPaymentProfile.onclick = () => {
-      paymentProfileForm.elements.bank_name.value = profile.bank_name || "";
-      paymentProfileForm.elements.account_name.value =
-        profile.account_name || "";
-      paymentProfileForm.elements.account_number.value =
-        profile.account_number || "";
-      paymentProfileForm.hidden = false;
-      paymentProfileForm.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    };
+    paymentProfileForm.hidden = false;
+    paymentProfileForm.elements.bank_name.value = profile.bank_name || "";
+    paymentProfileForm.elements.account_name.value = profile.account_name || "";
+    paymentProfileForm.elements.account_number.value = profile.account_number || "";
+    paymentProfileStatus.innerHTML = `<div class="payment-profile-summary"><b>${esc(profile.bank_name || "-")} · ${esc(profile.account_name || "-")}</b><strong>✓ บันทึกแล้ว ไม่ต้องกรอกเพิ่ม</strong><span>ข้อมูลเดิมแสดงอยู่ด้านล่าง แก้ไขแล้วบันทึกใหม่ได้เมื่อต้องการ</span><small>${profile.has_payment_qr ? "มี QR รับเงินเดิมแล้ว · ไม่เลือกไฟล์ใหม่ ระบบจะใช้ QR เดิม" : "ยังไม่มี QR รับเงิน · ช่อง QR ไม่บังคับ"}</small></div>`;
+    paymentProfileForm.querySelector('button[type="submit"]').textContent = "บันทึกการแก้ไขบัญชีรับเงิน";
   }
   const auto = profile.slip_auto_verify === 1;
   paintSlipSwitch(auto);

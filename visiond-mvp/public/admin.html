@@ -31,6 +31,12 @@
         border-radius: 18px;
         background: #f8fffe;
       }
+      .admin-event-list{margin-top:16px;border:1px solid #b9dfdc;border-radius:16px;background:#fff;overflow:hidden}
+      .admin-event-list table{width:100%;border-collapse:collapse}
+      .admin-event-list th,.admin-event-list td{padding:12px;text-align:left;border-bottom:1px solid #e2efee;vertical-align:top}
+      .admin-event-list th{background:#e8f8f6;color:#064b48}
+      .admin-event-list td small{display:block;color:#587573;margin-top:4px}
+      .admin-event-list code{font-size:12px;overflow-wrap:anywhere}
       .v3-review-head {
         display: flex;
         justify-content: space-between;
@@ -442,7 +448,7 @@
       }
     </style>
     <link rel="stylesheet" href="/product-systems-modern-ai.css?v=01496" />
-  </head>
+</head>
   <body>
     <style>
       .bundle-launch {
@@ -680,6 +686,10 @@
         text-align: center;
       }
       @media (max-width: 700px) {
+        .admin-event-list table,.admin-event-list tbody,.admin-event-list tr,.admin-event-list td{display:block;width:100%}
+        .admin-event-list thead{display:none}.admin-event-list tr{padding:9px 12px;border-bottom:1px solid #cde4e2}
+        .admin-event-list td{display:grid;grid-template-columns:105px 1fr;gap:8px;border:0;padding:5px 0}
+        .admin-event-list td::before{content:attr(data-label);font-weight:900;color:#08756f}
         .bundle-preview-gallery {
           grid-template-columns: repeat(3, 1fr);
         }
@@ -870,7 +880,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.136</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.139</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1007,6 +1017,7 @@
             <button data-admin-tab="promotion"><span aria-hidden="true">🏷️</span><b>โปรโมชั่น</b></button>
             <button data-admin-tab="categories"><span aria-hidden="true">🗂️</span><b>หมวดหมู่</b></button>
             <button data-admin-tab="users"><span aria-hidden="true">👥</span><b>สมาชิกและระดับไอดี</b></button>
+            <button data-admin-tab="events"><span aria-hidden="true">🕘</span><b>ดูเหตุการณ์วันนี้</b></button>
             <button data-admin-tab="settings"><span aria-hidden="true">⚙️</span><b>ตั้งค่าชำระเงิน</b></button>
             <button data-admin-tab="elon"><span aria-hidden="true">🤖</span><b>ELON AI Support</b></button>
             <button class="boss-only-danger" data-admin-tab="health"><span aria-hidden="true">🩺</span><b>System Health</b></button>
@@ -1149,6 +1160,18 @@
               </form>
             </section>
           </section>
+        </section>
+        <section id="eventsPanel" hidden>
+          <div class="section-head"><div><p class="eyebrow">DAILY ACTIVITY</p><h2>เหตุการณ์ในแต่ละวัน</h2><p>ดูว่าใครกดอะไร ที่หน้าไหน โดยไม่บันทึกรหัสผ่าน Token หรือข้อมูลที่กรอก</p></div></div>
+          <form id="eventFilterForm" class="profit-filter">
+            <label>วันที่<input id="eventDate" type="date" required></label>
+            <label>ผู้ใช้<input id="eventUser" type="search" placeholder="ชื่อ ยูส หรืออีเมล"></label>
+            <label>พื้นที่<select id="eventArea"><option value="">ทุกพื้นที่</option><option value="storefront">หน้าร้าน</option><option value="course">ศูนย์จัดการคอร์ส</option><option value="vbot">VBot</option><option value="admin">หลังบ้าน</option></select></label>
+            <label>ประเภท<select id="eventType"><option value="">ทุกประเภท</option></select></label>
+            <button class="primary" type="submit">ดูเหตุการณ์</button>
+          </form>
+          <div id="eventSummary" class="profit-summary"></div>
+          <div id="eventTable" class="admin-event-list" role="region" aria-live="polite"><p>เลือกวันที่แล้วกดดูเหตุการณ์</p></div>
         </section>
         <section id="overviewPanel" hidden>
           <div class="section-head">
@@ -2132,7 +2155,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-    <script src="/admin.js?v=014127"></script>
+    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014138"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>
