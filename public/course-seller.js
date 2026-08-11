@@ -37,11 +37,11 @@ const sellerShell = document.querySelector(".seller-shell");
   document.querySelector("#createPanel"),
   document.querySelector("#paymentProfilePanel"),
   document.querySelector("#slipApiPanel"),
-  document.querySelector("#pendingSlipPanel"),
   document.querySelector("#myCoursesPanel"),
   document.querySelector("#sellerLessonManager"),
   document.querySelector("#publishPanel"),
   document.querySelector("#customerSalesPanel"),
+  document.querySelector("#pendingSlipPanel"),
 ].forEach((section) => section && sellerShell?.append(section));
 function updateVision5Flow(data) {
   const courses = data.courses || [],
@@ -155,7 +155,6 @@ function render(data) {
     card.append(actions);
   });
   salesTotal.textContent = money(data.totals?.amount);
-  salesTableTotal.textContent = money(data.totals?.amount);
   salesCount.textContent =
     (Number(data.totals?.orders) || 0) +
     (data.sales_list_limited ? " (ตาราง 200 ล่าสุด)" : "");
@@ -420,9 +419,9 @@ sellerCoverInput.onchange = () => {
     sellerMessage.textContent = "รูปปกต้องเป็น JPG, PNG หรือ WEBP";
     return;
   }
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > 8 * 1024 * 1024) {
     clearSellerCover();
-    sellerMessage.textContent = "รูปปกต้องไม่เกิน 5 MB";
+    sellerMessage.textContent = "รูปปกต้องไม่เกิน 8 MB";
     return;
   }
   if (sellerCoverObjectUrl) URL.revokeObjectURL(sellerCoverObjectUrl);

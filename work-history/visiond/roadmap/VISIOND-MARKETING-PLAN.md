@@ -1,7 +1,11 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-11
-Current build: v0.14.149
+Current build: v0.14.150
+
+## v0.14.150 creator operations reliability
+- Keep manual-approval orders beside customer revenue so creators can act without searching another section.
+- Prevent deploy-version ambiguity by verifying the immutable Pages URL before sending traffic to production.
 
 ## v0.14.149 creator workflow clarity
 - Keep the three-step onboarding guide distinct from the six operational workspace parts.

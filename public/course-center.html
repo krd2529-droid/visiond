@@ -96,7 +96,7 @@
           <button class="primary span2" type="submit">
             บันทึกบัญชีรับเงิน
           </button>
-          <p id="paymentProfileMessage" class="span2"></p>
+          <p id="paymentProfileMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="slipApiPanel" class="seller-card">
@@ -118,7 +118,7 @@
               name="enabled"
               type="checkbox"
               role="switch"
-              aria-labelledby="slipSwitchTitle" /><i aria-hidden="true"></i
+              aria-labelledby="slipSwitchTitle" /><i aria-hidden="true"></i></label>
           <p id="slipManualHelp" class="span2 account-lock-warning">
             ปิดอยู่ · เจ้าของคอร์สต้องเปิดดูสลิปและอนุมัติเอง
           </p>
@@ -149,7 +149,7 @@
           <button class="primary span2" type="submit">
             บันทึกโหมดตรวจสลิป
           </button>
-          <p id="slipApiMessage" class="span2"></p>
+          <p id="slipApiMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="createPanel" class="seller-card" hidden>
@@ -253,7 +253,7 @@
           <button class="primary span2" type="submit">
             ใช้ 1 เครดิตและสร้างตะกร้าคอร์ส
           </button>
-          <p id="sellerMessage" class="span2"></p>
+          <p id="sellerMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="myCoursesPanel" class="seller-card seller-basket-catalog">
@@ -323,7 +323,7 @@
           >
             ยกเลิก
           </button>
-          <p id="sellerLessonMessage" class="span2"></p>
+          <p id="sellerLessonMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
         <div id="sellerLessonList" class="seller-lesson-list">
           <p>ยังไม่มีบทเรียน</p>
@@ -358,7 +358,7 @@
           ><button class="primary span2" type="submit">
             เผยแพร่ตะกร้าคอร์ส
           </button>
-          <p id="publishMessage" class="span2"></p>
+          <p id="publishMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="customerSalesPanel" class="seller-card">
@@ -397,10 +397,9 @@
             </tbody>
           </table>
         </div>
-        <p class="seller-table-total">ยอดขายรวมทั้งหมด <b id="salesTableTotal">0 บาท</b></p>
       </section>
       <section id="pendingSlipPanel" class="seller-card">
-        <p class="seller-section-number">ต่อจาก PART 3</p>
+        <p class="seller-section-number">ต่อจาก PART 6</p>
         <h2>ออเดอร์รออนุมัติ</h2>
         <p>
           เจ้าของคอร์สรับผิดชอบ Token และโควต้า API ของตนเอง
@@ -438,7 +437,7 @@
     />
     <script src="/shared-nav.js?v=014135" defer></script>
     <script src="/header-shell.js?v=014134" defer></script>
-    <script src="/course-seller.js?v=014149"></script>
+    <script src="/course-seller.js?v=014150"></script>
     <script src="/course-draft-first-ep.js?v=014134"></script>
     <script src="/course-license-dates.js?v=014134"></script>
     <script src="/elon-chat.js?v=014134" defer></script>

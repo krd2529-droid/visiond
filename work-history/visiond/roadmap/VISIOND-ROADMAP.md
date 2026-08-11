@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.149
+Current build: v0.14.150
+
+# v0.14.150 — Deploy-safe Course Center Repair (IMPLEMENTED)
+
+- ส่งแพตแบบ Delta ขนาดเล็กสำหรับ GitHub Web และล็อกเลข VERSION/WEB/ADMIN ให้ตรงกัน
+- แก้สวิตช์ตรวจสลิป, ตำแหน่งออเดอร์รออนุมัติหลัง PART 6 และยอดขายรวมที่ซ้ำ
+- ทำขนาดปก 8 MB ให้ตรงกันทุกจุด พร้อมแก้ลิงก์แจ้งเตือนเก่าและหลักฐาน QA
 
 # v0.14.149 — Course Center PART Order (IMPLEMENTED)
 
