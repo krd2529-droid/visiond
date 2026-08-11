@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.146
+Current build: v0.14.147
+
+# v0.14.147 — Course Cover Digital Card Ratio (IMPLEMENTED)
+
+- กรอบรูปปกคอร์สหน้าแรกใช้ขนาด 250 × 290 เทียบเท่ากรอบการ์ดสินค้าดิจิทัล
+- แสดงภาพปกเพียงภาพเดียวด้วย `object-fit: contain` ไม่ครอปภาพและไม่มีปุ่มเลื่อนซ้าย–ขวา
+- คงข้อมูลราคา ผู้สอน จำนวน EP และ CTA คอร์สเดิม
 
 # v0.14.146 — Course Center Information Order (IMPLEMENTED)
 
