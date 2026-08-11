@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const html=fs.readFileSync('public/index.html','utf8');
+const admin=fs.readFileSync('public/admin.html','utf8');
+const image='https://visiondonline.com/assets/vlearning-home-preview-v014144.png?v=014145';
+assert.equal(fs.readFileSync('VERSION.txt','utf8').trim(),'v0.14.145');
+assert.match(html,/<meta\s+property="og:title"[\s\S]*?VisionD V-Learning \| ระบบคอร์สออนไลน์/);
+assert.match(html,/<meta\s+property="og:description"[\s\S]*?จ่ายครั้งเดียว รับยอดขายเต็ม ไม่หักเปอร์เซ็นต์/);
+assert.equal((html.match(new RegExp(image.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length,3);
+assert.match(html,/property="og:image:type" content="image\/png"/);
+assert.match(html,/property="og:image:width" content="1729"/);
+assert.match(html,/property="og:image:height" content="910"/);
+assert.match(html,/property="og:site_name" content="VisionD Online"/);
+assert.match(html,/name="twitter:card" content="summary_large_image"/);
+assert.match(html,/name="twitter:image:alt" content="VisionD V-Learning/);
+assert.doesNotMatch(html,/visiond-og-preview\.jpg/);
+assert.match(html,/WEB v0\.14\.145/);
+assert.match(admin,/ADMIN v0\.14\.145/);
+console.log('v0.14.145 V-Learning social preview checks passed');

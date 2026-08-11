@@ -65,7 +65,7 @@ export async function onRequestGet(ctx) {
     .bind(auth.user.id)
     .all();
   const sales = await ctx.env.DB.prepare(
-    `SELECT o.id,o.order_no,o.total,o.updated_at paid_at,COALESCE((SELECT product_title FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1),p.title,'สินค้าเดิม') course_title,u.name buyer_name FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN products p ON p.id=(SELECT product_id FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1) WHERE o.course_owner_user_id=? AND o.status='paid' ORDER BY o.updated_at DESC LIMIT 200`,
+    `SELECT o.id,o.order_no,o.total,o.updated_at paid_at,CASE WHEN o.slip_key IS NOT NULL AND TRIM(o.slip_key)<>'' THEN 1 ELSE 0 END has_slip,COALESCE((SELECT product_title FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1),p.title,'สินค้าเดิม') course_title,u.name buyer_name FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN products p ON p.id=(SELECT product_id FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1) WHERE o.course_owner_user_id=? AND o.status='paid' ORDER BY o.updated_at DESC LIMIT 200`,
   )
     .bind(auth.user.id)
     .all();

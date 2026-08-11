@@ -26,12 +26,24 @@ document.head.insertAdjacentHTML(
 document
   .querySelector(".seller-hero")
   ?.insertAdjacentHTML(
-    "beforebegin",
+    "afterend",
     '<section id="vision5SellerFlow" class="vision5-seller-flow"><h2>Vision 5 · เริ่มขายคอร์สใน 3 ขั้นตอน</h2><div class="vision5-steps vision5-steps--compact"><div class="vision5-step" data-v5-step="credit"><span>1</span><b>ซื้อสิทธิ์เปิดขาย</b></div><div class="vision5-step" data-v5-step="setup"><span>2</span><b>ตั้งค่ารับเงินและตรวจสลิป</b></div><div class="vision5-step" data-v5-step="course"><span>3</span><b>สร้างคอร์ส · เพิ่ม EP · เผยแพร่</b></div></div><p id="vision5NextAction" class="vision5-next-action"></p></section>',
   );
-document
-  .querySelector("#vision5SellerFlow")
-  ?.after(document.querySelector("#vision5CreditSummary"));
+const sellerShell = document.querySelector(".seller-shell");
+[
+  document.querySelector(".seller-hero"),
+  document.querySelector("#vision5SellerFlow"),
+  document.querySelector("#salesOverviewPanel"),
+  document.querySelector("#paymentProfilePanel"),
+  document.querySelector("#slipApiPanel"),
+  document.querySelector("#pendingSlipPanel"),
+  document.querySelector("#vision5CreditSummary"),
+  document.querySelector("#createPanel"),
+  document.querySelector("#myCoursesPanel"),
+  document.querySelector("#sellerLessonManager"),
+  document.querySelector("#publishPanel"),
+  document.querySelector("#customerSalesPanel"),
+].forEach((section) => section && sellerShell?.append(section));
 function updateVision5Flow(data) {
   const courses = data.courses || [],
     creditReady = Number(data.credit_balance) > 0 || courses.length > 0,
@@ -144,6 +156,7 @@ function render(data) {
     card.append(actions);
   });
   salesTotal.textContent = money(data.totals?.amount);
+  salesTableTotal.textContent = money(data.totals?.amount);
   salesCount.textContent =
     (Number(data.totals?.orders) || 0) +
     (data.sales_list_limited ? " (ตาราง 200 ล่าสุด)" : "");
@@ -151,10 +164,10 @@ function render(data) {
     ? data.sales
         .map(
           (x) =>
-            `<tr><td>${esc(x.order_no)}</td><td>${esc(x.buyer_name || "-")}</td><td>${esc(x.course_title)}</td><td>${money(x.total)}</td><td>${date(x.paid_at)}</td></tr>`,
+            `<tr><td>${esc(x.order_no)}</td><td>${esc(x.buyer_name || "-")}</td><td>${esc(x.course_title)}</td><td>${x.has_slip ? `<a class="seller-slip-link" href="/api/course-seller/orders/${x.id}/slip" target="_blank" rel="noopener">เปิดดูสลิป</a>` : '<span class="seller-no-slip">ไม่มีสลิป</span>'}</td><td>${money(x.total)}</td><td>${date(x.paid_at)}</td></tr>`,
         )
         .join("")
-    : '<tr><td colspan="5">ยังไม่มียอดขาย</td></tr>';
+    : '<tr><td colspan="6">ยังไม่มียอดขาย</td></tr>';
   slipIssueRows.innerHTML = data.slip_issues?.length
     ? data.slip_issues
         .map(

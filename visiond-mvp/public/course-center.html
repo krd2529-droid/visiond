@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/style.css?v=014134" />
     <link rel="stylesheet" href="/visiond-design-system.css?v=014134" />
     <link rel="stylesheet" href="/course.css?v=014134" />
-    <link rel="stylesheet" href="/course-seller.css?v=014139" />
+    <link rel="stylesheet" href="/course-seller.css?v=014146" />
     <link rel="stylesheet" href="/course-license-dates.css?v=014134" />
     <link rel="stylesheet" href="/course-owner-actions.css?v=014134" />
     <link rel="stylesheet" href="/elon-chat.css?v=014134" />
@@ -28,53 +28,36 @@
     <main class="seller-shell">
       <section class="seller-hero">
         <div>
-          <p class="eyebrow">ระบบ Vision 5 สำหรับเจ้าของคอร์ส</p>
+          <p class="eyebrow">ส่วนที่ 1 · ระบบ Vision 5 สำหรับเจ้าของคอร์ส</p>
           <h1>ศูนย์จัดการคอร์ส</h1>
           <p>
-            ต้องมีเครดิตก่อนสร้าง · 1 เครดิตสร้างตะกร้าคอร์สได้ 1 ใบ · หาก Boss
-            ไม่อนุมัติ ระบบคืนเครดิตให้
+            จัดการยอดขาย การรับเงิน คอร์ส ลูกค้า และสลิปจากที่เดียว
           </p>
         </div>
-        <button
-          id="createCourseBasket"
-          class="primary seller-create-credit-button"
-          type="button"
-        >
-          + สร้างตะกร้าคอร์ส</button
-        ><a class="primary" href="/product.html?slug=course-selling-rights"
-          >ซื้อสิทธิ์</a
-        >
       </section>
-      <nav class="seller-task-nav" aria-label="งานผู้ขายคอร์ส">
-        <a href="#sellerActionRequired">ต้องดำเนินการ</a
-        ><a href="#mySellerCourses">ตะกร้าคอร์สของฉัน</a
-        ><a href="#sellerLessonManager">จัดการบทเรียนและ EP</a
-        ><a href="#salesRows">ยอดขาย</a
-        ><a href="#paymentProfilePanel">ตั้งค่ารับเงินและ API</a>
-      </nav>
-      <section
-        id="sellerActionRequired"
-        class="seller-card seller-priority-card"
-      >
-        <h2>สิ่งที่ต้องดำเนินการ</h2>
-        <p>
-          ตรวจสลิปที่ระบบอ่านไม่สำเร็จ เพิ่มบทเรียนให้ครบ
-          และส่งตะกร้าคอร์สที่พร้อมแล้วให้ Boss ตรวจ
-        </p>
-        <div class="seller-priority-actions">
-          <a href="#slipIssueRows">ตรวจสลิปผิดปกติ</a
-          ><a href="#mySellerCourses">จัดการตะกร้าคอร์ส</a
-          ><a href="#sellerLessonManager">จัดการบทเรียน</a>
+      <section id="salesOverviewPanel" class="seller-card seller-overview-card">
+        <p class="seller-section-number">ส่วนที่ 2</p>
+        <h2>สรุปยอดขาย</h2>
+        <div class="seller-summary">
+          <div><small>ยอดขายรวม</small><b id="salesTotal">0 บาท</b></div>
+          <div><small>ออเดอร์ชำระแล้ว</small><b id="salesCount">0</b></div>
         </div>
       </section>
       <section
         id="vision5CreditSummary"
         class="seller-card vision5-credit-summary"
       >
-        <h2>เครดิตสร้างตะกร้าคอร์ส</h2>
+        <p class="seller-section-number">ส่วนที่ 4</p>
+        <h2>สร้างคอร์ส / เติมเครดิต</h2>
+        <div class="seller-create-actions">
+          <button id="createCourseBasket" class="primary seller-create-credit-button" type="button">+ สร้างตะกร้าคอร์ส</button>
+          <a class="primary" href="/product.html?slug=course-selling-rights">เติมเครดิต</a>
+        </div>
+        <h3>เครดิตสร้างตะกร้าคอร์ส</h3>
         <div id="licenseList">กำลังโหลด…</div>
       </section>
       <section id="paymentProfilePanel" class="seller-card">
+        <p class="seller-section-number">ส่วนที่ 3 · ตั้งค่ารับเงิน</p>
         <h2>บัญชีรับเงินของเจ้าของคอร์ส</h2>
         <div id="paymentProfileStatus">กำลังตรวจสอบ…</div>
         <form id="paymentProfileForm" class="seller-form" hidden>
@@ -125,6 +108,7 @@
         </form>
       </section>
       <section id="slipApiPanel" class="seller-card">
+        <p class="seller-section-number">ส่วนที่ 3 · ตรวจสลิปอัตโนมัติ</p>
         <h2>การตรวจสลิปของตะกร้าคอร์ส</h2>
         <p>
           เลือกได้ว่าจะตรวจและอนุมัติเอง หรือเปิด EasySlip API
@@ -143,7 +127,6 @@
               type="checkbox"
               role="switch"
               aria-labelledby="slipSwitchTitle" /><i aria-hidden="true"></i
-          ></label>
           <p id="slipManualHelp" class="span2 account-lock-warning">
             ปิดอยู่ · เจ้าของคอร์สต้องเปิดดูสลิปและอนุมัติเอง
           </p>
@@ -281,8 +264,9 @@
           <p id="sellerMessage" class="span2"></p>
         </form>
       </section>
-      <section class="seller-card seller-basket-catalog">
-        <h2>ตะกร้าคอร์สของฉัน</h2>
+      <section id="myCoursesPanel" class="seller-card seller-basket-catalog">
+        <p class="seller-section-number">ส่วนที่ 5</p>
+        <h2>คอร์สของฉัน</h2>
         <p class="account-lock-warning">
           ตะกร้าที่ยังไม่มียอดขายสามารถจัดการหรือลบพร้อมไฟล์ได้
           ส่วนตะกร้าที่มีประวัติออเดอร์แล้วจะเก็บประวัติไว้และลบไม่ได้
@@ -384,12 +368,9 @@
           <p id="publishMessage" class="span2"></p>
         </form>
       </section>
-      <section class="seller-card">
-        <div class="seller-summary">
-          <div><small>ยอดขายรวม</small><b id="salesTotal">0 บาท</b></div>
-          <div><small>ออเดอร์ชำระแล้ว</small><b id="salesCount">0</b></div>
-        </div>
-        <h2>รายการยอดขายและวันเวลา</h2>
+      <section id="customerSalesPanel" class="seller-card">
+        <p class="seller-section-number">ส่วนที่ 6</p>
+        <h2>ตารางลูกค้า สลิปจริง และยอดขาย</h2>
         <p class="account-lock-warning">
           <b>คุ้มครองข้อมูลผู้ซื้อ:</b> หน้านี้แสดงเฉพาะชื่อ–นามสกุลจากบัญชี
           VisionD เพื่อให้เจ้าของคอร์สตรวจสอบรายการซื้อ โดยไม่แสดงอีเมล เบอร์โทร
@@ -407,20 +388,23 @@
                 <th>ออเดอร์</th>
                 <th>ชื่อผู้ซื้อ</th>
                 <th>คอร์ส</th>
+                <th>สลิปจริง</th>
                 <th>ยอด</th>
                 <th>วันเวลา</th>
               </tr>
             </thead>
             <tbody id="salesRows">
               <tr>
-                <td colspan="5">ยังไม่มียอดขาย</td>
+                <td colspan="6">ยังไม่มียอดขาย</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <p class="seller-table-total">ยอดขายรวมทั้งหมด <b id="salesTableTotal">0 บาท</b></p>
       </section>
-      <section class="seller-card">
-        <h2>สลิปที่ API ของฉันตรวจไม่สำเร็จ</h2>
+      <section id="pendingSlipPanel" class="seller-card">
+        <p class="seller-section-number">ส่วนที่ 3 · ออเดอร์รออนุมัติ</p>
+        <h2>ออเดอร์รออนุมัติ</h2>
         <p>
           เจ้าของคอร์สรับผิดชอบ Token และโควต้า API ของตนเอง
           เปิดดูสลิปแล้วเลือกอนุมัติเพื่อปลดล็อกคอร์ส
@@ -457,7 +441,7 @@
     />
     <script src="/shared-nav.js?v=014135" defer></script>
     <script src="/header-shell.js?v=014134" defer></script>
-    <script src="/course-seller.js?v=014139"></script>
+    <script src="/course-seller.js?v=014146"></script>
     <script src="/course-draft-first-ep.js?v=014134"></script>
     <script src="/course-license-dates.js?v=014134"></script>
     <script src="/elon-chat.js?v=014134" defer></script>

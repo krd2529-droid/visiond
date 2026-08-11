@@ -1,7 +1,20 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-11
-Current build: v0.14.144
+Current build: v0.14.146
+
+# v0.14.146 — Course Center Information Order (IMPLEMENTED)
+
+- จัดศูนย์จัดการคอร์สใหม่ตามลำดับงานจริง: ภาพรวม → ยอดขาย → รับเงิน/ตรวจสลิป → สร้างคอร์ส/เครดิต → คอร์ส → ลูกค้าและยอดรวม
+- ย้ายสรุปยอดขายขึ้นด้านบนและเปิดตารางลูกค้า/สลิปจริงที่เคยถูก CSS เก่าซ่อน
+- รักษา hook ปุ่มสร้างคอร์ส เติมเครดิต จัดการ EP เผยแพร่ และอนุมัติออเดอร์เดิมทั้งหมด
+- ถอดแถบนำทางงานและกฎ `order` เก่าที่ทำให้ตำแหน่งบนหน้ากับลำดับสำหรับ accessibility ไม่ตรงกัน
+
+# v0.14.145 — V-Learning Social Link Preview (IMPLEMENTED)
+
+- พรีวิวลิงก์หน้าแรกบน Facebook/LINE ใช้ภาพและข้อความ V-Learning เป็นพระเอก
+- ใช้ Open Graph/Twitter Card URL แบบเต็มพร้อมชนิด ขนาด และ alt ของภาพ
+- คง Hero V-Learning ในหน้าเว็บจาก v0.14.144 และไม่กระทบพรีวิวเฉพาะสินค้าหรือคอร์ส
 
 # v0.14.144 — V-Learning Preview Focus (IMPLEMENTED)
 
