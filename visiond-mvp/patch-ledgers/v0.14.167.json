@@ -1,0 +1,1 @@
+{"version":"0.14.167","event_case":"LINE status remains yellow after successful setup","changed":["functions/api/vision7/shops/[shopId]/bot.js","scripts/test-v014167.mjs","VERSION.txt","public/index.html","public/admin.html"],"result":"bot readiness exposes normalized connected/running state without returning credentials"}
