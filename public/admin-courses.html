@@ -10,7 +10,7 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/admin.html">VISIOND <small>ADMIN</small></a>
+      <a class="brand" href="/admin.html">VISIOND <small>ADMIN</small></a><span class="visiond-build-version">ADMIN v0.14.178</span>
       <nav>
         <a href="/admin.html">← หลังบ้านหลัก</a
         ><a href="/courses.html" target="_blank">ดูหน้าขายคอร์ส</a>
@@ -103,7 +103,13 @@
         </form>
         <div id="lessonList"></div>
       </section>
+      <section id="partnerSharePanel" class="course-admin-card" hidden>
+        <div class="course-toolbar"><div><p class="eyebrow">PARTNER 50/50</p><h2 id="partnerShareTitle">ส่วนแบ่งตะกร้าคอร์ส</h2></div><button id="closePartnerShare" type="button">ปิด</button></div>
+        <div id="partnerShareSummary" class="seller-summary"></div>
+        <p>แบ่งยอดขาย VisionD 50% / ผู้สอน 50% ก่อน แล้วหักค่า VisionD API 1 บาทจากส่วนผู้สอน</p>
+        <div id="partnerShareRows" class="table-wrap"></div>
+      </section>
     </main>
-    <script src="/admin-courses.js?v=01430"></script><script src="/course-review-admin.js?v=01430"></script>
-  <script src="/visiond-design-system.js?v=01489" defer></script></body>
+    <script src="/admin-courses.js?v=01430"></script><script src="/course-review-admin.js?v=014178"></script>
+  <script src="/build-version.js?v=014178"></script><script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>
