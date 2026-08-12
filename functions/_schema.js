@@ -102,6 +102,11 @@ async function initializeDatabase(env) {
   if (!productColumns.includes('family_key')) await env.DB.prepare("ALTER TABLE products ADD COLUMN family_key TEXT").run();
   if (!productColumns.includes('series_no')) await env.DB.prepare("ALTER TABLE products ADD COLUMN series_no INTEGER").run();
   if (!productColumns.includes('demand_basis')) await env.DB.prepare("ALTER TABLE products ADD COLUMN demand_basis TEXT").run();
+  const planCourseColumns = (await env.DB.prepare('PRAGMA table_info(courses)').all()).results.map(column => column.name);
+  if (!planCourseColumns.includes('seller_plan')) await env.DB.prepare("ALTER TABLE courses ADD COLUMN seller_plan TEXT NOT NULL DEFAULT 'paid_rights'").run();
+  if (!planCourseColumns.includes('slip_fee_cents')) await env.DB.prepare('ALTER TABLE courses ADD COLUMN slip_fee_cents INTEGER NOT NULL DEFAULT 0').run();
+  if (!planCourseColumns.includes('visiond_share_percent')) await env.DB.prepare('ALTER TABLE courses ADD COLUMN visiond_share_percent INTEGER NOT NULL DEFAULT 0').run();
+  if (!planCourseColumns.includes('seller_share_percent')) await env.DB.prepare('ALTER TABLE courses ADD COLUMN seller_share_percent INTEGER NOT NULL DEFAULT 100').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_trash_expires_at ON trash_items(expires_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_slug_history_product ON product_slug_history(product_id)').run();

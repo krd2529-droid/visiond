@@ -1,14 +1,1 @@
-import fs from 'node:fs';
-import assert from 'node:assert/strict';
-const version=fs.readFileSync('VERSION.txt','utf8').trim();
-assert.equal(version,'0.14.174');
-const web=fs.readFileSync('public/index.html','utf8');
-const admin=fs.readFileSync('public/admin.html','utf8');
-assert.match(web,/WEB v0\.14\.174/);
-assert.match(admin,/ADMIN v0\.14\.174/);
-assert.doesNotMatch(web,/WEB v0\.14\.169/);
-assert.doesNotMatch(admin,/ADMIN v0\.14\.169/);
-const stamp=fs.readFileSync('scripts/release-stamp-assets.mjs','utf8');
-assert.match(stamp,/VERSION\.txt/);
-assert.match(stamp,/visiond-build-version/);
-console.log('PASS v0.14.174 single-source version display');
+import assert from'node:assert/strict';import{readFile}from'node:fs/promises';const r=p=>readFile(new URL('../'+p,import.meta.url),'utf8');const[schema,api,ui,lesson,ledger]=await Promise.all([r('functions/_schema.js'),r('functions/api/course-seller/index.js'),r('public/course-seller.js'),r('functions/api/course-seller/[id]/lessons.js'),r('patch-ledgers/v0.14.174.json')]);assert.match(schema,/seller_plan/);assert.match(api,/free_manual/);assert.match(api,/partner_50/);assert.match(api,/slipFee=.*100/);assert.match(api,/visiondShare=.*50/);assert.match(ui,/ผู้ซื้อจ่ายค่า API/);assert.match(ui,/หักค่าตรวจสลิป 1 บาท\/รายการ/);assert.match(lesson,/จำกัดไม่เกิน 5 EP/);assert.equal(JSON.parse(ledger).version,'0.14.174');console.log('v0.14.174 Vision5 plans contract: PASS');
