@@ -286,7 +286,7 @@ export async function onRequestPost(ctx) {
         slug,
         episode_count: episodes,
         seller_plan:sellerPlan,credit_used:sellerPlan==='paid_rights'?1:0,slip_fee_cents:slipFee,visiond_share_percent:visiondShare,seller_share_percent:sellerShare,
-        message: sellerPlan==='paid_rights'?`สร้างร่างตะกร้าคอร์สและเตรียม ${episodes} EP แล้ว หัก 1 เครดิตเรียบร้อย`:sellerPlan==='free_manual'?`สร้างคอร์สฟรี ${episodes} EP แล้ว ตรวจสลิปด้วยตนเอง`:`สร้างคอร์สพาร์ตเนอร์ ${episodes} EP แล้ว ระบบจะหักค่าตรวจสลิป 1 บาทก่อนแบ่ง 50/50`,
+        message: sellerPlan==='paid_rights'?`สร้างร่างตะกร้าคอร์สและเตรียม ${episodes} EP แล้ว หัก 1 เครดิตเรียบร้อย`:sellerPlan==='free_manual'?`สร้างคอร์สฟรี ${episodes} EP แล้ว ตรวจสลิปด้วยตนเอง`:`สร้างคอร์สพาร์ตเนอร์ ${episodes} EP แล้ว ระบบแบ่งยอด 50/50 และหักค่า VisionD API 1 บาทจากส่วนผู้สอน`,
       },
       201,
     );

@@ -55,7 +55,7 @@ export async function grantOrder(env, order, actor = {}) {
   if(!claimed)return 0;
   if(order.seller_course_id){
     const partner=await env.DB.prepare("SELECT id,owner_user_id,slip_fee_cents,visiond_share_percent,seller_share_percent FROM courses WHERE id=? AND seller_plan='partner_50'").bind(order.seller_course_id).first();
-    if(partner){const gross=Math.max(0,Number(order.total)||0),fee=Math.min(gross,Math.max(0,Number(partner.slip_fee_cents)||100)),net=gross-fee,visiond=Math.floor(net*(Number(partner.visiond_share_percent)||50)/100),seller=net-visiond;await env.DB.prepare("INSERT OR IGNORE INTO course_partner_payouts(order_id,course_id,owner_user_id,gross_amount,slip_fee,net_amount,visiond_amount,seller_amount,status) VALUES(?,?,?,?,?,?,?,?,'pending')").bind(order.id,partner.id,partner.owner_user_id,gross,fee,net,visiond,seller).run()}
+    if(partner){const gross=Math.max(0,Number(order.total)||0),visiond=Math.floor(gross*(Number(partner.visiond_share_percent)||50)/100),sellerBeforeFee=gross-visiond,fee=Math.min(sellerBeforeFee,Math.max(0,Number(partner.slip_fee_cents)||100)),seller=sellerBeforeFee-fee,net=gross-fee;await env.DB.prepare("INSERT OR IGNORE INTO course_partner_payouts(order_id,course_id,owner_user_id,gross_amount,slip_fee,net_amount,visiond_amount,seller_amount,status) VALUES(?,?,?,?,?,?,?,?,'pending')").bind(order.id,partner.id,partner.owner_user_id,gross,fee,net,visiond,seller).run()}
   }
   await fulfillVision7Order(env,order,actor);
   try{

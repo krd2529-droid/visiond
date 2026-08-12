@@ -108,6 +108,8 @@ async function initializeDatabase(env) {
   if (!planCourseColumns.includes('visiond_share_percent')) await env.DB.prepare('ALTER TABLE courses ADD COLUMN visiond_share_percent INTEGER NOT NULL DEFAULT 0').run();
   if (!planCourseColumns.includes('seller_share_percent')) await env.DB.prepare('ALTER TABLE courses ADD COLUMN seller_share_percent INTEGER NOT NULL DEFAULT 100').run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS course_partner_payouts(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL UNIQUE,course_id INTEGER NOT NULL,owner_user_id INTEGER NOT NULL,gross_amount INTEGER NOT NULL,slip_fee INTEGER NOT NULL DEFAULT 100,net_amount INTEGER NOT NULL,visiond_amount INTEGER NOT NULL,seller_amount INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending',paid_at TEXT,payment_note TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+  const partnerPayoutColumns=(await env.DB.prepare('PRAGMA table_info(course_partner_payouts)').all()).results.map(column=>column.name);
+  if(!partnerPayoutColumns.includes('payout_batch_no'))await env.DB.prepare("ALTER TABLE course_partner_payouts ADD COLUMN payout_batch_no TEXT NOT NULL DEFAULT ''").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_course_partner_payout_owner_status ON course_partner_payouts(owner_user_id,status,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_trash_expires_at ON trash_items(expires_at)').run();
