@@ -1505,24 +1505,30 @@
                   >เลือกตะกร้าที่ลงขายแล้วมาจัดชุด</b
                 >
                 <p>
-                  ระบบดึงรูปตัวอย่าง 3 รูปจากทุกตะกร้า: ชุด 5 ตะกร้าได้ 15 รูป
-                  และชุด 10 ตะกร้าได้ 30 รูป พร้อมเชื่อม PDF ทุกชุด
+                  ระบบเชื่อมไฟล์ทุกไฟล์จากตะกร้าต้นทาง ใช้เฉพาะรูปปกตะกร้าละ 1 รูป
+                  และสร้างรายละเอียดชื่อสินค้า (จำนวนรูป) ให้อัตโนมัติ
                 </p>
                 <div class="bundle-size">
                   <label
-                    ><input type="radio" name="bundle_size" value="5" checked />
-                    ชุด 5 ตะกร้า</label
+                    ><input type="radio" name="bundle_size" value="10" checked />
+                    ชุด 10 ตะกร้า</label
                   ><label
-                    ><input type="radio" name="bundle_size" value="10" /> ชุด 10
+                    ><input type="radio" name="bundle_size" value="20" /> ชุด 20
                     ตะกร้า</label
-                  ><strong id="bundleSelectedCount">เลือกแล้ว 0/5</strong>
+                  ><label
+                    ><input type="radio" name="bundle_size" value="30" /> ชุด 30
+                    ตะกร้า</label
+                  ><label
+                    ><input type="radio" name="bundle_size" value="50" /> ชุด 50
+                    ตะกร้า</label
+                  ><strong id="bundleSelectedCount">เลือกแล้ว 0/10</strong>
                 </div>
                 <div
                   id="bundleProductPicker"
                   class="bundle-product-picker"
                 ></div>
                 <div class="bundle-preview-head">
-                  <b>รูปสไลด์ที่ดึงมา</b
+                  <b>รูปปกที่ดึงมา</b
                   ><span id="bundlePreviewCount">0 รูป</span>
                 </div>
                 <div id="bundlePreviewGallery" class="bundle-preview-gallery">

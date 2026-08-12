@@ -95,3 +95,8 @@ Next marketing work:
 - Measure: recommendation_view, recommendation_click, downstream add_to_cart, purchase and revenue.
 - Production decision remains family-level: premade stock count is not demand evidence; exposure and paid conversion decide whether to extend the next numbered set.
 - v0.14.170 rebuilt sales quality: use factual product strengths, baht pricing, and contextual follow-ups to improve qualified purchase intent without premature checkout claims.
+# โปรยกชุด (v0.14.172)
+
+- ใช้หมวด `bundle-deals` เป็นหน้ารวมข้อเสนอราคาพิเศษแบบ 10/20/30/50 ตะกร้า
+- ชื่อสินค้าควรระบุหมวด จำนวนตะกร้า และลำดับชุด เช่น “รวมแบบรอยสัก 30 ตะกร้า ชุดที่ 1”
+- รายละเอียดแสดงรายชื่อตะกร้าและจำนวนรูป เพื่อให้ลูกค้าเห็นมูลค่าที่ได้รับก่อนซื้อ

@@ -190,6 +190,8 @@ async function initializeDatabase(env) {
   await env.DB.prepare("UPDATE categories SET name='แบบรอยสัก',parent_slug=NULL,file_type='PDF',active=1,sort_order=20 WHERE slug='tattoo'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('set-coloring','คละแบบระบายสี',NULL,'ชุด PDF',1,21)").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('set-tattoo','คละแบบรอยสัก',NULL,'ชุด PDF',1,22)").run();
+  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('bundle-deals','โปรยกชุด',NULL,'ชุดไฟล์ดิจิทัล',1,23)").run();
+  await env.DB.prepare("UPDATE categories SET name='โปรยกชุด',parent_slug=NULL,file_type='ชุดไฟล์ดิจิทัล',active=1,sort_order=23 WHERE slug='bundle-deals'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('worksheet','แบบฝึกหัด',NULL,'PDF',1,25)").run();
   await env.DB.prepare("UPDATE categories SET name='แบบฝึกหัด',parent_slug=NULL,file_type='PDF',active=1,sort_order=25 WHERE slug='worksheet'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('development-game','เกมเสริมพัฒนาการ',NULL,'PDF',1,26)").run();

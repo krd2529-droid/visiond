@@ -157,3 +157,10 @@ EVENT CASE: ยังไม่เสร็จ — ต้องแพตต่อ
 ## Current next decision
 Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior. Analyze `recommendation_view → recommendation_click → add_to_cart → purchase`. Commerce/Conversion diagnostics are now implemented in v0.14.50. Deploy and validate with real traffic. Unless production data or a new Event Case overrides it, rotate next to Product/Production Intelligence: turn family exposure/cart/paid evidence into an ordered production queue, never inventory count alone.
 - v0.14.170 rebuilt from the verified v0.14.168 baseline: restore complete factual product knowledge and consultative LINE sales behavior without importing later patches.
+# Patch v0.14.172 — โปรยกชุด
+
+- เพิ่มหมวด `โปรยกชุด` slug `bundle-deals`
+- หลังบ้านเลือกสินค้าเปิดขาย 10/20/30/50 ตะกร้าและตั้งชื่อโปรใหม่ได้
+- โปรเชื่อมไฟล์ทั้งหมดจากตะกร้าต้นทาง แต่ใช้เฉพาะรูปปกตะกร้าละหนึ่งรูป
+- สรุปจำนวนตะกร้า ไฟล์ และรูป/หน้า พร้อมสร้างรายละเอียดรายชื่อสินค้าอัตโนมัติ
+- งานถัดไป: ตรวจนับสินค้า 151 ตะกร้าจากฐานจริงและลดภาระ `/api/products`

@@ -1,0 +1,11 @@
+{
+  "version": "0.14.172",
+  "event_case": "bundle-deals-admin-builder",
+  "requirements": [
+    {"id":"bundle-category","status":"complete","files":["functions/_schema.js"]},
+    {"id":"bundle-sizes-10-20-30-50","status":"complete","files":["public/admin.html","public/admin.js"]},
+    {"id":"bundle-all-files-cover-only","status":"complete","files":["functions/api/admin/products/index.js","functions/api/admin/products/[id].js"]},
+    {"id":"bundle-generated-description-counts","status":"complete","files":["functions/api/admin/products/index.js","functions/api/admin/products/[id].js"]},
+    {"id":"catalog-count-audit","status":"pending","note":"API /api/products ยังต้องแยกแก้ performance และเทียบฐานจริง"}
+  ]
+}

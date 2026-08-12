@@ -1,8 +1,20 @@
-import assert from'node:assert/strict';import fs from'node:fs';
-const r=p=>fs.readFileSync(p,'utf8'),runtime=r('functions/_veasy_runtime.js'),ai=r('functions/_veasy_line_ai.js'),api=r('functions/api/vision7/shops/[shopId]/contexts.js');
-assert.equal(r('VERSION.txt').trim(),'v0.14.172');
-for(const value of ['veasy_context_reviews','veasy_context_audit','occurrences'])assert.match(runtime,new RegExp(value));
-for(const value of ['queueContextReview','prompt_injection','เบอร์โทรถูกซ่อน','ที่อยู่ถูกซ่อน','ร้านยังไม่ได้ระบุ'])assert.match(ai,new RegExp(value));
-for(const value of ['approve_review','dismiss_review','edit_context','risk_flag','actor_user_id'])assert.match(api,new RegExp(value));
-assert.match(api,/WHERE id=\? AND shop_id=\?/);assert.match(api,/user_id=\?/);
-console.log('PASS v0.14.172 V Easy guarded chat review queue');
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const [schema,createApi,updateApi,adminHtml,adminJs,ledger]=await Promise.all([
+  read('functions/_schema.js'),read('functions/api/admin/products/index.js'),
+  read('functions/api/admin/products/[id].js'),read('public/admin.html'),
+  read('public/admin.js'),read('patch-ledgers/v0.14.172.json')
+]);
+
+assert.match(schema,/bundle-deals','โปรยกชุด'/);
+for(const size of [10,20,30,50])assert.match(adminHtml,new RegExp(`bundle_size" value="${size}"`));
+assert.match(createApi,/\[10,20,30,50\]/);
+assert.match(updateApi,/\[10, 20, 30, 50\]/);
+assert.match(createApi,/items\.map\(item=>item\.cover_url\)/);
+assert.match(updateApi,/orderedItems\.map\(item=>item\.cover_url\)/);
+assert.match(createApi,/item\.title.*รูป/);
+assert.match(adminJs,/totalFiles.*totalPages/s);
+assert.equal(JSON.parse(ledger).version,'0.14.172');
+console.log('v0.14.172 bundle-deals contract: PASS');
