@@ -41,8 +41,6 @@ export async function onRequestPost(ctx) {
 
     const exists = await ctx.env.DB.prepare('SELECT id FROM users WHERE lower(email)=? OR lower(username)=?').bind(email, username).first();
     if (exists) return json({ error: 'ไอดีหรืออีเมลนี้ถูกใช้แล้ว' }, 409);
-    const duplicateName=await ctx.env.DB.prepare('SELECT id FROM users WHERE lower(trim(name))=lower(trim(?)) LIMIT 1').bind(name).first();
-    if(duplicateName)return json({error:'ชื่อ–นามสกุลนี้มีบัญชีอยู่แล้ว หากเป็นยูสเทสให้ Boss กำหนดสถานะจากหลังบ้าน'},409);
 
     const hash = await hashPassword(body.password);
     const acceptedIpHash=await sha256(`${requestIp(ctx.request)}|visiond-terms-ip-v1`),sessionId=crypto.randomUUID();

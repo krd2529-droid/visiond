@@ -1,0 +1,6 @@
+.topbar{display:flex;align-items:center;gap:24px;min-height:76px;padding:10px clamp(18px,5vw,72px)}
+.topbar>nav{display:flex;align-items:center;justify-content:center;gap:10px;flex:1;flex-wrap:wrap}
+.topbar>nav a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 18px;border:1px solid rgba(255,255,255,.78);border-radius:999px;background:rgba(255,255,255,.94);color:#075c59;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(0,70,67,.10);transition:.15s ease}
+.topbar>nav a:hover,.topbar>nav a:focus-visible{background:#fff;box-shadow:0 7px 18px rgba(0,70,67,.18);transform:translateY(-1px);outline:2px solid rgba(255,255,255,.55);outline-offset:2px}
+.dashboard-version{color:#fff;font-size:12px;font-weight:700;white-space:nowrap;opacity:.9}
+@media(max-width:760px){.topbar{gap:12px;flex-wrap:wrap;padding:12px 16px}.topbar>nav{order:3;flex-basis:100%;gap:8px}.topbar>nav a{min-height:40px;padding:8px 14px}.dashboard-version{margin-left:auto}}

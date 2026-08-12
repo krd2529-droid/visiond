@@ -1,0 +1,2 @@
+import assert from'node:assert/strict';import fs from'node:fs';const r=p=>fs.readFileSync(p,'utf8');
+assert.match(r('public/dashboard.html'),/dashboard-nav-v014170\.css/);assert.match(r('public/dashboard.html'),/WEB v0\.14\.170/);assert.match(r('public/dashboard-nav-v014170.css'),/border-radius:999px/);assert.match(r('functions/api/vision7/shops/[shopId]/products/[productId]/image.js'),/5\*1024\*1024/);assert.match(r('functions/_veasy_shop.js'),/cover_image_key/);console.log('v0.14.170 rebuilt dashboard/media UX checks passed');

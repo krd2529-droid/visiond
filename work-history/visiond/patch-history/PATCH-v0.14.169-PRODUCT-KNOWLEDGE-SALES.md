@@ -1,4 +1,4 @@
-# Patch v0.14.169 — Complete Product Knowledge and Sales Behavior
+# Patch v0.14.170 — Complete Product Knowledge and Sales Behavior
 
 The V Easy LINE sales assistant now receives category, short and full descriptions, specifications, warranty, shipping, price, and stock for each active product. Prices stored by the mobile product form are treated as baht instead of being divided by 100.
 

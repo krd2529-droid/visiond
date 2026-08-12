@@ -156,4 +156,4 @@ EVENT CASE: ยังไม่เสร็จ — ต้องแพตต่อ
 
 ## Current next decision
 Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior. Analyze `recommendation_view → recommendation_click → add_to_cart → purchase`. Commerce/Conversion diagnostics are now implemented in v0.14.50. Deploy and validate with real traffic. Unless production data or a new Event Case overrides it, rotate next to Product/Production Intelligence: turn family exposure/cart/paid evidence into an ordered production queue, never inventory count alone.
-- v0.14.169 rebuilt from the verified v0.14.168 baseline: restore complete factual product knowledge and consultative LINE sales behavior without importing later patches.
+- v0.14.170 rebuilt from the verified v0.14.168 baseline: restore complete factual product knowledge and consultative LINE sales behavior without importing later patches.

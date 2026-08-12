@@ -94,4 +94,4 @@ Next marketing work:
 - Do not enable aggressive personalized popup frequency until recommendation CTR/cart/paid uplift is observed in production.
 - Measure: recommendation_view, recommendation_click, downstream add_to_cart, purchase and revenue.
 - Production decision remains family-level: premade stock count is not demand evidence; exposure and paid conversion decide whether to extend the next numbered set.
-- v0.14.169 rebuilt sales quality: use factual product strengths, baht pricing, and contextual follow-ups to improve qualified purchase intent without premature checkout claims.
+- v0.14.170 rebuilt sales quality: use factual product strengths, baht pricing, and contextual follow-ups to improve qualified purchase intent without premature checkout claims.

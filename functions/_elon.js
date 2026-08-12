@@ -14,7 +14,7 @@ const ELON_RETENTION_DAYS=60;
 const ELON_PURGE_INTERVAL_MS=60*60*1000;
 const ELON_ALLOWED_PAGE_PATHS=new Set([
   '/','/about','/account','/blog','/bots','/cart','/contact','/course-basket-edit',
-  '/course-rights-terms','/course-center','/courses','/dashboard','/digital-products',
+  '/course-rights-terms','/course-seller','/courses','/dashboard','/digital-products',
   '/forgot-password','/index','/learn','/login','/my-courses','/product','/register',
   '/reset-password'
 ]);
@@ -26,7 +26,7 @@ const PAGE_TITLES=new Map([
   ['/','หน้าแรก'],['/about','เกี่ยวกับ VisionD'],['/account','บัญชีของฉัน'],
   ['/blog','บทความ'],['/bots','ผู้ช่วย VisionD'],['/cart','ตะกร้าสินค้า'],
   ['/contact','ติดต่อ VisionD'],['/course-basket-edit','จัดการตะกร้าคอร์ส'],
-  ['/course-rights-terms','เงื่อนไขสิทธิ์คอร์ส'],['/course-center','ศูนย์จัดการคอร์ส'],
+  ['/course-rights-terms','เงื่อนไขสิทธิ์คอร์ส'],['/course-seller','คอร์สของฉัน'],
   ['/courses','คอร์สออนไลน์'],['/dashboard','ของฉัน'],['/digital-products','สินค้าดิจิทัล'],
   ['/forgot-password','ลืมรหัสผ่าน'],['/index','หน้าแรก'],['/learn','บทเรียน'],
   ['/login','เข้าสู่ระบบ'],['/my-courses','คอร์สเรียนของฉัน'],['/product','รายละเอียดสินค้า'],
