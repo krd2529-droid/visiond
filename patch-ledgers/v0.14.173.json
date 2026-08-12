@@ -1,0 +1,11 @@
+{
+  "version":"0.14.173",
+  "event_case":"catalog-performance-mobile-menu-counts",
+  "requirements":[
+    {"id":"products-api-cpu","status":"complete","files":["functions/api/products/index.js"]},
+    {"id":"published-catalog-counts","status":"complete","files":["functions/api/products/index.js","public/catalog-sync.js"]},
+    {"id":"bundle-deals-storefront-filter","status":"complete","files":["public/catalog-sync.js"]},
+    {"id":"mobile-menu-backdrop-reset","status":"complete","files":["public/mobile-storefront.js","public/mobile-storefront.css","public/register.html"]},
+    {"id":"production-db-exact-151-audit","status":"requires-production-auth","note":"แพตเพิ่มตัวเลข authoritative และ mismatch detector; การยืนยันแถว D1 จริงต้องดูหลัง deploy"}
+  ]
+}

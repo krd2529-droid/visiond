@@ -199,6 +199,7 @@ import('/nav-account.js?v=014109');
               if (/coloring|ระบายสี/.test(text)) return "coloring";
               if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
               if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
+              if (/bundle-deals|โปรยกชุด/.test(text)) return "bundle-deals";
               if (/resale-rights|สิทธิ์ลงขายคอร์ส/.test(text)) return "resale-rights";
               return "";
             };
@@ -389,13 +390,15 @@ import('/nav-account.js?v=014109');
             counts[card.dataset.category] += 1;
           return counts;
         },
-        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "resale-rights": 0 },
+        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "bundle-deals": 0, "resale-rights": 0 },
       );
+      const apiCounts=data.catalog_counts||{};
+      if(Number.isFinite(Number(apiCounts.all))&&Number(apiCounts.all)!==categoryCounts.all)console.warn('VISIOND_CATALOG_COUNT_MISMATCH',{api:apiCounts.all,rendered:categoryCounts.all});
       const requestedCategory = new URLSearchParams(location.search).get("category"),
-        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "resale-rights"].includes(requestedCategory)
+        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "bundle-deals", "resale-rights"].includes(requestedCategory)
           ? requestedCategory
           : "all";
-      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><button data-category="bundle-deals" type="button">โปรยกชุด ${categoryCounts["bundle-deals"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
       const pageSize = 8,
         requestedPage = Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1);
       let currentCategory = initialCategory,
