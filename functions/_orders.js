@@ -53,6 +53,10 @@ export async function grantOrder(env, order, actor = {}) {
   const statusIndex=statements.length;statements.push(env.DB.prepare("UPDATE orders SET status='paid',admin_note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending_review'").bind(actor.note || '', order.id));
   const results=await env.DB.batch(statements),claimed=Number(results[statusIndex]?.meta?.changes)||0;
   if(!claimed)return 0;
+  if(order.seller_course_id){
+    const partner=await env.DB.prepare("SELECT id,owner_user_id,slip_fee_cents,visiond_share_percent,seller_share_percent FROM courses WHERE id=? AND seller_plan='partner_50'").bind(order.seller_course_id).first();
+    if(partner){const gross=Math.max(0,Number(order.total)||0),fee=Math.min(gross,Math.max(0,Number(partner.slip_fee_cents)||100)),net=gross-fee,visiond=Math.floor(net*(Number(partner.visiond_share_percent)||50)/100),seller=net-visiond;await env.DB.prepare("INSERT OR IGNORE INTO course_partner_payouts(order_id,course_id,owner_user_id,gross_amount,slip_fee,net_amount,visiond_amount,seller_amount,status) VALUES(?,?,?,?,?,?,?,?,'pending')").bind(order.id,partner.id,partner.owner_user_id,gross,fee,net,visiond,seller).run()}
+  }
   await fulfillVision7Order(env,order,actor);
   try{
     const attribution=await env.DB.prepare(`SELECT visitor_key,source,medium,campaign,content,referrer FROM customer_events WHERE user_id=? AND event_type<>'purchase' AND (source<>'' OR campaign<>'' OR content<>'') AND created_at>=datetime('now','-30 days') ORDER BY created_at DESC,id DESC LIMIT 1`).bind(order.user_id).first();

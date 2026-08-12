@@ -82,7 +82,7 @@ export async function onRequestGet(ctx) {
     credit: 1,
   }));
   const courses = await ctx.env.DB.prepare(
-    `SELECT c.id,c.license_entitlement_id,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,c.teacher_name,c.contact_info,c.platform_tags,c.learner_level,c.expected_episodes,c.review_status,c.review_note,c.submitted_at,c.edit_expires_at,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id),0) planned_lesson_count,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id AND TRIM(COALESCE(l.title,''))<>'' AND (l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id))),0) lesson_count FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL ORDER BY c.id DESC`,
+    `SELECT c.id,c.license_entitlement_id,c.seller_plan,c.slip_fee_cents,c.visiond_share_percent,c.seller_share_percent,p.slug,p.title,p.short_description,p.description,p.price,p.cover_url,p.status,c.teacher_name,c.contact_info,c.platform_tags,c.learner_level,c.expected_episodes,c.review_status,c.review_note,c.submitted_at,c.edit_expires_at,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id),0) planned_lesson_count,COALESCE((SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id AND TRIM(COALESCE(l.title,''))<>'' AND (l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id))),0) lesson_count FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL ORDER BY c.id DESC`,
   )
     .bind(auth.user.id)
     .all();
