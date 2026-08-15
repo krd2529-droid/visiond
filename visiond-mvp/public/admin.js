@@ -26,8 +26,10 @@ let viewer = null,
   bundleMode = false,
   vision2PendingProductFiles = null;
 const bulkSelectedProducts = new Set();
-const PRODUCTS_PER_PAGE = 10;
-let productAdminPage = 1;
+const PUBLISHED_PRODUCTS_PER_PAGE = 10;
+const DRAFT_PRODUCTS_PER_PAGE = 5;
+let publishedProductPage = 1;
+let draftProductPage = 1;
 
 function setVision2PendingProductFiles(files) {
   vision2PendingProductFiles = files;
@@ -127,7 +129,7 @@ categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
 downloadCategoryPreviews.onclick = downloadPreviewArchive;
 previewExportCategory.onchange = loadPreviewBatches;
-productSearchInput.oninput = () => { productAdminPage = 1; renderProductAdminList(productSearchInput.value); };
+productSearchInput.oninput = () => { publishedProductPage = 1; draftProductPage = 1; renderProductAdminList(productSearchInput.value); };
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-trash-action]");
@@ -592,13 +594,15 @@ async function deleteCategory() {
 }
 
 async function loadProducts() {
-  productAdminList.innerHTML =
-    '<div class="admin-empty">กำลังโหลดสินค้า…</div>';
+  publishedProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าที่วางจำหน่าย…</div>';
+  draftProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าแบบร่าง…</div>';
   await loadCategories(false);
   const r = await fetch("/api/admin/products");
   const d = await r.json().catch(() => ({}));
   if (!r.ok) {
-    productAdminList.innerHTML = `<div class="admin-empty">${esc(d.error || "โหลดสินค้าไม่สำเร็จ")}</div>`;
+    const error = `<div class="admin-empty">${esc(d.error || "โหลดสินค้าไม่สำเร็จ")}</div>`;
+    publishedProductList.innerHTML = error;
+    draftProductList.innerHTML = error;
     return;
   }
   products = d.items || [];
@@ -612,29 +616,43 @@ function renderProductAdminList(search = "") {
       !query || [p.id, p.title, p.slug, p.category].some((value) =>
         String(value || "").toLocaleLowerCase("th-TH").includes(query),
       ),
-    );
-  const totalPages=Math.max(1,Math.ceil(visible.length/PRODUCTS_PER_PAGE));
-  productAdminPage=Math.min(Math.max(1,productAdminPage),totalPages);
-  const pageItems=visible.slice((productAdminPage-1)*PRODUCTS_PER_PAGE,productAdminPage*PRODUCTS_PER_PAGE);
-  productSearchCount.textContent = `${query ? `พบ ${visible.length} จาก ${products.length}` : `ทั้งหมด ${products.length}`} ตะกร้า · หน้า ${productAdminPage}/${totalPages}`;
-  productAdminList.innerHTML = pageItems.map((p) => {
+    ),
+    published = visible.filter((product) => product.status === "published"),
+    drafts = visible.filter((product) => product.status !== "published");
+  productSearchCount.textContent = `${query ? `พบ ${visible.length} จาก ${products.length}` : `ทั้งหมดในระบบ ${products.length}`} ตะกร้า · วางจำหน่าย ${published.length} · แบบร่าง ${drafts.length}`;
+  renderProductGroup(published, "published");
+  renderProductGroup(drafts, "draft");
+  productAdminList.querySelectorAll('[data-select-product]').forEach(input=>input.onchange=()=>{const id=Number(input.dataset.selectProduct);input.checked?bulkSelectedProducts.add(id):bulkSelectedProducts.delete(id);input.closest('.product-admin-card')?.classList.toggle('bulk-selected',input.checked);updateBulkProductBar()});
+  updateBulkProductBar();
+}
+function productCardMarkup(p) {
     const fileLabel = p.latest_file_mime === "application/zip" ? "ดาวน์โหลด ZIP" : "ดาวน์โหลด PDF",
       fileAction = p.latest_file_id
         ? `<a class="product-download-action" href="/api/admin/product-files/${p.latest_file_id}?mode=download">${fileLabel}</a>`
         : '<span class="product-download-unavailable">ยังไม่มี PDF/ZIP</span>';
     const checked=bulkSelectedProducts.has(Number(p.id));
     return `<article class="product-admin-card${checked?' bulk-selected':''}"><label class="product-select-box" title="เลือกตะกร้านี้เพื่อลบ"><input type="checkbox" data-select-product="${p.id}" ${checked?'checked':''} aria-label="เลือก ${esc(p.title)}"></label><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><div><h3>${esc(p.title)}</h3><p>เลข ${p.id} · ${esc(p.slug)} · ${esc(p.category || "ไม่ระบุหมวด")}</p><div class="product-meta"><span>${money(p.price)}</span><span>${p.status === "published" ? "เปิดขาย" : "แบบร่าง"}</span><span>${Number(p.file_count) || 0} ไฟล์</span></div><div class="product-card-downloads"><a class="product-download-action" href="/api/admin/product-previews.zip?product_id=${p.id}">ดาวน์โหลดรูปปก + รูปตัวอย่าง</a>${fileAction}</div></div><button type="button" data-edit-product="${p.id}">แก้ไข</button></article>`;
-  }).join("") || (products.length ? '<div class="admin-empty">ไม่พบตะกร้าที่ตรงกับคำค้นหา</div>' : '<div class="admin-empty">ยังไม่มีสินค้า กด “เพิ่มสินค้า” เพื่อเริ่มต้น</div>');
+}
+function renderProductGroup(items, status) {
+  const isPublished = status === "published",
+    perPage = isPublished ? PUBLISHED_PRODUCTS_PER_PAGE : DRAFT_PRODUCTS_PER_PAGE,
+    totalPages = Math.max(1, Math.ceil(items.length / perPage));
+  if (isPublished) publishedProductPage = Math.min(Math.max(1, publishedProductPage), totalPages);
+  else draftProductPage = Math.min(Math.max(1, draftProductPage), totalPages);
+  const page = isPublished ? publishedProductPage : draftProductPage,
+    pageItems = items.slice((page - 1) * perPage, page * perPage),
+    list = isPublished ? publishedProductList : draftProductList,
+    count = isPublished ? publishedProductCount : draftProductCount;
+  count.textContent = `${items.length} ตะกร้า · หน้า ${page}/${totalPages}`;
+  list.innerHTML = pageItems.map(productCardMarkup).join("") || `<div class="admin-empty">${items.length ? "ไม่พบตะกร้าในหน้านี้" : isPublished ? "ยังไม่มีตะกร้าที่วางจำหน่าย" : "ยังไม่มีตะกร้าแบบร่าง"}</div>`;
   document
-    .querySelectorAll("#productAdminList [data-edit-product]")
+    .querySelectorAll(`#${list.id} [data-edit-product]`)
     .forEach(
       (b) => (b.onclick = () => editProduct(Number(b.dataset.editProduct))),
     );
-  productAdminList.querySelectorAll('[data-select-product]').forEach(input=>input.onchange=()=>{const id=Number(input.dataset.selectProduct);input.checked?bulkSelectedProducts.add(id):bulkSelectedProducts.delete(id);input.closest('.product-admin-card')?.classList.toggle('bulk-selected',input.checked);updateBulkProductBar()});
-  renderProductPagination(totalPages,visible.length);
-  updateBulkProductBar();
+  renderProductPagination(status, totalPages, items.length, perPage);
 }
-function renderProductPagination(totalPages,totalItems){const nav=document.getElementById('productAdminPagination');if(!nav)return;if(totalItems<=PRODUCTS_PER_PAGE){nav.innerHTML='';nav.hidden=true;return}nav.hidden=false;const pages=[];for(let page=1;page<=totalPages;page++)if(page===1||page===totalPages||Math.abs(page-productAdminPage)<=2)pages.push(page);let previous=0,html=`<button type="button" data-product-page="${productAdminPage-1}" ${productAdminPage===1?'disabled':''}>ก่อนหน้า</button>`;for(const page of pages){if(previous&&page-previous>1)html+='<span>…</span>';html+=`<button type="button" data-product-page="${page}" class="${page===productAdminPage?'active':''}" ${page===productAdminPage?'aria-current="page"':''}>${page}</button>`;previous=page}html+=`<button type="button" data-product-page="${productAdminPage+1}" ${productAdminPage===totalPages?'disabled':''}>ถัดไป</button>`;nav.innerHTML=html;nav.querySelectorAll('[data-product-page]:not([disabled])').forEach(button=>button.onclick=()=>{productAdminPage=Number(button.dataset.productPage);renderProductAdminList(productSearchInput.value);productAdminList.scrollIntoView({behavior:'smooth',block:'start'})})}
+function renderProductPagination(status,totalPages,totalItems,perPage){const isPublished=status==='published',nav=isPublished?publishedProductPagination:draftProductPagination,currentPage=isPublished?publishedProductPage:draftProductPage,target=isPublished?publishedProductList:draftProductList;if(totalItems<=perPage){nav.innerHTML='';nav.hidden=true;return}nav.hidden=false;const pages=[];for(let page=1;page<=totalPages;page++)if(page===1||page===totalPages||Math.abs(page-currentPage)<=2)pages.push(page);let previous=0,html=`<button type="button" data-product-page="${currentPage-1}" ${currentPage===1?'disabled':''}>ก่อนหน้า</button>`;for(const page of pages){if(previous&&page-previous>1)html+='<span>…</span>';html+=`<button type="button" data-product-page="${page}" class="${page===currentPage?'active':''}" ${page===currentPage?'aria-current="page"':''}>${page}</button>`;previous=page}html+=`<button type="button" data-product-page="${currentPage+1}" ${currentPage===totalPages?'disabled':''}>ถัดไป</button>`;nav.innerHTML=html;nav.querySelectorAll('[data-product-page]:not([disabled])').forEach(button=>button.onclick=()=>{if(isPublished)publishedProductPage=Number(button.dataset.productPage);else draftProductPage=Number(button.dataset.productPage);renderProductAdminList(productSearchInput.value);target.scrollIntoView({behavior:'smooth',block:'start'})})}
 function updateBulkProductBar(){const count=bulkSelectedProducts.size,output=document.getElementById('bulkProductCount'),button=document.getElementById('bulkDeleteProducts');if(output)output.textContent=`เลือกแล้ว ${count} ตะกร้า`;if(button)button.disabled=!count}
 async function bulkDeleteSelectedProducts(){const ids=[...bulkSelectedProducts];if(!ids.length)return;if(!confirm(`ย้ายตะกร้าที่เลือก ${ids.length} รายการไปถังขยะ 30 วันหรือไม่?`))return;const button=document.getElementById('bulkDeleteProducts');button.disabled=true;let deleted=0,failed=0;for(const id of ids){const response=await fetch('/api/admin/products/'+id,{method:'DELETE'});if(response.ok){deleted++;bulkSelectedProducts.delete(id)}else failed++}await loadProducts();alert(`ย้ายไปถังขยะแล้ว ${deleted} ตะกร้า${failed?` · ลบไม่สำเร็จ ${failed} ตะกร้า`:''}`)}
 document.getElementById('bulkClearProducts')?.addEventListener('click',()=>{bulkSelectedProducts.clear();renderProductAdminList(productSearchInput.value)});

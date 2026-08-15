@@ -147,7 +147,8 @@
     "test:v014166": "node scripts/test-v014166.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs",
     "test:v014167": "node scripts/test-v014167.mjs && node scripts/test-v01486-vision5-two-account-e2e.mjs",
     "test:v014181": "node scripts/test-v014181.mjs",
-    "test:v014182": "node scripts/test-v014182.mjs"
+    "test:v014182": "node scripts/test-v014182.mjs",
+    "test:v014183": "node scripts/test-v014183.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

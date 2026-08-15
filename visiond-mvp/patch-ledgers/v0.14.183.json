@@ -1,0 +1,1 @@
+{"patch":"v0.14.183","scope":"mobile-menu-and-product-status-pagination","changed":["public/mobile-storefront.css","public/index.html","public/admin.html","public/admin.js","public/admin-products.css","VERSION.txt","scripts/test-v014183.mjs"],"result":"ปุ่มเมนูมือถือเป็นแถบยาวใต้แถวหัวเว็บ และหลังบ้านแยกตะกร้าวางจำหน่ายหน้าละ 10 กับแบบร่างหน้าละ 5"}

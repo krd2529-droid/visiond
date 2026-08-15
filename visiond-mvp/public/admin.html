@@ -12,7 +12,7 @@
     />
     <link rel="stylesheet" href="/style.css?v=014136" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
     <link rel="stylesheet" href="/course-owner-badge.css?v=01369" />
-    <link rel="stylesheet" href="/admin-products.css?v=013270" />
+    <link rel="stylesheet" href="/admin-products.css?v=014183" />
     <link rel="stylesheet" href="/admin-payment.css?v=01444" />
     <link rel="stylesheet" href="/promotion.css?v=01336" />
     <link rel="stylesheet" href="/elon-controls.css?v=01481" />
@@ -880,7 +880,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.182</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.183</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1418,12 +1418,18 @@
           </div>
           <div class="product-admin-layout">
             <div>
-              <div id="productAdminList" class="product-admin-list"></div>
-              <nav
-                id="productAdminPagination"
-                class="product-admin-pagination"
-                aria-label="หน้ารายการสินค้า"
-              ></nav>
+              <div id="productAdminList" class="product-status-lists">
+                <section class="product-status-section">
+                  <div class="product-status-head"><h3>ตะกร้าที่วางจำหน่าย</h3><b id="publishedProductCount">0 ตะกร้า</b></div>
+                  <div id="publishedProductList" class="product-admin-list"></div>
+                  <nav id="publishedProductPagination" class="product-admin-pagination" aria-label="หน้าตะกร้าที่วางจำหน่าย"></nav>
+                </section>
+                <section class="product-status-section product-draft-section">
+                  <div class="product-status-head"><h3>ตะกร้าแบบร่าง</h3><b id="draftProductCount">0 ตะกร้า</b></div>
+                  <div id="draftProductList" class="product-admin-list"></div>
+                  <nav id="draftProductPagination" class="product-admin-pagination" aria-label="หน้าตะกร้าแบบร่าง"></nav>
+                </section>
+              </div>
             </div>
             <form id="productEditor" class="product-editor">
               <input type="hidden" name="id" />
@@ -2155,7 +2161,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014182"></script>
+    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014183"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>
