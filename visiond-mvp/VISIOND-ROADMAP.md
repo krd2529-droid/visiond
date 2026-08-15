@@ -1,7 +1,15 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.192
+Current build: v0.14.193
+
+## v0.14.193 — V12 V Connect Broadcast Center (IMPLEMENTED)
+- เพิ่ม Broadcast Center สำหรับข้อความ/รูปผ่าน LINE VisionD และ Facebook Page พร้อมเลือกบัญชีและผู้รับจากบทสนทนา
+- เพิ่มคิว ประวัติยอดสำเร็จ/ล้มเหลว และปุ่มส่งซ้ำเฉพาะรายการล้มเหลว โดยมีรหัสแคมเปญป้องกันการสร้างรายการซ้ำ
+- เพิ่มการตั้งค่า Facebook Page Token แบบเข้ารหัสและทดสอบการเชื่อมต่อ โดยไม่แสดง Token กลับหน้าเว็บ
+- ส่ง Facebook เฉพาะบทสนทนาที่อัปเดตภายใน 24 ชั่วโมง และทุกการส่งต้องยืนยันก่อนสร้างคิว
+- Event Case V12 V Connect ปิดในระดับโค้ดและการทดสอบ; การทดสอบ Production ต้องทำหลัง Boss Push/Deploy และเชื่อม Credential จริง
+- แผนเว็บไซต์ 2 ยังอยู่สถานะ `PAUSED BY BOSS` จนกว่า Boss สั่งกลับมาเริ่ม
 
 ## v0.14.192 — V12 V Connect Unified Inbox (IMPLEMENTED)
 - เพิ่มปุ่ม `V12 V Connect` ในงานหลักหลังบ้านและหน้า Inbox responsive สำหรับ Boss/Admin
