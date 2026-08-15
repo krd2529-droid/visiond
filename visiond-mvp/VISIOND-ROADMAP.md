@@ -253,3 +253,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 
 - Event Case: ทำมาตรฐานปุ่มกลางครบทุกหน้าและมือถือ
 - สถานะ: IMPLEMENTED รอผลทดสอบและ commit ในเครื่อง
+# v0.14.188 — ยอดสินค้าหน้าบ้าน/หลังบ้านตรงกัน (2026-08-15)
+
+- รวมสิทธิ์ Vision 5 แบบอ่านอย่างเดียวในยอดหลังบ้าน 336+1=337 โดยไม่รวม draft
