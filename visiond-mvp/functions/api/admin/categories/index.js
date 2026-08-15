@@ -4,7 +4,7 @@ import {ensureDatabase} from '../../../_schema.js';
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
-  const {results}=await ctx.env.DB.prepare(`SELECT c.*,(SELECT COUNT(*) FROM products p WHERE p.category=c.slug) product_count FROM categories c ORDER BY c.sort_order,c.id`).all();
+  const {results}=await ctx.env.DB.prepare(`SELECT c.*,(SELECT COUNT(*) FROM products p WHERE p.category=c.slug AND p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product' AND (p.category<>'resale-rights' OR p.slug='course-selling-rights')) product_count FROM categories c ORDER BY c.sort_order,c.id`).all();
   return json({items:results});
 }
 

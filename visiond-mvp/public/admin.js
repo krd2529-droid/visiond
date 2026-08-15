@@ -455,6 +455,20 @@ async function loadCategories(render = true) {
     return;
   }
   categories = d.items || [];
+  const categoryFamily = (category) => {
+    const text = `${category?.slug || ""} ${category?.name || ""}`.toLowerCase();
+    if (/tattoo|รอยสัก|แบบสัก/.test(text)) return "tattoo";
+    if (/coloring|ระบายสี/.test(text)) return "coloring";
+    if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
+    if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
+    return "";
+  };
+  const populatedFamilies = new Set(
+    categories.filter((category) => Number(category.product_count) > 0).map(categoryFamily).filter(Boolean),
+  );
+  categories = categories.filter(
+    (category) => Number(category.product_count) > 0 || !populatedFamilies.has(categoryFamily(category)),
+  );
   const exportCategories=categories.filter((c)=>Number(c.product_count)>0);
   previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + exportCategories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)} (${Number(c.product_count)||0} สินค้า)</option>`).join("");
   await loadPreviewBatches();
