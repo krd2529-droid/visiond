@@ -256,3 +256,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.188 — ยอดสินค้าหน้าบ้าน/หลังบ้านตรงกัน (2026-08-15)
 
 - รวมสิทธิ์ Vision 5 แบบอ่านอย่างเดียวในยอดหลังบ้าน 336+1=337 โดยไม่รวม draft
+# v0.14.189 — Compact Language Switcher + Permanent Template Rule (2026-08-15)
+
+- TH/EN บนมือถือเป็น pill กว้างตามเนื้อหา ไม่ยืดเต็มแถบ
+- Template กลางและการตรวจ desktop/Android/iPhone เป็นเงื่อนไขบังคับของทุก Event Case และ Event Roadmap รวมเว็บไซต์ 2
+- Header กลางต้องมีรถเข็นเพียงหนึ่งปุ่มและ badge ใช้ยอด normalized quantity จาก `vd_cart` เดียวกันทุกหน้า

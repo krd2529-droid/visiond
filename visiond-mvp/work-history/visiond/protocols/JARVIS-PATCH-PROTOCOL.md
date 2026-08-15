@@ -32,6 +32,13 @@ Roadmap work rotates across major tracks so one track cannot monopolize releases
 
 After every patch report: Event Case completed/remaining; Event Roadmap completed/remaining; data signals; exact recommended next patch order.
 
+## Permanent template control rule (v0.14.189+)
+
+- Every Event Case and Event Roadmap queue that creates or changes a page must reuse the canonical VisionD template assets before adding page-specific CSS.
+- The language switcher is one compact pill: content-width, maximum 100% of its container, TH/EN controls centered, and never a full-width navigation row on mobile.
+- The canonical header renders exactly one cart action. Its badge must use the normalized `vd_cart` quantity total: unique digital/program products count once, Vision 5 resale rights use their valid quantity, and the total is capped at 30.
+- Desktop, Android-size and iPhone-size template checks are mandatory. New one-off header, language-switcher or button geometry is forbidden unless Boss approves a named exception.
+
 
 ## EVENT CASE STATUS REPORTING
 After EVERY patch, the delivery report MUST end with exactly one clear Event Case state:
