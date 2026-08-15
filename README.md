@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.81** — replaces the broken full-width ELON checkboxes with responsive independent control cards and clear on/off/database states.
+Current package: **v0.14.178** — active production source is the repository root; see `ACTIVE-PRODUCTION-TREE.md` and `patch-ledgers/v0.14.178.json`.
 
 ## ตรวจสอบก่อน Deploy
 

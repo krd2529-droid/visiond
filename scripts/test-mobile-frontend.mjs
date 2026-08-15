@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {join,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-const root=new URL('../',import.meta.url).pathname;
+const root=fileURLToPath(new URL('../',import.meta.url));
 const read=file=>readFileSync(join(root,file),'utf8');
 const htmlFiles=[];
 const walk=dir=>{for(const entry of readdirSync(join(root,dir),{withFileTypes:true})){const rel=join(dir,entry.name);if(entry.isDirectory())walk(rel);else if(rel.endsWith('.html'))htmlFiles.push(rel)}};

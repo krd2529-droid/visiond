@@ -268,6 +268,7 @@
     },
     {
       "legacy_root": "VISIOND-MARKETING-PLAN.md",
+      "active_root": true,
       "archive": "work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md",
       "accepted_legacy_sha256": [
         "a6cc62adf065c23d8735fdcc8b858f40f8cf5a7bb7c573c579786fc7e386fa42"
@@ -275,6 +276,7 @@
     },
     {
       "legacy_root": "VISIOND-ROADMAP.md",
+      "active_root": true,
       "archive": "work-history/visiond/roadmap/VISIOND-ROADMAP.md",
       "accepted_legacy_sha256": [
         "332b121efbd43f84774b8c72c3b48b78d42143720f8ec9b1ada7f305e7aa90f9"
