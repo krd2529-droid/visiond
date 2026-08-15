@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read=file=>fs.readFileSync(file,'utf8');
-const html=read('public/course-center.html');
+const html=read('public/course-seller.html');
 const ui=read('public/course-seller.js');
 const css=read('public/course-seller.css');
 const create=read('functions/api/course-seller/index.js');
@@ -12,7 +12,7 @@ assert.match(ui,/data-v5-step="draft"><span>2/);
 assert.match(ui,/data-v5-step="ep"><span>3/);
 assert.match(ui,/data-v5-step="setup"><span>4/);
 assert.match(ui,/data-v5-step="bind"><span>5/);
-assert.match(html,/1 เครดิตสร้าง(?:ร่าง)?ตะกร้าคอร์สได้ 1 ใบ/);
+assert.match(html,/1 เครดิตสร้างร่างตะกร้าคอร์สได้ 1 ใบ/);
 assert.match(html,/1280 × 720 px/);
 assert.match(create,/credit_required: true/);
 assert.match(create,/UPDATE course_right_credits SET active=0/);

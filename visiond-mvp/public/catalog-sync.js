@@ -1,6 +1,6 @@
-import("/facebook-chat.js?v=014134");
-import("/mouse-ui.js?v=014134");
-import('/nav-account.js?v=014135');
+import("/facebook-chat.js?v=014180");
+import("/mouse-ui.js?v=014180");
+import('/nav-account.js?v=014180');
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
@@ -8,7 +8,7 @@ import('/nav-account.js?v=014135');
   if (!grid) return;
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.querySelector("#vd-catalog-slider-style")?.remove();
-  if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014134">');
+  if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014180">');
   document.head.insertAdjacentHTML(
     "beforeend",
     "<style id=\"vd-catalog-slider-style\">.vd-card[hidden]{display:none!important}.vd-cover>a{display:block;width:100%;height:100%}.vd-cover-slider{isolation:isolate!important;touch-action:pan-y;user-select:none}.vd-cover-slider>a{position:relative!important;z-index:1!important}.vd-cover img[hidden]{display:none!important}.vd-image-total{position:absolute;z-index:20;right:8px;bottom:8px;padding:7px 10px;border:2px solid #fff;border-radius:999px;background:#0abab5;color:#063d3b;box-shadow:0 5px 16px rgba(0,0,0,.18);font-size:12px;font-weight:900}.vd-cover-slider .vd-image-total{bottom:34px}.vd-cover-slider>.vd-slide-prev,.vd-cover-slider>.vd-slide-next{position:absolute!important;z-index:50!important;top:50%!important;transform:translateY(-50%)!important;display:grid!important;place-items:center!important;width:44px!important;height:52px!important;margin:0!important;padding:0!important;border:2px solid #fff!important;border-radius:50%!important;background:#0abab5!important;color:#063d3b!important;box-shadow:0 4px 14px rgba(6,61,59,.2)!important;font-size:29px!important;font-weight:900!important;line-height:1!important;cursor:pointer!important;pointer-events:auto!important;visibility:visible!important;opacity:1!important}.vd-cover-slider>.vd-slide-prev{left:8px!important}.vd-cover-slider>.vd-slide-next{right:8px!important}.vd-slide-count{position:absolute;z-index:20;left:50%;bottom:7px;transform:translateX(-50%);padding:4px 7px;border-radius:999px;background:#ddf8f5;color:#063d3b;font-size:9px;font-weight:900}@media(max-width:560px){.vd-cover-slider>.vd-slide-prev,.vd-cover-slider>.vd-slide-next{width:44px!important;height:48px!important;font-size:26px!important}.vd-cover-slider>.vd-slide-prev{left:5px!important}.vd-cover-slider>.vd-slide-next{right:5px!important}}</style>",
@@ -199,6 +199,7 @@ import('/nav-account.js?v=014135');
               if (/coloring|ระบายสี/.test(text)) return "coloring";
               if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
               if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
+              if (/bundle-deals|โปรยกชุด/.test(text)) return "bundle-deals";
               if (/resale-rights|สิทธิ์ลงขายคอร์ส/.test(text)) return "resale-rights";
               return "";
             };
@@ -389,13 +390,15 @@ import('/nav-account.js?v=014135');
             counts[card.dataset.category] += 1;
           return counts;
         },
-        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "resale-rights": 0 },
+        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "bundle-deals": 0, "resale-rights": 0 },
       );
+      const apiCounts=data.catalog_counts||{};
+      if(Number.isFinite(Number(apiCounts.all))&&Number(apiCounts.all)!==categoryCounts.all)console.warn('VISIOND_CATALOG_COUNT_MISMATCH',{api:apiCounts.all,rendered:categoryCounts.all});
       const requestedCategory = new URLSearchParams(location.search).get("category"),
-        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "resale-rights"].includes(requestedCategory)
+        initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "bundle-deals", "resale-rights"].includes(requestedCategory)
           ? requestedCategory
           : "all";
-      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button>`;
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><button data-category="bundle-deals" type="button">โปรยกชุด ${categoryCounts["bundle-deals"]}</button><a class="catalog-course-category" href="/courses.html">คอร์สออนไลน์</a>`;
       const pageSize = 8,
         requestedPage = Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1);
       let currentCategory = initialCategory,
@@ -440,4 +443,4 @@ import('/nav-account.js?v=014135');
       grid.innerHTML = '<div class="product-loading"><b>โหลดแคตตาล็อกไม่สำเร็จ</b><p>การเชื่อมต่อใช้เวลานาน กรุณากดลองใหม่</p><button type="button" onclick="location.reload()">ลองโหลดอีกครั้ง</button></div>';
     });
 })();
-import("/nav-account.js?v=014135").then((module) => module.initAccountNav());
+import("/nav-account.js?v=014180").then((module) => module.initAccountNav());

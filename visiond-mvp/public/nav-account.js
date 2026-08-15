@@ -7,7 +7,6 @@ export async function initAccountNav(){
   const nav=document.querySelector('.topbar nav');
   if(!nav||nav.dataset.accountReady)return;
   nav.dataset.accountReady='1';
-  const header=nav.closest('.topbar')||nav;
   nav.querySelectorAll('a[href="/member"],a[href="/member.html"]').forEach(link=>link.remove());
   nav.querySelectorAll('a[href^="/dashboard"]').forEach(link=>link.remove());
   let cartLink=nav.querySelector('a[href="/cart"],a[href="/cart.html"]');
@@ -28,17 +27,16 @@ export async function initAccountNav(){
     if(!response.ok)return;
     const {user}=await response.json();
     if(!user)return;
-    header.querySelectorAll('a[href="/login.html"],a[href="/register.html"]').forEach(link=>link.remove());
-    header.querySelectorAll('.nav-member-account,.course-owner-badge,.nav-logout').forEach(item=>item.remove());
+    nav.querySelectorAll('a[href="/login.html"],a[href="/register.html"]').forEach(link=>link.remove());
     const account=document.createElement('a');
     account.className='nav-member-account';
     account.href='/dashboard.html';
-    header.querySelectorAll('#navMember,.member-nav-status').forEach(link=>link.remove());
+    nav.querySelectorAll('#navMember,.member-nav-status').forEach(link=>link.remove());
     account.innerHTML=`<span class="nav-member-dot"></span><span><b>บัญชีของฉัน</b></span><em>${esc(roleLabel[user.role]||user.role)}</em>`;
-    const ownerBadge=user.is_course_owner?Object.assign(document.createElement('a'),{className:'course-owner-badge',href:'/course-center',textContent:'ศูนย์จัดการคอร์ส'}):null;
+    const ownerBadge=user.is_course_owner?Object.assign(document.createElement('a'),{className:'course-owner-badge',href:'/course-seller.html',textContent:'เจ้าของคอร์ส'}):null;
     const isStaff=['boss','admin'].includes(user.role);
-    let adminLink=header.querySelector('.nav-admin-link');
-    if(isStaff&&!adminLink)adminLink=header.querySelector('a[href="/admin"],a[href="/admin.html"]');
+    let adminLink=nav.querySelector('.nav-admin-link');
+    if(isStaff&&!adminLink)adminLink=nav.querySelector('a[href="/admin"],a[href="/admin.html"]');
     if(isStaff&&!adminLink)adminLink=document.createElement('a');
     if(isStaff&&adminLink){adminLink.hidden=false;adminLink.classList.add('nav-admin-link');adminLink.href='/admin';adminLink.innerHTML='<span aria-hidden="true">⚙</span><b>หลังบ้าน</b>'}
     const logout=document.createElement('button');
@@ -46,7 +44,6 @@ export async function initAccountNav(){
     logout.type='button';
     logout.innerHTML='<span aria-hidden="true">↪</span> ออกจากระบบ';
     logout.onclick=async()=>{logout.disabled=true;await fetch('/api/auth/logout',{method:'POST'});location.href='/'};
-    header.querySelectorAll('.nav-admin-link').forEach(item=>{if(item!==adminLink)item.remove()});
     if(adminLink)nav.append(adminLink);
     nav.append(account,...(ownerBadge?[ownerBadge]:[]),logout);syncNavGroups();
     fetch('/api/notifications',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{const count=Number(d?.count)||0;if(!count)return;const badge=document.createElement('i');badge.className='nav-notification-badge';badge.textContent=count>99?'99+':count;account.append(badge);account.href='/dashboard.html#notifications';account.title=`มีการแจ้งเตือน ${count} รายการ`}).catch(()=>{});

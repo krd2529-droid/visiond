@@ -207,3 +207,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - กำหนด repository root เป็น production source และแยก `visiond-mvp/` เป็น snapshot เก่า
 - แก้ regression tests บน Windows, Layer 2 recheck และ document-history validation
 - เพิ่ม cache version ให้ asset ที่ตกหล่น และทำเลขเวอร์ชันหน้าเว็บให้ตรงกับแพต
+
+# Patch v0.14.180 — Cloudflare production source sync
+
+- ยืนยันจากเว็บจริงว่า Cloudflare ยัง Deploy จาก `visiond-mvp` และแก้ Active Production Tree ให้ตรงกับระบบจริง
+- Sync โค้ดล่าสุดเข้า `visiond-mvp` แทนการเปลี่ยนเพียงป้ายเลขเวอร์ชัน
+- บังคับตรวจเลขเวอร์ชันบนเว็บจริงหลัง Push ก่อนรายงาน Deploy สำเร็จ

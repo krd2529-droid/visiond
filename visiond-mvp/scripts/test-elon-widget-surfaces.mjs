@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {readdirSync,readFileSync,statSync} from 'node:fs';
 import {join,relative} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-const publicRoot=new URL('../public/',import.meta.url);
+const publicRoot=fileURLToPath(new URL('../public/',import.meta.url));
 const widget=readFileSync(new URL('../public/elon-chat.js',import.meta.url),'utf8');
 assert.match(widget,/const FRONTEND_SURFACES = new Set/,'widget must use an explicit frontend allowlist');
 assert.match(widget,/if \(!frontendSurface\(location\.pathname\)\) return/,'unknown routes must fail closed before authentication or mount');
@@ -19,10 +20,10 @@ function walk(directory){
   for(const name of readdirSync(directory)){
     const file=join(directory,name);
     if(statSync(file).isDirectory())walk(file);
-    else if(name.endsWith('.html')&&readFileSync(file,'utf8').includes('elon-chat.js'))html.push(relative(publicRoot.pathname,file));
+    else if(name.endsWith('.html')&&readFileSync(file,'utf8').includes('elon-chat.js'))html.push(relative(publicRoot,file));
   }
 }
-walk(publicRoot.pathname);
+walk(publicRoot);
 
 const forbidden=html.filter(file=>/(^|\/)(?:admin|vision4|system-health)(?:[/.]|$)/i.test(file));
 assert.deepEqual(forbidden,[],'internal/admin HTML must not load the ELON widget asset');

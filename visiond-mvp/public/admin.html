@@ -880,7 +880,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.169</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.180</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1505,24 +1505,30 @@
                   >เลือกตะกร้าที่ลงขายแล้วมาจัดชุด</b
                 >
                 <p>
-                  ระบบดึงรูปตัวอย่าง 3 รูปจากทุกตะกร้า: ชุด 5 ตะกร้าได้ 15 รูป
-                  และชุด 10 ตะกร้าได้ 30 รูป พร้อมเชื่อม PDF ทุกชุด
+                  ระบบเชื่อมไฟล์ทุกไฟล์จากตะกร้าต้นทาง ใช้เฉพาะรูปปกตะกร้าละ 1 รูป
+                  และสร้างรายละเอียดชื่อสินค้า (จำนวนรูป) ให้อัตโนมัติ
                 </p>
                 <div class="bundle-size">
                   <label
-                    ><input type="radio" name="bundle_size" value="5" checked />
-                    ชุด 5 ตะกร้า</label
+                    ><input type="radio" name="bundle_size" value="10" checked />
+                    ชุด 10 ตะกร้า</label
                   ><label
-                    ><input type="radio" name="bundle_size" value="10" /> ชุด 10
+                    ><input type="radio" name="bundle_size" value="20" /> ชุด 20
                     ตะกร้า</label
-                  ><strong id="bundleSelectedCount">เลือกแล้ว 0/5</strong>
+                  ><label
+                    ><input type="radio" name="bundle_size" value="30" /> ชุด 30
+                    ตะกร้า</label
+                  ><label
+                    ><input type="radio" name="bundle_size" value="50" /> ชุด 50
+                    ตะกร้า</label
+                  ><strong id="bundleSelectedCount">เลือกแล้ว 0/10</strong>
                 </div>
                 <div
                   id="bundleProductPicker"
                   class="bundle-product-picker"
                 ></div>
                 <div class="bundle-preview-head">
-                  <b>รูปสไลด์ที่ดึงมา</b
+                  <b>รูปปกที่ดึงมา</b
                   ><span id="bundlePreviewCount">0 รูป</span>
                 </div>
                 <div id="bundlePreviewGallery" class="bundle-preview-gallery">
@@ -2155,11 +2161,11 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014138"></script>
+    <script src="/analytics.js?v=014138"></script><script src="/build-version.js?v=014176"></script><script src="/admin.js?v=014138"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>
     <script src="/vision4-bundle.js?v=01471"></script>
     <script src="/vision4-card-actions.js?v=01372"></script>
-  <script src="/visiond-design-system.js?v=01489" defer></script></body>
+  <script src="/partner-payout-admin.js?v=014177" defer></script><script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

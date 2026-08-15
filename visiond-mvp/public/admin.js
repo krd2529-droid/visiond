@@ -1,4 +1,4 @@
-import("/facebook-chat.js?v=014134");
+import("/facebook-chat.js?v=014180");
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (value) =>
@@ -634,9 +634,9 @@ function setBundleMode(active) {
   productEditor.elements.file_label.closest("label").hidden = active;
   if (active) {
     productCategorySelect.innerHTML =
-      '<option value="set-coloring">คละแบบระบายสี</option><option value="set-tattoo">คละแบบรอยสัก</option>';
-    productEditor.elements.file_type.value = "ชุด PDF";
-    productEditor.elements.pages.value = 5;
+      '<option value="bundle-deals">โปรยกชุด</option>';
+    productEditor.elements.file_type.value = "ชุดไฟล์ดิจิทัล";
+    productEditor.elements.pages.value = 0;
   } else productCategorySelect.innerHTML = productCategoryOptions();
 }
 function renderBundlePicker(selected = []) {
@@ -646,7 +646,7 @@ function renderBundlePicker(selected = []) {
       (p) =>
         p.status === "published" &&
         p.id !== currentId &&
-        !["set-coloring", "set-tattoo"].includes(p.category),
+        !["set-coloring", "set-tattoo", "bundle-deals", "resale-rights"].includes(p.category),
     );
   bundleProductPicker.innerHTML =
     candidates
@@ -659,7 +659,7 @@ function renderBundlePicker(selected = []) {
   bundleProductPicker.querySelectorAll("input").forEach(
     (input) =>
       (input.onchange = () => {
-        const limit = Number(productEditor.elements.bundle_size.value) || 5,
+        const limit = Number(productEditor.elements.bundle_size.value) || 10,
           checked = [...bundleProductPicker.querySelectorAll("input:checked")];
         if (checked.length > limit) {
           input.checked = false;
@@ -683,29 +683,24 @@ function productPreviewUrls(product) {
   );
 }
 function updateBundleCount() {
-  const limit = Number(productEditor.elements.bundle_size.value) || 5,
+  const limit = Number(productEditor.elements.bundle_size.value) || 10,
     selected = [...bundleProductPicker.querySelectorAll("input:checked")]
       .map((input) =>
         products.find((product) => Number(product.id) === Number(input.value)),
       )
       .filter(Boolean),
     count = selected.length,
-    previews = selected.flatMap((product, basketIndex) =>
-      productPreviewUrls(product).map((url, imageIndex) => ({
-        url,
-        title: product.title,
-        basketIndex,
-        imageIndex,
-      })),
-    );
+    previews = selected.map((product, basketIndex) => ({url:product.cover_url||"/assets/product-placeholder.svg",title:product.title,basketIndex,imageIndex:0})),
+    totalPages=selected.reduce((sum,product)=>sum+(Number(product.pages)||0),0),
+    totalFiles=selected.reduce((sum,product)=>sum+(Number(product.file_count)||0),0);
   bundleSelectedCount.textContent = `เลือกแล้ว ${count}/${limit}`;
   bundleSelectedCount.style.color = count === limit ? "#08756f" : "#b23b35";
-  bundlePreviewCount.textContent = `${previews.length} รูป${count === limit ? " · พร้อมใช้เป็นสไลด์" : ""}`;
+  bundlePreviewCount.textContent = `${previews.length} รูปปก · ${totalFiles} ไฟล์ · ${totalPages} รูป${count === limit ? " · พร้อมสร้างโปร" : ""}`;
   bundlePreviewGallery.innerHTML =
     previews
       .map(
         (item) =>
-          `<figure><img src="${esc(item.url)}" alt="${esc(item.title)} รูป ${item.imageIndex + 1}"><figcaption>ตะกร้า ${item.basketIndex + 1} · รูป ${item.imageIndex + 1}</figcaption></figure>`,
+          `<figure><img src="${esc(item.url)}" alt="${esc(item.title)}"><figcaption>${item.basketIndex + 1}. ${esc(item.title)}</figcaption></figure>`,
       )
       .join("") || "<small>เลือกรายการด้านบนเพื่อดูรูปตัวอย่าง</small>";
 }
@@ -722,11 +717,11 @@ productEditor.querySelectorAll('[name="bundle_size"]').forEach(
 function openBundleBuilder() {
   resetProductForm();
   setBundleMode(true);
-  productEditor.elements.category.value = "set-coloring";
+  productEditor.elements.category.value = "bundle-deals";
   productEditor.elements.title.value = "";
   productEditor.elements.short_description.value =
-    "ชุดคละ 5 ตะกร้า พร้อมไฟล์ PDF ครบทุกชุด";
-  editorTitle.textContent = "สร้างตะกร้าชุดคละ";
+    "โปรยกชุด 10 ตะกร้า พร้อมไฟล์ครบทุกชุด";
+  editorTitle.textContent = "สร้างโปรยกชุด";
   renderBundlePicker();
   updateProductSlugPreview();
   document.body.classList.add("product-editor-active");
@@ -769,7 +764,7 @@ async function editProduct(id) {
   document.body.classList.add("product-editor-active");
   const p = d.item,
     isBundle =
-      ["set-coloring", "set-tattoo"].includes(p.category) ||
+      ["set-coloring", "set-tattoo", "bundle-deals"].includes(p.category) ||
       d.bundle_items?.length;
   productEditor.elements.id.value = p.id;
   setBundleMode(Boolean(isBundle));
@@ -788,7 +783,7 @@ async function editProduct(id) {
   productEditor.elements.description.value = p.description || "";
   productEditor.elements.status.value = p.status || "draft";
   if (isBundle) {
-    const size = bundleCount === 10 ? 10 : 5;
+    const size = [10,20,30,50].includes(bundleCount) ? bundleCount : 10;
     productEditor.querySelector(
       `[name="bundle_size"][value="${size}"]`,
     ).checked = true;
@@ -902,12 +897,12 @@ async function saveProduct(event) {
   if(separateVision2Files)for(const name of ['cover','preview_2','preview_3','product_file'])fd.delete(name);
   const pages = Number(fd.get("pages")) || 0;
   if (bundleMode) {
-    const required = Number(fd.get("bundle_size")) || 5,
+    const required = Number(fd.get("bundle_size")) || 10,
       selected = fd.getAll("bundle_product_ids");
     if (selected.length !== required)
       return setMessage(`กรุณาเลือกตะกร้าให้ครบ ${required} รายการ`, true);
     fd.set("bundle_product_ids", selected.join(","));
-    fd.set("file_type", "ชุด PDF");
+    fd.set("file_type", "ชุดไฟล์ดิจิทัล");
   }
   if (!fd.get("short_description"))
     fd.set(
@@ -1532,8 +1527,8 @@ async function saveRole(id) {
 }
 showAdminNotice();
 init();
-import('/mouse-ui.js?v=014134');
-import('/i18n.js?v=014134');
+import('/mouse-ui.js?v=014180');
+import('/i18n.js?v=014180');
 
 document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
 
