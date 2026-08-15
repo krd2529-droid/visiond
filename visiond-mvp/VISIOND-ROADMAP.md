@@ -261,3 +261,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - TH/EN บนมือถือเป็น pill กว้างตามเนื้อหา ไม่ยืดเต็มแถบ
 - Template กลางและการตรวจ desktop/Android/iPhone เป็นเงื่อนไขบังคับของทุก Event Case และ Event Roadmap รวมเว็บไซต์ 2
 - Header กลางต้องมีรถเข็นเพียงหนึ่งปุ่มและ badge ใช้ยอด normalized quantity จาก `vd_cart` เดียวกันทุกหน้า
+# v0.14.190 — Mobile Menu Desktop Visibility Guard (2026-08-15)
+
+- ปุ่มเมนูมือถือซ่อนบนจอคอมและแสดงเฉพาะจอไม่เกิน 800px
+- ปุ่มควบคุม responsive layout ถูกยกเว้นจาก runtime ปุ่มกลาง และกฎนี้บังคับทุก Event Case/Roadmap รวมเว็บไซต์ 2
+- หน้าบัญชีของ Boss/Admin ไม่แสดงเมนูบัญชีสมาชิก ปุ่มเปิดเมนู หรือกล่องข้อความแจ้งเตือนลูกค้า และใช้พื้นที่งาน Control Center แบบคอลัมน์เดียว

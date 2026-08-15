@@ -17,6 +17,7 @@ const evergreen = new Set([
   'test-v014187.mjs',
   'test-v014188.mjs',
   'test-v014189.mjs',
+  'test-v014190.mjs',
 ]);
 const all = fs.readdirSync('scripts').filter(x => /^test-.*\.mjs$/.test(x) && x !== 'test-all-regressions.mjs').sort();
 const files = all.filter(x => evergreen.has(x));

@@ -37,6 +37,8 @@ After every patch report: Event Case completed/remaining; Event Roadmap complete
 - Every Event Case and Event Roadmap queue that creates or changes a page must reuse the canonical VisionD template assets before adding page-specific CSS.
 - The language switcher is one compact pill: content-width, maximum 100% of its container, TH/EN controls centered, and never a full-width navigation row on mobile.
 - The canonical header renders exactly one cart action. Its badge must use the normalized `vd_cart` quantity total: unique digital/program products count once, Vision 5 resale rights use their valid quantity, and the total is capped at 30.
+- The mobile menu toggle is a responsive layout control, not a canonical content button. It must stay hidden above 800px, appear only at 800px or below, and remain exempt from runtime button classification.
+- Boss/Admin account surfaces must lead with Control Center work. Do not render the member account sidebar, its mobile menu toggle, or customer notification message cards for staff; those components remain available only to member/customer roles.
 - Desktop, Android-size and iPhone-size template checks are mandatory. New one-off header, language-switcher or button geometry is forbidden unless Boss approves a named exception.
 
 

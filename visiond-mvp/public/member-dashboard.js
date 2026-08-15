@@ -14,6 +14,8 @@ async function load(reset=true){
   if(authResult.status==='rejected')return showOrderLoadError('เชื่อมต่อบัญชีไม่สำเร็จ');
   const r=authResult.value;if(r.status===401){location.href='/login.html';return}if(!r.ok)return showOrderLoadError('โหลดข้อมูลบัญชีไม่สำเร็จ');
   const {user}=await r.json();currentUser=user;const isStaff=['boss','admin'].includes(user.role);
+  document.body.classList.toggle('staff-dashboard',isStaff);
+  if(isStaff){hubMenuToggle.hidden=true;hubMenuBackdrop.hidden=true;hubSidebar.hidden=true;dashNotifications.hidden=true;document.querySelector('[data-dash="notifications"]')?.remove();if(location.hash==='#notifications')history.replaceState(null,'','#overview')}
   dashName.textContent=user.name||user.username;dashIdentity.textContent=roleLabel[user.role]||user.role;profileName.value=user.name||'';profileUsername.value=user.username||'';profileEmail.value=user.email||'';profilePhone.value=user.phone||'ไม่ได้ระบุ';profileRole.value=roleLabel[user.role]||user.role;controlCenterLink.hidden=!isStaff;
   if(isStaff)dashboardGuide.innerHTML='<h2>เครื่องมือสำหรับผู้ดูแลระบบ</h2><p>ตรวจคำสั่งซื้อ ดูสลิป และอนุมัติสินค้าได้จาก Control Center</p><a class="primary-button" href="/admin.html">เปิด Control Center</a>';
   if(orderResult.status==='rejected')return showOrderLoadError('เชื่อมต่อรายการคำสั่งซื้อไม่สำเร็จ',!reset);

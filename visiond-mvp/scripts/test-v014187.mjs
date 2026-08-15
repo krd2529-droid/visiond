@@ -18,7 +18,7 @@ assert.equal(pages.length,38,'จำนวนหน้า HTML เปลี่�
 for(const page of pages){
   const source=await read(page);
   assert.match(source,/\/visiond-button-system\.css\?v=014\d+/,page+' ไม่มี CSS ปุ่มมาตรฐาน');
-  assert.match(source,/\/visiond-button-system\.js\?v=014187/,page+' ไม่มี runtime ปุ่มมาตรฐาน');
+  assert.match(source,/\/visiond-button-system\.js\?v=014\d+/,page+' ไม่มี runtime ปุ่มมาตรฐาน');
   assert.ok(source.indexOf('visiond-button-system.css')<source.indexOf('</head>'),page+' โหลด CSS ผิดตำแหน่ง');
 }
 const [css,js,base]=await Promise.all([

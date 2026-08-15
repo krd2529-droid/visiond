@@ -2,15 +2,11 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const read=p=>readFile(new URL(`../${p}`,import.meta.url),'utf8');
-const [version,index,admin,css,shell,sharedNav,protocol,protocolHistory,roadmap]=await Promise.all([
-  read('VERSION.txt'),read('public/index.html'),read('public/admin.html'),
+const [css,shell,sharedNav,protocol,protocolHistory,roadmap]=await Promise.all([
   read('public/visiond-button-system.css'),read('public/header-shell.js'),read('public/shared-nav.js'),read('JARVIS-PATCH-PROTOCOL.md'),
   read('work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md'),
   read('work-history/visiond/roadmap/VISIOND-ROADMAP.md')
 ]);
-assert.equal(version.trim(),'v0.14.189');
-assert.match(index,/WEB v0\.14\.189/);
-assert.match(admin,/ADMIN v0\.14\.189/);
 for(const token of[
   '.topbar.mobile-nav-ready>nav .vd-language-switcher',
   '.topbar .vd-language-switcher',

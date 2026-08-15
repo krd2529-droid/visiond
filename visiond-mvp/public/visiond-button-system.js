@@ -1,6 +1,6 @@
 (()=>{
   const legacyAnchors='a.primary,a.primary-button,a.secondary,a.secondary-button,a.secondary-action,a.download-primary,a.line-outline,a[role="button"]';
-  const unstyled=/\b(?:mobile-preview-dismiss|mobile-nav-backdrop|hub-menu-backdrop|lesson-menu-backdrop|boss-mobile-away)\b/;
+  const unstyled=/\b(?:mobile-preview-dismiss|mobile-nav-toggle|mobile-nav-backdrop|hub-menu-backdrop|lesson-menu-backdrop|boss-mobile-away)\b/;
   const danger=/(?:danger|delete|remove|reject|trash|logout|ลบ|ปฏิเสธ|ออกจากระบบ)/i;
   const promotion=/(?:add.?cart|buy|purchase|offer|promotion|ใส่.*(?:รถเข็น|ตะกร้า)|ซื้อ)/i;
   const tonal=/(?:tab|filter|page|pagination|toggle|menu|refresh|reload|retry|clear|prev|next)/i;
