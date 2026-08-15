@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.196
+Current build: v0.14.197
+
+## v0.14.197 — Messenger-Scope Connection Test (IMPLEMENTED)
+- เปลี่ยนการตรวจ Facebook ไปใช้ Messenger Profile API ซึ่งตรวจ `pages_messaging` โดยตรง แทนการอ่าน Page Object ที่ต้องการสิทธิ์คนละชุด
+- รองรับ Page Token เดิมที่ Meta ออกซ้ำและ Token Debugger ยืนยันว่าถูกต้อง
 
 ## v0.14.196 — Automatic Customer Profile Recovery (IMPLEMENTED)
 - เมื่อเปิด V12 ระบบตรวจลูกค้าที่มี Conversation ID แต่ยังไม่มีชื่อ/รูป และเติมจาก LINE/Facebook อัตโนมัติครั้งละไม่เกิน 40 ราย
