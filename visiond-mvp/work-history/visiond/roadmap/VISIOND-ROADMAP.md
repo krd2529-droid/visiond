@@ -546,3 +546,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่ม runtime contract จำลองข้อมูลจริง ตรวจคลิกแก้ไข EP แล้วเปิดฟอร์ม เติม ID/ชื่อ/รายละเอียดเดิม เลื่อนและโฟกัสได้
 - ตรวจบันทึก EP ส่ง `PUT` ไป lesson ที่เลือก และเผยแพร่ส่ง `POST` ไปตะกร้าที่ถูกต้อง
 - อัปเดต regression inventory จากหน้าเก่า `course-seller.html` เป็น `course-center.html` หลังนำเส้นทางเก่าออก
+# v0.14.187 — Template และปุ่มมาตรฐาน (2026-08-15)
+
+- Event Case: ทำมาตรฐานปุ่มกลางครบทุกหน้าและมือถือ
+- สถานะ: IMPLEMENTED รอผลทดสอบและ commit ในเครื่อง
