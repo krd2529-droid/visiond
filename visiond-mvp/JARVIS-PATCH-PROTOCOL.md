@@ -15,6 +15,17 @@ When a VisionD ZIP is received with `J` or `เจ`:
 
 Data rule: aggregate/minimum necessary. Never place customer PII, slip data, secrets, tokens or API keys in roadmap/marketing/handoff files.
 
+## Mandatory standard patch loop (v0.14.191+)
+
+Every patch and every Event Case must use this exact loop:
+
+`ตรวจโค้ด → แก้ → รันทดสอบ → เจอข้อผิดพลาด → แก้อีก → ทดสอบใหม่`
+
+- Repeat the same loop until the relevant focused, regression, security and predeploy checks pass.
+- Errors found during the loop remain in the current patch. Do not increment the patch number merely because another fix/test iteration is required.
+- A new patch number starts only for a new Event Case or an explicitly continued patch whose remaining scope is recorded.
+- Commit only after the loop passes. Boss controls Push and Deploy unless Boss explicitly orders otherwise.
+
 
 ## Guest identity rule
 Never collapse unauthenticated visitors into one `guest` identity. Use the platform's hashed per-browser/device visitor key. When a guest authenticates, claim prior events into the user where technically safe. Treat device/browser identity as a technical visitor, not proof of a unique natural person.
