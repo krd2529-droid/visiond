@@ -48,12 +48,12 @@ export async function onRequestPost(ctx) {
       400,
     );
   const course = await ctx.env.DB.prepare(
-    `SELECT c.id,c.product_id,c.license_entitlement_id,c.basket_binding_locked,c.expected_episodes,c.seller_plan,p.title FROM courses c JOIN products p ON p.id=c.product_id WHERE c.id=? AND c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL`,
+    `SELECT c.id,c.product_id,c.license_entitlement_id,c.basket_binding_locked,c.expected_episodes,p.title FROM courses c JOIN products p ON p.id=c.product_id WHERE c.id=? AND c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL`,
   )
     .bind(ctx.params.id, auth.user.id)
     .first();
   if (!course) return json({ error: "ไม่พบคอร์สของคุณ" }, 404);
-  if ((course.seller_plan==='paid_rights'&&course.license_entitlement_id === null) || !course.basket_binding_locked)
+  if (course.license_entitlement_id === null || !course.basket_binding_locked)
     return json(
       { error: "ตะกร้าคอร์สนี้ไม่มีสิทธิ์ที่จองไว้ กรุณาติดต่อ VisionD" },
       409,
@@ -80,7 +80,7 @@ export async function onRequestPost(ctx) {
   )
     .bind(auth.user.id)
     .first();
-  if (course.seller_plan!=='partner_50'&&owner?.seller_payment_status !== "approved")
+  if (owner?.seller_payment_status !== "approved")
     return json(
       {
         error: "กรุณาตั้งค่าบัญชีรับเงินและรอ Boss อนุมัติก่อนเผยแพร่",
@@ -88,8 +88,8 @@ export async function onRequestPost(ctx) {
       },
       409,
     );
-  let sellerToken='';if(course.seller_plan==='paid_rights'&&Number(owner.seller_slip_auto_verify)===1&&Number(owner.vision5_test_account)!==1)try{sellerToken=await loadSellerToken(ctx.env,auth.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
-  if (course.seller_plan==='paid_rights'&&Number(owner.seller_slip_auto_verify)===1&&Number(owner.vision5_test_account)!==1&&sellerToken.length < 20)
+  let sellerToken='';if(Number(owner.seller_slip_auto_verify)===1&&Number(owner.vision5_test_account)!==1)try{sellerToken=await loadSellerToken(ctx.env,auth.user.id)}catch(error){return json({error:String(error?.message)==='TOKEN_ENCRYPTION_NOT_CONFIGURED'?'ระบบยังไม่ได้ตั้งค่า Secret สำหรับถอดรหัส EasySlip Token กรุณาติดต่อผู้ดูแลระบบ':'EasySlip Token ใช้งานไม่ได้ กรุณาบันทึกใหม่',code:String(error?.message||'TOKEN_DECRYPT_FAILED')},503)}
+  if (Number(owner.seller_slip_auto_verify)===1&&Number(owner.vision5_test_account)!==1&&sellerToken.length < 20)
     return json(
       {
         error: "กรุณาตั้งค่า EasySlip API ของคุณก่อนเผยแพร่",
@@ -97,13 +97,13 @@ export async function onRequestPost(ctx) {
       },
       409,
     );
-  const bindingId = course.license_entitlement_id===null?0:Number(course.license_entitlement_id),
+  const bindingId = Number(course.license_entitlement_id),
     expires = new Date(Date.now() + 30 * 86400000).toISOString(),
     paymentQrUrl = owner.seller_payment_qr_url?`/api/course-seller/payment-qr/${bindingId}`:'';
   try {
     const results = await ctx.env.DB.batch([
       ctx.env.DB.prepare(
-        "UPDATE courses SET edit_expires_at=COALESCE(edit_expires_at,?),license_edit_days=30,contact_info=?,payment_bank_name=?,payment_account_name=?,payment_account_number=?,payment_qr_url=?,review_status='pending',review_note='',submitted_at=CURRENT_TIMESTAMP,active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND (seller_plan<>'paid_rights' OR license_entitlement_id=?) AND basket_binding_locked=1 AND review_status IN ('draft','changes_requested')",
+        "UPDATE courses SET edit_expires_at=COALESCE(edit_expires_at,?),license_edit_days=30,contact_info=?,payment_bank_name=?,payment_account_name=?,payment_account_number=?,payment_qr_url=?,review_status='pending',review_note='',submitted_at=CURRENT_TIMESTAMP,active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND license_entitlement_id=? AND basket_binding_locked=1 AND review_status IN ('draft','changes_requested')",
       ).bind(
         expires,
         contact,
@@ -116,7 +116,7 @@ export async function onRequestPost(ctx) {
         bindingId,
       ),
       ctx.env.DB.prepare(
-        "UPDATE products SET price=?,status='draft',source='course-seller',updated_at=CURRENT_TIMESTAMP WHERE id=? AND EXISTS(SELECT 1 FROM courses WHERE id=? AND (seller_plan<>'paid_rights' OR license_entitlement_id=?))",
+        "UPDATE products SET price=?,status='draft',source='course-seller',updated_at=CURRENT_TIMESTAMP WHERE id=? AND EXISTS(SELECT 1 FROM courses WHERE id=? AND license_entitlement_id=?)",
       ).bind(price, course.product_id, course.id, bindingId),
     ]);
     if (

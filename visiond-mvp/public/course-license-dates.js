@@ -7,13 +7,9 @@ const licenseDate=value=>{
 
 function showLicenseDates(){
   if(typeof state==='undefined'||!state?.licenses)return;
-  let summary=licenseList.parentElement.querySelector('.credit-summary');
-  if(!summary){
-    summary=document.createElement('div');
-    summary.className='credit-summary';
-    licenseList.before(summary);
-  }
-  summary.innerHTML=`<span><small>เครดิตสิทธิ์คงเหลือ</small><strong>${Number(state.credit_balance)||0} แต้ม</strong></span><span><small>ใช้เปิดตะกร้าแล้ว</small><strong>${Number(state.credit_used)||0} แต้ม</strong></span><p>1 เครดิต = เปิดตะกร้าคอร์สได้ 1 ตะกร้า · หักเครดิตเมื่อสร้างสำเร็จเท่านั้น · เครดิตสิทธิ์ไม่คืนเงินหรือแลกเป็นเงินสด เว้นแต่ระบบยังใช้งานไม่ได้ภายใน 7 วันและ VisionD ตรวจสอบว่าเกิดจากระบบจริง</p>`;
+  // course-seller.js owns the single credit summary. This helper only adds
+  // dates to legacy license rows and removes summaries left by older assets.
+  licenseList.parentElement.querySelectorAll('.credit-summary').forEach(node=>node.remove());
   licenseList.querySelectorAll('.license-row').forEach((row,index)=>{
     const license=state.licenses[index];
     if(!license||row.querySelector('.license-dates'))return;

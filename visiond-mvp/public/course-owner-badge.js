@@ -8,7 +8,7 @@
     if(sidebar&&!sidebar.parentElement.querySelector('.member-course-owner-badge')){
       const badge=document.createElement('a');
       badge.className='course-owner-badge member-course-owner-badge';
-      badge.href='/course-seller.html';
+      badge.href='/course-center';
       badge.textContent='เจ้าของคอร์ส';
       sidebar.insertAdjacentElement('afterend',badge);
     }

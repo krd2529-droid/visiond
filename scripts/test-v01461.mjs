@@ -1,8 +1,6 @@
 import fs from 'node:fs';
-import path from 'node:path';
 
 const manifestPath = 'work-history/visiond/history-manifest.json';
-const packagedProduction = path.basename(path.resolve('.')).toLowerCase() === 'visiond-mvp';
 let failed = 0;
 const pass = message => console.log(`PASS ${message}`);
 const fail = message => { failed++; console.error(`FAIL ${message}`); };
@@ -16,7 +14,7 @@ if (fs.existsSync(manifestPath)) {
   if (manifest.phase !== 2) fail('manifest phase is not 2'); else pass('manifest phase 2');
   for (const item of manifest.files) {
     if (!fs.existsSync(item.archive)) fail(`archive missing ${item.archive}`);
-    if (fs.existsSync(item.legacy_root) && !item.active_root && !packagedProduction) fail(`legacy root still present ${item.legacy_root}`);
+    if (fs.existsSync(item.legacy_root) && !item.active_root) fail(`legacy root still present ${item.legacy_root}`);
   }
 }
 

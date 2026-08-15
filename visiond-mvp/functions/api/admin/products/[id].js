@@ -106,16 +106,16 @@ export async function onRequestPut(ctx) {
     if (slug !== old.slug)
       await ctx.env.DB.prepare("INSERT OR REPLACE INTO product_slug_history(old_slug,product_id,changed_at) VALUES(?,?,CURRENT_TIMESTAMP)").bind(old.slug,old.id).run();
     if (isBundle) {
-      if (category !== "bundle-deals")
-        return json({ error: "หมวดโปรยกชุดต้องใช้ slug bundle-deals" }, 400);
-      if (![10, 20, 30, 50].includes(size) || ids.length !== size)
+      if (!["set-coloring", "set-tattoo"].includes(category))
+        return json({ error: "กรุณาเลือกหมวดชุดคละ" }, 400);
+      if (![5, 10].includes(size) || ids.length !== size)
         return json(
-          { error: `กรุณาเลือกตะกร้าให้ครบ ${size || 10} รายการ` },
+          { error: `กรุณาเลือกตะกร้าให้ครบ ${size || 5} รายการ` },
           400,
         );
       const marks = ids.map(() => "?").join(","),
         valid = await ctx.env.DB.prepare(
-          `SELECT p.id,p.title,p.cover_url,p.pages,(SELECT COUNT(*) FROM product_files pf WHERE pf.product_id=p.id) file_count FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category NOT IN ('set-coloring','set-tattoo','bundle-deals','resale-rights') AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights'))`,
+          `SELECT id,cover_url,preview_urls FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category NOT IN ('set-coloring','set-tattoo','resale-rights') AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights'))`,
         )
           .bind(...ids, old.id)
           .all();
@@ -127,18 +127,17 @@ export async function onRequestPut(ctx) {
       const byId = new Map(
         valid.results.map((item) => [Number(item.id), item]),
       );
-      const orderedItems=ids.map(id=>byId.get(id)),totalPages=orderedItems.reduce((sum,item)=>sum+(Number(item.pages)||0),0),totalFiles=orderedItems.reduce((sum,item)=>sum+(Number(item.file_count)||0),0),generatedDescription=orderedItems.map((item,index)=>`${index+1}. ${item.title} (${Number(item.pages)||0} รูป)`).join('\n');
       await ctx.env.DB.prepare(
-        `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุดไฟล์ดิจิทัล',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+        `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
       )
         .bind(
           slug,
           title,
-          `โปรยกชุด ${size} ตะกร้า · ${totalFiles} ไฟล์ · ${totalPages} รูป`,
-          generatedDescription,
+          String(form.get("short_description") || ""),
+          String(form.get("description") || ""),
           price,
           category,
-          totalPages,
+          pages,
           form.get("status") === "published" ? "published" : "draft",
           old.id,
         )
@@ -154,7 +153,19 @@ export async function onRequestPut(ctx) {
         )
           .bind(old.id, ids[index], index)
           .run();
-      const previews = orderedItems.map(item=>item.cover_url).filter(Boolean);
+      const previews = ids.flatMap((id) => {
+        const item = byId.get(id);
+        let saved = [];
+        try {
+          saved = JSON.parse(item.preview_urls || "[]");
+        } catch (error) {
+          saved = [];
+        }
+        return [...new Set([item.cover_url, ...saved].filter(Boolean))].slice(
+          0,
+          3,
+        );
+      });
       await ctx.env.DB.prepare(
         "UPDATE products SET cover_url=?,preview_urls=? WHERE id=?",
       )

@@ -55,7 +55,7 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.seller_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
       (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
       (SELECT q.offer_price FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
@@ -145,7 +145,7 @@ export async function onRequestPost(ctx) {
       Date.now().toString().slice(-10) +
       "-" +
       Math.floor(Math.random() * 90 + 10);
-  const seller=sellerItems[0],paymentTarget=seller?.seller_plan==='partner_50'?{active_account:'company',...payment.profiles.company,qr_url:payment.qr_url}:seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
+  const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
   const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
   const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount)
     SELECT ?,?,?,?,?,?,?,?,?,?,?,?

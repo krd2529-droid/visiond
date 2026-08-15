@@ -1,10 +1,7 @@
-import('/notification-bell.js?v=014180');
-import('/build-version.js?v=014180');
+import('/notification-bell.js?v=014134');
 (()=>{
   const MOBILE='(max-width: 800px)';
   const init=()=>{
-    document.body.classList.remove('mobile-nav-open');
-    document.querySelectorAll('.mobile-nav-backdrop').forEach(node=>node.remove());
     const header=document.querySelector('.topbar'),nav=header?.querySelector(':scope > nav');
     if(!header||!nav||header.classList.contains('mobile-nav-ready'))return;
     header.classList.add('mobile-nav-ready');
@@ -26,14 +23,10 @@ import('/build-version.js?v=014180');
     backdrop.addEventListener('click',()=>close());
     nav.addEventListener('click',event=>{if(event.target.closest('a[href]')&&isMobile())close({restore:false})});
     document.addEventListener('keydown',event=>{if(!document.body.classList.contains('mobile-nav-open'))return;if(event.key==='Escape'){event.preventDefault();close();return}if(event.key!=='Tab')return;const items=links();if(!items.length)return;const first=items[0],last=items.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}});
-    const sync=()=>{if(isMobile()){if(!document.body.classList.contains('mobile-nav-open'))close({restore:false})}else close({restore:false})};
+    const sync=()=>{if(isMobile()){if(!document.body.classList.contains('mobile-nav-open'))nav.setAttribute('aria-hidden','true')}else close({restore:false})};
     matchMedia(MOBILE).addEventListener?.('change',sync);
-    window.addEventListener('pageshow',()=>close({restore:false}));
-    window.addEventListener('pagehide',()=>close({restore:false}));
-    window.addEventListener('popstate',()=>close({restore:false}));
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')close({restore:false})});
     new MutationObserver(markCurrent).observe(nav,{childList:true,subtree:true});
-    markCurrent();close({restore:false});sync();
+    markCurrent();sync();
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

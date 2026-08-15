@@ -17,9 +17,8 @@ img,video,iframe{max-width:100%}
   .topbar.mobile-nav-ready>nav>a[aria-current="page"]{border-color:#fff!important;background:#fff!important;color:#05645f!important}
   .topbar.mobile-nav-ready>nav .nav-member-account b{max-width:none!important}
   .topbar.mobile-nav-ready>nav .nav-notification-badge{position:static;margin-left:auto}
-  .mobile-nav-backdrop{position:fixed;z-index:10020;inset:0;display:none!important;border:0;background:rgba(6,47,45,.72);opacity:0;pointer-events:none;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  body.mobile-nav-open .mobile-nav-backdrop:not([hidden]){display:block!important;opacity:1;pointer-events:auto}
-  .mobile-nav-backdrop[hidden]{display:none!important}
+  .mobile-nav-backdrop{position:fixed;z-index:10020;inset:0;display:block;border:0;background:rgba(6,47,45,.72);backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .mobile-nav-backdrop[hidden]{display:none}
   body.mobile-nav-open{overflow:hidden}
   .product-page,.catalog-page,.vd-catalog-wrap,.cart-page,.auth-shell{max-width:100%;overflow-x:hidden}
   .product-layout,.payment-grid,.cart-layout,.auth-shell{min-width:0}

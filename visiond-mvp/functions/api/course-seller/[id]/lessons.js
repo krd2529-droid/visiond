@@ -3,7 +3,7 @@ import {ensureDatabase} from '../../../_schema.js';
 
 const safeExt=name=>{const x=String(name||'').split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g,'');return x?.slice(0,12)||'bin'};
 const editable=course=>!course.edit_expires_at||Date.parse(course.edit_expires_at)>Date.now();
-async function owned(ctx,user){return ctx.env.DB.prepare("SELECT c.id,c.product_id,c.license_entitlement_id,c.edit_expires_at,c.seller_plan FROM courses c JOIN products p ON p.id=c.product_id WHERE c.id=? AND c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL").bind(ctx.params.id,user.id).first()}
+async function owned(ctx,user){return ctx.env.DB.prepare("SELECT c.id,c.product_id,c.license_entitlement_id,c.edit_expires_at FROM courses c JOIN products p ON p.id=c.product_id WHERE c.id=? AND c.owner_user_id=? AND c.course_origin='seller_rights' AND p.deleted_at IS NULL").bind(ctx.params.id,user.id).first()}
 async function hasPaidSale(ctx,courseId){return Boolean(await ctx.env.DB.prepare("SELECT id FROM orders WHERE seller_course_id=? AND status IN ('pending_review','paid') LIMIT 1").bind(courseId).first())}
 const readySql=`(video_key IS NOT NULL OR pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=course_lessons.id))`;
 
@@ -26,7 +26,6 @@ export async function onRequestPost(ctx){
   if(!title)return json({error:'กรุณาใส่ชื่อ EP'},400);
   if(!Number.isInteger(duration)||duration<0||duration>86400)return json({error:'ระยะเวลาต้องเป็นวินาทีจำนวนเต็ม 0–86,400'},400);
   if(!video?.size&&!documents.length)return json({error:'แนบคลิปหรือเอกสารอย่างน้อยหนึ่งไฟล์'},400);
-  if(course.seller_plan==='free_manual'){const count=await ctx.env.DB.prepare('SELECT COUNT(*) total FROM course_lessons WHERE course_id=?').bind(course.id).first();if(Number(count?.total)>=5&&!await ctx.env.DB.prepare(`SELECT id FROM course_lessons WHERE course_id=? AND NOT ${readySql} LIMIT 1`).bind(course.id).first())return json({error:'แผนเริ่มขายฟรีจำกัดไม่เกิน 5 EP ต่อคอร์ส'},409)}
   if(video?.size&&(!['video/mp4','video/webm'].includes(video.type)||video.size>200*1024*1024))return json({error:'คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 200 MB'},400);
   if(documents.length>20)return json({error:'แนบไฟล์ประกอบได้ไม่เกิน 20 ไฟล์ต่อครั้ง'},400);
   if(documents.some(file=>file.size>200*1024*1024))return json({error:'ไฟล์ประกอบแต่ละไฟล์ต้องไม่เกิน 200 MB'},400);
