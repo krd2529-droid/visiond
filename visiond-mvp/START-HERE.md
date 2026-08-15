@@ -1,11 +1,11 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.81**
+เวอร์ชันปัจจุบัน: **v0.14.181**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
-2. PATCH ล่าสุด: `work-history/visiond/patch-history/PATCH-v0.14.81-ELON-CONTROL-UI-HOTFIX.md`
+2. Patch ledger ล่าสุด: `patch-ledgers/v0.14.181.json`
 3. Requirement ปัจจุบัน: `requirements-ledger.json`
 4. Roadmap ปัจจุบัน: `work-history/visiond/roadmap/VISIOND-ROADMAP.md`
 5. กติกาแพต: `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`

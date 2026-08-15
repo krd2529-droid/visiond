@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.81** — replaces the broken full-width ELON checkboxes with responsive independent control cards and clear on/off/database states.
+Current package: **v0.14.181** — minimal visible-version patch on the active Cloudflare production tree.
 
 ## ตรวจสอบก่อน Deploy
 
