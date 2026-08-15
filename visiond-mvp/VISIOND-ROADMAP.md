@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.194
+Current build: v0.14.195
+
+## v0.14.195 — Meta Direct Page Diagnostics (IMPLEMENTED)
+- เปลี่ยนการทดสอบ Facebook จาก `/me` เป็น Page ID โดยตรง เพื่อลดความกำกวมของชนิด Token
+- แสดงรหัส Meta code/subcode ที่ปลอดภัยและแยกสาเหตุ Token, permission, Page ID และ rate limit โดยไม่เปิดเผย Token
+- Event Case ยังรอ Production validation หลัง Boss Push/Deploy แล้วส่งรหัส Meta ที่หน้า V12 แสดง
 
 ## v0.14.194 — V12 Customer Identity + Facebook Credential Recovery (IMPLEMENTED)
 - ดึงชื่อและรูปโปรไฟล์ LINE จาก Profile API เมื่อรับข้อความใหม่ และรับชื่อ/รูป Facebook จาก Runtime โดยมีอักษรสำรองเมื่อไม่มีรูป
