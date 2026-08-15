@@ -32,7 +32,16 @@
 
 ## Status
 
+- EVENT CASE ID:
+- Completion condition:
+- Remaining items:
+- Next required action:
 - IMPLEMENTED:
 - PUSHED:
 - DEPLOYED:
 - PRODUCTION_VALIDATED:
+
+End every delivery with exactly one:
+- `EVENT CASE: เสร็จทั้งหมดแล้ว — พร้อมรับ Event Case ใหม่`
+- `EVENT CASE: ยังไม่เสร็จ — ต้องทำต่อให้จบ`
+- `EVENT CASE: PAUSED BY BOSS — ยังไม่เสร็จ`

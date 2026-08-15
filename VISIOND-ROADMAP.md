@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.185
+Current build: v0.14.186
+
+## v0.14.186 — One Request = One Event Case Completion Guard (IMPLEMENTED)
+- งานที่ Boss สั่งหนึ่งเรื่องเป็น Event Case เดียว และห้ามปิดเคสเพียงเพราะจบหนึ่งแพตช์หรือหนึ่งงานย่อย
+- หากยังเหลืองาน ต้องแจ้งรายการที่เหลือและงานถัดไปอย่างเด่นชัดก่อนรับเรื่องใหม่
+- Boss สั่งพักหรือเปลี่ยนลำดับได้ แต่ต้องบันทึก `PAUSED BY BOSS` และไม่อ้างว่าเคสเสร็จ
 
 ## v0.14.185 — Mandatory Patch Handoff + Safe Rollback (IMPLEMENTED)
 - ทุกแพตช์ต้องบันทึกสิ่งที่แก้ ไฟล์ที่แก้ ผลทดสอบ Commit identity และวิธีย้อนกลับ

@@ -64,3 +64,13 @@ Rollback safety:
 - Prefer `git revert <bad-commit>` to preserve later history and data.
 - Never use broad file overlay, `git reset --hard`, automatic Push, or automatic Deploy.
 - Re-run regression, predeploy, security scan and visible-version checks on the revert commit.
+
+## One request = one Event Case completion guard (v0.14.186+)
+
+- Treat one user-requested topic as one Event Case with a clear completion condition.
+- Do not mark the Event Case complete merely because one patch, one turn, one commit, or one subtask finished.
+- If any required part remains at delivery, the final report must prominently state: `EVENT CASE: ยังไม่เสร็จ — ต้องทำต่อให้จบ`.
+- The report must list every remaining item, the exact blocker/status, and the next action required to finish.
+- Before starting an unrelated new Event Case, warn Boss that the active Event Case remains unfinished and recommend completing it first.
+- Boss may explicitly reorder or pause work; record that decision as `PAUSED BY BOSS` without mislabeling the Event Case complete.
+- A new request that adds acceptance criteria to the active topic remains part of the same Event Case.
