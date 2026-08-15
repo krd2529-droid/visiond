@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.193
+Current build: v0.14.194
+
+## v0.14.194 — V12 Customer Identity + Facebook Credential Recovery (IMPLEMENTED)
+- ดึงชื่อและรูปโปรไฟล์ LINE จาก Profile API เมื่อรับข้อความใหม่ และรับชื่อ/รูป Facebook จาก Runtime โดยมีอักษรสำรองเมื่อไม่มีรูป
+- แสดงชื่อและรูปจริงทั้งรายการสนทนาและหัวแชท โดยไม่ส่ง participant ID หรือ Token ไปหน้าเว็บ
+- เพิ่ม Runtime schema guard ให้ตาราง V12 สร้างได้แม้ Production ยังไม่ได้เรียก Migration 0042 จึงแก้ปัญหาปุ่มบันทึก Credential ล้มเหลว
+- แยกข้อความผิดพลาด Facebook เป็น Secret เข้ารหัสไม่พร้อม, Token หมดอายุ, สิทธิ์ไม่ครบ และ Page ID ไม่ตรง โดยไม่เปิดเผย Token
+- Event Case นี้เสร็จระดับโค้ด/ทดสอบ; Production validation รอ Boss Push/Deploy และทดสอบ Credential จริง
 
 ## v0.14.193 — V12 V Connect Broadcast Center (IMPLEMENTED)
 - เพิ่ม Broadcast Center สำหรับข้อความ/รูปผ่าน LINE VisionD และ Facebook Page พร้อมเลือกบัญชีและผู้รับจากบทสนทนา

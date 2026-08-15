@@ -42,8 +42,9 @@ export async function processLineEvent(env,endpoint,event){
   const claim=await env.DB.prepare("INSERT OR IGNORE INTO veasy_message_claims(shop_id,platform_message_id,conversation_id) VALUES(?,?,?)").bind(endpoint.shop_id,messageId,conversationId).run();
   if(!claim.meta?.changes)return;
   try{
-    const participantHash=await sha256(`line:${participant}`);
-    await env.DB.prepare(`INSERT INTO veasy_conversations(shop_id,id,platform,participant_hash,display_name) VALUES(?,?,'line',?,'ลูกค้า LINE') ON CONFLICT(shop_id,id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(endpoint.shop_id,conversationId,participantHash).run();
+    const participantHash=await sha256(`line:${participant}`);let displayName='ลูกค้า LINE',profileUrl='';
+    if(source.type==='user'){try{const profileToken=await decryptChannelValue(env,endpoint.token_ciphertext),profileResponse=await fetch(`https://api.line.me/v2/bot/profile/${encodeURIComponent(participant)}`,{headers:{authorization:`Bearer ${profileToken}`}}),profile=await profileResponse.json().catch(()=>({}));if(profileResponse.ok){displayName=clean(profile.displayName,120)||displayName;profileUrl=/^https:\/\//i.test(profile.pictureUrl||'')?clean(profile.pictureUrl,500):''}}catch{}}
+    await env.DB.prepare(`INSERT INTO veasy_conversations(shop_id,id,platform,participant_hash,display_name,profile_url) VALUES(?,?,'line',?,?,?) ON CONFLICT(shop_id,id) DO UPDATE SET display_name=CASE WHEN excluded.display_name!='ลูกค้า LINE' THEN excluded.display_name ELSE veasy_conversations.display_name END,profile_url=CASE WHEN excluded.profile_url!='' THEN excluded.profile_url ELSE veasy_conversations.profile_url END,updated_at=CURRENT_TIMESTAMP`).bind(endpoint.shop_id,conversationId,participantHash,displayName,profileUrl).run();
     const targetCiphertext=await encryptChannelValue(env,participant);
     let mediaUrl='',mediaMime='';
     if(messageType==='image'){

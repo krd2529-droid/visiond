@@ -26,6 +26,8 @@ export async function ensureVEasyRuntimeSchema(env){
   if(!messageColumns.includes('message_type'))await env.DB.prepare("ALTER TABLE veasy_chat_messages ADD COLUMN message_type TEXT NOT NULL DEFAULT 'text'").run();
   if(!messageColumns.includes('media_url'))await env.DB.prepare("ALTER TABLE veasy_chat_messages ADD COLUMN media_url TEXT NOT NULL DEFAULT ''").run();
   if(!messageColumns.includes('media_mime'))await env.DB.prepare("ALTER TABLE veasy_chat_messages ADD COLUMN media_mime TEXT NOT NULL DEFAULT ''").run();
+  const conversationColumns=(await env.DB.prepare('PRAGMA table_info(veasy_conversations)').all()).results?.map(x=>x.name)||[];
+  if(!conversationColumns.includes('profile_url'))await env.DB.prepare("ALTER TABLE veasy_conversations ADD COLUMN profile_url TEXT NOT NULL DEFAULT ''").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v12_connect_platform_updated ON veasy_conversations(platform,updated_at DESC)').run();
 }
 

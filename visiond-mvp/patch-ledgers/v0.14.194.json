@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.194","event_case_id":"EC-V12-PROFILE-CREDENTIAL","completion_condition":"เห็นชื่อและรูปจริง และบันทึก/ทดสอบ Facebook Credential พร้อมข้อความผิดพลาดที่แก้ได้","status":"IMPLEMENTED-PRODUCTION-VALIDATION-PENDING","what_changed":"เพิ่ม customer profile และ Runtime schema guard พร้อมวิเคราะห์ข้อผิดพลาด Facebook Credential",
+  "changed_files":["functions/_v12_schema.js","functions/_veasy_line_ai.js","functions/_veasy_runtime.js","functions/api/admin/v12-channel.js","functions/api/admin/v12-connect.js","functions/api/vision7/runtime/register-conversation.js","public/v12-connect.html","public/v12-connect.js","public/v12-profile.css","migrations/0043_v12_customer_profiles.sql","scripts/test-v014194.mjs"],
+  "tasks":[
+    {"id":"P14194-001","scope":"FEATURE","source_instruction":"แสดงชื่อลูกค้าและรูปโปรไฟล์จริง","status":"DONE-VERIFIED","evidence":["functions/_veasy_line_ai.js","public/v12-connect.js","public/v12-profile.css"]},
+    {"id":"P14194-002","scope":"BUG","source_instruction":"แก้ปุ่มบันทึก Facebook Credential ไม่สำเร็จ","status":"DONE-VERIFIED","evidence":["functions/_v12_schema.js","functions/api/admin/v12-channel.js"]},
+    {"id":"P14194-003","scope":"SECURITY","source_instruction":"แสดงสาเหตุทดสอบไม่ผ่านโดยไม่เปิดเผย Token","status":"DONE-VERIFIED","evidence":["functions/api/admin/v12-channel.js","scripts/test-v014194.mjs"]},
+    {"id":"P14194-004","scope":"QA","source_instruction":"ใช้ลูปมาตรฐานถึง Commit","status":"DONE-VERIFIED","evidence":["scripts/test-v014194.mjs","scripts/test-all-regressions.mjs"]}
+  ],
+  "tests":{"focused":"PASS","regression":"PASS-15/15","predeploy":"PASS-8-WARN-9-FAIL-0","syntax":"PASS","secret_scan":"PASS-CHANGED-FILES"},"commit_id":"SELF","parent_commit":"f491542cab9428ccc38e8cf53f01014e3250e104","safe_rollback_commit":"5ea8741","rollback_method":"git revert SELF แล้วทดสอบใหม่; Boss Push/Deploy เท่านั้น","remaining_items":["Production validation หลัง Boss Push/Deploy และทดสอบ Facebook Credential จริง"]
+}

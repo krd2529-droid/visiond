@@ -2,9 +2,10 @@ import {json,requireAdmin} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
 import {ensureVEasyRuntimeSchema} from '../../_veasy_runtime.js';
 import {decryptChannelValue} from '../../_channel_crypto.js';
+import {ensureV12Schema} from '../../_v12_schema.js';
 
 const headers={'cache-control':'private, no-store'},clean=(v,n=4900)=>String(v||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().replace(/\s+/g,' ').slice(0,n);
-async function auth(ctx){await ensureDatabase(ctx.env);await ensureVEasyRuntimeSchema(ctx.env);const a=await requireAdmin(ctx);return a.error?{error:a.error}:a}
+async function auth(ctx){await ensureDatabase(ctx.env);await ensureVEasyRuntimeSchema(ctx.env);await ensureV12Schema(ctx.env);const a=await requireAdmin(ctx);return a.error?{error:a.error}:a}
 const absolute=(env,path)=>{const base=clean(env.APP_ORIGIN,300)||'https://visiondonline.com';try{return new URL(path,base).href}catch{return `https://visiondonline.com${path}`}};
 async function channels(env){const line=(await env.DB.prepare(`SELECT c.shop_id,s.name,c.external_account_id,c.verified_at FROM veasy_channel_credentials c JOIN veasy_shops s ON s.id=c.shop_id WHERE c.provider='line' AND c.verified_at IS NOT NULL ORDER BY s.name`).all()).results||[],facebook=await env.DB.prepare("SELECT external_account_id,verified_at FROM v12_channel_credentials WHERE provider='facebook'").first();return {line,facebook:{configured:Boolean(facebook),verified:Boolean(facebook?.verified_at),external_account_id:facebook?.external_account_id||''}}}
 async function targets(env,provider,shopId,ids=[]){const args=[provider],where=["c.status='active'","c.platform=?","k.target_ciphertext!=''"];if(provider==='facebook')where.push("c.updated_at>=datetime('now','-24 hours')");if(shopId){where.push('c.shop_id=?');args.push(shopId)}if(ids.length){where.push(`c.id IN (${ids.map(()=>'?').join(',')})`);args.push(...ids)}return (await env.DB.prepare(`SELECT c.id,c.shop_id,c.updated_at,k.target_ciphertext FROM veasy_conversations c JOIN veasy_conversation_controls k ON k.shop_id=c.shop_id AND k.conversation_id=c.id WHERE ${where.join(' AND ')} ORDER BY c.updated_at DESC LIMIT 500`).bind(...args).all()).results||[]}
