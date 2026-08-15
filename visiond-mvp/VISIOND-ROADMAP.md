@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.197
+Current build: v0.14.198
+
+## v0.14.198 — Facebook Webhook Inbound Adapter (IMPLEMENTED)
+- เพิ่ม Callback URL/Verify Token, ตรวจ `X-Hub-Signature-256`, กัน event ซ้ำ และรับข้อความ/รูปเข้า V12
+- ดึงชื่อและรูปโปรไฟล์ผู้ส่งด้วย Page Token และผูกเข้าร้านที่ Boss เลือก โดยไม่ส่ง PSID/Token/App Secret ออกหน้าเว็บ
+- App Secret, Page Token และ Verify Token เก็บแบบเข้ารหัส; Verify Token แสดงครั้งเดียวหลังสร้าง
 
 ## v0.14.197 — Messenger-Scope Connection Test (IMPLEMENTED)
 - เปลี่ยนการตรวจ Facebook ไปใช้ Messenger Profile API ซึ่งตรวจ `pages_messaging` โดยตรง แทนการอ่าน Page Object ที่ต้องการสิทธิ์คนละชุด

@@ -11,4 +11,8 @@ export async function ensureV12Schema(env){
     `CREATE INDEX IF NOT EXISTS idx_v12_campaign_status ON v12_broadcast_campaigns(status,created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_v12_delivery_campaign_status ON v12_broadcast_deliveries(campaign_id,status)`
   ];for(const statement of sql)await env.DB.prepare(statement).run();
+  const credentialColumns=(await env.DB.prepare('PRAGMA table_info(v12_channel_credentials)').all()).results?.map(x=>x.name)||[];
+  if(!credentialColumns.includes('shop_id'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN shop_id TEXT NOT NULL DEFAULT ''").run();
+  if(!credentialColumns.includes('secret_ciphertext'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN secret_ciphertext TEXT NOT NULL DEFAULT ''").run();
+  if(!credentialColumns.includes('verify_token_ciphertext'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN verify_token_ciphertext TEXT NOT NULL DEFAULT ''").run();
 }
