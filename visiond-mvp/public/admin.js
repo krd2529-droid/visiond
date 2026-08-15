@@ -118,6 +118,7 @@ newProductButton.onclick = () => {
     productEditor.scrollIntoView({ behavior: "smooth", block: "start" }),
   );
 };
+newBundleButton.onclick = openBundleBuilder;
 closeEditor.onclick = () => { resetProductForm(); if(mobileEditorQuery.matches)lastEditorTrigger?.focus?.(); };
 productEditor.onsubmit = saveProduct;
 deleteProductButton.onclick = deleteProduct;
@@ -306,6 +307,7 @@ productCategorySelect.onchange = () => {
     originalCategory = productEditor.dataset.originalCategory || "";
   if (!editing || productCategorySelect.value !== originalCategory)
     productEditor.elements.slug.value = nextProductSlug(productCategorySelect.value);
+  if(bundleMode){renderBundlePicker();changeBundleSize()}
 };
 manualUnlockForm.onsubmit = unlockProductForUser;
 applySalesFilter.onclick = () => { salesCursor = null; salesCursorHistory = []; loadSalesReport(); };
@@ -679,13 +681,15 @@ function renderBundlePicker(selected = []) {
       (p) =>
         p.status === "published" &&
         p.id !== currentId &&
-        !["set-coloring", "set-tattoo"].includes(p.category),
-    );
+        (!p.bundled_into_id || Number(p.bundled_into_id) === currentId) &&
+        !["set-coloring", "set-tattoo"].includes(p.category) &&
+        (productEditor.elements.category.value === "set-tattoo" ? p.category === "tattoo" : p.category === "coloring"),
+    ).sort((a,b)=>Number(a.id)-Number(b.id));
   bundleProductPicker.innerHTML =
     candidates
       .map(
         (p) =>
-          `<label class="bundle-pick"><input type="checkbox" name="bundle_product_ids" value="${p.id}" ${selectedSet.has(Number(p.id)) ? "checked" : ""}><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><span><b>${esc(p.title)}</b><small>${esc(p.slug)} · ${esc(categories.find((c) => c.slug === p.category)?.name || p.category)}</small></span></label>`,
+          `<label class="bundle-pick"><input type="checkbox" name="bundle_product_ids" value="${p.id}" ${selectedSet.has(Number(p.id)) ? "checked" : ""}><img src="${esc(p.cover_url || "/assets/product-placeholder.svg")}" alt=""><span><b>${esc(p.title)}</b><small>ลำดับ ${p.id} · ${money(p.price)} · ${Number(p.pages)||0} หน้า</small></span></label>`,
       )
       .join("") ||
     '<div class="admin-empty">ยังไม่มีสินค้าที่เปิดขายสำหรับนำมาจัดชุด</div>';
@@ -723,14 +727,13 @@ function updateBundleCount() {
       )
       .filter(Boolean),
     count = selected.length,
-    previews = selected.flatMap((product, basketIndex) =>
-      productPreviewUrls(product).map((url, imageIndex) => ({
-        url,
-        title: product.title,
-        basketIndex,
-        imageIndex,
-      })),
-    );
+    previewLimit=Math.max(1,Math.min(Number(productEditor.elements.bundle_preview_count.value)||count,count||1)),
+    previews = selected.slice(0,previewLimit).map((product,basketIndex)=>({url:product.cover_url||"/assets/product-placeholder.svg",title:product.title,basketIndex,imageIndex:0})),
+    normalPrice=selected.reduce((sum,product)=>sum+Number(product.price||0),0),
+    totalPages=selected.reduce((sum,product)=>sum+Number(product.pages||0),0),
+    promoPrice=Math.round((Number(productEditor.elements.price.value)||0)*100),
+    saving=Math.max(0,normalPrice-promoPrice),
+    percent=normalPrice?Math.round(saving*100/normalPrice):0;
   bundleSelectedCount.textContent = `เลือกแล้ว ${count}/${limit}`;
   bundleSelectedCount.style.color = count === limit ? "#08756f" : "#b23b35";
   bundlePreviewCount.textContent = `${previews.length} รูป${count === limit ? " · พร้อมใช้เป็นสไลด์" : ""}`;
@@ -741,26 +744,26 @@ function updateBundleCount() {
           `<figure><img src="${esc(item.url)}" alt="${esc(item.title)} รูป ${item.imageIndex + 1}"><figcaption>ตะกร้า ${item.basketIndex + 1} · รูป ${item.imageIndex + 1}</figcaption></figure>`,
       )
       .join("") || "<small>เลือกรายการด้านบนเพื่อดูรูปตัวอย่าง</small>";
+  productEditor.elements.pages.value=totalPages;
+  bundleSummary.innerHTML=`<b>${count} ตะกร้า · ราคาปกติรวม ${money(normalPrice)} · ${new Intl.NumberFormat("th-TH").format(totalPages)} หน้า</b><span>ราคาชุดโปร ${money(promoPrice)} · ประหยัด ${money(saving)} (${percent}%)</span><ol>${selected.map(product=>`<li>${esc(product.title)} · ${money(product.price)} · ${Number(product.pages)||0} หน้า</li>`).join("")}</ol>`;
 }
-productEditor.querySelectorAll('[name="bundle_size"]').forEach(
-  (radio) =>
-    (radio.onchange = () => {
-      const limit = Number(radio.value),
-        checked = [...bundleProductPicker.querySelectorAll("input:checked")];
-      checked.slice(limit).forEach((input) => (input.checked = false));
-      productEditor.elements.pages.value = limit;
-      updateBundleCount();
-    }),
-);
+function changeBundleSize(delta=0){const field=productEditor.elements.bundle_size,limit=Math.max(2,Math.min(30,(Number(field.value)||2)+delta));field.value=limit;const inputs=[...bundleProductPicker.querySelectorAll("input")],checked=inputs.filter(input=>input.checked);checked.slice(limit).forEach(input=>input.checked=false);if(checked.length<limit)inputs.filter(input=>!input.checked).slice(0,limit-checked.length).forEach(input=>input.checked=true);productEditor.elements.bundle_preview_count.max=limit;productEditor.elements.bundle_preview_count.value=Math.min(limit,Math.max(1,Number(productEditor.elements.bundle_preview_count.value)||limit));updateBundleCount()}
+bundleSizeMinus.onclick=()=>changeBundleSize(-1);
+bundleSizePlus.onclick=()=>changeBundleSize(1);
+productEditor.elements.bundle_size.onchange=()=>changeBundleSize();
+productEditor.elements.bundle_preview_count.onchange=updateBundleCount;
+productEditor.elements.price.addEventListener("input",()=>{if(bundleMode)updateBundleCount()});
 function openBundleBuilder() {
   resetProductForm();
   setBundleMode(true);
   productEditor.elements.category.value = "set-coloring";
+  productEditor.elements.status.value = "draft";
   productEditor.elements.title.value = "";
   productEditor.elements.short_description.value =
     "ชุดคละ 5 ตะกร้า พร้อมไฟล์ PDF ครบทุกชุด";
-  editorTitle.textContent = "สร้างตะกร้าชุดคละ";
+  editorTitle.textContent = "สร้างชุดรวมตะกร้า";
   renderBundlePicker();
+  changeBundleSize();
   updateProductSlugPreview();
   document.body.classList.add("product-editor-active");
   requestAnimationFrame(() =>
@@ -821,11 +824,12 @@ async function editProduct(id) {
   productEditor.elements.description.value = p.description || "";
   productEditor.elements.status.value = p.status || "draft";
   if (isBundle) {
-    const size = bundleCount === 10 ? 10 : 5;
-    productEditor.querySelector(
-      `[name="bundle_size"][value="${size}"]`,
-    ).checked = true;
+    const size = Math.max(2,bundleCount);
+    productEditor.elements.bundle_size.value=size;
+    let savedPreviewCount=0;try{savedPreviewCount=JSON.parse(p.preview_urls||"[]").length}catch(error){savedPreviewCount=0}
+    productEditor.elements.bundle_preview_count.value=Math.max(1,Math.min(size,savedPreviewCount||size));
     renderBundlePicker((d.bundle_items || []).map((x) => x.id));
+    changeBundleSize();
   }
   let previews = [];
   try {
@@ -844,7 +848,7 @@ async function editProduct(id) {
           : "",
       )
       .join("") || "<span>ยังไม่มีรูปตัวอย่าง</span>";
-  editorTitle.textContent = isBundle ? "แก้ไขตะกร้าชุดคละ" : "แก้ไขสินค้า";
+  editorTitle.textContent = isBundle ? "แก้ไขชุดรวมตะกร้า" : "แก้ไขสินค้า";
   deleteProductButton.hidden = false;
   editProductWithVision2.hidden = Boolean(isBundle);
   existingFiles.innerHTML = isBundle
@@ -941,6 +945,10 @@ async function saveProduct(event) {
       return setMessage(`กรุณาเลือกตะกร้าให้ครบ ${required} รายการ`, true);
     fd.set("bundle_product_ids", selected.join(","));
     fd.set("file_type", "ชุด PDF");
+    const chosen=selected.map(value=>products.find(product=>Number(product.id)===Number(value))).filter(Boolean);
+    fd.set("pages",String(chosen.reduce((sum,product)=>sum+Number(product.pages||0),0)));
+    const itemList=chosen.map((product,index)=>`${index+1}. ${product.title} · ${money(product.price)} · ${Number(product.pages)||0} หน้า`).join("\n"),currentDescription=String(fd.get("description")||"").trim();
+    if(!currentDescription.includes("รายการตะกร้าในชุด"))fd.set("description",[currentDescription,"รายการตะกร้าในชุด",itemList].filter(Boolean).join("\n\n"));
   }
   if (!fd.get("short_description"))
     fd.set(
@@ -1566,7 +1574,7 @@ async function saveRole(id) {
 showAdminNotice();
 init();
 import('/mouse-ui.js?v=014134');
-import('/i18n.js?v=014134');
+import('/i18n.js?v=014191');
 
 document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
 

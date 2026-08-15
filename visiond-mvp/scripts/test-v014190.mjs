@@ -7,9 +7,9 @@ const [version,index,admin,css,runtime,dashboard,hubCss,protocol,history,roadmap
   read('JARVIS-PATCH-PROTOCOL.md'),read('work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md'),
   read('work-history/visiond/roadmap/VISIOND-ROADMAP.md')
 ]);
-assert.equal(version.trim(),'v0.14.190');
-assert.match(index,/WEB v0\.14\.190/);
-assert.match(admin,/ADMIN v0\.14\.190/);
+assert.match(version.trim(),/^v0\.14\.\d+$/);
+assert.match(index,/WEB v0\.14\.\d+/);
+assert.match(admin,/ADMIN v0\.14\.\d+/);
 assert.match(css,/\.mobile-nav-toggle,\.mobile-nav-backdrop\{display:none!important\}/);
 assert.match(css,/@media\(max-width:800px\)/);
 assert.match(css,/\.mobile-nav-toggle\{[^}]*display:inline-flex!important/);

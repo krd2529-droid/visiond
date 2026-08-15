@@ -1,5 +1,6 @@
 import { json, requireAdmin } from "../../../_lib.js";
 import { putTrash } from "../../../_trash.js";
+import { ensureDatabase } from "../../../_schema.js";
 const ext = (name, type) =>
   type === "image/png"
     ? "png"
@@ -22,6 +23,7 @@ const vision5Product = (env, id) => env.DB.prepare(`SELECT p.id FROM products p 
   .bind(id).first();
 
 export async function onRequestGet(ctx) {
+  await ensureDatabase(ctx.env);
   const a = await requireAdmin(ctx);
   if (a.error) return a.error;
   const item = await ctx.env.DB.prepare("SELECT * FROM products WHERE id=?")
@@ -58,6 +60,7 @@ export async function onRequestGet(ctx) {
 }
 
 export async function onRequestPut(ctx) {
+  await ensureDatabase(ctx.env);
   const a = await requireAdmin(ctx);
   if (a.error) return a.error;
   const old = await ctx.env.DB.prepare("SELECT * FROM products WHERE id=?")
@@ -94,7 +97,8 @@ export async function onRequestPut(ctx) {
             .filter(Number.isInteger),
         ),
       ],
-      size = Number(form.get("bundle_size"));
+      size = Number(form.get("bundle_size")),
+      previewCount = Number(form.get("bundle_preview_count")) || ids.length;
     if(category==='resale-rights')return json({error:'ตะกร้าสิทธิ์ Vision 5 ต้องจัดการผ่านระบบ Vision 5 เท่านั้น'},403);
     if (category !== old.category) {
       const prefix = `${category}-`,
@@ -108,16 +112,16 @@ export async function onRequestPut(ctx) {
     if (isBundle) {
       if (!["set-coloring", "set-tattoo"].includes(category))
         return json({ error: "กรุณาเลือกหมวดชุดคละ" }, 400);
-      if (![5, 10].includes(size) || ids.length !== size)
+      if (!Number.isInteger(size) || size < 2 || size > 30 || ids.length !== size)
         return json(
           { error: `กรุณาเลือกตะกร้าให้ครบ ${size || 5} รายการ` },
           400,
         );
-      const marks = ids.map(() => "?").join(","),
+      const sourceCategory=category==="set-tattoo"?"tattoo":"coloring",marks = ids.map(() => "?").join(","),
         valid = await ctx.env.DB.prepare(
-          `SELECT id,cover_url,preview_urls FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category NOT IN ('set-coloring','set-tattoo','resale-rights') AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights'))`,
+          `SELECT id,title,price,pages,cover_url FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category=? AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')) AND NOT EXISTS(SELECT 1 FROM bundle_source_allocations a WHERE a.source_product_id=p.id AND a.bundle_product_id<>?)`,
         )
-          .bind(...ids, old.id)
+          .bind(...ids, old.id, sourceCategory, old.id)
           .all();
       if (valid.results.length !== ids.length)
         return json(
@@ -127,6 +131,7 @@ export async function onRequestPut(ctx) {
       const byId = new Map(
         valid.results.map((item) => [Number(item.id), item]),
       );
+      const ordered=ids.map(id=>byId.get(id)),totalPages=ordered.reduce((sum,item)=>sum+Number(item.pages||0),0);
       await ctx.env.DB.prepare(
         `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
       )
@@ -137,7 +142,7 @@ export async function onRequestPut(ctx) {
           String(form.get("description") || ""),
           price,
           category,
-          pages,
+          totalPages,
           form.get("status") === "published" ? "published" : "draft",
           old.id,
         )
@@ -148,24 +153,12 @@ export async function onRequestPut(ctx) {
         .bind(old.id)
         .run();
       for (let index = 0; index < ids.length; index++)
-        await ctx.env.DB.prepare(
+        {await ctx.env.DB.prepare("INSERT OR IGNORE INTO bundle_source_allocations(source_product_id,bundle_product_id) VALUES(?,?)").bind(ids[index],old.id).run();const allocation=await ctx.env.DB.prepare("SELECT bundle_product_id FROM bundle_source_allocations WHERE source_product_id=?").bind(ids[index]).first();if(Number(allocation?.bundle_product_id)!==Number(old.id))throw new Error("ตะกร้าบางใบถูกใช้สร้างชุดอื่นแล้ว กรุณาโหลดใหม่");await ctx.env.DB.prepare(
           "INSERT INTO product_bundle_items(bundle_product_id,source_product_id,sort_order) VALUES(?,?,?)",
         )
           .bind(old.id, ids[index], index)
-          .run();
-      const previews = ids.flatMap((id) => {
-        const item = byId.get(id);
-        let saved = [];
-        try {
-          saved = JSON.parse(item.preview_urls || "[]");
-        } catch (error) {
-          saved = [];
-        }
-        return [...new Set([item.cover_url, ...saved].filter(Boolean))].slice(
-          0,
-          3,
-        );
-      });
+          .run();}
+      const previews = ordered.map(item=>item.cover_url).filter(Boolean).slice(0,Math.max(1,Math.min(previewCount,ids.length)));
       await ctx.env.DB.prepare(
         "UPDATE products SET cover_url=?,preview_urls=? WHERE id=?",
       )

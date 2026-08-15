@@ -49,7 +49,7 @@
     'จัดการคอร์สออนไลน์':'Manage Online Courses','สร้างคอร์สใหม่':'Create New Course','คอร์สที่มีอยู่':'Existing Courses',
     'สร้างคอร์ส':'Create Course','เพิ่มบทเรียน':'Add Lesson','เปิดขายทันที':'Publish Immediately',
     'Control Center':'Control Center','ค้นหาสินค้า สมาชิก หรือคำสั่งซื้อ':'Search products, members, or orders',
-    'บันทึก':'Save','แก้ไข':'Edit','ยกเลิก':'Cancel','เพิ่ม':'Add','สร้าง':'Create','รีเฟรช':'Refresh',
+    'บันทึก':'Save','แก้ไข':'Edit','ยกเลิก':'Cancel','เพิ่ม':'Add','สร้าง':'Create','รีเฟรช':'Refresh','สร้างชุดรวมตะกร้า':'Create Basket Bundle',
     'คำสั่งซื้อ':'Orders','สมาชิก':'Members','ยอดขาย':'Sales','ตั้งค่า':'Settings','เครื่องมือ':'Tools',
     'สินค้าดิจิทัลแนะนำ':'Recommended Digital Products','ดูสินค้าดิจิทัลทั้งหมด →':'View All Digital Products →'
   };

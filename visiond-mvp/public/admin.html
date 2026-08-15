@@ -495,6 +495,10 @@
         margin-left: auto;
         color: #08756f;
       }
+      .bundle-size input[type="number"] { width: 82px; margin-left: 8px; }
+      .bundle-summary { display:grid; gap:6px; padding:12px; border-radius:12px; background:#fff; color:#174d4a; }
+      .bundle-summary span { color:#08756f; font-weight:800; }
+      .bundle-summary ol { margin:4px 0 0; padding-left:24px; max-height:180px; overflow:auto; }
       .bundle-product-picker {
         display: grid;
         gap: 8px;
@@ -880,7 +884,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.190</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.191</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1371,6 +1375,8 @@
                 ✦ สร้างสินค้าด้วย Vision 2</button
               ><button class="primary" id="newProductButton" type="button">
                 + เพิ่มสินค้าเอง
+              </button><button class="bundle-launch" id="newBundleButton" type="button">
+                สร้างชุดรวมตะกร้า
               </button>
             </div>
           </div>
@@ -1515,14 +1521,13 @@
                   และชุด 10 ตะกร้าได้ 30 รูป พร้อมเชื่อม PDF ทุกชุด
                 </p>
                 <div class="bundle-size">
-                  <label
-                    ><input type="radio" name="bundle_size" value="5" checked />
-                    ชุด 5 ตะกร้า</label
-                  ><label
-                    ><input type="radio" name="bundle_size" value="10" /> ชุด 10
-                    ตะกร้า</label
-                  ><strong id="bundleSelectedCount">เลือกแล้ว 0/5</strong>
+                  <button type="button" id="bundleSizeMinus" aria-label="ลดจำนวนตะกร้า">−</button>
+                  <label>จำนวนตะกร้า<input type="number" name="bundle_size" min="2" max="30" value="5" /></label>
+                  <button type="button" id="bundleSizePlus" aria-label="เพิ่มจำนวนตะกร้า">+</button>
+                  <label>จำนวนรูปตัวอย่าง<input type="number" name="bundle_preview_count" min="1" max="30" value="5" /></label>
+                  <strong id="bundleSelectedCount">เลือกแล้ว 0/5</strong>
                 </div>
+                <div id="bundleSummary" class="bundle-summary" aria-live="polite"></div>
                 <div
                   id="bundleProductPicker"
                   class="bundle-product-picker"
@@ -2161,7 +2166,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014188"></script>
+    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014191"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>
