@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.198
+Current build: v0.14.199
+
+## v0.14.199 — Fast Meta Webhook Verification (IMPLEMENTED)
+- ตัดงานตรวจ/ปรับ schema ออกจาก hot path ของ Facebook Webhook หลัง schema ถูกติดตั้งโดย migration แล้ว
+- ลดเวลาตอบ Callback verification ให้ Meta โดยยังตรวจ Verify Token จากค่าที่เข้ารหัสเหมือนเดิม
 
 ## v0.14.198 — Facebook Webhook Inbound Adapter (IMPLEMENTED)
 - เพิ่ม Callback URL/Verify Token, ตรวจ `X-Hub-Signature-256`, กัน event ซ้ำ และรับข้อความ/รูปเข้า V12
