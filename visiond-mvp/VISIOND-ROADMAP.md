@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.199
+Current build: v0.14.200
+
+## v0.14.200 — V12 Faster Inbox + Outbound Images (IMPLEMENTED)
+- ตัด runtime schema checks ออกจาก API กล่องข้อความ และเพิ่มการอัปเดต LINE/Facebook อัตโนมัติทุก 4 วินาที
+- เปิด URL รูปขาออกแบบสุ่มเฉพาะไฟล์ V12 ให้ LINE/Meta ดาวน์โหลดได้ โดยไม่เปิดไฟล์ส่วนตัวชนิดอื่น
 
 ## v0.14.199 — Fast Meta Webhook Verification (IMPLEMENTED)
 - ตัดงานตรวจ/ปรับ schema ออกจาก hot path ของ Facebook Webhook หลัง schema ถูกติดตั้งโดย migration แล้ว

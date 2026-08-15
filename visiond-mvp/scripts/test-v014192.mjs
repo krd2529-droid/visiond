@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';const read=p=>readFile(new URL(`../${p}`,import.meta.url),'utf8');
 const [version,index,admin,page,ui,css,api,line,runtime,migration,roadmap]=await Promise.all([read('VERSION.txt'),read('public/index.html'),read('public/admin.html'),read('public/v12-connect.html'),read('public/v12-connect.js'),read('public/v12-connect.css'),read('functions/api/admin/v12-connect.js'),read('functions/_veasy_line_ai.js'),read('functions/_veasy_runtime.js'),read('migrations/0041_v12_connect_media.sql'),read('VISIOND-ROADMAP.md')]);
-assert.match(version.trim(),/^v0\.14\.(192|193|194|195|196|197|198|199)$/);assert.match(index,/WEB v0\.14\.(192|193|194|195|196|197|198|199)/);assert.match(admin,/ADMIN v0\.14\.(192|193|194|195|196|197|198|199)/);assert.match(admin,/href="\/v12-connect\.html"[\s\S]*V12[\s\S]*V Connect/);
+assert.match(version.trim(),/^v0\.14\.(192|193|194|195|196|197|198|199|200)$/);assert.match(index,/WEB v0\.14\.(192|193|194|195|196|197|198|199|200)/);assert.match(admin,/ADMIN v0\.14\.(192|193|194|195|196|197|198|199|200)/);assert.match(admin,/href="\/v12-connect\.html"[\s\S]*V12[\s\S]*V Connect/);
 for(const token of['V12 V Connect','LINE VisionD','Facebook Page VisionD','v12Handoff','v12Composer'])assert.ok(page.includes(token),token);
 for(const token of['/api/admin/v12-connect','data-platform','message_type','media_url','V12 รับช่วง'])assert.ok(ui.includes(token),token);
 assert.match(css,/@media\(max-width:800px\)/);assert.match(css,/grid-template-columns:1fr/);
-for(const token of['requireAdmin','ensureVEasyRuntimeSchema','target_ciphertext','token_ciphertext','x-line-retry-key','image\/jpeg','image\/png','1 MB'])assert.ok(api.includes(token),token);
+for(const token of['requireAdmin','target_ciphertext','token_ciphertext','x-line-retry-key','image\/jpeg','image\/png','1 MB'])assert.ok(api.includes(token),token);
 assert.match(api,/SELECT c\.id,c\.shop_id,c\.display_name,(?:c\.profile_url,)?c\.platform,c\.updated_at,s\.name shop_name/);assert.match(api,/return json\(\{conversation,messages\}/);assert.match(api,/return json\(\{conversations:rows,channels:/);
 for(const source of[line,runtime,migration])for(const token of['message_type','media_url','media_mime'])assert.ok(source.includes(token),token);
 assert.match(line,/api-data\.line\.me/);assert.match(line,/env\.FILES\.put/);assert.match(roadmap,/v0\.14\.192[\s\S]*V12 V Connect/);assert.match(roadmap,/PAUSED BY BOSS/);
