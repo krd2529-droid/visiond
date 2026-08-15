@@ -1,0 +1,1 @@
+{"patch":"v0.14.185","production_root":"visiond-mvp","status":"IMPLEMENTED","commit_id":"SELF","parent_commit":"288cd0f","safe_rollback_commit":"5ea8741","result":"ทุกแพตช์ต้องมี handoff 5 ข้อและ rollback target ที่ตรวจสอบได้"}

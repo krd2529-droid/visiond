@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.184
+Current build: v0.14.185
+
+## v0.14.185 — Mandatory Patch Handoff + Safe Rollback (IMPLEMENTED)
+- ทุกแพตช์ต้องบันทึกสิ่งที่แก้ ไฟล์ที่แก้ ผลทดสอบ Commit identity และวิธีย้อนกลับ
+- แยก parent commit ออกจาก safe rollback commit และเลื่อน Safe Baseline ได้เฉพาะเมื่อ Production validated
+- ใช้ `git revert` แบบไม่ทำลายประวัติ ห้ามวางไฟล์เก่าทับทั้งระบบ ห้าม Reset/Push/Deploy อัตโนมัติ
 
 ## v0.14.184 — Roadmap Historical Continuity (IMPLEMENTED)
 - รวมประวัติ v0.14.163–v0.14.183 จาก Git และ Patch Ledger กลับเข้าสู่ Roadmap กลาง

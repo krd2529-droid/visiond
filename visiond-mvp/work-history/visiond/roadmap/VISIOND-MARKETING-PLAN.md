@@ -1,7 +1,7 @@
 # VisionD Marketing Plan — Living Growth Plan
 
 Updated: 2026-08-15
-Current build: v0.14.184
+Current build: v0.14.185
 
 ## v0.14.184 historical handoff
 - Keep technical, product, production and marketing history continuous so future decisions use the real baseline.

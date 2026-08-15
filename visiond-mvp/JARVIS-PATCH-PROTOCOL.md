@@ -38,3 +38,29 @@ After EVERY patch, the delivery report MUST end with exactly one clear Event Cas
 - `EVENT CASE: เสร็จทั้งหมดแล้ว — พร้อมรับ Event Case ใหม่`
 - `EVENT CASE: ยังไม่เสร็จ — ต้องแพตต่อ`
 If unfinished, list every remaining Event Case item and make continuation the next-patch priority. Never mark a case complete because only one subtask shipped.
+
+## Mandatory patch handoff + rollback rule (v0.14.185+)
+
+Every patch must record these five items before delivery:
+1. What changed — concise scope and intended outcome.
+2. Changed files — exact repository paths.
+3. Tests — commands/contracts and pass/fail/warn results.
+4. Commit identity — use `SELF` inside the patch ledger because a Git commit cannot contain its own final hash; resolve it with `git log -1 --format=%H -- <ledger-file>`. Report the resolved hash after commit.
+5. Rollback — record both `parent_commit` and `safe_rollback_commit`, plus a non-destructive `git revert` procedure. Never assume the parent is production-safe.
+
+Required files:
+- `SAFE-BASELINE.md` — last production version/commit explicitly validated by Boss, plus unvalidated candidate.
+- `patch-ledgers/vX.Y.Z.json` — machine-readable five-item handoff.
+- `work-history/visiond/patch-history/PATCH-vX.Y.Z-*.md` — human-readable reasoning and cautions for material patches.
+
+Status meanings must stay separate:
+- `IMPLEMENTED`: code and local QA complete.
+- `PUSHED`: Boss pushed the commit.
+- `DEPLOYED`: hosting completed.
+- `PRODUCTION_VALIDATED`: Boss or recorded live evidence confirmed critical paths.
+Only `PRODUCTION_VALIDATED` may replace the safe baseline.
+
+Rollback safety:
+- Prefer `git revert <bad-commit>` to preserve later history and data.
+- Never use broad file overlay, `git reset --hard`, automatic Push, or automatic Deploy.
+- Re-run regression, predeploy, security scan and visible-version checks on the revert commit.
