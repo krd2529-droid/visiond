@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';const read=p=>readFile(new URL(`../${p}`,import.meta.url),'utf8');
 const [version,index,admin,page,ui,css,api,line,runtime,migration,roadmap]=await Promise.all([read('VERSION.txt'),read('public/index.html'),read('public/admin.html'),read('public/v12-connect.html'),read('public/v12-connect.js'),read('public/v12-connect.css'),read('functions/api/admin/v12-connect.js'),read('functions/_veasy_line_ai.js'),read('functions/_veasy_runtime.js'),read('migrations/0041_v12_connect_media.sql'),read('VISIOND-ROADMAP.md')]);
-assert.match(version.trim(),/^v0\.14\.(192|193|194|195)$/);assert.match(index,/WEB v0\.14\.(192|193|194|195)/);assert.match(admin,/ADMIN v0\.14\.(192|193|194|195)/);assert.match(admin,/href="\/v12-connect\.html"[\s\S]*V12[\s\S]*V Connect/);
+assert.match(version.trim(),/^v0\.14\.(192|193|194|195|196)$/);assert.match(index,/WEB v0\.14\.(192|193|194|195|196)/);assert.match(admin,/ADMIN v0\.14\.(192|193|194|195|196)/);assert.match(admin,/href="\/v12-connect\.html"[\s\S]*V12[\s\S]*V Connect/);
 for(const token of['V12 V Connect','LINE VisionD','Facebook Page VisionD','v12Handoff','v12Composer'])assert.ok(page.includes(token),token);
 for(const token of['/api/admin/v12-connect','data-platform','message_type','media_url','V12 รับช่วง'])assert.ok(ui.includes(token),token);
 assert.match(css,/@media\(max-width:800px\)/);assert.match(css,/grid-template-columns:1fr/);

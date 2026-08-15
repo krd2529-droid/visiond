@@ -1,7 +1,12 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.195
+Current build: v0.14.196
+
+## v0.14.196 — Automatic Customer Profile Recovery (IMPLEMENTED)
+- เมื่อเปิด V12 ระบบตรวจลูกค้าที่มี Conversation ID แต่ยังไม่มีชื่อ/รูป และเติมจาก LINE/Facebook อัตโนมัติครั้งละไม่เกิน 40 ราย
+- เพิ่มปุ่ม `อัปเดตชื่อและรูปลูกค้า` สำหรับสั่งซ้ำ พร้อมสรุปจำนวนตรวจ/สำเร็จ/ล้มเหลว
+- ยืนยันข้อจำกัดว่าไม่สร้างประวัติหรือรายชื่อลูกค้าก่อน Webhook หากแพลตฟอร์มไม่ส่ง Conversation ID
 
 ## v0.14.195 — Meta Direct Page Diagnostics (IMPLEMENTED)
 - เปลี่ยนการทดสอบ Facebook จาก `/me` เป็น Page ID โดยตรง เพื่อลดความกำกวมของชนิด Token
