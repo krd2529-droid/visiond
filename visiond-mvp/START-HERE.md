@@ -1,11 +1,11 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.183**
+เวอร์ชันปัจจุบัน: **v0.14.184**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
-2. Patch ledgerล่าสุด: `patch-ledgers/v0.14.183.json`
+2. Patch ledgerล่าสุด: `patch-ledgers/v0.14.184.json`
 3. Requirement ปัจจุบัน: `requirements-ledger.json`
 4. Roadmap ปัจจุบัน: `work-history/visiond/roadmap/VISIOND-ROADMAP.md`
 5. กติกาแพต: `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`

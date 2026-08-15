@@ -1,7 +1,42 @@
 # VisionD Marketing Plan — Living Growth Plan
 
-Updated: 2026-08-11
-Current build: v0.14.162
+Updated: 2026-08-15
+Current build: v0.14.184
+
+## v0.14.184 historical handoff
+- Keep technical, product, production and marketing history continuous so future decisions use the real baseline.
+- Mark v0.14.180 as reverted; never interpret that failed rollout as a conversion experiment.
+
+## v0.14.183 storefront operations clarity
+- Keep mobile navigation unobstructed and separate published inventory from drafts in Boss operations.
+
+## v0.14.182 authoritative sellable inventory
+- Category and storefront counts must represent published sellable products, not drafts or deleted inventory.
+
+## v0.14.181 production identity recovery
+- Prefer minimal visible-version patches and verify the live page before campaign traffic.
+
+## v0.14.180 failed rollout (REVERTED)
+- Full-tree sync caused a blank storefront and was rolled back; it produced no valid marketing baseline.
+
+## v0.14.179 release confidence
+- Visible patch identity, Windows QA and the locked Production tree are campaign safety gates.
+
+## v0.14.174–v0.14.178 creator monetization
+- Three seller plans, central payment routing, Partner revenue sharing and per-course payout visibility form the creator-growth foundation.
+- Scale Partner acquisition only after real order, slip and payout E2E verification.
+
+## v0.14.172–v0.14.173 digital-product merchandising
+- Bundle creation and authoritative published counts support offer testing without treating draft inventory as demand.
+
+## v0.14.170–v0.14.171 baseline consolidation
+- Preserve product-form behavior and treat large legacy cleanup as infrastructure history, not conversion evidence.
+
+## v0.14.163–v0.14.169 LINE sales readiness
+- Progressed from verified connection and diagnostics to a secure human-handoff inbox and grounded consultative product sales.
+- Promote LINE as a sales channel only after real-message and order-path validation.
+
+
 
 ## v0.14.162 LINE activation gate
 - Require a successful LINE Verify before enabling Use webhook and testing one real message.

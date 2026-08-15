@@ -1,7 +1,13 @@
 # Customer Data Analysis — Patch Handoff
 
-Updated: 2026-08-10
-Build: v0.14.48
+Updated: 2026-08-15
+Build: v0.14.184
+
+## Historical continuity note — v0.14.184
+- ประวัติ v0.14.163–183 ถูกนำกลับเข้า Roadmap แล้ว แต่ไม่มี production customer dataset เพิ่มเข้ามาใน repository
+- ห้ามตีความสินค้าร่าง จำนวนไฟล์ หรือจำนวนสินค้าในคลังเป็นหลักฐานความต้องการซื้อ
+- v0.14.180 ถูก Revert หลังหน้าร้านขาว จึงไม่ใช่ baseline สำหรับเปรียบเทียบ conversion
+- การตัดสินใจด้านลูกค้ายังต้องใช้ aggregate events, paid orders, revenue และ ROAS จาก Production จริง
 
 ## Privacy rule
 Use aggregate/minimum-necessary business data. Do not copy names, email, phone, slip contents, tokens, API keys, IP addresses, or other unnecessary PII into patch planning documents.

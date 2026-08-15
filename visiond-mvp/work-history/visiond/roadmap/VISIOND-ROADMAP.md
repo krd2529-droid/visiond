@@ -1,7 +1,90 @@
 # VisionD Roadmap — Living Plan
 
-Updated: 2026-08-11
-Current build: v0.14.162
+Updated: 2026-08-15
+Current build: v0.14.184
+
+## v0.14.184 — Roadmap Historical Continuity (IMPLEMENTED)
+- รวมประวัติ v0.14.163–v0.14.183 จาก Git และ Patch Ledger กลับเข้าสู่ Roadmap กลาง
+- ระบุแพตที่ถูกย้อนกลับและงานที่ยังรอตรวจ Production ตามสถานะจริง
+
+## v0.14.183 — Mobile Menu + Product Status Pagination (IMPLEMENTED)
+- ย้ายเมนูมือถือเป็นแถบยาวใต้หัวเว็บ ไม่ชนเลขแพตช์
+- แยกตะกร้าวางจำหน่ายหน้าละ 10 และแบบร่างหน้าละ 5 พร้อม pagination คนละชุด
+
+## v0.14.182 — Storefront/Admin Category Count Parity (IMPLEMENTED)
+- ตัวนับหมวดหลังบ้านใช้เงื่อนไขสินค้าที่เผยแพร่เดียวกับหน้าบ้าน
+- ซ่อนหมวดประเภทซ้ำที่มี 0 สินค้าเมื่อมีหมวดประเภทเดียวกันใช้งานจริง
+
+## v0.14.181 — Minimal Production Version Repair (IMPLEMENTED)
+- ยืนยัน `visiond-mvp` เป็น Cloudflare Production tree
+- เปลี่ยนเฉพาะ VERSION และ badge WEB/ADMIN โดยไม่ซิงก์ Runtime จำนวนมาก
+
+## v0.14.180 — Full-tree Production Sync (REVERTED)
+- การซิงก์ไฟล์จำนวนมากทำให้หน้าเว็บเหลือเพียงเลขเวอร์ชันบนหน้าขาว
+- ย้อนทั้งชุดด้วย `eddde97`; ห้ามใช้ v0.14.180 เป็นฐาน Production
+- บทเรียนถาวร: ใช้ Delta ขนาดเล็กกับ Active tree และตรวจหน้าเว็บก่อนงานถัดไป
+
+## v0.14.179 — Production Tree + QA Hardening (IMPLEMENTED)
+- ระบุ Active Production tree, ซ่อม regression บน Windows และ requirement recheck
+- บังคับ cache version และเลขแพตช์ที่มองเห็นได้ทุกงาน
+
+## v0.14.178 — Course Partner Share Button (IMPLEMENTED)
+- หลังบ้านระบุตะกร้าแผน Partner และดูส่วนแบ่งรายตะกร้า โดยจำกัดสิทธิ์เฉพาะหลังบ้าน
+- การทดสอบออเดอร์จริงหลัง Deploy ยังเป็น Production QA
+
+## v0.14.177 — Vision 5 Partner Share Formula (IMPLEMENTED)
+- แบ่งยอด VisionD/ผู้สอน 50/50 ก่อน แล้วหัก API 1 บาทจากส่วนผู้สอน
+- ตัวอย่างราคา 100 บาทได้ VisionD 51 บาท / ผู้สอน 49 บาท พร้อม ledger และรอบจ่าย
+
+## v0.14.176 — Visible Version Runtime Source (IMPLEMENTED)
+- ทำ VERSION เป็นแหล่งเดียวสำหรับเลข Home, Admin และ Dashboard พร้อม cache refresh
+
+## v0.14.175 — Vision 5 Partner Money Flow (IMPLEMENTED)
+- Routing เงินเข้าบัญชีกลาง ตรวจสลิปส่วนกลาง และ ledger ส่วนแบ่งแบบ idempotent
+- เพิ่มยอดคงเหลือผู้สอนและบันทึกจ่ายหลังบ้าน; Bank/Slip E2E จริงยังรอ Production
+
+## v0.14.174 — Vision 5 Three Seller Plans (FOUNDATION IMPLEMENTED)
+- วางโครง 3 แผนผู้ขาย พร้อมกฎฟรี 3 คอร์ส คอร์สละไม่เกิน 5 EP
+- ระบบ Partner ledger/การจ่ายถูกทำต่อใน v0.14.175–178
+
+## v0.14.173 — Catalog Performance + Mobile Menu Counts (IMPLEMENTED)
+- ลดภาระ API และนับเฉพาะสินค้าที่เผยแพร่ พร้อมซ่อมเมนูมือถือ
+- การเทียบ D1 จริงต้องอาศัยสิทธิ์ Production
+
+## v0.14.172 — Bundle Deals Admin Builder (IMPLEMENTED)
+- เพิ่มเครื่องมือสร้างชุดสินค้า รวมไฟล์ ปก และคำอธิบายตามจำนวนในชุด
+- Catalog count audit ถูกทำต่อใน v0.14.173 และ v0.14.182
+
+## v0.14.171 — Product Form Contract (IMPLEMENTED)
+- เพิ่มสัญญาทดสอบฟอร์มสินค้า ป้องกันช่องกรอกและการบันทึกเดิมเสีย
+
+## v0.14.170 — Baseline Consolidation (IMPLEMENTED WITH LARGE LEGACY CLEANUP)
+- รวมฐาน LINE/Vision 5 และลด Runtime/CSS เก่าที่ซ้ำจำนวนมาก
+- เป็นการเปลี่ยนโครงใหญ่ในประวัติ ไม่ใช่รูปแบบ Delta ที่ใช้ในปัจจุบัน
+
+## v0.14.169 — Grounded Product Knowledge Sales (IMPLEMENTED)
+- LINE AI ใช้ข้อมูลสินค้าจริงและราคาเป็นบาท ตอบต่อเนื่องเชิงปรึกษา
+- ห้ามอ้างสถานะสั่งซื้อหรือส่งของที่ไม่มีจริง
+
+## v0.14.168 — Internal Mobile LINE Inbox (IMPLEMENTED)
+- เพิ่มบทสนทนา LINE, handoff, คนตอบ, push และคืนให้บอท โดยไม่เปิดเผย credentials
+
+## v0.14.167 — LINE Chat Status Refresh (IMPLEMENTED)
+- ทำสถานะ connected/running ให้ตรงกันหลังตั้งค่า โดยไม่คืน credentials
+
+## v0.14.166 — Persistent Mobile LINE Settings (IMPLEMENTED)
+- มือถือจำสถานะการตั้งค่า ส่วน credentials จริงเข้ารหัสและอยู่ฝั่ง Server
+
+## v0.14.165 — LINE Status Self-Heal (IMPLEMENTED)
+- ซ่อมสถานะหน้าแชตจากผล Verify จริงโดยไม่ต้องกรอก Token ใหม่
+
+## v0.14.164 — V Easy LINE Diagnostics (IMPLEMENTED)
+- เก็บข้อความก่อนเรียก AI และแสดง last_error/ความพร้อม AI/LINE
+
+## v0.14.163 — V Easy LINE AI Reply (IMPLEMENTED)
+- เชื่อม LINE webhook กับ AI/Reply API แยกร้านและกัน redelivery ตอบซ้ำ
+
+
 
 # v0.14.162 — LINE Verify Fast Path (IMPLEMENTED)
 - รวม endpoint และ Channel Secret เป็น D1 query เดียว
