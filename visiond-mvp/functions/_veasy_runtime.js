@@ -22,6 +22,11 @@ export async function ensureVEasyRuntimeSchema(env){
     `CREATE INDEX IF NOT EXISTS idx_veasy_conversation_shop ON veasy_conversations(shop_id,status,updated_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_veasy_chat_history ON veasy_chat_messages(shop_id,conversation_id,created_at DESC)`
   ];for(const statement of sql)await env.DB.prepare(statement).run();
+  const messageColumns=(await env.DB.prepare('PRAGMA table_info(veasy_chat_messages)').all()).results?.map(x=>x.name)||[];
+  if(!messageColumns.includes('message_type'))await env.DB.prepare("ALTER TABLE veasy_chat_messages ADD COLUMN message_type TEXT NOT NULL DEFAULT 'text'").run();
+  if(!messageColumns.includes('media_url'))await env.DB.prepare("ALTER TABLE veasy_chat_messages ADD COLUMN media_url TEXT NOT NULL DEFAULT ''").run();
+  if(!messageColumns.includes('media_mime'))await env.DB.prepare("ALTER TABLE veasy_chat_messages ADD COLUMN media_mime TEXT NOT NULL DEFAULT ''").run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v12_connect_platform_updated ON veasy_conversations(platform,updated_at DESC)').run();
 }
 
 export async function ownedActiveShop(env,userId,shopId){

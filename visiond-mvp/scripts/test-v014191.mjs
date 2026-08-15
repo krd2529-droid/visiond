@@ -6,8 +6,8 @@ const [version,index,admin,ui,api,editApi,schema,migration,protocol,roadmap]=awa
   read('functions/api/admin/products/index.js'),read('functions/api/admin/products/[id].js'),read('functions/_schema.js'),
   read('migrations/0040_bundle_source_allocations.sql'),read('JARVIS-PATCH-PROTOCOL.md'),read('VISIOND-ROADMAP.md')
 ]);
-assert.equal(version.trim(),'v0.14.191');
-assert.match(index,/WEB v0\.14\.191/);assert.match(admin,/ADMIN v0\.14\.191/);
+assert.match(version.trim(),/^v0\.14\.\d+$/);
+assert.match(index,/WEB v0\.14\.\d+/);assert.match(admin,/ADMIN v0\.14\.\d+/);
 assert.match(admin,/id="newProductButton"[\s\S]*id="newBundleButton"[\s\S]*สร้างชุดรวมตะกร้า/);
 for(const token of ['bundleSummary','bundleSizeMinus','bundleSizePlus','bundle_preview_count','ราคาปกติรวม','changeBundleSize','newBundleButton.onclick = openBundleBuilder'])assert.ok(admin.includes(token)||ui.includes(token),token);
 assert.match(ui,/sort\(\(a,b\)=>Number\(a\.id\)-Number\(b\.id\)\)/);

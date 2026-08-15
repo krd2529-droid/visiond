@@ -33,8 +33,8 @@ async function history(env,shopId,conversationId){
 }
 
 export async function processLineEvent(env,endpoint,event){
-  const externalEventId=clean(event?.webhookEventId,180),messageId=clean(event?.message?.id||externalEventId,180),replyToken=clean(event?.replyToken,180),text=clean(event?.message?.text,1200);
-  if(event?.type!=='message'||event?.message?.type!=='text'||!messageId||!replyToken||!text)return;
+  const externalEventId=clean(event?.webhookEventId,180),messageId=clean(event?.message?.id||externalEventId,180),replyToken=clean(event?.replyToken,180),messageType=event?.message?.type,text=clean(event?.message?.text,1200);
+  if(event?.type!=='message'||!['text','image'].includes(messageType)||!messageId||!replyToken||(messageType==='text'&&!text))return;
   await ensureVEasyRuntimeSchema(env);
   const source=event?.source||{},participant=clean(source.userId||source.groupId||source.roomId,180);
   if(!participant)throw new Error('LINE_SOURCE_MISSING');
@@ -45,10 +45,23 @@ export async function processLineEvent(env,endpoint,event){
     const participantHash=await sha256(`line:${participant}`);
     await env.DB.prepare(`INSERT INTO veasy_conversations(shop_id,id,platform,participant_hash,display_name) VALUES(?,?,'line',?,'ลูกค้า LINE') ON CONFLICT(shop_id,id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(endpoint.shop_id,conversationId,participantHash).run();
     const targetCiphertext=await encryptChannelValue(env,participant);
+    let mediaUrl='',mediaMime='';
+    if(messageType==='image'){
+      const token=await decryptChannelValue(env,endpoint.token_ciphertext),response=await fetch(`https://api-data.line.me/v2/bot/message/${encodeURIComponent(messageId)}/content`,{headers:{authorization:`Bearer ${token}`}});
+      if(!response.ok)throw new Error(`LINE_CONTENT_HTTP_${response.status}`);
+      mediaMime=clean(response.headers.get('content-type')||'image/jpeg',80);const key=`v12-connect/line/${endpoint.shop_id}/${crypto.randomUUID()}.${mediaMime.includes('png')?'png':'jpg'}`;
+      await env.FILES.put(key,await response.arrayBuffer(),{httpMetadata:{contentType:mediaMime}});mediaUrl=`/api/media/${key}`;
+    }
     await env.DB.batch([
       env.DB.prepare(`INSERT INTO veasy_conversation_controls(shop_id,conversation_id,mode,provider,target_ciphertext) VALUES(?,?,'bot','line',?) ON CONFLICT(shop_id,conversation_id) DO UPDATE SET target_ciphertext=excluded.target_ciphertext,updated_at=CURRENT_TIMESTAMP`).bind(endpoint.shop_id,conversationId,targetCiphertext),
-      env.DB.prepare(`INSERT OR IGNORE INTO veasy_chat_messages(id,shop_id,conversation_id,platform_message_id,role,content) VALUES(?,?,?,?, 'user',?)`).bind(crypto.randomUUID(),endpoint.shop_id,conversationId,messageId,text)
+      env.DB.prepare(`INSERT OR IGNORE INTO veasy_chat_messages(id,shop_id,conversation_id,platform_message_id,role,content,message_type,media_url,media_mime) VALUES(?,?,?,?, 'user',?,?,?,?)`).bind(crypto.randomUUID(),endpoint.shop_id,conversationId,messageId,messageType==='image'?'[รูปภาพ]':text,messageType,mediaUrl,mediaMime)
     ]);
+    if(messageType==='image'){
+      await env.DB.batch([
+        env.DB.prepare("UPDATE veasy_message_claims SET status='completed',completed_at=CURRENT_TIMESTAMP WHERE shop_id=? AND platform_message_id=?").bind(endpoint.shop_id,messageId),
+        env.DB.prepare("UPDATE veasy_webhook_events SET processing_status='processed',error_code='' WHERE endpoint_id=? AND external_event_id=?").bind(endpoint.id,externalEventId)
+      ]);return;
+    }
     const state=await env.DB.prepare("SELECT state FROM veasy_bot_state WHERE shop_id=?").bind(endpoint.shop_id).first(),control=await env.DB.prepare("SELECT mode FROM veasy_conversation_controls WHERE shop_id=? AND conversation_id=?").bind(endpoint.shop_id,conversationId).first();
     if(state?.state!=='running'||control?.mode==='human'){
       await env.DB.prepare("UPDATE veasy_message_claims SET status='completed',completed_at=CURRENT_TIMESTAMP WHERE shop_id=? AND platform_message_id=?").bind(endpoint.shop_id,messageId).run();

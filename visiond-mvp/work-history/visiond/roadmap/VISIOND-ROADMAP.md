@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.191
+Current build: v0.14.192
+
+## v0.14.192 — V12 V Connect Unified Inbox (IMPLEMENTED)
+- เพิ่มปุ่ม `V12 V Connect` ในงานหลักหลังบ้านและหน้า Inbox responsive สำหรับ Boss/Admin
+- รวมบทสนทนา LINE VisionD และ Facebook Page VisionD ที่อยู่ในฐานช่องทางเดิม พร้อมกรอง ค้นหา ดูข้อความ/รูป และรับช่วงจากบอท
+- LINE รองรับรับรูป ส่งข้อความ/รูป และใช้ Retry Key โดยไม่ส่ง Token หรือ participant ID ออกหน้าเว็บ
+- Facebook adapter สำหรับส่งข้อความ และ Broadcast Center ยังเป็นงานต่อ `v0.14.193`; Event Case ยังไม่ปิด
+- แผนเว็บไซต์ 2 อยู่สถานะ `PAUSED BY BOSS` จนกว่า V12 V Connect จะเสร็จ
 
 ## v0.14.191 — Standard Patch Loop + Basket Bundle Builder (IMPLEMENTED)
 - ทุกแพตช์และทุก Event Case ต้องใช้ลูปมาตรฐาน: `ตรวจโค้ด → แก้ → รันทดสอบ → เจอข้อผิดพลาด → แก้อีก → ทดสอบใหม่`

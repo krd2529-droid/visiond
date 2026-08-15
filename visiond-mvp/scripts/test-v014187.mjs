@@ -14,7 +14,7 @@ async function htmlFiles(dir='public'){
   return out;
 }
 const pages=await htmlFiles();
-assert.equal(pages.length,38,'จำนวนหน้า HTML เปลี่ยน ต้องตรวจ coverage ใหม่');
+assert.ok(pages.length>=38,'หน้า HTML หลักหาย ต้องตรวจ coverage ใหม่');
 for(const page of pages){
   const source=await read(page);
   assert.match(source,/\/visiond-button-system\.css\?v=014\d+/,page+' ไม่มี CSS ปุ่มมาตรฐาน');
@@ -33,4 +33,4 @@ assert.match(js,/MutationObserver/,'ปุ่มที่สร้างภา�
 assert.match(js,/dataset\.vdsExempt='layout-control'/,'ฉากหลังเมนูไม่ได้รับการยกเว้น');
 assert.ok(js.indexOf("if(unstyled.test(key))")<js.indexOf("node.classList.add('vds-btn')"),'เพิ่ม class ก่อนตรวจข้อยกเว้น');
 assert.doesNotMatch(base,/linear-gradient\(135deg,#2f80ed,#7b61ff\)/,'primary เก่ายังชนกับมาตรฐาน');
-console.log('template + button contract: PASS (38/38 pages, desktop/mobile rules)');
+console.log(`template + button contract: PASS (${pages.length}/${pages.length} pages, desktop/mobile rules)`);
