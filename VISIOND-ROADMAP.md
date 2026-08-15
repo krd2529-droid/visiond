@@ -201,3 +201,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - หลังบ้านแสดงปุ่ม `ส่วนแบ่งตะกร้าคอร์ส` เฉพาะแบบที่ 3 พาร์ตเนอร์ 50/50
 - กดดูยอดขาย ส่วนแบ่ง VisionD ค่า VisionD API ยอดผู้สอน และยอดรอจ่ายแยกตามตะกร้า
 - แสดงรายละเอียดรายออเดอร์และสถานะรอจ่าย/จ่ายแล้ว พร้อมเลขรอบจ่าย
+
+# Patch v0.14.179 — Production tree และ QA hardening
+
+- กำหนด repository root เป็น production source และแยก `visiond-mvp/` เป็น snapshot เก่า
+- แก้ regression tests บน Windows, Layer 2 recheck และ document-history validation
+- เพิ่ม cache version ให้ asset ที่ตกหล่น และทำเลขเวอร์ชันหน้าเว็บให้ตรงกับแพต

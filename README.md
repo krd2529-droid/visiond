@@ -1,6 +1,6 @@
 # VisionD MVP
 
-Current package: **v0.14.178** — active production source is the repository root; see `ACTIVE-PRODUCTION-TREE.md` and `patch-ledgers/v0.14.178.json`.
+Current package: **v0.14.179** — active production source is the repository root; see `ACTIVE-PRODUCTION-TREE.md` and `patch-ledgers/v0.14.179.json`.
 
 ## ตรวจสอบก่อน Deploy
 
