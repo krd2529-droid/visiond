@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.215
+Current build: v0.14.216
+
+## v0.14.216 — Partner API Phase 2 Customer and Sales Sync (IMPLEMENTED)
+
+- รับและซิงก์ลูกค้า ออเดอร์ ยอดขาย ชำระเงิน ยกเลิก และคืนเงินจากเว็บ 2
+- ใช้ External ID, Idempotency Key, Scope แยก และเข้ารหัสข้อมูลลูกค้า
+- ปฏิเสธรหัสผ่าน Token เต็ม ข้อมูลบัตร และข้อมูลธนาคาร
 
 ## v0.14.215 — Partner API Phase 1 Foundation (IMPLEMENTED)
 

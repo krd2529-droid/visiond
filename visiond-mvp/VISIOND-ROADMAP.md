@@ -1,7 +1,15 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.215
+Current build: v0.14.216
+
+## v0.14.216 — Partner API Phase 2 Customer and Sales Sync (IMPLEMENTED)
+
+- เพิ่ม API ซิงก์ลูกค้าและออเดอร์จากเว็บ 2 ด้วย Scope แยก `customers:write` และ `orders:write`
+- รองรับยอดขาย สถานะชำระเงิน การยกเลิก คืนเงิน และรายการสินค้า โดยเก็บจำนวนเงินเป็นสตางค์และสกุล THB
+- ป้องกันข้อมูลซ้ำด้วย External ID ต่อเว็บไซต์และ `Idempotency-Key`; Key เดิมกับ Payload เดิมคืนผลเดิม ส่วน Payload ต่างกันถูกปฏิเสธ
+- เข้ารหัสชื่อ อีเมล และโทรศัพท์แบบ AES-GCM และปฏิเสธ Password, Token เต็ม, ข้อมูลบัตร และข้อมูลธนาคารทุกระดับของ Payload
+- แสดงลูกค้า ออเดอร์ ยอดสุทธิ และยอดคืนเงินภายใน `ศูนย์ควบคุมเว็บพาร์ทเนอร์` จุดเดียว
 
 ## v0.14.215 — Partner API Phase 1 Foundation (IMPLEMENTED)
 

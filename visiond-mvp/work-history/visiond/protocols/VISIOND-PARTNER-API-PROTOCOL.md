@@ -6,4 +6,6 @@
 - งานเว็บ 2 ทุกระยะรวมอยู่ที่ปุ่ม `ศูนย์ควบคุมเว็บพาร์ทเนอร์` จุดเดียว
 - เชื่อมผ่าน Versioned API/Signed Event เท่านั้น
 - Credential ต่อเว็บไซต์เข้ารหัส แสดงครั้งเดียว เพิกถอนได้ และใช้ Least Privilege Scope
-- Phase 1 เปิดเฉพาะ `products:read` และ Metadata สินค้าที่เผยแพร่แล้ว
+- Phase 1 เปิด `products:read`; Phase 2 แยก `customers:write` และ `orders:write`
+- งานเขียนต้องมี External ID และ `Idempotency-Key`; Key เดิมห้ามสร้างข้อมูลซ้ำ
+- ห้ามรับ Password, Token เต็ม, ข้อมูลบัตร หรือข้อมูลธนาคาร และต้องเข้ารหัสข้อมูลระบุตัวลูกค้า
