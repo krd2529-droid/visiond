@@ -120,7 +120,7 @@ export async function onRequestPost(ctx) {
   }
   const promotion=await loadPromotion(ctx.env),normalProducts=orderedResults.filter(p=>p.product_kind!=='vision7-key'),promotedById=new Map(applyPromotion(normalProducts,promotion).map(p=>[Number(p.id),p])),pricedResults=orderedResults.map(p=>p.product_kind==='vision7-key'?{...p,original_price:p.price,sale_price:p.price,promotion_percent:0}:promotedById.get(Number(p.id))),
     subtotal = pricedResults.reduce((sum, p) => sum + Number(p.sale_price), 0),
-    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&p.product_kind!=='vision7-key'&&(!p.product_kind||p.product_kind==='product')),
+    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&p.category!=='bundle-deals'&&p.product_kind!=='vision7-key'&&(!p.product_kind||p.product_kind==='product')),
     discountableCount = discountableItems.length,
     discountRate =
       discountableCount >= 30
