@@ -460,3 +460,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.225 — Vision 14 Page Trace + Credit Cleaner (IMPLEMENTED · EVENT CASE CONTINUES)
 - เพิ่ม Raw/Clean Text รายหน้าและ Credit Cleaner โดย Source PDF เดิมไม่ถูกแก้ไข
 - มีทางนำเข้าข้อความที่ถอดแล้วและตรวจย้อนกลับ; ถัดไปทำ OCR/Text-layer extraction อัตโนมัติ
+# v0.14.226 — Vision 14 Automatic PDF Extraction + OCR Retry (IMPLEMENTED · EVENT CASE CONTINUES)
+- อ่าน Text Layer อัตโนมัติและ OCR เฉพาะหน้าสแกน พร้อมสถานะ/Retry รายหน้า
+- ถัดไปทำสรุปเต็มรายเล่มและ PDF สอนของจาวิส

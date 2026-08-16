@@ -27,10 +27,14 @@ export function ensureVision14Schema(env){
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS vision14_source_pages (
       source_id TEXT NOT NULL,page_number INTEGER NOT NULL,raw_text TEXT NOT NULL,clean_text TEXT NOT NULL,
       removed_credit_lines TEXT NOT NULL DEFAULT '[]',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(source_id,page_number),
+      extraction_method TEXT NOT NULL DEFAULT 'manual',extraction_status TEXT NOT NULL DEFAULT 'success',extraction_error TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(source_id,page_number),
       FOREIGN KEY(source_id) REFERENCES vision14_sources(id) ON DELETE CASCADE
     )`).run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_pages_source ON vision14_source_pages(source_id,page_number)').run();
+    const pageColumns=(await env.DB.prepare('PRAGMA table_info(vision14_source_pages)').all()).results.map(column=>column.name);
+    if(!pageColumns.includes('extraction_method'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_method TEXT NOT NULL DEFAULT 'manual'").run();
+    if(!pageColumns.includes('extraction_status'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_status TEXT NOT NULL DEFAULT 'success'").run();
+    if(!pageColumns.includes('extraction_error'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_error TEXT NOT NULL DEFAULT ''").run();
     })().catch(error=>{readyByDatabase.delete(env.DB);throw error});
     readyByDatabase.set(env.DB,ready);
   }

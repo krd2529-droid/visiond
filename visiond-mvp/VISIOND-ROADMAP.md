@@ -487,3 +487,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่ม Identity/Credit Cleaner สำหรับชื่อผู้จัดทำ สำนักพิมพ์ เครดิต ISBN URL และอีเมล พร้อมประวัติบรรทัดที่นำออก
 - เพิ่มหน้าจอนำเข้าข้อความที่ถอดแล้ว 1–500 หน้าและตรวจย้อนกลับข้อความสะอาด; OCR อัตโนมัติยังเป็นงานแพตถัดไป
 - งานที่เหลือ: OCR/Text-layer extraction อัตโนมัติ, สรุปเต็ม, PDF สอนของจาวิส, Dedup/MIX และ Vision 13
+# v0.14.226 — Vision 14 Automatic PDF Extraction + OCR Retry (IMPLEMENTED · EVENT CASE CONTINUES)
+- PDF.js อ่าน Text Layer อัตโนมัติใน Browser ของ Boss โดยไม่ส่ง PDF ทั้งเล่มออกนอกระบบ
+- หน้าที่ไม่มีข้อความถูก Render เป็น JPEG และส่ง Backend OCR ด้วย Secret ฝั่ง Cloudflare; ไม่ฝังคีย์ใน Frontend/Git
+- เก็บ method/status/error รายหน้า แสดงหน้าที่ค้างและลองใหม่เฉพาะ failed/ocr-pending ได้
+- ถัดไป: สรุปเต็มรายเล่มและ PDF สอนของจาวิส
