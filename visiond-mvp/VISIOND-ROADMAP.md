@@ -482,3 +482,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - จำกัดการเข้าถึงเฉพาะ Boss, รับเฉพาะ PDF ไม่เกิน 100 MB และลบ R2 คืนเมื่อบันทึกฐานข้อมูลล้มเหลว
 - เพิ่มสถานะสิทธิ์ owned / PLR / Public Domain / licensed / reference-only และล็อก reference-only ไม่ให้ผ่านด่านขาย
 - งาน Event Case ที่เหลือ: ถอดข้อความผูกเลขหน้า, Credit Cleaner, สรุปเต็ม, PDF สอนของจาวิส, Dedup/MIX และส่งเข้า Vision 13
+# v0.14.225 — Vision 14 Page Trace + Credit Cleaner (IMPLEMENTED · EVENT CASE CONTINUES)
+- เก็บข้อความดิบและข้อความสะอาดแยกกันตาม Source ID + เลขหน้า โดยไม่แก้ PDF ต้นฉบับ
+- เพิ่ม Identity/Credit Cleaner สำหรับชื่อผู้จัดทำ สำนักพิมพ์ เครดิต ISBN URL และอีเมล พร้อมประวัติบรรทัดที่นำออก
+- เพิ่มหน้าจอนำเข้าข้อความที่ถอดแล้ว 1–500 หน้าและตรวจย้อนกลับข้อความสะอาด; OCR อัตโนมัติยังเป็นงานแพตถัดไป
+- งานที่เหลือ: OCR/Text-layer extraction อัตโนมัติ, สรุปเต็ม, PDF สอนของจาวิส, Dedup/MIX และ Vision 13

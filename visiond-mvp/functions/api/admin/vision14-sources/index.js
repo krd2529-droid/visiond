@@ -13,7 +13,7 @@ async function authorize(ctx){
 
 export async function onRequestGet(ctx){
   const auth=await authorize(ctx);if(auth.error)return auth.error;
-  const items=(await ctx.env.DB.prepare(`SELECT s.id,s.title,s.original_file_name,s.mime_type,s.file_size,s.rights_status,s.rights_note,s.processing_status,s.sale_eligible,s.created_at,s.updated_at,u.name created_by_name FROM vision14_sources s LEFT JOIN users u ON u.id=s.created_by ORDER BY s.created_at DESC LIMIT 200`).all()).results||[];
+  const items=(await ctx.env.DB.prepare(`SELECT s.id,s.title,s.original_file_name,s.mime_type,s.file_size,s.rights_status,s.rights_note,s.processing_status,s.sale_eligible,s.created_at,s.updated_at,u.name created_by_name,(SELECT COUNT(*) FROM vision14_source_pages p WHERE p.source_id=s.id) extracted_pages,(SELECT COALESCE(SUM(json_array_length(p.removed_credit_lines)),0) FROM vision14_source_pages p WHERE p.source_id=s.id) removed_credit_lines FROM vision14_sources s LEFT JOIN users u ON u.id=s.created_by ORDER BY s.created_at DESC LIMIT 200`).all()).results||[];
   return json({items,rights:V14_RIGHTS.map(value=>({value,label:V14_RIGHT_LABELS[value]}))},200,headers);
 }
 

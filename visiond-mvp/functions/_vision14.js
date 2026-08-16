@@ -24,6 +24,13 @@ export function ensureVision14Schema(env){
     )`).run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_sources_created ON vision14_sources(created_at DESC)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_sources_rights ON vision14_sources(rights_status,sale_eligible)').run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS vision14_source_pages (
+      source_id TEXT NOT NULL,page_number INTEGER NOT NULL,raw_text TEXT NOT NULL,clean_text TEXT NOT NULL,
+      removed_credit_lines TEXT NOT NULL DEFAULT '[]',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(source_id,page_number),
+      FOREIGN KEY(source_id) REFERENCES vision14_sources(id) ON DELETE CASCADE
+    )`).run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_pages_source ON vision14_source_pages(source_id,page_number)').run();
     })().catch(error=>{readyByDatabase.delete(env.DB);throw error});
     readyByDatabase.set(env.DB,ready);
   }
@@ -31,3 +38,6 @@ export function ensureVision14Schema(env){
 }
 
 export const canSellWithRights=status=>['owned','plr','public_domain','licensed'].includes(status);
+
+const creditLinePatterns=[/^(ผู้เขียน|เขียนโดย|ผู้เรียบเรียง|เรียบเรียงโดย|ผู้จัดทำ|จัดทำโดย|บรรณาธิการ|แปลโดย|ผู้แปล)\s*[:：]?/iu,/^(สำนักพิมพ์|จัดพิมพ์โดย|ผลิตโดย|บริษัท|ห้างหุ้นส่วน|พิมพ์ที่|ครั้งที่พิมพ์|สงวนลิขสิทธิ์|ลิขสิทธิ์)\s*[:：]?/iu,/^(isbn|copyright|published by|publisher|written by|author|editor|credits?)\s*[:：]?/iu,/(?:https?:\/\/|www\.)\S+/iu,/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/iu,/\bISBN(?:-1[03])?\s*:?\s*[0-9Xx-]{10,}\b/iu];
+export function cleanVision14PageText(value){const raw=String(value||'').replaceAll('\r\n','\n').replaceAll('\r','\n').trim(),removed=[];const kept=raw.split('\n').map(line=>line.trim()).filter(line=>{if(!line)return true;if(creditLinePatterns.some(pattern=>pattern.test(line))){removed.push(line.slice(0,500));return false}return true});return {raw_text:raw,clean_text:kept.join('\n').replace(/\n{3,}/g,'\n\n').trim(),removed_credit_lines:removed}}

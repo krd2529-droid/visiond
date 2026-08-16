@@ -457,3 +457,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่มคลัง PDF ต้นฉบับและ Rights Gate ในหลังบ้านสำหรับ Vision 14
 - `reference_only` ถูกล็อกไม่ให้ส่งไป Vision 13 หรือสร้างสินค้าขาย; `licensed` ต้องมีหลักฐานอ้างอิง
 - ถัดไปต้องทำ Text Extraction + Page Trace + Identity/Credit Cleaner ตาม Event Case เดิม
+# v0.14.225 — Vision 14 Page Trace + Credit Cleaner (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่ม Raw/Clean Text รายหน้าและ Credit Cleaner โดย Source PDF เดิมไม่ถูกแก้ไข
+- มีทางนำเข้าข้อความที่ถอดแล้วและตรวจย้อนกลับ; ถัดไปทำ OCR/Text-layer extraction อัตโนมัติ
