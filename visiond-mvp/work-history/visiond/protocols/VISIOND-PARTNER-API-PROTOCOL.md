@@ -9,3 +9,4 @@
 - Phase 1 เปิด `products:read`; Phase 2 แยก `customers:write` และ `orders:write`
 - งานเขียนต้องมี External ID และ `Idempotency-Key`; Key เดิมห้ามสร้างข้อมูลซ้ำ
 - ห้ามรับ Password, Token เต็ม, ข้อมูลบัตร หรือข้อมูลธนาคาร และต้องเข้ารหัสข้อมูลระบุตัวลูกค้า
+- Sandbox ต้องแยกจากข้อมูล Production และประวัติต้องปิดบัง Credential, ข้อมูลส่วนตัว, External ID และ Idempotency Key

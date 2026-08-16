@@ -14,6 +14,7 @@
 9. API เขียนข้อมูลทุกคำขอต้องมี External ID และ Header `Idempotency-Key`; Key เดิมกับ Payload ต่างกันต้องตอบ Conflict และห้ามเขียนซ้ำ
 10. ห้ามรับหรือเก็บ Password/Passcode, Access/Refresh Token เต็ม, API Key/Client Secret, เลขบัตร/CVV/วันหมดอายุ หรือบัญชี/เส้นทางธนาคารใน Payload ทุกระดับ
 11. ข้อมูลระบุตัวลูกค้าต้องเข้ารหัส AES-GCM; จำนวนเงินใช้จำนวนเต็มหน่วยสตางค์ สกุล THB และตรวจยอดรายการ/ส่วนลด/คืนเงินก่อนเขียน
+12. Sandbox ต้องแยกจากข้อมูล Production, ห้ามเขียนตารางลูกค้า/ออเดอร์จริง และประวัติต้องปิดบัง Credential, ข้อมูลส่วนตัว, External ID และ Idempotency Key
 
 ## Phase 1 Contract
 
@@ -31,3 +32,10 @@
 - Required header: `Idempotency-Key` ความยาว 8–100 ตัวอักษร
 - ใช้ `external_customer_id`, `external_order_id` และ `external_refund_id` ป้องกันทรัพยากรซ้ำต่อเว็บไซต์
 - Admin data remains inside `/partner-api.html`; no separate backend control button is allowed.
+
+## Phase 3 Sandbox Contract
+
+- Admin Sandbox: `GET|POST /api/admin/partner-websites/{id}/sandbox`
+- Scenarios: `customer`, `order`, `payment`, `cancellation`, `refund`
+- ทดสอบ Scope, External ID, Idempotency Key และ Replay/Conflict โดยไม่เรียกหรือแก้ข้อมูล Production
+- ประวัติแสดงเฉพาะค่าปิดบังและผลตรวจสอบ ห้ามแสดง Client Secret, Token เต็ม หรือข้อมูลส่วนตัว

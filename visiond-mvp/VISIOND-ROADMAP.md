@@ -1,7 +1,15 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.216
+Current build: v0.14.217
+
+## v0.14.217 — Partner API Phase 3 Sandbox (IMPLEMENTED)
+
+- เพิ่ม Sandbox ภายในศูนย์ควบคุมเว็บพาร์ทเนอร์สำหรับจำลองลูกค้า ออเดอร์ ชำระเงิน ยกเลิก และคืนเงิน
+- ตรวจ Scope, External ID และ Idempotency Key โดยไม่เขียนข้อมูลลงตารางลูกค้า/ออเดอร์ Production
+- เก็บประวัติ Request/Response สูงสุด 50 รายการต่อการแสดงผล โดยปิดบัง Credential, External ID, Idempotency Key และข้อมูลส่วนตัว
+- Key เดิมกับเหตุการณ์/External ID เดิมแสดง Idempotent Replay; Key เดิมกับข้อมูลต่างกันตอบ Conflict
+- หน้า Sandbox รองรับมือถือและคงอยู่ในปุ่มศูนย์ควบคุมเว็บพาร์ทเนอร์จุดเดียว
 
 ## v0.14.216 — Partner API Phase 2 Customer and Sales Sync (IMPLEMENTED)
 

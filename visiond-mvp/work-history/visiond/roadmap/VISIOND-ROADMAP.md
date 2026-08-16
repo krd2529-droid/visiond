@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.216
+Current build: v0.14.217
+
+## v0.14.217 — Partner API Phase 3 Sandbox (IMPLEMENTED)
+
+- เพิ่ม Sandbox จำลอง 5 เหตุการณ์ ตรวจ External ID/Idempotency และแสดงประวัติที่ปิดบังข้อมูล โดยไม่ปน Production
 
 ## v0.14.216 — Partner API Phase 2 Customer and Sales Sync (IMPLEMENTED)
 
