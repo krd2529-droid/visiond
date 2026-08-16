@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.203
+Current build: v0.14.204
+
+## v0.14.204 — Broadcast Image Delivery (IMPLEMENTED)
+- Facebook Broadcast อัปโหลดรูปตรง Meta และส่งด้วย attachment_id
+- LINE Broadcast ใช้ URL รูปสุ่มที่เปิดชั่วคราวไม่เกิน 2 วัน
 
 ## v0.14.203 — Broadcast Recipient Picker (IMPLEMENTED)
 - เลือกลูกค้าจากชื่อ/ร้าน/ช่องทางแทนกรอก Conversation ID และแสดงจำนวนที่เลือก
