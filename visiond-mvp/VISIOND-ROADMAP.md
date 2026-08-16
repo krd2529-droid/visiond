@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.209
+Current build: v0.14.210
+
+## v0.14.210 — Home Bundle Deals Catalog (IMPLEMENTED)
+
+- หน้าแรกมีแคตตาล็อก `โปรยกชุด` แยกอยู่เหนือแคตตาล็อกสินค้าดิจิทัลแนะนำ
+- แคตตาล็อกใหม่นี้รับเฉพาะสินค้าที่ Backend ส่งมาพร้อม `category = bundle-deals` และซ่อนทั้งส่วนเมื่อยังไม่มีสินค้า
+- หน้าแรกตัด `bundle-deals` ออกจากแคตตาล็อกสินค้าดิจิทัลเดิมเพื่อไม่ให้แสดงซ้ำ
+- ปุ่มใส่รถเข็น สไลด์รูป สถานะซื้อแล้ว และการบล็อกซื้อซ้ำใช้ handler ชุดเดียวกับสินค้าเดิมทั้ง desktop/mobile
 
 ## v0.14.209 — Mixed Promotion Bundle (IMPLEMENTED)
 

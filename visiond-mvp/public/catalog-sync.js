@@ -4,8 +4,9 @@ import('/nav-account.js?v=014196');
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
-  const grid = document.querySelector(".vd-grid");
+  const grid = document.querySelector("#homeDigitalProductsGrid")||document.querySelector(".vd-grid");
   if (!grid) return;
+  const promotionSection=document.querySelector('#homeBundleDeals'),promotionGrid=document.querySelector('#homeBundleDealsGrid'),catalogRoots=()=>[grid,promotionGrid].filter(Boolean);
   if (!grid.children.length) grid.innerHTML = '<div class="product-loading"><b>กำลังเปิดแคตตาล็อก…</b><p>กำลังโหลดรายการสินค้า กรุณารอสักครู่</p></div>';
   document.querySelector("#vd-catalog-slider-style")?.remove();
   if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014196">');
@@ -154,8 +155,7 @@ import('/nav-account.js?v=014196');
     );
   };
   const syncCartButtons = () =>
-    grid
-      .querySelectorAll("[data-add-cart]")
+    catalogRoots().flatMap(root=>[...root.querySelectorAll("[data-add-cart]")])
       .forEach(
         (button) =>
           (button.textContent = getCart().some(
@@ -236,22 +236,23 @@ import('/nav-account.js?v=014196');
           new URL(a.href, location.origin).searchParams.get("slug"),
         ),
       );
+      const cardMarkup=(p)=>`<article class="vd-card${Number(p.promotion_percent)>0?' has-promo':''}" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom">${priceMarkup(p)}<div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`;
+      const promotionProducts=products.filter(product=>product.category==='bundle-deals');
+      [...grid.querySelectorAll('.vd-card')].forEach(card=>{const link=card.querySelector('a[href*="slug="]'),slug=link&&new URL(link.href,location.origin).searchParams.get('slug');if(bySlug.get(slug)?.category==='bundle-deals')card.remove()});
+      if(promotionGrid&&promotionSection){promotionGrid.innerHTML=promotionProducts.map(cardMarkup).join('');promotionSection.hidden=!promotionProducts.length}
       grid.insertAdjacentHTML(
         "beforeend",
         products
-          .filter((p) => !existing.has(p.slug) && !(location.pathname === "/" && p.slug === "course-selling-rights"))
-          .map(
-            (p) =>
-              `<article class="vd-card${Number(p.promotion_percent)>0?' has-promo':''}" data-category="${esc(catalogGroup(p))}" data-search="${esc(`${p.title || ""} ${p.slug || ""} ${p.category || ""} ${p.category_label || ""} ${p.short_description || ""} ${p.description || ""}`.toLocaleLowerCase("th-TH"))}">${coverMarkup(p)}<div class="vd-info"><small>VD-${String(p.id).padStart(3, "0")} · ผู้เข้าชม ${new Intl.NumberFormat("th-TH").format(Number(p.view_count) || 0)} ครั้ง</small><h2><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h2><div class="vd-bottom">${priceMarkup(p)}<div class="vd-card-actions"><button type="button" data-add-cart="${esc(p.slug)}">ใส่รถเข็น</button><a href="/product.html?slug=${encodeURIComponent(p.slug)}">ดูสินค้า</a></div></div></div></article>`,
-          )
+          .filter((p) => (!promotionGrid||p.category!=='bundle-deals')&&!existing.has(p.slug) && !(location.pathname === "/" && p.slug === "course-selling-rights"))
+          .map(cardMarkup)
           .join(""),
       );
-      grid.querySelectorAll(".vd-card").forEach((card) => {
+      catalogRoots().flatMap(root=>[...root.querySelectorAll(".vd-card")]).forEach((card) => {
         card.classList.add("vds-card", "vds-card--product");
         card.querySelector("[data-add-cart]")?.classList.add("vds-btn", "vds-btn--small", "vds-btn--promotion");
         card.querySelector(".vd-card-actions a")?.classList.add("vds-btn", "vds-btn--small", "vds-btn--secondary");
       });
-      grid.querySelectorAll(".vd-cover-slider").forEach((slider) => {
+      catalogRoots().flatMap(root=>[...root.querySelectorAll(".vd-cover-slider")]).forEach((slider) => {
         slider.querySelectorAll(".vd-slide-prev").forEach((button, index) => { if (index) button.remove(); });
         slider.querySelectorAll(".vd-slide-next").forEach((button, index) => { if (index) button.remove(); });
         const slides = [...slider.querySelectorAll("[data-slide]")],
@@ -273,7 +274,7 @@ import('/nav-account.js?v=014196');
           show(Number(slider.dataset.catalogSlider) + 1);
         };
       });
-      grid.querySelectorAll("[data-add-cart]").forEach((button) => {
+      catalogRoots().flatMap(root=>[...root.querySelectorAll("[data-add-cart]")]).forEach((button) => {
         const slug = button.dataset.addCart;
         if (getCart().some((item) => item.slug === slug))
           button.textContent = "อยู่ในรถเข็นแล้ว";
@@ -328,7 +329,7 @@ import('/nav-account.js?v=014196');
             purchaseBySlug.set(item.slug, order);
         }),
       );
-      grid.querySelectorAll(".vd-card").forEach((card) => {
+      catalogRoots().flatMap(root=>[...root.querySelectorAll(".vd-card")]).forEach((card) => {
         const link = card.querySelector('a[href*="slug="]');
         if (!link) return;
         const slug = new URL(link.href, location.origin).searchParams.get(
