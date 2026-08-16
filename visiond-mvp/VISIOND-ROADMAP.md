@@ -499,3 +499,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ตรวจตะกร้ารวมเดิม เลือกรูปจากสมาชิกชุด และแก้เฉพาะ cover/preview ของ Product ID เดิม
 - เก็บ Snapshot ก่อน–หลัง; ไม่เปลี่ยน Slug, created_at, ราคา, หมวด, หน้า, ลำดับ หรือสมาชิกชุด
 - แพตถัดไปเพิ่มตัวจำแนกใบงาน/หน้าปก/ลายเซ็ต/เงื่อนไข และเลือกรูปทดแทนอัตโนมัติ
+# v0.14.228 — Bundle Preview Classifier + PDF Replacement (IMPLEMENTED · URGENT EVENT CASE COMPLETE)
+- ตรวจรูปอัตโนมัติทั้งตอนสร้างชุดใหม่และชุดเดิม พร้อมคะแนนความเป็นใบงานและให้ Boss ตรวจด้วยตาก่อนบันทึก
+- ค้นหน้าที่เหมาะจาก PDF สมาชิกใน Browser อัปโหลดเฉพาะรูปที่เลือก และแก้ Product ID เดิม
+- เพิ่มประวัติ Revision และปุ่มย้อนรูป โดยไม่เปลี่ยน Slug ราคา หมวด สมาชิก หรือลำดับ

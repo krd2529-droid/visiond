@@ -1,4 +1,4 @@
-import("/facebook-chat.js?v=014227");
+import("/facebook-chat.js?v=014228");
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (value) =>
@@ -787,6 +787,8 @@ bundleSizeMinus.onclick=()=>changeBundleSize(-1);
 bundleSizePlus.onclick=()=>changeBundleSize(1);
 productEditor.elements.bundle_size.onchange=()=>changeBundleSize();
 productEditor.elements.bundle_preview_count.onchange=updateBundleCount;
+async function scoreBundleImage(img){if(!img.complete)await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject});const canvas=document.createElement('canvas'),size=80;canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,size,size);const pixels=ctx.getImageData(0,0,size,size).data;let light=0,saturation=0,edges=0,last=0;for(let i=0;i<pixels.length;i+=4){const max=Math.max(pixels[i],pixels[i+1],pixels[i+2]),min=Math.min(pixels[i],pixels[i+1],pixels[i+2]),lum=(max+min)/510;light+=lum;saturation+=(max-min)/255;if(i&&Math.abs(lum-last)>.18)edges++;last=lum}const count=pixels.length/4;return Math.round(Math.max(0,Math.min(100,(light/count*.48+(1-saturation/count)*.27+Math.min(edges/count*4,1)*.25)*100)))}
+bundleAutoAnalyze.onclick=async()=>{const figures=[...bundlePreviewGallery.querySelectorAll('figure')],limit=Number(productEditor.elements.bundle_preview_count.value)||1;setMessage(`กำลังตรวจรูป ${figures.length} รูป…`);for(const figure of figures){try{figure.dataset.score=await scoreBundleImage(figure.querySelector('img'));figure.title=Number(figure.dataset.score)>=62?`แนะนำเป็นใบงาน ${figure.dataset.score}/100`:`ควรตรวจด้วยตา ${figure.dataset.score}/100`}catch{figure.dataset.score=0}}figures.sort((a,b)=>Number(b.dataset.score)-Number(a.dataset.score)).forEach(figure=>bundlePreviewGallery.append(figure));bundlePreviewGallery.querySelectorAll('input').forEach(input=>input.checked=false);figures.slice(0,limit).forEach(figure=>figure.querySelector('input').checked=true);productEditor.elements.bundle_preview_urls.value=figures.slice(0,limit).map(figure=>figure.querySelector('input').value).join("\n");bundlePreviewCount.textContent=`เลือกอัตโนมัติ ${Math.min(limit,figures.length)} รูป · กรุณาตรวจด้วยตา`;setMessage('ตรวจรูปเสร็จแล้ว กรุณาดูรูปที่เลือกก่อนบันทึก')};
 productEditor.elements.price.addEventListener("input",()=>{if(bundleMode)updateBundleCount()});
 function openBundleBuilder() {
   resetProductForm();
@@ -1608,8 +1610,8 @@ async function saveRole(id) {
 }
 showAdminNotice();
 init();
-import('/mouse-ui.js?v=014227');
-import('/i18n.js?v=014227');
+import('/mouse-ui.js?v=014228');
+import('/i18n.js?v=014228');
 
 document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
 

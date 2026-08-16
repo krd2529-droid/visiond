@@ -468,3 +468,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่มปุ่มตรวจรูปในหน้าจัดการสินค้าและซ่อมรูป Product ID เดิมพร้อม Snapshot
 - ครอบคลุมการตรวจและเลือกรูปก่อนสร้างตะกร้ารวมใหม่ด้วย
 - ถัดไปทำ AI Classification และเลือกใบงานทดแทนอัตโนมัติ
+# v0.14.228 — Bundle Preview Classifier + PDF Replacement (IMPLEMENTED · URGENT EVENT CASE COMPLETE)
+- ตรวจรูปอัตโนมัติสำหรับชุดใหม่/เดิม ค้นรูปจาก PDF และย้อน Revision ได้
+- Vision 14 ยังอยู่สถานะ PAUSED BY BOSS จนกว่าจะสั่งกลับไปทำต่อ
