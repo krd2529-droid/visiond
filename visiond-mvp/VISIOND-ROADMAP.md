@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.202
+Current build: v0.14.203
+
+## v0.14.203 — Broadcast Recipient Picker (IMPLEMENTED)
+- เลือกลูกค้าจากชื่อ/ร้าน/ช่องทางแทนกรอก Conversation ID และแสดงจำนวนที่เลือก
+- ซ่อนบัญชี LINE เมื่อใช้ Facebook และบังคับส่งทดสอบข้อมูลชุดเดียวกันก่อนส่งจริง
 
 ## v0.14.202 — Facebook Direct Image Upload (IMPLEMENTED)
 - เปลี่ยนรูปขาออก Facebook จากการให้ Meta ดาวน์โหลด URL เป็นอัปโหลดไฟล์ตรงไป `message_attachments`
