@@ -503,3 +503,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ตรวจรูปอัตโนมัติทั้งตอนสร้างชุดใหม่และชุดเดิม พร้อมคะแนนความเป็นใบงานและให้ Boss ตรวจด้วยตาก่อนบันทึก
 - ค้นหน้าที่เหมาะจาก PDF สมาชิกใน Browser อัปโหลดเฉพาะรูปที่เลือก และแก้ Product ID เดิม
 - เพิ่มประวัติ Revision และปุ่มย้อนรูป โดยไม่เปลี่ยน Slug ราคา หมวด สมาชิก หรือลำดับ
+# v0.14.229 — Vision 14 Full-book Summary + Page Trace (IMPLEMENTED · EVENT CASE CONTINUES)
+- กลับมาทำ Vision 14 หลังปิดงานด่วนตรวจรูปตะกร้ารวม
+- สรุปจาก clean text เท่านั้น แยก Record จาก PDF/Raw Text และมีเลขหน้าอ้างอิงทุกประเด็น
+- แสดงจำนวนหน้าครอบคลุมและหน้าที่ OCR/Extraction ขาดก่อนนำไปสร้าง PDF สอนของจาวิส
+- ถัดไปสร้าง Teaching PDF จาก Summary ที่ Boss ตรวจแล้ว

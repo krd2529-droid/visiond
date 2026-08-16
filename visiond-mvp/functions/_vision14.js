@@ -31,6 +31,8 @@ export function ensureVision14Schema(env){
       FOREIGN KEY(source_id) REFERENCES vision14_sources(id) ON DELETE CASCADE
     )`).run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_pages_source ON vision14_source_pages(source_id,page_number)').run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS vision14_book_summaries(id INTEGER PRIMARY KEY AUTOINCREMENT,source_id TEXT NOT NULL UNIQUE,overview TEXT NOT NULL DEFAULT '',sections TEXT NOT NULL DEFAULT '[]',keywords TEXT NOT NULL DEFAULT '[]',covered_pages INTEGER NOT NULL DEFAULT 0,total_pages INTEGER NOT NULL DEFAULT 0,missing_pages TEXT NOT NULL DEFAULT '[]',summary_method TEXT NOT NULL DEFAULT 'extractive',created_by INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(source_id) REFERENCES vision14_sources(id) ON DELETE CASCADE,FOREIGN KEY(created_by) REFERENCES users(id))`).run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_summaries_source ON vision14_book_summaries(source_id,updated_at DESC)').run();
     const pageColumns=(await env.DB.prepare('PRAGMA table_info(vision14_source_pages)').all()).results.map(column=>column.name);
     if(!pageColumns.includes('extraction_method'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_method TEXT NOT NULL DEFAULT 'manual'").run();
     if(!pageColumns.includes('extraction_status'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_status TEXT NOT NULL DEFAULT 'success'").run();

@@ -471,3 +471,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.228 — Bundle Preview Classifier + PDF Replacement (IMPLEMENTED · URGENT EVENT CASE COMPLETE)
 - ตรวจรูปอัตโนมัติสำหรับชุดใหม่/เดิม ค้นรูปจาก PDF และย้อน Revision ได้
 - Vision 14 ยังอยู่สถานะ PAUSED BY BOSS จนกว่าจะสั่งกลับไปทำต่อ
+# v0.14.229 — Vision 14 Full-book Summary + Page Trace (IMPLEMENTED · EVENT CASE CONTINUES)
+- Boss สั่งทำต่อ จึง RESUME Vision 14 และสร้างสรุปเต็มรายเล่มจากข้อความสะอาด
+- ทุกประเด็นมีเลขหน้าอ้างอิง พร้อม Coverage และ Missing Pages
+- ถัดไปสร้าง PDF สอนของจาวิส
