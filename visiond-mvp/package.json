@@ -188,7 +188,8 @@
     "test:v014220": "node scripts/test-v014220.mjs",
     "test:v014221": "node scripts/test-v014221.mjs",
     "test:v014222": "node scripts/test-v014222.mjs",
-    "security:partner-api": "node scripts/partner-api-security-gate.mjs"
+    "security:partner-api": "node scripts/partner-api-security-gate.mjs",
+    "test:v014223": "node scripts/test-v014223.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

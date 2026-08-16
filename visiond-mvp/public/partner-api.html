@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ศูนย์ควบคุมเว็บพาร์ทเนอร์ | VisionD</title>
-  <link rel="stylesheet" href="/partner-api.css?v=014222">
-  <link rel="stylesheet" href="/partner-sandbox.css?v=014222">
-  <link rel="stylesheet" href="/partner-webhook.css?v=014222">
-  <link rel="stylesheet" href="/visiond-button-system.css?v=014222">
-  <script src="/visiond-button-system.js?v=014222" defer></script>
+  <link rel="stylesheet" href="/partner-api.css?v=014223">
+  <link rel="stylesheet" href="/partner-sandbox.css?v=014223">
+  <link rel="stylesheet" href="/partner-webhook.css?v=014223">
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014223">
+  <script src="/visiond-button-system.js?v=014223" defer></script>
 </head>
 <body>
   <header class="partner-head">
     <a href="/admin.html">← หลังบ้าน</a>
     <div><small>VISIOND CONTROL</small><h1>ศูนย์ควบคุมเว็บพาร์ทเนอร์</h1><p>ศูนย์กลางงานเว็บ 2 · เว็บไซต์ ลูกค้า ยอดขาย Sandbox Signed Webhook Retry Dead Letter สุขภาพ API และ E2E</p></div>
-    <span>v0.14.222</span>
+    <span>v0.14.223</span>
   </header>
   <main class="partner-shell">
     <section class="partner-card">
@@ -56,9 +56,10 @@ X-Request-ID: &lt;REQUEST_ID&gt;</pre></details>
       <details><summary>Signed Webhook</summary><pre>v1=HMAC_SHA256(client_secret, timestamp + "." + raw_body)</pre></details>
       <p><b>ข้อมูลต้องห้าม:</b> Password, Token เต็ม, API Key/Secret ใน Payload, ข้อมูลบัตร และข้อมูลธนาคาร</p>
       <p class="status">คู่มือฉบับเต็ม: <code>docs/PARTNER-API-WEB2-INTEGRATION.md</code> · ตัวอย่าง: <code>docs/examples/partner-api-web2.http</code></p>
+      <p class="status">Starter Kit ฝั่ง Backend เว็บ 2: <code>integrations/web2/</code> (ห้ามใส่ Credential ใน Frontend)</p>
     </section>
   </main>
-  <script src="/partner-api.js?v=014222"></script>
-  <script src="/partner-webhook.js?v=014222" defer></script>
+  <script src="/partner-api.js?v=014223"></script>
+  <script src="/partner-webhook.js?v=014223" defer></script>
 </body>
 </html>

@@ -25,6 +25,8 @@ Base URL: `https://visiondonline.com/api/partner/v1`
 
 ตัวอย่างที่คัดลอกได้อยู่ใน `docs/examples/partner-api-web2.http` และใช้ placeholder เท่านั้น
 
+Starter Kit สำหรับ Backend เว็บ 2 อยู่ที่ `integrations/web2/` พร้อม Client, `.env.example` และวิธีใช้งาน ห้ามนำ Client หรือ Credential ไปใส่ Frontend bundle
+
 ## 4. Signed Webhook
 
 คำนวณ `v1=HMAC_SHA256(client_secret, timestamp + "." + raw_body)` และส่ง Header:

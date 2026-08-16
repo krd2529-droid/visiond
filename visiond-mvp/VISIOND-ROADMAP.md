@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.222
+Current build: v0.14.223
+
+## v0.14.223 — Web 2 Integration Starter Kit (IMPLEMENTED)
+
+- เพิ่ม Backend Client SDK สำหรับอ่านสินค้า ซิงก์ลูกค้า/ออเดอร์ และส่ง Signed Event
+- เพิ่ม Config Validator, Request ID, Idempotency Key และ Sensitive Payload Guard ก่อนส่งข้อมูล
+- Credential เก็บใน Private State และ `.env.example` ใช้ Placeholder สำหรับ Secret Manager เท่านั้น
+- Security Gate ครอบคลุม SDK, คู่มือ และตัวอย่างทั้งหมด พร้อมกฎห้ามนำ Credential เข้า Frontend
 
 ## v0.14.222 — Partner API Guide and Production Security Gate (IMPLEMENTED)
 

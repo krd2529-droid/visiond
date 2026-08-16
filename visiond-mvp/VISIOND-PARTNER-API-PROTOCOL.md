@@ -22,6 +22,7 @@
 17. Alert ขั้นต่ำ: Signature ผิด ≥1, Timestamp เกินกำหนด ≥1, Retry ค้าง ≥3 หรือ Dead Letter ≥1; Security Log เก็บเฉพาะรหัสเหตุการณ์ที่ปิดบัง
 18. ก่อนเชื่อมเว็บ 2 ต้องผ่าน E2E Readiness ใน Sandbox ครบสินค้า ลูกค้า ออเดอร์ ชำระเงิน ยกเลิก คืนเงิน Idempotency Webhook Retry/Dead และ Alert โดยไม่เขียนข้อมูลทดสอบลง Production
 19. ก่อน Production ต้องมีคู่มือ ตัวอย่าง Placeholder, Checklist, Rollback และ Security Gate ที่ผ่าน โดย Credential ต้องอยู่ใน Secret Manager เท่านั้น
+20. Starter Kit ใช้ได้เฉพาะ Backend เว็บ 2, Config ต้องเป็น HTTPS, Credential ต้องอยู่ใน Private State/Secret Manager และต้องปฏิเสธ Sensitive Payload ก่อนส่ง
 
 ## Phase 1 Contract
 
@@ -77,3 +78,11 @@
 - Security Gate: `npm run security:partner-api`
 - ห้ามเปิด Production ก่อน E2E ผ่าน, Credential อยู่ใน Secret Manager, Log ปิดบัง และมีแผน Pause/Rollback
 - เริ่ม Production ด้วยปริมาณต่ำและติดตาม Health Dashboard อย่างน้อย 24 ชั่วโมงแรก
+
+## Phase 8 Web 2 Starter Kit Contract
+
+- Backend client: `integrations/web2/visiond-partner-client.mjs`
+- Environment template: `integrations/web2/.env.example` ใช้ Placeholder เท่านั้น
+- Client รองรับสินค้า ลูกค้า ออเดอร์ Signed Event, Request ID และ Idempotency Key
+- ห้าม import Starter Kit เข้า Browser bundle และห้าม Log Config, Authorization Header, Signature หรือ Payload ส่วนตัว
+- Starter Kit ต้องผ่าน `npm run security:partner-api` และ `npm run test:v014223`

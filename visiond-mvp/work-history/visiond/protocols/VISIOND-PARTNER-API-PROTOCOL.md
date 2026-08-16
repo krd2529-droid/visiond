@@ -14,3 +14,4 @@
 - Health Dashboard แยกแต่ละเว็บไซต์ แสดง Metrics 24 ชั่วโมงและแจ้ง Signature/Timestamp/Retry/Dead Letter โดยห้ามเปิดเผย Payload หรือข้อมูลส่วนตัว
 - E2E Readiness ต้องตรวจสินค้าและวงจรธุรกรรมครบใน Sandbox พร้อม Idempotency, Webhook, Retry/Dead และ Alert โดยไม่เขียนข้อมูลทดสอบลง Production
 - Production Gate ต้องมีคู่มือ ตัวอย่าง Placeholder, Checklist, Rollback, Secret Manager และ Security Gate ผ่านก่อนเปิดเว็บ 2 จริง
+- Starter Kit ของเว็บ 2 ใช้เฉพาะ Backend, HTTPS และ Secret Manager พร้อม Sensitive Payload Guard; ห้ามรวม Credential ใน Frontend
