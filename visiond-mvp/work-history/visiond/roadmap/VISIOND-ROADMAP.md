@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.213
+Current build: v0.14.214
+
+## v0.14.214 — Bulk Category Move Button Guidance (IMPLEMENTED)
+
+- ปุ่มย้ายหมวดกดได้ตลอด ไม่ถูกปิดจนดูเหมือนเสีย
+- ถ้ายังไม่เลือกตะกร้า ระบบเลื่อนไปช่องค้นหา โฟกัสให้ และแจ้งขั้นตอนติ๊กช่องหน้าตะกร้าอย่างชัดเจน
+- ช่องติ๊กและแถบจำนวนเปลี่ยนข้อความให้ตรงกับงานย้ายหมวด พร้อมแสดงจำนวนบนปุ่มก่อนเปิด Dialog
 
 ## v0.14.213 — Bundle File Type Persistence (IMPLEMENTED)
 
