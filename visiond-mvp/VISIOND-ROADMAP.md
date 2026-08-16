@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.211
+Current build: v0.14.212
+
+## v0.14.212 — Draft Bundle Publish Category Recovery (IMPLEMENTED)
+
+- เมื่อเปิดแก้ไขชุดรวมแบบร่าง ระบบรักษาหมวดชุดรวมเดิมไว้ใน Dropdown เสมอ แม้หมวดต้นทางถูกกรองหรือจำนวนตะกร้าพร้อมรวมเปลี่ยน
+- ผู้ดูแลเปลี่ยนสถานะจากแบบร่างเป็นเปิดขายได้โดยไม่ทำหมวดเดิมหาย ส่วน Backend ยังคงตรวจตะกร้าต้นทางก่อนเผยแพร่จริง
+- ครอบคลุมทั้งหมวด `set-*` และ `bundle-deals` พร้อมอัปเดต Cache ของหน้าหลังบ้าน
 
 ## v0.14.211 — Bundle Deals No Discount Stacking (IMPLEMENTED)
 

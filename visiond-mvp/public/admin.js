@@ -680,13 +680,18 @@ function setBundleMode(active) {
       if (category.slug === currentSourceCategory) return true;
       return products.filter((product) => product.status === "published" && product.category === category.slug && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length >= 2;
     });
-    const promotionSourceCategories = new Set(["worksheet", "coloring", "development-game"]),
+    const originalCategory = productEditor.dataset.originalCategory || "",
+      promotionSourceCategories = new Set(["worksheet", "coloring", "development-game"]),
       promotionCategoryActive = categories.some((category) => category.slug === "bundle-deals" && Number(category.active)),
       promotionReadyCount = products.filter((product) => product.status === "published" && promotionSourceCategories.has(product.category) && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length,
-      promotionOption = promotionCategoryActive && (promotionReadyCount >= 2 || productEditor.dataset.originalCategory === "bundle-deals") ? '<option value="bundle-deals">โปรยกชุด (แบบฝึกหัด + ระบายสี + เกมเสริมพัฒนาการ)</option>' : '';
-    productCategorySelect.innerHTML = promotionOption + eligibleCategories
+      promotionOption = promotionCategoryActive && (promotionReadyCount >= 2 || originalCategory === "bundle-deals") ? '<option value="bundle-deals">โปรยกชุด (แบบฝึกหัด + ระบายสี + เกมเสริมพัฒนาการ)</option>' : '',
+      generatedOptions = promotionOption + eligibleCategories
       .map((category) => `<option value="set-${esc(category.slug)}">ชุดรวม ${esc(category.name)}</option>`)
-      .join("") || '<option value="">ยังไม่มีหมวดที่มีตะกร้าพร้อมรวมอย่างน้อย 2 ใบ</option>';
+      .join(""),
+      originalOption = originalCategory && (originalCategory === "bundle-deals" || originalCategory.startsWith("set-")) && !generatedOptions.includes(`value="${originalCategory}"`)
+        ? `<option value="${esc(originalCategory)}">${originalCategory === "bundle-deals" ? "โปรยกชุด" : `ชุดรวม ${esc(categories.find(category=>category.slug===originalCategory)?.name || categories.find(category=>category.slug===bundleSourceCategory(originalCategory))?.name || bundleSourceCategory(originalCategory))}`} · หมวดเดิม</option>`
+        : "";
+    productCategorySelect.innerHTML = originalOption + generatedOptions || '<option value="">ยังไม่มีหมวดที่มีตะกร้าพร้อมรวมอย่างน้อย 2 ใบ</option>';
     productEditor.elements.file_type.value = "ชุด PDF";
     productEditor.elements.pages.value = 5;
   } else productCategorySelect.innerHTML = productCategoryOptions();
