@@ -680,7 +680,11 @@ function setBundleMode(active) {
       if (category.slug === currentSourceCategory) return true;
       return products.filter((product) => product.status === "published" && product.category === category.slug && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length >= 2;
     });
-    productCategorySelect.innerHTML = eligibleCategories
+    const promotionSourceCategories = new Set(["worksheet", "coloring", "development-game"]),
+      promotionCategoryActive = categories.some((category) => category.slug === "bundle-deals" && Number(category.active)),
+      promotionReadyCount = products.filter((product) => product.status === "published" && promotionSourceCategories.has(product.category) && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length,
+      promotionOption = promotionCategoryActive && (promotionReadyCount >= 2 || productEditor.dataset.originalCategory === "bundle-deals") ? '<option value="bundle-deals">โปรยกชุด (แบบฝึกหัด + ระบายสี + เกมเสริมพัฒนาการ)</option>' : '';
+    productCategorySelect.innerHTML = promotionOption + eligibleCategories
       .map((category) => `<option value="set-${esc(category.slug)}">ชุดรวม ${esc(category.name)}</option>`)
       .join("") || '<option value="">ยังไม่มีหมวดที่มีตะกร้าพร้อมรวมอย่างน้อย 2 ใบ</option>';
     productEditor.elements.file_type.value = "ชุด PDF";
@@ -688,6 +692,7 @@ function setBundleMode(active) {
   } else productCategorySelect.innerHTML = productCategoryOptions();
 }
 function bundleSourceCategory(category) { return String(category || "").startsWith("set-") ? String(category).slice(4) : ""; }
+const promotionBundleCategories = new Set(["worksheet", "coloring", "development-game"]);
 function renderBundlePicker(selected = []) {
   const selectedSet = new Set(selected.map(Number)),
     currentId = Number(productEditor.elements.id.value) || 0,
@@ -697,7 +702,7 @@ function renderBundlePicker(selected = []) {
         p.id !== currentId &&
         (!p.bundled_into_id || Number(p.bundled_into_id) === currentId) &&
         !String(p.category || "").startsWith("set-") &&
-        p.category === bundleSourceCategory(productEditor.elements.category.value),
+        (productEditor.elements.category.value === "bundle-deals" ? promotionBundleCategories.has(p.category) : p.category === bundleSourceCategory(productEditor.elements.category.value)),
     ).sort((a,b)=>Number(a.id)-Number(b.id));
   bundleProductPicker.innerHTML =
     candidates

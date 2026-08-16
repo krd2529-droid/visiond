@@ -110,18 +110,19 @@ export async function onRequestPut(ctx) {
     if (slug !== old.slug)
       await ctx.env.DB.prepare("INSERT OR REPLACE INTO product_slug_history(old_slug,product_id,changed_at) VALUES(?,?,CURRENT_TIMESTAMP)").bind(old.slug,old.id).run();
     if (isBundle) {
-      if (!/^set-[a-z0-9][a-z0-9-]{0,75}$/.test(category) || category.slice(4).startsWith("set-") || category.slice(4) === "resale-rights")
+      const promotionBundle=category==="bundle-deals";
+      if (!promotionBundle&&(!/^set-[a-z0-9][a-z0-9-]{0,75}$/.test(category) || category.slice(4).startsWith("set-") || category.slice(4) === "resale-rights"))
         return json({ error: "กรุณาเลือกหมวดชุดรวมที่ถูกต้อง" }, 400);
       if (!Number.isInteger(size) || size < 2 || size > 30 || ids.length !== size)
         return json(
           { error: `กรุณาเลือกตะกร้าให้ครบ ${size || 5} รายการ` },
           400,
         );
-      const sourceCategory=category.slice(4),sourceCategoryRow=await ctx.env.DB.prepare("SELECT name FROM categories WHERE slug=? AND active=1").bind(sourceCategory).first(),marks = ids.map(() => "?").join(","),
+      const sourceCategory=promotionBundle?"":category.slice(4),sourceCategoryRow=promotionBundle?await ctx.env.DB.prepare("SELECT name FROM categories WHERE slug='bundle-deals' AND active=1").first():await ctx.env.DB.prepare("SELECT name FROM categories WHERE slug=? AND active=1").bind(sourceCategory).first(),marks = ids.map(() => "?").join(","),categoryClause=promotionBundle?"p.category IN ('worksheet','coloring','development-game')":"p.category=?",bindings=promotionBundle?[...ids,old.id,old.id]:[...ids,old.id,sourceCategory,old.id],
         valid = await ctx.env.DB.prepare(
-          `SELECT id,title,price,pages,cover_url FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category=? AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')) AND NOT EXISTS(SELECT 1 FROM bundle_source_allocations a WHERE a.source_product_id=p.id AND a.bundle_product_id<>?)`,
+          `SELECT id,title,price,pages,cover_url FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND ${categoryClause} AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')) AND NOT EXISTS(SELECT 1 FROM bundle_source_allocations a WHERE a.source_product_id=p.id AND a.bundle_product_id<>?)`,
         )
-          .bind(...ids, old.id, sourceCategory, old.id)
+          .bind(...bindings)
           .all();
       if(!sourceCategoryRow)return json({error:"ไม่พบหมวดต้นทางที่เปิดใช้งาน"},400);
       if (valid.results.length !== ids.length)
@@ -132,7 +133,7 @@ export async function onRequestPut(ctx) {
       const byId = new Map(
         valid.results.map((item) => [Number(item.id), item]),
       );
-      await ctx.env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES(?,?,NULL,'ชุด PDF',1,900)").bind(category,`ชุดรวม ${sourceCategoryRow.name||sourceCategory}`).run();
+      if(!promotionBundle)await ctx.env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES(?,?,NULL,'ชุด PDF',1,900)").bind(category,`ชุดรวม ${sourceCategoryRow.name||sourceCategory}`).run();
       const ordered=ids.map(id=>byId.get(id)),totalPages=ordered.reduce((sum,item)=>sum+Number(item.pages||0),0);
       await ctx.env.DB.prepare(
         `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
