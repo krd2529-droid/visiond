@@ -18,7 +18,7 @@ assert.match(api,/size<2\|\|size>30/);assert.match(api,/item\.cover_url/);assert
 assert.match(editApi,/size < 2 \|\| size > 30/);assert.match(editApi,/a\.bundle_product_id<>\?/);
 assert.match(migration,/source_product_id INTEGER PRIMARY KEY/);
 assert.match(ui,/elements\.status\.value = "draft"/);assert.match(ui,/รายการตะกร้าในชุด/);
-assert.match(ui,/p\.category === "tattoo"[\s\S]*p\.category === "coloring"/);assert.match(api,/sourceCategory=category==='set-tattoo'\?'tattoo':'coloring'/);
+assert.match(ui,/bundleSourceCategory/);assert.match(ui,/set-\$\{esc\(category\.slug\)\}/);assert.match(api,/bundleSourceCategory=category/);
 assert.ok(protocol.includes('ตรวจโค้ด → แก้ → รันทดสอบ → เจอข้อผิดพลาด → แก้อีก → ทดสอบใหม่'));
 assert.match(roadmap,/v0\.14\.191[\s\S]*สร้างชุดรวมตะกร้า/);
 console.log('v0.14.191 basket bundle builder: PASS');

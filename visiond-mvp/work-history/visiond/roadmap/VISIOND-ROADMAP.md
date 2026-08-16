@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.205
+Current build: v0.14.206
+
+## v0.14.206 — Dynamic Bundle Categories (IMPLEMENTED)
+
+- หน้าสร้างชุดรวมตะกร้าแสดงทุกหมวดที่เปิดใช้งานและมีตะกร้าพร้อมรวมอย่างน้อย 2 ใบ ไม่จำกัดเฉพาะ coloring/tattoo
+- หมวดชุดรวมใช้ `set-<หมวดต้นทาง>` และสร้างชื่อหมวดให้อัตโนมัติเมื่อบันทึกครั้งแรก
+- ตะกร้าต้นทางยังต้องเปิดขาย อยู่หมวดเดียวกัน และยังไม่เคยถูกใช้ในชุดอื่น
+- เพิ่ม focused Button/Event coverage สำหรับการเปิดตัวสร้าง เปลี่ยนหมวด และกรองตะกร้าต้นทาง
 
 ## v0.14.205 — Continuous Frontend Button/Event Coverage (IMPLEMENTED)
 

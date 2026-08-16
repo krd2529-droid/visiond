@@ -110,19 +110,20 @@ export async function onRequestPut(ctx) {
     if (slug !== old.slug)
       await ctx.env.DB.prepare("INSERT OR REPLACE INTO product_slug_history(old_slug,product_id,changed_at) VALUES(?,?,CURRENT_TIMESTAMP)").bind(old.slug,old.id).run();
     if (isBundle) {
-      if (!["set-coloring", "set-tattoo"].includes(category))
-        return json({ error: "กรุณาเลือกหมวดชุดคละ" }, 400);
+      if (!/^set-[a-z0-9][a-z0-9-]{0,75}$/.test(category) || category.slice(4).startsWith("set-") || category.slice(4) === "resale-rights")
+        return json({ error: "กรุณาเลือกหมวดชุดรวมที่ถูกต้อง" }, 400);
       if (!Number.isInteger(size) || size < 2 || size > 30 || ids.length !== size)
         return json(
           { error: `กรุณาเลือกตะกร้าให้ครบ ${size || 5} รายการ` },
           400,
         );
-      const sourceCategory=category==="set-tattoo"?"tattoo":"coloring",marks = ids.map(() => "?").join(","),
+      const sourceCategory=category.slice(4),sourceCategoryRow=await ctx.env.DB.prepare("SELECT name FROM categories WHERE slug=? AND active=1").bind(sourceCategory).first(),marks = ids.map(() => "?").join(","),
         valid = await ctx.env.DB.prepare(
           `SELECT id,title,price,pages,cover_url FROM products p WHERE id IN (${marks}) AND id<>? AND status='published' AND deleted_at IS NULL AND category=? AND COALESCE(product_kind,'product')='product' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')) AND NOT EXISTS(SELECT 1 FROM bundle_source_allocations a WHERE a.source_product_id=p.id AND a.bundle_product_id<>?)`,
         )
           .bind(...ids, old.id, sourceCategory, old.id)
           .all();
+      if(!sourceCategoryRow)return json({error:"ไม่พบหมวดต้นทางที่เปิดใช้งาน"},400);
       if (valid.results.length !== ids.length)
         return json(
           { error: "มีตะกร้าต้นทางที่ไม่พร้อมขาย กรุณาเลือกใหม่" },
@@ -131,6 +132,7 @@ export async function onRequestPut(ctx) {
       const byId = new Map(
         valid.results.map((item) => [Number(item.id), item]),
       );
+      await ctx.env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES(?,?,NULL,'ชุด PDF',1,900)").bind(category,`ชุดรวม ${sourceCategoryRow.name||sourceCategory}`).run();
       const ordered=ids.map(id=>byId.get(id)),totalPages=ordered.reduce((sum,item)=>sum+Number(item.pages||0),0);
       await ctx.env.DB.prepare(
         `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
@@ -152,6 +154,7 @@ export async function onRequestPut(ctx) {
       )
         .bind(old.id)
         .run();
+      await ctx.env.DB.prepare("DELETE FROM bundle_source_allocations WHERE bundle_product_id=?").bind(old.id).run();
       for (let index = 0; index < ids.length; index++)
         {await ctx.env.DB.prepare("INSERT OR IGNORE INTO bundle_source_allocations(source_product_id,bundle_product_id) VALUES(?,?)").bind(ids[index],old.id).run();const allocation=await ctx.env.DB.prepare("SELECT bundle_product_id FROM bundle_source_allocations WHERE source_product_id=?").bind(ids[index]).first();if(Number(allocation?.bundle_product_id)!==Number(old.id))throw new Error("ตะกร้าบางใบถูกใช้สร้างชุดอื่นแล้ว กรุณาโหลดใหม่");await ctx.env.DB.prepare(
           "INSERT INTO product_bundle_items(bundle_product_id,source_product_id,sort_order) VALUES(?,?,?)",

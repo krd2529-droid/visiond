@@ -668,12 +668,21 @@ function setBundleMode(active) {
   productEditor.elements.product_file.closest("label").hidden = active;
   productEditor.elements.file_label.closest("label").hidden = active;
   if (active) {
-    productCategorySelect.innerHTML =
-      '<option value="set-coloring">คละแบบระบายสี</option><option value="set-tattoo">คละแบบรอยสัก</option>';
+    const currentId = Number(productEditor.elements.id.value) || 0,
+      currentSourceCategory = bundleSourceCategory(productEditor.dataset.originalCategory);
+    const eligibleCategories = categories.filter((category) => {
+      if (!Number(category.active) || String(category.slug).startsWith("set-") || category.slug === "resale-rights") return false;
+      if (category.slug === currentSourceCategory) return true;
+      return products.filter((product) => product.status === "published" && product.category === category.slug && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length >= 2;
+    });
+    productCategorySelect.innerHTML = eligibleCategories
+      .map((category) => `<option value="set-${esc(category.slug)}">ชุดรวม ${esc(category.name)}</option>`)
+      .join("") || '<option value="">ยังไม่มีหมวดที่มีตะกร้าพร้อมรวมอย่างน้อย 2 ใบ</option>';
     productEditor.elements.file_type.value = "ชุด PDF";
     productEditor.elements.pages.value = 5;
   } else productCategorySelect.innerHTML = productCategoryOptions();
 }
+function bundleSourceCategory(category) { return String(category || "").startsWith("set-") ? String(category).slice(4) : ""; }
 function renderBundlePicker(selected = []) {
   const selectedSet = new Set(selected.map(Number)),
     currentId = Number(productEditor.elements.id.value) || 0,
@@ -682,8 +691,8 @@ function renderBundlePicker(selected = []) {
         p.status === "published" &&
         p.id !== currentId &&
         (!p.bundled_into_id || Number(p.bundled_into_id) === currentId) &&
-        !["set-coloring", "set-tattoo"].includes(p.category) &&
-        (productEditor.elements.category.value === "set-tattoo" ? p.category === "tattoo" : p.category === "coloring"),
+        !String(p.category || "").startsWith("set-") &&
+        p.category === bundleSourceCategory(productEditor.elements.category.value),
     ).sort((a,b)=>Number(a.id)-Number(b.id));
   bundleProductPicker.innerHTML =
     candidates
@@ -756,7 +765,7 @@ productEditor.elements.price.addEventListener("input",()=>{if(bundleMode)updateB
 function openBundleBuilder() {
   resetProductForm();
   setBundleMode(true);
-  productEditor.elements.category.value = "set-coloring";
+  productEditor.elements.category.value = productCategorySelect.options[0]?.value || "";
   productEditor.elements.status.value = "draft";
   productEditor.elements.title.value = "";
   productEditor.elements.short_description.value =
@@ -804,15 +813,13 @@ async function editProduct(id) {
   if (!r.ok) return alert(d.error || "โหลดสินค้าไม่สำเร็จ");
   document.body.classList.add("product-editor-active");
   const p = d.item,
-    isBundle =
-      ["set-coloring", "set-tattoo"].includes(p.category) ||
-      d.bundle_items?.length;
+    isBundle = p.source === "bundle" || String(p.category || "").startsWith("set-") || d.bundle_items?.length;
   productEditor.elements.id.value = p.id;
+  productEditor.dataset.originalCategory = p.category || "";
   setBundleMode(Boolean(isBundle));
   productEditor.elements.title.value = p.title || "";
   productEditor.elements.slug.value = p.slug || "";
   productEditor.elements.category.value = p.category || "";
-  productEditor.dataset.originalCategory = p.category || "";
   productEditor.elements.file_type.value = p.file_type || "PDF";
   productEditor.elements.price.value = (Number(p.price) || 0) / 100;
   const bundleCount = d.bundle_items?.length || 0;
