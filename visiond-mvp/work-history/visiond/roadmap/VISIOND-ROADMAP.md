@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.198
+Current build: v0.14.205
+
+## v0.14.205 — Continuous Frontend Button/Event Coverage (IMPLEMENTED)
+
+- ทุกแพตที่สร้างหรือแก้ Frontend ต้องเพิ่ม/อัปเดต Button/Event coverage ในแพตเดียวกันให้ครอบคลุมปุ่ม ลิงก์ เมนู แท็บ ฟอร์ม toggle dialog upload retry และ confirm ที่เปลี่ยน
+- ต้องตรวจ handler, สถานะ loading/disabled/success/error, keyboard, ปุ่มซ้ำ/ปุ่มลอยที่กดไม่ได้ และพฤติกรรม desktop/Android/iPhone
+- ต้องมี focused automated test และหลักฐานใน patch ledger; ห้ามปิดแพต Frontend หาก coverage ยังไม่ครอบคลุม
+- กฎนี้เป็นงานถาวรใน Event Roadmap และขยายตาม Frontend ใหม่ทุกครั้ง
 
 ## v0.14.198 — Facebook Webhook Inbound Adapter (IMPLEMENTED)
 - เพิ่ม Callback URL/Verify Token, ตรวจ `X-Hub-Signature-256`, กัน event ซ้ำ และรับข้อความ/รูปเข้า V12

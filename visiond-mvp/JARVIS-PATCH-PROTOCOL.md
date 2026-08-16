@@ -52,6 +52,15 @@ After every patch report: Event Case completed/remaining; Event Roadmap complete
 - Boss/Admin account surfaces must lead with Control Center work. Do not render the member account sidebar, its mobile menu toggle, or customer notification message cards for staff; those components remain available only to member/customer roles.
 - Desktop, Android-size and iPhone-size template checks are mandatory. New one-off header, language-switcher or button geometry is forbidden unless Boss approves a named exception.
 
+## Continuous frontend Button/Event coverage rule (v0.14.205+)
+
+- Every patch that creates or changes frontend UI must update Button/Event coverage in the same patch. This includes buttons, button-like links, menus, tabs, accordions, form submissions, toggles, dialogs, upload controls, retry actions and confirmation actions.
+- Coverage must verify the intended handler or submit path, loading/disabled/success/error states, keyboard accessibility where applicable, and the absence of duplicate, ghost or unreachable controls.
+- The same interaction must be checked on desktop, Android-size and iPhone-size layouts. Responsive-only controls must also prove that they are hidden outside their intended breakpoint.
+- Add the new or changed interaction to a focused automated test and record that test as evidence in the patch ledger. A visual-only inspection is not sufficient.
+- A frontend patch cannot be closed, committed or marked `DONE-VERIFIED` while any new or changed interaction lacks Button/Event coverage. Record it as a remaining Event Case item and continue the standard patch loop until it passes.
+- This is a living rule: coverage expands whenever frontend work expands; later features may not rely only on an older page-wide test.
+
 
 ## EVENT CASE STATUS REPORTING
 After EVERY patch, the delivery report MUST end with exactly one clear Event Case state:
