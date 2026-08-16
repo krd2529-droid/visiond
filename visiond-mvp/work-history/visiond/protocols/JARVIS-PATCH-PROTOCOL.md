@@ -60,6 +60,9 @@ After every patch report: Event Case completed/remaining; Event Roadmap complete
 - Add the new or changed interaction to a focused automated test and record that test as evidence in the patch ledger. A visual-only inspection is not sufficient.
 - A frontend patch cannot be closed, committed or marked `DONE-VERIFIED` while any new or changed interaction lacks Button/Event coverage. Record it as a remaining Event Case item and continue the standard patch loop until it passes.
 - This is a living rule: coverage expands whenever frontend work expands; later features may not rely only on an older page-wide test.
+- Coverage is full-stack whenever an interaction reaches the server: trace the frontend handler through the API route, authorization/role boundary, input validation, idempotency or duplicate protection, database/file mutation, success response and safe error response.
+- Backend tests must prove both an allowed path and the important denied/invalid path. A button is not covered merely because its click handler exists or the API returns any response.
+- If an interaction is intentionally UI-only, record `UI-ONLY` with evidence that it performs no network or persistent-data operation; do not invent a backend dependency.
 
 
 ## EVENT CASE STATUS REPORTING

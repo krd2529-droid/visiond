@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.206
+Current build: v0.14.207
+
+## v0.14.207 — Full-stack Button/Event Coverage (IMPLEMENTED)
+
+- Button/Event coverage ต้องตามจาก Frontend handler ไปถึง API, สิทธิ์, validation, duplicate/idempotency guard, ฐานข้อมูลหรือไฟล์ และผล success/error
+- Backend test ต้องมีทั้งเส้นทางที่อนุญาตและเส้นทางปฏิเสธ/ข้อมูลผิดที่สำคัญ
+- เหตุการณ์ที่เป็น UI-only ต้องบันทึก `UI-ONLY` พร้อมหลักฐานว่าไม่เรียก network และไม่แก้ข้อมูลถาวร
+- กฎนี้ใช้กับ Frontend ใหม่หรือที่แก้ทุกแพตและทุกคิว Event Roadmap
 
 ## v0.14.206 — Dynamic Bundle Categories (IMPLEMENTED)
 
