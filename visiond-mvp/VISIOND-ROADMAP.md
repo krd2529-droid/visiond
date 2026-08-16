@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.200
+Current build: v0.14.201
+
+## v0.14.201 — V12 Provider Error Diagnostics (IMPLEMENTED)
+- แสดง HTTP/provider error code ที่ปลอดภัยเมื่อส่งรูป LINE/Facebook ไม่สำเร็จ โดยไม่แสดง Token
+- ใช้รหัสจริงเพื่อแก้สาเหตุส่งรูปขาออกใน Event Case รอบถัดไปแทนการเดา
 
 ## v0.14.200 — V12 Faster Inbox + Outbound Images (IMPLEMENTED)
 - ตัด runtime schema checks ออกจาก API กล่องข้อความ และเพิ่มการอัปเดต LINE/Facebook อัตโนมัติทุก 4 วินาที
