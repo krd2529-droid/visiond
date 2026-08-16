@@ -21,6 +21,7 @@
 16. ทุกเว็บไซต์ต้องมี Health Dashboard ช่วง 24 ชั่วโมง แสดง Success/Retry/Dead/Error Rate/Response Time/Event ล่าสุด โดย Metrics ห้ามมี Payload หรือข้อมูลส่วนตัว
 17. Alert ขั้นต่ำ: Signature ผิด ≥1, Timestamp เกินกำหนด ≥1, Retry ค้าง ≥3 หรือ Dead Letter ≥1; Security Log เก็บเฉพาะรหัสเหตุการณ์ที่ปิดบัง
 18. ก่อนเชื่อมเว็บ 2 ต้องผ่าน E2E Readiness ใน Sandbox ครบสินค้า ลูกค้า ออเดอร์ ชำระเงิน ยกเลิก คืนเงิน Idempotency Webhook Retry/Dead และ Alert โดยไม่เขียนข้อมูลทดสอบลง Production
+19. ก่อน Production ต้องมีคู่มือ ตัวอย่าง Placeholder, Checklist, Rollback และ Security Gate ที่ผ่าน โดย Credential ต้องอยู่ใน Secret Manager เท่านั้น
 
 ## Phase 1 Contract
 
@@ -68,3 +69,11 @@
 - ตรวจ External ID, Idempotent Replay/Conflict, HMAC/Timestamp, Retry/Dead Letter และ Health Alert ในรอบเดียว
 - ห้ามเขียนลูกค้าและออเดอร์ทดสอบลง Production และห้ามส่ง Client Secret, Signature หรือข้อมูลส่วนตัวกลับ Frontend
 - เว็บไซต์ต้อง active และมี Scope `products:read`, `customers:write`, `orders:write` ครบ
+
+## Phase 7 Integration Guide and Production Gate Contract
+
+- คู่มือหลัก: `docs/PARTNER-API-WEB2-INTEGRATION.md`
+- ตัวอย่าง HTTP: `docs/examples/partner-api-web2.http` ต้องใช้ Placeholder เท่านั้น
+- Security Gate: `npm run security:partner-api`
+- ห้ามเปิด Production ก่อน E2E ผ่าน, Credential อยู่ใน Secret Manager, Log ปิดบัง และมีแผน Pause/Rollback
+- เริ่ม Production ด้วยปริมาณต่ำและติดตาม Health Dashboard อย่างน้อย 24 ชั่วโมงแรก

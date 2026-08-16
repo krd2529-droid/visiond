@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.221
+Current build: v0.14.222
+
+## v0.14.222 — Partner API Guide and Production Security Gate (IMPLEMENTED)
+
+- เพิ่มคู่มือเชื่อมเว็บ 2 พร้อม Endpoint, Authentication, Signed Webhook, Checklist และ Rollback
+- เพิ่มตัวอย่าง HTTP ที่ใช้ Placeholder เท่านั้นและเก็บ Credential จริงใน Secret Manager
+- เพิ่ม Security Gate ตรวจ Credential รูปแบบจริง, Private Key, เลขบัตร และสัญญาการปิดบังข้อมูล
+- แสดง Checklist ฉบับย่อภายในศูนย์ควบคุมเว็บพาร์ทเนอร์ และกำหนดให้ E2E ผ่านก่อน Production
 
 ## v0.14.221 — Partner API End-to-End Readiness (IMPLEMENTED)
 

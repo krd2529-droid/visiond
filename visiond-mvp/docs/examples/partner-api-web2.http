@@ -1,0 +1,59 @@
+@baseUrl = https://visiondonline.com/api/partner/v1
+@clientId = <CLIENT_ID_FROM_SECRET_MANAGER>
+@clientSecret = <CLIENT_SECRET_FROM_SECRET_MANAGER>
+
+### อ่านสินค้า
+GET {{baseUrl}}/products?limit=50
+X-VisionD-Client-ID: {{clientId}}
+Authorization: Bearer {{clientSecret}}
+X-Request-ID: web2-products-0001
+
+### ซิงก์ลูกค้า
+POST {{baseUrl}}/customers/sync
+Content-Type: application/json
+X-VisionD-Client-ID: {{clientId}}
+Authorization: Bearer {{clientSecret}}
+Idempotency-Key: web2-customer-0001-v1
+X-Request-ID: web2-customer-0001
+
+{
+  "external_customer_id": "CUSTOMER-0001",
+  "name": "ตัวอย่างลูกค้า",
+  "email": "customer@example.invalid",
+  "phone": "+66000000000",
+  "status": "active",
+  "created_at": "2026-08-16T00:00:00.000Z"
+}
+
+### ซิงก์ออเดอร์ชำระเงินแล้ว
+POST {{baseUrl}}/orders/sync
+Content-Type: application/json
+X-VisionD-Client-ID: {{clientId}}
+Authorization: Bearer {{clientSecret}}
+Idempotency-Key: web2-order-0001-paid-v1
+X-Request-ID: web2-order-0001-paid
+
+{
+  "external_order_id": "ORDER-0001",
+  "external_customer_id": "CUSTOMER-0001",
+  "status": "paid",
+  "payment_status": "paid",
+  "currency": "THB",
+  "subtotal": 10000,
+  "discount": 0,
+  "total": 10000,
+  "items": [{"external_product_id":"PRODUCT-0001","sku":"SKU-0001","title":"สินค้าตัวอย่าง","quantity":1,"unit_price":10000,"line_total":10000}],
+  "refunds": [],
+  "created_at": "2026-08-16T00:00:00.000Z",
+  "updated_at": "2026-08-16T00:01:00.000Z"
+}
+
+### Signed Webhook (คำนวณค่าจริงที่ Backend ของเว็บ 2)
+POST {{baseUrl}}/webhooks/events
+Content-Type: application/json
+X-VisionD-Client-ID: {{clientId}}
+X-VisionD-Timestamp: <UNIX_SECONDS>
+X-VisionD-Signature: v1=<HMAC_SHA256_HEX>
+Idempotency-Key: web2-event-order-0001-v1
+
+{"type":"order","external_id":"ORDER-0001","data":{"external_order_id":"ORDER-0001","status":"paid","payment_status":"paid","currency":"THB","subtotal":10000,"discount":0,"total":10000,"items":[{"external_product_id":"PRODUCT-0001","title":"สินค้าตัวอย่าง","quantity":1,"unit_price":10000,"line_total":10000}],"refunds":[],"created_at":"2026-08-16T00:00:00.000Z","updated_at":"2026-08-16T00:01:00.000Z"}}

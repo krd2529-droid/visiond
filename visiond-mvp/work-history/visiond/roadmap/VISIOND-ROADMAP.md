@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.221
+Current build: v0.14.222
+
+## v0.14.222 — Partner API Guide and Production Security Gate (IMPLEMENTED)
+
+- คู่มือ ตัวอย่าง Placeholder, Checklist, Rollback และ Security Gate พร้อมสำหรับเริ่มเชื่อมเว็บ 2 หลัง E2E ผ่าน
 
 ## v0.14.221 — Partner API End-to-End Readiness (IMPLEMENTED)
 
