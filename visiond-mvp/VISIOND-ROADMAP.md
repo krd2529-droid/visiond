@@ -477,3 +477,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ปุ่มเมนูมือถือซ่อนบนจอคอมและแสดงเฉพาะจอไม่เกิน 800px
 - ปุ่มควบคุม responsive layout ถูกยกเว้นจาก runtime ปุ่มกลาง และกฎนี้บังคับทุก Event Case/Roadmap รวมเว็บไซต์ 2
 - หน้าบัญชีของ Boss/Admin ไม่แสดงเมนูบัญชีสมาชิก ปุ่มเปิดเมนู หรือกล่องข้อความแจ้งเตือนลูกค้า และใช้พื้นที่งาน Control Center แบบคอลัมน์เดียว
+# v0.14.224 — Vision 14 Source Library + Rights Gate (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่มหน้าหลังบ้าน `Vision 14 คลัง E-book` รับ PDF ต้นฉบับเข้า R2 และเก็บ Metadata ใน D1
+- จำกัดการเข้าถึงเฉพาะ Boss, รับเฉพาะ PDF ไม่เกิน 100 MB และลบ R2 คืนเมื่อบันทึกฐานข้อมูลล้มเหลว
+- เพิ่มสถานะสิทธิ์ owned / PLR / Public Domain / licensed / reference-only และล็อก reference-only ไม่ให้ผ่านด่านขาย
+- งาน Event Case ที่เหลือ: ถอดข้อความผูกเลขหน้า, Credit Cleaner, สรุปเต็ม, PDF สอนของจาวิส, Dedup/MIX และส่งเข้า Vision 13

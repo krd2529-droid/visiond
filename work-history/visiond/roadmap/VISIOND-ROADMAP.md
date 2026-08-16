@@ -453,3 +453,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - เพิ่ม runtime contract จำลองข้อมูลจริง ตรวจคลิกแก้ไข EP แล้วเปิดฟอร์ม เติม ID/ชื่อ/รายละเอียดเดิม เลื่อนและโฟกัสได้
 - ตรวจบันทึก EP ส่ง `PUT` ไป lesson ที่เลือก และเผยแพร่ส่ง `POST` ไปตะกร้าที่ถูกต้อง
 - อัปเดต regression inventory จากหน้าเก่า `course-seller.html` เป็น `course-center.html` หลังนำเส้นทางเก่าออก
+# v0.14.224 — Vision 14 Source Library + Rights Gate (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่มคลัง PDF ต้นฉบับและ Rights Gate ในหลังบ้านสำหรับ Vision 14
+- `reference_only` ถูกล็อกไม่ให้ส่งไป Vision 13 หรือสร้างสินค้าขาย; `licensed` ต้องมีหลักฐานอ้างอิง
+- ถัดไปต้องทำ Text Extraction + Page Trace + Identity/Credit Cleaner ตาม Event Case เดิม
