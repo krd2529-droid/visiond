@@ -692,7 +692,7 @@ function setBundleMode(active) {
         ? `<option value="${esc(originalCategory)}">${originalCategory === "bundle-deals" ? "โปรยกชุด" : `ชุดรวม ${esc(categories.find(category=>category.slug===originalCategory)?.name || categories.find(category=>category.slug===bundleSourceCategory(originalCategory))?.name || bundleSourceCategory(originalCategory))}`} · หมวดเดิม</option>`
         : "";
     productCategorySelect.innerHTML = originalOption + generatedOptions || '<option value="">ยังไม่มีหมวดที่มีตะกร้าพร้อมรวมอย่างน้อย 2 ใบ</option>';
-    productEditor.elements.file_type.value = "ชุด PDF";
+    if (!productEditor.elements.id.value) productEditor.elements.file_type.value = "PDF";
     productEditor.elements.pages.value = 5;
   } else productCategorySelect.innerHTML = productCategoryOptions();
 }
@@ -966,7 +966,6 @@ async function saveProduct(event) {
     if (selected.length !== required)
       return setMessage(`กรุณาเลือกตะกร้าให้ครบ ${required} รายการ`, true);
     fd.set("bundle_product_ids", selected.join(","));
-    fd.set("file_type", "ชุด PDF");
     const chosen=selected.map(value=>products.find(product=>Number(product.id)===Number(value))).filter(Boolean);
     fd.set("pages",String(chosen.reduce((sum,product)=>sum+Number(product.pages||0),0)));
     const itemList=chosen.map((product,index)=>`${index+1}. ${product.title} · ${money(product.price)} · ${Number(product.pages)||0} หน้า`).join("\n"),currentDescription=String(fd.get("description")||"").trim();

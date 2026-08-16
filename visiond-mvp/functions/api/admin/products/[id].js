@@ -98,7 +98,9 @@ export async function onRequestPut(ctx) {
         ),
       ],
       size = Number(form.get("bundle_size")),
-      previewCount = Number(form.get("bundle_preview_count")) || ids.length;
+      previewCount = Number(form.get("bundle_preview_count")) || ids.length,
+      requestedFileType = String(form.get("file_type") || "PDF"),
+      fileType = ["PDF", "ZIP", "JPG/PNG", "ชุดรวมหลายประเภท"].includes(requestedFileType) ? requestedFileType : "PDF";
     if(category==='resale-rights')return json({error:'ตะกร้าสิทธิ์ Vision 5 ต้องจัดการผ่านระบบ Vision 5 เท่านั้น'},403);
     if (category !== old.category) {
       const prefix = `${category}-`,
@@ -136,7 +138,7 @@ export async function onRequestPut(ctx) {
       if(!promotionBundle)await ctx.env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES(?,?,NULL,'ชุด PDF',1,900)").bind(category,`ชุดรวม ${sourceCategoryRow.name||sourceCategory}`).run();
       const ordered=ids.map(id=>byId.get(id)),totalPages=ordered.reduce((sum,item)=>sum+Number(item.pages||0),0);
       await ctx.env.DB.prepare(
-        `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type='ชุด PDF',status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+        `UPDATE products SET slug=?,title=?,short_description=?,description=?,price=?,category=?,pages=?,file_type=?,status=?,source='bundle',updated_at=CURRENT_TIMESTAMP WHERE id=?`,
       )
         .bind(
           slug,
@@ -146,6 +148,7 @@ export async function onRequestPut(ctx) {
           price,
           category,
           totalPages,
+          fileType,
           form.get("status") === "published" ? "published" : "draft",
           old.id,
         )

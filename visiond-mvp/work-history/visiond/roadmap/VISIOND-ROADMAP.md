@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.212
+Current build: v0.14.213
+
+## v0.14.213 — Bundle File Type Persistence (IMPLEMENTED)
+
+- ชุดรวมและโปรยกชุดบันทึกประเภทไฟล์ตามที่ผู้ดูแลเลือกจริง ได้แก่ PDF, ZIP, JPG/PNG หรือชุดรวมหลายประเภท
+- เมื่อกลับมาแก้ไขแบบร่างหรือสินค้าที่เผยแพร่แล้ว ช่องประเภทไฟล์โหลดค่าจากฐานข้อมูลเดิม ไม่ถูกเขียนทับเป็นค่าที่ไม่มีใน Dropdown
+- Backend ตรวจ allowlist ประเภทไฟล์ทั้งการสร้างและแก้ไข ป้องกันค่าที่ไม่ได้รองรับ
 
 ## v0.14.212 — Draft Bundle Publish Category Recovery (IMPLEMENTED)
 
