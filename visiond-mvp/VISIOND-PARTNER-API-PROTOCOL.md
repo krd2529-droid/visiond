@@ -18,6 +18,8 @@
 13. Signed Webhook ต้องใช้ HMAC-SHA256 ครอบคลุม `timestamp.raw_body`, ตรวจแบบ constant-time และยอมรับ Timestamp คลาดเคลื่อนไม่เกิน 5 นาที
 14. Signature Hash และ Idempotency Key ต้อง Unique ต่อเว็บไซต์; Payload ใน Retry Queue ต้องเข้ารหัส และ Log ห้ามมี Raw Body, Secret, Token หรือข้อมูลส่วนตัว
 15. Retry ใช้ exponential backoff และย้าย Dead Letter เมื่อครบ 5 ครั้ง; การลองใหม่ต้องผ่านตัวประมวลผลและกฎข้อมูลเดียวกับ API ระยะ 2
+16. ทุกเว็บไซต์ต้องมี Health Dashboard ช่วง 24 ชั่วโมง แสดง Success/Retry/Dead/Error Rate/Response Time/Event ล่าสุด โดย Metrics ห้ามมี Payload หรือข้อมูลส่วนตัว
+17. Alert ขั้นต่ำ: Signature ผิด ≥1, Timestamp เกินกำหนด ≥1, Retry ค้าง ≥3 หรือ Dead Letter ≥1; Security Log เก็บเฉพาะรหัสเหตุการณ์ที่ปิดบัง
 
 ## Phase 1 Contract
 
@@ -50,3 +52,10 @@
 - Signature: `v1=HMAC_SHA256(client_secret, timestamp + "." + raw_body)`
 - Event envelope: `type`, `external_id`, `data`; types ได้แก่ `customer`, `order`, `payment`, `cancellation`, `refund`
 - Queue control: `GET|POST /api/admin/partner-websites/{id}/webhooks` ภายในศูนย์ควบคุมเว็บพาร์ทเนอร์เท่านั้น
+
+## Phase 5 Health Contract
+
+- Health window: 24 ชั่วโมง แยกตาม Website ID
+- Metrics: total, completed, retry, dead, error rate, average/max duration milliseconds, latest event
+- Alerts: `SIGNATURE_FAILURE`, `TIMESTAMP_EXPIRED`, `RETRY_ACCUMULATED`, `DEAD_LETTER_PRESENT`
+- Dashboard ใช้ Admin Webhook API เดิมและห้ามส่ง Payload Ciphertext, Signature, Secret, Token หรือข้อมูลลูกค้ากลับ Frontend

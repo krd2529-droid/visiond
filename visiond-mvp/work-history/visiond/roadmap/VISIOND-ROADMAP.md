@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.218
+Current build: v0.14.219
+
+## v0.14.219 — Partner API Phase 5 Health Dashboard (IMPLEMENTED)
+
+- Dashboard 24 ชั่วโมงแยกเว็บ แสดง Success/Retry/Dead/Error Rate/Response Time/Event ล่าสุด และ Alert ความปลอดภัยแบบปิดบัง
 
 ## v0.14.218 — Partner API Phase 4 Signed Webhook (IMPLEMENTED)
 

@@ -1,7 +1,16 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.218
+Current build: v0.14.219
+
+## v0.14.219 — Partner API Phase 5 Health Dashboard (IMPLEMENTED)
+
+- เพิ่ม Dashboard สุขภาพ API แยกแต่ละเว็บไซต์ในศูนย์ควบคุมเว็บพาร์ทเนอร์
+- แสดง Event สำเร็จ Retry Dead Letter Error Rate Response Time เฉลี่ย/สูงสุด และ Event ล่าสุดในช่วง 24 ชั่วโมง
+- บันทึกเวลา Process ของแต่ละ Event เป็นมิลลิวินาที และไม่รวม Payload/ข้อมูลส่วนตัวใน Metrics
+- แจ้งเตือน Signature ผิด, Timestamp เกิน 5 นาที, Retry ค้างตั้งแต่ 3 Event และ Dead Letter ตั้งแต่ 1 Event
+- Security failure ถูกบันทึกเป็น Log แบบปิดบัง โดยไม่เก็บ Signature, Raw Body, Credential หรือข้อมูลส่วนตัว
+- Dashboard และ Alert รองรับมือถือและอยู่ในปุ่มศูนย์ควบคุมเว็บพาร์ทเนอร์เดิม
 
 ## v0.14.218 — Partner API Phase 4 Signed Webhook (IMPLEMENTED)
 

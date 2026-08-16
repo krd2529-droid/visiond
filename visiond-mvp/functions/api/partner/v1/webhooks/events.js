@@ -1,14 +1,15 @@
 import {json} from '../../../../_lib.js';
 import {ensureDatabase} from '../../../../_schema.js';
+import {ensurePartnerHealthSchema} from '../../../../_partner_health.js';
 import {decryptPartnerSecret} from '../../../../_partner_crypto.js';
-import {ensurePartnerWebhookSchema,processWebhookEvent,queueWebhook,verifyWebhook,webhookEnvelope,webhookLog,webhookRequestHash,webhookSignatureHash} from '../../../../_partner_webhook.js';
+import {processWebhookEvent,queueWebhook,verifyWebhook,webhookEnvelope,webhookLog,webhookRequestHash,webhookSignatureHash} from '../../../../_partner_webhook.js';
 const headers={'cache-control':'no-store'};
 export async function onRequestPost(ctx){
-  await ensureDatabase(ctx.env);await ensurePartnerWebhookSchema(ctx.env);
+  await ensureDatabase(ctx.env);await ensurePartnerHealthSchema(ctx.env);
   const raw=await ctx.request.text(),clientId=String(ctx.request.headers.get('x-visiond-client-id')||'').trim(),timestamp=String(ctx.request.headers.get('x-visiond-timestamp')||''),signature=String(ctx.request.headers.get('x-visiond-signature')||''),website=clientId?await ctx.env.DB.prepare('SELECT id,status,scopes,client_id,secret_ciphertext FROM partner_websites WHERE client_id=?').bind(clientId).first():null;
   if(!website||website.status!=='active')return json({error:'PARTNER_CREDENTIAL_INVALID'},401,headers);
   const secret=await decryptPartnerSecret(ctx.env,website.secret_ciphertext),verification=await verifyWebhook({secret,timestamp,raw,signature});
-  if(verification)return json({error:verification},401,headers);
+  if(verification){await webhookLog(ctx.env,{websiteId:website.id,eventId:null,type:'security',externalId:'',level:'critical',message:verification,status:401});return json({error:verification},401,headers)}
   let body=null;try{body=JSON.parse(raw)}catch{return json({error:'WEBHOOK_JSON_INVALID'},400,headers)}
   const envelope=webhookEnvelope(body,ctx.request);if(!envelope)return json({error:'WEBHOOK_EVENT_INVALID'},400,headers);
   const required=envelope.type==='customer'?'customers:write':'orders:write',scopes=JSON.parse(website.scopes||'[]');if(!scopes.includes(required))return json({error:'PARTNER_SCOPE_DENIED',required_scope:required},403,headers);
