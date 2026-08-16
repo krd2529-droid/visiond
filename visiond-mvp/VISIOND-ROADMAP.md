@@ -492,3 +492,10 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - หน้าที่ไม่มีข้อความถูก Render เป็น JPEG และส่ง Backend OCR ด้วย Secret ฝั่ง Cloudflare; ไม่ฝังคีย์ใน Frontend/Git
 - เก็บ method/status/error รายหน้า แสดงหน้าที่ค้างและลองใหม่เฉพาะ failed/ocr-pending ได้
 - ถัดไป: สรุปเต็มรายเล่มและ PDF สอนของจาวิส
+# v0.14.227 — Existing Bundle Preview Repair Foundation (IMPLEMENTED · URGENT EVENT CASE CONTINUES)
+- Vision 14 ถูกพักตามคำสั่ง Boss โดยไม่ปิด Event Case
+- เพิ่มปุ่ม `ตรวจรูปตัวอย่างตะกร้ารวม` ในหน้าจัดการสินค้า ติดกับปุ่มสร้างชุดรวม
+- ตอนสร้างชุดรวมใหม่ต้องตรวจและเลือกรูปใบงานจากรูปของตะกร้าต้นทางก่อนบันทึก; API ตรวจเจ้าของรูปซ้ำ
+- ตรวจตะกร้ารวมเดิม เลือกรูปจากสมาชิกชุด และแก้เฉพาะ cover/preview ของ Product ID เดิม
+- เก็บ Snapshot ก่อน–หลัง; ไม่เปลี่ยน Slug, created_at, ราคา, หมวด, หน้า, ลำดับ หรือสมาชิกชุด
+- แพตถัดไปเพิ่มตัวจำแนกใบงาน/หน้าปก/ลายเซ็ต/เงื่อนไข และเลือกรูปทดแทนอัตโนมัติ

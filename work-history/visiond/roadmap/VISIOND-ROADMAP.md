@@ -463,3 +463,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.226 — Vision 14 Automatic PDF Extraction + OCR Retry (IMPLEMENTED · EVENT CASE CONTINUES)
 - อ่าน Text Layer อัตโนมัติและ OCR เฉพาะหน้าสแกน พร้อมสถานะ/Retry รายหน้า
 - ถัดไปทำสรุปเต็มรายเล่มและ PDF สอนของจาวิส
+# v0.14.227 — Existing Bundle Preview Repair Foundation (IMPLEMENTED · URGENT EVENT CASE CONTINUES)
+- Vision 14 = PAUSED BY BOSS
+- เพิ่มปุ่มตรวจรูปในหน้าจัดการสินค้าและซ่อมรูป Product ID เดิมพร้อม Snapshot
+- ครอบคลุมการตรวจและเลือกรูปก่อนสร้างตะกร้ารวมใหม่ด้วย
+- ถัดไปทำ AI Classification และเลือกใบงานทดแทนอัตโนมัติ

@@ -1,4 +1,4 @@
-import("/facebook-chat.js?v=014226");
+import("/facebook-chat.js?v=014227");
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (value) =>
@@ -752,7 +752,11 @@ function updateBundleCount() {
       .filter(Boolean),
     count = selected.length,
     previewLimit=Math.max(1,Math.min(Number(productEditor.elements.bundle_preview_count.value)||count,count||1)),
-    previews = selected.slice(0,previewLimit).map((product,basketIndex)=>({url:product.cover_url||"/assets/product-placeholder.svg",title:product.title,basketIndex,imageIndex:0})),
+    previousPreviewUrls=String(productEditor.elements.bundle_preview_urls.value||"").split("\n").filter(Boolean),
+    candidates=selected.flatMap((product,basketIndex)=>productPreviewUrls(product).map((url,imageIndex)=>({url,title:product.title,basketIndex,imageIndex}))),
+    validPrevious=previousPreviewUrls.filter(url=>candidates.some(item=>item.url===url)).slice(0,previewLimit),
+    defaultPreviewUrls=selected.map(product=>product.cover_url).filter(Boolean).slice(0,previewLimit),
+    chosenPreviewUrls=validPrevious.length?validPrevious:defaultPreviewUrls,
     normalPrice=selected.reduce((sum,product)=>sum+Number(product.price||0),0),
     totalPages=selected.reduce((sum,product)=>sum+Number(product.pages||0),0),
     promoPrice=Math.round((Number(productEditor.elements.price.value)||0)*100),
@@ -760,14 +764,21 @@ function updateBundleCount() {
     percent=normalPrice?Math.round(saving*100/normalPrice):0;
   bundleSelectedCount.textContent = `เลือกแล้ว ${count}/${limit}`;
   bundleSelectedCount.style.color = count === limit ? "#08756f" : "#b23b35";
-  bundlePreviewCount.textContent = `${previews.length} รูป${count === limit ? " · พร้อมใช้เป็นสไลด์" : ""}`;
+  productEditor.elements.bundle_preview_urls.value=chosenPreviewUrls.join("\n");
+  bundlePreviewCount.textContent = `${chosenPreviewUrls.length}/${previewLimit} รูป${count === limit ? " · ตรวจและเลือกรูปใบงานก่อนบันทึก" : ""}`;
   bundlePreviewGallery.innerHTML =
-    previews
+    candidates
       .map(
         (item) =>
-          `<figure><img src="${esc(item.url)}" alt="${esc(item.title)} รูป ${item.imageIndex + 1}"><figcaption>ตะกร้า ${item.basketIndex + 1} · รูป ${item.imageIndex + 1}</figcaption></figure>`,
+          `<figure><label><input type="checkbox" value="${esc(item.url)}" ${chosenPreviewUrls.includes(item.url)?"checked":""}><img src="${esc(item.url)}" alt="${esc(item.title)} รูป ${item.imageIndex + 1}"><figcaption>ตะกร้า ${item.basketIndex + 1} · รูป ${item.imageIndex + 1}</figcaption></label></figure>`,
       )
       .join("") || "<small>เลือกรายการด้านบนเพื่อดูรูปตัวอย่าง</small>";
+  bundlePreviewGallery.querySelectorAll('input').forEach(input=>input.onchange=()=>{
+    const checked=[...bundlePreviewGallery.querySelectorAll('input:checked')];
+    if(checked.length>previewLimit){input.checked=false;return setMessage(`เลือกได้ไม่เกิน ${previewLimit} รูป`,true)}
+    productEditor.elements.bundle_preview_urls.value=checked.map(item=>item.value).join("\n");
+    bundlePreviewCount.textContent=`${checked.length}/${previewLimit} รูป · ตรวจและเลือกรูปใบงานก่อนบันทึก`;
+  });
   productEditor.elements.pages.value=totalPages;
   bundleSummary.innerHTML=`<b>${count} ตะกร้า · ราคาปกติรวม ${money(normalPrice)} · ${new Intl.NumberFormat("th-TH").format(totalPages)} หน้า</b><span>ราคาชุดโปร ${money(promoPrice)} · ประหยัด ${money(saving)} (${percent}%)</span><ol>${selected.map(product=>`<li>${esc(product.title)} · ${money(product.price)} · ${Number(product.pages)||0} หน้า</li>`).join("")}</ol>`;
 }
@@ -966,6 +977,9 @@ async function saveProduct(event) {
     if (selected.length !== required)
       return setMessage(`กรุณาเลือกตะกร้าให้ครบ ${required} รายการ`, true);
     fd.set("bundle_product_ids", selected.join(","));
+    const selectedPreviews=String(fd.get("bundle_preview_urls")||"").split("\n").filter(Boolean);
+    if(!selectedPreviews.length)return setMessage("กรุณาตรวจและเลือกรูปตัวอย่างตะกร้ารวมอย่างน้อย 1 รูป",true);
+    fd.set("bundle_preview_urls",JSON.stringify(selectedPreviews));
     const chosen=selected.map(value=>products.find(product=>Number(product.id)===Number(value))).filter(Boolean);
     fd.set("pages",String(chosen.reduce((sum,product)=>sum+Number(product.pages||0),0)));
     const itemList=chosen.map((product,index)=>`${index+1}. ${product.title} · ${money(product.price)} · ${Number(product.pages)||0} หน้า`).join("\n"),currentDescription=String(fd.get("description")||"").trim();
@@ -1594,8 +1608,8 @@ async function saveRole(id) {
 }
 showAdminNotice();
 init();
-import('/mouse-ui.js?v=014226');
-import('/i18n.js?v=014226');
+import('/mouse-ui.js?v=014227');
+import('/i18n.js?v=014227');
 
 document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
 
