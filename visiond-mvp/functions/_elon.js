@@ -330,6 +330,7 @@ const SALES_INTENTS=[
   {patterns:['รอยสัก','แบบสัก','tattoo'],terms:['รอยสัก','แบบสัก','tattoo']},
   {patterns:['แบบฝึกหัด','worksheet'],terms:['แบบฝึกหัด','worksheet']},
   {patterns:['ระบายสี','coloring'],terms:['ระบายสี','coloring']},
+  {patterns:['ตุ๊กตากระดาษ','paper doll','paper-doll'],terms:['ตุ๊กตากระดาษ','paper-doll']},
   {patterns:['เกมเสริม','เกมเด็ก','development game'],terms:['เกมเสริม','development-game']},
   {patterns:['คอร์ส','เรียนออนไลน์'],terms:['คอร์ส','online-course']},
   {patterns:['สิทธิ์ขายคอร์ส','ลงขายคอร์ส'],terms:['สิทธิ์ลงขายคอร์ส','resale-rights']}

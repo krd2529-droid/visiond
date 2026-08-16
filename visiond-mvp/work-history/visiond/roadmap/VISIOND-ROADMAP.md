@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.219
+Current build: v0.14.220
+
+## v0.14.220 — Paper Doll Digital Category (IMPLEMENTED)
+
+- เปิดหมวด “ตุ๊กตากระดาษ” ในหลังบ้านและตัวกรองแคตตาล็อกหน้าบ้าน โดยไม่ปนกับหมวดแบบฝึกหัด
 
 ## v0.14.219 — Partner API Phase 5 Health Dashboard (IMPLEMENTED)
 

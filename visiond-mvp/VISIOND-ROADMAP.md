@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.219
+Current build: v0.14.220
+
+## v0.14.220 — Paper Doll Digital Category (IMPLEMENTED)
+
+- เปิดหมวดหลัก `paper-doll` ชื่อ “ตุ๊กตากระดาษ” ในสินค้าดิจิทัลและช่องเลือกหมวดหลังบ้าน
+- หน้าร้านมีตัวกรองตุ๊กตากระดาษแยกจากแบบฝึกหัด พร้อมรองรับ URL `?category=paper-doll`
+- กำหนดค่ามาตรฐานเป็น PDF, active และ sort order 27 ผ่าน Migration 0051 โดยไม่สร้างหมวดซ้ำ
+- เพิ่มคำค้นให้ ELON และตรวจ label หน้ารายละเอียดสินค้าให้ใช้ชื่อเดียวกัน
 
 ## v0.14.219 — Partner API Phase 5 Health Dashboard (IMPLEMENTED)
 

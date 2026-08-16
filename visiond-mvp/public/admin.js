@@ -1,4 +1,4 @@
-import("/facebook-chat.js?v=014219");
+import("/facebook-chat.js?v=014220");
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (value) =>
@@ -34,7 +34,7 @@ let draftProductPage = 1;
 function setVision2PendingProductFiles(files) {
   vision2PendingProductFiles = files;
 }
-const starterCategorySlugs = new Set(["dinosaur", "paper-doll", "document"]);
+const starterCategorySlugs = new Set(["dinosaur", "document"]);
 const panels = {
   overview: overviewPanel,
   products: productsPanel,
@@ -1594,8 +1594,8 @@ async function saveRole(id) {
 }
 showAdminNotice();
 init();
-import('/mouse-ui.js?v=014219');
-import('/i18n.js?v=014219');
+import('/mouse-ui.js?v=014220');
+import('/i18n.js?v=014220');
 
 document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
 

@@ -242,6 +242,7 @@ async function initializeDatabase(env) {
     await env.DB.prepare("DELETE FROM products WHERE category='resale-rights' AND id<>?").bind(rightsId).run();
   }
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('dinosaur','ไดโนเสาร์','coloring','PDF',1,11)").run();
-  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('paper-doll','ตุ๊กตากระดาษ',NULL,'PDF',1,30)").run();
+  await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('paper-doll','ตุ๊กตากระดาษ',NULL,'PDF',1,27)").run();
+  await env.DB.prepare("UPDATE categories SET name='ตุ๊กตากระดาษ',parent_slug=NULL,file_type='PDF',active=1,sort_order=27 WHERE slug='paper-doll'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('document','เอกสารและแบบฟอร์ม',NULL,'PDF',1,40)").run();
 }
