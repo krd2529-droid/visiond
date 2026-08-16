@@ -1,7 +1,16 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.214
+Current build: v0.14.215
+
+## v0.14.215 — Partner API Phase 1 Foundation (IMPLEMENTED)
+
+- เพิ่ม Website Registry สำหรับเว็บ 2 และเว็บไซต์คู่ค้า โดย VisionD เปิด พัก หรือเพิกถอนการเชื่อมต่อได้
+- ออก Client ID/Client Secret แยกต่อเว็บไซต์ Secret แสดงครั้งเดียว เก็บ AES-GCM พร้อม Hash และรองรับการหมุน Credential
+- เพิ่ม Least Privilege Scope `products:read`, Request ID และ Audit Log โดยไม่เก็บ Secret/IP จริง
+- เพิ่ม `GET /api/partner/v1/products` แบบ Read-only ส่งเฉพาะ Metadata สินค้า/โปรแกรมที่เผยแพร่แล้ว ไม่ส่งไฟล์ดาวน์โหลด ข้อมูลลูกค้า หรือข้อมูลชำระเงิน
+- เพิ่มหน้าหลังบ้าน Partner API พร้อมกฎถาวรว่าเว็บ 2 แยกฐานข้อมูลและเชื่อม VisionD ผ่าน Versioned API/Signed Event เท่านั้น
+- งานเว็บ 2 ระยะต่อไปทั้งหมดต้องต่อภายในปุ่ม `ศูนย์ควบคุมเว็บพาร์ทเนอร์` จุดเดียว
 
 ## v0.14.214 — Bulk Category Move Button Guidance (IMPLEMENTED)
 
