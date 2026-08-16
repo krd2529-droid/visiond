@@ -20,6 +20,7 @@
 15. Retry ใช้ exponential backoff และย้าย Dead Letter เมื่อครบ 5 ครั้ง; การลองใหม่ต้องผ่านตัวประมวลผลและกฎข้อมูลเดียวกับ API ระยะ 2
 16. ทุกเว็บไซต์ต้องมี Health Dashboard ช่วง 24 ชั่วโมง แสดง Success/Retry/Dead/Error Rate/Response Time/Event ล่าสุด โดย Metrics ห้ามมี Payload หรือข้อมูลส่วนตัว
 17. Alert ขั้นต่ำ: Signature ผิด ≥1, Timestamp เกินกำหนด ≥1, Retry ค้าง ≥3 หรือ Dead Letter ≥1; Security Log เก็บเฉพาะรหัสเหตุการณ์ที่ปิดบัง
+18. ก่อนเชื่อมเว็บ 2 ต้องผ่าน E2E Readiness ใน Sandbox ครบสินค้า ลูกค้า ออเดอร์ ชำระเงิน ยกเลิก คืนเงิน Idempotency Webhook Retry/Dead และ Alert โดยไม่เขียนข้อมูลทดสอบลง Production
 
 ## Phase 1 Contract
 
@@ -59,3 +60,11 @@
 - Metrics: total, completed, retry, dead, error rate, average/max duration milliseconds, latest event
 - Alerts: `SIGNATURE_FAILURE`, `TIMESTAMP_EXPIRED`, `RETRY_ACCUMULATED`, `DEAD_LETTER_PRESENT`
 - Dashboard ใช้ Admin Webhook API เดิมและห้ามส่ง Payload Ciphertext, Signature, Secret, Token หรือข้อมูลลูกค้ากลับ Frontend
+
+## Phase 6 E2E Readiness Contract
+
+- Admin E2E: `POST /api/admin/partner-websites/{id}/e2e`
+- เริ่มจากสินค้า Read-only แล้วจำลองลูกค้า ออเดอร์ ชำระเงิน ยกเลิก และคืนเงินใน Sandbox
+- ตรวจ External ID, Idempotent Replay/Conflict, HMAC/Timestamp, Retry/Dead Letter และ Health Alert ในรอบเดียว
+- ห้ามเขียนลูกค้าและออเดอร์ทดสอบลง Production และห้ามส่ง Client Secret, Signature หรือข้อมูลส่วนตัวกลับ Frontend
+- เว็บไซต์ต้อง active และมี Scope `products:read`, `customers:write`, `orders:write` ครบ

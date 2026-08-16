@@ -12,3 +12,4 @@
 - Sandbox ต้องแยกจากข้อมูล Production และประวัติต้องปิดบัง Credential, ข้อมูลส่วนตัว, External ID และ Idempotency Key
 - Signed Webhook ต้องตรวจ HMAC ของ Timestamp+Raw Body ภายใน 5 นาที ป้องกัน Signature/Idempotency ซ้ำ เข้ารหัส Payload คิว และปิดบัง Log
 - Health Dashboard แยกแต่ละเว็บไซต์ แสดง Metrics 24 ชั่วโมงและแจ้ง Signature/Timestamp/Retry/Dead Letter โดยห้ามเปิดเผย Payload หรือข้อมูลส่วนตัว
+- E2E Readiness ต้องตรวจสินค้าและวงจรธุรกรรมครบใน Sandbox พร้อม Idempotency, Webhook, Retry/Dead และ Alert โดยไม่เขียนข้อมูลทดสอบลง Production

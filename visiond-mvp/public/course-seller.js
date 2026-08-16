@@ -21,7 +21,7 @@ const esc = (v) =>
 let state;
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014220">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014221">',
 );
 document
   .querySelector(".seller-hero")

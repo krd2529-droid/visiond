@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.220
+Current build: v0.14.221
+
+## v0.14.221 — Partner API End-to-End Readiness (IMPLEMENTED)
+
+- เพิ่มปุ่มทดสอบ E2E แยกแต่ละเว็บไซต์ภายในศูนย์ควบคุมเว็บพาร์ทเนอร์
+- ตรวจสินค้า Read-only ผ่าน Credential จริง และจำลองวงจรลูกค้า ออเดอร์ ชำระเงิน ยกเลิก คืนเงินใน Sandbox
+- ตรวจ Idempotency Replay/Conflict, Signed Webhook, Retry/Dead Letter และ Health Alert ในรายงานเดียว
+- ผลทดสอบไม่เขียนลูกค้า/ออเดอร์ลง Production และไม่ส่ง Credential, Signature หรือข้อมูลส่วนตัวกลับ Frontend
 
 ## v0.14.220 — Paper Doll Digital Category (IMPLEMENTED)
 
