@@ -884,7 +884,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.207</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.208</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1380,6 +1380,8 @@
                 + เพิ่มสินค้าเอง
               </button><button class="bundle-launch" id="newBundleButton" type="button">
                 สร้างชุดรวมตะกร้า
+              </button><button class="bundle-launch" id="bulkMoveCategoryButton" type="button" disabled>
+                ย้ายหมวดหลายตะกร้า
               </button>
             </div>
           </div>
@@ -1425,6 +1427,17 @@
               ลบตะกร้าที่เลือก
             </button>
           </div>
+          <dialog id="bulkMoveCategoryDialog" aria-labelledby="bulkMoveCategoryTitle">
+            <form id="bulkMoveCategoryForm">
+              <div class="dialog-head"><div><small>PRODUCT BULK EDITOR</small><h2 id="bulkMoveCategoryTitle">ย้ายหมวดหลายตะกร้า</h2></div><button id="bulkMoveCategoryClose" type="button" aria-label="ปิด">×</button></div>
+              <p id="bulkMoveCategorySummary">เลือกรายการจากช่องติ๊กในหน้าจัดการสินค้า</p>
+              <label>หมวดปลายทาง<select name="category" required></select></label>
+              <div class="admin-card"><b>ระบบจะปรับให้อัตโนมัติ</b><p>หมวดหมู่ · Slug/รหัสตะกร้า · ชื่อ · คำอธิบาย · ประเภทไฟล์ โดยคงเลขรหัสสินค้าเดิมและความเชื่อมโยงออเดอร์ไว้</p></div>
+              <label class="confirm-row"><input name="confirmed" type="checkbox" required> ตรวจรายการที่เลือกและยืนยันย้ายหมวดแล้ว</label>
+              <p id="bulkMoveCategoryState" role="status"></p>
+              <div class="dialog-actions"><button id="bulkMoveCategoryCancel" type="button">ยกเลิก</button><button class="primary" type="submit">ย้ายหมวดที่เลือก</button></div>
+            </form>
+          </dialog>
           <div class="product-admin-layout">
             <div>
               <div id="productAdminList" class="product-status-lists">
@@ -2169,7 +2182,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014206"></script>
+    <script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014208"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>

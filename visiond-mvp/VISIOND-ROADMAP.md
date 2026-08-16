@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-15
-Current build: v0.14.207
+Current build: v0.14.208
+
+## v0.14.208 — Bulk Product Category Move (IMPLEMENTED)
+
+- เพิ่มปุ่ม `ย้ายหมวดหลายตะกร้า` ต่อจาก `สร้างชุดรวมตะกร้า` ในหน้าจัดการสินค้า ใช้ผลค้นหาและช่องติ๊กเดิม
+- Boss/Admin เลือกหลายตะกร้าและหมวดปลายทางครั้งเดียว ระบบเปลี่ยนหมวด Slug ชื่อ คำอธิบาย และชนิดไฟล์ให้สอดคล้อง
+- เลขรหัสสินค้าแบบตัวเลขไม่เปลี่ยน จึงรักษาออเดอร์ สิทธิ์ ไฟล์ และสถิติที่ผูกกับ Product ID เดิม
+- Backend ปฏิเสธตะกร้าสิทธิ์ ชุดรวม และตะกร้าที่ถูกจัดสรรเข้า bundle พร้อม confirmation และ role guard
 
 ## v0.14.207 — Full-stack Button/Event Coverage (IMPLEMENTED)
 
