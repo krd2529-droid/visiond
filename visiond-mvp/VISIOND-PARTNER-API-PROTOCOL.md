@@ -15,6 +15,9 @@
 10. ห้ามรับหรือเก็บ Password/Passcode, Access/Refresh Token เต็ม, API Key/Client Secret, เลขบัตร/CVV/วันหมดอายุ หรือบัญชี/เส้นทางธนาคารใน Payload ทุกระดับ
 11. ข้อมูลระบุตัวลูกค้าต้องเข้ารหัส AES-GCM; จำนวนเงินใช้จำนวนเต็มหน่วยสตางค์ สกุล THB และตรวจยอดรายการ/ส่วนลด/คืนเงินก่อนเขียน
 12. Sandbox ต้องแยกจากข้อมูล Production, ห้ามเขียนตารางลูกค้า/ออเดอร์จริง และประวัติต้องปิดบัง Credential, ข้อมูลส่วนตัว, External ID และ Idempotency Key
+13. Signed Webhook ต้องใช้ HMAC-SHA256 ครอบคลุม `timestamp.raw_body`, ตรวจแบบ constant-time และยอมรับ Timestamp คลาดเคลื่อนไม่เกิน 5 นาที
+14. Signature Hash และ Idempotency Key ต้อง Unique ต่อเว็บไซต์; Payload ใน Retry Queue ต้องเข้ารหัส และ Log ห้ามมี Raw Body, Secret, Token หรือข้อมูลส่วนตัว
+15. Retry ใช้ exponential backoff และย้าย Dead Letter เมื่อครบ 5 ครั้ง; การลองใหม่ต้องผ่านตัวประมวลผลและกฎข้อมูลเดียวกับ API ระยะ 2
 
 ## Phase 1 Contract
 
@@ -39,3 +42,11 @@
 - Scenarios: `customer`, `order`, `payment`, `cancellation`, `refund`
 - ทดสอบ Scope, External ID, Idempotency Key และ Replay/Conflict โดยไม่เรียกหรือแก้ข้อมูล Production
 - ประวัติแสดงเฉพาะค่าปิดบังและผลตรวจสอบ ห้ามแสดง Client Secret, Token เต็ม หรือข้อมูลส่วนตัว
+
+## Phase 4 Signed Webhook Contract
+
+- Endpoint: `POST /api/partner/v1/webhooks/events`
+- Headers: `X-VisionD-Client-ID`, `X-VisionD-Timestamp`, `X-VisionD-Signature`, `Idempotency-Key`
+- Signature: `v1=HMAC_SHA256(client_secret, timestamp + "." + raw_body)`
+- Event envelope: `type`, `external_id`, `data`; types ได้แก่ `customer`, `order`, `payment`, `cancellation`, `refund`
+- Queue control: `GET|POST /api/admin/partner-websites/{id}/webhooks` ภายในศูนย์ควบคุมเว็บพาร์ทเนอร์เท่านั้น

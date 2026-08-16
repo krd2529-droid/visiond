@@ -10,3 +10,4 @@
 - งานเขียนต้องมี External ID และ `Idempotency-Key`; Key เดิมห้ามสร้างข้อมูลซ้ำ
 - ห้ามรับ Password, Token เต็ม, ข้อมูลบัตร หรือข้อมูลธนาคาร และต้องเข้ารหัสข้อมูลระบุตัวลูกค้า
 - Sandbox ต้องแยกจากข้อมูล Production และประวัติต้องปิดบัง Credential, ข้อมูลส่วนตัว, External ID และ Idempotency Key
+- Signed Webhook ต้องตรวจ HMAC ของ Timestamp+Raw Body ภายใน 5 นาที ป้องกัน Signature/Idempotency ซ้ำ เข้ารหัส Payload คิว และปิดบัง Log

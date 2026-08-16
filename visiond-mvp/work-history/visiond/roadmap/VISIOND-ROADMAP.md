@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.217
+Current build: v0.14.218
+
+## v0.14.218 — Partner API Phase 4 Signed Webhook (IMPLEMENTED)
+
+- รับ Signed Event 5 ประเภทด้วย HMAC/Timestamp/Replay Protection พร้อม Retry และ Dead Letter ที่ปิดบัง Log
 
 ## v0.14.217 — Partner API Phase 3 Sandbox (IMPLEMENTED)
 

@@ -1,7 +1,16 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.217
+Current build: v0.14.218
+
+## v0.14.218 — Partner API Phase 4 Signed Webhook (IMPLEMENTED)
+
+- เพิ่ม Signed Webhook รับ Event ลูกค้า ออเดอร์ ชำระเงิน ยกเลิก และคืนเงินจากเว็บ 2
+- ตรวจ HMAC-SHA256 จาก Timestamp และ Raw Body แบบ constant-time พร้อมปฏิเสธ Timestamp เกิน 5 นาที
+- ป้องกัน Replay ด้วย Signature Hash และ Idempotency Key แยกต่อเว็บไซต์ และใช้ External ID ตรวจทุก Event
+- Payload ในคิวเข้ารหัส AES-GCM; ประมวลผลผ่าน API ซิงก์ระยะ 2 เดิมเพื่อใช้กฎข้อมูลชุดเดียว
+- ล้มเหลวเข้าคิว Retry แบบ exponential backoff และย้าย Dead Letter เมื่อครบ 5 ครั้ง พร้อมปุ่มลองใหม่/ย้าย Dead Letter
+- หน้า Queue และ Log อยู่ภายในศูนย์ควบคุมเว็บพาร์ทเนอร์ รองรับมือถือ และแสดงเฉพาะข้อมูลปิดบัง
 
 ## v0.14.217 — Partner API Phase 3 Sandbox (IMPLEMENTED)
 
