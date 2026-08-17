@@ -498,3 +498,5 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.236 — Ad UTM + Conversion + A/B Variants (IMPLEMENTED · EVENT CASE CONTINUES)
 - A/B ถ่วงน้ำหนัก, sticky assignment, UTM และ Event funnel ใช้ Customer Intelligence เดิมถึง Purchase
 - หน้าหลังบ้านตั้ง Variant และดูสถิติ 30 วัน; ถัดไป SEO Draft Engine
+# v0.14.237 — V12 Inbox Conversation Recovery (URGENT EVENT CASE COMPLETE)
+- เปิดแชตแรกอัตโนมัติ แสดงสถานะโหลด/ข้อผิดพลาด/ลองใหม่ และแก้ cache mismatch โดยรักษาประวัติลูกค้าเดิมทั้งหมด

@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const read=file=>fs.readFileSync(file,'utf8');
+const version=read('VERSION.txt'),page=read('public/v12-connect.html'),ui=read('public/v12-connect.js');
+assert.equal(version.trim(),'v0.14.237');
+assert.match(page,/v0\.14\.237/);
+for(const asset of['v12-connect.css','v12-profile.css','visiond-button-system.css','visiond-button-system.js','v12-connect.js'])assert.match(page,new RegExp(asset.replace('.','\\.')+'\\?v=014237'));
+for(const token of["byId('v12Empty')","loadList({openFirst:true})",'กำลังโหลดบทสนทนา','v12RetryThread','เปิดแชทไม่สำเร็จ'])assert.ok(ui.includes(token),token);
+assert.doesNotMatch(ui,/v12Empty\.hidden|v12Active\.hidden/);
+console.log('v0.14.237 V12 conversation visibility and cache recovery: PASS');

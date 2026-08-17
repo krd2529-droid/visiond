@@ -546,3 +546,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - Session Attribution ไหลต่อถึง `/cart` และ Purchase Attribution เดิมเมื่อออเดอร์ชำระสำเร็จ
 - เพิ่มหน้าตั้งค่า A/B และสรุป Event แยก Variant ย้อนหลัง 30 วัน โดยไม่เก็บ PII เพิ่ม
 - ระยะถัดไป SEO Automation Draft Engine
+# v0.14.237 — V12 Inbox Conversation Recovery (IMPLEMENTED · URGENT EVENT CASE COMPLETE)
+- เปิดบทสนทนาแรกอัตโนมัติเมื่อมีลูกค้า ลดหน้าว่างที่ทำให้เข้าใจว่าไม่มีแชต
+- ใช้ DOM reference โดยตรงแทน global จาก id พร้อมสถานะโหลด ข้อผิดพลาด และปุ่มลองใหม่ในพื้นที่แชต
+- อัปเดต cache stamp ของหน้า V12 เป็นแพตเดียวกัน โดยไม่แตะหรือลบประวัติข้อความลูกค้า
