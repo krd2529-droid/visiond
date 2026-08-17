@@ -495,3 +495,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - Public `/s/{slug}` แบบ noindex กรองเฉพาะหน้า/สินค้าที่ published และหยุดขายเมื่อไม่มีสินค้าใช้ได้
 - ราคา/โปรโมชั่นมาจากระบบจริง ปุ่มซื้อใช้ vd_cart → /cart เดิม
 - ถัดไป UTM, Conversion และ A/B Variant
+# v0.14.236 — Ad UTM + Conversion + A/B Variants (IMPLEMENTED · EVENT CASE CONTINUES)
+- A/B ถ่วงน้ำหนัก, sticky assignment, UTM และ Event funnel ใช้ Customer Intelligence เดิมถึง Purchase
+- หน้าหลังบ้านตั้ง Variant และดูสถิติ 30 วัน; ถัดไป SEO Draft Engine

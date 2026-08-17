@@ -540,3 +540,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ปุ่มเพิ่มตะกร้า/ซื้อทันทีใช้ `vd_cart` และ `/cart` เดิม จึงรักษากฎราคา ส่วนลด ชุดรวม และชำระเงินชุดเดียวกัน
 - หน้า Mobile-first และมีลิงก์เปิดหน้าจริงจาก Sales Page Center
 - ระยะถัดไป UTM, Conversion Event และ A/B Variant
+# v0.14.236 — Ad UTM + Conversion + A/B Variants (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่ม Variant A/B แบบถ่วงน้ำหนักรวม 100 และจำ Variant เดิมของผู้ชมแต่ละหน้า
+- รับ UTM source/medium/campaign และใช้ Variant เป็น content พร้อมเก็บ landing/add-to-cart/checkout ใน Customer Intelligence เดิม
+- Session Attribution ไหลต่อถึง `/cart` และ Purchase Attribution เดิมเมื่อออเดอร์ชำระสำเร็จ
+- เพิ่มหน้าตั้งค่า A/B และสรุป Event แยก Variant ย้อนหลัง 30 วัน โดยไม่เก็บ PII เพิ่ม
+- ระยะถัดไป SEO Automation Draft Engine
