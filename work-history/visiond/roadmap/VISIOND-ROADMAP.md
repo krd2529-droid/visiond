@@ -478,3 +478,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.230 — Vision 14 Jarvis Teaching PDF (IMPLEMENTED · EVENT CASE CONTINUES)
 - สร้าง/เก็บ/ดาวน์โหลด PDF สอนภาษาไทย พร้อม Coverage Gate 80% และ Rights Gate
 - ถัดไปทำ Dedup/MIX และส่ง Vision 13
+# v0.14.231 — Vision 14 Dedup/MIX + Vision 13 Intake Boundary (IMPLEMENTED · EVENT CASE CONTINUES)
+- Dedup ความรู้พร้อมรวม Citation หลายต้นฉบับ และสร้าง MIX ภายใน
+- สิทธิ์ครบเท่านั้นเข้า Vision 13 Intake `ready`; ถัดไปทำหน้ารับงาน Vision 13

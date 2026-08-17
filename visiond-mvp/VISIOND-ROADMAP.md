@@ -513,3 +513,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - บล็อกเมื่อ Coverage ต่ำกว่า 80% และเก็บ Rights Gate ว่าส่งต่อเพื่อขายได้หรือใช้สอนภายในเท่านั้น
 - ตรวจ Render PDF ตัวอย่างจริงแล้ว ไม่พบอักษรไทยแตก ข้อความชน หรือตัดขอบ
 - ถัดไปทำ Dedup/MIX และส่งเข้า Vision 13
+# v0.14.231 — Vision 14 Dedup/MIX + Vision 13 Intake Boundary (IMPLEMENTED · EVENT CASE CONTINUES)
+- รวมประเด็นจาก PDF สอนหลายเล่ม ตัดข้อความซ้ำด้วย Normalization + Token Similarity และเก็บ SHA-256 Fingerprint
+- รายการที่รวมยังเก็บ Source ID, ชื่อต้นฉบับ และเลขหน้าอ้างอิงครบ
+- MIX ที่ทุกต้นฉบับผ่าน Rights Gate เท่านั้นจึงสร้างคิว Vision 13 `ready`; รายการสิทธิ์ไม่ผ่านเก็บภายในและไม่ส่งขาย
+- ถัดไปสร้างศูนย์รับงาน Vision 13 และตรวจ Intake ก่อนนำไปผลิต E-book
