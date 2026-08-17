@@ -475,3 +475,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - Boss สั่งทำต่อ จึง RESUME Vision 14 และสร้างสรุปเต็มรายเล่มจากข้อความสะอาด
 - ทุกประเด็นมีเลขหน้าอ้างอิง พร้อม Coverage และ Missing Pages
 - ถัดไปสร้าง PDF สอนของจาวิส
+# v0.14.230 — Vision 14 Jarvis Teaching PDF (IMPLEMENTED · EVENT CASE CONTINUES)
+- สร้าง/เก็บ/ดาวน์โหลด PDF สอนภาษาไทย พร้อม Coverage Gate 80% และ Rights Gate
+- ถัดไปทำ Dedup/MIX และส่ง Vision 13

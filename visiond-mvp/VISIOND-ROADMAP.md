@@ -508,3 +508,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - สรุปจาก clean text เท่านั้น แยก Record จาก PDF/Raw Text และมีเลขหน้าอ้างอิงทุกประเด็น
 - แสดงจำนวนหน้าครอบคลุมและหน้าที่ OCR/Extraction ขาดก่อนนำไปสร้าง PDF สอนของจาวิส
 - ถัดไปสร้าง Teaching PDF จาก Summary ที่ Boss ตรวจแล้ว
+# v0.14.230 — Vision 14 Jarvis Teaching PDF (IMPLEMENTED · EVENT CASE CONTINUES)
+- สร้าง PDF ภาษาไทยจาก Summary และ Page Trace ใน Browser แล้วเก็บ R2 พร้อม Metadata
+- บล็อกเมื่อ Coverage ต่ำกว่า 80% และเก็บ Rights Gate ว่าส่งต่อเพื่อขายได้หรือใช้สอนภายในเท่านั้น
+- ตรวจ Render PDF ตัวอย่างจริงแล้ว ไม่พบอักษรไทยแตก ข้อความชน หรือตัดขอบ
+- ถัดไปทำ Dedup/MIX และส่งเข้า Vision 13
