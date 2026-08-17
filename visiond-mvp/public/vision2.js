@@ -971,9 +971,9 @@
   let pdfJsPromise = null;
   const loadPdfJs = async () => {
     if (!pdfJsPromise)
-      pdfJsPromise = import("/vendor/pdfjs/pdf.mjs?v=014247").then((pdfjs) => {
+      pdfJsPromise = import("/vendor/pdfjs/pdf.mjs?v=014248").then((pdfjs) => {
         pdfjs.GlobalWorkerOptions.workerSrc =
-          "/vendor/pdfjs/pdf.worker.mjs?v=014247";
+          "/vendor/pdfjs/pdf.worker.mjs?v=014248";
         return pdfjs;
       });
     return pdfJsPromise;

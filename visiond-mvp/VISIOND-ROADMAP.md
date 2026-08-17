@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-18
-Current build: v0.14.247
+Current build: v0.14.248
+
+## v0.14.248 — V12 AI Sales Assistant Production Recovery (IMPLEMENTED)
+- แก้ production วิเคราะห์ไม่สำเร็จจากตาราง Lead Insight ที่ยังไม่ได้ apply โดย API ตรวจและสร้าง schema แบบ idempotent ก่อนใช้งาน
+- แสดงรหัส HTTP/Provider/Network ที่เกิดขึ้นจริงแทนข้อความกว้าง เพื่อใช้หลักฐานแก้ครั้งต่อไปโดยไม่เดา
 
 ## v0.14.247 — V12 AI Sales Assistant (IMPLEMENTED)
 

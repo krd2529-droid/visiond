@@ -1,5 +1,8 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.248 — V12 AI Sales Assistant Production Recovery (IMPLEMENTED)
+- API สร้างตาราง Lead Insight ที่ขาดแบบ idempotent ก่อนวิเคราะห์ และแสดงรหัสข้อผิดพลาดจริง
+
 ## v0.14.247 — V12 AI Sales Assistant (IMPLEMENTED)
 
 - วิเคราะห์ประวัติแชตแบบปิดบังข้อมูลส่วนตัว จัดระดับลูกค้าและร่างข้อความขายจากสินค้าเปิดขายจริง โดยคนต้องตรวจและกดส่งเอง

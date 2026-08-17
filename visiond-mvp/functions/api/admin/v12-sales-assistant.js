@@ -3,6 +3,18 @@ import {selectElonProvider,requestElonProvider,extractProviderText} from '../../
 import {enforceElonGlobalBudget} from '../../_elon.js';
 const headers={'cache-control':'private, no-store'},stages=new Set(['new','exploring','interested','ready','follow_up']);
 const clean=(value,max=1600)=>String(value||'').normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+export async function ensureV12SalesAssistantSchema(env){
+  await env.DB.exec(`CREATE TABLE IF NOT EXISTS v12_lead_insights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shop_id TEXT NOT NULL,
+    conversation_id TEXT NOT NULL,
+    stage TEXT NOT NULL DEFAULT 'new' CHECK(stage IN ('new','exploring','interested','ready','follow_up')),
+    intent TEXT NOT NULL DEFAULT '',summary TEXT NOT NULL DEFAULT '',objections TEXT NOT NULL DEFAULT '',
+    next_action TEXT NOT NULL DEFAULT '',suggested_reply TEXT NOT NULL DEFAULT '',source_message_count INTEGER NOT NULL DEFAULT 0,
+    analyzed_by INTEGER,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(shop_id,conversation_id)
+  ); CREATE INDEX IF NOT EXISTS idx_v12_lead_insights_stage ON v12_lead_insights(stage,updated_at DESC);`);
+}
 export const redactSalesHistory=value=>clean(value,1800).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[อีเมลถูกปิดบัง]').replace(/(?:\+?66|0)[\s-]?\d(?:[\s-]?\d){7,9}/g,'[เบอร์โทรถูกปิดบัง]').replace(/\b\d[\d\s-]{5,}\d\b/g,'[ตัวเลขส่วนตัวถูกปิดบัง]').replace(/(?:\b(?:api[_ -]?key|access[_ -]?token|password)\b|รหัสผ่าน)[^\n]{0,120}/gi,'[ข้อมูลลับถูกปิดบัง]');
 export const parseSalesInsight=value=>{try{const data=JSON.parse(String(value||'').replace(/^```(?:json)?\s*|\s*```$/g,'').trim());return {stage:stages.has(data?.stage)?data.stage:'new',intent:clean(data?.intent,300),summary:clean(data?.summary,600),objections:clean(data?.objections,500),next_action:clean(data?.next_action,400),suggested_reply:clean(data?.suggested_reply,1200)}}catch{return null}};
 const salesPrompt=products=>`คุณคือผู้ช่วยฝ่ายขายภายในของ VisionD วิเคราะห์บทสนทนาเพื่อช่วยเจ้าหน้าที่ ห้ามส่งข้อความเอง
@@ -10,9 +22,10 @@ const salesPrompt=products=>`คุณคือผู้ช่วยฝ่าย
 stage ใช้ได้เฉพาะ new, exploring, interested, ready, follow_up
 ตอบ JSON เท่านั้น: {"stage":"...","intent":"สิ่งที่สนใจ","summary":"สรุปข้อเท็จจริง","objections":"ข้อกังวลที่พบหรือไม่พบ","next_action":"สิ่งที่เจ้าหน้าที่ควรทำ","suggested_reply":"ร่างภาษาไทยสุภาพ กระชับ และมีคำถามถัดไปหนึ่งข้อ"}
 CATALOG=${JSON.stringify(products)}`;
-export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url),shopId=clean(url.searchParams.get('shop_id'),80),conversationId=clean(url.searchParams.get('conversation_id'),160);if(!shopId||!conversationId)return json({error:'ข้อมูลบทสนทนาไม่ครบ'},400,headers);const insight=await ctx.env.DB.prepare('SELECT stage,intent,summary,objections,next_action,suggested_reply,source_message_count,updated_at FROM v12_lead_insights WHERE shop_id=? AND conversation_id=?').bind(shopId,conversationId).first();return json({insight:insight||null},200,headers)}
+export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;await ensureV12SalesAssistantSchema(ctx.env);const url=new URL(ctx.request.url),shopId=clean(url.searchParams.get('shop_id'),80),conversationId=clean(url.searchParams.get('conversation_id'),160);if(!shopId||!conversationId)return json({error:'ข้อมูลบทสนทนาไม่ครบ'},400,headers);const insight=await ctx.env.DB.prepare('SELECT stage,intent,summary,objections,next_action,suggested_reply,source_message_count,updated_at FROM v12_lead_insights WHERE shop_id=? AND conversation_id=?').bind(shopId,conversationId).first();return json({insight:insight||null},200,headers)}
 export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  await ensureV12SalesAssistantSchema(ctx.env);
   const body=await ctx.request.json().catch(()=>({})),shopId=clean(body.shop_id,80),conversationId=clean(body.conversation_id,160);
   const conversation=await ctx.env.DB.prepare("SELECT id FROM veasy_conversations WHERE shop_id=? AND id=? AND status='active'").bind(shopId,conversationId).first();
   if(!shopId||!conversationId||!conversation)return json({error:'ไม่พบบทสนทนา'},404,headers);
@@ -29,5 +42,5 @@ export async function onRequestPost(ctx){
     if(!insight)return json({error:'AI ตอบรูปแบบไม่ถูกต้อง กรุณาลองใหม่'},502,headers);
     await ctx.env.DB.prepare('INSERT INTO v12_lead_insights(shop_id,conversation_id,stage,intent,summary,objections,next_action,suggested_reply,source_message_count,analyzed_by) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(shop_id,conversation_id) DO UPDATE SET stage=excluded.stage,intent=excluded.intent,summary=excluded.summary,objections=excluded.objections,next_action=excluded.next_action,suggested_reply=excluded.suggested_reply,source_message_count=excluded.source_message_count,analyzed_by=excluded.analyzed_by,updated_at=CURRENT_TIMESTAMP').bind(shopId,conversationId,insight.stage,insight.intent,insight.summary,insight.objections,insight.next_action,insight.suggested_reply,messages.length,auth.user.id).run();
     return json({insight:{...insight,source_message_count:messages.length}},200,headers);
-  }catch(error){console.error('V12_SALES_ASSISTANT_FAILED',{code:clean(error?.message,80)});return json({error:'วิเคราะห์บทสนทนาไม่สำเร็จ',code:clean(error?.message,80)},502,headers)}
+  }catch(error){const code=clean(error?.message,80)||'UNKNOWN';console.error('V12_SALES_ASSISTANT_FAILED',{code});return json({error:`วิเคราะห์บทสนทนาไม่สำเร็จ (${code})`,code},502,headers)}
 }
