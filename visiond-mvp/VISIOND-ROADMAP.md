@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.242
+Current build: v0.14.243
+
+## v0.14.243 — V12 Inbox Button Separation (IMPLEMENTED)
+
+- ป้องกันแถวตัวกรอง แถวปุ่มอัปเดต และปุ่มนำเข้าแชตเก่าถูก Flex ย่อจนซ้อนกัน
+- แยกพื้นที่ปุ่มจัดการเป็นแถวเต็มความกว้าง พร้อมระยะห่างมาตรฐาน
+- ให้เฉพาะรายการบทสนทนายืดและเลื่อนภายในพื้นที่ที่เหลือ ทั้งคอมพิวเตอร์และมือถือ
 
 ## v0.14.242 — Facebook Profile Picture Fallback (IMPLEMENTED)
 
