@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014237');
+import('/facebook-chat.js?v=014238');
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 const freshMedia=(url,version)=>url?.startsWith('/api/media/')?`${url}?v=${encodeURIComponent(version||Date.now())}`:url;
@@ -107,4 +107,4 @@ paymentDialog.addEventListener('click',event=>{if(event.target===paymentDialog)p
 productCopyAccount.addEventListener('click',async()=>{const number=productAccountNumber.textContent.trim();if(!number||number==='-')return;try{await navigator.clipboard.writeText(number);productCopyAccount.textContent='คัดลอกแล้ว ✓'}catch{const range=document.createRange();range.selectNode(productAccountNumber);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);productCopyAccount.textContent='เลือกเลขแล้ว กดคัดลอก'}setTimeout(()=>productCopyAccount.textContent='คัดลอกเลขบัญชี',1600)});
 productSlipForm.addEventListener('submit',async event=>{event.preventDefault();if(!activeOrder?.id)return;const button=productSlipForm.querySelector('button');button.disabled=true;productSlipMessage.textContent='กำลังอัปโหลดและตรวจสลิป…';try{const response=await fetch(`/api/orders/${activeOrder.id}/slip`,{method:'POST',body:new FormData(productSlipForm)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'ส่งสลิปไม่สำเร็จ');productSlipMessage.textContent=data.message||'รับสลิปเรียบร้อย';setTimeout(()=>location.href=data.auto_approved&&currentProduct.category==='online-course'?'/my-courses.html':'/dashboard.html#orders',1400)}catch(error){productSlipMessage.textContent=error.message;button.disabled=false;}});
 loadProduct();
-import('/nav-account.js?v=014237').then(module=>module.initAccountNav());
+import('/nav-account.js?v=014238').then(module=>module.initAccountNav());
