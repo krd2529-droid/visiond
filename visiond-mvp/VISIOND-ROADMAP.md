@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
-Updated: 2026-08-16
-Current build: v0.14.245
+Updated: 2026-08-18
+Current build: v0.14.246
+
+## v0.14.246 — Meta Domain Verification (IMPLEMENTED-AWAITING-DEPLOY)
+
+- เพิ่มแท็ก `facebook-domain-verification` ที่ Meta ออกให้โดยตรงใน `<head>` ของหน้าแรก
+- ใช้ยืนยันเจ้าของโดเมน `visiondonline.com` เพื่อดำเนินการตรวจสอบธุรกิจและสิทธิ์ Business Asset User Profile Access
+- หลัง Push/Deploy ต้องตรวจ Source ของหน้าแรกว่ามีแท็ก แล้วจึงกดตรวจสอบยืนยันโดเมนใน Meta Business Settings
 
 ## v0.14.245 — V12 Profile Evidence and Truthful Result (IMPLEMENTED)
 

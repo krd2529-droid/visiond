@@ -1,5 +1,9 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.246 — Meta Domain Verification (IMPLEMENTED-AWAITING-DEPLOY)
+
+- เพิ่มแท็กยืนยันโดเมนจาก Meta ใน `<head>` ของหน้าแรก เพื่อยืนยัน `visiondonline.com` ก่อนเดินหน้าตรวจธุรกิจและสิทธิ์รูปโปรไฟล์ลูกค้า
+
 ## v0.14.245 — V12 Profile Evidence and Truthful Result (IMPLEMENTED)
 
 - แยกผลได้รูปจริง อัปเดตชื่อ และรูปที่ดึงไม่ได้ พร้อมสรุป HTTP/Meta error code แบบไม่เปิดเผย Credential หรือข้อมูลลูกค้ารายบุคคล
