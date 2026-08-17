@@ -3,6 +3,14 @@
 Updated: 2026-08-16
 Current build: v0.14.244
 
+## Permanent Governance — Evidence-first / ห้ามเดางาน (ACTIVE)
+
+- ทุก Event Case และ Event Roadmap ต้องตรวจหลักฐานจากโค้ด, Log ที่ปิดบังข้อมูล, API response, ฐานข้อมูลแบบลดข้อมูลส่วนตัว หรือผลทดสอบที่ทำซ้ำได้ก่อนแก้
+- รายงานต้องแยกข้อเท็จจริงที่ยืนยันแล้ว สิ่งที่ยังไม่ทราบ และขั้นตอนตรวจถัดไป ห้ามเปลี่ยนสมมติฐานเป็นข้อสรุป
+- หากยังพิสูจน์สาเหตุไม่ได้ งานต้องคงสถานะ `INVESTIGATING` หรือ `BLOCKED BY EVIDENCE` และห้าม Commit วิธีแก้เชิงเดา
+- Patch Ledger ต้องมี Root-cause evidence, Fix evidence และ Test evidence ก่อนปิดงานเป็น `DONE-VERIFIED`
+- Event Case รูปโปรไฟล์ Facebook V12 ยังไม่เสร็จ: รูปไม่แสดงได้รับการยืนยันจากหน้าจอ แต่สาเหตุจาก Meta response/สิทธิ์/การโหลดรูปยังต้องเก็บหลักฐานจริงก่อนแก้ต่อ
+
 ## v0.14.244 — V12 Settings Production Render Fix (IMPLEMENTED)
 
 - ยกเลิกการ Fetch `/VERSION.txt` จาก Frontend ซึ่ง Production ตอบหน้า Index กลับมาแทนไฟล์เวอร์ชัน
