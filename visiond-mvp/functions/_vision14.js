@@ -41,6 +41,8 @@ export function ensureVision14Schema(env){
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS vision13_intake_queue(id INTEGER PRIMARY KEY AUTOINCREMENT,mix_id TEXT NOT NULL UNIQUE,status TEXT NOT NULL DEFAULT 'ready',attempts INTEGER NOT NULL DEFAULT 0,last_error TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(mix_id) REFERENCES vision14_mixes(id))`).run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v14_mix_items_mix ON vision14_mix_items(mix_id,id)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v13_intake_status ON vision13_intake_queue(status,created_at)').run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS vision13_intake_reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,queue_id INTEGER NOT NULL,action TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',snapshot_hash TEXT NOT NULL DEFAULT '',reviewed_by INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(queue_id) REFERENCES vision13_intake_queue(id) ON DELETE CASCADE,FOREIGN KEY(reviewed_by) REFERENCES users(id))`).run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_v13_reviews_queue ON vision13_intake_reviews(queue_id,created_at DESC)').run();
     const pageColumns=(await env.DB.prepare('PRAGMA table_info(vision14_source_pages)').all()).results.map(column=>column.name);
     if(!pageColumns.includes('extraction_method'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_method TEXT NOT NULL DEFAULT 'manual'").run();
     if(!pageColumns.includes('extraction_status'))await env.DB.prepare("ALTER TABLE vision14_source_pages ADD COLUMN extraction_status TEXT NOT NULL DEFAULT 'success'").run();

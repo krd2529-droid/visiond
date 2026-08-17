@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS vision13_intake_reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,queue_id INTEGER NOT NULL,action TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',snapshot_hash TEXT NOT NULL DEFAULT '',reviewed_by INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(queue_id) REFERENCES vision13_intake_queue(id) ON DELETE CASCADE,FOREIGN KEY(reviewed_by) REFERENCES users(id));
+CREATE INDEX IF NOT EXISTS idx_v13_reviews_queue ON vision13_intake_reviews(queue_id,created_at DESC);

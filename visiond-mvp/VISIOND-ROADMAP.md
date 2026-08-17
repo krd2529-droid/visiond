@@ -518,3 +518,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - รายการที่รวมยังเก็บ Source ID, ชื่อต้นฉบับ และเลขหน้าอ้างอิงครบ
 - MIX ที่ทุกต้นฉบับผ่าน Rights Gate เท่านั้นจึงสร้างคิว Vision 13 `ready`; รายการสิทธิ์ไม่ผ่านเก็บภายในและไม่ส่งขาย
 - ถัดไปสร้างศูนย์รับงาน Vision 13 และตรวจ Intake ก่อนนำไปผลิต E-book
+# v0.14.232 — Vision 13 Intake Review + Approval Snapshot (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่มศูนย์รับงาน Vision 13 แยกสถานะ ready, reviewing, approved และ rejected
+- ตรวจ Rights, PDF สอน, Fingerprint และ Citation ก่อนอนุมัติ พร้อมบังคับเหตุผลเมื่อส่งกลับ
+- สร้าง SHA-256 Approval Snapshot และประวัติผู้ตรวจ/เวลา/หมายเหตุ เพื่อกัน MIX เปลี่ยนหลังอนุมัติ
+- ถัดไปผลิต E-book เฉพาะ Intake approved ที่ Snapshot ยังตรง

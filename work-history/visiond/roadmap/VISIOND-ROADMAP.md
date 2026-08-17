@@ -481,3 +481,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.231 — Vision 14 Dedup/MIX + Vision 13 Intake Boundary (IMPLEMENTED · EVENT CASE CONTINUES)
 - Dedup ความรู้พร้อมรวม Citation หลายต้นฉบับ และสร้าง MIX ภายใน
 - สิทธิ์ครบเท่านั้นเข้า Vision 13 Intake `ready`; ถัดไปทำหน้ารับงาน Vision 13
+# v0.14.232 — Vision 13 Intake Review + Approval Snapshot (IMPLEMENTED · EVENT CASE CONTINUES)
+- ตรวจและอนุมัติ/ตีกลับ MIX พร้อม Audit History และ Snapshot Hash
+- ขั้นผลิต E-book แพตถัดไปต้องรับเฉพาะ approved และตรวจ Snapshot ซ้ำ
