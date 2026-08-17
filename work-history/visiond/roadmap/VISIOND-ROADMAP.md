@@ -484,3 +484,6 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.232 — Vision 13 Intake Review + Approval Snapshot (IMPLEMENTED · EVENT CASE CONTINUES)
 - ตรวจและอนุมัติ/ตีกลับ MIX พร้อม Audit History และ Snapshot Hash
 - ขั้นผลิต E-book แพตถัดไปต้องรับเฉพาะ approved และตรวจ Snapshot ซ้ำ
+# v0.14.233 — Vision 13 Approved Snapshot → EPUB (IMPLEMENTED · EVENT CASE COMPLETE)
+- ผลิต EPUB จาก approved snapshot เท่านั้น ตรวจ Snapshot ซ้ำ และหยุดเมื่อ MIX เปลี่ยน
+- เก็บ Artifact Hash/Audit/R2 แล้วเปลี่ยนคิวเป็น `produced`; Event Case คลังต้นฉบับถึง E-book ปิดครบ

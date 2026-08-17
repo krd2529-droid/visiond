@@ -523,3 +523,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ตรวจ Rights, PDF สอน, Fingerprint และ Citation ก่อนอนุมัติ พร้อมบังคับเหตุผลเมื่อส่งกลับ
 - สร้าง SHA-256 Approval Snapshot และประวัติผู้ตรวจ/เวลา/หมายเหตุ เพื่อกัน MIX เปลี่ยนหลังอนุมัติ
 - ถัดไปผลิต E-book เฉพาะ Intake approved ที่ Snapshot ยังตรง
+# v0.14.233 — Vision 13 Approved Snapshot → EPUB (IMPLEMENTED · EVENT CASE COMPLETE)
+- ผลิต EPUB ภาษาไทยจากคิวที่ `approved` เท่านั้น และคำนวณ Approval Snapshot ซ้ำก่อนเริ่มทุกครั้ง
+- ถ้า MIX เปลี่ยนหลังอนุมัติ ระบบหยุดด้วย `APPROVAL_SNAPSHOT_MISMATCH` และไม่สร้างไฟล์
+- เก็บ EPUB ใน R2 พร้อม Artifact SHA-256, ขนาด, จำนวนรายการ, ผู้ผลิต และ Audit History ก่อนเปลี่ยนสถานะเป็น `produced`
+- ศูนย์ Vision 13 แสดงคิวพร้อมผลิต/ผลิตแล้ว และดาวน์โหลด Artifact ที่ตรวจสอบย้อนกลับได้
