@@ -1,5 +1,8 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.249 — V12 AI Sales Guaranteed Analysis (IMPLEMENTED)
+- เพิ่มระบบวิเคราะห์สำรองเมื่อ Provider ใช้งานไม่ได้ และแสดง build/source เพื่อยืนยัน production โดยไม่เดา
+
 ## v0.14.248 — V12 AI Sales Assistant Production Recovery (IMPLEMENTED)
 - API สร้างตาราง Lead Insight ที่ขาดแบบ idempotent ก่อนวิเคราะห์ และแสดงรหัสข้อผิดพลาดจริง
 

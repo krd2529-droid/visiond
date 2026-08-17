@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-18
-Current build: v0.14.248
+Current build: v0.14.249
+
+## v0.14.249 — V12 AI Sales Guaranteed Analysis (IMPLEMENTED)
+- ถ้า AI Provider ไม่พร้อม โควตาเต็ม ตอบผิดรูปแบบ หรือ timeout ระบบใช้ตัววิเคราะห์สำรองจากประวัติแชตแทนการจบด้วยข้อผิดพลาด
+- แสดงแหล่งวิเคราะห์ AI/ระบบสำรองและรหัสสาเหตุจริง พร้อม build 014249 ในแผงเพื่อยืนยัน cache production
 
 ## v0.14.248 — V12 AI Sales Assistant Production Recovery (IMPLEMENTED)
 - แก้ production วิเคราะห์ไม่สำเร็จจากตาราง Lead Insight ที่ยังไม่ได้ apply โดย API ตรวจและสร้าง schema แบบ idempotent ก่อนใช้งาน

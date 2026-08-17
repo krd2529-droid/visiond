@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {buildFallbackInsight} from '../functions/api/admin/v12-sales-assistant.js';
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const [version,index,admin,page,ui,api]=await Promise.all([read('VERSION.txt'),read('public/index.html'),read('public/admin.html'),read('public/v12-connect.html'),read('public/v12-sales-assistant.js'),read('functions/api/admin/v12-sales-assistant.js')]);
+assert.equal(version.trim(),'v0.14.249');assert.match(index,/WEB v0\.14\.249/);assert.match(admin,/ADMIN v0\.14\.249/);assert.match(page,/v0\.14\.249/);assert.match(page,/build 014249/);
+for(const token of['rules_fallback','AI_NOT_CONFIGURED','AI_BUDGET_LIMIT','analysis_source'])assert.ok(api.includes(token),token);
+for(const token of['ระบบสำรองวิเคราะห์สำเร็จ','AI_UNAVAILABLE'])assert.ok(ui.includes(token),token);
+const fallback=buildFallbackInsight([{role:'user',content:'เปิดคอร์สราคาเท่าไหร่'}]);
+assert.equal(fallback.stage,'exploring');assert.match(fallback.intent,/เปิดคอร์สราคาเท่าไหร่/);assert.match(fallback.suggested_reply,/ช่วงวัยใด/);
+console.log('v0.14.249 V12 AI sales fallback and cache evidence: PASS');

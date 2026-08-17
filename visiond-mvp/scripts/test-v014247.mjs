@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {redactSalesHistory,parseSalesInsight} from '../functions/api/admin/v12-sales-assistant.js';
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const [version,index,admin,page,ui,api,migration]=await Promise.all([read('VERSION.txt'),read('public/index.html'),read('public/admin.html'),read('public/v12-connect.html'),read('public/v12-sales-assistant.js'),read('functions/api/admin/v12-sales-assistant.js'),read('migrations/0063_v12_sales_assistant.sql')]);
-assert.match(version.trim(),/^v0\.14\.(247|248)$/);assert.match(index,/WEB v0\.14\.(247|248)/);assert.match(admin,/ADMIN v0\.14\.(247|248)/);assert.match(page,/v0\.14\.(247|248)/);
+assert.match(version.trim(),/^v0\.14\.(247|248|249)$/);assert.match(index,/WEB v0\.14\.(247|248|249)/);assert.match(admin,/ADMIN v0\.14\.(247|248|249)/);assert.match(page,/v0\.14\.(247|248|249)/);
 for(const token of['AI ผู้ช่วยปิดการขาย','วิเคราะห์ประวัติแชต','นำร่างไปใส่ช่องตอบ','v12-sales-assistant.js'])assert.ok(page.includes(token),token);
 for(const token of['ยังไม่มีการส่งหาลูกค้า','กรุณาตรวจข้อความก่อนกดส่ง','v12SalesNativeFetch'])assert.ok(ui.includes(token),token);
 for(const token of['requireAdmin','selectElonProvider','enforceElonGlobalBudget','redactSalesHistory','status=\'published\'','v12_lead_insights'])assert.ok(api.includes(token),token);
