@@ -487,3 +487,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.233 — Vision 13 Approved Snapshot → EPUB (IMPLEMENTED · EVENT CASE COMPLETE)
 - ผลิต EPUB จาก approved snapshot เท่านั้น ตรวจ Snapshot ซ้ำ และหยุดเมื่อ MIX เปลี่ยน
 - เก็บ Artifact Hash/Audit/R2 แล้วเปลี่ยนคิวเป็น `produced`; Event Case คลังต้นฉบับถึง E-book ปิดครบ
+# v0.14.234 — Sales Page Center Phase 1 (IMPLEMENTED · EVENT CASE CONTINUES)
+- ศูนย์หลังบ้าน Ad Shortcut/SEO Automation, Template, สินค้าเชื่อมโยง, Slug ไม่ซ้ำ, Revision และ Mobile Preview
+- Ad noindex ถาวร; SEO ต้องผ่าน Boss Approval ของ Revision ปัจจุบันก่อน publish/index
+- ถัดไป Public Renderer และเส้นทางซื้อจริงของ Ad Shortcut

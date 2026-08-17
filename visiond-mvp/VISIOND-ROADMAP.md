@@ -528,3 +528,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ถ้า MIX เปลี่ยนหลังอนุมัติ ระบบหยุดด้วย `APPROVAL_SNAPSHOT_MISMATCH` และไม่สร้างไฟล์
 - เก็บ EPUB ใน R2 พร้อม Artifact SHA-256, ขนาด, จำนวนรายการ, ผู้ผลิต และ Audit History ก่อนเปลี่ยนสถานะเป็น `produced`
 - ศูนย์ Vision 13 แสดงคิวพร้อมผลิต/ผลิตแล้ว และดาวน์โหลด Artifact ที่ตรวจสอบย้อนกลับได้
+# v0.14.234 — Sales Page Center Phase 1 (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่มศูนย์หลังบ้านสำหรับ Ad Shortcut และ SEO Automation พร้อม Template กลางและสินค้าเชื่อมโยง
+- Slug ไม่ซ้ำ, Revision History, สถานะ draft/reviewing/approved/published/paused/archived และ Preview มือถือ
+- Ad Shortcut เป็น noindex เสมอ; SEO ต้องผ่าน Boss Approval ของ Revision ปัจจุบันก่อนเผยแพร่/index
+- แก้ข้อมูลหลังอนุมัติแล้วระบบถอน Approval และกลับเป็น draft อัตโนมัติ
+- ระยะถัดไปสร้าง Public Renderer และการซื้อจริงสำหรับ Ad Shortcut
