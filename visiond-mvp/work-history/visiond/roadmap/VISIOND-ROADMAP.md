@@ -1,5 +1,10 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.245 — V12 Profile Evidence and Truthful Result (IMPLEMENTED)
+
+- แยกผลได้รูปจริง อัปเดตชื่อ และรูปที่ดึงไม่ได้ พร้อมสรุป HTTP/Meta error code แบบไม่เปิดเผย Credential หรือข้อมูลลูกค้ารายบุคคล
+- ประมวลผลเป็นชุด ลดปุ่มค้าง และห้ามสรุปปัญหาสิทธิ์จนกว่าจะตรวจรหัสตอบกลับหลัง Deploy
+
 ## Permanent Governance — Evidence-first / ห้ามเดางาน (ACTIVE)
 
 - ทุก Event Case และ Event Roadmap ต้องตรวจหลักฐานจากโค้ด, Log ที่ปิดบังข้อมูล, API response, ฐานข้อมูลแบบลดข้อมูลส่วนตัว หรือผลทดสอบที่ทำซ้ำได้ก่อนแก้

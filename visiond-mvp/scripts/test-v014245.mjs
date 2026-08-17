@@ -1,0 +1,13 @@
+import assert from'node:assert/strict';import fs from'node:fs';
+const read=path=>fs.readFileSync(path,'utf8'),version=read('VERSION.txt'),helper=read('functions/_facebook_profile.js'),api=read('functions/api/admin/v12-profiles.js'),ui=read('public/v12-connect.js'),page=read('public/v12-connect.html');
+assert.equal(version.trim(),'v0.14.245');assert.match(page,/v0\.14\.245/);
+for(const token of['pictureStatus','errorCode','errorSubcode','picture_denied','profile_denied','silhouette','picture_missing'])assert.ok(helper.includes(token),token);
+for(const token of['picture_updated','name_updated','reasons','LIMIT 40','index+=5','Promise.all','c.profile_url=\'\''])assert.ok(api.includes(token),token);
+assert.doesNotMatch(api,/return json\([^\n]*token/i);assert.doesNotMatch(api,/target_ciphertext[^\n]*reasons/);
+for(const token of['ได้รูปใหม่','Meta ปฏิเสธการดึงรูป','Meta ไม่ส่งรูป','finally{profileButton.disabled=false}'])assert.ok(ui.includes(token),token);
+assert.doesNotMatch(ui,/data\.updated/);console.log('v0.14.245 V12 evidence-first profile diagnostics: PASS');
+const {fetchFacebookProfile}=await import('../functions/_facebook_profile.js');const originalFetch=globalThis.fetch;
+globalThis.fetch=async url=>String(url).includes('/picture?')?new Response(JSON.stringify({error:{code:200,error_subcode:2018065}}),{status:403,headers:{'content-type':'application/json'}}):new Response(JSON.stringify({name:'Example Customer'}),{status:200,headers:{'content-type':'application/json'}});
+const denied=await fetchFacebookProfile('masked-id','masked-token');assert.equal(denied.name,'Example Customer');assert.equal(denied.picture,'');assert.equal(denied.reason,'picture_denied');assert.equal(denied.pictureStatus,403);assert.equal(denied.errorCode,200);assert.equal(denied.errorSubcode,2018065);
+globalThis.fetch=async()=>new Response(JSON.stringify({name:'Example Customer',profile_pic:'https://example.invalid/profile.jpg'}),{status:200,headers:{'content-type':'application/json'}});const ready=await fetchFacebookProfile('masked-id','masked-token');assert.equal(ready.reason,'picture_ready');assert.equal(ready.picture,'https://example.invalid/profile.jpg');globalThis.fetch=originalFetch;
+console.log('v0.14.245 Meta response classification runtime: PASS');

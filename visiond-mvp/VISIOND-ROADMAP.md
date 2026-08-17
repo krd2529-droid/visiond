@@ -1,7 +1,15 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.244
+Current build: v0.14.245
+
+## v0.14.245 — V12 Profile Evidence and Truthful Result (IMPLEMENTED)
+
+- ยืนยันจาก Production ว่า Frontend แสดงรูปได้ แต่ลูกค้า Facebook ส่วนใหญ่มี `profile_url` ว่าง และจำนวนรูปไม่เพิ่มหลังสั่งอัปเดต
+- แก้ผลสำเร็จเทียมที่นับการอัปเดตชื่อเป็นการอัปเดตรูป พร้อมแยกจำนวนรูปใหม่ ชื่อใหม่ และรูปที่ดึงไม่ได้
+- เก็บเฉพาะ HTTP status, Meta error code/subcode และเหตุผลแบบสรุปรวม โดยไม่ส่ง PSID, Token, App Secret หรือข้อมูลลูกค้ารายบุคคลออกหน้าเว็บ
+- ประมวลผลโปรไฟล์เป็นชุดละ 5 รายเพื่อลดเวลาปุ่มค้าง และคืนปุ่มใน `finally` เมื่อ API ล้มเหลว
+- หลัง Deploy ต้องกดตรวจอีกครั้งเพื่ออ่านเหตุผลจริงจาก Meta; ห้ามสรุปเรื่องสิทธิ์จนกว่าจะมีรหัสตอบกลับ
 
 ## Permanent Governance — Evidence-first / ห้ามเดางาน (ACTIVE)
 
