@@ -1,5 +1,9 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.247 — V12 AI Sales Assistant (IMPLEMENTED)
+
+- วิเคราะห์ประวัติแชตแบบปิดบังข้อมูลส่วนตัว จัดระดับลูกค้าและร่างข้อความขายจากสินค้าเปิดขายจริง โดยคนต้องตรวจและกดส่งเอง
+
 ## v0.14.246 — Meta Domain Verification (IMPLEMENTED-AWAITING-DEPLOY)
 
 - เพิ่มแท็กยืนยันโดเมนจาก Meta ใน `<head>` ของหน้าแรก เพื่อยืนยัน `visiondonline.com` ก่อนเดินหน้าตรวจธุรกิจและสิทธิ์รูปโปรไฟล์ลูกค้า
