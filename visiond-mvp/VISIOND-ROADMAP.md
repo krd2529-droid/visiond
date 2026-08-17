@@ -534,3 +534,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - Ad Shortcut เป็น noindex เสมอ; SEO ต้องผ่าน Boss Approval ของ Revision ปัจจุบันก่อนเผยแพร่/index
 - แก้ข้อมูลหลังอนุมัติแล้วระบบถอน Approval และกลับเป็น draft อัตโนมัติ
 - ระยะถัดไปสร้าง Public Renderer และการซื้อจริงสำหรับ Ad Shortcut
+# v0.14.235 — Ad Shortcut Public Renderer + Checkout Path (IMPLEMENTED · EVENT CASE CONTINUES)
+- เพิ่ม Public URL `/s/{slug}` สำหรับ Ad Shortcut ที่เผยแพร่แล้ว พร้อม `noindex,nofollow` ทั้ง Meta และ HTTP Header
+- ดึงเฉพาะสินค้าจริงที่ published/ไม่ถูกลบ พร้อมราคาโปรโมชั่นปัจจุบัน; ถ้าไม่มีสินค้าพร้อมขายตอบ 410
+- ปุ่มเพิ่มตะกร้า/ซื้อทันทีใช้ `vd_cart` และ `/cart` เดิม จึงรักษากฎราคา ส่วนลด ชุดรวม และชำระเงินชุดเดียวกัน
+- หน้า Mobile-first และมีลิงก์เปิดหน้าจริงจาก Sales Page Center
+- ระยะถัดไป UTM, Conversion Event และ A/B Variant

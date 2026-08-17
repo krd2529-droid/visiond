@@ -491,3 +491,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ศูนย์หลังบ้าน Ad Shortcut/SEO Automation, Template, สินค้าเชื่อมโยง, Slug ไม่ซ้ำ, Revision และ Mobile Preview
 - Ad noindex ถาวร; SEO ต้องผ่าน Boss Approval ของ Revision ปัจจุบันก่อน publish/index
 - ถัดไป Public Renderer และเส้นทางซื้อจริงของ Ad Shortcut
+# v0.14.235 — Ad Shortcut Public Renderer + Checkout Path (IMPLEMENTED · EVENT CASE CONTINUES)
+- Public `/s/{slug}` แบบ noindex กรองเฉพาะหน้า/สินค้าที่ published และหยุดขายเมื่อไม่มีสินค้าใช้ได้
+- ราคา/โปรโมชั่นมาจากระบบจริง ปุ่มซื้อใช้ vd_cart → /cart เดิม
+- ถัดไป UTM, Conversion และ A/B Variant

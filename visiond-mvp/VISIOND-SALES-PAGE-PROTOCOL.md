@@ -7,3 +7,6 @@
 5. Slug ต้องไม่ซ้ำทั้งระบบ และระบบต้องไม่เปิดเผยสินค้าร่าง/ปิดขายในหน้าสาธารณะ
 6. Admin จัดการร่างและส่งตรวจได้; เฉพาะ Boss อนุมัติ SEO ได้
 7. ทุก frontend/action ที่เพิ่มภายหลังต้องอัปเดต Event Coverage, Mobile Preview, Button Standard, Roadmap และ Patch Ledger
+8. Public Ad Shortcut เปิดได้เฉพาะหน้า `published` และต้องอ่านเฉพาะสินค้าที่ `published` ไม่ถูกลบ และเป็นสินค้าขายจริง
+9. ราคาและโปรโมชั่นใน Public Renderer ต้องคำนวณจากระบบสินค้าปัจจุบัน ห้ามเก็บราคาซ้ำในเซลเพจ
+10. ปุ่มซื้อของ Ad Shortcut ต้องใช้ตะกร้าและ Checkout กลางของ VisionD ห้ามสร้างออเดอร์คู่ขนาน
