@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.241
+Current build: v0.14.242
+
+## v0.14.242 — Facebook Profile Picture Fallback (IMPLEMENTED)
+
+- ดึงชื่อและรูป Facebook จาก Messenger User Profile API ด้วย PSID
+- หาก `profile_pic` ไม่ถูกส่งกลับ ให้ลอง Profile Picture endpoint แบบไม่ Redirect และไม่เก็บภาพ silhouette
+- ใช้ตัวดึงรูปมาตรฐานเดียวกันกับแชทเก่า ปุ่มอัปเดตชื่อ/รูป และ Webhook แชทใหม่
+- ไม่แก้ ไม่แสดง และไม่บันทึก Page Access Token หรือ App Secret เพิ่มเติม
 
 ## v0.14.241 — V12 Channel Settings and Chat Scroll (IMPLEMENTED)
 
