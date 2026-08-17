@@ -1,7 +1,7 @@
 if (!document.querySelector('link[data-visiond-mouse-ui]')) {
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
-  stylesheet.href = '/mouse-ui.css?v=014243';
+  stylesheet.href = '/mouse-ui.css?v=014244';
   stylesheet.dataset.visiondMouseUi = 'true';
   document.head.append(stylesheet);
 }

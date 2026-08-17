@@ -1,7 +1,13 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.243
+Current build: v0.14.244
+
+## v0.14.244 — V12 Settings Production Render Fix (IMPLEMENTED)
+
+- ยกเลิกการ Fetch `/VERSION.txt` จาก Frontend ซึ่ง Production ตอบหน้า Index กลับมาแทนไฟล์เวอร์ชัน
+- ป้องกัน HTML หน้าแรกถูกนำไปแสดงเป็นข้อความภายในหัวหน้าตั้งค่า
+- กำหนดเลขแพตจากไฟล์หน้า Settings โดยตรงและคงการโหลด Credential ผ่าน API เดิม
 
 ## v0.14.243 — V12 Inbox Button Separation (IMPLEMENTED)
 
