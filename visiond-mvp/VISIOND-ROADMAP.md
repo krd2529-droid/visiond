@@ -1,7 +1,14 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-16
-Current build: v0.14.223
+Current build: v0.14.241
+
+## v0.14.241 — V12 Channel Settings and Chat Scroll (IMPLEMENTED)
+
+- ย้ายการตั้งค่า Facebook Page/Webhook ไปหน้า `ตั้งค่าช่องทาง V12` แยกจากพื้นที่กล่องข้อความ
+- แสดงสถานะ `บันทึกแล้ว` แยก Page Access Token และ Meta App Secret โดยไม่ส่งค่าจริงกลับ Frontend
+- เก็บ Credential เดิมเมื่อช่องค่าลับว่าง และบันทึกใหม่เฉพาะค่าที่ผู้ดูแลต้องการเปลี่ยน
+- จำกัดความสูงรายการบทสนทนาและข้อความ พร้อมแถบเลื่อนแยกทั้งคอมพิวเตอร์และมือถือ
 
 ## v0.14.223 — Web 2 Integration Starter Kit (IMPLEMENTED)
 
