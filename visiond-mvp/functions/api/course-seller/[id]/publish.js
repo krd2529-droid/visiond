@@ -53,11 +53,16 @@ export async function onRequestPost(ctx) {
     .bind(ctx.params.id, auth.user.id)
     .first();
   if (!course) return json({ error: "ไม่พบคอร์สของคุณ" }, 404);
-  if ((course.course_plan==='rights'&&course.license_entitlement_id === null) || !course.basket_binding_locked)
+  if (!course.basket_binding_locked)
     return json(
       { error: "ตะกร้าคอร์สนี้ไม่มีสิทธิ์ที่จองไว้ กรุณาติดต่อ VisionD" },
       409,
     );
+  let publishCredit=null;
+  if(course.course_plan==='rights'&&course.license_entitlement_id===null){
+    publishCredit=await ctx.env.DB.prepare("SELECT id FROM course_right_credits WHERE user_id=? AND active=1 AND used_course_id IS NULL ORDER BY id LIMIT 1").bind(auth.user.id).first();
+    if(!publishCredit)return json({error:"ต้องมี 1 เครดิตก่อนส่งตรวจ ร่างนี้ยังแก้ไขต่อได้",credit_required:true,buy_url:"/product.html?slug=course-selling-rights"},409);
+  }
   const validation = await lessonValidation(
     ctx.env,
     course.id,
@@ -97,12 +102,14 @@ export async function onRequestPost(ctx) {
       },
       409,
     );
-  const bindingId = Number(course.license_entitlement_id),
+  const bindingId = publishCredit?-Number(publishCredit.id):Number(course.license_entitlement_id),
     expires = new Date(Date.now() + 30 * 86400000).toISOString(),
     paymentQrUrl = course.course_plan==='partner'?'':owner.seller_payment_qr_url?`/api/course-seller/payment-qr/${bindingId}`:'';
   try {
-    const results = await ctx.env.DB.batch([
-      ctx.env.DB.prepare(
+    const courseUpdate=publishCredit
+      ?ctx.env.DB.prepare("UPDATE courses SET license_entitlement_id=?,edit_expires_at=COALESCE(edit_expires_at,?),license_edit_days=30,contact_info=?,payment_bank_name=?,payment_account_name=?,payment_account_number=?,payment_qr_url=?,review_status='pending',review_note='',submitted_at=CURRENT_TIMESTAMP,active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND course_plan='rights' AND license_entitlement_id IS NULL AND basket_binding_locked=1 AND review_status IN ('draft','changes_requested')").bind(
+        bindingId,expires,contact,owner.seller_bank_name,owner.seller_account_name,owner.seller_account_number,paymentQrUrl,course.id,auth.user.id)
+      :ctx.env.DB.prepare(
         "UPDATE courses SET edit_expires_at=COALESCE(edit_expires_at,?),license_edit_days=30,contact_info=?,payment_bank_name=?,payment_account_name=?,payment_account_number=?,payment_qr_url=?,review_status='pending',review_note='',submitted_at=CURRENT_TIMESTAMP,active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND (course_plan<>'rights' OR license_entitlement_id=?) AND basket_binding_locked=1 AND review_status IN ('draft','changes_requested')",
       ).bind(
         expires,
@@ -114,14 +121,18 @@ export async function onRequestPost(ctx) {
         course.id,
         auth.user.id,
         bindingId,
-      ),
+      );
+    const statements=[courseUpdate];
+    if(publishCredit)statements.push(ctx.env.DB.prepare("UPDATE course_right_credits SET active=0,used_at=CURRENT_TIMESTAMP,used_course_id=? WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL").bind(course.id,publishCredit.id,auth.user.id));
+    statements.push(
       ctx.env.DB.prepare(
         "UPDATE products SET price=?,status='draft',source='course-seller',updated_at=CURRENT_TIMESTAMP WHERE id=? AND EXISTS(SELECT 1 FROM courses WHERE id=?)",
       ).bind(price, course.product_id, course.id),
-    ]);
+    );
+    const results = await ctx.env.DB.batch(statements);
     if (
       !results[0].meta.changes ||
-      !results[1].meta.changes
+      results.slice(1).some(result=>!result.meta.changes)
     )
       throw new Error("BINDING_CONFLICT");
     return json({
@@ -129,7 +140,7 @@ export async function onRequestPost(ctx) {
       course_id: course.id,
       edit_expires_at: expires,
       review_status: "pending",
-      message: "ส่งตะกร้าคอร์สให้ Boss ตรวจแล้ว (ไม่หักเครดิตซ้ำ)",
+      message: publishCredit?"ส่งตะกร้าคอร์สให้ Boss ตรวจแล้ว และใช้ 1 เครดิต":"ส่งตะกร้าคอร์สให้ Boss ตรวจแล้ว (ไม่หักเครดิตซ้ำ)",
     });
   } catch (error) {
     return json(

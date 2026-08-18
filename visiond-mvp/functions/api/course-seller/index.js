@@ -116,15 +116,6 @@ export async function onRequestPost(ctx) {
   )
     .bind(auth.user.id)
     .first();
-  if (selectedPlan.requiresCredit&&!credit)
-    return json(
-      {
-        error: "ต้องมีอย่างน้อย 1 เครดิตก่อนสร้างตะกร้าคอร์ส",
-        credit_required: true,
-        buy_url: "/product.html?slug=course-selling-rights",
-      },
-      409,
-    );
   const title = String(form.get("title") || "").trim(),
     teacher = String(form.get("teacher_name") || "").trim(),
     description = String(form.get("description") || "").trim(),
@@ -210,7 +201,7 @@ export async function onRequestPost(ctx) {
       ? String(form.get("learner_level"))
       : "all",
     planJson = JSON.stringify(plan);
-  if(!selectedPlan.requiresCredit){
+  if(!selectedPlan.requiresCredit||!credit){
     try{
       const statements=[
         ctx.env.DB.prepare(`INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) VALUES(?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course')`).bind(slug,title,short,description,draftPrice,coverUrl,JSON.stringify([coverUrl]),episodes),
@@ -219,7 +210,7 @@ export async function onRequestPost(ctx) {
       ];
       const results=await ctx.env.DB.batch(statements);if(!results[0].meta.changes||!results[1].meta.changes)throw new Error('COURSE_CREATE_FAILED');
       const course=await ctx.env.DB.prepare('SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=?').bind(slug,auth.user.id).first();
-      return json({ok:true,id:course.id,slug,episode_count:episodes,course_plan:selectedPlan.code,credit_used:0,message:`สร้างรูปแบบ ${selectedPlan.number} ${selectedPlan.label} แล้ว`},201);
+      return json({ok:true,id:course.id,slug,episode_count:episodes,course_plan:selectedPlan.code,credit_used:0,draft_only:selectedPlan.requiresCredit,message:selectedPlan.requiresCredit?"บันทึกร่างแบบ 1 แล้ว ต้องมี 1 เครดิตก่อนส่งตรวจ":`สร้างรูปแบบ ${selectedPlan.number} ${selectedPlan.label} แล้ว`},201);
     }catch(error){await ctx.env.FILES.delete(coverKey).catch(()=>{});return json({error:'สร้างตะกร้าคอร์สไม่สำเร็จ กรุณาลองใหม่'},409)}
   }
   try {

@@ -40,7 +40,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014281">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014282">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -255,7 +255,7 @@ function enterCourseCreatePage(plan) {
     createPanel.insertAdjacentHTML(
       "afterbegin",
       plan === "rights"
-        ? `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ 1</small><h1>สร้างคอร์สแบบ 1 · ซื้อสิทธิ์ 499 บาท</h1><p>ผู้สอนรับยอดขาย 100% · เงินเข้าบัญชีผู้สอนโดยตรง · 1 เครดิตต่อ 1 คอร์ส</p></header><section id="coursePlanFlow" class="course-plan-flow course-rights-stepper" aria-label="7 ขั้นตอนสร้างคอร์สแบบ 1">${["ตรวจเครดิต","ข้อมูลคอร์ส","เนื้อหา EP","ตั้งค่ารับเงิน","ตรวจสลิป","ตรวจความพร้อม","ส่งตรวจ"].map((step,index)=>`<span><b>${index+1}</b>${step}</span>`).join("")}</section><section id="coursePlanCreditGuard" class="course-credit-guard course-rights-section"><div><small>ขั้นที่ 1</small><h2>ตรวจเครดิตก่อนสร้าง</h2><b></b><span></span></div><div class="course-credit-actions"><button id="startCourseForm" class="primary" type="button">กำลังตรวจเครดิต…</button><a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์ 499 บาท</a></div></section>`
+        ? `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ 1</small><h1>สร้างคอร์สแบบ 1 · ซื้อสิทธิ์ 499 บาท</h1><p>ผู้สอนรับยอดขาย 100% · เงินเข้าบัญชีผู้สอนโดยตรง · ไม่มีเครดิตก็สร้างร่างได้ แต่ต้องผูก 1 เครดิตก่อนส่งตรวจ</p></header><section id="coursePlanFlow" class="course-plan-flow course-rights-stepper" aria-label="7 ขั้นตอนสร้างคอร์สแบบ 1">${["ตรวจเครดิต","ข้อมูลคอร์ส","เนื้อหา EP","ตั้งค่ารับเงิน","ตรวจสลิป","ตรวจความพร้อมและส่งตรวจ","รอ Boss ตรวจ"].map((step,index)=>`<span><b>${index+1}</b>${step}</span>`).join("")}</section><section id="coursePlanCreditGuard" class="course-credit-guard course-rights-section"><div><small>ขั้นที่ 1</small><h2>ตรวจเครดิตสำหรับส่งตรวจ</h2><b></b><span></span></div><div class="course-credit-actions"><button id="startCourseForm" class="primary" type="button">กำลังตรวจเครดิต…</button><a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์ 499 บาท</a></div></section>`
         : `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><section id="coursePlanFlow" class="course-plan-flow"><h2>ขั้นตอนแบบ ${config.number}</h2></section>`,
     );
   }
@@ -265,14 +265,14 @@ function enterCourseCreatePage(plan) {
     creditGuard.querySelector("b").textContent = `${credit} เครดิต`;
     creditGuard.querySelector("span").textContent = credit > 0
       ? "พร้อมสร้างคอร์ส"
-      : "เครดิตไม่พอ กรุณาซื้อสิทธิ์ก่อนสร้าง";
+      : "ยังไม่มีเครดิต — สร้างและแก้ไขร่างได้ แต่ส่งตรวจไม่ได้";
     const startCourseForm = creditGuard.querySelector("#startCourseForm");
-    startCourseForm.disabled = !state || credit < 1;
+    startCourseForm.disabled = !state;
     startCourseForm.textContent = !state
       ? "กำลังตรวจเครดิต…"
       : credit > 0
         ? "เริ่มกรอกข้อมูลคอร์ส"
-        : "ต้องมีเครดิตก่อนสร้าง";
+        : "เริ่มสร้างฉบับร่าง";
     startCourseForm.onclick = () => {
       sellerCourseForm.scrollIntoView({ behavior: "smooth", block: "start" });
       sellerCourseForm.querySelector("input:not([type=hidden]),textarea")?.focus();
@@ -292,8 +292,8 @@ function enterCourseCreatePage(plan) {
       ? "ฟอร์มสร้างคอร์สเดิมถูกย้ายมาไว้ในแบบ 1 โดยเฉพาะ ระบบจะใช้ 1 เครดิตและสร้าง EP เริ่มต้นให้ 1 EP"
       : "หน้าสร้างแบบ 2 สำหรับพาร์ตเนอร์ 50/50 โดยเฉพาะ ไม่หักเครดิตและไม่จำกัดคอร์สหรือ EP";
   sellerCourseForm.elements.course_plan.value = plan;
-  sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
-  sellerCourseForm.querySelector('button[type="submit"]').disabled=plan==="rights"&&credit<1;
+  sellerCourseForm.querySelector('button[type="submit"]').textContent = plan==="rights"&&credit<1?"บันทึกร่างคอร์สแบบ 1":config.submit;
+  sellerCourseForm.querySelector('button[type="submit"]').disabled=false;
   if (plan === "rights") {
     createPanel.dataset.step = "2";
     sellerLessonManager.dataset.step = "3";
@@ -303,9 +303,11 @@ function enterCourseCreatePage(plan) {
     if (!document.querySelector("#courseReadinessPanel")) {
       publishPanel.insertAdjacentHTML(
         "beforebegin",
-        `<section id="courseReadinessPanel" class="seller-card course-rights-readiness" data-step="6"><small>ขั้นที่ 6</small><h2>ตรวจความพร้อมก่อนส่ง</h2><ul><li data-ready="course">ข้อมูลคอร์สและรูปปก</li><li data-ready="lesson">มี EP ที่มีวิดีโอหรือเอกสารอย่างน้อย 1 EP</li><li data-ready="payment">บัญชีรับเงินของผู้สอน</li><li data-ready="slip">เลือกตรวจสลิปเองหรือ EasySlip</li></ul><p>ปุ่มส่งตรวจจะใช้ได้เมื่อรายการจำเป็นครบ</p></section>`,
+        `<section id="courseReadinessPanel" class="seller-card course-rights-readiness" data-step="6"><small>ขั้นที่ 6</small><h2>ตรวจความพร้อมและส่งเข้าหลังบ้าน</h2><ul><li data-ready="course">ข้อมูลคอร์สและรูปปก</li><li data-ready="lesson">มี EP ที่มีวิดีโอหรือเอกสารอย่างน้อย 1 EP</li><li data-ready="payment">บัญชีรับเงินของผู้สอน</li><li data-ready="slip">เลือกตรวจสลิปเองหรือ EasySlip</li><li data-ready="credit">มี 1 เครดิตสำหรับส่งตรวจ</li></ul><p>เมื่อข้อมูลครบ ปุ่มส่งตรวจจะส่งคอร์สไปยังเมนู “ตรวจคอร์ส” ในหลังบ้าน</p></section>`,
       );
     }
+    const readinessPanel=document.querySelector("#courseReadinessPanel"),reviewActions=document.querySelector(".seller-lesson-review-actions");
+    if(readinessPanel&&reviewActions)readinessPanel.append(reviewActions);
   }
   document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
 }
@@ -486,9 +488,9 @@ async function loadLessons(id) {
     sellerLessonList.textContent = d.error || "โหลดบทเรียนไม่สำเร็จ";
     return;
   }
-  const ready=d.items.length>0&&d.items.every(x=>Number(x.is_complete)===1&&String(x.title||"").trim());
-  if(sendCourseReview)sendCourseReview.disabled=!ready;
-  if(sendCourseReviewHelp)sendCourseReviewHelp.textContent=ready?"EP พร้อมแล้ว กดส่งตรวจเพื่อกำหนดราคาและยืนยันส่งให้ Boss ตรวจ":"ใส่ชื่อและอัปโหลดคลิปหรือเอกสารให้ครบทุก EP ก่อนส่งตรวจ";
+  const ready=d.items.length>0&&d.items.every(x=>Number(x.is_complete)===1&&String(x.title||"").trim()),hasCredit=activeLessonCourse?.course_plan!=="rights"||activeLessonCourse?.license_entitlement_id!=null||Number(state?.credit_balance)>0;
+  if(sendCourseReview)sendCourseReview.disabled=!ready||!hasCredit;
+  if(sendCourseReviewHelp)sendCourseReviewHelp.textContent=!ready?"ใส่ชื่อและอัปโหลดคลิปหรือเอกสารให้ครบทุก EP ก่อนส่งตรวจ":!hasCredit?"บันทึกร่างแล้ว — ต้องมี 1 เครดิตก่อนส่งเข้าหลังบ้านตรวจ":"ข้อมูลพร้อม กดส่งตรวจเพื่อกำหนดราคาและส่งไปเมนูตรวจคอร์สในหลังบ้าน";
   sellerLessonList.innerHTML = d.items.length
     ? d.items
         .map(
@@ -614,7 +616,7 @@ sellerCourseForm.onsubmit = async (e) => {
   e.preventDefault();
   const selectedPlan = sellerCourseForm.elements.course_plan.value,
     confirmation = selectedPlan === "rights"
-      ? "ยืนยันสร้างแบบ 1 ซื้อสิทธิ์ และใช้ 1 เครดิตหรือไม่"
+      ? Number(state?.credit_balance)>0?"ยืนยันสร้างคอร์สแบบ 1 และใช้ 1 เครดิตหรือไม่":"ยืนยันบันทึกร่างคอร์สแบบ 1 หรือไม่ (ยังไม่ใช้เครดิตและยังส่งตรวจไม่ได้)"
       : "ยืนยันสร้างแบบ 2 พาร์ตเนอร์ 50/50 หรือไม่";
   if (!confirm(confirmation)) return;
   const b = e.submitter;

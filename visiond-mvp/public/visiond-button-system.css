@@ -1,4 +1,4 @@
-@import url('/visiond-design-system.css?v=014281');
+@import url('/visiond-design-system.css?v=014282');
 
 /* Canonical button contract. This file must load after page-specific CSS. */
 :root{--vdb-primary:#0abab5;--vdb-primary-hover:#079e99;--vdb-ink:#063d3b;--vdb-soft:#e4f8f6;--vdb-border:#8fcfcb;--vdb-danger:#b83232;--vdb-focus:#155eef}
