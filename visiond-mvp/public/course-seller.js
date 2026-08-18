@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014297">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014298">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -65,6 +65,7 @@ const licenseList = document.querySelector("#licenseList"),
   document.querySelector("#pendingSlipPanel"),
 ].forEach((section) => section && sellerShell?.append(section));
 const sendCourseReview=document.querySelector("#sendCourseReview"),sendCourseReviewHelp=document.querySelector("#sendCourseReviewHelp");
+const sellerLessonIntro=document.querySelector("#sellerLessonIntro");
 let activeLessonCourse=null;
 function updateVision5Flow(data) {
   const done = { credit: true, setup: true };
@@ -195,7 +196,7 @@ function enterCourseCreatePage(plan) {
   createPanel.hidden = false;
   createPanel.after(sellerLessonManager,publishPanel);
   sellerCourseForm.hidden = false;
-  sellerLessonManager.hidden = true;
+  showLessonDraftGate();
   publishPanel.hidden = true;
   if (!createPanel.querySelector("#coursePlanFlow")) {
     createPanel.insertAdjacentHTML(
@@ -215,6 +216,18 @@ function enterCourseCreatePage(plan) {
   sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
   sellerCourseForm.querySelector('button[type="submit"]').disabled=false;
   document.title = "สร้างคอร์สพาร์ตเนอร์ 50/50 | VisionD";
+}
+function showLessonDraftGate(){
+  activeLessonCourse=null;
+  sellerLessonManager.hidden=false;
+  sellerLessonManager.dataset.state="waiting-course";
+  sellerLessonCourseTitle.textContent="EP ภายในตะกร้าคอร์ส";
+  sellerLessonIntro.textContent="บันทึกข้อมูลตะกร้าคอร์สด้านบนก่อน แล้วระบบจะเปิดส่วนสร้าง EP ให้ทันที";
+  addSellerLesson.disabled=true;
+  resetLessonEditor("",true);
+  sellerLessonList.innerHTML='<div class="seller-course-empty"><b>ยังไม่เริ่มสร้าง EP</b><p>EP เป็นส่วนหนึ่งของตะกร้าคอร์ส กรุณาบันทึกข้อมูลตะกร้าก่อน</p></div>';
+  if(sendCourseReview)sendCourseReview.disabled=true;
+  if(sendCourseReviewHelp)sendCourseReviewHelp.textContent="บันทึกข้อมูลตะกร้าก่อน จึงจะเพิ่ม EP และส่งตรวจได้";
 }
 function showCurrentCourseEditAction(course) {
   const heading = createPanel.querySelector(".course-plan-page-head");
@@ -384,7 +397,10 @@ addSellerLesson.onclick = () => {
 async function openLessons(course) {
   activeLessonCourse=course;
   sellerLessonManager.hidden = false;
+  sellerLessonManager.dataset.state="editing";
   sellerLessonCourseTitle.textContent = course.title;
+  sellerLessonIntro.textContent="เพิ่ม EP ให้ครบตามจำนวนที่กำหนด แต่ละ EP ต้องมีชื่อ คำอธิบาย และคลิปหรือเอกสารประกอบ";
+  addSellerLesson.disabled=false;
   resetLessonEditor(course.id, false);
   sellerLessonManager.scrollIntoView({ behavior: "smooth" });
   await loadLessons(course.id);
@@ -672,7 +688,6 @@ publishForm.onsubmit = async (e) => {
     await load();
   }
 };
-closeSellerLessons.onclick = () => (sellerLessonManager.hidden = true);
 if(sendCourseReview)sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
 if (coursePlanPages[courseCreateMode]) {
   createPanel.hidden = false;

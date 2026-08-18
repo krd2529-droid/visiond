@@ -27,9 +27,6 @@ async function putImage(env, file) {
   });
   return key;
 }
-function episodePlan() {
-  return [{ title: "EP.1", description: "", duration_seconds: 0 }];
-}
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
   const auth = await requireUser(ctx);
@@ -106,26 +103,9 @@ export async function onRequestPost(ctx) {
     );
   if (!Number.isFinite(draftPrice) || draftPrice < MIN_COURSE_PRICE_SATANG)
     return json({ error: coursePriceError() }, 400);
-  let plan;
-  try {
-    plan = episodePlan();
-  } catch (error) {
-    const code = String(error.message || "");
-    return json(
-      {
-        error:
-          code === "EP_COUNT"
-            ? "จำนวน EP ต้องเป็นเลขจำนวนเต็ม 1–200"
-            : code === "EP_JSON" || code === "EP_LENGTH"
-              ? "ข้อมูล EP ไม่ตรงกับจำนวนที่ระบุ"
-              : code.startsWith("EP_TITLE_")
-                ? `กรุณาใส่ชื่อ ${code.replace("EP_TITLE_", "EP.")}`
-                : "ระยะเวลา EP ต้องเป็นวินาทีจำนวนเต็ม 0–86,400",
-      },
-      400,
-    );
-  }
-  const episodes = plan.length;
+  const episodes = Number(form.get("expected_episodes"));
+  if (!Number.isInteger(episodes) || episodes < 1 || episodes > 200)
+    return json({ error: "จำนวน EP ต้องเป็นเลขจำนวนเต็ม 1–200" }, 400);
   let coverKey;
   try {
     coverKey = await putImage(ctx.env, form.get("cover"));
@@ -178,14 +158,12 @@ export async function onRequestPost(ctx) {
       String(form.get("learner_level")),
     )
       ? String(form.get("learner_level"))
-      : "all",
-    planJson = JSON.stringify(plan);
+      : "all";
   {
     try{
       const statements=[
         ctx.env.DB.prepare(`INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) VALUES(?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course')`).bind(slug,title,short,description,draftPrice,coverUrl,JSON.stringify([coverUrl]),episodes),
-        ctx.env.DB.prepare(`INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin,basket_binding_locked,basket_bound_at,course_plan) SELECT id,?,?,0,'online_course',30,?,NULL,NULL,?,?,?,?,'draft','seller_rights',1,CURRENT_TIMESTAMP,? FROM products WHERE slug=?`).bind(short,teacher,auth.user.id,contact,JSON.stringify(tags),level,episodes,selectedPlan.code,slug),
-        ctx.env.DB.prepare(`INSERT INTO course_lessons(course_id,title,description,sort_order,duration_seconds) SELECT c.id,json_extract(ep.value,'$.title'),json_extract(ep.value,'$.description'),(CAST(ep.key AS INTEGER)+1)*10,CAST(json_extract(ep.value,'$.duration_seconds') AS INTEGER) FROM courses c JOIN products p ON p.id=c.product_id CROSS JOIN json_each(?) ep WHERE p.slug=? AND c.owner_user_id=?`).bind(planJson,slug,auth.user.id)
+        ctx.env.DB.prepare(`INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin,basket_binding_locked,basket_bound_at,course_plan) SELECT id,?,?,0,'online_course',30,?,NULL,NULL,?,?,?,?,'draft','seller_rights',1,CURRENT_TIMESTAMP,? FROM products WHERE slug=?`).bind(short,teacher,auth.user.id,contact,JSON.stringify(tags),level,episodes,selectedPlan.code,slug)
       ];
       const results=await ctx.env.DB.batch(statements);if(!results[0].meta.changes||!results[1].meta.changes)throw new Error('COURSE_CREATE_FAILED');
       const course=await ctx.env.DB.prepare('SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=?').bind(slug,auth.user.id).first();
