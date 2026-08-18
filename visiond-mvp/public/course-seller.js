@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014270">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014271">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 const mySellerCourses = document.querySelector("#mySellerCourses"),
@@ -107,7 +107,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">เข้าแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 3</button></article></div><p>เลือกเข้าแบบ 1, 2 หรือ 3 เพื่อดูขั้นตอนและเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">เข้าแบบ 2 · ผู้สอนรับ 100%</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 3 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1, 2 หรือ 3 เพื่อดูขั้นตอนและเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
