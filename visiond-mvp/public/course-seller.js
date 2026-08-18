@@ -45,9 +45,14 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014268">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014269">',
 );
 const sellerShell = document.querySelector(".seller-shell");
+const mySellerCourses = document.querySelector("#mySellerCourses"),
+  salesTotal = document.querySelector("#salesTotal"),
+  salesCount = document.querySelector("#salesCount"),
+  salesRows = document.querySelector("#salesRows"),
+  slipIssueRows = document.querySelector("#slipIssueRows");
 [
   document.querySelector(".seller-hero"),
   document.querySelector("#vision5SellerFlow"),
@@ -127,7 +132,8 @@ function render(data) {
         ? "<b>เปิดตรวจอัตโนมัติ · EasySlip พร้อมใช้</b>"
         : "<b>เปิดตรวจอัตโนมัติ · กรุณาบันทึก Token</b>"
       : "<p>ปิดตรวจอัตโนมัติ · เจ้าของคอร์สต้องตรวจและอนุมัติเอง</p>";
-  mySellerCourses.innerHTML = data.courses.length
+  if (mySellerCourses) {
+    mySellerCourses.innerHTML = data.courses.length
     ? data.courses
         .map((c) => {
           const total = Math.max(
@@ -142,7 +148,7 @@ function render(data) {
         })
         .join("")
     : '<div class="seller-course-empty"><b>ยังไม่มีตะกร้าคอร์ส</b><p>เลือกสร้างคอร์สแบบ 1, 2 หรือ 3 ด้านบน</p></div>';
-  mySellerCourses.querySelectorAll(".owned-course").forEach((card, index) => {
+    mySellerCourses.querySelectorAll(".owned-course").forEach((card, index) => {
     const course = data.courses[index],
       total = Math.max(
         1,
@@ -176,13 +182,14 @@ function render(data) {
       publish.onclick = () => openPublish(course);
       actions.append(publish);
     }
-    card.append(actions);
-  });
-  salesTotal.textContent = money(data.totals?.amount);
-  salesCount.textContent =
-    (Number(data.totals?.orders) || 0) +
-    (data.sales_list_limited ? " (ตาราง 200 ล่าสุด)" : "");
-  salesRows.innerHTML = data.sales?.length
+      card.append(actions);
+    });
+  }
+  if (salesTotal) salesTotal.textContent = money(data.totals?.amount);
+  if (salesCount) salesCount.textContent =
+      (Number(data.totals?.orders) || 0) +
+      (data.sales_list_limited ? " (ตาราง 200 ล่าสุด)" : "");
+  if (salesRows) salesRows.innerHTML = data.sales?.length
     ? data.sales
         .map(
           (x) =>
@@ -190,7 +197,7 @@ function render(data) {
         )
         .join("")
     : '<tr><td colspan="6">ยังไม่มียอดขาย</td></tr>';
-  slipIssueRows.innerHTML = data.slip_issues?.length
+  if (slipIssueRows) slipIssueRows.innerHTML = data.slip_issues?.length
     ? data.slip_issues
         .map(
           (x) =>
@@ -199,12 +206,12 @@ function render(data) {
         .join("")
     : '<tr><td colspan="5">ไม่มีรายการผิดปกติ</td></tr>';
   slipIssueRows
-    .querySelectorAll("[data-slip-approve]")
+    ?.querySelectorAll("[data-slip-approve]")
     .forEach(
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipApprove, "approve")),
     );
   slipIssueRows
-    .querySelectorAll("[data-slip-reject]")
+    ?.querySelectorAll("[data-slip-reject]")
     .forEach(
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );

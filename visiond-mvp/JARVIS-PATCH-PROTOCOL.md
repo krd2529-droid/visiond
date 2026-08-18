@@ -115,3 +115,9 @@ Rollback safety:
 - Before starting an unrelated new Event Case, warn Boss that the active Event Case remains unfinished and recommend completing it first.
 - Boss may explicitly reorder or pause work; record that decision as `PAUSED BY BOSS` without mislabeling the Event Case complete.
 - A new request that adds acceptance criteria to the active topic remains part of the same Event Case.
+# Content Removal Rule
+
+- เมื่อผู้ใช้สั่งเอาเนื้อหาหรือส่วนประกอบออก ให้ลบองค์ประกอบและการอ้างอิงที่เกี่ยวข้องออกจริง
+- ห้ามใช้ `hidden`, `display: none`, visibility, เงื่อนไข JavaScript หรือ DOM/template แฝงเพื่อทำเสมือนลบ เว้นแต่ผู้ใช้ระบุชัดเจนว่าให้ “ซ่อน”
+- การลบส่วนแสดงผลต้องไม่ลบข้อมูลฐานข้อมูลหรือ API โดยอัตโนมัติ เว้นแต่ผู้ใช้สั่งให้ลบข้อมูลด้วย
+- หลังลบต้องตรวจการอ้างอิง JavaScript, anchor, event และ test ที่อาจชี้ไปยังองค์ประกอบเดิม
