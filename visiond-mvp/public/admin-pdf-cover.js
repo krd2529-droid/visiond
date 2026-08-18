@@ -11,11 +11,16 @@
   const lines = (text,maxWidth,font,maxLines=3) => {ctx.font=font;const words=String(text).trim().split(/\s+/),out=[];let line="";for(const word of words){const next=line?`${line} ${word}`:word;if(ctx.measureText(next).width<=maxWidth)line=next;else{if(line)out.push(line);line=word;if(out.length===maxLines-1)break}}if(line&&out.length<maxLines)out.push(line);return out};
   function background(kind){
     const g=ctx.createLinearGradient(0,0,1000,1400);
-    if(kind==="kids"){g.addColorStop(0,"#fff8df");g.addColorStop(1,"#ffc9a2")}else if(kind==="elegant"){g.addColorStop(0,"#101b2c");g.addColorStop(1,"#263a4c")}else{g.addColorStop(0,"#f8f1e5");g.addColorStop(1,"#e8f5f1")}
+    if(kind==="kids"){g.addColorStop(0,"#fff8df");g.addColorStop(1,"#ffc9a2")}else if(kind==="elegant"){g.addColorStop(0,"#101b2c");g.addColorStop(1,"#263a4c")}else{g.addColorStop(0,"#fffafa");g.addColorStop(1,"#e9e9ec")}
     ctx.fillStyle=g;ctx.fillRect(0,0,1000,1400);
     if(kind==="modern"){
-      ctx.fillStyle="#075f5a";ctx.fillRect(0,0,1000,28);ctx.fillRect(72,90,12,205);ctx.fillStyle="#d8a94f";ctx.fillRect(84,90,82,12);
-      ctx.globalAlpha=.08;ctx.fillStyle="#075f5a";for(let y=40;y<1400;y+=36)ctx.fillRect(0,y,1000,1);ctx.globalAlpha=1;
+      ctx.fillStyle="#17171b";ctx.fillRect(0,0,1000,34);ctx.fillStyle="#d71920";ctx.fillRect(0,34,1000,12);
+      ctx.beginPath();ctx.moveTo(0,46);ctx.lineTo(300,46);ctx.lineTo(0,350);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(1000,46);ctx.lineTo(1000,270);ctx.lineTo(775,46);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#17171b";ctx.beginPath();ctx.moveTo(0,1160);ctx.lineTo(0,1400);ctx.lineTo(255,1400);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#d71920";ctx.beginPath();ctx.moveTo(1000,1080);ctx.lineTo(1000,1400);ctx.lineTo(665,1400);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="#d71920";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(78,360);ctx.lineTo(255,360);ctx.lineTo(300,315);ctx.stroke();
+      ctx.globalAlpha=.08;ctx.fillStyle="#17171b";for(let x=-250;x<1100;x+=88){ctx.save();ctx.translate(x,0);ctx.rotate(-.48);ctx.fillRect(0,0,18,1550);ctx.restore()}ctx.globalAlpha=1;
     }else if(kind==="kids"){
       for(const [x,y,r,c] of [[75,110,82,"#47c7bc"],[910,120,110,"#ff8d85"],[90,1250,120,"#ffc83d"],[930,1240,85,"#6e8bff"]]){ctx.fillStyle=c;ctx.globalAlpha=.82;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
     }else{
@@ -24,22 +29,23 @@
   }
   function drawImage(kind){
     if(!productImage)return;
-    const box=kind==="modern"?{x:86,y:440,w:828,h:710,r:8}:kind==="kids"?{x:105,y:420,w:790,h:740,r:56}:{x:120,y:420,w:760,h:720,r:4};
+    const box=kind==="modern"?{x:100,y:430,w:800,h:720,r:0}:kind==="kids"?{x:105,y:420,w:790,h:740,r:56}:{x:120,y:420,w:760,h:720,r:4};
     const scale=Math.min((box.w-36)/productImage.width,(box.h-36)/productImage.height),w=productImage.width*scale,h=productImage.height*scale;
     ctx.save();ctx.shadowColor="#001f1d55";ctx.shadowBlur=kind==="kids"?30:42;ctx.shadowOffsetY=18;rounded(box.x,box.y,box.w,box.h,box.r);ctx.fillStyle="#fff";ctx.fill();ctx.restore();
     ctx.save();rounded(box.x+18,box.y+18,box.w-36,box.h-36,Math.max(2,box.r-10));ctx.clip();ctx.fillStyle="#fff";ctx.fillRect(box.x,box.y,box.w,box.h);ctx.drawImage(productImage,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);ctx.restore();
-    ctx.strokeStyle=kind==="modern"?"#075f5a":kind==="kids"?"#fff":"#d5b46c";ctx.lineWidth=kind==="kids"?14:5;rounded(box.x,box.y,box.w,box.h,box.r);ctx.stroke();
+    ctx.strokeStyle=kind==="modern"?"#d71920":kind==="kids"?"#fff":"#d5b46c";ctx.lineWidth=kind==="modern"?12:kind==="kids"?14:5;rounded(box.x,box.y,box.w,box.h,box.r);ctx.stroke();
+    if(kind==="modern"){ctx.fillStyle="#17171b";ctx.beginPath();ctx.moveTo(box.x,box.y);ctx.lineTo(box.x+95,box.y);ctx.lineTo(box.x,box.y+95);ctx.closePath();ctx.fill();ctx.fillStyle="#d71920";ctx.beginPath();ctx.moveTo(box.x+box.w,box.y+box.h);ctx.lineTo(box.x+box.w-110,box.y+box.h);ctx.lineTo(box.x+box.w,box.y+box.h-110);ctx.closePath();ctx.fill()}
     if(kind==="kids"){ctx.fillStyle="#ff5c77";rounded(690,1080,165,64,32);ctx.fill();ctx.fillStyle="#fff";ctx.font='800 25px "Leelawadee UI",Tahoma,sans-serif';ctx.fillText("สนุกเรียนรู้",772,1113)}
   }
   function render(){
     const kind=template(),title=titleInput.value.trim();background(kind);
-    ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=kind==="modern"?"#073f3d":kind==="kids"?"#3d315b":"#f7f0df";
+    ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=kind==="modern"?"#17171b":kind==="kids"?"#3d315b":"#f7f0df";
     const fontFamily=kind==="elegant"?'"Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif':'"Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif';
     let size=kind==="modern"?72:kind==="kids"?78:68,wrapped=[];do{wrapped=lines(title||"ชื่อปก PDF",kind==="elegant"?760:820,`${kind==="elegant"?600:800} ${size}px ${fontFamily}`,3);if(wrapped.every(x=>ctx.measureText(x).width<=(kind==="elegant"?760:820)))break;size-=4}while(size>42);
     ctx.font=`${kind==="elegant"?600:800} ${size}px ${fontFamily}`;const centerY=kind==="modern"?245:kind==="kids"?245:230,start=centerY-(wrapped.length-1)*(size*.58);wrapped.forEach((line,index)=>ctx.fillText(line,500,start+index*size*1.18));
-    if(kind==="modern"){ctx.fillStyle="#d8a94f";ctx.fillRect(430,348,140,5)}else if(kind==="kids"){ctx.strokeStyle="#3d315b";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(390,350);ctx.quadraticCurveTo(500,375,610,350);ctx.stroke()}else{ctx.fillStyle="#d5b46c";ctx.fillRect(455,340,90,3)}
+    if(kind==="modern"){ctx.fillStyle="#d71920";ctx.fillRect(385,348,230,10);ctx.fillStyle="#17171b";ctx.fillRect(455,370,90,5)}else if(kind==="kids"){ctx.strokeStyle="#3d315b";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(390,350);ctx.quadraticCurveTo(500,375,610,350);ctx.stroke()}else{ctx.fillStyle="#d5b46c";ctx.fillRect(455,340,90,3)}
     drawImage(kind);
-    ctx.fillStyle=kind==="modern"?"#075f5a":kind==="kids"?"#3d315b":"#d5b46c";ctx.font=`700 23px ${fontFamily}`;ctx.letterSpacing="3px";ctx.fillText("VISIOND  •  DIGITAL PDF",500,1285);ctx.letterSpacing="0px";
+    ctx.fillStyle=kind==="modern"?"#fff":kind==="kids"?"#3d315b":"#d5b46c";ctx.font=`700 23px ${fontFamily}`;ctx.letterSpacing="3px";ctx.fillText("VISIOND  •  DIGITAL PDF",kind==="modern"?805:500,1285);ctx.letterSpacing="0px";
     download.disabled=!(title&&productImage);message.textContent=download.disabled?"ใส่ชื่อและเลือกรูปสินค้าเพื่อดาวน์โหลด":"พร้อมดาวน์โหลดปก PNG ขนาด 1000 × 1400 px";
   }
   button.addEventListener("click",()=>{dialog.showModal();render();requestAnimationFrame(()=>titleInput.focus())});

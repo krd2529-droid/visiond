@@ -1,0 +1,1 @@
+{"patch":"v0.14.267","tasks":[{"id":"P14267-001","scope":"UI","source_instruction":"กรอบโมเดิร์นต้องเป็นกรอบเล่นเหลี่ยม เล่นมุม สีแดง","status":"DONE-VERIFIED","evidence":["public/admin-pdf-cover.js","public/admin-pdf-cover.css","scripts/test-v014267.mjs"]}]}
