@@ -18,6 +18,25 @@
   const addEpisodeButton=document.querySelector('#addEpisodeCard');
   let renderedCount=0,createdCourseId=0,createdLessons=[],uploadedEpisodes=new Set();
 
+  function readVideoResolution(file){
+    return new Promise((resolve,reject)=>{
+      const video=document.createElement('video'),url=URL.createObjectURL(file);
+      const finish=callback=>{URL.revokeObjectURL(url);video.removeAttribute('src');callback()};
+      video.preload='metadata';
+      video.onloadedmetadata=()=>{const resolution={width:Number(video.videoWidth),height:Number(video.videoHeight)};finish(()=>resolve(resolution))};
+      video.onerror=()=>finish(()=>reject(new Error('อ่านความละเอียดคลิปไม่ได้ กรุณาแปลงไฟล์เป็น MP4/WebM 720p แล้วลองใหม่')));
+      video.src=url;
+    });
+  }
+  async function validateVideoResolution(file,position){
+    if(!file)return '';
+    try{
+      const {width,height}=await readVideoResolution(file),landscape=width>=height;
+      if((landscape&&(width>1280||height>720))||(!landscape&&(width>720||height>1280)))return `EP.${position}: คลิป ${width}×${height}px สูงเกิน 720p กรุณาแปลงเป็นไม่เกิน 1280×720 (แนวนอน) หรือ 720×1280 (แนวตั้ง)`;
+      return '';
+    }catch(error){return `EP.${position}: ${error.message}`}
+  }
+
   const clampCount=value=>Math.min(200,Math.max(1,Math.trunc(Number(value)||1)));
   const cardHasData=card=>[...card.querySelectorAll('input:not([type=file]),textarea')].some(x=>String(x.value||'').trim())||[...card.querySelectorAll('input[type=file]')].some(x=>x.files?.length);
   const episodeData=card=>({
@@ -38,8 +57,10 @@
   function makeCard(index){
     const card=document.createElement('article');
     card.className='episode-card';card.dataset.episode=index;
-    card.innerHTML=`<div class="episode-card-head"><span class="episode-card-title">EP.${String(index).padStart(2,'0')} — ยังไม่ตั้งชื่อ</span><span class="episode-card-state">ยังไม่กรอก</span></div><div class="episode-card-body" role="group" aria-label="ข้อมูล EP.${index}"><div class="draft-first-ep-grid"><label>ชื่อ EP <input data-field="title" maxlength="180" placeholder="เช่น เริ่มต้นใช้งาน" required></label><label>ความยาวโดยประมาณ (นาที)<input data-field="minutes" type="number" min="0" step="0.5" inputmode="decimal"></label><label class="span2">คำอธิบาย EP<textarea data-field="description" rows="3" maxlength="3000" placeholder="อธิบายสิ่งที่จะเรียนในตอนนี้"></textarea></label><label class="draft-upload-box">🎥 คลิป MP4/WEBM สูงสุด 2 GB · แนะนำเตรียมเป็น 720p หรือ 480p<input data-field="video" type="file" accept="video/mp4,video/webm"></label><label>คุณภาพวิดีโอ<select data-field="video_quality"><option value="720">720p (แนะนำ)</option><option value="480">480p (ประหยัดพื้นที่)</option></select></label><label class="draft-upload-box">📎 เอกสารหรือไฟล์ประกอบ<input data-field="documents" type="file" multiple></label></div></div>`;
+    card.innerHTML=`<div class="episode-card-head"><span class="episode-card-title">EP.${String(index).padStart(2,'0')} — ยังไม่ตั้งชื่อ</span><span class="episode-card-state">ยังไม่กรอก</span></div><div class="episode-card-body" role="group" aria-label="ข้อมูล EP.${index}"><div class="draft-first-ep-grid"><label>ชื่อ EP <input data-field="title" maxlength="180" placeholder="เช่น เริ่มต้นใช้งาน" required></label><label>ความยาวโดยประมาณ (นาที)<input data-field="minutes" type="number" min="0" step="0.5" inputmode="decimal"></label><label class="span2">คำอธิบาย EP<textarea data-field="description" rows="3" maxlength="3000" placeholder="อธิบายสิ่งที่จะเรียนในตอนนี้"></textarea></label><label class="draft-upload-box">🎥 คลิป MP4/WEBM สูงสุด 2 GB · รับไม่เกิน 720p (แนวนอน 1280×720 / แนวตั้ง 720×1280)<input data-field="video" type="file" accept="video/mp4,video/webm"></label><label>คุณภาพวิดีโอ<select data-field="video_quality"><option value="720">720p (แนะนำ)</option><option value="480">480p (ประหยัดพื้นที่)</option></select></label><label class="draft-upload-box">📎 เอกสารหรือไฟล์ประกอบ<input data-field="documents" type="file" multiple></label></div></div>`;
     card.querySelectorAll('input,textarea').forEach(input=>{input.addEventListener('input',()=>refreshCard(card));input.addEventListener('change',()=>refreshCard(card))});
+    const videoInput=card.querySelector('[data-field="video"]');
+    videoInput.addEventListener('change',async()=>{const file=videoInput.files?.[0],error=await validateVideoResolution(file,index);if(error){sellerMessage.textContent=error;videoInput.value='';refreshCard(card)}});
     return card;
   }
   function renderCount(next,{confirmRemoval=true}={}){
@@ -76,10 +97,11 @@
     card.querySelectorAll('input[type="file"]').forEach(input=>input.disabled=true);
   }
 
-  function validateFiles(){
+  async function validateFiles(){
     for(const card of cards.children){
       const position=card.dataset.episode,video=card.querySelector('[data-field="video"]').files?.[0],docs=[...card.querySelector('[data-field="documents"]').files||[]];
       if(video&&(!['video/mp4','video/webm'].includes(video.type)||video.size>2*1024*1024*1024))return `EP.${position}: คลิปต้องเป็น MP4 หรือ WEBM ขนาดไม่เกิน 2 GB`;
+      const resolutionError=await validateVideoResolution(video,position);if(resolutionError)return resolutionError;
       if(docs.some(file=>file.size>200*1024*1024))return `EP.${position}: ไฟล์ประกอบแต่ละไฟล์ต้องไม่เกิน 200 MB`;
     }
     return '';
@@ -125,7 +147,7 @@
       sellerMessage.textContent=`กรุณาใส่ชื่อ EP.${firstMissing.dataset.episode}`;title.focus();return;
     }
     if(openInvalidField()||!form.reportValidity())return;
-    const fileError=validateFiles();if(fileError){sellerMessage.textContent=fileError;return}
+    const fileError=await validateFiles();if(fileError){sellerMessage.textContent=fileError;return}
     const episodeCards=[...cards.children],episodes=episodeCards.map(episodeData);
     if(!createdCourseId&&!confirm(`สร้างคอร์สร่าง ${episodes.length} EP หรือไม่? ยังไม่หักเครดิตและยังไม่เริ่มนับ 30 วัน`))return;
     const button=event.submitter;button.disabled=true;sellerMessage.textContent='กำลังสร้างคอร์สร่างและบันทึกรายละเอียด EP…';

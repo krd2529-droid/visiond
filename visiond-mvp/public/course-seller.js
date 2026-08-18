@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014290">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014291">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -600,6 +600,28 @@ async function uploadLessonVideo(courseId, lessonId, file, quality) {
     throw error;
   }
 }
+function readLessonVideoResolution(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video"), url = URL.createObjectURL(file);
+    const finish = (callback) => { URL.revokeObjectURL(url); video.removeAttribute("src"); callback(); };
+    video.preload = "metadata";
+    video.onloadedmetadata = () => { const resolution = { width: Number(video.videoWidth), height: Number(video.videoHeight) }; finish(() => resolve(resolution)); };
+    video.onerror = () => finish(() => reject(new Error("อ่านความละเอียดคลิปไม่ได้ กรุณาแปลงไฟล์เป็น MP4/WebM 720p แล้วลองใหม่")));
+    video.src = url;
+  });
+}
+async function validateLessonVideoResolution(file) {
+  if (!file) return "";
+  try {
+    const { width, height } = await readLessonVideoResolution(file), landscape = width >= height;
+    return (landscape && (width > 1280 || height > 720)) || (!landscape && (width > 720 || height > 1280))
+      ? `คลิป ${width}×${height}px สูงเกิน 720p กรุณาแปลงเป็นไม่เกิน 1280×720 (แนวนอน) หรือ 720×1280 (แนวตั้ง)` : "";
+  } catch (error) { return error.message; }
+}
+sellerLessonForm.elements.video.addEventListener("change", async () => {
+  const input = sellerLessonForm.elements.video, error = await validateLessonVideoResolution(input.files?.[0]);
+  if (error) { sellerLessonMessage.textContent = error; input.value = ""; }
+});
 sellerLessonForm.onsubmit = async (e) => {
   e.preventDefault();
   const id = sellerLessonForm.elements.course_id.value,
@@ -611,6 +633,12 @@ sellerLessonForm.onsubmit = async (e) => {
   const video = sellerLessonForm.elements.video.files?.[0];
   if (video && (video.size > 2 * 1024 * 1024 * 1024 || !["video/mp4", "video/webm"].includes(video.type))) {
     sellerLessonMessage.textContent = "คลิปต้องเป็น MP4/WEBM และมีขนาดไม่เกิน 2 GB";
+    b.disabled = false;
+    return;
+  }
+  const resolutionError = await validateLessonVideoResolution(video);
+  if (resolutionError) {
+    sellerLessonMessage.textContent = resolutionError;
     b.disabled = false;
     return;
   }
