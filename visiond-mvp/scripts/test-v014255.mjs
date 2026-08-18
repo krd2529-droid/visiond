@@ -8,9 +8,9 @@ const [version, index, admin, ui, css] = await Promise.all([
   "public/course-seller.js",
   "public/course-seller.css",
 ].map(read));
-assert.equal(version.trim(), "v0.14.255");
-assert.match(index, /WEB v0\.14\.255/);
-assert.match(admin, /ADMIN v0\.14\.255/);
+assert.ok(Number(version.trim().split(".").pop()) >= 255);
+assert.match(index, /WEB v0\.14\.\d+/);
+assert.match(admin, /ADMIN v0\.14\.\d+/);
 for (const token of [
   "?create=${encodeURIComponent(plan)}",
   "function enterCourseCreatePage(plan)",

@@ -423,6 +423,26 @@ td {
 .course-plan-page-head p {
   margin: 0;
 }
+.course-plan-flow {
+  margin: 0 0 24px;
+}
+.course-plan-condition {
+  margin: 0 0 20px;
+  padding: 18px 20px;
+  border: 1px solid #e4c66b;
+  border-radius: 14px;
+  background: #fff7dc;
+}
+.course-plan-condition p {
+  margin: 6px 0 0;
+}
+.course-create-page #paymentProfilePanel,
+.course-create-page #slipApiPanel {
+  margin: 0 0 20px;
+  padding: 20px;
+  border: 1px solid #8edbd6;
+  box-shadow: none;
+}
 .slip-auto-toggle {
   display: flex !important;
   align-items: center;

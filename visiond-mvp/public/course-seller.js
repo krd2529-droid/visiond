@@ -25,31 +25,28 @@ const coursePlanPages = {
       title: "ซื้อสิทธิ์ 499 บาท",
       detail: "ใช้ 1 เครดิตต่อคอร์ส รับเงินเข้าบัญชีผู้สอนและรับยอดขาย 100%",
       submit: "ใช้ 1 เครดิตและสร้างคอร์สแบบ 1",
+      steps: ["ซื้อสิทธิ์และมีเครดิต", "ตั้งค่าบัญชีรับเงินและการตรวจสลิป", "สร้างคอร์ส · เพิ่ม EP · เผยแพร่"],
     },
     free: {
       number: "2",
       title: "เริ่มขายฟรี",
       detail: "สร้างได้สูงสุด 3 คอร์ส คอร์สละไม่เกิน 5 EP ผู้สอนตรวจและอนุมัติสลิปเอง",
       submit: "สร้างคอร์สแบบ 2 ฟรี",
+      steps: ["ตรวจสิทธิ์โควตาขายฟรี", "ตั้งค่าบัญชีรับเงินและตรวจสลิปเอง", "สร้างคอร์ส · เพิ่มไม่เกิน 5 EP · เผยแพร่"],
     },
     partner: {
       number: "3",
       title: "พาร์ตเนอร์ 50/50",
       detail: "ไม่จำกัดคอร์สและ EP ระบบตรวจสลิปอัตโนมัติและแบ่งยอด VisionD 50% / ผู้สอน 50%",
       submit: "สร้างคอร์สแบบ 3 พาร์ตเนอร์",
+      steps: ["ตรวจเงื่อนไขพาร์ตเนอร์ 50/50", "VisionD รับเงินและตรวจสลิปอัตโนมัติ", "สร้างคอร์ส · เพิ่ม EP · ส่งตรวจเผยแพร่"],
     },
   },
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014255">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014256">',
 );
-document
-  .querySelector(".seller-hero")
-  ?.insertAdjacentHTML(
-    "afterend",
-    '<section id="vision5SellerFlow" class="vision5-seller-flow"><h2>Vision 5 · เริ่มขายคอร์สใน 3 ขั้นตอน</h2><div class="vision5-steps vision5-steps--compact"><div class="vision5-step" data-v5-step="credit"><span>1</span><b>ซื้อสิทธิ์เปิดขาย</b></div><div class="vision5-step" data-v5-step="setup"><span>2</span><b>ตั้งค่ารับเงินและตรวจสลิป</b></div><div class="vision5-step" data-v5-step="course"><span>3</span><b>สร้างคอร์ส · เพิ่ม EP · เผยแพร่</b></div></div><p id="vision5NextAction" class="vision5-next-action"></p></section>',
-  );
 const sellerShell = document.querySelector(".seller-shell");
 [
   document.querySelector(".seller-hero"),
@@ -209,6 +206,8 @@ function render(data) {
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );
   createCourseBasket.hidden = true;
+  paymentProfilePanel.hidden = true;
+  slipApiPanel.hidden = true;
 }
 function openCoursePlan(plan) {
   if (!coursePlanPages[plan]) return;
@@ -224,10 +223,23 @@ function enterCourseCreatePage(plan) {
   createPanel.hidden = false;
   createPanel.insertAdjacentHTML(
     "afterbegin",
-    `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header>`,
+    `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
   );
+  const formHeading = createPanel.querySelector(":scope > h2");
+  createPanel.insertBefore(paymentProfilePanel, formHeading);
+  createPanel.insertBefore(slipApiPanel, formHeading);
+  paymentProfilePanel.hidden = plan === "partner";
+  slipApiPanel.hidden = plan !== "rights";
+  const condition = document.createElement("aside");
+  condition.className = "course-plan-condition";
+  condition.innerHTML = plan === "rights"
+    ? "<b>เงื่อนไขแบบ 1</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง ผู้สอนเลือกตรวจเองหรือใช้ EasySlip API ของผู้สอนได้</p>"
+    : plan === "free"
+      ? "<b>เงื่อนไขแบบ 2</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง และผู้สอนต้องตรวจพร้อมอนุมัติสลิปเอง</p>"
+      : "<b>เงื่อนไขแบบ 3</b><p>ลูกค้าชำระเข้าบัญชีบริษัท VisionD ระบบ VisionD ตรวจสลิปอัตโนมัติและแบ่งรายได้ 50/50</p>";
+  createPanel.insertBefore(condition, paymentProfilePanel);
   createPanel.classList.toggle("course-plan-legacy-form", plan === "rights");
-  createPanel.querySelector("h2").textContent = `กรอกข้อมูลคอร์สแบบ ${config.number}`;
+  formHeading.textContent = `กรอกข้อมูลคอร์สแบบ ${config.number}`;
   createPanel.querySelector(":scope > p").textContent =
     plan === "rights"
       ? "ฟอร์มสร้างคอร์สเดิมถูกย้ายมาไว้ในแบบ 1 โดยเฉพาะ ระบบจะใช้ 1 เครดิตและสร้าง EP เริ่มต้นให้ 1 EP"
