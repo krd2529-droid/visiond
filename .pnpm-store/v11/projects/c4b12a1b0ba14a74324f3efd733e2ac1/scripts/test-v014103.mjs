@@ -1,0 +1,5 @@
+import assert from "node:assert/strict";import fs from "node:fs";const read=p=>fs.readFileSync(p,"utf8"),theme=read("public/frontend-theme.css"),catalog=read("public/catalog-sync.js");
+for(const token of ["background:#0abab5!important","color:#063d3b!important","width:44px!important","height:48px!important"])assert.ok(catalog.includes(token),token);
+assert.match(theme,/course-owner-price strong[^}]*color:#e32636!important/);assert.match(theme,/course-owner-price del[^}]*color:var\(--vf-ink\)!important[^}]*opacity:1!important/);assert.match(theme,/vd-cover-slider.*vd-slide-prev/);
+for(const page of ["digital-products.html","product.html","bots.html"]){const html=read(`public/${page}`);for(const asset of ["header-shell.css","header-shell.js","promo-banner.js","facebook-chat.js","elon-chat.js","mobile-storefront.js"])assert.ok(html.includes(asset),`${page}: ${asset}`)}
+assert.ok(Number(read("VERSION.txt").trim().split(".").at(-1))>=103);console.log("v0.14.103 deep frontend parity passed");

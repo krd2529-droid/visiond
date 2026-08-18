@@ -1,0 +1,44 @@
+{
+  "patch": "v0.14.287",
+  "status": "IMPLEMENTED",
+  "what_changed": "ปรับศูนย์จัดการคอร์สและ API ให้สร้างใหม่ได้เฉพาะพาร์ตเนอร์ 50/50 พร้อมรักษาคอร์สซื้อสิทธิ์เดิมแบบอ่านย้อนหลัง",
+  "changed_files": [
+    "functions/_course_plans.js",
+    "functions/api/course-seller/index.js",
+    "functions/api/course-seller/plans.js",
+    "public/course-center.html",
+    "public/course-center.js",
+    "public/course-seller.html",
+    "public/course-seller.js",
+    "scripts/test-v014287.mjs",
+    "VERSION.txt"
+  ],
+  "tests": ["node scripts/test-v014287.mjs", "node scripts/test-all-regressions.mjs", "node scripts/predeploy-check.mjs", "git diff --check"],
+  "tasks": [
+    {
+      "id": "P14287-001",
+      "scope": "UI",
+      "source_instruction": "ศูนย์จัดการคอร์สแสดงทางเลือกสร้างใหม่เพียงพาร์ตเนอร์ 50/50",
+      "status": "DONE-VERIFIED",
+      "evidence": ["public/course-center.js", "public/course-seller.js", "scripts/test-v014287.mjs"]
+    },
+    {
+      "id": "P14287-002",
+      "scope": "FEATURE",
+      "source_instruction": "API ปฏิเสธการสร้างคอร์สใหม่ที่ไม่ใช่พาร์ตเนอร์",
+      "status": "DONE-VERIFIED",
+      "evidence": ["functions/api/course-seller/index.js", "functions/_course_plans.js", "scripts/test-v014287.mjs"]
+    },
+    {
+      "id": "P14287-003",
+      "scope": "BUG",
+      "source_instruction": "คอร์สซื้อสิทธิ์เดิมยังอ่านและคำนวณรายได้เดิมได้โดยไม่เปิดให้สร้างใหม่",
+      "status": "DONE-VERIFIED",
+      "evidence": ["functions/_course_plans.js", "public/course-seller.js", "scripts/test-v014287.mjs"]
+    }
+  ],
+  "commit_identity": "SELF",
+  "parent_commit": "853021bc4519311fa4ec7bc78d864b7d1e7f63b8",
+  "safe_rollback_commit": "ตรวจ SAFE-BASELINE.md ก่อน rollback; ห้ามถือว่า parent ปลอดภัยโดยอัตโนมัติ",
+  "rollback": "git revert SELF แล้วรันทดสอบ regression, predeploy, security และเลขแพตใหม่ก่อน Push"
+}

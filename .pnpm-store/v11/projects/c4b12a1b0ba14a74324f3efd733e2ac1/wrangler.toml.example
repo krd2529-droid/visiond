@@ -1,0 +1,49 @@
+name = "visiond"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "visiond-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[d1_databases]]
+binding = "ELON_WEB_DB"
+database_name = "visiond-elon-web-db"
+database_id = "REPLACE_WITH_ELON_WEB_D1_DATABASE_ID"
+
+[[d1_databases]]
+binding = "ELON_V7_DB"
+database_name = "visiond-elon-v7-db"
+database_id = "REPLACE_WITH_ELON_V7_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "visiond-files"
+
+[vars]
+COMPANY_NAME = "VisionD Online"
+OPENAI_MODEL = "gpt-4.1-mini"
+BANK_NAME = "ตั้งค่าใน Cloudflare"
+BANK_ACCOUNT_NAME = "ตั้งค่าใน Cloudflare"
+BANK_ACCOUNT_NUMBER = "ตั้งค่าใน Cloudflare"
+ADMIN_EMAIL = "admin@example.com"
+TURNSTILE_SITE_KEY = ""
+ELON_MEMBER_DAILY_LIMIT = "100"
+ELON_GLOBAL_DAILY_LIMIT = "1000"
+PASSWORD_RESET_EMAIL_PROVIDER = "resend"
+APP_ORIGIN = "https://visiondonline.com"
+RESET_EMAIL_FROM = "VisionD <no-reply@example.com>"
+# เพิ่ม TURNSTILE_SECRET_KEY เป็น Secret ใน Cloudflare ห้ามใส่คีย์จริงในไฟล์นี้
+# เพิ่ม EASYSLIP_API_KEY เป็น Secret ใน Cloudflare ห้ามใส่คีย์จริงในไฟล์นี้
+# เพิ่ม OPENAI_API_KEY เป็น Secret ใน Cloudflare ห้ามใส่คีย์จริงในไฟล์นี้
+# หากไม่มี OpenAI ให้ใช้ GEMINI_API_KEY หรือ GEMINI_API_KEY_2 เป็น Secret (ELON จะเลือกตามลำดับนี้)
+# ELON_GEMINI_MODEL = "gemini-2.5-flash" # ไม่ใส่ก็ใช้ค่านี้อัตโนมัติ
+# เพิ่ม ELON_OPENAI_API_KEY หรือ ELON_GEMINI_API_KEY เป็น Secret แยกเฉพาะ ELON
+# ระบบจะไม่ใช้ OPENAI_API_KEY/GEMINI_API_KEY ร่วมกับฟีเจอร์อื่นโดยอัตโนมัติ
+# ELON_ALLOW_SHARED_PROVIDER_KEYS = "1" ใช้เฉพาะช่วงย้ายระบบชั่วคราว ไม่แนะนำ production
+# เพิ่ม ELON_CLEANUP_TOKEN เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร ห้ามใส่คีย์จริงในไฟล์นี้
+# เพิ่ม ANALYTICS_CLEANUP_TOKEN เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร สำหรับงานสรุป/ล้าง page views รายวัน
+# เพิ่ม VISION5_TOKEN_ENCRYPTION_KEY เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร และห้ามเปลี่ยนหลังเริ่มใช้งาน
+# เพิ่ม VISIOND_CHANNEL_ENCRYPTION_KEY เป็น Secret แบบสุ่มอย่างน้อย 32 ตัวอักษร สำหรับ LINE/Facebook V Easy และห้ามเปลี่ยนหลังเริ่มใช้งาน
+# เพิ่ม RESEND_API_KEY เป็น Secret เพื่อเปิดระบบลืมรหัสผ่าน (ต้องยืนยันโดเมนผู้ส่งใน Resend)

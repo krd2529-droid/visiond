@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {promotionPrice} from '../functions/_promotion.js';
+const read=(path)=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const [version,index,admin,v12,cart,catalog,orders,roadmap]=await Promise.all(['VERSION.txt','public/index.html','public/admin.html','public/v12-connect.html','public/cart.js','public/catalog-sync.js','functions/api/orders/index.js','VISIOND-ROADMAP.md'].map(read));
+const promotion={enabled:true,scopes:['all'],percent:30};
+const deal=promotionPrice({category:'bundle-deals',price:2900},promotion);
+assert.equal(deal.sale_price,2900);
+assert.equal(deal.promotion_percent,0);
+assert.equal(deal.standalone_promotion,true);
+assert.equal(promotionPrice({category:'worksheet',price:10000},promotion).sale_price,7000);
+assert.equal(version.trim(),'v0.14.211');
+assert.match(index,/WEB v0\.14\.211/);assert.match(admin,/ADMIN v0\.14\.211/);assert.match(v12,/v0\.14\.211/);
+for(const source of[cart,catalog,orders])assert.match(source,/category\s*!==?\s*["']bundle-deals["']/);
+assert.match(cart,/ราคาพิเศษแล้ว · ไม่ร่วมส่วนลดหลายตะกร้าและโปรโมชั่นอื่น/);
+assert.match(catalog,/ราคาพิเศษแล้ว · ไม่ร่วมส่วนลดอื่น/);
+assert.match(roadmap,/Bundle Deals No Discount Stacking/);
+console.log('v0.14.211 bundle-deals no discount stacking frontend/backend: PASS');

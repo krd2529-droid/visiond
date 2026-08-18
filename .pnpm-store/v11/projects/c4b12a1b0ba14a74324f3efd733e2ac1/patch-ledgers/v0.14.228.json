@@ -1,0 +1,19 @@
+{
+  "patch":"v0.14.228",
+  "event_case_id":"EC-URGENT-BUNDLE-PREVIEW-REPAIR",
+  "completion_condition":"ตรวจรูปตะกร้ารวมใหม่/เดิม เสนอรูปใบงานจาก PDF และย้อนกลับได้",
+  "status":"DONE-VERIFIED",
+  "what_changed":"เพิ่มคะแนนตรวจรูป ชุดใหม่/เดิม รูป PDF ทดแทน และ Revision rollback",
+  "tasks":[
+    {"id":"P14228-001","scope":"FEATURE","source_instruction":"ตรวจรูปตัวอย่างตะกร้ารวมเดิมและแยกรูปที่ไม่ใช่ใบงาน","status":"DONE-VERIFIED","evidence":["public/bundle-preview-audit.js"]},
+    {"id":"P14228-002","scope":"SECURITY","source_instruction":"เสนอรูปจาก PDF และแก้เฉพาะ Product เดิมพร้อมย้อนกลับ","status":"DONE-VERIFIED","evidence":["functions/api/admin/bundle-preview-audit/[id].js"]},
+    {"id":"P14228-003","scope":"FEATURE","source_instruction":"ให้ตรวจรูปอัตโนมัติตอนสร้างตะกร้ารวมใหม่ด้วย","status":"DONE-VERIFIED","evidence":["public/admin.js"]},
+    {"id":"P14228-004","scope":"QA","source_instruction":"ใช้ลูปมาตรฐานจนถึง Commit","status":"DONE-VERIFIED","evidence":["scripts/test-v014228.mjs"]}
+  ],
+  "tests":{"focused":"PASS","regression":"PASS 15/15","predeploy":"PASS 8 WARN 9 FAIL 0","secret_scan":"PASS","syntax":"PASS"},
+  "commit_id":"SELF",
+  "parent_commit":"fde8deaef5536bf0c8b5fbf69dc75d5e53c9f731",
+  "safe_rollback_commit":"fde8deaef5536bf0c8b5fbf69dc75d5e53c9f731",
+  "rollback_method":"git revert SELF; Boss Push/Deploy เท่านั้น",
+  "remaining_items":[]
+}

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Vision 7 Control</title>
+    <link rel="stylesheet" href="/vision7.css?v=014118" />
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014189" /><script src="/visiond-button-system.js?v=014190" defer></script></head>
+  <body class="v7-admin">
+    <header class="top">
+      <b>Vision 7 Control</b><a href="/admin.html">กลับหน้าผู้ดูแล</a>
+    </header>
+    <main class="wrap">
+      <div class="key-center-heading"><div><small>VISION 7 CONTROL</small><h1>ศูนย์คีย์โปรแกรม VisionD</h1><p>สร้างโปรแกรม ออกคีย์ทดสอบ และเผยแพร่ไฟล์กลางตามลำดับ</p></div></div>
+      <ol id="keyWorkflow" class="key-workflow" aria-label="ลำดับการตั้งค่า Vision 7">
+        <li data-workflow-step="program"><span>1</span><div><b>เพิ่มโปรแกรม</b><small>กำหนดแพลตฟอร์มและแพ็กเกจ</small></div></li>
+        <li data-workflow-step="key"><span>2</span><div><b>ออกคีย์ทดสอบ</b><small>ผูกบัญชีและเลือกอายุคีย์</small></div></li>
+        <li data-workflow-step="release"><span>3</span><div><b>เผยแพร่ตัวติดตั้ง</b><small>APK หรือไฟล์กลางสำหรับลูกค้า</small></div></li>
+      </ol>
+      <p id="nextAction" class="next-action" role="status">กำลังตรวจขั้นตอนถัดไป…</p>
+      <p class="notice">คีย์สร้างแยกจากไฟล์ติดตั้ง · APK V Easy เป็นไฟล์กลางและไม่ฝังคีย์ลูกค้า</p>
+      <p id="encryptionState" class="key-center-state" role="status" aria-live="polite">
+        กำลังตรวจความพร้อมระบบเข้ารหัสคีย์…
+      </p>
+      <section
+        id="keySummary"
+        class="summary-grid"
+        aria-label="สรุประบบคีย์"
+      ></section>
+      <div class="bar primary-actions">
+        <button id="newProgram">＋ เพิ่มโปรแกรมแรก</button
+        ><button id="newKey" class="secondary-action" disabled>🔑 ออกคีย์ทดสอบ</button>
+      </div>
+      <section class="key-workspace">
+        <article id="programWorkspace" class="card program-panel">
+          <header class="card-heading"><div><small>STEP 1</small><h2>โปรแกรม</h2></div><button type="button" class="compact-action" data-open-program>＋ เพิ่ม</button></header>
+          <div id="programs"></div>
+        </article>
+        <article id="licenseWorkspace" class="card license-panel">
+          <header class="card-heading"><div><small>STEP 2</small><h2>ทุกคีย์ในระบบ</h2><p class="muted">เรียงจากคีย์ที่ออกล่าสุด</p></div></header>
+          <label class="search-label" for="licenseSearch">ค้นหาคีย์</label><input
+            id="licenseSearch"
+            type="search"
+            placeholder="ค้นหาชื่อ อีเมล โปรแกรม หรือท้ายคีย์"
+          />
+          <div id="licenses"></div>
+        </article>
+        <details id="releaseDetails" class="card release-panel">
+          <summary><span><small>STEP 3</small><b>เผยแพร่ APK/ตัวติดตั้ง</b><em>แยกจากการออกคีย์ · เปิดเมื่อต้องการลงเวอร์ชันใหม่</em></span><strong>เปิดแบบฟอร์ม</strong></summary>
+          <div class="release-content"><p class="muted">ใช้ไฟล์กลางสำหรับลูกค้าทุกคน การอัปเดตไม่ต้องออกคีย์ใหม่</p>
+          <form id="releaseForm">
+            <label
+              >โปรแกรม<select
+                name="program_id"
+                id="releaseProgram"
+                required
+              ></select></label
+            ><label
+              >เวอร์ชันใหม่<input
+                name="version"
+                placeholder="1.1.0"
+                required /></label
+            ><label
+              >เวอร์ชันต่ำสุดที่ยอมรับ<input
+                name="minimum_version"
+                placeholder="1.0.0"
+                required /></label
+            ><label
+              ><input name="mandatory" type="checkbox" value="1" />
+              บังคับอัปเดตก่อนใช้งาน</label
+            ><label
+              >รายละเอียดอัปเดต<textarea
+                name="release_notes"
+                maxlength="2000"
+              ></textarea></label
+            ><label
+              >ไฟล์ติดตั้งไม่เกิน 95 MB<input
+                name="file"
+                type="file"
+                required /></label
+            ><button type="submit">อัปโหลดและเผยแพร่</button>
+            <p id="releaseState" class="muted" role="status" aria-live="polite"></p>
+          </form>
+          <div id="releases"></div></div>
+        </details>
+      </section>
+    </main>
+    <dialog id="programDialog" class="app-builder-dialog" aria-labelledby="programDialogTitle" aria-describedby="programDialogIntro">
+      <form id="programForm" enctype="multipart/form-data">
+        <header class="app-builder-heading"><div><small>VBOT APP BUILDER · สร้างฟรี</small><h2 id="programDialogTitle">สร้างแอปพร้อมขาย</h2><p id="programDialogIntro">สร้างแอปได้ฟรี ใส่ข้อมูลครั้งเดียว ระบบจะเตรียมแพ็กเกจคีย์และไฟล์ให้พร้อมใช้งาน</p></div><button type="button" class="dialog-close" data-close="programDialog" aria-label="ปิด">×</button></header>
+        <section class="app-builder-section" aria-labelledby="appInfoTitle">
+          <h3 id="appInfoTitle"><span>1</span> ข้อมูลแอป</h3>
+          <label>ชื่อแอปที่ลูกค้าเห็น<input name="name" required maxlength="120" placeholder="เช่น V Easy ผู้ช่วยขายร้านค้า" autocomplete="off" /><small>ระบบจะสร้างรหัสแอปให้อัตโนมัติ</small></label><input name="code" type="hidden" />
+          <label>รายละเอียดแอป<textarea name="description" required maxlength="2000" rows="4" placeholder="บอกว่าแอปช่วยลูกค้าทำอะไร และเหมาะกับใคร"></textarea></label>
+          <div class="app-builder-grid"><label>รูปปกแอป<input name="cover" type="file" accept="image/png,image/jpeg,image/webp" required /><small>PNG, JPG หรือ WebP · แนะนำภาพสี่เหลี่ยม 1200 × 1200 px</small></label><label>ไฟล์ติดตั้ง<input name="installer" type="file" accept=".apk,.aab,.exe,.msi,.dmg,.pkg,.zip,application/vnd.android.package-archive" required /><small>APK หรือไฟล์ติดตั้ง ไม่เกิน 95 MB</small></label></div>
+          <div class="app-builder-grid"><label>แพลตฟอร์ม<select name="platform_type" required><option value="android">VBot · Android APK</option><option value="veasy">V Easy · 1 คีย์ = 1 ร้าน</option><option value="windows">Windows</option><option value="mac">macOS</option><option value="web">Web</option><option value="cross-platform">หลายแพลตฟอร์ม</option></select><small id="platformHelp">แอป VBot สำหรับติดตั้งบน Android</small></label><label>เวอร์ชันเริ่มต้น<input name="current_version" value="1.0.0" required maxlength="40" pattern="[0-9]+(\.[0-9]+){0,3}([+-][A-Za-z0-9.-]+)?" inputmode="decimal" spellcheck="false" /><small>เช่น 1.0.0</small></label></div>
+        </section>
+        <fieldset class="app-builder-section price-builder"><legend><span>2</span> ราคาและอายุคีย์</legend><p>กรอกเฉพาะแบบที่ต้องการขาย หากเว้นว่างทั้งหมด แอปจะถูกเก็บเป็นร่าง</p>
+          <div class="package-grid"><label>คีย์ 30 วัน<div class="price-input"><input name="price_30d" type="number" min="1" step="1" inputmode="numeric" placeholder="ว่าง = ไม่ขาย" /><span>บาท</span></div></label><label>คีย์ 1 ปี<div class="price-input"><input name="price_1y" type="number" min="1" step="1" inputmode="numeric" placeholder="ว่าง = ไม่ขาย" /><span>บาท</span></div></label><label>คีย์ตลอดชีพ<div class="price-input"><input name="price_lifetime" type="number" min="1" step="1" inputmode="numeric" placeholder="ว่าง = ไม่ขาย" /><span>บาท</span></div></label></div>
+        </fieldset>
+        <div id="programPreview" class="program-preview" aria-live="polite">เว้นราคาทั้งหมดเพื่อบันทึกเป็นร่าง หรือใส่ราคาอย่างน้อย 1 แบบเพื่อเปิดขาย</div>
+        <p id="programState" class="muted" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button type="button" class="secondary-action" data-close="programDialog">ยกเลิก</button><button id="saveProgram" type="submit">สร้างแอป VBot ฟรี</button></footer>
+      </form>
+    </dialog>
+    <dialog id="keyDialog" aria-labelledby="keyDialogTitle">
+      <form id="keyForm">
+        <h2 id="keyDialogTitle">ออกคีย์ใหม่</h2>
+        <label>ประเภทคีย์<select name="key_mode" id="keyMode"><option value="test">คีย์ทดสอบ — ไม่มีค่าใช้จ่าย</option><option value="customer">คีย์ลูกค้า — คิดราคาตามแพ็กเกจ</option></select></label>
+        <div id="keyCustomerFields" hidden><label
+          >ค้นหาลูกค้า<input
+            id="userSearch"
+            placeholder="ชื่อ อีเมล หรือเบอร์" /></label
+        ><label
+          >ลูกค้า<select name="user_id" id="keyUser" required></select></label
+        ></div><label
+          >โปรแกรม<select
+            name="program_id"
+            id="keyProgram"
+            required
+          ></select></label>
+        <label id="testDurationField">อายุคีย์ทดสอบ<select name="test_duration" id="testDuration"><option value="30">30 วัน</option><option value="365">1 ปี</option><option value="lifetime">ตลอดอายุ</option></select></label>
+        <label id="keyPackageField" hidden
+          >แพ็กเกจ<select name="plan_id" id="keyPlan">
+            <option value="">ไม่กำหนด</option>
+          </select></label
+        >
+        <p id="keyCostSummary" class="key-info" role="status">คีย์ทดสอบ · ไม่มีค่าใช้จ่าย</p>
+        <p id="keyBindingPreview" class="key-info" hidden></p>
+        <label>หมายเหตุ<input name="note" maxlength="300" /></label>
+        <p id="issuedKey" class="key-success" hidden></p>
+        <button type="button" data-close="keyDialog">ยกเลิก</button
+        ><button id="issueKeySubmit" type="submit">ออกคีย์</button>
+      </form>
+    </dialog>
+    <dialog id="historyDialog" aria-labelledby="historyDialogTitle">
+      <section>
+        <h2 id="historyDialogTitle">ประวัติคีย์</h2>
+        <div id="historyContent"></div>
+        <button type="button" data-close="historyDialog">ปิด</button>
+      </section>
+    </dialog>
+    <script src="/vision7-admin.js?v=014118" type="module"></script>
+  </body>
+</html>

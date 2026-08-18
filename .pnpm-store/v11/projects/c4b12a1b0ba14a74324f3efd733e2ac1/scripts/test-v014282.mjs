@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=path=>fs.readFileSync(path,"utf8"),version=read("VERSION.txt").trim(),ui=read("public/course-seller.js"),create=read("functions/api/course-seller/index.js"),publish=read("functions/api/course-seller/[id]/publish.js"),admin=read("functions/api/admin/course-seller-reviews/index.js");
+assert.equal(version,"v0.14.282");
+assert.match(create,/if\(!selectedPlan\.requiresCredit\|\|!credit\)/);
+assert.match(create,/draft_only:selectedPlan\.requiresCredit/);
+assert.doesNotMatch(create,/ต้องมีอย่างน้อย 1 เครดิตก่อนสร้างตะกร้าคอร์ส/);
+assert.match(ui,/บันทึกร่างคอร์สแบบ 1/);
+assert.match(ui,/มี 1 เครดิตสำหรับส่งตรวจ/);
+assert.match(ui,/sendCourseReview\.disabled=!ready\|\|!hasCredit/);
+assert.match(publish,/ต้องมี 1 เครดิตก่อนส่งตรวจ ร่างนี้ยังแก้ไขต่อได้/);
+assert.match(publish,/UPDATE course_right_credits SET active=0/);
+assert.match(publish,/review_status='pending'/);
+assert.match(admin,/review_status IN \('pending'/);
+console.log("v0.14.282 rights draft before credit and admin review queue: PASS");

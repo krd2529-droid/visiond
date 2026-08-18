@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=file=>readFileSync(file,'utf8');
+const api=read('functions/api/admin/daily-events.js'),tracker=read('public/analytics.js'),eventApi=read('functions/api/analytics/event.js'),admin=read('public/admin.html'),js=read('public/admin.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.138');
+assert.match(api,/requireAdmin/);assert.match(api,/date\(e\.created_at,'\+7 hours'\)/);assert.match(api,/LIMIT 300/);
+assert.doesNotMatch(api,/password|token|account_number|bank_account/i);
+assert.match(eventApi,/'ui_click'/);assert.match(eventApi,/metadata\.target/);assert.match(tracker,/closest\('button,a,\[role="button"\]'\)/);
+assert.match(admin,/data-admin-tab="events"/);assert.match(admin,/เหตุการณ์ในแต่ละวัน/);assert.match(admin,/ไม่บันทึกรหัสผ่าน Token หรือข้อมูลที่กรอก/);
+assert.match(admin,/ADMIN v0\.14\.138/);assert.match(read('public/index.html'),/WEB v0\.14\.138/);
+assert.match(js,/loadDailyEvents/);assert.match(js,/ผู้เยี่ยมชม/);assert.match(js,/eventFilterForm\.onsubmit/);
+console.log('v0.14.138 admin daily event center PASS');

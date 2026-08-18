@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.68",
+  "tasks":[
+    {"id":"P1468-001","scope":"BUG","source_instruction":"แก้งานหลุดที่หลังบ้านไม่มีปุ่ม Vision 7","status":"DONE-VERIFIED","evidence":["functions/_middleware.js","scripts/test-v01468.mjs"]},
+    {"id":"P1468-002","scope":"UI","source_instruction":"แสดงปุ่ม Vision 7 ออกคีย์ในกลุ่มงานหลักของหลังบ้าน","status":"DONE-VERIFIED","evidence":["functions/_middleware.js","public/admin-navigation.css"]},
+    {"id":"P1468-003","scope":"FEATURE","source_instruction":"ปุ่มต้องเปิดหน้าศูนย์ออกคีย์จริง","status":"DONE-VERIFIED","evidence":["functions/_middleware.js","public/vision7-admin.html"]},
+    {"id":"P1468-004","scope":"QA","source_instruction":"ห้ามเทสต์เพียงว่าหน้าปลายทางมีอยู่ ต้องตรวจทางเข้าจาก Admin","status":"DONE-VERIFIED","evidence":["scripts/test-v01468.mjs"]},
+    {"id":"P1468-005","scope":"QA","source_instruction":"แก้ Requirement Evidence ที่เคยติ๊กเสร็จผิดและบันทึกเหตุผลเปิดงานซ้ำ","status":"DONE-VERIFIED","evidence":["requirements-ledger.json","scripts/test-v01468.mjs"]},
+    {"id":"P1468-006","scope":"QA","source_instruction":"ตรวจ Regression Coverage และ Layer 2 หลังแก้งานหลุด","status":"DONE-VERIFIED","evidence":["scripts/test-v01468.mjs","work-history/visiond/qa-history/QA-v0.14.68-ADMIN-ENTRY-RECOVERY.md"]}
+  ]
+}

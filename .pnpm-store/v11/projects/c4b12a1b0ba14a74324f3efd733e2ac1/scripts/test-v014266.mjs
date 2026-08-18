@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=file=>fs.readFileSync(file,"utf8"),page=read("public/course-center.html"),ui=read("public/course-seller.js"),api=read("functions/api/course-seller/index.js");
+assert.equal(read("VERSION.txt").trim(),"v0.14.266");
+for(const text of ["คำอธิบายของ EP นี้","วิดีโอ MP4/WEBM","เอกสารแนบของ EP นี้","+ สร้าง EP เพิ่ม","ส่งตรวจ"])assert.ok(page.includes(text));
+assert.match(ui,/coursePlanCreditGuard/);assert.match(ui,/credit<1/);assert.match(api,/credit_required:\s*true/);
+assert.match(ui,/if \(!createPanel\.querySelector\("#coursePlanFlow"\)\)/);
+assert.match(ui,/create=.*course_id=/);assert.doesNotMatch(ui,/enterCourseCreatePage\(courseCreateMode\);\s*return;/);
+assert.match(ui,/paymentProfilePanel\.hidden=plan!=="rights"/);assert.match(ui,/resetLessonEditor\(course\.id, false\)/);
+assert.match(ui,/sendCourseReview\.onclick/);assert.match(ui,/d\.items\.every/);
+console.log("v0.14.266 single-page course plan 1 EP and review flow: PASS");

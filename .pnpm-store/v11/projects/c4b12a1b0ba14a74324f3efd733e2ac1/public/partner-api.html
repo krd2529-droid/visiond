@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ศูนย์ควบคุมเว็บพาร์ทเนอร์ | VisionD</title>
+  <link rel="stylesheet" href="/partner-api.css?v=014223">
+  <link rel="stylesheet" href="/partner-sandbox.css?v=014223">
+  <link rel="stylesheet" href="/partner-webhook.css?v=014223">
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014223">
+  <script src="/visiond-button-system.js?v=014223" defer></script>
+</head>
+<body>
+  <header class="partner-head">
+    <a href="/admin.html">← หลังบ้าน</a>
+    <div><small>VISIOND CONTROL</small><h1>ศูนย์ควบคุมเว็บพาร์ทเนอร์</h1><p>ศูนย์กลางงานเว็บ 2 · เว็บไซต์ ลูกค้า ยอดขาย Sandbox Signed Webhook Retry Dead Letter สุขภาพ API และ E2E</p></div>
+    <span>v0.14.223</span>
+  </header>
+  <main class="partner-shell">
+    <section class="partner-card">
+      <h2>เพิ่มเว็บไซต์คู่ค้า</h2>
+      <p>Client Secret จะแสดงครั้งเดียว กรุณาคัดลอกเก็บใน Secret ของเว็บ 2 เท่านั้น</p>
+      <form id="partnerCreate" class="partner-form">
+        <label>ชื่อเว็บไซต์<input name="name" required placeholder="เช่น VisionD Shop 2"></label>
+        <label>HTTPS Domain<input name="domain" type="url" required placeholder="https://shop2.example.com"></label>
+        <label>สถานะ<select name="status"><option value="draft">แบบร่าง</option><option value="active">เปิด API</option><option value="paused">พัก API</option></select></label>
+        <div class="partner-scope-grid">
+          <label class="partner-scopes"><input name="products_read" type="checkbox" checked> products:read — อ่านสินค้า</label>
+          <label class="partner-scopes"><input name="customers_write" type="checkbox"> customers:write — ซิงก์ลูกค้า</label>
+          <label class="partner-scopes"><input name="orders_write" type="checkbox"> orders:write — ซิงก์ยอดขาย/ยกเลิก/คืนเงิน</label>
+        </div>
+        <div class="partner-actions"><button class="primary" type="submit">สร้างเว็บไซต์และ Credential</button></div>
+        <p id="partnerCreateState" class="status"></p>
+      </form>
+      <div id="partnerCredential" class="credential-output" hidden></div>
+    </section>
+    <section class="partner-card">
+      <h2>เว็บไซต์ที่เชื่อมต่อ</h2>
+      <p>สินค้า: <code>GET /api/partner/v1/products</code> · ลูกค้า: <code>POST /api/partner/v1/customers/sync</code> · ออเดอร์: <code>POST /api/partner/v1/orders/sync</code> · Event: <code>POST /api/partner/v1/webhooks/events</code></p>
+      <div id="partnerList" class="partner-list">กำลังโหลด…</div>
+    </section>
+    <section class="partner-card partner-guide" id="partnerGuide">
+      <h2>คู่มือเชื่อมเว็บ 2 และ Checklist ก่อนใช้งานจริง</h2>
+      <p>ทำตามลำดับนี้และกดทดสอบ E2E ของแต่ละเว็บไซต์ให้ผ่านก่อนเริ่มส่งข้อมูลจริง</p>
+      <ol>
+        <li>ตั้ง HTTPS Domain, สถานะ active และ Scope เท่าที่จำเป็น</li>
+        <li>เก็บ Client ID/Secret ใน Secret Manager ของเว็บ 2 ห้ามใส่ Frontend, Git หรือ Log</li>
+        <li>เชื่อมสินค้า → ลูกค้า → ออเดอร์/ชำระเงิน → ยกเลิก/คืนเงิน ด้วย External ID และ Idempotency-Key</li>
+        <li>เซ็น Webhook ด้วย HMAC-SHA256 และ Timestamp ไม่เกิน 5 นาที</li>
+        <li>กด “ทดสอบ E2E” และตรวจ Dashboard, Retry, Dead Letter กับ Alert ให้ผ่าน</li>
+      </ol>
+      <details><summary>Headers มาตรฐาน</summary><pre>X-VisionD-Client-ID: &lt;CLIENT_ID&gt;
+Authorization: Bearer &lt;CLIENT_SECRET&gt;
+Idempotency-Key: &lt;UNIQUE_KEY&gt;
+X-Request-ID: &lt;REQUEST_ID&gt;</pre></details>
+      <details><summary>Signed Webhook</summary><pre>v1=HMAC_SHA256(client_secret, timestamp + "." + raw_body)</pre></details>
+      <p><b>ข้อมูลต้องห้าม:</b> Password, Token เต็ม, API Key/Secret ใน Payload, ข้อมูลบัตร และข้อมูลธนาคาร</p>
+      <p class="status">คู่มือฉบับเต็ม: <code>docs/PARTNER-API-WEB2-INTEGRATION.md</code> · ตัวอย่าง: <code>docs/examples/partner-api-web2.http</code></p>
+      <p class="status">Starter Kit ฝั่ง Backend เว็บ 2: <code>integrations/web2/</code> (ห้ามใส่ Credential ใน Frontend)</p>
+    </section>
+  </main>
+  <script src="/partner-api.js?v=014223"></script>
+  <script src="/partner-webhook.js?v=014223" defer></script>
+</body>
+</html>

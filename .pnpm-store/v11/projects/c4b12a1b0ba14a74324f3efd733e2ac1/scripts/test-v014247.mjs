@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {redactSalesHistory,parseSalesInsight} from '../functions/api/admin/v12-sales-assistant.js';
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const [version,index,admin,page,ui,api,migration]=await Promise.all([read('VERSION.txt'),read('public/index.html'),read('public/admin.html'),read('public/v12-connect.html'),read('public/v12-sales-assistant.js'),read('functions/api/admin/v12-sales-assistant.js'),read('migrations/0063_v12_sales_assistant.sql')]);
+assert.match(version.trim(),/^v0\.14\.(247|248|249|250)$/);assert.match(index,/WEB v0\.14\.(247|248|249|250)/);assert.match(admin,/ADMIN v0\.14\.(247|248|249|250)/);assert.match(page,/v0\.14\.(247|248|249|250)/);
+for(const token of['AI ผู้ช่วยปิดการขาย','วิเคราะห์ประวัติแชต','นำร่างไปใส่ช่องตอบ','v12-sales-assistant.js'])assert.ok(page.includes(token),token);
+for(const token of['ยังไม่มีการส่งหาลูกค้า','กรุณาตรวจข้อความก่อนกดส่ง','v12SalesNativeFetch'])assert.ok(ui.includes(token),token);
+for(const token of['requireAdmin','selectElonProvider','enforceElonGlobalBudget','redactSalesHistory','status=\'published\'','v12_lead_insights'])assert.ok(api.includes(token),token);
+assert.ok(migration.includes("CHECK(stage IN ('new','exploring','interested','ready','follow_up'))"));
+const redacted=redactSalesHistory('โทร 081-234-5678 อีเมล buyer@example.com เลข 123456789 รหัสผ่าน secret-value');assert.doesNotMatch(redacted,/081|buyer@example|123456789|secret-value/);
+const parsed=parseSalesInsight('{"stage":"ready","intent":"แบบฝึกหัด","summary":"ถามราคา","objections":"ยังไม่แน่ใจ","next_action":"ถามช่วงวัย","suggested_reply":"ต้องการช่วงวัยใดคะ"}');assert.equal(parsed.stage,'ready');assert.equal(parsed.suggested_reply,'ต้องการช่วงวัยใดคะ');
+console.log('v0.14.247 V12 AI sales assistant privacy and human review: PASS');

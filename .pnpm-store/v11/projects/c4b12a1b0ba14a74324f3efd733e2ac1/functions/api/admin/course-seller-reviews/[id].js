@@ -1,0 +1,57 @@
+import {json,requireAdmin} from '../../../_lib.js';
+import {ensureDatabase} from '../../../_schema.js';
+async function lessonValidation(env,courseId,expected){
+  const rows=await env.DB.prepare(`SELECT l.id,l.title,l.sort_order,
+    CASE WHEN l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id) THEN 1 ELSE 0 END has_media
+    FROM course_lessons l WHERE l.course_id=? ORDER BY l.sort_order,l.id`).bind(courseId).all();
+  const lessons=rows.results||[],required=Math.max(1,Number(expected)||1),missing=[];
+  for(let index=0;index<lessons.length;index++)if(!String(lessons[index].title||'').trim()||!Number(lessons[index].has_media))missing.push(index+1);
+  if(lessons.length<required)for(let index=lessons.length;index<required;index++)missing.push(index+1);
+  return {complete:lessons.length===required&&!missing.length,actual:lessons.length,required,missing:[...new Set(missing)]};
+}
+async function courseTransition(env,{courseId,productId,from,to,courseSet,courseBindings=[],productStatus}){
+  const fromList=Array.isArray(from)?from:[from],marks=fromList.map(()=>'?').join(',');
+  const results=await env.DB.batch([
+    env.DB.prepare(`UPDATE courses SET ${courseSet},updated_at=CURRENT_TIMESTAMP WHERE id=? AND product_id=? AND course_origin='seller_rights' AND review_status IN (${marks})`).bind(...courseBindings,courseId,productId,...fromList),
+    env.DB.prepare(`UPDATE products SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND EXISTS(SELECT 1 FROM courses c WHERE c.id=? AND c.product_id=products.id AND c.course_origin='seller_rights' AND c.review_status=?)`).bind(productStatus,productId,courseId,to)
+  ]);
+  return Number(results?.[0]?.meta?.changes||0)===1&&Number(results?.[1]?.meta?.changes||0)===1;
+}
+export async function onRequestPost(ctx){
+  await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;if(auth.user.role!=='boss')return json({error:'เฉพาะ Boss อนุมัติได้'},403);
+  const body=await ctx.request.json().catch(()=>({})),action=String(body.action||''),id=Number(ctx.params.id);
+  if(['mark_test_account','unmark_test_account','mark_test_user','unmark_test_user'].includes(action)){const value=action.startsWith('mark_')?1:0;const changed=await ctx.env.DB.prepare("UPDATE users SET is_test_user=?,vision5_test_account=?,name=CASE WHEN ?=1 THEN 'รัฐสิทธิ ดำรงรถการ' ELSE name END WHERE id=?").bind(value,value,value,id).run();return changed.meta.changes?json({ok:true,message:value?'ตั้งเป็นยูสเทสแล้ว · ใช้ชื่อกลางและสลิปต้องให้ Boss อนุมัติ':'ยกเลิกสถานะยูสเทสแล้ว'}):json({error:'ไม่พบยูสเซอร์'},404)}
+  if(action==='approve_profile'){const changed=await ctx.env.DB.prepare("UPDATE users SET seller_payment_status='approved',seller_payment_verified_at=CURRENT_TIMESTAMP,seller_payment_verified_by=? WHERE id=? AND seller_payment_status='pending'").bind(auth.user.id,id).run();return changed.meta.changes?json({ok:true}):json({error:'ไม่พบบัญชีที่รอตรวจ'},404)}
+  if(action==='reject_profile'){const changed=await ctx.env.DB.prepare("UPDATE users SET seller_payment_status='rejected',seller_payment_verified_at=CURRENT_TIMESTAMP,seller_payment_verified_by=? WHERE id=? AND seller_payment_status='pending'").bind(auth.user.id,id).run();return changed.meta.changes?json({ok:true}):json({error:'ไม่พบบัญชีที่รอตรวจ'},404)}
+  if(action==='reset_profile'){const user=await ctx.env.DB.prepare('SELECT seller_payment_qr_url FROM users WHERE id=?').bind(id).first();if(!user)return json({error:'ไม่พบยูสเซอร์'},404);await ctx.env.DB.prepare("UPDATE users SET seller_bank_name='',seller_account_name='',seller_account_number='',seller_payment_qr_url='',seller_payment_status='unset',seller_payment_submitted_at=NULL,seller_payment_verified_at=NULL,seller_payment_verified_by=NULL WHERE id=?").bind(id).run();if(user.seller_payment_qr_url)await ctx.env.FILES.delete(user.seller_payment_qr_url);return json({ok:true})}
+  const course=await ctx.env.DB.prepare(`SELECT c.id,c.product_id,c.review_status,c.owner_user_id,c.license_entitlement_id,c.basket_binding_locked,c.submitted_at,c.expected_episodes,c.course_plan,u.seller_payment_status FROM courses c JOIN users u ON u.id=c.owner_user_id WHERE c.id=? AND c.course_type='online_course'`).bind(id).first();if(!course)return json({error:'ไม่พบตะกร้าคอร์ส'},404);
+  if(action==='approve_course'){const partner=course.course_plan==='partner',rightsReady=course.license_entitlement_id!==null&&Number(course.basket_binding_locked)===1;if(!course.submitted_at||course.review_status!=='pending'||(!partner&&!rightsReady))return json({error:partner?'เจ้าของคอร์สพาร์ตเนอร์ยังไม่ได้ส่งตรวจ':'เจ้าของคอร์สยังไม่ได้ส่งตรวจและผูกสิทธิ์ตะกร้า VisionD จึงยังอนุมัติไม่ได้'},409);const validation=await lessonValidation(ctx.env,id,course.expected_episodes);if(!validation.complete){const detail=validation.missing.length?` EP ที่ยังไม่พร้อม: ${validation.missing.join(', ')}`:'';return json({error:`อนุมัติไม่ได้ บทเรียนยังไม่ครบ (${validation.actual}/${validation.required} EP)${detail}`,lesson_validation:validation},409)}const changed=await courseTransition(ctx.env,{courseId:id,productId:course.product_id,from:'pending',to:'approved',courseSet:"review_status='approved',review_note='',approved_at=CURRENT_TIMESTAMP,approved_by=?,active=1",courseBindings:[auth.user.id],productStatus:'published'});if(!changed)return json({error:'สถานะคอร์สถูกเปลี่ยนไปแล้ว กรุณาโหลดรายการใหม่'},409);return json({ok:true,message:'อนุมัติแล้ว คอร์สถูกเผยแพร่ในแคตตาล็อกคอร์ส'})}
+  if(action==='request_changes'){const changed=await courseTransition(ctx.env,{courseId:id,productId:course.product_id,from:'pending',to:'changes_requested',courseSet:"review_status='changes_requested',review_note=?,active=0",courseBindings:[String(body.note||'กรุณาแก้ไขข้อมูลตะกร้าคอร์ส').trim().slice(0,500)],productStatus:'draft'});if(!changed)return json({error:'คอร์สไม่ได้อยู่ในสถานะรอตรวจ หรือมีผู้ตรวจดำเนินการแล้ว'},409);return json({ok:true})}
+  if(action==='reject_course'){
+    const note=String(body.note||'ตะกร้าคอร์สไม่ผ่านการตรวจ').trim().slice(0,500);
+    if(course.review_status!=='pending'||course.license_entitlement_id===null)return json({error:'คืนเครดิตได้เฉพาะตะกร้าที่กำลังรอตรวจ'},409);
+    const creditId=Math.abs(Number(course.license_entitlement_id));
+    const results=await ctx.env.DB.batch([
+      ctx.env.DB.prepare("UPDATE course_right_credits SET active=1,used_at=NULL,used_course_id=NULL WHERE id=? AND user_id=? AND used_course_id=? AND active=0").bind(creditId,course.owner_user_id,course.id),
+      ctx.env.DB.prepare("UPDATE courses SET review_status='rejected',review_note=?,active=0,license_entitlement_id=NULL,basket_binding_locked=0,basket_bound_at=NULL,submitted_at=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=? AND review_status='pending' AND license_entitlement_id=?").bind(note,course.id,course.license_entitlement_id),
+      ctx.env.DB.prepare("UPDATE products SET status='draft',deleted_prev_status=status,deleted_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(course.product_id)
+    ]);
+    if(!results.every(result=>Number(result.meta?.changes||0)===1))return json({error:'คืนเครดิตไม่สำเร็จ สถานะอาจถูกเปลี่ยนไปแล้ว'},409);
+    return json({ok:true,credit_refunded:1,message:'ไม่อนุมัติตะกร้าและคืน 1 เครดิตให้เจ้าของคอร์สแล้ว'});
+  }
+  if(action==='suspend_course'){const reason=String(body.note||'ระงับเนื่องจากฝ่าฝืนกฎห้ามเปลี่ยนเนื้อหาหลังมียอดขาย').trim().slice(0,500),changed=await courseTransition(ctx.env,{courseId:id,productId:course.product_id,from:'approved',to:'suspended',courseSet:"review_status='suspended',review_note=?,active=0",courseBindings:[reason],productStatus:'draft'});if(!changed)return json({error:'ระงับได้เฉพาะคอร์สที่กำลังเผยแพร่ หรือสถานะถูกเปลี่ยนไปแล้ว'},409);return json({ok:true,message:'ระงับการขายและการเข้าถึงของผู้เรียนแล้ว'})}
+  if(action==='restore_course'){const changed=await courseTransition(ctx.env,{courseId:id,productId:course.product_id,from:'suspended',to:'approved',courseSet:"review_status='approved',review_note='',active=1",productStatus:'published'});if(!changed)return json({error:'คอร์สไม่ได้ถูกระงับ หรือสถานะถูกเปลี่ยนไปแล้ว'},409);return json({ok:true,message:'คืนสถานะตะกร้าแล้ว'})}
+  if(action==='delete_course'){
+    if(course.review_status==='pending'&&course.license_entitlement_id!==null){
+      const creditId=Math.abs(Number(course.license_entitlement_id));
+      const results=await ctx.env.DB.batch([
+        ctx.env.DB.prepare("UPDATE course_right_credits SET active=1,used_at=NULL,used_course_id=NULL WHERE id=? AND user_id=? AND used_course_id=? AND active=0").bind(creditId,course.owner_user_id,course.id),
+        ctx.env.DB.prepare("UPDATE courses SET review_status='rejected',review_note='Boss ไม่อนุมัติตะกร้าคอร์ส',active=0,license_entitlement_id=NULL,basket_binding_locked=0,basket_bound_at=NULL,submitted_at=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=? AND review_status='pending' AND license_entitlement_id=?").bind(course.id,course.license_entitlement_id),
+        ctx.env.DB.prepare("UPDATE products SET deleted_at=CURRENT_TIMESTAMP,deleted_prev_status=status,status='draft',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(course.product_id)
+      ]);
+      if(!results.every(result=>Number(result.meta?.changes||0)===1))return json({error:'ไม่อนุมัติและคืนเครดิตไม่สำเร็จ'},409);
+      return json({ok:true,credit_refunded:1,message:'ไม่อนุมัติตะกร้า ลบร่าง และคืน 1 เครดิตแล้ว'});
+    }
+    await ctx.env.DB.prepare("UPDATE products SET deleted_at=CURRENT_TIMESTAMP,deleted_prev_status=status,status='draft',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(course.product_id).run();return json({ok:true,message:'ลบตะกร้าคอร์สแล้ว'})}
+  return json({error:'คำสั่งไม่ถูกต้อง'},400);
+}

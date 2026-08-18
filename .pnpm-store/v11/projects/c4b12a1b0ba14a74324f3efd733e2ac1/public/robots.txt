@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /dashboard.html
+Disallow: /account.html
+
+Sitemap: https://visiondonline.com/sitemap.xml

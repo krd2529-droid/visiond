@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const api=fs.readFileSync('functions/api/vision7/shops/[shopId]/products.js','utf8');
+const schema=fs.readFileSync('functions/_veasy_shop.js','utf8');
+const migration=fs.readFileSync('migrations/0029_veasy_catalog.sql','utf8');
+const [,major,minor,patch]=fs.readFileSync('VERSION.txt','utf8').trim().match(/^v(\d+)\.(\d+)\.(\d+)$/)||[];
+assert.ok(Number(major)===0&&Number(minor)===14&&Number(patch)>=83,'v0.14.83 capability must remain in later patches');
+assert.match(api,/requireVision7User/);
+assert.match(api,/WHERE id=\? AND user_id=\? AND status='active'/);
+assert.match(api,/idempotency-key/);
+assert.match(schema,/UNIQUE\(shop_id,idempotency_key\)/);
+assert.match(api,/count\?\.total\)>=shop\.plan_limit/);
+assert.match(api,/p\.shop_id=\?/);
+assert.doesNotMatch(api,/FROM products\b/,'must not mix V Easy products with VisionD storefront products');
+assert.match(schema,/CREATE TABLE IF NOT EXISTS veasy_products/);
+assert.match(migration,/FOREIGN KEY\(shop_id\) REFERENCES veasy_shops\(id\) ON DELETE CASCADE/);
+const ledger=JSON.parse(fs.readFileSync('requirements-ledger.json','utf8'));
+assert.equal(ledger.requirements.find(x=>x.id==='B1-LIVE-PRODUCT-001')?.status,'DONE-VERIFIED');
+console.log('v0.14.83 B1 live product ownership and idempotency checks passed');

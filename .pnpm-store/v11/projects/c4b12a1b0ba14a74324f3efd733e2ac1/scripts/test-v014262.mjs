@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+const read = path => readFile(new URL("../" + path, import.meta.url), "utf8");
+const [version,index,admin,ui,css] = await Promise.all(["VERSION.txt","public/index.html","public/admin.html","public/admin-pdf-cover.js","public/admin-pdf-cover.css"].map(read));
+assert.ok(Number(version.trim().split(".").at(-1)) >= 262);
+assert.match(index,/WEB v0\.14\.\d+/);assert.match(admin,/ADMIN v0\.14\.\d+/);
+assert.match(admin,/id="pdfCoverCreatorButton"[\s\S]*สร้างปก PDF/);
+assert.match(admin,/id="pdfCoverCreatorDialog"/);assert.match(admin,/admin-pdf-cover\.js\?v=014\d+/);
+assert.match(admin,/value="modern"[\s\S]*value="kids"[\s\S]*value="elegant"/);
+assert.match(admin,/accept="image\/jpeg,image\/png,image\/webp"/);
+assert.match(ui,/file\.size>8\*1024\*1024/);assert.match(ui,/canvas\.toBlob/);assert.match(ui,/1000 × 1400 px/);
+assert.match(css,/\.pdf-cover-workspace/);assert.match(css,/@media\(max-width:820px\)/);
+console.log("v0.14.262 admin PDF cover maker: PASS");

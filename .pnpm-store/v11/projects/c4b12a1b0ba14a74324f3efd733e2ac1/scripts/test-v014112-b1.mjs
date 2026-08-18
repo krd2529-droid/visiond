@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+
+const root=process.cwd(),mobile=path.resolve(root,'../V-Easy-v1.0.9-work');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8'),mread=p=>fs.readFileSync(path.join(mobile,p),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.112');
+assert.equal(JSON.parse(mread('package.json')).version,'1.0.11');
+const cors=read('functions/api/vision7/_middleware.js'),health=read('functions/api/vision7/mobile-health.js'),events=read('functions/api/vision7/mobile-events.js'),runtime=mread('public/android-runtime.js'),feature=mread('public/b111-mobile.js');
+for(const token of ['/api/vision7/mobile-health','/api/vision7/mobile-events','x-veasy-app-version',"'null'"])assert.ok(cors.includes(token),token);
+for(const token of ["service:'visiond'","mobile_api:'ready'",'server_time'])assert.ok(health.includes(token),token);
+for(const token of ['requireVision7User','requireAppSession','shop_id','limit','events','no_customer_pii'])assert.ok(events.includes(token),token);
+assert.ok(fs.existsSync(path.join(root,'scripts/test-v014111-pages-cors.mjs')),'compiled Pages CORS test missing');
+for(const token of ['ONLINE_LEGACY',"['visiond','visiond-mobile-health']",'mobile_api',"/api/vision7/auth/me",'v0.14.112'])assert.ok(runtime.includes(token),token);
+assert.doesNotMatch(runtime,/['"]x-veasy-app-version['"]\s*:/,'mobile must not depend on rejected custom header');
+for(const token of ["/bot\\/(readiness|start|stop)","JSON.stringify({action:botMatch[2]})",'Array.isArray(data.channels)'])assert.ok(runtime.includes(token),token);
+assert.ok(feature.includes('veasyPollStatus')&&feature.includes('แตะเพื่อลองใหม่'),'poll errors must be visible');
+const apk=path.join(mobile,'dist/V-Easy-v1.0.11-debug.apk');assert.ok(fs.existsSync(apk)&&fs.statSync(apk).size>100_000,'v1.0.11 APK missing');
+for(const envName of ['VISIOND_WEB_ZIP','VEASY_APK'])if(process.env[envName])assert.ok(fs.existsSync(process.env[envName])&&fs.statSync(process.env[envName]).size>1024,envName);
+assert.ok(fs.existsSync(path.join(mobile,'scripts/build-apk.mjs')),'private source/build script missing');
+console.log('v0.14.112 / V Easy v1.0.11 live CORS lock passed');

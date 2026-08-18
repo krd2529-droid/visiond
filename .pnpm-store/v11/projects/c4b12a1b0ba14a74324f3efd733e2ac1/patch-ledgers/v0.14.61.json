@@ -1,0 +1,8 @@
+{
+  "patch": "v0.14.61",
+  "tasks": [
+    {"id":"P1461-001","scope":"DOC","source_instruction":"ย้ายเอกสารงานต่อเนื่องเข้าโฟลเดอร์ของตัวเอง","status":"DONE-VERIFIED","evidence":["work-history/visiond/history-manifest.json"]},
+    {"id":"P1461-002","scope":"BUG","source_instruction":"การแตก ZIP ทับต้องเก็บไฟล์เดิมออกโดยไม่ลบผิดไฟล์","status":"DONE-VERIFIED","evidence":["scripts/migrate-document-history.mjs","APPLY-DOCUMENT-MIGRATION.cmd"]},
+    {"id":"P1461-003","scope":"QA","source_instruction":"ทดสอบว่าเปลี่ยนตำแหน่งแล้วไม่เกิดบั๊ก","status":"DONE-VERIFIED","evidence":["scripts/test-v01461.mjs","work-history/visiond/qa-history/QA-v0.14.61-DOCUMENT-HISTORY-PHASE2.md"]}
+  ]
+}

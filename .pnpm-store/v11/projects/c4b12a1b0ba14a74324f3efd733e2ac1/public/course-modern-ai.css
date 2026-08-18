@@ -1,0 +1,35 @@
+/* VisionD course journey adoption — v0.14.95 */
+.course-hero h1,.page-hero h1{font-family:var(--vd-font-display)}
+.page-shell,.seller-shell{color:var(--vd-text);font-family:var(--vd-font-body)}
+.course-toolbar{padding:var(--vd-space-4);border:1px solid var(--vd-border);border-radius:var(--vd-radius-md);background:#fff}
+.course-platform-filters button{min-height:44px;border-color:var(--vd-border-strong);background:#fff;color:var(--vd-ai-midnight)}
+.course-platform-filters button:hover{border-color:var(--vd-primary);background:var(--vd-primary-soft)}
+.course-platform-filters button.active{border-color:var(--vd-primary);background:var(--vd-primary);color:var(--vd-ai-midnight)}
+.course-platform-filters button:focus-visible,.course-card :is(a,button):focus-visible{outline:3px solid var(--vd-focus);outline-offset:3px}
+.course-card{border-color:var(--vd-border);border-radius:var(--vd-radius-lg);background:#fff;box-shadow:var(--vd-shadow-sm);transition:transform var(--vd-motion-fast),box-shadow var(--vd-motion-fast),border-color var(--vd-motion-fast)}
+.course-card:hover,.course-card:focus-within{transform:translateY(-3px);border-color:var(--vd-primary);box-shadow:var(--vd-shadow-md)}
+.course-card .primary,.course-empty .primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:var(--vd-radius-sm);background:linear-gradient(135deg,var(--vd-ai-midnight),#067b77);color:#fff}
+.course-card progress,.lesson-sidebar progress{height:10px;accent-color:var(--vd-primary)}
+.course-empty{border-color:var(--vd-border-strong);border-radius:var(--vd-radius-lg);background:var(--vd-surface)}
+.course-notice{border-radius:var(--vd-radius-md)}
+.seller-hero{border-radius:var(--vd-radius-lg);box-shadow:var(--vd-shadow-ai)}
+.seller-card{border-color:var(--vd-border);border-radius:var(--vd-radius-md);background:#fff;box-shadow:var(--vd-shadow-sm)}
+.seller-card :is(input,select,textarea){min-height:44px;border-color:var(--vd-border-strong);border-radius:var(--vd-radius-sm)}
+.seller-card :is(input,select,textarea):focus{outline:0;border-color:var(--vd-primary);box-shadow:0 0 0 4px rgba(10,186,181,.15)}
+.seller-card .primary,.seller-hero .primary{min-height:44px;border-radius:var(--vd-radius-sm);background:linear-gradient(135deg,var(--vd-ai-midnight),#067b77);color:#fff}
+.seller-task-nav{border-color:var(--vd-border);background:#fff;box-shadow:var(--vd-shadow-sm)}
+.seller-task-nav a{min-height:44px;box-sizing:border-box;background:var(--vd-primary-soft);color:var(--vd-ai-midnight)}
+.seller-task-nav a:focus-visible{outline:3px solid var(--vd-focus);outline-offset:2px}
+.learning-page{background:var(--vd-page);color:var(--vd-text);font-family:var(--vd-font-body)}
+.learning-header{background:var(--vd-ai-midnight);border-color:transparent}.learning-header a{color:#fff}
+.lesson-sidebar{border-color:var(--vd-border);background:#fff;box-shadow:var(--vd-shadow-sm)}
+.lesson-link{min-height:52px;color:var(--vd-text)}
+.lesson-link:hover,.lesson-link.active{background:var(--vd-primary-soft)}
+.lesson-link.active{box-shadow:inset 3px 0 var(--vd-primary)}
+.lesson-link.done i{background:var(--vd-success)}
+.lesson-heading,.lesson-files{padding:var(--vd-space-5);border:1px solid var(--vd-border);border-radius:var(--vd-radius-md);background:#fff;box-shadow:var(--vd-shadow-sm)}
+.lesson-save-actions button,.lesson-pager button,.lesson-menu-toggle{min-height:44px;border:1px solid var(--vd-primary);border-radius:var(--vd-radius-sm);background:#fff;color:var(--vd-ai-midnight);font-weight:900}
+#completeLesson{background:var(--vd-primary);color:var(--vd-ai-midnight)}
+.lesson-file-link{border-color:var(--vd-border);border-radius:var(--vd-radius-sm);background:var(--vd-surface-subtle)}
+@media(max-width:760px){.course-toolbar{align-items:stretch}.course-toolbar>a{min-height:44px;text-align:center}.seller-hero{margin-inline:10px}.seller-card{padding:var(--vd-space-4)}.lesson-heading{padding:var(--vd-space-4)}.lesson-pager{position:sticky;bottom:0;padding:10px;background:rgba(244,250,249,.96)}}
+@media(prefers-reduced-motion:reduce){.course-card{transition:none}.course-card:hover{transform:none}}
