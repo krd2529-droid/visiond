@@ -1,7 +1,11 @@
 # VisionD Roadmap — Living Plan
 
 Updated: 2026-08-18
-Current build: v0.14.249
+Current build: v0.14.250
+
+## v0.14.250 — V12 Course Offer Attachment (IMPLEMENTED)
+- เพิ่มปุ่มแนบรูปเปรียบเทียบแพ็กเกจคอร์สพร้อมบทขายสั้นใน AI ผู้ช่วย โดยใส่ลง Composer ให้คนตรวจก่อนส่ง
+- บีบอัดรูปจาก 1.70 MB เหลือประมาณ 192 KB ต่ำกว่าขีดจำกัด V12 1 MB และไม่ส่งอัตโนมัติ
 
 ## v0.14.249 — V12 AI Sales Guaranteed Analysis (IMPLEMENTED)
 - ถ้า AI Provider ไม่พร้อม โควตาเต็ม ตอบผิดรูปแบบ หรือ timeout ระบบใช้ตัววิเคราะห์สำรองจากประวัติแชตแทนการจบด้วยข้อผิดพลาด

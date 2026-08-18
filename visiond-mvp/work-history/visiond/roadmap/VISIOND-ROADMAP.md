@@ -1,5 +1,8 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.250 — V12 Course Offer Attachment (IMPLEMENTED)
+- เพิ่มรูปแพ็กเกจคอร์สและบทขายสั้นแบบ one-click ลง Composer โดยเจ้าหน้าที่ต้องตรวจและกดส่งเอง
+
 ## v0.14.249 — V12 AI Sales Guaranteed Analysis (IMPLEMENTED)
 - เพิ่มระบบวิเคราะห์สำรองเมื่อ Provider ใช้งานไม่ได้ และแสดง build/source เพื่อยืนยัน production โดยไม่เดา
 
