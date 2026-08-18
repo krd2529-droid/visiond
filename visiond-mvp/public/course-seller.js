@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014293">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014294">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -278,7 +278,17 @@ async function load() {
       cache: "no-store",
       signal: controller.signal,
     });
-  } catch { return; } finally {
+  } catch (error) {
+    if (coursePlanPages[courseCreateMode]) {
+      createPanel.hidden = false;
+      sellerCourseForm.hidden = true;
+      createPanel.querySelector(":scope > h2").textContent = "โหลดตะกร้าคอร์สไม่สำเร็จ";
+      createPanel.querySelector(":scope > p").textContent = error?.name === "AbortError"
+        ? "ระบบใช้เวลาโหลดนานเกินไป กรุณารีเฟรชอีกครั้ง โดยข้อมูลร่างเดิมยังไม่ถูกลบ"
+        : "เชื่อมต่อข้อมูลตะกร้าไม่ได้ กรุณารีเฟรชอีกครั้ง โดยข้อมูลร่างเดิมยังไม่ถูกลบ";
+    }
+    return;
+  } finally {
     clearTimeout(timeout);
   }
   if (r.status === 401) {
@@ -293,7 +303,9 @@ async function load() {
   }
   render(d);
   const params = new URLSearchParams(location.search),
-    id = Number(params.get("course_id")),
+    requestedId = Number(params.get("course_id")),
+    rememberedId = Number(sessionStorage.getItem("vd_active_course_draft_id")),
+    id = requestedId || rememberedId,
     flow = document.querySelector("#vision5SellerFlow");
   if (coursePlanPages[courseCreateMode]) {
     enterCourseCreatePage(courseCreateMode);
@@ -307,7 +319,16 @@ async function load() {
   }
   if (id && !sellerLessonManager.dataset.autoOpened) {
     const course = d.courses.find((x) => Number(x.id) === id);
+    if (!requestedId && course && !["draft", "changes_requested"].includes(course.review_status)) {
+      sessionStorage.removeItem("vd_active_course_draft_id");
+      return;
+    }
     if (course) {
+      sessionStorage.setItem("vd_active_course_draft_id", String(course.id));
+      if (!requestedId) {
+        params.set("course_id", String(course.id));
+        history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+      }
       sellerLessonManager.dataset.autoOpened = "1";
       if(coursePlanPages[courseCreateMode]){
         showCurrentCourseEditAction(course);
@@ -566,6 +587,7 @@ sellerCourseForm.onsubmit = async (e) => {
     clearSellerCover();
     createPanel.hidden = true;
     if (coursePlanPages[courseCreateMode]) {
+      sessionStorage.setItem("vd_active_course_draft_id", String(d.id));
       location.href = `/course-seller?type=${coursePlanPages[courseCreateMode].number}&course_id=${encodeURIComponent(d.id)}`;
       return;
     }
@@ -716,6 +738,7 @@ publishForm.onsubmit = async (e) => {
   }
   if (r.ok) {
     alert(d.message);
+    sessionStorage.removeItem("vd_active_course_draft_id");
     publishPanel.hidden = true;
     history.replaceState(null, "", "/course-center");
     sellerLessonManager.dataset.autoOpened = "";
@@ -724,5 +747,10 @@ publishForm.onsubmit = async (e) => {
 };
 closeSellerLessons.onclick = () => (sellerLessonManager.hidden = true);
 if(sendCourseReview)sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
-if (coursePlanPages[courseCreateMode]) enterCourseCreatePage(courseCreateMode);
+if (coursePlanPages[courseCreateMode]) {
+  createPanel.hidden = false;
+  sellerCourseForm.hidden = true;
+  createPanel.querySelector(":scope > h2").textContent = "กำลังโหลดตะกร้าคอร์ส…";
+  createPanel.querySelector(":scope > p").textContent = "กำลังตรวจสถานะร่างเดิมก่อนแสดงขั้นตอนถัดไป";
+}
 load();

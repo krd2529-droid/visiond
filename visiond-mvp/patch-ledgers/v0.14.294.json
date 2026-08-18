@@ -1,0 +1,14 @@
+{
+  "version": "v0.14.294",
+  "summary": "แก้ปุ่มส่งตรวจย้อนกลับเป็นปุ่มสร้างคอร์สหลังรีเฟรช",
+  "scope": [
+    "course seller refresh state",
+    "active draft persistence",
+    "load failure guard"
+  ],
+  "security": [
+    "ตรวจ course id กับรายการตะกร้าที่ API คืนตามเจ้าของ",
+    "ไม่เก็บข้อมูลส่วนตัวหรือ credential ใน browser storage"
+  ],
+  "rollback": "ย้อนกลับไป Commit ก่อนหน้า 43ee9b70d44f73ee71536db59917272bf022ef77"
+}
