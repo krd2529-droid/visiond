@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014292">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014293">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
