@@ -1,6 +1,6 @@
-import("/facebook-chat.js?v=014271");
+import("/facebook-chat.js?v=014272");
 const bundlePromoImage=document.querySelector('.cart-promo-gif');if(bundlePromoImage){bundlePromoImage.src=`/assets/visiond-bundle-promo.gif?motion=${Date.now()}`;bundlePromoImage.classList.add('cart-promo-banner')}
-if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014271">');
+if(!document.querySelector('link[href^="/promotion.css"]'))document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="/promotion.css?v=014272">');
 if(!document.querySelector('#rights-quantity-style'))document.head.insertAdjacentHTML('beforeend','<style id="rights-quantity-style">.rights-quantity,.vbot-key-choice{display:grid;gap:4px;color:#315f5b;font-size:12px;font-weight:900}.rights-quantity input{width:76px;padding:8px;border:1px solid #39aaa4;border-radius:8px;text-align:center;font-weight:900}.vbot-key-choice{max-width:330px;margin:10px 0}.vbot-key-choice select{width:100%;min-height:44px;padding:9px 11px;border:1px solid #39aaa4;border-radius:10px;background:#fff;color:#063d3b;font:inherit}</style>');
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
@@ -300,4 +300,4 @@ async function removeUnavailableCartItems() {
 }
 render();
 (async()=>{await removeUnavailableCartItems();await refreshCartPrices()})();
-import("/nav-account.js?v=014271").then((module) => module.initAccountNav());
+import("/nav-account.js?v=014272").then((module) => module.initAccountNav());

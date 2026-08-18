@@ -1,0 +1,1 @@
+{"patch":"v0.14.272","tasks":[{"id":"P14272-001","scope":"UI","source_instruction":"แก้อาการ course-center แสดงหน้าเก่าก่อนแล้วสลับเป็นหน้าใหม่ ให้มีแต่หน้าใหม่","status":"DONE-VERIFIED","evidence":["public/course-center.html","public/course-center.js","scripts/test-v014272.mjs"]}]}
