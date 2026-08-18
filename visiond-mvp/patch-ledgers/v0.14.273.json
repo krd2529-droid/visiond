@@ -1,0 +1,1 @@
+{"patch":"v0.14.273","tasks":[{"id":"P14273-001","scope":"UI","source_instruction":"บอกว่าแบบ 2 จำกัด 3 คอร์ส คอร์สละ 5 EP","status":"DONE-VERIFIED","evidence":["public/course-center.js","scripts/test-v014273.mjs"]}]}

@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014272">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014273">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 const mySellerCourses = document.querySelector("#mySellerCourses"),
