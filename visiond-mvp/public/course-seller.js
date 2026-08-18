@@ -40,7 +40,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014278">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014279">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -52,7 +52,9 @@ if (coursePlanPages[courseCreateMode]) {
   if (heroTitle) heroTitle.textContent = `สร้างคอร์สแบบ ${config.number}`;
   if (heroDescription) heroDescription.textContent = config.detail;
 }
-const mySellerCourses = document.querySelector("#mySellerCourses"),
+const licenseList = document.querySelector("#licenseList"),
+  createCourseBasket = document.querySelector("#createCourseBasket"),
+  mySellerCourses = document.querySelector("#mySellerCourses"),
   salesTotal = document.querySelector("#salesTotal"),
   salesCount = document.querySelector("#salesCount"),
   salesRows = document.querySelector("#salesRows"),
@@ -111,8 +113,8 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์ 499 บาท</small><b>${Number(data.credit_balance)||0} เครดิต</b><span>ใช้ 1 เครดิตต่อ 1 คอร์ส · เงินเข้าผู้สอนโดยตรง</span><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์สและ EP</b><span>เงินเข้า VisionD · ระบบตรวจสลิปและแบ่งรายได้อัตโนมัติ</span><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1 หรือ 2 เพื่อดูขั้นตอน เงื่อนไขรับเงิน และเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
-  licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
+  if (licenseList) licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์ 499 บาท</small><b>${Number(data.credit_balance)||0} เครดิต</b><span>ใช้ 1 เครดิตต่อ 1 คอร์ส · เงินเข้าผู้สอนโดยตรง</span><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์สและ EP</b><span>เงินเข้า VisionD · ระบบตรวจสลิปและแบ่งรายได้อัตโนมัติ</span><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1 หรือ 2 เพื่อดูขั้นตอน เงื่อนไขรับเงิน และเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
+  licenseList?.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
   if (profile.status === "unset") {
@@ -219,7 +221,7 @@ function render(data) {
     .forEach(
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );
-  createCourseBasket.hidden = true;
+  if (createCourseBasket) createCourseBasket.hidden = true;
   paymentProfilePanel.hidden = true;
   slipApiPanel.hidden = true;
 }
