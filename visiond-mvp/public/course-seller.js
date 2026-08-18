@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014265">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014266">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 [
@@ -61,6 +61,8 @@ const sellerShell = document.querySelector(".seller-shell");
   document.querySelector("#customerSalesPanel"),
   document.querySelector("#pendingSlipPanel"),
 ].forEach((section) => section && sellerShell?.append(section));
+const sendCourseReview=document.querySelector("#sendCourseReview"),sendCourseReviewHelp=document.querySelector("#sendCourseReviewHelp");
+let activeLessonCourse=null;
 function updateVision5Flow(data) {
   const courses = data.courses || [],
     creditReady = Number(data.credit_balance) > 0 || courses.length > 0,
@@ -222,19 +224,33 @@ function enterCourseCreatePage(plan) {
     section.hidden = section !== createPanel;
   });
   createPanel.hidden = false;
-  createPanel.insertAdjacentHTML(
-    "afterbegin",
-    `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>+ สร้างตะกร้าคอร์ส</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
-  );
+  createPanel.after(paymentProfilePanel,slipApiPanel,sellerLessonManager,publishPanel);
+  paymentProfilePanel.hidden=plan!=="rights";
+  slipApiPanel.hidden=plan!=="rights";
+  const credit=Number(state?.credit_balance)||0;
+  if (!createPanel.querySelector("#coursePlanFlow")) {
+    createPanel.insertAdjacentHTML(
+      "afterbegin",
+      `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header>${plan==="rights"?'<section id="coursePlanCreditGuard" class="course-credit-guard"><small>เครดิตสำหรับสร้างคอร์สแบบ 1</small><b></b><span></span></section>':""}<div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>+ สร้างตะกร้าคอร์ส</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
+    );
+  }
+  const creditGuard = createPanel.querySelector("#coursePlanCreditGuard");
+  if (creditGuard) {
+    creditGuard.dataset.ready = String(credit > 0);
+    creditGuard.querySelector("b").textContent = `${credit} เครดิต`;
+    creditGuard.querySelector("span").textContent = credit > 0
+      ? "พร้อมสร้างคอร์ส"
+      : "เครดิตไม่พอ กรุณาซื้อสิทธิ์ก่อนสร้าง";
+  }
   const formHeading = createPanel.querySelector(":scope > h2");
-  const condition = document.createElement("aside");
+  const condition = createPanel.querySelector(".course-plan-condition") || document.createElement("aside");
   condition.className = "course-plan-condition";
   condition.innerHTML = plan === "rights"
     ? "<b>เงื่อนไขแบบ 1</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง ผู้สอนเลือกตรวจเองหรือใช้ EasySlip API ของผู้สอนได้</p>"
     : plan === "free"
       ? "<b>เงื่อนไขแบบ 2</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง และผู้สอนต้องตรวจพร้อมอนุมัติสลิปเอง</p>"
       : "<b>เงื่อนไขแบบ 3</b><p>ลูกค้าชำระเข้าบัญชีบริษัท VisionD ระบบ VisionD ตรวจสลิปอัตโนมัติและแบ่งรายได้ 50/50</p>";
-  createPanel.insertBefore(condition, formHeading);
+  if (!condition.isConnected) createPanel.insertBefore(condition, formHeading);
   createPanel.classList.toggle("course-plan-legacy-form", plan === "rights");
   formHeading.textContent = `กรอกข้อมูลคอร์สแบบ ${config.number}`;
   createPanel.querySelector(":scope > p").textContent =
@@ -247,10 +263,12 @@ function enterCourseCreatePage(plan) {
   select.replaceChildren(new Option(`แบบ ${config.number} · ${config.title}`, plan, true, true));
   select.closest("label").hidden = true;
   sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
-  createPanel.querySelector("[data-start-course]")?.addEventListener("click", () => {
+  sellerCourseForm.querySelector('button[type="submit"]').disabled=plan==="rights"&&credit<1;
+  const startCourse = createPanel.querySelector("[data-start-course]");
+  if (startCourse) startCourse.onclick = () => {
     formHeading.scrollIntoView({ behavior: "smooth", block: "start" });
     sellerCourseForm.elements.title.focus({ preventScroll: true });
-  });
+  };
   document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
 }
 async function load() {
@@ -271,7 +289,6 @@ async function load() {
     flow = document.querySelector("#vision5SellerFlow");
   if (coursePlanPages[courseCreateMode]) {
     enterCourseCreatePage(courseCreateMode);
-    return;
   }
   if (params.get("vision5") === "1" && flow && !flow.dataset.opened) {
     flow.dataset.opened = "1";
@@ -284,7 +301,12 @@ async function load() {
     const course = d.courses.find((x) => Number(x.id) === id);
     if (course) {
       sellerLessonManager.dataset.autoOpened = "1";
-      if (params.get("create") === "1") openPublish(course);
+      if(coursePlanPages[courseCreateMode]){
+        sellerCourseForm.hidden=true;
+        createPanel.querySelector(":scope > h2").textContent="สร้างข้อมูลคอร์สแล้ว";
+        createPanel.querySelector(":scope > p").textContent="ตั้งค่ารับเงินและเพิ่มรายละเอียด EP ต่อด้านล่าง จากนั้นกดส่งตรวจ";
+      }
+      if (params.get("publish") === "1") openPublish(course);
       else openLessons(course);
     }
   }
@@ -359,9 +381,10 @@ addSellerLesson.onclick = () => {
   sellerLessonForm.elements.title.focus();
 };
 async function openLessons(course) {
+  activeLessonCourse=course;
   sellerLessonManager.hidden = false;
   sellerLessonCourseTitle.textContent = course.title;
-  resetLessonEditor(course.id, true);
+  resetLessonEditor(course.id, false);
   sellerLessonManager.scrollIntoView({ behavior: "smooth" });
   await loadLessons(course.id);
 }
@@ -374,6 +397,9 @@ async function loadLessons(id) {
     sellerLessonList.textContent = d.error || "โหลดบทเรียนไม่สำเร็จ";
     return;
   }
+  const ready=d.items.length>0&&d.items.every(x=>Number(x.is_complete)===1&&String(x.title||"").trim());
+  sendCourseReview.disabled=!ready;
+  sendCourseReviewHelp.textContent=ready?"EP พร้อมแล้ว กดส่งตรวจเพื่อกำหนดราคาและยืนยันส่งให้ Boss ตรวจ":"ใส่ชื่อและอัปโหลดคลิปหรือเอกสารให้ครบทุก EP ก่อนส่งตรวจ";
   sellerLessonList.innerHTML = d.items.length
     ? d.items
         .map(
@@ -518,7 +544,7 @@ sellerCourseForm.onsubmit = async (e) => {
     clearSellerCover();
     createPanel.hidden = true;
     if (coursePlanPages[courseCreateMode]) {
-      location.href = `/course-seller.html?course_id=${encodeURIComponent(d.id)}`;
+      location.href = `/course-seller.html?create=${encodeURIComponent(courseCreateMode)}&course_id=${encodeURIComponent(d.id)}`;
       return;
     }
     await load();
@@ -598,4 +624,5 @@ publishForm.onsubmit = async (e) => {
   }
 };
 closeSellerLessons.onclick = () => (sellerLessonManager.hidden = true);
+sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
 load();
