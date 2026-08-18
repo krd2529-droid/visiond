@@ -8,10 +8,10 @@
   if(!countInput||!rule||!submit)return;
 
   if(intro)intro.textContent='กรอกข้อมูลตะกร้าก่อน แล้วอัปโหลดชื่อ คำอธิบาย คลิป และเอกสารของแต่ละ EP ต่อได้ทันทีในตะกร้าเดียวกัน';
-  submit.textContent='บันทึกตะกร้าคอร์สพร้อม EP';
+  submit.textContent='ส่งตรวจ';
   countInput.inputMode='numeric';
   countInput.setAttribute('aria-describedby','episodeBuilderHelp');
-  rule.insertAdjacentHTML('afterend',`<fieldset class="draft-first-ep episode-builder"><legend>ขั้นต่อไป · อัปโหลดงาน EP ในตะกร้าคอร์ส</legend><div class="episode-builder-head"><p id="episodeBuilderHelp">ทุก EP อยู่ในตะกร้าคอร์สเดียวกัน ใส่ชื่อ คำอธิบาย คลิป และเอกสารประกอบได้เลย ก่อนบันทึกร่าง</p><div class="episode-builder-controls"><strong id="episodeBuilderProgress" aria-live="polite"></strong><button id="addEpisodeCard" class="primary" type="button">+ เพิ่ม EP</button></div></div><div id="episodeCards" class="episode-cards"></div></fieldset>`);
+  rule.insertAdjacentHTML('afterend',`<fieldset class="draft-first-ep episode-builder"><legend>ขั้นต่อไป · อัปโหลดงาน EP ในตะกร้าคอร์ส</legend><div class="episode-builder-head"><p id="episodeBuilderHelp">ทุก EP อยู่ในตะกร้าคอร์สเดียวกัน ใส่ชื่อ คำอธิบาย คลิป และเอกสารประกอบให้ครบ แล้วกดส่งตรวจด้านล่าง</p><div class="episode-builder-controls"><strong id="episodeBuilderProgress" aria-live="polite"></strong><button id="addEpisodeCard" class="primary" type="button">+ เพิ่ม EP</button></div></div><div id="episodeCards" class="episode-cards"></div></fieldset>`);
 
   const cards=document.querySelector('#episodeCards');
   const progress=document.querySelector('#episodeBuilderProgress');
@@ -138,6 +138,12 @@
     if(video)await uploadLargeVideo(courseId,lesson.id,video,card.querySelector('[data-field="video_quality"]').value,index);
     uploadedEpisodes.add(index);markUploaded(card);
   }
+  async function submitForReview(courseId){
+    sellerMessage.textContent='อัปโหลดครบแล้ว กำลังส่งคอร์สให้ Boss ตรวจ…';
+    const response=await fetch(`/api/course-seller/${courseId}/publish`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({price_baht:form.elements.price_baht.value,contact_info:form.elements.contact_info.value,confirm_permanent:true})}),result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||'ส่งตรวจไม่สำเร็จ');
+    return result;
+  }
   form.onsubmit=async event=>{
     event.preventDefault();
     renderCount(countInput.value,{confirmRemoval:false});
@@ -149,7 +155,7 @@
     if(openInvalidField()||!form.reportValidity())return;
     const fileError=await validateFiles();if(fileError){sellerMessage.textContent=fileError;return}
     const episodeCards=[...cards.children],episodes=episodeCards.map(episodeData);
-    if(!createdCourseId&&!confirm(`สร้างคอร์สร่าง ${episodes.length} EP หรือไม่? ยังไม่หักเครดิตและยังไม่เริ่มนับ 30 วัน`))return;
+    if(!createdCourseId&&!confirm(`ส่งคอร์ส ${episodes.length} EP ให้ Boss ตรวจหรือไม่? ระบบจะสร้างร่างและอัปโหลดไฟล์ทั้งหมดก่อนส่งตรวจ`))return;
     const button=event.submitter;button.disabled=true;sellerMessage.textContent='กำลังสร้างคอร์สร่างและบันทึกรายละเอียด EP…';
     let data={id:createdCourseId,lessons:createdLessons};
     if(!createdCourseId){
@@ -162,12 +168,13 @@
       const lessons=(createdLessons.length?createdLessons:await fetchLessons(createdCourseId)).sort((a,b)=>Number(a.sort_order)-Number(b.sort_order));createdLessons=lessons;
       if(lessons.length<episodes.length)throw new Error('ระบบสร้างช่อง EP ไม่ครบ กรุณาเปิดจัดการ EP แล้วลองใหม่');
       for(let i=0;i<episodeCards.length;i++)if(!uploadedEpisodes.has(i+1))await uploadEpisode(createdCourseId,lessons[i],episodeCards[i],i+1,episodeCards.length);
-      sellerMessage.textContent=`บันทึกตะกร้าคอร์สพร้อม ${episodes.length} EP สำเร็จแล้ว`;
-      const finishedId=createdCourseId;form.reset();countInput.disabled=false;cards.classList.remove('plan-locked');renderedCount=0;createdCourseId=0;createdLessons=[];uploadedEpisodes=new Set();cards.replaceChildren();renderCount(1,{confirmRemoval:false});button.textContent='บันทึกตะกร้าคอร์สพร้อม EP';createPanel.hidden=true;await load();
-      const course=state.courses.find(item=>Number(item.id)===finishedId);if(course)openLessons(course);
+      const review=await submitForReview(createdCourseId);
+      sellerMessage.textContent=review.message||`ส่งคอร์สพร้อม ${episodes.length} EP ให้ Boss ตรวจแล้ว`;
+      alert(sellerMessage.textContent);
+      form.reset();countInput.disabled=false;cards.classList.remove('plan-locked');renderedCount=0;createdCourseId=0;createdLessons=[];uploadedEpisodes=new Set();cards.replaceChildren();renderCount(1,{confirmRemoval:false});button.textContent='ส่งตรวจ';createPanel.hidden=true;await load();
     }catch(error){
-      sellerMessage.textContent=`สร้างคอร์สร่างแล้ว แต่ ${error.message} ข้อมูลในแบบฟอร์มยังอยู่ กด “ลองอัปโหลดต่อ” เพื่อทำต่อจาก EP ที่ไม่สำเร็จ`;
-      button.textContent='ลองอัปโหลดต่อ';
+      sellerMessage.textContent=`เก็บคอร์สเป็นร่างแล้ว แต่ ${error.message} ข้อมูลในแบบฟอร์มยังอยู่ กด “ลองส่งตรวจอีกครั้ง” เพื่อทำต่อ`;
+      button.textContent='ลองส่งตรวจอีกครั้ง';
       await load();
     }finally{button.disabled=false}
   };

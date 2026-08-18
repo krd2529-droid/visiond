@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014291');
+import('/facebook-chat.js?v=014292');
 const state={products:[],category:'all'};const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const products=[
  {id:1,slug:'dinosaur-coloring-200-set-1',title:'ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ 1',category:'dinosaur',label:'ชุดระบายสีไดโนเสาร์',pages:200,price:19900,cover_url:'/assets/dinosaur-set-1.jpeg'},
