@@ -2,6 +2,8 @@ import {sha256} from './_lib.js';
 import {decryptChannelValue,encryptChannelValue} from './_channel_crypto.js';
 import {ensureVEasyRuntimeSchema} from './_veasy_runtime.js';
 import {extractProviderText,requestElonProvider} from './_elon-provider.js';
+import {classifySalesTurn,salesPlaybookPrompt} from './_visiond-sales-playbook.js';
+import {loadV12PageCaptions,captionKnowledgePrompt} from './_v12-page-captions.js';
 
 const clean=(value,max=1000)=>String(value||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().replace(/\s+/g,' ').slice(0,max);
 const money=value=>Math.max(0,Number(value||0)).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:2});
@@ -68,9 +70,13 @@ export async function processLineEvent(env,endpoint,event){
       await env.DB.prepare("UPDATE veasy_message_claims SET status='completed',completed_at=CURRENT_TIMESTAMP WHERE shop_id=? AND platform_message_id=?").bind(endpoint.shop_id,messageId).run();
       return;
     }
-    const [catalog,prior]=await Promise.all([products(env,endpoint.shop_id),history(env,endpoint.shop_id,conversationId)]),selected=provider(env);
+    const turn=classifySalesTurn(text);
+    if(turn.needs_human){const token=await decryptChannelValue(env,endpoint.token_ciphertext),answer='รับทราบค่ะ เรื่องนี้ต้องให้เจ้าหน้าที่ตรวจสอบข้อมูลในระบบก่อน ขอส่งต่อให้เจ้าหน้าที่ดูแลต่อโดยไม่ต้องส่งข้อมูลการเงินหรือรหัสผ่านในแชทนะคะ';await lineReply(token,replyToken,answer);await env.DB.batch([env.DB.prepare("UPDATE veasy_conversation_controls SET mode='human',updated_at=CURRENT_TIMESTAMP WHERE shop_id=? AND conversation_id=?").bind(endpoint.shop_id,conversationId),env.DB.prepare(`INSERT INTO veasy_chat_messages(id,shop_id,conversation_id,platform_message_id,role,content) VALUES(?,?,?,?, 'assistant',?)`).bind(crypto.randomUUID(),endpoint.shop_id,conversationId,`${messageId}:handoff`,answer),env.DB.prepare("UPDATE veasy_message_claims SET status='completed',completed_at=CURRENT_TIMESTAMP WHERE shop_id=? AND platform_message_id=?").bind(endpoint.shop_id,messageId)]);return}
+    const [catalog,prior,pageKnowledge]=await Promise.all([products(env,endpoint.shop_id),history(env,endpoint.shop_id,conversationId),loadV12PageCaptions(env)]),selected=provider(env);
     if(!selected)throw new Error('VEASY_AI_NOT_CONFIGURED');
     const systemPrompt=`คุณคือพนักงานขายออนไลน์มืออาชีพของร้าน ${clean(endpoint.shop_name||'ร้านค้า',120)} บน LINE หน้าที่คือเข้าใจคำถาม แนะนำอย่างเป็นธรรมชาติ และช่วยปิดการขายโดยไม่กดดัน
+${salesPlaybookPrompt()}
+${captionKnowledgePrompt(pageKnowledge.captions)}
 
 กฎข้อมูลที่ต้องทำตามอย่างเคร่งครัด:
 1) ใช้ข้อเท็จจริงเฉพาะสินค้าใน JSON เท่านั้น อ่านได้ครบทุกช่อง: name, category, short_description, full_description, specifications, warranty, shipping, price_baht, stock, has_product_image
