@@ -25,27 +25,27 @@ const coursePlanPages = {
       title: "ซื้อสิทธิ์ 499 บาท",
       detail: "ใช้ 1 เครดิตต่อคอร์ส รับเงินเข้าบัญชีผู้สอนและรับยอดขาย 100%",
       submit: "ใช้ 1 เครดิตและสร้างคอร์สแบบ 1",
-      steps: ["ซื้อสิทธิ์และมีเครดิต", "ตั้งค่าบัญชีรับเงินและการตรวจสลิป", "สร้างคอร์ส · เพิ่ม EP · เผยแพร่"],
+      steps: ["ซื้อสิทธิ์และมีเครดิต", "ตั้งค่าบัญชีรับเงินและการตรวจสลิป", "สร้างคอร์ส · เพิ่ม EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
     },
     free: {
       number: "2",
       title: "เริ่มขายฟรี",
       detail: "สร้างได้สูงสุด 3 คอร์ส คอร์สละไม่เกิน 5 EP ผู้สอนตรวจและอนุมัติสลิปเอง",
       submit: "สร้างคอร์สแบบ 2 ฟรี",
-      steps: ["ตรวจสิทธิ์โควตาขายฟรี", "ตั้งค่าบัญชีรับเงินและตรวจสลิปเอง", "สร้างคอร์ส · เพิ่มไม่เกิน 5 EP · เผยแพร่"],
+      steps: ["ตรวจสิทธิ์โควตาขายฟรี", "ตั้งค่าบัญชีรับเงินและตรวจสลิปเอง", "สร้างคอร์ส · เพิ่มไม่เกิน 5 EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
     },
     partner: {
       number: "3",
       title: "พาร์ตเนอร์ 50/50",
       detail: "ไม่จำกัดคอร์สและ EP ระบบตรวจสลิปอัตโนมัติและแบ่งยอด VisionD 50% / ผู้สอน 50%",
       submit: "สร้างคอร์สแบบ 3 พาร์ตเนอร์",
-      steps: ["ตรวจเงื่อนไขพาร์ตเนอร์ 50/50", "VisionD รับเงินและตรวจสลิปอัตโนมัติ", "สร้างคอร์ส · เพิ่ม EP · ส่งตรวจเผยแพร่"],
+      steps: ["ตรวจเงื่อนไขพาร์ตเนอร์ 50/50", "VisionD รับเงินและตรวจสลิปอัตโนมัติ", "สร้างคอร์ส · เพิ่ม EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
     },
   },
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014258">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014259">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 [
@@ -100,7 +100,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">สร้างคอร์สแบบ 1</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">สร้างคอร์สแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">สร้างคอร์สแบบ 3</button></article></div><p>แต่ละปุ่มจะเปิดหน้าสร้างเฉพาะของแบบนั้น · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><div class="course-plan-card-actions"><button type="button" data-course-plan="rights">สร้างคอร์สแบบ 1</button><a href="/product.html?slug=course-selling-rights">ซื้อเครดิต</a></div></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">สร้างคอร์สแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">สร้างคอร์สแบบ 3</button></article></div><p>เลือกแบบที่ต้องการก่อนสร้าง · เฉพาะแบบ 1 ที่ใช้ 1 เครดิต</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
@@ -165,11 +165,11 @@ function render(data) {
       const publish = document.createElement("button");
       publish.type = "button";
       publish.textContent = complete
-        ? "เผยแพร่"
+        ? "ส่งตรวจ"
         : `เติมสื่ออีก ${Math.max(0, total - Number(course.lesson_count))} EP`;
       publish.disabled = !complete;
       publish.title = complete
-        ? "เผยแพร่และส่งให้ Boss ตรวจอนุมัติก่อนเปิดขาย"
+        ? "ส่งให้ Boss ตรวจอนุมัติก่อนเปิดขาย"
         : "เพิ่มสื่อให้ครบทุก EP ก่อนเผยแพร่";
       publish.onclick = () => openPublish(course);
       actions.append(publish);

@@ -321,7 +321,7 @@
           <h3 class="span2" id="sellerLessonFormTitle">สร้าง EP ใหม่</h3>
           <label>ชื่อ EP<input name="title" required /></label
           ><label
-            >คำอธิบาย EP<textarea name="description" rows="3"></textarea></label
+            >คำอธิบายของ EP นี้<textarea name="description" rows="3"></textarea></label
           ><label
             >ความยาวโดยประมาณ (วินาที)<input
               name="duration_seconds"
@@ -333,7 +333,7 @@
               type="file"
               accept="video/mp4,video/webm" /></label
           ><label
-            >ไฟล์ประกอบทุกประเภท เลือกได้หลายไฟล์<input
+            >เอกสารแนบของ EP นี้ เลือกได้หลายไฟล์<input
               name="documents"
               type="file"
               multiple /></label
@@ -350,9 +350,10 @@
         <div id="sellerLessonList" class="seller-lesson-list">
           <p>ยังไม่มีบทเรียน</p>
         </div>
+        <p class="account-lock-warning">กด “+ สร้าง EP เพิ่ม” เพื่อเพิ่มบทถัดไป เมื่อใส่สื่อครบทุก EP แล้ว กลับไปที่คอร์สของฉันและกด “ส่งตรวจ”</p>
       </section>
       <section id="publishPanel" class="seller-card" hidden>
-        <h2>เผยแพร่ตะกร้าคอร์ส</h2>
+        <h2>ส่งคอร์สให้ Boss ตรวจ</h2>
         <p>
           เมื่อกดเผยแพร่ ระบบจะส่งให้ Boss ตรวจอนุมัติก่อนเปิดขาย
           และไม่หักเครดิตซ้ำ
@@ -378,7 +379,7 @@
             ผู้ขายรับผิดชอบการคืนเงินและค่าเสียหายหากฝ่าฝืน และ VisionD
             มีสิทธิ์ระงับตะกร้าทันที</label
           ><button class="primary span2" type="submit">
-            เผยแพร่ตะกร้าคอร์ส
+            ส่งตรวจ
           </button>
           <p id="publishMessage" class="span2"></p>
         </form>

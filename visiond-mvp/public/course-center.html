@@ -4,17 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ศูนย์จัดการคอร์ส | VisionD</title>
-    <link rel="stylesheet" href="/style.css?v=014258" />
-    <link rel="stylesheet" href="/visiond-design-system.css?v=014258" />
-    <link rel="stylesheet" href="/course.css?v=014258" />
-    <link rel="stylesheet" href="/course-seller.css?v=014258" />
-    <link rel="stylesheet" href="/course-license-dates.css?v=014258" />
-    <link rel="stylesheet" href="/course-owner-actions.css?v=014258" />
-    <link rel="stylesheet" href="/elon-chat.css?v=014258" />
-    <link rel="stylesheet" href="/header-shell.css?v=014258" />
-    <link rel="stylesheet" href="/mobile-storefront.css?v=014258" />
-    <link rel="stylesheet" href="/frontend-theme.css?v=014258" />
-  <link rel="stylesheet" href="/visiond-button-system.css?v=014258" /><script src="/visiond-button-system.js?v=014258" defer></script></head>
+    <link rel="stylesheet" href="/style.css?v=014259" />
+    <link rel="stylesheet" href="/visiond-design-system.css?v=014259" />
+    <link rel="stylesheet" href="/course.css?v=014259" />
+    <link rel="stylesheet" href="/course-seller.css?v=014259" />
+    <link rel="stylesheet" href="/course-license-dates.css?v=014259" />
+    <link rel="stylesheet" href="/course-owner-actions.css?v=014259" />
+    <link rel="stylesheet" href="/elon-chat.css?v=014259" />
+    <link rel="stylesheet" href="/header-shell.css?v=014259" />
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014259" />
+    <link rel="stylesheet" href="/frontend-theme.css?v=014259" />
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014259" /><script src="/visiond-button-system.js?v=014259" defer></script></head>
   <body class="vd-frontend">
     <header class="topbar">
       <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
@@ -40,12 +40,9 @@
         class="seller-card vision5-credit-summary"
       >
         <p class="seller-section-number">PART 1</p>
-        <h2>สร้างคอร์ส / เติมเครดิต</h2>
-        <div class="seller-create-actions">
-          <button id="createCourseBasket" class="primary seller-create-credit-button" type="button">+ สร้างตะกร้าคอร์ส</button>
-          <a class="primary" href="/product.html?slug=course-selling-rights">เติมเครดิต</a>
-        </div>
-        <h3>เครดิตสร้างตะกร้าคอร์ส</h3>
+        <h2>เลือกรูปแบบแล้วสร้างคอร์ส</h2>
+        <button id="createCourseBasket" type="button" hidden>สร้างคอร์ส</button>
+        <p>เลือกแบบ 1, 2 หรือ 3 ด้านล่าง ระบบจะพาไปหน้าสร้างของแบบนั้นโดยตรง</p>
         <div id="licenseList">กำลังโหลด…</div>
       </section>
       <section id="paymentProfilePanel" class="seller-card">
@@ -272,7 +269,6 @@
         class="seller-card seller-lesson-workspace"
         hidden
       >
-        <p class="seller-section-number">PART 5</p>
         <header class="seller-lesson-head">
           <div>
             <small>บทเรียนของตะกร้า</small>
@@ -299,7 +295,7 @@
           <h3 class="span2" id="sellerLessonFormTitle">สร้าง EP ใหม่</h3>
           <label>ชื่อ EP<input name="title" required /></label
           ><label
-            >คำอธิบาย EP<textarea name="description" rows="3"></textarea></label
+            >คำอธิบายของ EP นี้<textarea name="description" rows="3"></textarea></label
           ><label
             >ความยาวโดยประมาณ (วินาที)<input
               name="duration_seconds"
@@ -311,7 +307,7 @@
               type="file"
               accept="video/mp4,video/webm" /></label
           ><label
-            >ไฟล์ประกอบทุกประเภท เลือกได้หลายไฟล์<input
+            >เอกสารแนบของ EP นี้ เลือกได้หลายไฟล์<input
               name="documents"
               type="file"
               multiple /></label
@@ -328,9 +324,10 @@
         <div id="sellerLessonList" class="seller-lesson-list">
           <p>ยังไม่มีบทเรียน</p>
         </div>
+        <p class="account-lock-warning">กด “+ สร้าง EP เพิ่ม” เพื่อเพิ่มบทถัดไป เมื่อใส่สื่อครบทุก EP แล้ว กลับไปที่คอร์สของฉันและกด “ส่งตรวจ”</p>
       </section>
       <section id="publishPanel" class="seller-card" hidden>
-        <h2>เผยแพร่ตะกร้าคอร์ส</h2>
+        <h2>ส่งคอร์สให้ Boss ตรวจ</h2>
         <p>
           เมื่อกดเผยแพร่ ระบบจะส่งให้ Boss ตรวจอนุมัติก่อนเปิดขาย
           และไม่หักเครดิตซ้ำ
@@ -356,13 +353,13 @@
             ผู้ขายรับผิดชอบการคืนเงินและค่าเสียหายหากฝ่าฝืน และ VisionD
             มีสิทธิ์ระงับตะกร้าทันที</label
           ><button class="primary span2" type="submit">
-            เผยแพร่ตะกร้าคอร์ส
+            ส่งตรวจ
           </button>
           <p id="publishMessage" class="span2" role="status" aria-live="polite"></p>
         </form>
       </section>
       <section id="customerSalesPanel" class="seller-card">
-        <p class="seller-section-number">PART 6</p>
+        <p class="seller-section-number">PART 5</p>
         <h2>ตารางลูกค้า สลิปจริง และยอดขาย</h2>
         <div class="seller-summary">
           <div><small>ยอดขายรวม</small><b id="salesTotal">0 บาท</b></div>
@@ -399,7 +396,7 @@
         </div>
       </section>
       <section id="pendingSlipPanel" class="seller-card">
-        <p class="seller-section-number">ต่อจาก PART 6</p>
+        <p class="seller-section-number">PART 6</p>
         <h2>ออเดอร์รออนุมัติ</h2>
         <p>
           เจ้าของคอร์สรับผิดชอบ Token และโควต้า API ของตนเอง
@@ -431,17 +428,17 @@
         </div>
       </section>
     </main>
-    <link rel="stylesheet" href="/seller-lesson-files.css?v=014258" /><link
+    <link rel="stylesheet" href="/seller-lesson-files.css?v=014259" /><link
       rel="stylesheet"
-      href="/course-draft-first-ep.css?v=014258"
+      href="/course-draft-first-ep.css?v=014259"
     />
-    <script src="/shared-nav.js?v=014258" defer></script>
-    <script src="/header-shell.js?v=014258" defer></script>
-    <script src="/course-seller.js?v=014258"></script>
-    <script src="/course-draft-first-ep.js?v=014258"></script>
-    <script src="/course-license-dates.js?v=014258"></script>
-    <script src="/elon-chat.js?v=014258" defer></script>
-    <script src="/mobile-storefront.js?v=014258" defer></script>
-    <script src="/visiond-design-system.js?v=014258" defer></script>
+    <script src="/shared-nav.js?v=014259" defer></script>
+    <script src="/header-shell.js?v=014259" defer></script>
+    <script src="/course-seller.js?v=014259"></script>
+    <script src="/course-draft-first-ep.js?v=014259"></script>
+    <script src="/course-license-dates.js?v=014259"></script>
+    <script src="/elon-chat.js?v=014259" defer></script>
+    <script src="/mobile-storefront.js?v=014259" defer></script>
+    <script src="/visiond-design-system.js?v=014259" defer></script>
   </body>
 </html>

@@ -391,6 +391,25 @@ td {
   color: #fff;
   outline: none;
 }
+.course-plan-card-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+.course-plan-card-actions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid #08aaa4;
+  border-radius: 10px;
+  background: #087d77;
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+}
 .course-create-page .seller-shell {
   max-width: 920px;
 }
