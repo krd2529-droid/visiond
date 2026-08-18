@@ -4,17 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ศูนย์จัดการคอร์ส | VisionD</title>
-    <link rel="stylesheet" href="/style.css?v=014295" />
-    <link rel="stylesheet" href="/visiond-design-system.css?v=014295" />
-    <link rel="stylesheet" href="/course.css?v=014295" />
-    <link rel="stylesheet" href="/course-seller.css?v=014295" />
-    <link rel="stylesheet" href="/course-license-dates.css?v=014295" />
-    <link rel="stylesheet" href="/course-owner-actions.css?v=014295" />
-    <link rel="stylesheet" href="/elon-chat.css?v=014295" />
-    <link rel="stylesheet" href="/header-shell.css?v=014295" />
-    <link rel="stylesheet" href="/mobile-storefront.css?v=014295" />
-    <link rel="stylesheet" href="/frontend-theme.css?v=014295" />
-  <link rel="stylesheet" href="/visiond-button-system.css?v=014295" /><script src="/visiond-button-system.js?v=014295" defer></script></head>
+    <link rel="stylesheet" href="/style.css?v=014296" />
+    <link rel="stylesheet" href="/visiond-design-system.css?v=014296" />
+    <link rel="stylesheet" href="/course.css?v=014296" />
+    <link rel="stylesheet" href="/course-seller.css?v=014296" />
+    <link rel="stylesheet" href="/course-license-dates.css?v=014296" />
+    <link rel="stylesheet" href="/course-owner-actions.css?v=014296" />
+    <link rel="stylesheet" href="/elon-chat.css?v=014296" />
+    <link rel="stylesheet" href="/header-shell.css?v=014296" />
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014296" />
+    <link rel="stylesheet" href="/frontend-theme.css?v=014296" />
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014296" /><script src="/visiond-button-system.js?v=014296" defer></script></head>
   <body class="vd-frontend">
     <header class="topbar">
       <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
@@ -34,8 +34,7 @@
         </div>
       </section>
       <nav class="seller-task-nav" aria-label="งานผู้ขายคอร์ส">
-        <a href="#sellerLessonManager">จัดการบทเรียนและ EP</a
-        ><a href="#paymentProfilePanel">ตั้งค่ารับเงินและ API</a>
+        <a href="#sellerLessonManager">จัดการบทเรียนและ EP</a>
       </nav>
       <section
         id="vision5CreditSummary"
@@ -43,106 +42,6 @@
       >
         <h2>สร้างคอร์สพาร์ตเนอร์</h2>
         <div id="licenseList">กำลังโหลด…</div>
-      </section>
-      <section id="paymentProfilePanel" class="seller-card">
-        <h2>บัญชีรับเงินของเจ้าของคอร์ส</h2>
-        <div id="paymentProfileStatus">กำลังตรวจสอบ…</div>
-        <form id="paymentProfileForm" class="seller-form" hidden>
-          <label
-            >ธนาคาร<select name="bank_name" required>
-              <option value="">เลือกธนาคาร</option>
-              <option>กสิกรไทย</option>
-              <option>กรุงไทย</option>
-              <option>กรุงเทพ</option>
-              <option>ไทยพาณิชย์</option>
-              <option>กรุงศรีอยุธยา</option>
-              <option>ทหารไทยธนชาต</option>
-              <option>ออมสิน</option>
-              <option>ธ.ก.ส.</option>
-              <option>ธอส.</option>
-              <option>เกียรตินาคินภัทร</option>
-              <option>CIMB Thai</option>
-              <option>UOB</option>
-              <option>LH Bank</option>
-              <option>ไทยเครดิต</option>
-              <option>ธนาคารอิสลาม</option>
-            </select></label
-          ><label
-            >ชื่อบัญชี (ต้องตรงกับชื่อที่สมัคร)<input
-              name="account_name"
-              required /></label
-          ><label
-            >เลขบัญชี<input
-              name="account_number"
-              inputmode="numeric"
-              required /></label
-          ><label
-            >QR รับเงิน (ไม่บังคับ)<input
-              name="payment_qr"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-          /></label>
-          <p class="span2 account-lock-warning">
-            บันทึกแล้วแก้ไขได้เมื่อต้องการ หากไม่เลือก QR ใหม่ ระบบจะใช้ QR เดิม
-          </p>
-          <button class="primary span2" type="submit">
-            บันทึกบัญชีรับเงิน
-          </button>
-          <p id="paymentProfileMessage" class="span2"></p>
-        </form>
-      </section>
-      <section id="slipApiPanel" class="seller-card">
-        <h2>การตรวจสลิปของตะกร้าคอร์ส</h2>
-        <p>
-          เลือกได้ว่าจะตรวจและอนุมัติเอง หรือเปิด EasySlip API
-          ของคุณเพื่อตรวจบัญชี ยอดเงิน เลขอ้างอิง และสลิปซ้ำอัตโนมัติ
-        </p>
-        <div id="slipApiStatus">กำลังตรวจสอบ…</div>
-        <form id="slipApiForm" class="seller-form">
-          <label class="span2 slip-mode-switch"
-            ><span
-              ><b id="slipSwitchTitle">ตรวจและอนุมัติเอง</b
-              ><small id="slipSwitchDescription"
-                >ปิดการตรวจสลิปอัตโนมัติ</small
-              ></span
-            ><input
-              name="enabled"
-              type="checkbox"
-              role="switch"
-              aria-labelledby="slipSwitchTitle" /><i aria-hidden="true"></i
-          ></label>
-          <p id="slipManualHelp" class="span2 account-lock-warning">
-            ปิดอยู่ · เจ้าของคอร์สต้องเปิดดูสลิปและอนุมัติเอง
-          </p>
-          <label id="slipTokenField" class="span2" hidden
-            >EasySlip API Access Token<input
-              name="api_key"
-              type="password"
-              autocomplete="off"
-              placeholder="วาง Token เมื่อเปิดใช้งานครั้งแรก"
-              minlength="20"
-          /></label>
-          <p class="span2 account-lock-warning">
-            Token จะถูกเข้ารหัสและไม่แสดงกลับบนหน้าเว็บ หากปิด ระบบจะเก็บ Token
-            เดิมไว้เพื่อเปิดอีกครั้งภายหลัง
-          </p>
-          <p class="span2 seller-api-link">
-            <a
-              href="https://easyslip.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              >เปิดเว็บไซต์ EasySlip เพื่อสมัครหรือจัดการ API Token ↗</a
-            >
-            <small
-              >สมัครหรือเข้าสู่ระบบ EasySlip แล้วคัดลอก API Key จาก Credentials
-              กลับมากรอกในช่อง Access Token ด้านบน</small
-            >
-          </p>
-          <button class="primary span2" type="submit">
-            บันทึกโหมดตรวจสลิป
-          </button>
-          <p id="slipApiMessage" class="span2"></p>
-        </form>
       </section>
       <section id="createPanel" class="seller-card" hidden>
         <h2>ตะกร้าคอร์สและเนื้อหา EP</h2>
@@ -253,7 +152,7 @@
             </p>
           </aside>
           <button class="primary span2" type="submit">
-            ใช้ 1 เครดิตและสร้างตะกร้าคอร์ส
+            บันทึกข้อมูลและไปจัดการ EP
           </button>
           <p id="sellerMessage" class="span2"></p>
         </form>
@@ -364,17 +263,17 @@
         </form>
       </section>
     </main>
-    <link rel="stylesheet" href="/seller-lesson-files.css?v=014295" /><link
+    <link rel="stylesheet" href="/seller-lesson-files.css?v=014296" /><link
       rel="stylesheet"
-      href="/course-draft-first-ep.css?v=014295"
+      href="/course-draft-first-ep.css?v=014296"
     />
-    <script src="/shared-nav.js?v=014295" defer></script>
-    <script src="/header-shell.js?v=014295" defer></script>
-    <script src="/course-seller.js?v=014295"></script>
-    <script src="/course-draft-first-ep.js?v=014295"></script>
-    <script src="/course-license-dates.js?v=014295"></script>
-    <script src="/elon-chat.js?v=014295" defer></script>
-    <script src="/mobile-storefront.js?v=014295" defer></script>
-    <script src="/visiond-design-system.js?v=014295" defer></script>
+    <script src="/shared-nav.js?v=014296" defer></script>
+    <script src="/header-shell.js?v=014296" defer></script>
+    <script src="/course-seller.js?v=014296"></script>
+    <script src="/course-draft-first-ep.js?v=014296"></script>
+    <script src="/course-license-dates.js?v=014296"></script>
+    <script src="/elon-chat.js?v=014296" defer></script>
+    <script src="/mobile-storefront.js?v=014296" defer></script>
+    <script src="/visiond-design-system.js?v=014296" defer></script>
   </body>
 </html>
