@@ -21,7 +21,7 @@ const esc = (v) =>
 let state;
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014251">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014252">',
 );
 document
   .querySelector(".seller-hero")
@@ -82,7 +82,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><div><small>เครดิตคงเหลือ</small><b>${Number(data.credit_balance) || 0} เครดิต</b></div><div><small>ใช้สร้างตะกร้าแล้ว</small><b>${used} เครดิต</b></div></div><p><b>1 เครดิต</b> = สร้างตะกร้าคอร์สได้ 1 ตะกร้า · หักเมื่อสร้างสำเร็จเท่านั้น</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><div><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b></div><div><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b></div><div><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b></div></div><p>เลือกแผนก่อนสร้าง · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
   if (profile.status === "unset") {
     paymentProfileStatus.innerHTML =
       "<p>ยังไม่ได้ตั้งค่าบัญชีรับเงิน ตั้งภายหลังเมื่อต้องการเปิดตะกร้าได้</p>";
@@ -185,11 +185,6 @@ function render(data) {
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );
   createCourseBasket.onclick = () => {
-    if (Number(data.credit_balance) < 1) {
-      if (confirm("ต้องมีเครดิตก่อนสร้าง ต้องการไปซื้อสิทธิ์ตอนนี้หรือไม่?"))
-        location.href = "/product.html?slug=course-selling-rights";
-      return;
-    }
     createPanel.hidden = false;
     createPanel.scrollIntoView({ behavior: "smooth" });
   };

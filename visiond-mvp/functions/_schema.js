@@ -160,6 +160,7 @@ async function initializeDatabase(env) {
   if(!courseColumns.includes('course_origin'))await env.DB.prepare("ALTER TABLE courses ADD COLUMN course_origin TEXT NOT NULL DEFAULT 'company'").run();
   if(!courseColumns.includes('basket_binding_locked'))await env.DB.prepare('ALTER TABLE courses ADD COLUMN basket_binding_locked INTEGER NOT NULL DEFAULT 0').run();
   if(!courseColumns.includes('basket_bound_at'))await env.DB.prepare('ALTER TABLE courses ADD COLUMN basket_bound_at TEXT').run();
+  if(!courseColumns.includes('course_plan'))await env.DB.prepare("ALTER TABLE courses ADD COLUMN course_plan TEXT NOT NULL DEFAULT 'rights'").run();
   await env.DB.prepare("UPDATE courses SET course_origin='seller_rights' WHERE owner_user_id IS NOT NULL AND course_type='online_course' AND course_origin='company'").run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_courses_license_entitlement ON courses(license_entitlement_id) WHERE license_entitlement_id IS NOT NULL').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_courses_owner ON courses(owner_user_id,created_at DESC)').run();
@@ -189,6 +190,10 @@ async function initializeDatabase(env) {
   if (!orderColumns.includes('discount_amount')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0').run();
   if (!orderColumns.includes('order_origin')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN order_origin TEXT NOT NULL DEFAULT 'customer'").run();
   if (!orderColumns.includes('gift_for_order_id')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN gift_for_order_id INTEGER').run();
+  if (!orderColumns.includes('course_plan')) await env.DB.prepare("ALTER TABLE orders ADD COLUMN course_plan TEXT NOT NULL DEFAULT 'rights'").run();
+  if (!orderColumns.includes('teacher_revenue')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN teacher_revenue INTEGER NOT NULL DEFAULT 0').run();
+  if (!orderColumns.includes('visiond_revenue')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN visiond_revenue INTEGER NOT NULL DEFAULT 0').run();
+  if (!orderColumns.includes('course_api_fee')) await env.DB.prepare('ALTER TABLE orders ADD COLUMN course_api_fee INTEGER NOT NULL DEFAULT 0').run();
   await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_first_order_gift ON orders(user_id) WHERE order_origin='first_order_gift'").run();
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_verified_slips_trans_ref ON verified_slips(trans_ref)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_orders_slip_verification ON orders(slip_verification_status,updated_at DESC)').run();

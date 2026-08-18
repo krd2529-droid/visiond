@@ -7,6 +7,7 @@ import { rateLimit } from "../../_security.js";
 import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {loadSellerToken} from '../../_seller_token.js';
 import {firstOrderPromoStatus,calculateFirstOrderDiscount} from '../../_first_order_promo.js';
+import {courseRevenue} from '../../_course_plans.js';
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -55,7 +56,7 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
       (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
       (SELECT q.offer_price FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
@@ -145,15 +146,15 @@ export async function onRequestPost(ctx) {
       Date.now().toString().slice(-10) +
       "-" +
       Math.floor(Math.random() * 90 + 10);
-  const seller=sellerItems[0],paymentTarget=seller?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment;
+  const seller=sellerItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
   const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
-  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount)
-    SELECT ?,?,?,?,?,?,?,?,?,?,?,?
+  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount,course_plan,teacher_revenue,visiond_revenue,course_api_fee)
+    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
     WHERE ?='[]' OR NOT EXISTS(
       SELECT 1 FROM orders existing_order JOIN order_items existing_item ON existing_item.order_id=existing_order.id
       WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
       AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
-    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,guardJson,a.user.id,guardJson)];
+    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,seller?.course_plan||'rights',seller?revenue.teacher:0,seller?revenue.visiond:0,seller?revenue.apiFee:0,guardJson,a.user.id,guardJson)];
   for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price,vision7_renew_license_id) SELECT id,?,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,renewLicenseId||null,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
   const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);
@@ -173,7 +174,7 @@ export async function onRequestPost(ctx) {
       total,
       items: pricedResults.map(p=>({...p,price:p.sale_price})),
       promotion,
-      bank: seller?paymentTarget:publicPaymentSettings(payment),
+      bank: seller?paymentTarget:publicPaymentSettings(payment),coursePlan:seller?.course_plan||null,revenue:seller?revenue:null,
     },
     201,
   );

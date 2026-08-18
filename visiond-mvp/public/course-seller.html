@@ -177,10 +177,11 @@
       <section id="createPanel" class="seller-card" hidden>
         <h2>กรอกข้อมูลตะกร้าคอร์ส</h2>
         <p>
-          เมื่อบันทึกสำเร็จ ระบบจะหัก 1 เครดิตและสร้าง EP เริ่มต้นให้ 1 EP
+          เลือกรูปแบบ 1, 2 หรือ 3 ก่อนสร้าง ระบบจะบันทึกแผนไว้กับคอร์สและสร้าง EP เริ่มต้นให้ 1 EP
           จากนั้นเพิ่ม EP ได้เองในตัวจัดการบทเรียน
         </p>
         <form id="sellerCourseForm" class="seller-form">
+          <label class="span2">เลือกรูปแบบเปิดคอร์ส<select name="course_plan" required><option value="rights">1 · ซื้อสิทธิ์ 499 บาท — รับยอดขาย 100%</option><option value="free">2 · เริ่มขายฟรี — สูงสุด 3 คอร์ส คอร์สละไม่เกิน 5 EP</option><option value="partner">3 · พาร์ตเนอร์ 50/50 — ไม่จำกัดคอร์สและ EP</option></select></label>
           <input name="license_entitlement_id" type="hidden" /><label
             class="course-cover-upload"
             >รูปปกคอร์ส <small>แนะนำ 1280 × 720 px (16:9) · JPG/PNG/WEBP</small

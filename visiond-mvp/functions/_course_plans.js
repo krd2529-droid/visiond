@@ -1,0 +1,7 @@
+export const COURSE_PLANS={
+  free:{code:'free',number:2,label:'เริ่มขายฟรี',maxCourses:3,maxEpisodes:5,requiresCredit:false,paymentOwner:'seller',teacherPercent:100,visiondPercent:0,apiFee:0},
+  rights:{code:'rights',number:1,label:'ซื้อสิทธิ์ 499 บาท',maxCourses:null,maxEpisodes:200,requiresCredit:true,paymentOwner:'seller',teacherPercent:100,visiondPercent:0,apiFee:0},
+  partner:{code:'partner',number:3,label:'พาร์ตเนอร์ 50/50',maxCourses:null,maxEpisodes:200,requiresCredit:false,paymentOwner:'visiond',teacherPercent:50,visiondPercent:50,apiFee:100},
+};
+export const coursePlan=value=>COURSE_PLANS[String(value||'rights')]||null;
+export function courseRevenue(planCode,total){const plan=coursePlan(planCode)||COURSE_PLANS.rights,amount=Math.max(0,Math.round(Number(total)||0));if(plan.code!=='partner')return{teacher:amount,visiond:0,apiFee:0};const half=Math.floor(amount/2),fee=Math.min(plan.apiFee,half);return{teacher:half-fee,visiond:amount-half,apiFee:fee}}
