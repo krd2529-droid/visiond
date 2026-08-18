@@ -59,9 +59,9 @@
   let pdfjsPromise;
   const pdfjs = () =>
     pdfjsPromise ||
-    (pdfjsPromise = import("/vendor/pdfjs/pdf.mjs?v=014282").then((lib) => {
+    (pdfjsPromise = import("/vendor/pdfjs/pdf.mjs?v=014283").then((lib) => {
       lib.GlobalWorkerOptions.workerSrc =
-        "/vendor/pdfjs/pdf.worker.mjs?v=014282";
+        "/vendor/pdfjs/pdf.worker.mjs?v=014283";
       return lib;
     }));
   const canvasFile = (canvas, name, quality = 0.82) =>

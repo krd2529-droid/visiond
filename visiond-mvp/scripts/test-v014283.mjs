@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=path=>fs.readFileSync(path,"utf8"),version=read("VERSION.txt").trim(),html=read("public/course-seller.html"),flow=read("public/course-draft-first-ep.js"),api=read("functions/api/course-seller/index.js");
+assert.equal(version,"v0.14.283");
+assert.match(html,/ตะกร้าคอร์สและเนื้อหา EP/);
+assert.match(html,/EP ทั้งหมดเป็นส่วนหนึ่งของตะกร้าคอร์สนี้/);
+assert.match(flow,/อัปโหลดงาน EP ในตะกร้าคอร์ส/);
+assert.match(flow,/บันทึกตะกร้าคอร์สพร้อม EP/);
+assert.match(flow,/fetch\('\/api\/course-seller'/);
+assert.match(flow,/uploadEpisode\(createdCourseId/);
+assert.match(api,/INSERT INTO course_lessons/);
+console.log("v0.14.283 basket-owned EP continuation: PASS");
