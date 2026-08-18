@@ -1,0 +1,14 @@
+{
+  "version": "v0.14.296",
+  "summary": "ลบขั้นตอนบัญชีรับเงินและปุ่มสร้างคอร์สแบบเก่าออกจากหน้าพาร์ตเนอร์",
+  "scope": [
+    "partner course seller page",
+    "legacy creator payment form removal",
+    "course draft action wording"
+  ],
+  "security": [
+    "หน้าพาร์ตเนอร์ไม่รับหรือแสดงบัญชีธนาคารและ EasySlip Token ของผู้สอน",
+    "คง API เดิมไว้สำหรับข้อมูลย้อนหลังโดยไม่เปิดฟอร์มเก่าบนหน้าปัจจุบัน"
+  ],
+  "rollback": "ย้อนกลับไป Commit แพต v0.14.295 c7051c3"
+}

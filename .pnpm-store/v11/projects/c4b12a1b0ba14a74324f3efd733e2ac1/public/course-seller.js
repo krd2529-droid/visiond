@@ -24,7 +24,7 @@ const coursePlanPages = {
       number: "1",
       title: "พาร์ตเนอร์ 50/50",
       detail: "VisionD รับเงินและตรวจสลิปอัตโนมัติ แบ่งรายได้ผู้สอน 50% / VisionD 50%",
-      submit: "สร้างร่างคอร์สพาร์ตเนอร์",
+      submit: "บันทึกข้อมูลและไปจัดการ EP",
       steps: ["กรอกข้อมูลคอร์ส", "เพิ่ม EP พร้อมวิดีโอหรือเอกสาร", "ตรวจความพร้อมและส่งให้ Boss ตรวจ"],
     },
   },
@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014295">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014296">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -58,8 +58,6 @@ const licenseList = document.querySelector("#licenseList"),
   document.querySelector("#vision5SellerFlow"),
   document.querySelector("#vision5CreditSummary"),
   document.querySelector("#createPanel"),
-  document.querySelector("#paymentProfilePanel"),
-  document.querySelector("#slipApiPanel"),
   document.querySelector("#myCoursesPanel"),
   document.querySelector("#sellerLessonManager"),
   document.querySelector("#publishPanel"),
@@ -85,45 +83,14 @@ function updateVision5Flow(data) {
   if (next)
     next.textContent = "พร้อมแล้ว: สร้างคอร์สพาร์ตเนอร์ เพิ่ม EP แล้วส่งให้ Boss ตรวจ";
 }
-function paintSlipSwitch(on) {
-  slipApiForm.elements.enabled.checked = Boolean(on);
-  slipTokenField.hidden = !on;
-  slipManualHelp.hidden = Boolean(on);
-  slipSwitchTitle.textContent = on ? "ตรวจสลิปอัตโนมัติ" : "ตรวจและอนุมัติเอง";
-  slipSwitchDescription.textContent = on
-    ? "เปิดใช้ EasySlip API ของเจ้าของคอร์ส"
-    : "ปิดการตรวจสลิปอัตโนมัติ";
-}
 function render(data) {
   state = data;
   updateVision5Flow(data);
-  const profile = data.payment_profile || { status: "unset" },
-    used = (data.licenses || []).filter((x) => !x.available).length;
+  const used = (data.licenses || []).filter((x) => !x.available).length;
   if (licenseList) licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>รูปแบบเดียว · พาร์ตเนอร์ 50/50</small><b>ผู้สอน 50% / VisionD 50%</b><span>VisionD รับเงิน ตรวจสลิป และแบ่งรายได้อัตโนมัติ</span><button type="button" data-course-plan="partner">สร้างคอร์สพาร์ตเนอร์</button></article></div><p>คอร์สซื้อสิทธิ์เดิมยังจัดการย้อนหลังได้ แต่ปิดรับการสร้างใหม่แล้ว</p>`;
   licenseList?.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
-  if (profile.status === "unset") {
-    paymentProfileStatus.innerHTML =
-      "<p>ยังไม่ได้ตั้งค่าบัญชีรับเงิน ตั้งภายหลังเมื่อต้องการเปิดตะกร้าได้</p>";
-    paymentProfileForm.hidden = false;
-  } else {
-    paymentProfileForm.hidden = false;
-    paymentProfileForm.elements.bank_name.value = profile.bank_name || "";
-    paymentProfileForm.elements.account_name.value = profile.account_name || "";
-    paymentProfileForm.elements.account_number.value = profile.account_number || "";
-    paymentProfileStatus.innerHTML = `<div class="payment-profile-summary"><b>${esc(profile.bank_name || "-")} · ${esc(profile.account_name || "-")}</b><strong>✓ บันทึกแล้ว ไม่ต้องกรอกเพิ่ม</strong><span>ข้อมูลเดิมแสดงอยู่ด้านล่าง แก้ไขแล้วบันทึกใหม่ได้เมื่อต้องการ</span><small>${profile.has_payment_qr ? "มี QR รับเงินเดิมแล้ว · ไม่เลือกไฟล์ใหม่ ระบบจะใช้ QR เดิม" : "ยังไม่มี QR รับเงิน · ช่อง QR ไม่บังคับ"}</small></div>`;
-    paymentProfileForm.querySelector('button[type="submit"]').textContent = "บันทึกการแก้ไขบัญชีรับเงิน";
-  }
-  const auto = profile.slip_auto_verify === 1;
-  paintSlipSwitch(auto);
-  slipApiStatus.innerHTML = profile.test_account
-    ? "<b>ยูสเทส · สลิปต้องรอ Boss อนุมัติ</b>"
-    : auto
-      ? profile.slip_api_configured
-        ? "<b>เปิดตรวจอัตโนมัติ · EasySlip พร้อมใช้</b>"
-        : "<b>เปิดตรวจอัตโนมัติ · กรุณาบันทึก Token</b>"
-      : "<p>ปิดตรวจอัตโนมัติ · เจ้าของคอร์สต้องตรวจและอนุมัติเอง</p>";
   if (mySellerCourses) {
     mySellerCourses.innerHTML = data.courses.length
     ? data.courses
@@ -208,8 +175,6 @@ function render(data) {
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );
   if (createCourseBasket) createCourseBasket.hidden = true;
-  paymentProfilePanel.hidden = true;
-  slipApiPanel.hidden = true;
 }
 function openCoursePlan(plan) {
   if (!coursePlanPages[plan]) return;
@@ -222,19 +187,15 @@ function enterCourseCreatePage(plan) {
   const planPanels = new Set([
     createPanel,
     sellerLessonManager,
-    paymentProfilePanel,
-    slipApiPanel,
     publishPanel,
   ]);
   [...sellerShell.children].forEach((section) => {
     if (!planPanels.has(section)) section.remove();
   });
   createPanel.hidden = false;
-  createPanel.after(sellerLessonManager,paymentProfilePanel,slipApiPanel,publishPanel);
+  createPanel.after(sellerLessonManager,publishPanel);
   sellerCourseForm.hidden = false;
   sellerLessonManager.hidden = true;
-  paymentProfilePanel.hidden = true;
-  slipApiPanel.hidden = true;
   publishPanel.hidden = true;
   if (!createPanel.querySelector("#coursePlanFlow")) {
     createPanel.insertAdjacentHTML(
@@ -496,42 +457,6 @@ async function loadLessons(id) {
       }),
   );
 }
-paymentProfileForm.onsubmit = async (e) => {
-  e.preventDefault();
-  const b = e.submitter;
-  b.disabled = true;
-  const r = await fetch("/api/course-seller/payment-profile", {
-      method: "POST",
-      body: new FormData(paymentProfileForm),
-    }),
-    d = await r.json().catch(() => ({}));
-  paymentProfileMessage.textContent = d.error || d.message || "";
-  b.disabled = false;
-  if (r.ok) load();
-};
-slipApiForm.elements.enabled.onchange = () =>
-  paintSlipSwitch(slipApiForm.elements.enabled.checked);
-slipApiForm.onsubmit = async (e) => {
-  e.preventDefault();
-  const b = e.submitter,
-    form = new FormData(slipApiForm);
-  b.disabled = true;
-  const r = await fetch("/api/course-seller/slip-api", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        enabled: form.get("enabled") === "on",
-        api_key: form.get("api_key"),
-      }),
-    }),
-    d = await r.json().catch(() => ({}));
-  slipApiMessage.textContent = d.error || d.message || "";
-  b.disabled = false;
-  if (r.ok) {
-    slipApiForm.elements.api_key.value = "";
-    load();
-  }
-};
 let sellerCoverObjectUrl = "";
 function clearSellerCover() {
   if (sellerCoverObjectUrl) URL.revokeObjectURL(sellerCoverObjectUrl);
@@ -581,7 +506,7 @@ sellerCourseForm.onsubmit = async (e) => {
     sellerMessage.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
     return;
   }
-  const confirmation = "ยืนยันสร้างร่างคอร์สพาร์ตเนอร์ 50/50 หรือไม่";
+  const confirmation = "ยืนยันบันทึกข้อมูลคอร์สและไปจัดการ EP หรือไม่";
   if (!confirm(confirmation)) return;
   const b = e.submitter;
   b.disabled = true;
@@ -736,14 +661,6 @@ publishForm.onsubmit = async (e) => {
   b.disabled = false;
   if (d.credit_required) {
     location.href = d.buy_url || "/product.html?slug=course-selling-rights";
-    return;
-  }
-  if (d.payment_profile_required) {
-    location.href = "/course-center#paymentProfilePanel";
-    return;
-  }
-  if (d.slip_api_required) {
-    location.href = "/course-center#slipApiPanel";
     return;
   }
   if (r.ok) {
