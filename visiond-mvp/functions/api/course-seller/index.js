@@ -1,6 +1,5 @@
 import { json, requireUser } from "../../_lib.js";
 import { ensureDatabase } from "../../_schema.js";
-import { sellerTokenStatus } from "../../_seller_token.js";
 import {COURSE_PLANS,coursePlan} from '../../_course_plans.js';
 import {MIN_COURSE_PRICE_SATANG,coursePriceError} from '../../_course_rules.js';
 const imageTypes = ["image/jpeg", "image/png", "image/webp"],
@@ -35,21 +34,6 @@ export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
   const auth = await requireUser(ctx);
   if (auth.error) return auth.error;
-  const profile = await ctx.env.DB.prepare(
-    `SELECT seller_bank_name bank_name,seller_account_name account_name,seller_account_number account_number,seller_payment_status status,seller_slip_api_key,seller_slip_auto_verify slip_auto_verify,vision5_test_account test_account,CASE WHEN TRIM(COALESCE(seller_payment_qr_url,''))<>'' THEN 1 ELSE 0 END has_payment_qr FROM users WHERE id=?`,
-  )
-    .bind(auth.user.id)
-    .first();
-  const tokenStatus = sellerTokenStatus(ctx.env, profile?.seller_slip_api_key);
-  if (profile) {
-    delete profile.seller_slip_api_key;
-    profile.slip_api_configured = tokenStatus.configured ? 1 : 0;
-    profile.slip_auto_verify = Number(profile.slip_auto_verify) === 1 ? 1 : 0;
-    profile.test_account = Number(profile.test_account) === 1 ? 1 : 0;
-    profile.has_payment_qr = Number(profile.has_payment_qr) === 1 ? 1 : 0;
-    profile.token_encryption_configured = tokenStatus.encryption_configured;
-    profile.token_requires_configuration = tokenStatus.requires_configuration;
-  }
   const credits = await ctx.env.DB.prepare(
     `SELECT cr.id credit_id,cr.active,cr.used_at,cr.granted_at,p.title license_title FROM course_right_credits cr JOIN products p ON p.id=cr.product_id WHERE cr.user_id=? ORDER BY cr.id DESC`,
   )
@@ -87,7 +71,6 @@ export async function onRequestGet(ctx) {
     assignedDrafts = items.filter((x) => x.license_entitlement_id !== null);
   return json(
     {
-      payment_profile: profile,
       licenses,
       courses: items,
       sales: saleItems,
