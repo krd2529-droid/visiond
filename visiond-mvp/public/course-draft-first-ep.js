@@ -11,11 +11,10 @@
   submit.textContent='บันทึกตะกร้าคอร์สพร้อม EP';
   countInput.inputMode='numeric';
   countInput.setAttribute('aria-describedby','episodeBuilderHelp');
-  rule.insertAdjacentHTML('afterend',`<fieldset class="draft-first-ep episode-builder"><legend>ขั้นต่อไป · อัปโหลดงาน EP ในตะกร้าคอร์ส</legend><div class="episode-builder-head"><p id="episodeBuilderHelp">ทุก EP อยู่ในตะกร้าคอร์สเดียวกัน ใส่ชื่อ คำอธิบาย คลิป และเอกสารประกอบได้เลย ก่อนบันทึกร่าง</p><div class="episode-builder-actions"><strong id="episodeBuilderProgress" aria-live="polite"></strong><button id="collapseEpisodeCards" type="button">ยุบทั้งหมด</button></div></div><div id="episodeCards" class="episode-cards"></div></fieldset>`);
+  rule.insertAdjacentHTML('afterend',`<fieldset class="draft-first-ep episode-builder"><legend>ขั้นต่อไป · อัปโหลดงาน EP ในตะกร้าคอร์ส</legend><div class="episode-builder-head"><p id="episodeBuilderHelp">ทุก EP อยู่ในตะกร้าคอร์สเดียวกัน ใส่ชื่อ คำอธิบาย คลิป และเอกสารประกอบได้เลย ก่อนบันทึกร่าง</p><strong id="episodeBuilderProgress" aria-live="polite"></strong></div><div id="episodeCards" class="episode-cards"></div></fieldset>`);
 
   const cards=document.querySelector('#episodeCards');
   const progress=document.querySelector('#episodeBuilderProgress');
-  const collapseButton=document.querySelector('#collapseEpisodeCards');
   let renderedCount=0,createdCourseId=0,createdLessons=[],uploadedEpisodes=new Set();
 
   const clampCount=value=>Math.min(200,Math.max(1,Math.trunc(Number(value)||1)));
@@ -38,10 +37,7 @@
   function makeCard(index){
     const card=document.createElement('article');
     card.className='episode-card';card.dataset.episode=index;
-    const panelId=`episode-card-panel-${index}`;
-    card.innerHTML=`<button class="episode-card-toggle" type="button" aria-expanded="${index===1?'true':'false'}" aria-controls="${panelId}"><span class="episode-card-title">EP.${String(index).padStart(2,'0')} — ยังไม่ตั้งชื่อ</span><span class="episode-card-state">ยังไม่กรอก</span><i aria-hidden="true">⌄</i></button><div id="${panelId}" class="episode-card-body" role="region" aria-label="ข้อมูล EP.${index}" ${index===1?'':'hidden'}><div class="draft-first-ep-grid"><label>ชื่อ EP <input data-field="title" maxlength="180" placeholder="เช่น เริ่มต้นใช้งาน" required></label><label>ความยาวโดยประมาณ (นาที)<input data-field="minutes" type="number" min="0" step="0.5" inputmode="decimal"></label><label class="span2">คำอธิบาย EP<textarea data-field="description" rows="3" maxlength="3000" placeholder="อธิบายสิ่งที่จะเรียนในตอนนี้"></textarea></label><label class="draft-upload-box">🎥 คลิป MP4/WEBM ไม่เกิน 200 MB<input data-field="video" type="file" accept="video/mp4,video/webm"></label><label class="draft-upload-box">📎 เอกสารหรือไฟล์ประกอบ<input data-field="documents" type="file" multiple></label></div></div>`;
-    const toggle=card.querySelector('.episode-card-toggle'),body=card.querySelector('.episode-card-body');
-    toggle.onclick=()=>{const open=body.hidden;body.hidden=!open;toggle.setAttribute('aria-expanded',String(open))};
+    card.innerHTML=`<div class="episode-card-head"><span class="episode-card-title">EP.${String(index).padStart(2,'0')} — ยังไม่ตั้งชื่อ</span><span class="episode-card-state">ยังไม่กรอก</span></div><div class="episode-card-body" role="group" aria-label="ข้อมูล EP.${index}"><div class="draft-first-ep-grid"><label>ชื่อ EP <input data-field="title" maxlength="180" placeholder="เช่น เริ่มต้นใช้งาน" required></label><label>ความยาวโดยประมาณ (นาที)<input data-field="minutes" type="number" min="0" step="0.5" inputmode="decimal"></label><label class="span2">คำอธิบาย EP<textarea data-field="description" rows="3" maxlength="3000" placeholder="อธิบายสิ่งที่จะเรียนในตอนนี้"></textarea></label><label class="draft-upload-box">🎥 คลิป MP4/WEBM ไม่เกิน 200 MB<input data-field="video" type="file" accept="video/mp4,video/webm"></label><label class="draft-upload-box">📎 เอกสารหรือไฟล์ประกอบ<input data-field="documents" type="file" multiple></label></div></div>`;
     card.querySelectorAll('input,textarea').forEach(input=>{input.addEventListener('input',()=>refreshCard(card));input.addEventListener('change',()=>refreshCard(card))});
     return card;
   }
@@ -58,12 +54,11 @@
   }
   countInput.addEventListener('change',()=>renderCount(countInput.value));
   countInput.addEventListener('blur',()=>renderCount(countInput.value));
-  collapseButton.onclick=()=>cards.querySelectorAll('.episode-card').forEach(card=>{card.querySelector('.episode-card-body').hidden=true;card.querySelector('.episode-card-toggle').setAttribute('aria-expanded','false')});
   renderCount(countInput.value,{confirmRemoval:false});
 
   function openInvalidField(){
     const invalid=form.querySelector(':invalid');if(!invalid)return false;
-    const card=invalid.closest('.episode-card');if(card){const body=card.querySelector('.episode-card-body'),toggle=card.querySelector('.episode-card-toggle');body.hidden=false;toggle.setAttribute('aria-expanded','true');sellerMessage.textContent=`กรุณาตรวจข้อมูล EP.${card.dataset.episode}`}
+    const card=invalid.closest('.episode-card');if(card)sellerMessage.textContent=`กรุณาตรวจข้อมูล EP.${card.dataset.episode}`;
     invalid.focus();invalid.reportValidity();return true;
   }
   function lockEpisodePlan(){
@@ -104,8 +99,8 @@
     renderCount(countInput.value,{confirmRemoval:false});
     const firstMissing=[...cards.children].find(card=>!card.querySelector('[data-field="title"]').value.trim());
     if(firstMissing){
-      const body=firstMissing.querySelector('.episode-card-body'),toggle=firstMissing.querySelector('.episode-card-toggle'),title=firstMissing.querySelector('[data-field="title"]');
-      body.hidden=false;toggle.setAttribute('aria-expanded','true');sellerMessage.textContent=`กรุณาใส่ชื่อ EP.${firstMissing.dataset.episode}`;title.focus();return;
+      const title=firstMissing.querySelector('[data-field="title"]');
+      sellerMessage.textContent=`กรุณาใส่ชื่อ EP.${firstMissing.dataset.episode}`;title.focus();return;
     }
     if(openInvalidField()||!form.reportValidity())return;
     const fileError=validateFiles();if(fileError){sellerMessage.textContent=fileError;return}
