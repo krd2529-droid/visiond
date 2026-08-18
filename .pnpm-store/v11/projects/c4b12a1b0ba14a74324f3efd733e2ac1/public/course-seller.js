@@ -29,12 +29,12 @@ const coursePlanPages = {
     },
   },
   legacyCoursePlan = { number: "เดิม", title: "ซื้อสิทธิ์เดิม (ปิดรับใหม่)" },
-  coursePlanByNumber = { "1": "partner", "2": "partner" },
+  coursePlanByNumber = { "1": "partner" },
   courseParams = new URLSearchParams(location.search),
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014296">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014297">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
