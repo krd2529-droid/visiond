@@ -391,6 +391,38 @@ td {
   color: #fff;
   outline: none;
 }
+.course-create-page .seller-shell {
+  max-width: 920px;
+}
+.course-create-page #createPanel {
+  margin-top: 24px;
+}
+.course-create-back {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-bottom: 18px;
+  color: #076a65;
+  font-weight: 900;
+  text-decoration: none;
+}
+.course-plan-page-head {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid #8edbd6;
+  border-radius: 16px;
+  background: #e9faf8;
+}
+.course-plan-page-head small {
+  color: #08756f;
+  font-weight: 900;
+}
+.course-plan-page-head h1 {
+  margin: 4px 0 8px;
+}
+.course-plan-page-head p {
+  margin: 0;
+}
 .slip-auto-toggle {
   display: flex !important;
   align-items: center;

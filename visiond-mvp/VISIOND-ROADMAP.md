@@ -632,3 +632,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.254 — Dedicated Create Button Per Course Plan (IMPLEMENTED · UI COMPLETE)
 - แบบ 1, 2 และ 3 ต้องมีปุ่ม `สร้างคอร์สแบบ 1/2/3` ของตัวเองภายในกล่อง
 - ซ่อนปุ่มสร้างคอร์สรวมด้านบน เหลือปุ่มเติมเครดิตแยก เพื่อไม่ให้ลูกค้าสับสนว่าจะสร้างด้วยแผนใด
+
+# v0.14.255 — Dedicated Course Creation Page Per Plan (IMPLEMENTED · FLOW COMPLETE)
+- ปุ่มสร้างคอร์สแบบ 1, 2 และ 3 ต้องพาเข้าหน้าสร้างเฉพาะของแผนนั้น ไม่เปิดฟอร์มร่วมในหน้าศูนย์
+- หน้าสร้างต้องล็อกแผน แสดงชื่อและเงื่อนไขเฉพาะ พร้อมปุ่มย้อนกลับ และเมื่อสร้างสำเร็จให้กลับไปจัดการคอร์สที่สร้าง

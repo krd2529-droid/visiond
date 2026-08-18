@@ -19,9 +19,30 @@ const esc = (v) =>
   money = (n) =>
     new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 let state;
+const coursePlanPages = {
+    rights: {
+      number: "1",
+      title: "ซื้อสิทธิ์ 499 บาท",
+      detail: "ใช้ 1 เครดิตต่อคอร์ส รับเงินเข้าบัญชีผู้สอนและรับยอดขาย 100%",
+      submit: "ใช้ 1 เครดิตและสร้างคอร์สแบบ 1",
+    },
+    free: {
+      number: "2",
+      title: "เริ่มขายฟรี",
+      detail: "สร้างได้สูงสุด 3 คอร์ส คอร์สละไม่เกิน 5 EP ผู้สอนตรวจและอนุมัติสลิปเอง",
+      submit: "สร้างคอร์สแบบ 2 ฟรี",
+    },
+    partner: {
+      number: "3",
+      title: "พาร์ตเนอร์ 50/50",
+      detail: "ไม่จำกัดคอร์สและ EP ระบบตรวจสลิปอัตโนมัติและแบ่งยอด VisionD 50% / ผู้สอน 50%",
+      submit: "สร้างคอร์สแบบ 3 พาร์ตเนอร์",
+    },
+  },
+  courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014254">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014255">',
 );
 document
   .querySelector(".seller-hero")
@@ -82,7 +103,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">สร้างคอร์สแบบ 1</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">สร้างคอร์สแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">สร้างคอร์สแบบ 3</button></article></div><p>เลือกปุ่มสร้างคอร์สของแต่ละแบบโดยตรง · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">สร้างคอร์สแบบ 1</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">สร้างคอร์สแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">สร้างคอร์สแบบ 3</button></article></div><p>แต่ละปุ่มจะเปิดหน้าสร้างเฉพาะของแบบนั้น · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
@@ -190,11 +211,34 @@ function render(data) {
   createCourseBasket.hidden = true;
 }
 function openCoursePlan(plan) {
-  const select = sellerCourseForm.elements.course_plan;
-  if (select && ["rights", "free", "partner"].includes(plan)) select.value = plan;
+  if (!coursePlanPages[plan]) return;
+  location.href = `/course-seller.html?create=${encodeURIComponent(plan)}`;
+}
+function enterCourseCreatePage(plan) {
+  const config = coursePlanPages[plan];
+  if (!config) return;
+  document.body.classList.add("course-create-page");
+  [...sellerShell.children].forEach((section) => {
+    section.hidden = section !== createPanel;
+  });
   createPanel.hidden = false;
-  createPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-  select?.focus({ preventScroll: true });
+  createPanel.insertAdjacentHTML(
+    "afterbegin",
+    `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header>`,
+  );
+  createPanel.classList.toggle("course-plan-legacy-form", plan === "rights");
+  createPanel.querySelector("h2").textContent = `กรอกข้อมูลคอร์สแบบ ${config.number}`;
+  createPanel.querySelector(":scope > p").textContent =
+    plan === "rights"
+      ? "ฟอร์มสร้างคอร์สเดิมถูกย้ายมาไว้ในแบบ 1 โดยเฉพาะ ระบบจะใช้ 1 เครดิตและสร้าง EP เริ่มต้นให้ 1 EP"
+      : plan === "free"
+        ? "หน้าสร้างแบบ 2 สำหรับเริ่มขายฟรีโดยเฉพาะ ไม่หักเครดิต จำกัด 3 คอร์สและคอร์สละไม่เกิน 5 EP"
+        : "หน้าสร้างแบบ 3 สำหรับพาร์ตเนอร์ 50/50 โดยเฉพาะ ไม่หักเครดิตและไม่จำกัดคอร์สหรือ EP";
+  const select = sellerCourseForm.elements.course_plan;
+  select.value = plan;
+  select.closest("label").hidden = true;
+  sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
+  document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
 }
 async function load() {
   const r = await fetch("/api/course-seller", { cache: "no-store" });
@@ -212,6 +256,10 @@ async function load() {
   const params = new URLSearchParams(location.search),
     id = Number(params.get("course_id")),
     flow = document.querySelector("#vision5SellerFlow");
+  if (coursePlanPages[courseCreateMode]) {
+    enterCourseCreatePage(courseCreateMode);
+    return;
+  }
   if (params.get("vision5") === "1" && flow && !flow.dataset.opened) {
     flow.dataset.opened = "1";
     flow.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -456,6 +504,10 @@ sellerCourseForm.onsubmit = async (e) => {
     sellerCourseForm.reset();
     clearSellerCover();
     createPanel.hidden = true;
+    if (coursePlanPages[courseCreateMode]) {
+      location.href = `/course-seller.html?course_id=${encodeURIComponent(d.id)}`;
+      return;
+    }
     await load();
     const course = state.courses.find((x) => Number(x.id) === Number(d.id));
     if (course) openLessons(course);
