@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014294">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014295">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -305,7 +305,6 @@ async function load() {
   const params = new URLSearchParams(location.search),
     requestedId = Number(params.get("course_id")),
     rememberedId = Number(sessionStorage.getItem("vd_active_course_draft_id")),
-    id = requestedId || rememberedId,
     flow = document.querySelector("#vision5SellerFlow");
   if (coursePlanPages[courseCreateMode]) {
     enterCourseCreatePage(courseCreateMode);
@@ -317,11 +316,22 @@ async function load() {
       createPanel.hidden = false;
     }
   }
-  if (id && !sellerLessonManager.dataset.autoOpened) {
-    const course = d.courses.find((x) => Number(x.id) === id);
-    if (!requestedId && course && !["draft", "changes_requested"].includes(course.review_status)) {
+  if (!sellerLessonManager.dataset.autoOpened) {
+    const editableStatuses = ["draft", "changes_requested"];
+    const requestedCourse = requestedId
+      ? d.courses.find((x) => Number(x.id) === requestedId)
+      : null;
+    const rememberedCourse = !requestedId && rememberedId
+      ? d.courses.find((x) =>
+          Number(x.id) === rememberedId && editableStatuses.includes(x.review_status),
+        )
+      : null;
+    const latestEditableCourse = !requestedId && !rememberedCourse
+      ? d.courses.find((x) => editableStatuses.includes(x.review_status))
+      : null;
+    const course = requestedCourse || rememberedCourse || latestEditableCourse;
+    if (rememberedId && !rememberedCourse && !requestedId) {
       sessionStorage.removeItem("vd_active_course_draft_id");
-      return;
     }
     if (course) {
       sessionStorage.setItem("vd_active_course_draft_id", String(course.id));
