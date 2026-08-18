@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014289">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014290">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -530,9 +530,23 @@ sellerCoverInput.onchange = () => {
 };
 changeSellerCover.onclick = () => sellerCoverInput.click();
 removeSellerCover.onclick = clearSellerCover;
+const minimumCoursePriceBaht = 499;
+for (const priceInput of document.querySelectorAll('input[name="price_baht"]')) {
+  priceInput.min = String(minimumCoursePriceBaht);
+  if (!priceInput.value || Number(priceInput.value) < minimumCoursePriceBaht)
+    priceInput.value = String(minimumCoursePriceBaht);
+  priceInput.addEventListener("change", () => {
+    if (!Number.isFinite(Number(priceInput.value)) || Number(priceInput.value) < minimumCoursePriceBaht) {
+      priceInput.value = String(minimumCoursePriceBaht);
+      priceInput.setCustomValidity("ราคาคอร์สขั้นต่ำ 499 บาท");
+      priceInput.reportValidity();
+      priceInput.setCustomValidity("");
+    }
+  });
+}
 sellerCourseForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (Number(sellerCourseForm.elements.price_baht.value) < 499) {
+  if (Number(sellerCourseForm.elements.price_baht.value) < minimumCoursePriceBaht) {
     sellerMessage.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
     return;
   }
@@ -633,7 +647,7 @@ sellerLessonForm.onsubmit = async (e) => {
 };
 publishForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (Number(publishForm.elements.price_baht.value) < 499) {
+  if (Number(publishForm.elements.price_baht.value) < minimumCoursePriceBaht) {
     publishMessage.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
     return;
   }

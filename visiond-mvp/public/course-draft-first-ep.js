@@ -38,7 +38,7 @@
   function makeCard(index){
     const card=document.createElement('article');
     card.className='episode-card';card.dataset.episode=index;
-    card.innerHTML=`<div class="episode-card-head"><span class="episode-card-title">EP.${String(index).padStart(2,'0')} — ยังไม่ตั้งชื่อ</span><span class="episode-card-state">ยังไม่กรอก</span></div><div class="episode-card-body" role="group" aria-label="ข้อมูล EP.${index}"><div class="draft-first-ep-grid"><label>ชื่อ EP <input data-field="title" maxlength="180" placeholder="เช่น เริ่มต้นใช้งาน" required></label><label>ความยาวโดยประมาณ (นาที)<input data-field="minutes" type="number" min="0" step="0.5" inputmode="decimal"></label><label class="span2">คำอธิบาย EP<textarea data-field="description" rows="3" maxlength="3000" placeholder="อธิบายสิ่งที่จะเรียนในตอนนี้"></textarea></label><label class="draft-upload-box">🎥 คลิป MP4/WEBM ไม่เกิน 200 MB<input data-field="video" type="file" accept="video/mp4,video/webm"></label><label class="draft-upload-box">📎 เอกสารหรือไฟล์ประกอบ<input data-field="documents" type="file" multiple></label></div></div>`;
+    card.innerHTML=`<div class="episode-card-head"><span class="episode-card-title">EP.${String(index).padStart(2,'0')} — ยังไม่ตั้งชื่อ</span><span class="episode-card-state">ยังไม่กรอก</span></div><div class="episode-card-body" role="group" aria-label="ข้อมูล EP.${index}"><div class="draft-first-ep-grid"><label>ชื่อ EP <input data-field="title" maxlength="180" placeholder="เช่น เริ่มต้นใช้งาน" required></label><label>ความยาวโดยประมาณ (นาที)<input data-field="minutes" type="number" min="0" step="0.5" inputmode="decimal"></label><label class="span2">คำอธิบาย EP<textarea data-field="description" rows="3" maxlength="3000" placeholder="อธิบายสิ่งที่จะเรียนในตอนนี้"></textarea></label><label class="draft-upload-box">🎥 คลิป MP4/WEBM สูงสุด 2 GB · แนะนำเตรียมเป็น 720p หรือ 480p<input data-field="video" type="file" accept="video/mp4,video/webm"></label><label>คุณภาพวิดีโอ<select data-field="video_quality"><option value="720">720p (แนะนำ)</option><option value="480">480p (ประหยัดพื้นที่)</option></select></label><label class="draft-upload-box">📎 เอกสารหรือไฟล์ประกอบ<input data-field="documents" type="file" multiple></label></div></div>`;
     card.querySelectorAll('input,textarea').forEach(input=>{input.addEventListener('input',()=>refreshCard(card));input.addEventListener('change',()=>refreshCard(card))});
     return card;
   }
@@ -79,7 +79,7 @@
   function validateFiles(){
     for(const card of cards.children){
       const position=card.dataset.episode,video=card.querySelector('[data-field="video"]').files?.[0],docs=[...card.querySelector('[data-field="documents"]').files||[]];
-      if(video&&(!['video/mp4','video/webm'].includes(video.type)||video.size>200*1024*1024))return `EP.${position}: คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 200 MB`;
+      if(video&&(!['video/mp4','video/webm'].includes(video.type)||video.size>2*1024*1024*1024))return `EP.${position}: คลิปต้องเป็น MP4 หรือ WEBM ขนาดไม่เกิน 2 GB`;
       if(docs.some(file=>file.size>200*1024*1024))return `EP.${position}: ไฟล์ประกอบแต่ละไฟล์ต้องไม่เกิน 200 MB`;
     }
     return '';
@@ -89,15 +89,31 @@
     if(!response.ok)throw new Error(data.error||'โหลดรายการ EP ไม่สำเร็จ');
     return data.items||[];
   }
+  async function uploadLargeVideo(courseId,lessonId,file,quality,position){
+    const initResponse=await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/init`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lesson_id:Number(lessonId),file_name:file.name,file_type:file.type,file_size:file.size,quality:Number(quality)})});
+    const init=await initResponse.json().catch(()=>({}));if(!initResponse.ok)throw new Error(init.error||`EP.${position}: เริ่มอัปโหลดคลิปไม่สำเร็จ`);
+    const parts=[];
+    try{
+      for(let offset=0,partNumber=1;offset<file.size;offset+=init.chunk_size,partNumber++){
+        const end=Math.min(file.size,offset+init.chunk_size),percent=Math.round((offset/file.size)*100);
+        sellerMessage.textContent=`กำลังอัปโหลดคลิป EP.${position} ${percent}% กรุณาอย่าปิดหน้านี้…`;
+        const partResponse=await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/part?key=${encodeURIComponent(init.key)}&upload_id=${encodeURIComponent(init.upload_id)}&part_number=${partNumber}`,{method:'PUT',body:file.slice(offset,end)}),part=await partResponse.json().catch(()=>({}));
+        if(!partResponse.ok)throw new Error(part.error||`EP.${position}: อัปโหลดส่วนที่ ${partNumber} ไม่สำเร็จ`);parts.push(part);
+      }
+      const completeResponse=await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/complete`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:init.key,upload_id:init.upload_id,file_size:file.size,parts})}),complete=await completeResponse.json().catch(()=>({}));
+      if(!completeResponse.ok)throw new Error(complete.error||`EP.${position}: รวมคลิปไม่สำเร็จ`);return complete;
+    }catch(error){await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/abort`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:init.key,upload_id:init.upload_id})}).catch(()=>{});throw error}
+  }
   async function uploadEpisode(courseId,lesson,card,index,total){
     const video=card.querySelector('[data-field="video"]').files?.[0],documents=[...card.querySelector('[data-field="documents"]').files||[]];
     if(!video&&!documents.length)return;
     const data=episodeData(card),payload=new FormData();
     payload.set('title',data.title);payload.set('description',data.description);payload.set('duration_seconds',String(data.duration_seconds));
-    if(video)payload.set('video',video);documents.forEach(file=>payload.append('documents',file));
-    sellerMessage.textContent=`กำลังอัปโหลด EP ${index}/${total} กรุณาอย่าปิดหน้านี้…`;
+    documents.forEach(file=>payload.append('documents',file));
+    sellerMessage.textContent=`กำลังบันทึก EP ${index}/${total} กรุณาอย่าปิดหน้านี้…`;
     const response=await fetch(`/api/course-seller/${courseId}/lessons/${lesson.id}`,{method:'PUT',body:payload}),result=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(`EP.${index}: ${result.error||'อัปโหลดไม่สำเร็จ'}`);
+    if(video)await uploadLargeVideo(courseId,lesson.id,video,card.querySelector('[data-field="video_quality"]').value,index);
     uploadedEpisodes.add(index);markUploaded(card);
   }
   form.onsubmit=async event=>{

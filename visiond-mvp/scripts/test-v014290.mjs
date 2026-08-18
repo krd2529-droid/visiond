@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.290');
+const draft=read('public/course-draft-first-ep.js');
+const sellerHtml=read('public/course-seller.html');
+const sellerJs=read('public/course-seller.js');
+for(const token of ['สูงสุด 2 GB','720p (แนะนำ)','480p (ประหยัดพื้นที่)','uploadLargeVideo','lesson-video-multipart/init','lesson-video-multipart/part','lesson-video-multipart/complete','lesson-video-multipart/abort'])assert.ok(draft.includes(token),`draft multipart contract: ${token}`);
+assert.ok(!draft.includes('คลิป MP4/WEBM ไม่เกิน 200 MB'),'draft flow must not advertise the retired 200 MB video limit');
+assert.match(draft,/video\.size>2\*1024\*1024\*1024/);
+assert.match(draft,/if\(video\)await uploadLargeVideo/);
+assert.equal((sellerHtml.match(/min="499"/g)||[]).length,2);
+assert.equal((sellerHtml.match(/value="499"/g)||[]).length,2);
+assert.equal((sellerHtml.match(/ราคาขายขั้นต่ำ 499 บาท/g)||[]).length,2);
+assert.match(sellerJs,/minimumCoursePriceBaht = 499/);
+assert.match(sellerJs,/priceInput\.addEventListener\("change"/);
+console.log('v0.14.290 draft-first large video multipart upload: PASS');
