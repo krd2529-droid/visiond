@@ -494,6 +494,76 @@ td {
 .course-plan-condition p {
   margin: 6px 0 0;
 }
+.course-rights-stepper {
+  display: grid;
+  grid-template-columns: repeat(7,minmax(0,1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.course-rights-stepper span {
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  align-content: center;
+  padding: 10px 7px;
+  border: 1px solid #8edbd6;
+  border-radius: 12px;
+  background: #effbf9;
+  color: #075f5b;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+.course-rights-stepper b {
+  width: 26px;
+  height: 26px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #087d77;
+  color: #fff;
+}
+.course-rights-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid #8edbd6;
+  border-radius: 14px;
+  background: #e9faf8;
+}
+.course-rights-section h2 { margin: 3px 0 7px; }
+.course-rights-section b { display:block; font-size: 26px; color:#076a65; }
+.course-create-page [data-step]::before {
+  content: "ขั้นที่ " attr(data-step);
+  display: block;
+  margin-bottom: 5px;
+  color: #087d77;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.course-rights-readiness ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+.course-rights-readiness li {
+  padding: 12px 14px;
+  border: 1px solid #cce5e3;
+  border-radius: 10px;
+  background: #f7fffe;
+}
+@media (max-width:700px) {
+  .course-rights-stepper { grid-template-columns: 1fr 1fr; }
+  .course-rights-section { align-items:stretch; flex-direction:column; }
+  .course-rights-readiness ul { grid-template-columns:1fr; }
+}
 .course-create-page #paymentProfilePanel,
 .course-create-page #slipApiPanel {
   margin: 0 0 20px;

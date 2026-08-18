@@ -42,7 +42,7 @@ export async function onRequestGet(ctx) {
       FROM lesson_state
       WHERE completed=0
     )
-    SELECT c.id,c.subtitle,c.teacher_name,c.total_minutes,c.course_type,
+    SELECT c.id,c.subtitle,c.teacher_name,c.total_minutes,c.course_type,c.course_plan,
       c.course_origin,c.platform_tags,c.learner_level,c.expected_episodes,
       c.active,c.review_status,p.status product_status,p.id product_id,p.slug,
       p.title,p.short_description,p.description,p.price,p.cover_url,

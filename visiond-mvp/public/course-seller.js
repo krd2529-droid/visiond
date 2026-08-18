@@ -47,7 +47,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014274">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014275">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -238,18 +238,27 @@ function enterCourseCreatePage(plan) {
   const config = coursePlanPages[plan];
   if (!config) return;
   document.body.classList.add("course-create-page");
+  const planPanels = new Set([
+    createPanel,
+    sellerLessonManager,
+    paymentProfilePanel,
+    slipApiPanel,
+    publishPanel,
+  ]);
   [...sellerShell.children].forEach((section) => {
-    section.hidden = section !== createPanel;
+    if (!planPanels.has(section)) section.remove();
   });
   createPanel.hidden = false;
-  createPanel.after(paymentProfilePanel,slipApiPanel,sellerLessonManager,publishPanel);
+  createPanel.after(sellerLessonManager,paymentProfilePanel,slipApiPanel,publishPanel);
   paymentProfilePanel.hidden=plan!=="rights";
   slipApiPanel.hidden=plan!=="rights";
   const credit=Number(state?.credit_balance)||0;
   if (!createPanel.querySelector("#coursePlanFlow")) {
     createPanel.insertAdjacentHTML(
       "afterbegin",
-      `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header>${plan==="rights"?'<section id="coursePlanCreditGuard" class="course-credit-guard"><small>เครดิตสำหรับสร้างคอร์สแบบ 1</small><b></b><span></span></section>':""}<div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>เริ่มสร้างคอร์สแบบ ${config.number}</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อเครดิต</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
+      plan === "rights"
+        ? `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ 1</small><h1>สร้างคอร์สแบบ 1 · ซื้อสิทธิ์ 499 บาท</h1><p>ผู้สอนรับยอดขาย 100% · เงินเข้าบัญชีผู้สอนโดยตรง · 1 เครดิตต่อ 1 คอร์ส</p></header><section id="coursePlanFlow" class="course-plan-flow course-rights-stepper" aria-label="7 ขั้นตอนสร้างคอร์สแบบ 1">${["ตรวจเครดิต","ข้อมูลคอร์ส","เนื้อหา EP","ตั้งค่ารับเงิน","ตรวจสลิป","ตรวจความพร้อม","ส่งตรวจ"].map((step,index)=>`<span><b>${index+1}</b>${step}</span>`).join("")}</section><section id="coursePlanCreditGuard" class="course-credit-guard course-rights-section"><div><small>ขั้นที่ 1</small><h2>ตรวจเครดิตก่อนสร้าง</h2><b></b><span></span></div><a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์ 499 บาท</a></section>`
+        : `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><section id="coursePlanFlow" class="course-plan-flow"><h2>ขั้นตอนแบบ ${config.number}</h2></section>`,
     );
   }
   const creditGuard = createPanel.querySelector("#coursePlanCreditGuard");
@@ -277,16 +286,22 @@ function enterCourseCreatePage(plan) {
       : plan === "free"
         ? "หน้าสร้างแบบ 2 สำหรับเริ่มขายฟรีโดยเฉพาะ ไม่หักเครดิต จำกัด 3 คอร์สและคอร์สละไม่เกิน 5 EP"
         : "หน้าสร้างแบบ 3 สำหรับพาร์ตเนอร์ 50/50 โดยเฉพาะ ไม่หักเครดิตและไม่จำกัดคอร์สหรือ EP";
-  const select = sellerCourseForm.elements.course_plan;
-  select.replaceChildren(new Option(`แบบ ${config.number} · ${config.title}`, plan, true, true));
-  select.closest("label").hidden = true;
+  sellerCourseForm.elements.course_plan.value = plan;
   sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
   sellerCourseForm.querySelector('button[type="submit"]').disabled=plan==="rights"&&credit<1;
-  const startCourse = createPanel.querySelector("[data-start-course]");
-  if (startCourse) startCourse.onclick = () => {
-    formHeading.scrollIntoView({ behavior: "smooth", block: "start" });
-    sellerCourseForm.elements.title.focus({ preventScroll: true });
-  };
+  if (plan === "rights") {
+    createPanel.dataset.step = "2";
+    sellerLessonManager.dataset.step = "3";
+    paymentProfilePanel.dataset.step = "4";
+    slipApiPanel.dataset.step = "5";
+    publishPanel.dataset.step = "7";
+    if (!document.querySelector("#courseReadinessPanel")) {
+      publishPanel.insertAdjacentHTML(
+        "beforebegin",
+        `<section id="courseReadinessPanel" class="seller-card course-rights-readiness" data-step="6"><small>ขั้นที่ 6</small><h2>ตรวจความพร้อมก่อนส่ง</h2><ul><li data-ready="course">ข้อมูลคอร์สและรูปปก</li><li data-ready="lesson">มี EP ที่มีวิดีโอหรือเอกสารอย่างน้อย 1 EP</li><li data-ready="payment">บัญชีรับเงินของผู้สอน</li><li data-ready="slip">เลือกตรวจสลิปเองหรือ EasySlip</li></ul><p>ปุ่มส่งตรวจจะใช้ได้เมื่อรายการจำเป็นครบ</p></section>`,
+      );
+    }
+  }
   document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
 }
 async function load() {
