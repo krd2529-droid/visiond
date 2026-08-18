@@ -27,27 +27,20 @@ const coursePlanPages = {
       submit: "ใช้ 1 เครดิตและสร้างคอร์สแบบ 1",
       steps: ["ซื้อสิทธิ์และมีเครดิต", "สร้างคอร์สและเพิ่ม EP พร้อมเอกสาร", "ส่งคอร์สให้ Boss ตรวจ"],
     },
-    free: {
-      number: "2",
-      title: "เริ่มขายฟรี",
-      detail: "สร้างได้สูงสุด 3 คอร์ส คอร์สละไม่เกิน 5 EP ผู้สอนตรวจและอนุมัติสลิปเอง",
-      submit: "สร้างคอร์สแบบ 2 ฟรี",
-      steps: ["ตรวจสิทธิ์โควตาขายฟรี", "สร้างคอร์สและเพิ่มไม่เกิน 5 EP", "ส่งคอร์สให้ Boss ตรวจ"],
-    },
     partner: {
-      number: "3",
+      number: "2",
       title: "พาร์ตเนอร์ 50/50",
       detail: "ไม่จำกัดคอร์สและ EP ระบบตรวจสลิปอัตโนมัติและแบ่งยอด VisionD 50% / ผู้สอน 50%",
-      submit: "สร้างคอร์สแบบ 3 พาร์ตเนอร์",
+      submit: "สร้างคอร์สแบบ 2 พาร์ตเนอร์",
       steps: ["ตรวจเงื่อนไขพาร์ตเนอร์ 50/50", "VisionD รับเงินและตรวจสลิปอัตโนมัติ", "สร้างคอร์ส · เพิ่ม EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
     },
   },
-  coursePlanByNumber = { "1": "rights", "2": "free", "3": "partner" },
+  coursePlanByNumber = { "1": "rights", "2": "partner" },
   courseParams = new URLSearchParams(location.search),
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014276">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014277">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -118,7 +111,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">เข้าแบบ 2 · ผู้สอนรับ 100%</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 3 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1, 2 หรือ 3 เพื่อดูขั้นตอนและเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1 หรือ 2 เพื่อดูขั้นตอนและเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
@@ -288,18 +281,14 @@ function enterCourseCreatePage(plan) {
   condition.className = "course-plan-condition";
   condition.innerHTML = plan === "rights"
     ? "<b>เงื่อนไขแบบ 1</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง ผู้สอนเลือกตรวจเองหรือใช้ EasySlip API ของผู้สอนได้</p>"
-    : plan === "free"
-      ? "<b>เงื่อนไขแบบ 2</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง และผู้สอนต้องตรวจพร้อมอนุมัติสลิปเอง</p>"
-      : "<b>เงื่อนไขแบบ 3</b><p>ลูกค้าชำระเข้าบัญชีบริษัท VisionD ระบบ VisionD ตรวจสลิปอัตโนมัติและแบ่งรายได้ 50/50</p>";
+    : "<b>เงื่อนไขแบบ 2</b><p>ลูกค้าชำระเข้าบัญชีบริษัท VisionD ระบบ VisionD ตรวจสลิปอัตโนมัติและแบ่งรายได้ 50/50</p>";
   if (!condition.isConnected) createPanel.insertBefore(condition, formHeading);
   createPanel.classList.toggle("course-plan-legacy-form", plan === "rights");
   formHeading.textContent = `กรอกข้อมูลคอร์สแบบ ${config.number}`;
   createPanel.querySelector(":scope > p").textContent =
     plan === "rights"
       ? "ฟอร์มสร้างคอร์สเดิมถูกย้ายมาไว้ในแบบ 1 โดยเฉพาะ ระบบจะใช้ 1 เครดิตและสร้าง EP เริ่มต้นให้ 1 EP"
-      : plan === "free"
-        ? "หน้าสร้างแบบ 2 สำหรับเริ่มขายฟรีโดยเฉพาะ ไม่หักเครดิต จำกัด 3 คอร์สและคอร์สละไม่เกิน 5 EP"
-        : "หน้าสร้างแบบ 3 สำหรับพาร์ตเนอร์ 50/50 โดยเฉพาะ ไม่หักเครดิตและไม่จำกัดคอร์สหรือ EP";
+      : "หน้าสร้างแบบ 2 สำหรับพาร์ตเนอร์ 50/50 โดยเฉพาะ ไม่หักเครดิตและไม่จำกัดคอร์สหรือ EP";
   sellerCourseForm.elements.course_plan.value = plan;
   sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
   sellerCourseForm.querySelector('button[type="submit"]').disabled=plan==="rights"&&credit<1;
@@ -609,9 +598,7 @@ sellerCourseForm.onsubmit = async (e) => {
   const selectedPlan = sellerCourseForm.elements.course_plan.value,
     confirmation = selectedPlan === "rights"
       ? "ยืนยันสร้างแบบ 1 ซื้อสิทธิ์ และใช้ 1 เครดิตหรือไม่"
-      : selectedPlan === "free"
-        ? "ยืนยันสร้างแบบ 2 เริ่มขายฟรีหรือไม่"
-        : "ยืนยันสร้างแบบ 3 พาร์ตเนอร์ 50/50 หรือไม่";
+      : "ยืนยันสร้างแบบ 2 พาร์ตเนอร์ 50/50 หรือไม่";
   if (!confirm(confirmation)) return;
   const b = e.submitter;
   b.disabled = true;

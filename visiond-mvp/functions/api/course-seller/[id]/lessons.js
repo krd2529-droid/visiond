@@ -30,7 +30,6 @@ export async function onRequestPost(ctx){
   if(documents.length>20)return json({error:'แนบไฟล์ประกอบได้ไม่เกิน 20 ไฟล์ต่อครั้ง'},400);
   if(documents.some(file=>file.size>200*1024*1024))return json({error:'ไฟล์ประกอบแต่ละไฟล์ต้องไม่เกิน 200 MB'},400);
   const placeholder=await ctx.env.DB.prepare(`SELECT id,sort_order FROM course_lessons WHERE course_id=? AND NOT ${readySql} AND (upload_claim IS NULL OR upload_claimed_at<datetime('now','-2 hours')) ORDER BY sort_order,id LIMIT 1`).bind(course.id).first(),claim=placeholder?crypto.randomUUID():null;
-  if(!placeholder&&course.course_plan==='free'){const count=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM course_lessons WHERE course_id=?').bind(course.id).first();if(Number(count?.count)>=5)return json({error:'รูปแบบ 2 เริ่มขายฟรี เพิ่มได้ไม่เกิน 5 EP ต่อคอร์ส'},409)}
   if(placeholder){const acquired=await ctx.env.DB.prepare(`UPDATE course_lessons SET upload_claim=?,upload_claimed_at=CURRENT_TIMESTAMP WHERE id=? AND course_id=? AND NOT ${readySql} AND (upload_claim IS NULL OR upload_claimed_at<datetime('now','-2 hours'))`).bind(claim,placeholder.id,course.id).run();if(!acquired.meta.changes)return json({error:'มีการอัปโหลด EP นี้พร้อมกัน กรุณาลองอีกครั้ง'},409)}
   let videoKey=null,uploaded=[],createdLessonId=null;
   try{

@@ -2,7 +2,7 @@
   const root = document.querySelector("#courseDetail"), params = new URLSearchParams(location.search);
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
   const money = (value) => new Intl.NumberFormat("th-TH").format((Number(value) || 0) / 100) + " บาท";
-  const planLabel = (course) => course.course_plan === "free" ? "แบบ 2 · เริ่มขายฟรี" : course.course_plan === "partner" ? "แบบ 3 · พาร์ตเนอร์ 50/50" : "แบบ 1 · ผู้สอนรับ 100%";
+  const planLabel = (course) => course.course_plan === "partner" ? "แบบ 2 · พาร์ตเนอร์ 50/50" : "แบบ 1 · ผู้สอนรับ 100%";
   const tags = (course) => { try { return JSON.parse(course.platform_tags || "[]"); } catch { return []; } };
   function addCart(course) {
     let cart = []; try { cart = JSON.parse(localStorage.getItem("vd_cart") || "[]"); } catch {}

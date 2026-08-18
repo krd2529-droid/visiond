@@ -100,7 +100,6 @@ export async function onRequestGet(ctx) {
       course_draft_count: assignedDrafts.length,
       credit_balance: licenses.filter((x) => x.available).length,
       plans:Object.values(COURSE_PLANS).sort((a,b)=>a.number-b.number),
-      free_course_count:items.filter(x=>x.course_plan==='free').length,
     },
     200,
     { "cache-control": "no-store" },
@@ -111,7 +110,7 @@ export async function onRequestPost(ctx) {
   const auth = await requireUser(ctx);
   if (auth.error) return auth.error;
   const form=await ctx.request.formData(),selectedPlan=coursePlan(form.get('course_plan'));
-  if(!selectedPlan)return json({error:'กรุณาเลือกรูปแบบเปิดคอร์ส 1, 2 หรือ 3'},400);
+  if(!selectedPlan||!['rights','partner'].includes(String(form.get('course_plan'))))return json({error:'กรุณาเลือกรูปแบบเปิดคอร์ส 1 หรือ 2'},400);
   const credit = await ctx.env.DB.prepare(
     "SELECT id FROM course_right_credits WHERE user_id=? AND active=1 AND used_course_id IS NULL ORDER BY id LIMIT 1",
   )
@@ -126,7 +125,6 @@ export async function onRequestPost(ctx) {
       },
       409,
     );
-  if(selectedPlan.maxCourses){const count=await ctx.env.DB.prepare("SELECT COUNT(*) count FROM courses c JOIN products p ON p.id=c.product_id WHERE c.owner_user_id=? AND c.course_plan=? AND p.deleted_at IS NULL").bind(auth.user.id,selectedPlan.code).first();if(Number(count?.count)>=selectedPlan.maxCourses)return json({error:`รูปแบบ 2 เริ่มขายฟรี เปิดได้สูงสุด ${selectedPlan.maxCourses} คอร์ส`},409)}
   const title = String(form.get("title") || "").trim(),
     teacher = String(form.get("teacher_name") || "").trim(),
     description = String(form.get("description") || "").trim(),
