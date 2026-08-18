@@ -11,26 +11,35 @@
   const lines = (text,maxWidth,font,maxLines=3) => {ctx.font=font;const words=String(text).trim().split(/\s+/),out=[];let line="";for(const word of words){const next=line?`${line} ${word}`:word;if(ctx.measureText(next).width<=maxWidth)line=next;else{if(line)out.push(line);line=word;if(out.length===maxLines-1)break}}if(line&&out.length<maxLines)out.push(line);return out};
   function background(kind){
     const g=ctx.createLinearGradient(0,0,1000,1400);
-    if(kind==="kids"){g.addColorStop(0,"#fff3a9");g.addColorStop(1,"#ff9b65")}else if(kind==="elegant"){g.addColorStop(0,"#101922");g.addColorStop(1,"#725471")}else{g.addColorStop(0,"#063f3c");g.addColorStop(1,"#16bbb3")}
+    if(kind==="kids"){g.addColorStop(0,"#fff8df");g.addColorStop(1,"#ffc9a2")}else if(kind==="elegant"){g.addColorStop(0,"#101b2c");g.addColorStop(1,"#263a4c")}else{g.addColorStop(0,"#f8f1e5");g.addColorStop(1,"#e8f5f1")}
     ctx.fillStyle=g;ctx.fillRect(0,0,1000,1400);
-    ctx.globalAlpha=.18;ctx.fillStyle="#fff";
-    if(kind==="kids")for(const [x,y,r] of [[90,120,48],[890,190,70],[120,1210,66],[860,1160,42]]){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
-    else for(let i=-300;i<1500;i+=150){ctx.save();ctx.translate(i,700);ctx.rotate(-.55);ctx.fillRect(-18,-900,36,1800);ctx.restore()}
-    ctx.globalAlpha=1;
+    if(kind==="modern"){
+      ctx.fillStyle="#075f5a";ctx.fillRect(0,0,1000,28);ctx.fillRect(72,90,12,205);ctx.fillStyle="#d8a94f";ctx.fillRect(84,90,82,12);
+      ctx.globalAlpha=.08;ctx.fillStyle="#075f5a";for(let y=40;y<1400;y+=36)ctx.fillRect(0,y,1000,1);ctx.globalAlpha=1;
+    }else if(kind==="kids"){
+      for(const [x,y,r,c] of [[75,110,82,"#47c7bc"],[910,120,110,"#ff8d85"],[90,1250,120,"#ffc83d"],[930,1240,85,"#6e8bff"]]){ctx.fillStyle=c;ctx.globalAlpha=.82;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+    }else{
+      ctx.strokeStyle="#d5b46c";ctx.lineWidth=3;ctx.strokeRect(42,42,916,1316);ctx.strokeRect(57,57,886,1286);ctx.fillStyle="#d5b46c";ctx.fillRect(410,82,180,3);
+    }
   }
-  function drawImage(){
+  function drawImage(kind){
     if(!productImage)return;
-    const box={x:105,y:390,w:790,h:760},scale=Math.min(box.w/productImage.width,box.h/productImage.height),w=productImage.width*scale,h=productImage.height*scale;
-    ctx.save();rounded(box.x,box.y,box.w,box.h,38);ctx.clip();ctx.fillStyle="#fff";ctx.fillRect(box.x,box.y,box.w,box.h);ctx.drawImage(productImage,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);ctx.restore();
-    ctx.strokeStyle=template()==="kids"?"#743510":"#ffffff";ctx.lineWidth=10;rounded(box.x,box.y,box.w,box.h,38);ctx.stroke();
+    const box=kind==="modern"?{x:86,y:440,w:828,h:710,r:8}:kind==="kids"?{x:105,y:420,w:790,h:740,r:56}:{x:120,y:420,w:760,h:720,r:4};
+    const scale=Math.min((box.w-36)/productImage.width,(box.h-36)/productImage.height),w=productImage.width*scale,h=productImage.height*scale;
+    ctx.save();ctx.shadowColor="#001f1d55";ctx.shadowBlur=kind==="kids"?30:42;ctx.shadowOffsetY=18;rounded(box.x,box.y,box.w,box.h,box.r);ctx.fillStyle="#fff";ctx.fill();ctx.restore();
+    ctx.save();rounded(box.x+18,box.y+18,box.w-36,box.h-36,Math.max(2,box.r-10));ctx.clip();ctx.fillStyle="#fff";ctx.fillRect(box.x,box.y,box.w,box.h);ctx.drawImage(productImage,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);ctx.restore();
+    ctx.strokeStyle=kind==="modern"?"#075f5a":kind==="kids"?"#fff":"#d5b46c";ctx.lineWidth=kind==="kids"?14:5;rounded(box.x,box.y,box.w,box.h,box.r);ctx.stroke();
+    if(kind==="kids"){ctx.fillStyle="#ff5c77";rounded(690,1080,165,64,32);ctx.fill();ctx.fillStyle="#fff";ctx.font='800 25px "Leelawadee UI",Tahoma,sans-serif';ctx.fillText("สนุกเรียนรู้",772,1113)}
   }
   function render(){
-    const kind=template(),title=titleInput.value.trim();background(kind);drawImage();
-    ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=kind==="kids"?"#71320d":"#fff";
-    const fontFamily=kind==="kids"?'Tahoma, sans-serif':kind==="elegant"?'Georgia, Tahoma, serif':'Tahoma, sans-serif';
-    let size=82,wrapped=[];do{wrapped=lines(title||"ชื่อปก PDF",850,`900 ${size}px ${fontFamily}`,3);if(wrapped.every(x=>ctx.measureText(x).width<=850))break;size-=4}while(size>46);
-    ctx.font=`900 ${size}px ${fontFamily}`;const start=205-(wrapped.length-1)*(size*.6);wrapped.forEach((line,index)=>ctx.fillText(line,500,start+index*size*1.18));
-    ctx.font=`700 27px Tahoma, sans-serif`;ctx.globalAlpha=.9;ctx.fillText("VISIOND DIGITAL PDF",500,1300);ctx.globalAlpha=1;
+    const kind=template(),title=titleInput.value.trim();background(kind);
+    ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=kind==="modern"?"#073f3d":kind==="kids"?"#3d315b":"#f7f0df";
+    const fontFamily=kind==="elegant"?'"Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif':'"Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif';
+    let size=kind==="modern"?72:kind==="kids"?78:68,wrapped=[];do{wrapped=lines(title||"ชื่อปก PDF",kind==="elegant"?760:820,`${kind==="elegant"?600:800} ${size}px ${fontFamily}`,3);if(wrapped.every(x=>ctx.measureText(x).width<=(kind==="elegant"?760:820)))break;size-=4}while(size>42);
+    ctx.font=`${kind==="elegant"?600:800} ${size}px ${fontFamily}`;const centerY=kind==="modern"?245:kind==="kids"?245:230,start=centerY-(wrapped.length-1)*(size*.58);wrapped.forEach((line,index)=>ctx.fillText(line,500,start+index*size*1.18));
+    if(kind==="modern"){ctx.fillStyle="#d8a94f";ctx.fillRect(430,348,140,5)}else if(kind==="kids"){ctx.strokeStyle="#3d315b";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(390,350);ctx.quadraticCurveTo(500,375,610,350);ctx.stroke()}else{ctx.fillStyle="#d5b46c";ctx.fillRect(455,340,90,3)}
+    drawImage(kind);
+    ctx.fillStyle=kind==="modern"?"#075f5a":kind==="kids"?"#3d315b":"#d5b46c";ctx.font=`700 23px ${fontFamily}`;ctx.letterSpacing="3px";ctx.fillText("VISIOND  •  DIGITAL PDF",500,1285);ctx.letterSpacing="0px";
     download.disabled=!(title&&productImage);message.textContent=download.disabled?"ใส่ชื่อและเลือกรูปสินค้าเพื่อดาวน์โหลด":"พร้อมดาวน์โหลดปก PNG ขนาด 1000 × 1400 px";
   }
   button.addEventListener("click",()=>{dialog.showModal();render();requestAnimationFrame(()=>titleInput.focus())});

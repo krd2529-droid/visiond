@@ -668,6 +668,11 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - รับเฉพาะรูปสินค้า JPG/PNG/WEBP 1 รูปไม่เกิน 8 MB พร้อมชื่อปก และมีกรอบมาตรฐานให้เลือก
 - ระบบจัดฟอนต์และขนาดชื่อให้สัมพันธ์กับกรอบ แสดงตัวอย่างทันที และดาวน์โหลด PNG 1000 × 1400 px ได้โดยไม่ส่งรูปออกจากเบราว์เซอร์
 
+# v0.14.265 — PDF Cover Visual Refresh (IMPLEMENTED · UI)
+
+- ปรับฟอนต์หัวเรื่องปก PDF ให้มีน้ำหนักและช่องไฟเหมาะกับภาษาไทย
+- ออกแบบกรอบ Modern, Kids และ Elegant ใหม่ให้มีองค์ประกอบและมิติแตกต่างกันจริง
+
 # v0.14.264 — Course Plan Payment Rules (IMPLEMENTED · CLARIFICATION)
 
 - รวมหน้าตั้งค่ารับเงินและตรวจสลิปไว้ใน Course Center แต่ไม่รวมกติกาธุรกิจเข้าด้วยกัน

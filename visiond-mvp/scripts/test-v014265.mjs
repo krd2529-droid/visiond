@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=file=>fs.readFileSync(file,"utf8"),ui=read("public/admin-pdf-cover.js");
+assert.equal(read("VERSION.txt").trim(),"v0.14.265");
+assert.match(ui,/"Leelawadee UI","Noto Sans Thai",Tahoma/);
+assert.match(ui,/kind==="modern"\?\{x:86,y:440,w:828,h:710,r:8\}/);
+assert.match(ui,/kind==="kids"\?\{x:105,y:420,w:790,h:740,r:56\}/);
+assert.match(ui,/"#d5b46c"/);
+assert.match(ui,/VISIOND  •  DIGITAL PDF/);
+console.log("v0.14.265 redesigned PDF cover typography and frames: PASS");
