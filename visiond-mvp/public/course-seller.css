@@ -358,17 +358,34 @@ td {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.vision5-credit-grid > div {
+.vision5-credit-grid > button {
   display: grid;
   gap: 4px;
   padding: 16px;
   border: 1px solid #8edbd6;
   border-radius: 14px;
   background: #e9faf8;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.vision5-credit-grid > button:hover,
+.vision5-credit-grid > button:focus-visible {
+  border-color: #08aaa4;
+  box-shadow: 0 0 0 4px rgba(8,170,164,.15);
+  transform: translateY(-2px);
+  outline: none;
 }
 .vision5-credit-grid b {
   font-size: 24px;
   color: #076a65;
+}
+.vision5-credit-grid span {
+  margin-top: 8px;
+  color: #08756f;
+  font-weight: 900;
 }
 .slip-auto-toggle {
   display: flex !important;

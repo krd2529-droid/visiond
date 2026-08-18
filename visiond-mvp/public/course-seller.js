@@ -21,7 +21,7 @@ const esc = (v) =>
 let state;
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014252">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014253">',
 );
 document
   .querySelector(".seller-hero")
@@ -82,7 +82,10 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><div><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b></div><div><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b></div><div><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b></div></div><p>เลือกแผนก่อนสร้าง · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><button type="button" data-course-plan="rights"><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><span>เลือกแบบ 1</span></button><button type="button" data-course-plan="free"><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><span>เลือกแบบ 2</span></button><button type="button" data-course-plan="partner"><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><span>เลือกแบบ 3</span></button></div><p>กดเลือกแบบ 1, 2 หรือ 3 เพื่อเปิดฟอร์มสร้างคอร์ส · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
+  licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
+    button.onclick = () => openCoursePlan(button.dataset.coursePlan);
+  });
   if (profile.status === "unset") {
     paymentProfileStatus.innerHTML =
       "<p>ยังไม่ได้ตั้งค่าบัญชีรับเงิน ตั้งภายหลังเมื่อต้องการเปิดตะกร้าได้</p>";
@@ -184,10 +187,14 @@ function render(data) {
     .forEach(
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );
-  createCourseBasket.onclick = () => {
-    createPanel.hidden = false;
-    createPanel.scrollIntoView({ behavior: "smooth" });
-  };
+  createCourseBasket.onclick = () => openCoursePlan("rights");
+}
+function openCoursePlan(plan) {
+  const select = sellerCourseForm.elements.course_plan;
+  if (select && ["rights", "free", "partner"].includes(plan)) select.value = plan;
+  createPanel.hidden = false;
+  createPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  select?.focus({ preventScroll: true });
 }
 async function load() {
   const r = await fetch("/api/course-seller", { cache: "no-store" });
@@ -429,7 +436,13 @@ changeSellerCover.onclick = () => sellerCoverInput.click();
 removeSellerCover.onclick = clearSellerCover;
 sellerCourseForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (!confirm("ยืนยันใช้ 1 เครดิตเพื่อสร้างตะกร้าคอร์สนี้หรือไม่")) return;
+  const selectedPlan = sellerCourseForm.elements.course_plan.value,
+    confirmation = selectedPlan === "rights"
+      ? "ยืนยันสร้างแบบ 1 ซื้อสิทธิ์ และใช้ 1 เครดิตหรือไม่"
+      : selectedPlan === "free"
+        ? "ยืนยันสร้างแบบ 2 เริ่มขายฟรีหรือไม่"
+        : "ยืนยันสร้างแบบ 3 พาร์ตเนอร์ 50/50 หรือไม่";
+  if (!confirm(confirmation)) return;
   const b = e.submitter;
   b.disabled = true;
   const r = await fetch("/api/course-seller", {
