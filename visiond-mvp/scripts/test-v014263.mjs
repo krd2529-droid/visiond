@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+const read = path => readFile(new URL("../" + path, import.meta.url), "utf8");
+const [version,index,admin,center,ui,css] = await Promise.all(["VERSION.txt","public/index.html","public/admin.html","public/course-center.html","public/course-seller.js","public/course-seller.css"].map(read));
+assert.equal(version.trim(),"v0.14.263");assert.match(index,/WEB v0\.14\.263/);assert.match(admin,/ADMIN v0\.14\.263/);
+assert.match(center,/id="paymentProfilePanel"[\s\S]*ตั้งค่ารับเงินส่วนกลาง/);
+assert.match(center,/id="slipApiPanel"[\s\S]*ตั้งค่าการตรวจสลิปส่วนกลาง/);
+assert.match(center,/ตั้งค่าครั้งเดียวที่ศูนย์จัดการคอร์ส/);
+assert.doesNotMatch(ui,/createPanel\.insertBefore\(paymentProfilePanel/);
+assert.doesNotMatch(ui,/createPanel\.insertBefore\(slipApiPanel/);
+assert.match(ui,/location\.href = "\/course-center#paymentProfilePanel"/);
+assert.match(ui,/location\.href = "\/course-center#slipApiPanel"/);
+assert.match(css,/\.course-shared-setting-note/);
+console.log("v0.14.263 shared course payment and slip settings: PASS");

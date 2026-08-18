@@ -25,14 +25,14 @@ const coursePlanPages = {
       title: "ซื้อสิทธิ์ 499 บาท",
       detail: "ใช้ 1 เครดิตต่อคอร์ส รับเงินเข้าบัญชีผู้สอนและรับยอดขาย 100%",
       submit: "ใช้ 1 เครดิตและสร้างคอร์สแบบ 1",
-      steps: ["ซื้อสิทธิ์และมีเครดิต", "ตั้งค่าบัญชีรับเงินและการตรวจสลิป", "สร้างคอร์ส · เพิ่ม EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
+      steps: ["ซื้อสิทธิ์และมีเครดิต", "สร้างคอร์สและเพิ่ม EP พร้อมเอกสาร", "ส่งคอร์สให้ Boss ตรวจ"],
     },
     free: {
       number: "2",
       title: "เริ่มขายฟรี",
       detail: "สร้างได้สูงสุด 3 คอร์ส คอร์สละไม่เกิน 5 EP ผู้สอนตรวจและอนุมัติสลิปเอง",
       submit: "สร้างคอร์สแบบ 2 ฟรี",
-      steps: ["ตรวจสิทธิ์โควตาขายฟรี", "ตั้งค่าบัญชีรับเงินและตรวจสลิปเอง", "สร้างคอร์ส · เพิ่มไม่เกิน 5 EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
+      steps: ["ตรวจสิทธิ์โควตาขายฟรี", "สร้างคอร์สและเพิ่มไม่เกิน 5 EP", "ส่งคอร์สให้ Boss ตรวจ"],
     },
     partner: {
       number: "3",
@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014262">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014263">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 [
@@ -227,10 +227,6 @@ function enterCourseCreatePage(plan) {
     `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>+ สร้างตะกร้าคอร์ส</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
   );
   const formHeading = createPanel.querySelector(":scope > h2");
-  createPanel.insertBefore(paymentProfilePanel, formHeading);
-  createPanel.insertBefore(slipApiPanel, formHeading);
-  paymentProfilePanel.hidden = plan === "partner";
-  slipApiPanel.hidden = plan !== "rights";
   const condition = document.createElement("aside");
   condition.className = "course-plan-condition";
   condition.innerHTML = plan === "rights"
@@ -238,7 +234,7 @@ function enterCourseCreatePage(plan) {
     : plan === "free"
       ? "<b>เงื่อนไขแบบ 2</b><p>ลูกค้าชำระเข้าบัญชีผู้สอนโดยตรง และผู้สอนต้องตรวจพร้อมอนุมัติสลิปเอง</p>"
       : "<b>เงื่อนไขแบบ 3</b><p>ลูกค้าชำระเข้าบัญชีบริษัท VisionD ระบบ VisionD ตรวจสลิปอัตโนมัติและแบ่งรายได้ 50/50</p>";
-  createPanel.insertBefore(condition, paymentProfilePanel);
+  createPanel.insertBefore(condition, formHeading);
   createPanel.classList.toggle("course-plan-legacy-form", plan === "rights");
   formHeading.textContent = `กรอกข้อมูลคอร์สแบบ ${config.number}`;
   createPanel.querySelector(":scope > p").textContent =
@@ -586,11 +582,11 @@ publishForm.onsubmit = async (e) => {
     return;
   }
   if (d.payment_profile_required) {
-    paymentProfilePanel.scrollIntoView({ behavior: "smooth" });
+    location.href = "/course-center#paymentProfilePanel";
     return;
   }
   if (d.slip_api_required) {
-    slipApiPanel.scrollIntoView({ behavior: "smooth" });
+    location.href = "/course-center#slipApiPanel";
     return;
   }
   if (r.ok) {
