@@ -16,7 +16,20 @@ function renderCoursePlans(data) {
 }
 
 async function loadCoursePlans() {
-  const response = await fetch("/api/course-seller", { cache: "no-store" });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  let response;
+  try {
+    response = await fetch("/api/course-seller/plans", {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("โหลดรูปแบบคอร์สนานเกินไป กรุณาลองใหม่");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (response.status === 401) {
     sessionStorage.setItem("vd_return_to", "/course-center");
     location.href = "/login.html";
@@ -28,5 +41,11 @@ async function loadCoursePlans() {
 }
 
 loadCoursePlans().catch((error) => {
-  licenseList.textContent = error.message || "โหลดรูปแบบคอร์สไม่สำเร็จ";
+  licenseList.innerHTML = `<p>${error.message || "โหลดรูปแบบคอร์สไม่สำเร็จ"}</p><button type="button" id="retryCoursePlans">ลองโหลดใหม่</button>`;
+  document.querySelector("#retryCoursePlans")?.addEventListener("click", () => {
+    licenseList.textContent = "กำลังโหลดรูปแบบคอร์ส…";
+    loadCoursePlans().catch((retryError) => {
+      licenseList.textContent = retryError.message || "โหลดรูปแบบคอร์สไม่สำเร็จ";
+    });
+  });
 });
