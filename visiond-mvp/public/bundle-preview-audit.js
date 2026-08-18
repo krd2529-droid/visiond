@@ -36,7 +36,7 @@ async function analyze(){
   const recommended=labels.filter(label=>Number(label.dataset.score)>=62).slice(0,Math.max(1,dataCache.bundle.preview_urls.length));candidates.querySelectorAll('input').forEach(input=>input.checked=false);recommended.forEach(label=>label.querySelector('input').checked=true);
   state.textContent=`ตรวจเสร็จ · แนะนำ ${recommended.length} รูป กรุณาดูด้วยตาก่อนยืนยัน`;
 }
-const pdfjs=()=>import('/vendor/pdfjs/pdf.mjs?v=014257').then(lib=>{lib.GlobalWorkerOptions.workerSrc='/vendor/pdfjs/pdf.worker.mjs?v=014257';return lib});
+const pdfjs=()=>import('/vendor/pdfjs/pdf.mjs?v=014258').then(lib=>{lib.GlobalWorkerOptions.workerSrc='/vendor/pdfjs/pdf.worker.mjs?v=014258';return lib});
 async function scanPdf(){
   const members=dataCache.members.filter(member=>member.pdf_file_id);if(!members.length){state.textContent='สมาชิกชุดนี้ไม่มี PDF ให้ตรวจ';return}document.getElementById('scanPdf').disabled=true;
   try{const lib=await pdfjs();for(const member of members){state.textContent=`กำลังค้นใบงานใน PDF: ${member.title}`;const response=await fetch(`/api/admin/product-files/${member.pdf_file_id}`);if(!response.ok)continue;const pdf=await lib.getDocument({data:new Uint8Array(await response.arrayBuffer())}).promise,indexes=[2,Math.ceil(pdf.numPages/2),pdf.numPages].filter((page,index,all)=>page<=pdf.numPages&&all.indexOf(page)===index);let best=null;

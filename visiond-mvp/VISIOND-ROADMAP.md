@@ -645,3 +645,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.257 — Unified Owner Course Catalog (IMPLEMENTED · DATA COMPLETE)
 - คอร์สที่สร้างจากแบบ 1, 2 หรือ 3 ต้องรวมแสดงใน `คอร์สของฉัน` โดยไม่กรองตามแผน
 - การ์ดคอร์สต้องมีป้ายบอกแบบที่ใช้สร้าง และข้อความกรณีว่างต้องไม่บังคับว่าต้องใช้เครดิต
+
+# v0.14.258 — Plan 1 Actions Inside Its Steps (IMPLEMENTED · UI COMPLETE)
+- หน้าแบบ 1 ต้องไม่มีตัวเลือกแบบ 2–3 และต้องล็อกแบบ 1 เป็นค่าเดียว
+- ย้ายปุ่มซื้อเครดิตไปขั้นตอน 1 และปุ่มไปกรอก/สร้างคอร์สไปขั้นตอน 3 พร้อมซ่อนปุ่มเดิมในส่วนหัว

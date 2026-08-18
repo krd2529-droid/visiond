@@ -397,6 +397,11 @@ td {
 .course-create-page #createPanel {
   margin-top: 24px;
 }
+.course-create-page .seller-hero,
+#createCourseBasket[hidden],
+.course-create-page label[hidden] {
+  display: none !important;
+}
 .course-create-back {
   display: inline-flex;
   min-height: 44px;
@@ -425,6 +430,22 @@ td {
 }
 .course-plan-flow {
   margin: 0 0 24px;
+}
+.course-step-action {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: 1px solid #087d77;
+  border-radius: 10px;
+  background: #087d77;
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
 }
 .course-plan-condition {
   margin: 0 0 20px;

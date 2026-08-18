@@ -4,9 +4,9 @@ const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [version, index, admin, ui, css, api] = await Promise.all([
   "VERSION.txt", "public/index.html", "public/admin.html", "public/course-seller.js", "public/course-seller.css", "functions/api/course-seller/index.js",
 ].map(read));
-assert.equal(version.trim(), "v0.14.257");
-assert.match(index, /WEB v0\.14\.257/);
-assert.match(admin, /ADMIN v0\.14\.257/);
+assert.ok(Number(version.trim().split(".").at(-1)) >= 257);
+assert.match(index, /WEB v0\.14\.\d+/);
+assert.match(admin, /ADMIN v0\.14\.\d+/);
 for (const token of ["seller-course-plan", "coursePlanPages[c.course_plan]", "เลือกสร้างคอร์สแบบ 1, 2 หรือ 3 ด้านบน"])
   assert.ok(ui.includes(token), token);
 assert.match(css, /\.seller-course-plan/);
