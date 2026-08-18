@@ -47,7 +47,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014275">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014276">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -250,14 +250,17 @@ function enterCourseCreatePage(plan) {
   });
   createPanel.hidden = false;
   createPanel.after(sellerLessonManager,paymentProfilePanel,slipApiPanel,publishPanel);
-  paymentProfilePanel.hidden=plan!=="rights";
-  slipApiPanel.hidden=plan!=="rights";
+  sellerCourseForm.hidden = false;
+  sellerLessonManager.hidden = true;
+  paymentProfilePanel.hidden = true;
+  slipApiPanel.hidden = true;
+  publishPanel.hidden = true;
   const credit=Number(state?.credit_balance)||0;
   if (!createPanel.querySelector("#coursePlanFlow")) {
     createPanel.insertAdjacentHTML(
       "afterbegin",
       plan === "rights"
-        ? `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ 1</small><h1>สร้างคอร์สแบบ 1 · ซื้อสิทธิ์ 499 บาท</h1><p>ผู้สอนรับยอดขาย 100% · เงินเข้าบัญชีผู้สอนโดยตรง · 1 เครดิตต่อ 1 คอร์ส</p></header><section id="coursePlanFlow" class="course-plan-flow course-rights-stepper" aria-label="7 ขั้นตอนสร้างคอร์สแบบ 1">${["ตรวจเครดิต","ข้อมูลคอร์ส","เนื้อหา EP","ตั้งค่ารับเงิน","ตรวจสลิป","ตรวจความพร้อม","ส่งตรวจ"].map((step,index)=>`<span><b>${index+1}</b>${step}</span>`).join("")}</section><section id="coursePlanCreditGuard" class="course-credit-guard course-rights-section"><div><small>ขั้นที่ 1</small><h2>ตรวจเครดิตก่อนสร้าง</h2><b></b><span></span></div><a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์ 499 บาท</a></section>`
+        ? `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ 1</small><h1>สร้างคอร์สแบบ 1 · ซื้อสิทธิ์ 499 บาท</h1><p>ผู้สอนรับยอดขาย 100% · เงินเข้าบัญชีผู้สอนโดยตรง · 1 เครดิตต่อ 1 คอร์ส</p></header><section id="coursePlanFlow" class="course-plan-flow course-rights-stepper" aria-label="7 ขั้นตอนสร้างคอร์สแบบ 1">${["ตรวจเครดิต","ข้อมูลคอร์ส","เนื้อหา EP","ตั้งค่ารับเงิน","ตรวจสลิป","ตรวจความพร้อม","ส่งตรวจ"].map((step,index)=>`<span><b>${index+1}</b>${step}</span>`).join("")}</section><section id="coursePlanCreditGuard" class="course-credit-guard course-rights-section"><div><small>ขั้นที่ 1</small><h2>ตรวจเครดิตก่อนสร้าง</h2><b></b><span></span></div><div class="course-credit-actions"><button id="startCourseForm" class="primary" type="button">กำลังตรวจเครดิต…</button><a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์ 499 บาท</a></div></section>`
         : `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><section id="coursePlanFlow" class="course-plan-flow"><h2>ขั้นตอนแบบ ${config.number}</h2></section>`,
     );
   }
@@ -268,6 +271,17 @@ function enterCourseCreatePage(plan) {
     creditGuard.querySelector("span").textContent = credit > 0
       ? "พร้อมสร้างคอร์ส"
       : "เครดิตไม่พอ กรุณาซื้อสิทธิ์ก่อนสร้าง";
+    const startCourseForm = creditGuard.querySelector("#startCourseForm");
+    startCourseForm.disabled = !state || credit < 1;
+    startCourseForm.textContent = !state
+      ? "กำลังตรวจเครดิต…"
+      : credit > 0
+        ? "เริ่มกรอกข้อมูลคอร์ส"
+        : "ต้องมีเครดิตก่อนสร้าง";
+    startCourseForm.onclick = () => {
+      sellerCourseForm.scrollIntoView({ behavior: "smooth", block: "start" });
+      sellerCourseForm.querySelector("input:not([type=hidden]),textarea")?.focus();
+    };
   }
   const formHeading = createPanel.querySelector(":scope > h2");
   const condition = createPanel.querySelector(".course-plan-condition") || document.createElement("aside");
@@ -305,7 +319,29 @@ function enterCourseCreatePage(plan) {
   document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
 }
 async function load() {
-  const r = await fetch("/api/course-seller", { cache: "no-store" });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  let r;
+  try {
+    r = await fetch("/api/course-seller", {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch {
+    const creditGuard = document.querySelector("#coursePlanCreditGuard");
+    if (creditGuard) {
+      creditGuard.dataset.ready = "false";
+      creditGuard.querySelector("b").textContent = "โหลดไม่สำเร็จ";
+      creditGuard.querySelector("span").textContent = "ตรวจเครดิตไม่สำเร็จ กรุณากดลองใหม่";
+      const button = creditGuard.querySelector("#startCourseForm");
+      button.disabled = false;
+      button.textContent = "ลองตรวจเครดิตใหม่";
+      button.onclick = load;
+    }
+    return;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (r.status === 401) {
     sessionStorage.setItem("vd_return_to", "/course-center?vision5=1");
     location.href = "/login.html";
@@ -314,6 +350,16 @@ async function load() {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) {
     licenseList.textContent = d.error || "โหลดไม่สำเร็จ";
+    const creditGuard = document.querySelector("#coursePlanCreditGuard");
+    if (creditGuard) {
+      creditGuard.dataset.ready = "false";
+      creditGuard.querySelector("b").textContent = "ตรวจไม่ได้";
+      creditGuard.querySelector("span").textContent = d.error || "ตรวจเครดิตไม่สำเร็จ กรุณากดลองใหม่";
+      const button = creditGuard.querySelector("#startCourseForm");
+      button.disabled = false;
+      button.textContent = "ลองตรวจเครดิตใหม่";
+      button.onclick = load;
+    }
     return;
   }
   render(d);
@@ -336,6 +382,10 @@ async function load() {
       sellerLessonManager.dataset.autoOpened = "1";
       if(coursePlanPages[courseCreateMode]){
         sellerCourseForm.hidden=true;
+        if (courseCreateMode === "rights") {
+          paymentProfilePanel.hidden = false;
+          slipApiPanel.hidden = false;
+        }
         createPanel.querySelector(":scope > h2").textContent="สร้างข้อมูลคอร์สแล้ว";
         createPanel.querySelector(":scope > p").textContent="ตั้งค่ารับเงินและเพิ่มรายละเอียด EP ต่อด้านล่าง จากนั้นกดส่งตรวจ";
       }
@@ -658,4 +708,5 @@ publishForm.onsubmit = async (e) => {
 };
 closeSellerLessons.onclick = () => (sellerLessonManager.hidden = true);
 sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
+if (coursePlanPages[courseCreateMode]) enterCourseCreatePage(courseCreateMode);
 load();
