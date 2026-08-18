@@ -40,7 +40,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014280">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014281">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -487,8 +487,8 @@ async function loadLessons(id) {
     return;
   }
   const ready=d.items.length>0&&d.items.every(x=>Number(x.is_complete)===1&&String(x.title||"").trim());
-  sendCourseReview.disabled=!ready;
-  sendCourseReviewHelp.textContent=ready?"EP พร้อมแล้ว กดส่งตรวจเพื่อกำหนดราคาและยืนยันส่งให้ Boss ตรวจ":"ใส่ชื่อและอัปโหลดคลิปหรือเอกสารให้ครบทุก EP ก่อนส่งตรวจ";
+  if(sendCourseReview)sendCourseReview.disabled=!ready;
+  if(sendCourseReviewHelp)sendCourseReviewHelp.textContent=ready?"EP พร้อมแล้ว กดส่งตรวจเพื่อกำหนดราคาและยืนยันส่งให้ Boss ตรวจ":"ใส่ชื่อและอัปโหลดคลิปหรือเอกสารให้ครบทุก EP ก่อนส่งตรวจ";
   sellerLessonList.innerHTML = d.items.length
     ? d.items
         .map(
@@ -711,6 +711,6 @@ publishForm.onsubmit = async (e) => {
   }
 };
 closeSellerLessons.onclick = () => (sellerLessonManager.hidden = true);
-sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
+if(sendCourseReview)sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
 if (coursePlanPages[courseCreateMode]) enterCourseCreatePage(courseCreateMode);
 load();
