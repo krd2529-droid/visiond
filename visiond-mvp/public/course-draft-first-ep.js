@@ -11,10 +11,11 @@
   submit.textContent='บันทึกตะกร้าคอร์สพร้อม EP';
   countInput.inputMode='numeric';
   countInput.setAttribute('aria-describedby','episodeBuilderHelp');
-  rule.insertAdjacentHTML('afterend',`<fieldset class="draft-first-ep episode-builder"><legend>ขั้นต่อไป · อัปโหลดงาน EP ในตะกร้าคอร์ส</legend><div class="episode-builder-head"><p id="episodeBuilderHelp">ทุก EP อยู่ในตะกร้าคอร์สเดียวกัน ใส่ชื่อ คำอธิบาย คลิป และเอกสารประกอบได้เลย ก่อนบันทึกร่าง</p><strong id="episodeBuilderProgress" aria-live="polite"></strong></div><div id="episodeCards" class="episode-cards"></div></fieldset>`);
+  rule.insertAdjacentHTML('afterend',`<fieldset class="draft-first-ep episode-builder"><legend>ขั้นต่อไป · อัปโหลดงาน EP ในตะกร้าคอร์ส</legend><div class="episode-builder-head"><p id="episodeBuilderHelp">ทุก EP อยู่ในตะกร้าคอร์สเดียวกัน ใส่ชื่อ คำอธิบาย คลิป และเอกสารประกอบได้เลย ก่อนบันทึกร่าง</p><div class="episode-builder-controls"><strong id="episodeBuilderProgress" aria-live="polite"></strong><button id="addEpisodeCard" class="primary" type="button">+ เพิ่ม EP</button></div></div><div id="episodeCards" class="episode-cards"></div></fieldset>`);
 
   const cards=document.querySelector('#episodeCards');
   const progress=document.querySelector('#episodeBuilderProgress');
+  const addEpisodeButton=document.querySelector('#addEpisodeCard');
   let renderedCount=0,createdCourseId=0,createdLessons=[],uploadedEpisodes=new Set();
 
   const clampCount=value=>Math.min(200,Math.max(1,Math.trunc(Number(value)||1)));
@@ -54,6 +55,11 @@
   }
   countInput.addEventListener('change',()=>renderCount(countInput.value));
   countInput.addEventListener('blur',()=>renderCount(countInput.value));
+  addEpisodeButton.addEventListener('click',()=>{
+    if(renderedCount>=200){sellerMessage.textContent='เพิ่มได้สูงสุด 200 EP ต่อตะกร้าคอร์ส';return}
+    renderCount(renderedCount+1,{confirmRemoval:false});
+    cards.lastElementChild?.querySelector('[data-field="title"]')?.focus();
+  });
   renderCount(countInput.value,{confirmRemoval:false});
 
   function openInvalidField(){
