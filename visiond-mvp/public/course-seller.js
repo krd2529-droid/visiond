@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014259">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014260">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 [
@@ -224,7 +224,7 @@ function enterCourseCreatePage(plan) {
   createPanel.hidden = false;
   createPanel.insertAdjacentHTML(
     "afterbegin",
-    `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b>${plan === "rights" && index === 0 ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อเครดิต</a>' : ""}${index === 2 ? '<button class="course-step-action" type="button" data-start-course>ไปกรอกและสร้างคอร์ส</button>' : ""}</div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
+    `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header><div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>+ สร้างตะกร้าคอร์ส</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
   );
   const formHeading = createPanel.querySelector(":scope > h2");
   createPanel.insertBefore(paymentProfilePanel, formHeading);

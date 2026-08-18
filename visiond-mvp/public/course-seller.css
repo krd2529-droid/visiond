@@ -447,6 +447,15 @@ td {
 .course-plan-page-head p {
   margin: 0;
 }
+.course-plan-head-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: -12px 0 24px;
+}
+.course-plan-head-actions .course-step-action {
+  margin-top: 0;
+}
 .course-plan-flow {
   margin: 0 0 24px;
 }
@@ -465,6 +474,15 @@ td {
   font-weight: 900;
   text-decoration: none;
   cursor: pointer;
+}
+@media (max-width: 700px) {
+  .course-plan-head-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .course-plan-head-actions > * {
+    width: 100%;
+  }
 }
 .course-plan-condition {
   margin: 0 0 20px;

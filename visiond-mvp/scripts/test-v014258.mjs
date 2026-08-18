@@ -11,7 +11,7 @@ for (const token of [
   "select.replaceChildren(new Option",
   "ซื้อเครดิต",
   "data-start-course",
-  "ไปกรอกและสร้างคอร์ส",
+  "+ สร้างตะกร้าคอร์ส",
   "sellerCourseForm.elements.title.focus",
 ]) assert.ok(ui.includes(token), token);
 for (const selector of ["#createCourseBasket[hidden]", ".course-create-page label[hidden]", ".course-step-action"])
