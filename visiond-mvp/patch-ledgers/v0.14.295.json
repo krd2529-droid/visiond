@@ -1,0 +1,14 @@
+{
+  "version": "v0.14.295",
+  "summary": "แก้ปุ่มสร้างร่างคอร์สค้างหลังรีเฟรช โดยคืนร่างล่าสุดของเจ้าของเข้าสู่ขั้นตอนส่งตรวจ",
+  "scope": [
+    "course seller refresh state",
+    "latest editable draft recovery",
+    "course review action"
+  ],
+  "security": [
+    "เลือกร่างเฉพาะจากรายการที่ API กรองตามเจ้าของแล้ว",
+    "ไม่เก็บ credential หรือข้อมูลส่วนตัวเพิ่ม"
+  ],
+  "rollback": "ย้อนกลับไป Commit ก่อนหน้าแพต v0.14.295"
+}
