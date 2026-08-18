@@ -1,0 +1,1 @@
+{"patch":"v0.14.274","tasks":[{"id":"P14274-001","scope":"UI","source_instruction":"เข้าหน้าแบบ 1 แล้วต้องรู้ว่าเป็นแบบ 1 ตั้งแต่โดเมน","status":"DONE-VERIFIED","evidence":["public/course-center.js","public/course-seller.js","scripts/test-v014274.mjs"]}]}

@@ -1,7 +1,8 @@
 const licenseList = document.querySelector("#licenseList");
 
 function openCoursePlan(plan) {
-  location.href = `/course-seller.html?create=${encodeURIComponent(plan)}`;
+  const number = { rights: 1, free: 2, partner: 3 }[plan];
+  if (number) location.href = `/course-seller?type=${number}`;
 }
 
 function renderCoursePlans(data) {

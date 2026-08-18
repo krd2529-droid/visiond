@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const center = read("public/course-center.js");
+const seller = read("public/course-seller.js");
+assert.equal(read("VERSION.txt").trim(), "v0.14.274");
+assert.match(center, /\/course-seller\?type=\$\{number\}/);
+assert.doesNotMatch(center, /create=rights|create=free|create=partner/);
+assert.match(seller, /coursePlanByNumber = \{ "1": "rights", "2": "free", "3": "partner" \}/);
+assert.match(seller, /สร้างคอร์สแบบ \$\{config\.number\}/);
+assert.match(seller, /courseParams\.get\("create"\)/);
+assert.match(seller, /\/course-seller\?type=\$\{coursePlanPages\[plan\]\.number\}/);
+console.log("v0.14.274 explicit course plan URLs: PASS");

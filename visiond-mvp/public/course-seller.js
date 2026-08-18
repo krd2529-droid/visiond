@@ -42,12 +42,23 @@ const coursePlanPages = {
       steps: ["ตรวจเงื่อนไขพาร์ตเนอร์ 50/50", "VisionD รับเงินและตรวจสลิปอัตโนมัติ", "สร้างคอร์ส · เพิ่ม EP พร้อมคำอธิบายและเอกสาร · ส่งตรวจ"],
     },
   },
-  courseCreateMode = new URLSearchParams(location.search).get("create");
+  coursePlanByNumber = { "1": "rights", "2": "free", "3": "partner" },
+  courseParams = new URLSearchParams(location.search),
+  courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014273">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014274">',
 );
 const sellerShell = document.querySelector(".seller-shell");
+if (coursePlanPages[courseCreateMode]) {
+  const config = coursePlanPages[courseCreateMode];
+  document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
+  document.body.dataset.coursePlan = config.number;
+  const heroTitle = sellerShell?.querySelector(".seller-hero h1");
+  const heroDescription = sellerShell?.querySelector(".seller-hero h1 + p");
+  if (heroTitle) heroTitle.textContent = `สร้างคอร์สแบบ ${config.number}`;
+  if (heroDescription) heroDescription.textContent = config.detail;
+}
 const mySellerCourses = document.querySelector("#mySellerCourses"),
   salesTotal = document.querySelector("#salesTotal"),
   salesCount = document.querySelector("#salesCount"),
@@ -221,7 +232,7 @@ function render(data) {
 }
 function openCoursePlan(plan) {
   if (!coursePlanPages[plan]) return;
-  location.href = `/course-seller.html?create=${encodeURIComponent(plan)}`;
+  location.href = `/course-seller?type=${coursePlanPages[plan].number}`;
 }
 function enterCourseCreatePage(plan) {
   const config = coursePlanPages[plan];
@@ -551,7 +562,7 @@ sellerCourseForm.onsubmit = async (e) => {
     clearSellerCover();
     createPanel.hidden = true;
     if (coursePlanPages[courseCreateMode]) {
-      location.href = `/course-seller.html?create=${encodeURIComponent(courseCreateMode)}&course_id=${encodeURIComponent(d.id)}`;
+      location.href = `/course-seller?type=${coursePlanPages[courseCreateMode].number}&course_id=${encodeURIComponent(d.id)}`;
       return;
     }
     await load();
