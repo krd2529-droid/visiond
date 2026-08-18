@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014269">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014270">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 const mySellerCourses = document.querySelector("#mySellerCourses"),
@@ -107,7 +107,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><div class="course-plan-card-actions"><button type="button" data-course-plan="rights">สร้างคอร์สแบบ 1</button><a href="/product.html?slug=course-selling-rights">ซื้อเครดิต</a></div></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">สร้างคอร์สแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">สร้างคอร์สแบบ 3</button></article></div><p>เลือกแบบที่ต้องการก่อนสร้าง · เฉพาะแบบ 1 ที่ใช้ 1 เครดิต</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">เข้าแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 3</button></article></div><p>เลือกเข้าแบบ 1, 2 หรือ 3 เพื่อดูขั้นตอนและเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
@@ -238,7 +238,7 @@ function enterCourseCreatePage(plan) {
   if (!createPanel.querySelector("#coursePlanFlow")) {
     createPanel.insertAdjacentHTML(
       "afterbegin",
-      `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header>${plan==="rights"?'<section id="coursePlanCreditGuard" class="course-credit-guard"><small>เครดิตสำหรับสร้างคอร์สแบบ 1</small><b></b><span></span></section>':""}<div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>+ สร้างตะกร้าคอร์ส</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อสิทธิ์</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
+      `<a class="course-create-back" href="/course-seller.html">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบ ${config.number}</small><h1>${config.title}</h1><p>${config.detail}</p></header>${plan==="rights"?'<section id="coursePlanCreditGuard" class="course-credit-guard"><small>เครดิตสำหรับสร้างคอร์สแบบ 1</small><b></b><span></span></section>':""}<div class="course-plan-head-actions"><button class="course-step-action" type="button" data-start-course>เริ่มสร้างคอร์สแบบ ${config.number}</button>${plan === "rights" ? '<a class="course-step-action" href="/product.html?slug=course-selling-rights">ซื้อเครดิต</a>' : ""}</div><section id="coursePlanFlow" class="vision5-seller-flow course-plan-flow"><h2>แบบ ${config.number} · ขั้นตอนการเปิดคอร์ส</h2><div class="vision5-steps vision5-steps--compact">${config.steps.map((step, index) => `<div class="vision5-step${index === 0 ? " current" : ""}"><span>${index + 1}</span><b>${step}</b></div>`).join("")}</div><p class="vision5-next-action">เริ่มจากขั้นตอนที่ 1 ของรูปแบบ ${config.number} แล้วดำเนินการตามลำดับ</p></section>`,
     );
   }
   const creditGuard = createPanel.querySelector("#coursePlanCreditGuard");
