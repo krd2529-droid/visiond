@@ -443,6 +443,17 @@ td {
   border: 1px solid #8edbd6;
   box-shadow: none;
 }
+.seller-course-plan {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #def7f4;
+  color: #076a65;
+  font-size: 12px;
+  font-weight: 900;
+}
 .slip-auto-toggle {
   display: flex !important;
   align-items: center;

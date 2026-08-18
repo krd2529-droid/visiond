@@ -45,7 +45,7 @@ const coursePlanPages = {
   courseCreateMode = new URLSearchParams(location.search).get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014256">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014257">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 [
@@ -134,11 +134,12 @@ function render(data) {
                 Number(c.expected_episodes) ||
                 1,
             ),
-            ready = Number(c.lesson_count) || 0;
-          return `<article class="owned-course seller-course-card"><img src="${esc(c.cover_url || "/assets/product-placeholder.svg")}" alt="ปก ${esc(c.title)}"><div class="seller-course-card-body"><h3>${esc(c.title)}</h3><p class="seller-course-meta"><span>ผู้สอน ${esc(c.teacher_name || "-")}</span><b>${money(c.price)}</b></p><div class="seller-course-badges"><span class="seller-course-ep">สร้างแล้ว ${total} EP · พร้อมเผยแพร่ ${ready}/${total}</span><span class="seller-course-status" data-status="${esc(c.review_status || "draft")}">${c.review_status === "approved" ? "เปิดขายแล้ว" : c.review_status === "pending" ? "รอตรวจหลังเผยแพร่" : c.review_status === "changes_requested" ? "ต้องแก้ไขตามที่ Boss แจ้ง" : "กำลังจัดทำ"}</span></div><small>แก้ไขล่าสุด ${date(c.updated_at)}</small></div></article>`;
+            ready = Number(c.lesson_count) || 0,
+            plan = coursePlanPages[c.course_plan] || coursePlanPages.rights;
+          return `<article class="owned-course seller-course-card"><img src="${esc(c.cover_url || "/assets/product-placeholder.svg")}" alt="ปก ${esc(c.title)}"><div class="seller-course-card-body"><span class="seller-course-plan" data-plan="${esc(c.course_plan || "rights")}">แบบ ${plan.number} · ${esc(plan.title)}</span><h3>${esc(c.title)}</h3><p class="seller-course-meta"><span>ผู้สอน ${esc(c.teacher_name || "-")}</span><b>${money(c.price)}</b></p><div class="seller-course-badges"><span class="seller-course-ep">สร้างแล้ว ${total} EP · พร้อมเผยแพร่ ${ready}/${total}</span><span class="seller-course-status" data-status="${esc(c.review_status || "draft")}">${c.review_status === "approved" ? "เปิดขายแล้ว" : c.review_status === "pending" ? "รอตรวจหลังเผยแพร่" : c.review_status === "changes_requested" ? "ต้องแก้ไขตามที่ Boss แจ้ง" : "กำลังจัดทำ"}</span></div><small>แก้ไขล่าสุด ${date(c.updated_at)}</small></div></article>`;
         })
         .join("")
-    : '<div class="seller-course-empty"><b>ยังไม่มีตะกร้าคอร์ส</b><p>ใช้ 1 เครดิตเพื่อสร้างตะกร้าคอร์สใบแรก</p></div>';
+    : '<div class="seller-course-empty"><b>ยังไม่มีตะกร้าคอร์ส</b><p>เลือกสร้างคอร์สแบบ 1, 2 หรือ 3 ด้านบน</p></div>';
   mySellerCourses.querySelectorAll(".owned-course").forEach((card, index) => {
     const course = data.courses[index],
       total = Math.max(
