@@ -7,8 +7,8 @@ function openCoursePlan(plan) {
 
 function renderCoursePlans(data) {
   licenseList.innerHTML = `<div class="vision5-credit-grid">
-    <article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance) || 0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article>
-    <article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article>
+    <article><small>1 · ซื้อสิทธิ์ 499 บาท</small><b>${Number(data.credit_balance) || 0} เครดิต</b><span>ใช้ 1 เครดิตต่อ 1 คอร์ส · เงินเข้าผู้สอนโดยตรง</span><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article>
+    <article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์สและ EP</b><span>เงินเข้า VisionD · ระบบตรวจสลิปและแบ่งรายได้อัตโนมัติ</span><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article>
   </div>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.addEventListener("click", () => openCoursePlan(button.dataset.coursePlan));

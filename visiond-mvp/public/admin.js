@@ -1,4 +1,4 @@
-import("/facebook-chat.js?v=014277");
+import("/facebook-chat.js?v=014278");
 const money = (n) =>
   new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 const esc = (value) =>
@@ -1610,8 +1610,8 @@ async function saveRole(id) {
 }
 showAdminNotice();
 init();
-import('/mouse-ui.js?v=014277');
-import('/i18n.js?v=014277');
+import('/mouse-ui.js?v=014278');
+import('/i18n.js?v=014278');
 
 document.querySelector('#refreshCustomerAnalytics')?.addEventListener('click',loadCustomerAnalytics);
 

@@ -40,7 +40,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014277">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014278">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -111,7 +111,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1 หรือ 2 เพื่อดูขั้นตอนและเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์ 499 บาท</small><b>${Number(data.credit_balance)||0} เครดิต</b><span>ใช้ 1 เครดิตต่อ 1 คอร์ส · เงินเข้าผู้สอนโดยตรง</span><button type="button" data-course-plan="rights">เข้าแบบ 1 · ผู้สอนรับ 100%</button></article><article><small>2 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์สและ EP</b><span>เงินเข้า VisionD · ระบบตรวจสลิปและแบ่งรายได้อัตโนมัติ</span><button type="button" data-course-plan="partner">เข้าแบบ 2 · ผู้สอน 50% / VisionD 50%</button></article></div><p>เลือกเข้าแบบ 1 หรือ 2 เพื่อดูขั้นตอน เงื่อนไขรับเงิน และเริ่มสร้างภายในหน้าของแบบนั้น</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
@@ -151,7 +151,7 @@ function render(data) {
           return `<article class="owned-course seller-course-card"><img src="${esc(c.cover_url || "/assets/product-placeholder.svg")}" alt="ปก ${esc(c.title)}"><div class="seller-course-card-body"><span class="seller-course-plan" data-plan="${esc(c.course_plan || "rights")}">แบบ ${plan.number} · ${esc(plan.title)}</span><h3>${esc(c.title)}</h3><p class="seller-course-meta"><span>ผู้สอน ${esc(c.teacher_name || "-")}</span><b>${money(c.price)}</b></p><div class="seller-course-badges"><span class="seller-course-ep">สร้างแล้ว ${total} EP · พร้อมเผยแพร่ ${ready}/${total}</span><span class="seller-course-status" data-status="${esc(c.review_status || "draft")}">${c.review_status === "approved" ? "เปิดขายแล้ว" : c.review_status === "pending" ? "รอตรวจหลังเผยแพร่" : c.review_status === "changes_requested" ? "ต้องแก้ไขตามที่ Boss แจ้ง" : "กำลังจัดทำ"}</span></div><small>แก้ไขล่าสุด ${date(c.updated_at)}</small></div></article>`;
         })
         .join("")
-    : '<div class="seller-course-empty"><b>ยังไม่มีตะกร้าคอร์ส</b><p>เลือกสร้างคอร์สแบบ 1, 2 หรือ 3 ด้านบน</p></div>';
+    : '<div class="seller-course-empty"><b>ยังไม่มีตะกร้าคอร์ส</b><p>เลือกสร้างคอร์สแบบ 1 หรือ 2 ด้านบน</p></div>';
     mySellerCourses.querySelectorAll(".owned-course").forEach((card, index) => {
     const course = data.courses[index],
       total = Math.max(
@@ -307,6 +307,20 @@ function enterCourseCreatePage(plan) {
   }
   document.title = `สร้างคอร์สแบบ ${config.number} | VisionD`;
 }
+function showCurrentCourseEditAction(course) {
+  const heading = createPanel.querySelector(".course-plan-page-head");
+  if (!heading || !course?.id) return;
+  let action = heading.querySelector("#currentCourseEditAction");
+  if (!action) {
+    action = document.createElement("a");
+    action.id = "currentCourseEditAction";
+    action.className = "course-step-action";
+    heading.append(action);
+  }
+  action.href = `/course-basket-edit.html?id=${encodeURIComponent(course.id)}`;
+  action.textContent = "แก้ไขข้อมูลตะกร้าคอร์สนี้";
+  action.setAttribute("aria-label", `แก้ไขตะกร้าคอร์ส ${course.title || course.id}`);
+}
 async function load() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
@@ -370,6 +384,7 @@ async function load() {
     if (course) {
       sellerLessonManager.dataset.autoOpened = "1";
       if(coursePlanPages[courseCreateMode]){
+        showCurrentCourseEditAction(course);
         sellerCourseForm.hidden=true;
         if (courseCreateMode === "rights") {
           paymentProfilePanel.hidden = false;
