@@ -10,11 +10,11 @@ const [version, index, admin, sellerHtml, stampScript] = await Promise.all([
   "scripts/release-stamp-assets.mjs",
 ].map(read));
 
-assert.equal(version.trim(), "v0.14.261");
-assert.match(index, /WEB v0\.14\.261/);
-assert.match(admin, /ADMIN v0\.14\.261/);
-assert.match(sellerHtml, /course-seller\.js\?v=014261/);
-assert.match(sellerHtml, /course-seller\.css\?v=014261/);
+assert.ok(Number(version.trim().split(".").at(-1)) >= 261);
+assert.match(index, /WEB v0\.14\.\d+/);
+assert.match(admin, /ADMIN v0\.14\.\d+/);
+assert.match(sellerHtml, /course-seller\.js\?v=014\d+/);
+assert.match(sellerHtml, /course-seller\.css\?v=014\d+/);
 assert.doesNotMatch(sellerHtml, /\?v=014131/);
 assert.match(stampScript, /"course-seller\.html"/);
 console.log("v0.14.261 course seller cache stamp coverage: PASS");

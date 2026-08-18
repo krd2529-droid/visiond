@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/style.css?v=014136" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
     <link rel="stylesheet" href="/course-owner-badge.css?v=01369" />
     <link rel="stylesheet" href="/admin-products.css?v=014183" />
+    <link rel="stylesheet" href="/admin-pdf-cover.css?v=014262" />
     <link rel="stylesheet" href="/admin-payment.css?v=01444" />
     <link rel="stylesheet" href="/promotion.css?v=01336" />
     <link rel="stylesheet" href="/elon-controls.css?v=01481" />
@@ -884,7 +885,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.261</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.262</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1387,6 +1388,8 @@
                 ✦ สร้างสินค้าด้วย Vision 2</button
               ><button class="primary" id="newProductButton" type="button">
                 + เพิ่มสินค้าเอง
+              </button><button class="bundle-launch" id="pdfCoverCreatorButton" type="button">
+                สร้างปก PDF
               </button><button class="bundle-launch" id="newBundleButton" type="button">
                 สร้างชุดรวมตะกร้า
               </button><a class="bundle-launch" id="bundlePreviewAuditButton" href="/bundle-preview-audit.html">ตรวจรูปตัวอย่างตะกร้ารวม</a><button class="bundle-launch" id="bulkMoveCategoryButton" type="button" title="ค้นหาและติ๊กตะกร้าด้านล่างก่อนเลือกหมวดปลายทาง">
@@ -2188,6 +2191,28 @@
         </section>
       </section>
     </main>
+    <dialog id="pdfCoverCreatorDialog" class="pdf-cover-dialog" aria-labelledby="pdfCoverCreatorTitle">
+      <form method="dialog" class="pdf-cover-shell">
+        <header>
+          <div><small>VISIOND PDF COVER MAKER</small><h2 id="pdfCoverCreatorTitle">สร้างปก PDF จากรูปสินค้า</h2></div>
+          <button class="pdf-cover-close" value="cancel" aria-label="ปิด">×</button>
+        </header>
+        <div class="pdf-cover-workspace">
+          <section class="pdf-cover-controls">
+            <label>ชื่อบนปก<input id="pdfCoverTitle" type="text" maxlength="100" placeholder="เช่น แบบฝึกหัดคณิตศาสตร์สำหรับเด็ก" /></label>
+            <label>รูปสินค้า<input id="pdfCoverImage" type="file" accept="image/jpeg,image/png,image/webp" /><small>ใช้รูปสินค้า 1 รูป · JPG, PNG หรือ WEBP ไม่เกิน 8 MB</small></label>
+            <fieldset><legend>เลือกกรอบปก</legend><div id="pdfCoverTemplates" class="pdf-cover-templates">
+              <label><input type="radio" name="pdf_cover_template" value="modern" checked /><span class="modern">โมเดิร์น</span></label>
+              <label><input type="radio" name="pdf_cover_template" value="kids" /><span class="kids">เด็กสดใส</span></label>
+              <label><input type="radio" name="pdf_cover_template" value="elegant" /><span class="elegant">เรียบหรู</span></label>
+            </div></fieldset>
+            <p id="pdfCoverMessage" class="form-message">ใส่ชื่อและเลือกรูปสินค้าเพื่อดูตัวอย่าง</p>
+            <button id="pdfCoverDownload" class="primary" type="button" disabled>ดาวน์โหลดปก PNG</button>
+          </section>
+          <section class="pdf-cover-preview" aria-label="ตัวอย่างปก PDF"><canvas id="pdfCoverCanvas" width="1000" height="1400"></canvas></section>
+        </div>
+      </form>
+    </dialog>
     <link rel="stylesheet" href="/vision2-font.css?v=01178" /><link
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
@@ -2198,5 +2223,6 @@
     <script src="/vision3.js?v=01351"></script>
     <script src="/vision4-bundle.js?v=01471"></script>
     <script src="/vision4-card-actions.js?v=01372"></script>
+    <script src="/admin-pdf-cover.js?v=014262"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

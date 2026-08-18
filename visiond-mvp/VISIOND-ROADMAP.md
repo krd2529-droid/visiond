@@ -662,3 +662,8 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.261 — Course Seller Cache Stamp Coverage (IMPLEMENTED · BUGFIX COMPLETE)
 - หน้า `course-seller.html` ต้องอยู่ในรายการประทับเลขแพตทุกครั้ง เพื่อให้ไฟล์ JS/CSS ใหม่ถูกโหลดหลัง Deploy
 - ห้ามหน้า Course Seller อ้างไฟล์ `course-seller.js` หรือ `course-seller.css` ด้วยเลขแพตเก่า เพราะจะทำให้ UI ย้อนกลับไปใช้โค้ดเดิม
+
+# v0.14.262 — Admin PDF Cover Maker (IMPLEMENTED · URGENT EVENT CASE)
+- หน้าจัดการสินค้าหลังบ้านมีปุ่ม `สร้างปก PDF` ต่อจากปุ่มเพิ่มสินค้าเอง
+- รับเฉพาะรูปสินค้า JPG/PNG/WEBP 1 รูปไม่เกิน 8 MB พร้อมชื่อปก และมีกรอบมาตรฐานให้เลือก
+- ระบบจัดฟอนต์และขนาดชื่อให้สัมพันธ์กับกรอบ แสดงตัวอย่างทันที และดาวน์โหลด PNG 1000 × 1400 px ได้โดยไม่ส่งรูปออกจากเบราว์เซอร์
