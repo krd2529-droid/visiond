@@ -110,12 +110,7 @@ export async function onRequestPost(ctx) {
   const auth = await requireUser(ctx);
   if (auth.error) return auth.error;
   const form=await ctx.request.formData(),selectedPlan=coursePlan(form.get('course_plan'));
-  if(!selectedPlan||!['rights','partner'].includes(String(form.get('course_plan'))))return json({error:'กรุณาเลือกรูปแบบเปิดคอร์ส 1 หรือ 2'},400);
-  const credit = await ctx.env.DB.prepare(
-    "SELECT id FROM course_right_credits WHERE user_id=? AND active=1 AND used_course_id IS NULL ORDER BY id LIMIT 1",
-  )
-    .bind(auth.user.id)
-    .first();
+  if(!selectedPlan||selectedPlan.code!=='partner')return json({error:'ปิดรับแผนซื้อสิทธิ์แล้ว กรุณาสร้างคอร์สพาร์ตเนอร์ 50/50',code:'COURSE_PLAN_CLOSED'},409);
   const title = String(form.get("title") || "").trim(),
     teacher = String(form.get("teacher_name") || "").trim(),
     description = String(form.get("description") || "").trim(),
@@ -201,7 +196,7 @@ export async function onRequestPost(ctx) {
       ? String(form.get("learner_level"))
       : "all",
     planJson = JSON.stringify(plan);
-  if(!selectedPlan.requiresCredit||!credit){
+  {
     try{
       const statements=[
         ctx.env.DB.prepare(`INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) VALUES(?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course')`).bind(slug,title,short,description,draftPrice,coverUrl,JSON.stringify([coverUrl]),episodes),
@@ -210,87 +205,7 @@ export async function onRequestPost(ctx) {
       ];
       const results=await ctx.env.DB.batch(statements);if(!results[0].meta.changes||!results[1].meta.changes)throw new Error('COURSE_CREATE_FAILED');
       const course=await ctx.env.DB.prepare('SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=?').bind(slug,auth.user.id).first();
-      return json({ok:true,id:course.id,slug,episode_count:episodes,course_plan:selectedPlan.code,credit_used:0,draft_only:selectedPlan.requiresCredit,message:selectedPlan.requiresCredit?"บันทึกร่างแบบ 1 แล้ว ต้องมี 1 เครดิตก่อนส่งตรวจ":`สร้างรูปแบบ ${selectedPlan.number} ${selectedPlan.label} แล้ว`},201);
+      return json({ok:true,id:course.id,slug,episode_count:episodes,course_plan:selectedPlan.code,credit_used:0,draft_only:false,message:'สร้างคอร์สพาร์ตเนอร์ 50/50 แล้ว'},201);
     }catch(error){await ctx.env.FILES.delete(coverKey).catch(()=>{});return json({error:'สร้างตะกร้าคอร์สไม่สำเร็จ กรุณาลองใหม่'},409)}
-  }
-  try {
-    const bindingId = -Number(credit.id),
-      statements = [
-        ctx.env.DB.prepare(
-          `INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind) SELECT ?,?,?,?,?,?,?,'online-course','คอร์สออนไลน์',?,'draft','user-course-draft','course' WHERE EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
-        ).bind(
-          slug,
-          title,
-          short,
-          description,
-          draftPrice,
-          coverUrl,
-          JSON.stringify([coverUrl]),
-          episodes,
-          credit.id,
-          auth.user.id,
-        ),
-        ctx.env.DB.prepare(
-          `INSERT INTO courses(product_id,subtitle,teacher_name,active,course_type,license_edit_days,owner_user_id,license_entitlement_id,edit_expires_at,contact_info,platform_tags,learner_level,expected_episodes,review_status,course_origin,basket_binding_locked,basket_bound_at,course_plan) SELECT id,?,?,0,'online_course',30,?,?,NULL,?,?,?,?,'draft','seller_rights',1,CURRENT_TIMESTAMP,'rights' FROM products WHERE slug=? AND EXISTS(SELECT 1 FROM course_right_credits WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL)`,
-        ).bind(
-          short,
-          teacher,
-          auth.user.id,
-          bindingId,
-          contact,
-          JSON.stringify(tags),
-          level,
-          episodes,
-          slug,
-          credit.id,
-          auth.user.id,
-        ),
-        ctx.env.DB.prepare(
-          `UPDATE course_right_credits SET active=0,used_at=CURRENT_TIMESTAMP,used_course_id=(SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?) WHERE id=? AND user_id=? AND active=1 AND used_course_id IS NULL AND EXISTS(SELECT 1 FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=? AND c.license_entitlement_id=?)`,
-        ).bind(
-          slug,
-          auth.user.id,
-          bindingId,
-          credit.id,
-          auth.user.id,
-          slug,
-          auth.user.id,
-          bindingId,
-        ),
-        ctx.env.DB.prepare(
-          `INSERT INTO course_lessons(course_id,title,description,sort_order,duration_seconds) SELECT c.id,json_extract(ep.value,'$.title'),json_extract(ep.value,'$.description'),(CAST(ep.key AS INTEGER)+1)*10,CAST(json_extract(ep.value,'$.duration_seconds') AS INTEGER) FROM courses c JOIN products p ON p.id=c.product_id CROSS JOIN json_each(?) ep WHERE p.slug=? AND c.owner_user_id=?`,
-        ).bind(planJson, slug, auth.user.id),
-      ];
-    const results = await ctx.env.DB.batch(statements);
-    if (
-      !results[0].meta.changes ||
-      !results[1].meta.changes ||
-      !results[2].meta.changes
-    )
-      throw new Error("CREDIT_ASSIGNMENT_CONFLICT");
-    const course = await ctx.env.DB.prepare(
-      "SELECT c.id FROM courses c JOIN products p ON p.id=c.product_id WHERE p.slug=? AND c.owner_user_id=?",
-    )
-      .bind(slug, auth.user.id)
-      .first();
-    if (!course) throw new Error("COURSE_MISSING");
-    return json(
-      {
-        ok: true,
-        id: course.id,
-        slug,
-        episode_count: episodes,
-        credit_used: 1,
-        course_plan:'rights',
-        message: `สร้างตะกร้าคอร์สและเตรียม ${episodes} EP แล้ว หัก 1 เครดิตเรียบร้อย`,
-      },
-      201,
-    );
-  } catch (error) {
-    await ctx.env.FILES.delete(coverKey).catch(() => {});
-    return json(
-      { error: "สร้างตะกร้าคอร์สไม่สำเร็จ เครดิตไม่ถูกหัก กรุณาลองใหม่" },
-      409,
-    );
   }
 }

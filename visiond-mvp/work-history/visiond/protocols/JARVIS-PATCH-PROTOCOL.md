@@ -120,3 +120,10 @@ Rollback safety:
 - Before starting an unrelated new Event Case, warn Boss that the active Event Case remains unfinished and recommend completing it first.
 - Boss may explicitly reorder or pause work; record that decision as `PAUSED BY BOSS` without mislabeling the Event Case complete.
 - A new request that adds acceptance criteria to the active topic remains part of the same Event Case.
+
+## Course plan single-source rule (v0.14.287+)
+
+- หน้า Course Center และ API สร้างคอร์สใหม่ต้องอ่านรูปแบบที่เปิดใช้งานจาก `COURSE_PLANS` แหล่งเดียวกัน
+- รูปแบบที่ปิดรับใหม่ต้องถูกลบออกจากตัวเลือกและเส้นทางสร้างจริง ห้ามใช้ CSS ซ่อนหรือเหลือ POST branch ที่ยังสร้างได้
+- ต้องรักษาการอ่านและจัดการข้อมูลคอร์สเดิมโดยแยก legacy compatibility ออกจากรายการแผนที่สร้างใหม่ได้
+- ทุกแพตที่แตะคอร์สต้องทดสอบ URL เก่า, UI, API rejection และการอ่านคอร์สเดิม เพื่อป้องกันหน้าสลับหรือแผนเก่ากลับมา

@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+
+const read=(path)=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.287');
+const plans=read('functions/_course_plans.js');
+assert.match(plans,/COURSE_PLANS=\{\s*partner:/);
+assert.doesNotMatch(plans,/COURSE_PLANS=\{[\s\S]*?rights:/);
+assert.match(plans,/LEGACY_RIGHTS/);
+const api=read('functions/api/course-seller/index.js');
+assert.match(api,/selectedPlan\.code!==['"]partner['"]/);
+assert.match(api,/COURSE_PLAN_CLOSED/);
+assert.doesNotMatch(api,/UPDATE course_right_credits SET active=0/);
+const center=read('public/course-center.js');
+assert.match(center,/รูปแบบเดียว · พาร์ตเนอร์ 50\/50/);
+assert.doesNotMatch(center,/data-course-plan="rights"/);
+assert.doesNotMatch(center,/ซื้อสิทธิ์ 499 บาท/);
+const seller=read('public/course-seller.js');
+assert.match(seller,/coursePlanByNumber = \{ "1": "partner", "2": "partner" \}/);
+assert.match(seller,/ซื้อสิทธิ์เดิม \(ปิดรับใหม่\)/);
+assert.doesNotMatch(seller,/coursePlanPages\.rights/);
+assert.doesNotMatch(seller,/courseCreateMode === "rights"/);
+assert.equal((seller.match(/data-course-plan="partner"/g)||[]).length,1);
+const html=read('public/course-seller.html');
+assert.match(html,/name="course_plan" type="hidden" value="partner"/);
+assert.doesNotMatch(html,/id="createCourseBasket"/);
+assert.doesNotMatch(html,/href="\/product\.html\?slug=course-selling-rights"/);
+console.log('v0.14.287 course center single-plan contracts: PASS');
