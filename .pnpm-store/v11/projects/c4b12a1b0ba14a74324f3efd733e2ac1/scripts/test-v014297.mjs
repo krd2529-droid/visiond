@@ -7,7 +7,8 @@ const html = read("public/course-seller.html");
 const seller = read("public/course-seller.js");
 const api = read("functions/api/course-seller/index.js");
 
-assert.equal(version, "v0.14.297");
+assert.match(version, /^v0\.14\.\d+$/);
+assert.ok(Number(version.split(".").at(-1)) >= 297, "ต้องเป็นแพต v0.14.297 หรือใหม่กว่า");
 for (const obsolete of [
   "public/course-draft-first-ep.js",
   "public/course-draft-first-ep.css",
