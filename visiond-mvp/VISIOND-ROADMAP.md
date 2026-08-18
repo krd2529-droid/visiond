@@ -628,3 +628,7 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 # v0.14.253 — Clickable Course Plan Cards (IMPLEMENTED · BUGFIX COMPLETE)
 - กล่องสรุปแบบ 1/2/3 ในศูนย์จัดการคอร์สต้องเป็นปุ่มเลือกจริง กดแล้วเปิดฟอร์มและเลือกแผนนั้นอัตโนมัติ
 - ข้อความยืนยันสร้างต้องตรงกับแผนที่เลือก และกล่าวถึงการหักเครดิตเฉพาะแบบ 1
+
+# v0.14.254 — Dedicated Create Button Per Course Plan (IMPLEMENTED · UI COMPLETE)
+- แบบ 1, 2 และ 3 ต้องมีปุ่ม `สร้างคอร์สแบบ 1/2/3` ของตัวเองภายในกล่อง
+- ซ่อนปุ่มสร้างคอร์สรวมด้านบน เหลือปุ่มเติมเครดิตแยก เพื่อไม่ให้ลูกค้าสับสนว่าจะสร้างด้วยแผนใด

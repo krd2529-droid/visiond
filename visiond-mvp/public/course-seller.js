@@ -21,7 +21,7 @@ const esc = (v) =>
 let state;
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014253">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014254">',
 );
 document
   .querySelector(".seller-hero")
@@ -82,7 +82,7 @@ function render(data) {
   updateVision5Flow(data);
   const profile = data.payment_profile || { status: "unset" },
     used = (data.licenses || []).filter((x) => !x.available).length;
-  licenseList.innerHTML = `<div class="vision5-credit-grid"><button type="button" data-course-plan="rights"><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><span>เลือกแบบ 1</span></button><button type="button" data-course-plan="free"><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><span>เลือกแบบ 2</span></button><button type="button" data-course-plan="partner"><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><span>เลือกแบบ 3</span></button></div><p>กดเลือกแบบ 1, 2 หรือ 3 เพื่อเปิดฟอร์มสร้างคอร์ส · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
+  licenseList.innerHTML = `<div class="vision5-credit-grid"><article><small>1 · ซื้อสิทธิ์</small><b>${Number(data.credit_balance)||0} เครดิต</b><button type="button" data-course-plan="rights">สร้างคอร์สแบบ 1</button></article><article><small>2 · เริ่มขายฟรี</small><b>${Number(data.free_course_count)||0}/3 คอร์ส</b><button type="button" data-course-plan="free">สร้างคอร์สแบบ 2</button></article><article><small>3 · พาร์ตเนอร์ 50/50</small><b>ไม่จำกัดคอร์ส</b><button type="button" data-course-plan="partner">สร้างคอร์สแบบ 3</button></article></div><p>เลือกปุ่มสร้างคอร์สของแต่ละแบบโดยตรง · เฉพาะแบบ 1 ที่หัก 1 เครดิต</p>`;
   licenseList.querySelectorAll("[data-course-plan]").forEach((button) => {
     button.onclick = () => openCoursePlan(button.dataset.coursePlan);
   });
@@ -187,7 +187,7 @@ function render(data) {
     .forEach(
       (b) => (b.onclick = () => reviewSlip(b.dataset.slipReject, "reject")),
     );
-  createCourseBasket.onclick = () => openCoursePlan("rights");
+  createCourseBasket.hidden = true;
 }
 function openCoursePlan(plan) {
   const select = sellerCourseForm.elements.course_plan;
