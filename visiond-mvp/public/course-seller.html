@@ -4,17 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ศูนย์จัดการคอร์ส | VisionD</title>
-    <link rel="stylesheet" href="/style.css?v=014267" />
-    <link rel="stylesheet" href="/visiond-design-system.css?v=014267" />
-    <link rel="stylesheet" href="/course.css?v=014267" />
-    <link rel="stylesheet" href="/course-seller.css?v=014267" />
-    <link rel="stylesheet" href="/course-license-dates.css?v=014267" />
-    <link rel="stylesheet" href="/course-owner-actions.css?v=014267" />
-    <link rel="stylesheet" href="/elon-chat.css?v=014267" />
-    <link rel="stylesheet" href="/header-shell.css?v=014267" />
-    <link rel="stylesheet" href="/mobile-storefront.css?v=014267" />
-    <link rel="stylesheet" href="/frontend-theme.css?v=014267" />
-  <link rel="stylesheet" href="/visiond-button-system.css?v=014267" /><script src="/visiond-button-system.js?v=014267" defer></script></head>
+    <link rel="stylesheet" href="/style.css?v=014268" />
+    <link rel="stylesheet" href="/visiond-design-system.css?v=014268" />
+    <link rel="stylesheet" href="/course.css?v=014268" />
+    <link rel="stylesheet" href="/course-seller.css?v=014268" />
+    <link rel="stylesheet" href="/course-license-dates.css?v=014268" />
+    <link rel="stylesheet" href="/course-owner-actions.css?v=014268" />
+    <link rel="stylesheet" href="/elon-chat.css?v=014268" />
+    <link rel="stylesheet" href="/header-shell.css?v=014268" />
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014268" />
+    <link rel="stylesheet" href="/frontend-theme.css?v=014268" />
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014268" /><script src="/visiond-button-system.js?v=014268" defer></script></head>
   <body class="vd-frontend">
     <header class="topbar">
       <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
@@ -47,15 +47,13 @@
         >
       </section>
       <nav class="seller-task-nav" aria-label="งานผู้ขายคอร์ส">
-        <a href="#sellerActionRequired">ต้องดำเนินการ</a
-        ><a href="#mySellerCourses">ตะกร้าคอร์สของฉัน</a
-        ><a href="#sellerLessonManager">จัดการบทเรียนและ EP</a
-        ><a href="#salesRows">ยอดขาย</a
+        <a href="#sellerLessonManager">จัดการบทเรียนและ EP</a
         ><a href="#paymentProfilePanel">ตั้งค่ารับเงินและ API</a>
       </nav>
       <section
         id="sellerActionRequired"
         class="seller-card seller-priority-card"
+        hidden
       >
         <h2>สิ่งที่ต้องดำเนินการ</h2>
         <p>
@@ -280,7 +278,7 @@
           <p id="sellerMessage" class="span2"></p>
         </form>
       </section>
-      <section class="seller-card seller-basket-catalog">
+      <section class="seller-card seller-basket-catalog" hidden>
         <h2>ตะกร้าคอร์สของฉัน</h2>
         <p class="account-lock-warning">
           ตะกร้าที่ยังไม่มียอดขายสามารถจัดการหรือลบพร้อมไฟล์ได้
@@ -384,7 +382,7 @@
           <p id="publishMessage" class="span2"></p>
         </form>
       </section>
-      <section class="seller-card">
+      <section id="customerSalesPanel" class="seller-card" hidden>
         <div class="seller-summary">
           <div><small>ยอดขายรวม</small><b id="salesTotal">0 บาท</b></div>
           <div><small>ออเดอร์ชำระแล้ว</small><b id="salesCount">0</b></div>
@@ -419,7 +417,7 @@
           </table>
         </div>
       </section>
-      <section class="seller-card">
+      <section id="pendingSlipPanel" class="seller-card" hidden>
         <h2>สลิปที่ API ของฉันตรวจไม่สำเร็จ</h2>
         <p>
           เจ้าของคอร์สรับผิดชอบ Token และโควต้า API ของตนเอง
@@ -451,17 +449,17 @@
         </div>
       </section>
     </main>
-    <link rel="stylesheet" href="/seller-lesson-files.css?v=014267" /><link
+    <link rel="stylesheet" href="/seller-lesson-files.css?v=014268" /><link
       rel="stylesheet"
-      href="/course-draft-first-ep.css?v=014267"
+      href="/course-draft-first-ep.css?v=014268"
     />
-    <script src="/shared-nav.js?v=014267" defer></script>
-    <script src="/header-shell.js?v=014267" defer></script>
-    <script src="/course-seller.js?v=014267"></script>
-    <script src="/course-draft-first-ep.js?v=014267"></script>
-    <script src="/course-license-dates.js?v=014267"></script>
-    <script src="/elon-chat.js?v=014267" defer></script>
-    <script src="/mobile-storefront.js?v=014267" defer></script>
-    <script src="/visiond-design-system.js?v=014267" defer></script>
+    <script src="/shared-nav.js?v=014268" defer></script>
+    <script src="/header-shell.js?v=014268" defer></script>
+    <script src="/course-seller.js?v=014268"></script>
+    <script src="/course-draft-first-ep.js?v=014268"></script>
+    <script src="/course-license-dates.js?v=014268"></script>
+    <script src="/elon-chat.js?v=014268" defer></script>
+    <script src="/mobile-storefront.js?v=014268" defer></script>
+    <script src="/visiond-design-system.js?v=014268" defer></script>
   </body>
 </html>
