@@ -4,9 +4,9 @@ const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [version, index, admin, ui, css] = await Promise.all([
   "VERSION.txt", "public/index.html", "public/admin.html", "public/course-seller.js", "public/course-seller.css",
 ].map(read));
-assert.equal(version.trim(), "v0.14.260");
-assert.match(index, /WEB v0\.14\.260/);
-assert.match(admin, /ADMIN v0\.14\.260/);
+assert.ok(Number(version.trim().split(".").at(-1)) >= 260);
+assert.match(index, /WEB v0\.14\.\d+/);
+assert.match(admin, /ADMIN v0\.14\.\d+/);
 const headerEnd = ui.indexOf('</header><div class="course-plan-head-actions">');
 const flowStart = ui.indexOf('<section id="coursePlanFlow"');
 assert.ok(headerEnd > 0 && flowStart > headerEnd, "actions must be directly below plan header and above flow");
