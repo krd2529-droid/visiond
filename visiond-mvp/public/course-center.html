@@ -4,17 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ศูนย์จัดการคอร์ส | VisionD</title>
-    <link rel="stylesheet" href="/style.css?v=014263" />
-    <link rel="stylesheet" href="/visiond-design-system.css?v=014263" />
-    <link rel="stylesheet" href="/course.css?v=014263" />
-    <link rel="stylesheet" href="/course-seller.css?v=014263" />
-    <link rel="stylesheet" href="/course-license-dates.css?v=014263" />
-    <link rel="stylesheet" href="/course-owner-actions.css?v=014263" />
-    <link rel="stylesheet" href="/elon-chat.css?v=014263" />
-    <link rel="stylesheet" href="/header-shell.css?v=014263" />
-    <link rel="stylesheet" href="/mobile-storefront.css?v=014263" />
-    <link rel="stylesheet" href="/frontend-theme.css?v=014263" />
-  <link rel="stylesheet" href="/visiond-button-system.css?v=014263" /><script src="/visiond-button-system.js?v=014263" defer></script></head>
+    <link rel="stylesheet" href="/style.css?v=014264" />
+    <link rel="stylesheet" href="/visiond-design-system.css?v=014264" />
+    <link rel="stylesheet" href="/course.css?v=014264" />
+    <link rel="stylesheet" href="/course-seller.css?v=014264" />
+    <link rel="stylesheet" href="/course-license-dates.css?v=014264" />
+    <link rel="stylesheet" href="/course-owner-actions.css?v=014264" />
+    <link rel="stylesheet" href="/elon-chat.css?v=014264" />
+    <link rel="stylesheet" href="/header-shell.css?v=014264" />
+    <link rel="stylesheet" href="/mobile-storefront.css?v=014264" />
+    <link rel="stylesheet" href="/frontend-theme.css?v=014264" />
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014264" /><script src="/visiond-button-system.js?v=014264" defer></script></head>
   <body class="vd-frontend">
     <header class="topbar">
       <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
@@ -47,8 +47,13 @@
       </section>
       <section id="paymentProfilePanel" class="seller-card">
         <p class="seller-section-number">PART 2</p>
-        <h2>ตั้งค่ารับเงินส่วนกลาง</h2>
-        <p class="course-shared-setting-note">ตั้งค่าครั้งเดียวที่ศูนย์จัดการคอร์ส ไม่ต้องกรอกซ้ำในหน้าสร้างแบบ 1, 2 หรือ 3 และคอร์สใหม่จะใช้ค่าล่าสุดของเจ้าของคอร์ส</p>
+        <h2>ตั้งค่ารับเงินสำหรับแบบ 1 และแบบ 2</h2>
+        <p class="course-shared-setting-note">รวมการตั้งค่าไว้หน้านี้เพื่อไม่ต้องกรอกซ้ำ แต่ระบบยังแยกกติกาของแต่ละรูปแบบ: แบบ 1 และ 2 รับเงินเข้าบัญชีผู้สอนและผู้สอนได้ยอดขาย 100% ส่วนแบบ 3 รับเงินเข้าบัญชี VisionD และแบ่งรายได้ 50/50</p>
+        <div class="course-plan-payment-rules" aria-label="กติกาการรับเงินแยกตามรูปแบบคอร์ส">
+          <p><b>แบบ 1 · ซื้อสิทธิ์ 499 บาท</b><span>ใช้บัญชีผู้สอน · ผู้สอนได้ 100%</span></p>
+          <p><b>แบบ 2 · เริ่มขายฟรี</b><span>ใช้บัญชีผู้สอน · ผู้สอนได้ 100%</span></p>
+          <p><b>แบบ 3 · พาร์ตเนอร์ 50/50</b><span>ใช้บัญชี VisionD · แบ่ง VisionD 50% / ผู้สอน 50%</span></p>
+        </div>
         <div id="paymentProfileStatus">กำลังตรวจสอบ…</div>
         <form id="paymentProfileForm" class="seller-form" hidden>
           <label
@@ -99,10 +104,10 @@
       </section>
       <section id="slipApiPanel" class="seller-card">
         <p class="seller-section-number">PART 3</p>
-        <h2>ตั้งค่าการตรวจสลิปส่วนกลาง</h2>
+        <h2>ตั้งค่าการตรวจสลิปสำหรับแบบ 1 และแบบ 2</h2>
         <p>
-          ตั้งค่าที่นี่เพียงจุดเดียว เลือกได้ว่าจะตรวจและอนุมัติเอง หรือเปิด EasySlip API
-          ของคุณเพื่อตรวจบัญชี ยอดเงิน เลขอ้างอิง และสลิปซ้ำอัตโนมัติ
+          แบบ 1 และ 2 เลือกได้ว่าจะตรวจและอนุมัติเอง หรือเปิด EasySlip API
+          ของผู้สอน ส่วนแบบ 3 ให้ VisionD ตรวจสลิปอัตโนมัติและหักค่าตรวจ 1 บาทจากส่วนของผู้สอน
         </p>
         <div id="slipApiStatus">กำลังตรวจสอบ…</div>
         <form id="slipApiForm" class="seller-form">
@@ -429,17 +434,17 @@
         </div>
       </section>
     </main>
-    <link rel="stylesheet" href="/seller-lesson-files.css?v=014263" /><link
+    <link rel="stylesheet" href="/seller-lesson-files.css?v=014264" /><link
       rel="stylesheet"
-      href="/course-draft-first-ep.css?v=014263"
+      href="/course-draft-first-ep.css?v=014264"
     />
-    <script src="/shared-nav.js?v=014263" defer></script>
-    <script src="/header-shell.js?v=014263" defer></script>
-    <script src="/course-seller.js?v=014263"></script>
-    <script src="/course-draft-first-ep.js?v=014263"></script>
-    <script src="/course-license-dates.js?v=014263"></script>
-    <script src="/elon-chat.js?v=014263" defer></script>
-    <script src="/mobile-storefront.js?v=014263" defer></script>
-    <script src="/visiond-design-system.js?v=014263" defer></script>
+    <script src="/shared-nav.js?v=014264" defer></script>
+    <script src="/header-shell.js?v=014264" defer></script>
+    <script src="/course-seller.js?v=014264"></script>
+    <script src="/course-draft-first-ep.js?v=014264"></script>
+    <script src="/course-license-dates.js?v=014264"></script>
+    <script src="/elon-chat.js?v=014264" defer></script>
+    <script src="/mobile-storefront.js?v=014264" defer></script>
+    <script src="/visiond-design-system.js?v=014264" defer></script>
   </body>
 </html>

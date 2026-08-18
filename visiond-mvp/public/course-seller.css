@@ -951,3 +951,4 @@ td {
   color: #456b69;
 }
 .course-shared-setting-note{padding:12px 14px;border:1px solid #83cdc8;border-radius:12px;background:#effbf9;color:#075f5a;font-weight:800}
+.course-plan-payment-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.course-plan-payment-rules p{display:grid;gap:5px;margin:0;padding:12px;border:1px solid #9bded9;border-radius:12px;background:#effcfb}.course-plan-payment-rules span{font-size:.9rem;color:#315b59}@media(max-width:720px){.course-plan-payment-rules{grid-template-columns:1fr}}
