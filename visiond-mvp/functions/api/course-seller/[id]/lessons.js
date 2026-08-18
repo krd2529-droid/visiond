@@ -22,10 +22,10 @@ export async function onRequestPost(ctx){
   const course=await owned(ctx,auth.user);if(!course)return json({error:'ไม่พบคอร์ส'},404);
   if(await hasPaidSale(ctx,course.id))return json({error:'หลังมียอดขาย เปลี่ยนแปลงเนื้อหาทั้งหมดไม่ได้ หากแก้ข้อผิดพลาดภายในต้องติดต่อ VisionD เท่านั้น'},409);
   if(!editable(course))return json({error:'หมดระยะเวลาแก้ไข 30 วันแล้ว'},403);
-  const form=await ctx.request.formData(),title=String(form.get('title')||'').trim().slice(0,200),description=String(form.get('description')||'').slice(0,5000),duration=Number(form.get('duration_seconds')||0),video=form.get('video'),documents=form.getAll('documents').filter(x=>x instanceof File&&x.size);
+  const form=await ctx.request.formData(),title=String(form.get('title')||'').trim().slice(0,200),description=String(form.get('description')||'').slice(0,5000),duration=Number(form.get('duration_seconds')||0),video=form.get('video'),documents=form.getAll('documents').filter(x=>x instanceof File&&x.size),videoPending=form.get('video_upload_pending')==='1';
   if(!title)return json({error:'กรุณาใส่ชื่อ EP'},400);
   if(!Number.isInteger(duration)||duration<0||duration>86400)return json({error:'ระยะเวลาต้องเป็นวินาทีจำนวนเต็ม 0–86,400'},400);
-  if(!video?.size&&!documents.length)return json({error:'แนบคลิปหรือเอกสารอย่างน้อยหนึ่งไฟล์'},400);
+  if(!video?.size&&!documents.length&&!videoPending)return json({error:'แนบคลิปหรือเอกสารอย่างน้อยหนึ่งไฟล์'},400);
   if(video?.size&&(!['video/mp4','video/webm'].includes(video.type)||video.size>200*1024*1024))return json({error:'คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 200 MB'},400);
   if(documents.length>20)return json({error:'แนบไฟล์ประกอบได้ไม่เกิน 20 ไฟล์ต่อครั้ง'},400);
   if(documents.some(file=>file.size>200*1024*1024))return json({error:'ไฟล์ประกอบแต่ละไฟล์ต้องไม่เกิน 200 MB'},400);

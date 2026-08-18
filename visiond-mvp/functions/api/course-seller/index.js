@@ -2,6 +2,7 @@ import { json, requireUser } from "../../_lib.js";
 import { ensureDatabase } from "../../_schema.js";
 import { sellerTokenStatus } from "../../_seller_token.js";
 import {COURSE_PLANS,coursePlan} from '../../_course_plans.js';
+import {MIN_COURSE_PRICE_SATANG,coursePriceError} from '../../_course_rules.js';
 const imageTypes = ["image/jpeg", "image/png", "image/webp"],
   ext = (name, type) =>
     String(name || "")
@@ -120,8 +121,8 @@ export async function onRequestPost(ctx) {
       { error: "กรุณากรอกชื่อคอร์ส ชื่อผู้สอน และรายละเอียดให้ครบ" },
       400,
     );
-  if (!Number.isFinite(draftPrice) || draftPrice < 100)
-    return json({ error: "กรุณาระบุราคาขายอย่างน้อย 1 บาท" }, 400);
+  if (!Number.isFinite(draftPrice) || draftPrice < MIN_COURSE_PRICE_SATANG)
+    return json({ error: coursePriceError() }, 400);
   let plan;
   try {
     plan = episodePlan();

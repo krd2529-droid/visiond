@@ -1,5 +1,6 @@
 import { json, requireUser } from "../../_lib.js";
 import { ensureDatabase } from "../../_schema.js";
+import {MIN_COURSE_PRICE_SATANG,coursePriceError} from '../../_course_rules.js';
 const canEdit = (course) =>
     !course.edit_expires_at || Date.parse(course.edit_expires_at) > Date.now(),
   slugTags = new Set([
@@ -65,8 +66,8 @@ export async function onRequestPut(ctx) {
       .trim()
       .slice(0, 200);
   if (await hasPaidSale(ctx, course.id)) {
-    if (!Number.isFinite(price) || price < 100)
-      return json({ error: "กรุณาระบุราคาขายอย่างน้อย 1 บาท" }, 400);
+    if (!Number.isFinite(price) || price < MIN_COURSE_PRICE_SATANG)
+      return json({ error: coursePriceError() }, 400);
     await ctx.env.DB.batch([
       ctx.env.DB.prepare(
         "UPDATE products SET price=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
@@ -92,10 +93,10 @@ export async function onRequestPut(ctx) {
     !teacher ||
     !description ||
     !Number.isFinite(price) ||
-    price < 100
+    price < MIN_COURSE_PRICE_SATANG
   )
     return json(
-      { error: "กรุณากรอกข้อมูลให้ครบและตั้งราคาอย่างน้อย 1 บาท" },
+      { error: `กรุณากรอกข้อมูลให้ครบ และ${coursePriceError()}` },
       400,
     );
   const tags = [

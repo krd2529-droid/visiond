@@ -1,6 +1,7 @@
 import { json, requireUser } from "../../../_lib.js";
 import { ensureDatabase } from "../../../_schema.js";
 import {loadSellerToken} from '../../../_seller_token.js';
+import {MIN_COURSE_PRICE_SATANG,coursePriceError} from '../../../_course_rules.js';
 async function lessonValidation(env, courseId, expected) {
   const rows = await env.DB.prepare(
     `SELECT l.id,l.title,l.sort_order,
@@ -37,8 +38,8 @@ export async function onRequestPost(ctx) {
     contact = String(body.contact_info || "")
       .trim()
       .slice(0, 200);
-  if (!Number.isFinite(price) || price < 100)
-    return json({ error: "กรุณาระบุราคาขายอย่างน้อย 1 บาท" }, 400);
+  if (!Number.isFinite(price) || price < MIN_COURSE_PRICE_SATANG)
+    return json({ error: coursePriceError() }, 400);
   if (!contact) return json({ error: "กรุณาระบุช่องทางติดต่อ" }, 400);
   if (body.confirm_permanent !== true)
     return json(

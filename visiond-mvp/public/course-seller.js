@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014287">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014288">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -532,6 +532,10 @@ changeSellerCover.onclick = () => sellerCoverInput.click();
 removeSellerCover.onclick = clearSellerCover;
 sellerCourseForm.onsubmit = async (e) => {
   e.preventDefault();
+  if (Number(sellerCourseForm.elements.price_baht.value) < 499) {
+    sellerMessage.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
+    return;
+  }
   const confirmation = "ยืนยันสร้างร่างคอร์สพาร์ตเนอร์ 50/50 หรือไม่";
   if (!confirm(confirmation)) return;
   const b = e.submitter;
@@ -556,6 +560,32 @@ sellerCourseForm.onsubmit = async (e) => {
     if (course) openLessons(course);
   }
 };
+async function uploadLessonVideo(courseId, lessonId, file, quality) {
+  const initResponse = await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/init`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ lesson_id: Number(lessonId), file_name: file.name, file_type: file.type, file_size: file.size, quality: Number(quality) }),
+  });
+  const init = await initResponse.json().catch(() => ({}));
+  if (!initResponse.ok) throw new Error(init.error || "เริ่มอัปโหลดวิดีโอไม่สำเร็จ");
+  const parts = [];
+  try {
+    for (let offset = 0, partNumber = 1; offset < file.size; offset += init.chunk_size, partNumber++) {
+      const end = Math.min(file.size, offset + init.chunk_size);
+      sellerLessonMessage.textContent = `กำลังอัปโหลดวิดีโอ ${Math.round((offset / file.size) * 100)}% กรุณาอย่าปิดหน้านี้…`;
+      const partResponse = await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/part?key=${encodeURIComponent(init.key)}&upload_id=${encodeURIComponent(init.upload_id)}&part_number=${partNumber}`, { method: "PUT", body: file.slice(offset, end) });
+      const part = await partResponse.json().catch(() => ({}));
+      if (!partResponse.ok) throw new Error(part.error || `อัปโหลดส่วนที่ ${partNumber} ไม่สำเร็จ`);
+      parts.push(part);
+    }
+    const completeResponse = await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/complete`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: init.key, upload_id: init.upload_id, file_size: file.size, parts }) });
+    const complete = await completeResponse.json().catch(() => ({}));
+    if (!completeResponse.ok) throw new Error(complete.error || "รวมไฟล์วิดีโอไม่สำเร็จ");
+    return complete;
+  } catch (error) {
+    await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/abort`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: init.key, upload_id: init.upload_id }) }).catch(() => {});
+    throw error;
+  }
+}
 sellerLessonForm.onsubmit = async (e) => {
   e.preventDefault();
   const id = sellerLessonForm.elements.course_id.value,
@@ -564,26 +594,49 @@ sellerLessonForm.onsubmit = async (e) => {
   b.disabled = true;
   sellerLessonMessage.textContent =
     "กำลังบันทึกและอัปโหลด กรุณาอย่าปิดหน้านี้…";
+  const video = sellerLessonForm.elements.video.files?.[0];
+  if (video && (video.size > 2 * 1024 * 1024 * 1024 || !["video/mp4", "video/webm"].includes(video.type))) {
+    sellerLessonMessage.textContent = "คลิปต้องเป็น MP4/WEBM และมีขนาดไม่เกิน 2 GB";
+    b.disabled = false;
+    return;
+  }
+  const lessonData = new FormData(sellerLessonForm);
+  if (video) { lessonData.delete("video"); lessonData.set("video_upload_pending", "1"); }
   const r = await fetch(
       lessonId
         ? `/api/course-seller/${id}/lessons/${lessonId}`
         : `/api/course-seller/${id}/lessons`,
       {
         method: lessonId ? "PUT" : "POST",
-        body: new FormData(sellerLessonForm),
+        body: lessonData,
       },
     ),
     d = await r.json().catch(() => ({}));
   sellerLessonMessage.textContent = d.error || d.message || "";
-  b.disabled = false;
   if (r.ok) {
+    if (video) {
+      try {
+        await uploadLessonVideo(id, d.id || lessonId, video, sellerLessonForm.elements.video_quality.value);
+        sellerLessonMessage.textContent = "บันทึก EP และอัปโหลดวิดีโอสำเร็จ";
+      } catch (error) {
+        sellerLessonMessage.textContent = `${error.message} · ข้อมูล EP ถูกเก็บเป็นร่างแล้ว กดบันทึกใหม่เพื่ออัปโหลดซ้ำ`;
+        b.disabled = false;
+        await loadLessons(id);
+        return;
+      }
+    }
     resetLessonEditor(id);
     await loadLessons(id);
     await load();
   }
+  b.disabled = false;
 };
 publishForm.onsubmit = async (e) => {
   e.preventDefault();
+  if (Number(publishForm.elements.price_baht.value) < 499) {
+    publishMessage.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
+    return;
+  }
   if (
     !confirm(
       "ยืนยันว่า หลังมียอดขาย เปลี่ยนแปลงเนื้อหาทั้งหมดไม่ได้ หากแก้ข้อผิดพลาดภายในต้องติดต่อ VisionD เท่านั้น และต้องไม่เปลี่ยนสาระเดิม ใช่ไหม",
