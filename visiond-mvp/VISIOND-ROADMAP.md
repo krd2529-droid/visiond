@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.336` ELON Chat; `v0.14.337` Sales Page Center
+- เสร็จแล้ว: `v0.14.336` ELON Chat; `v0.14.337` Sales Page Center; `v0.14.338` Vision 13 Intake
 - ยังเหลือ: ระบบที่ Coverage Audit พบ เช่น Sales Page, Vision 13/14, Ads/Analytics, Webhook Hub, Security และ Partner API/Web 2
 
 ## Active Patch
 
-### v0.14.337 — Sales Page Center Feature Map
+### v0.14.338 — Vision 13 Intake Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน draft/revision/lifecycle, approval, public renderer และ A/B Variant ของ Sales Page
-- Acceptance: Map อ้าง route/API/data/permission จริง และ public renderer มีรหัส `SALES-PAGE-001`
-- ห้ามเปลี่ยน: lifecycle, robots, approval, variant rules, API และพฤติกรรม UI
+- เป้าหมายหลัก: ลงทะเบียนคิวตรวจ Approval Snapshot และการผลิต EPUB จาก Vision 14 MIX
+- Acceptance: Map อ้าง state/evidence/hash/R2/permission จริง และหน้า Intake มีรหัส `V13-INTAKE-001`
+- ห้ามเปลี่ยน: state machine, snapshot, rights gate, EPUB output, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
@@ -33,6 +33,7 @@
 
 ## Recently Completed
 
+- `v0.14.337` — Sales Page Center Feature Map
 - `v0.14.336` — ELON Chat Feature Map
 - `v0.14.335` — UI Design Contract Protocol
 - `v0.14.334` — Automated Patch Gate ก่อน Commit

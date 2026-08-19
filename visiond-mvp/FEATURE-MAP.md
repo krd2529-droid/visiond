@@ -414,6 +414,19 @@
 - รหัส UI: public renderer มี `data-feature="SALES-PAGE-001"`; หลังบ้านยึด route/ID ที่ระบุข้างต้น
 - การทดสอบ: `scripts/test-v014234.mjs`, `scripts/test-v014235.mjs`, `scripts/test-v014236.mjs`, `scripts/test-v014337.mjs`
 
+## V13-INTAKE-001 — ตรวจ Approval Snapshot และผลิต EPUB จาก Vision 14 MIX
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.338
+- หน้า/ไฟล์: `/vision13-intake.html`, `public/vision13-intake.js`, `functions/_vision13_epub.js`, `functions/_vision14.js`, `functions/api/admin/vision13-intake/index.js`, `functions/api/admin/vision13-intake/[id].js`, `functions/api/admin/vision13-production/[id].js`
+- ฟังก์ชัน: กรองคิว, ตรวจ rights/PDF teaching/fingerprint/citation, `start_review|approve|reject`, Approval Snapshot, ผลิต/ดาวน์โหลด EPUB
+- API: `GET /api/admin/vision13-intake`, `GET/PUT /api/admin/vision13-intake/:id`, `GET/POST /api/admin/vision13-production/:id`
+- ฐานข้อมูล/ไฟล์: `vision13_intake_queue`, `vision13_intake_reviews`, `vision13_ebook_productions`, Vision 14 mix/source/item tables และ R2 `vision13/ebooks/*`
+- Input/Output: MIX ที่ไม่ internal-only พร้อมหลักฐานสิทธิ์และ citation; ได้ snapshot hash, EPUB artifact hash/size และสถานะ `ready|reviewing|approved|rejected|produced`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; object key ไม่ถูกส่งออกและดาวน์โหลดผ่าน endpoint ที่ตรวจสิทธิ์
+- ห้ามกระทบ: reject ต้องมีเหตุผล; อนุมัติเมื่อ evidence ครบเท่านั้น; ผลิตเฉพาะ approved snapshot ที่ hash ยังตรง; ห้ามผลิตซ้ำ; หาก DB ล้มหลังอัปโหลดต้องลบ R2 object
+- รหัส UI: หน้า Intake มี `data-feature="V13-INTAKE-001"`
+- การทดสอบ: `scripts/test-v014233.mjs`, `scripts/test-v014338.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
