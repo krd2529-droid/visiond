@@ -19,7 +19,7 @@
   if (!button || !dialog || !globalThis.PDFLib) return;
 
   const state = { groups: [], baskets: [], signature: "", creating: false, created: [] };
-  const MAX_SOURCE_BYTES = 200 * 1024 * 1024, MAX_ZIP_ENTRIES = 500;
+  const MAX_ZIP_ENTRIES = 500;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const setMessage = (text, error = false) => {
     message.textContent = text;
@@ -52,7 +52,6 @@
   const isZip = (name, type = "") => ["application/zip", "application/x-zip-compressed"].includes(type) || /\.zip$/i.test(name);
   const readU16 = (view, offset) => view.getUint16(offset, true), readU32 = (view, offset) => view.getUint32(offset, true);
   const unzipEntries = async (file) => {
-    if (file.size > MAX_SOURCE_BYTES) throw new Error(`${file.name} เกิน 200 MB`);
     const bytes = new Uint8Array(await file.arrayBuffer()), view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     let eocd = -1;
     for (let offset = bytes.length - 22; offset >= Math.max(0, bytes.length - 65557); offset--) if (readU32(view, offset) === 0x06054b50) { eocd = offset; break; }
@@ -103,7 +102,6 @@
   const normalizeSources = async (files) => {
     const groups = [], loosePngs = [];
     for (const file of files) {
-      if (file.size > MAX_SOURCE_BYTES) throw new Error(`${file.name} เกิน 200 MB`);
       if (isPng(file.name, file.type)) { loosePngs.push({ name: file.name, data: new Uint8Array(await file.arrayBuffer()) }); continue; }
       if (isPdf(file.name, file.type)) { groups.push(await makeGroup(file.name, new Uint8Array(await file.arrayBuffer()))); continue; }
       if (!isZip(file.name, file.type)) throw new Error(`${file.name} ต้องเป็น PNG, PDF หรือ ZIP`);
