@@ -32,7 +32,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014300">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014302">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -221,11 +221,11 @@ function showLessonDraftGate(){
   sellerLessonManager.dataset.state="waiting-course";
   sellerLessonCourseTitle.textContent="EP ภายในตะกร้าคอร์ส";
   sellerLessonIntro.textContent="กรอกรายละเอียด EP ให้ครบในตะกร้าคอร์สเดียวกัน แล้วกดส่งตรวจเมื่อพร้อม";
-  addSellerLesson.disabled=true;
+  addSellerLesson.disabled=false;
   resetLessonEditor("",false);
   sellerLessonFormTitle.textContent="EP.01";
   sellerLessonForm.querySelector('button[type="submit"]').textContent="เพิ่ม EP นี้ในตะกร้า";
-  sellerLessonList.innerHTML='<div class="seller-course-empty"><b>ยังไม่มี EP ที่เพิ่มแล้ว</b><p>กรอกรายละเอียด EP ด้านบน แล้วเพิ่มเข้าในตะกร้าคอร์สนี้</p></div>';
+  sellerLessonList.replaceChildren();
   if(sendCourseReview)sendCourseReview.disabled=true;
   if(sendCourseReviewHelp)sendCourseReviewHelp.textContent="เพิ่ม EP พร้อมคลิปหรือเอกสารให้ครบ แล้วจึงส่งตรวจได้";
 }
@@ -390,7 +390,7 @@ function resetLessonEditor(courseId, hide = true) {
   sellerLessonForm.elements.lesson_id.value = "";
   sellerLessonForm.querySelector('button[type="submit"]').textContent =
     "เพิ่ม EP นี้ในตะกร้า";
-  sellerLessonFormTitle.textContent = "สร้าง EP ใหม่";
+  sellerLessonFormTitle.textContent = "เพิ่ม EP";
   sellerLessonMessage.textContent = "";
   sellerLessonForm.hidden = hide;
 }
@@ -431,7 +431,7 @@ async function loadLessons(id) {
             `<article class="seller-ep"><div class="seller-ep-number">${i + 1}</div><div><b>EP.${i + 1} · ${esc(x.title)}</b><small>${x.has_video ? "มีวิดีโอ" : ""}${x.has_video && x.file_count ? " · " : ""}${x.file_count ? `ไฟล์ประกอบ ${x.file_count} ไฟล์` : ""}${!x.has_video && !x.file_count ? "ยังไม่มีสื่อ" : ""}</small>${x.description ? `<p>${esc(x.description)}</p>` : ""}<div class="seller-file-list">${(x.files || []).map((f) => `<span>${esc(f.file_name)} <button type="button" data-file="${f.id}" data-lesson="${x.id}" ${d.editable ? "" : "disabled"}>ลบไฟล์</button></span>`).join("")}</div></div><div class="seller-ep-actions"><button type="button" data-edit="${x.id}" ${d.editable ? "" : "disabled"}>แก้ไข</button><button type="button" data-delete="${x.id}" ${d.editable ? "" : "disabled"}>ลบ EP</button></div></article>`,
         )
         .join("")
-    : '<div class="seller-course-empty"><b>ยังไม่มี EP</b><p>กด “+ สร้าง EP เพิ่ม” เพื่อเริ่มบทเรียนแรก</p></div>';
+    : "";
   sellerLessonList.querySelectorAll("[data-edit]").forEach(
     (b) =>
       (b.onclick = () => {
