@@ -440,6 +440,18 @@
 - รหัส UI: หน้า Library มี `data-feature="V14-LIBRARY-001"`; ใช้ปุ่ม/interaction เดิมของหน้าโดยไม่เพิ่ม theme หรือ component
 - การทดสอบ: `scripts/test-v014339.mjs`
 
+## V14-SUMMARY-001 — สรุปรายเล่มและ Teaching Document
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.340
+- หน้า/ไฟล์: `/vision14-summary.html`, `public/vision14-summary.js`, `public/vision14-teaching.js`, `functions/api/admin/vision14-summaries/index.js`, `functions/api/admin/vision14-summaries/[id].js`, `functions/api/admin/vision14-teaching/[id].js`
+- ฟังก์ชัน: สรุปจาก clean text แบบ extractive พร้อมเลขหน้า/keywords/missing pages, คำนวณ coverage และรับ/ดาวน์โหลด Teaching PDF
+- API: `GET /api/admin/vision14-summaries`, `GET/POST /api/admin/vision14-summaries/:id`, `GET/POST /api/admin/vision14-teaching/:id`
+- ฐานข้อมูล/ไฟล์: `vision14_book_summaries`, `vision14_teaching_documents`, `vision14_source_pages`; R2 `vision14/teaching/*`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; downstream sale ยึด rights ของ source
+- ห้ามกระทบ: ต้องมี clean text ก่อนสรุป; Teaching PDF ต้อง coverage อย่างน้อย 80%, เป็น PDF ไม่เกิน 25 MB และ 1–500 หน้า; replace สำเร็จจึงลบ object เก่า และ DB ล้มต้องลบ object ใหม่
+- รหัส UI: หน้า Summary มี `data-feature="V14-SUMMARY-001"`; คงปุ่มและ theme เดิม
+- การทดสอบ: `scripts/test-v014340.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
