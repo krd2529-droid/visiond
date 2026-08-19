@@ -727,6 +727,21 @@
 - รหัส UI: Ads Intelligence card มี `data-feature="AD-INTELLIGENCE-001"`; คง form, confirmation, loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014362.mjs`
 
+## COURSE-ADMIN-001 — สร้างคอร์สบริษัทและจัดการบทเรียน
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.363
+- หน้า/ไฟล์: company-course grid และ lesson manager ใน `/admin-courses.html`, `public/admin-courses.js`, `functions/api/admin/courses/index.js`, `functions/api/admin/courses/[id].js`, `functions/api/admin/courses/[id]/lessons.js`, `functions/api/admin/courses/[id]/lessons/[lessonId].js`
+- ฟังก์ชัน: แสดง/สร้าง/แก้คอร์สบริษัท, เปิดหรือเก็บแบบร่าง, อัปโหลดรูปปก, เพิ่ม/แสดง/ลบบทเรียนและสื่อ, คำนวณนาทีรวมและจำนวนนักเรียน
+- API: `GET/POST /api/admin/courses`, `POST /api/admin/courses/:id`, `GET/POST /api/admin/courses/:id/lessons`, `DELETE /api/admin/courses/:id/lessons/:lessonId`
+- ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `entitlements`; R2 course cover, lesson video และ PDF
+- สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; route นี้รับเฉพาะคอร์สบริษัทที่ `owner_user_id IS NULL`, `course_origin='company'` และ `course_type='online_course'`
+- ห้ามข้ามขอบเขต: คอร์สผู้ขาย/Vision 5, `seller_rights` และ resale-rights เดิมต้องจัดการในระบบเฉพาะ; ห้ามสร้างหรือแปลง company course เป็นตะกร้าสิทธิ์ผ่านหน้านี้
+- ห้ามกระทบไฟล์: รูปปก JPG/PNG/WEBP สูงสุด 5 MB; บทเรียนต้องมี MP4/WEBM สูงสุด 200 MB หรือ PDF สูงสุด 100 MB อย่างน้อยหนึ่งไฟล์; ถ้าบันทึก DB หรือ PDF ล้มต้องล้าง object ที่เพิ่งสร้าง
+- ห้ามกระทบข้อมูล: product และ course ต้องสร้างสัมพันธ์กัน; active สะท้อน `products.status` published/draft; ลบบทเรียนเฉพาะ course เดียวกัน, ลบ DB ก่อน object และคำนวณ `total_minutes` ใหม่
+- ความสัมพันธ์: ไม่รวม seller review section ในหน้าเดียวกันซึ่งอยู่ใต้ `COURSE-REVIEW-001`; ไม่รวมตะกร้าผู้สอน/EP ซึ่งอยู่ใต้ `COURSE-BASKET-001` และ `COURSE-EP-001`
+- รหัส UI: company-course grid และ lesson manager มี `data-feature="COURSE-ADMIN-001"`; คง form, confirmation, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014363.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
