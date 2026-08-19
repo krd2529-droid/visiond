@@ -3,6 +3,7 @@
   const banner=document.createElement('a');
   banner.href='/digital-products.html';
   banner.className='visiond-promo-banner';
+  banner.dataset.feature='STOREFRONT-PROMO-001';
   banner.dataset.visiondPromo='bundle-discount';
   banner.setAttribute('aria-label','โปรจัดชุดสินค้า เลือก 5 ถึง 30 ตะกร้า รับส่วนลดสูงสุด 30 เปอร์เซ็นต์');
   const motion=document.createElement('img');
@@ -14,6 +15,7 @@
   if(header)header.insertAdjacentElement('afterend',banner);else document.body.prepend(banner);
   const stats=document.createElement('section');
   stats.className='visiond-visit-strip';
+  stats.dataset.feature='STOREFRONT-PROMO-001';
   stats.setAttribute('aria-label','สถิติการเข้าชมเว็บไซต์');
   stats.innerHTML='<article><small>เข้าชมวันนี้</small><b data-visit-today>—</b></article><article><small>7 วันล่าสุด</small><b data-visit-7>—</b></article><article><small>30 วันล่าสุด</small><b data-visit-30>—</b></article>';
   banner.insertAdjacentElement('afterend',stats);

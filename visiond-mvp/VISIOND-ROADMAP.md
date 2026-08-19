@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.374` External Contact Dock; `v0.14.375` Shared TH/EN Language Layer; `v0.14.376` Boss Mobile Preview
+- เสร็จแล้ว: `v0.14.375` Shared TH/EN Language Layer; `v0.14.376` Boss Mobile Preview; `v0.14.377` Storefront Promo/Visit Strip
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.376 — Boss Mobile Preview Feature Map
+### v0.14.377 — Storefront Promo/Visit Strip Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนเครื่องมือ Boss ตรวจ public/admin routes ในกรอบมือถือ
-- Acceptance: Map อ้าง Boss-only, top-level/desktop guard, nested preview guard, route/iframe controls และ close behavior; ทั้งสอง shell มีรหัส
-- ห้ามเปลี่ยน: role checks, route list, iframe/query flags, open/close behavior และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน bundle promo banner และ public visit statistics strip
+- Acceptance: Map อ้าง static promotion boundary, GIF refresh, placement, analytics event/fallback และ failure state; สอง surface มีรหัส
+- ห้ามเปลี่ยน: promotion text/rules, target URL, analytics counting/API, fallback และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
