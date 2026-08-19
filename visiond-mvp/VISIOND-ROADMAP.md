@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.341` Vision 14 MIX; `v0.14.342` Ads/Analytics; `v0.14.343` Webhook Hub
-- ยังเหลือ: Security, Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ
+- เสร็จแล้ว: `v0.14.342` Ads/Analytics; `v0.14.343` Webhook Hub; `v0.14.344` Bundle Preview Audit
+- ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.343 — Webhook Hub Feature Map
+### v0.14.344 — Bundle Preview Audit Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน endpoint lifecycle และ LINE webhook ingestion ของ VEasy
-- Acceptance: Map อ้าง URL/rotation/state/signature/dedup/permission จริง และหน้ามีรหัส `WEBHOOK-HUB-001`
-- ห้ามเปลี่ยน: endpoint state, adapter gate, signature, ingestion, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียนการตรวจและย้อนรูปพรีวิวของตะกร้ารวม
+- Acceptance: Map อ้าง candidates/allowlist/revision/rollback/preserved fields จริง และหน้ามีรหัส `BUNDLE-PREVIEW-001`
+- ห้ามเปลี่ยน: bundle members, product identity, price, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

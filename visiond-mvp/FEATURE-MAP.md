@@ -490,6 +490,19 @@
 - รหัส UI: หน้า Webhook Hub มี `data-feature="WEBHOOK-HUB-001"`; คง confirmation, copy, success/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014343.mjs`
 
+## BUNDLE-PREVIEW-001 — ตรวจ แก้ และย้อนรูปพรีวิวตะกร้ารวม
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.344
+- หน้า/ไฟล์: `/bundle-preview-audit.html`, `public/bundle-preview-audit.js`, `functions/api/admin/bundle-preview-audit/index.js`, `functions/api/admin/bundle-preview-audit/[id].js`
+- ฟังก์ชัน: แสดงตะกร้าสมาชิกและรูป candidate, รับ JPG/PNG ที่ตรวจจาก PDF, เลือกรูป cover/preview, เก็บ revision และ rollback
+- API: `GET /api/admin/bundle-preview-audit`, `GET/PUT/POST/PATCH /api/admin/bundle-preview-audit/:id`
+- ฐานข้อมูล/ไฟล์: `products`, `product_bundle_items`, `product_files`, `bundle_preview_revisions`; R2 `bundle-preview-*`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; ทำงานเฉพาะ product `source='bundle'` ที่ยังไม่ถูกลบ
+- ห้ามกระทบ: เลือก 1–30 รูปและรับเฉพาะ URL จากสมาชิกหรือรูปตรวจ PDF ของ bundle เดียวกัน; upload ต้องเป็น JPG/PNG ไม่เกิน 2 MB และ source ต้องเป็นสมาชิก; update แค่ `cover_url`, `preview_urls`, `updated_at`; ต้องเก็บ revision ก่อนแก้และ rollback ก็สร้าง revision ใหม่
+- ข้อมูลที่ต้องคงเดิม: `id`, `slug`, `title`, `created_at`, `price`, `category`, `pages`, `bundle_members`
+- รหัส UI: หน้า Audit มี `data-feature="BUNDLE-PREVIEW-001"`; คง dialog, selection, status และ theme เดิม
+- การทดสอบ: `scripts/test-v014344.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
