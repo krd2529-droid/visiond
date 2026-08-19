@@ -32,7 +32,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014301">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014302">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -221,7 +221,7 @@ function showLessonDraftGate(){
   sellerLessonManager.dataset.state="waiting-course";
   sellerLessonCourseTitle.textContent="EP ภายในตะกร้าคอร์ส";
   sellerLessonIntro.textContent="กรอกรายละเอียด EP ให้ครบในตะกร้าคอร์สเดียวกัน แล้วกดส่งตรวจเมื่อพร้อม";
-  addSellerLesson.disabled=true;
+  addSellerLesson.disabled=false;
   resetLessonEditor("",false);
   sellerLessonFormTitle.textContent="EP.01";
   sellerLessonForm.querySelector('button[type="submit"]').textContent="เพิ่ม EP นี้ในตะกร้า";
@@ -390,7 +390,7 @@ function resetLessonEditor(courseId, hide = true) {
   sellerLessonForm.elements.lesson_id.value = "";
   sellerLessonForm.querySelector('button[type="submit"]').textContent =
     "เพิ่ม EP นี้ในตะกร้า";
-  sellerLessonFormTitle.textContent = "สร้าง EP ใหม่";
+  sellerLessonFormTitle.textContent = "เพิ่ม EP";
   sellerLessonMessage.textContent = "";
   sellerLessonForm.hidden = hide;
 }
