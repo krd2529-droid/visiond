@@ -452,6 +452,18 @@
 - รหัส UI: หน้า Summary มี `data-feature="V14-SUMMARY-001"`; คงปุ่มและ theme เดิม
 - การทดสอบ: `scripts/test-v014340.mjs`
 
+## V14-MIX-001 — รวมความรู้ ตัดซ้ำ และส่งคิว Vision 13
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.341
+- หน้า/ไฟล์: `/vision14-mix.html`, `public/vision14-mix.js`, `functions/api/admin/vision14-mixes/index.js`, `functions/api/admin/vision14-mixes/[id].js`
+- ฟังก์ชัน: เลือก 2–30 ต้นฉบับที่มี Teaching Document, normalize/token similarity, รวม citation, สร้าง SHA-256 fingerprint และแสดง Page Trace
+- API: `GET/POST /api/admin/vision14-mixes`, `GET /api/admin/vision14-mixes/:id`
+- ฐานข้อมูล: `vision14_mixes`, `vision14_mix_sources`, `vision14_mix_items`, `vision13_intake_queue`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; MIX ที่มี source ขายไม่ได้เป็น `internal_only` และไม่สร้างคิว Vision 13
+- ห้ามกระทบ: ต้องมีสรุปและ Teaching Document ทุก source; deduplicate เมื่อ normalized text ตรงหรือ Jaccard similarity อย่างน้อย 0.78; ต้องรักษา citation source/page; เฉพาะ MIX ที่สิทธิ์ผ่านทั้งหมดจึงเข้าคิว Vision 13 สถานะ ready
+- รหัส UI: หน้า MIX มี `data-feature="V14-MIX-001"`; คงปุ่ม loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014341.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
