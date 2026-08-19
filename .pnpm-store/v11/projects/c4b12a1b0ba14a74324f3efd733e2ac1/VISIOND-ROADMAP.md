@@ -1,5 +1,8 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.329 — Basket Sample Download Memory (IMPLEMENTED)
+- จดจำจำนวนครั้งที่ดาวน์โหลดรูปตัวอย่างของแต่ละตะกร้าใน browser และเตือนบนการ์ดโดยไม่บล็อกการโหลดซ้ำ
+
 ## v0.14.328 — Basket Sample ZIP Folder and 30-image Limit (IMPLEMENTED)
 - ZIP ใช้ชื่อตะกร้า ภายในเป็นโฟลเดอร์ชื่อตะกร้าและเก็บ JPEG ติด SAMPLE 30 รูปแรก
 
