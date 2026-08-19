@@ -687,6 +687,18 @@
 - รหัส UI: trash section มี `data-feature="TRASH-RECOVERY-001"`; คง confirmation/loading/error/card และ theme เดิม
 - การทดสอบ: `scripts/test-v014359.mjs`
 
+## CATEGORY-ADMIN-001 — จัดการหมวดหมู่สินค้าและ Slug Cascade
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.360
+- หน้า/ไฟล์: Category section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/categories/index.js`, `functions/api/admin/categories/[id].js`
+- ฟังก์ชัน: แสดง product count, สร้าง/แก้ชื่อและ slug, กำหนหมวดแม่, file type เริ่มต้น, active และ sort order; เปลี่ยน slug พร้อมย้าย product references; ลบหมวดที่ว่าง
+- API: `GET/POST /api/admin/categories`, `PUT/DELETE /api/admin/categories/:id`
+- ฐานข้อมูล: `categories.id/slug/name/parent_slug/file_type/active/sort_order`, `products.category`; product count นับเฉพาะ published, non-deleted, normal product ตาม query เดิม
+- สิทธิ์: `requireAdmin` สำหรับอ่าน/สร้าง/แก้; `requireBoss` สำหรับลบ; UI ซ่อนปุ่มลบจาก non-Boss
+- ห้ามกระทบ: ชื่อห้ามว่าง/ซ้ำแบบ trim + case-insensitive; slug ต้องเป็น lowercase kebab-case; เว้น slug ตอนสร้างได้และระบบสร้าง `category-NNN` ถัดไป; slug ซ้ำต้อง 400/409; เมื่อแก้ slug ต้อง update `products.category` จากค่าเก่า; หมวดที่มีสินค้าอ้างถึงห้ามลบและคืน 409
+- รหัส UI: categories section มี `data-feature="CATEGORY-ADMIN-001"`; คง form/list/confirmation/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014360.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

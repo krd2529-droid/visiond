@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.357` Vision 2 Factory; `v0.14.358` Vision 4 Draft Factory; `v0.14.359` Trash Recovery
+- เสร็จแล้ว: `v0.14.358` Vision 4 Draft Factory; `v0.14.359` Trash Recovery; `v0.14.360` Category Administration
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.359 — Trash Recovery Feature Map
+### v0.14.360 — Category Administration Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน lifecycle ถังขยะ 30 วัน กู้คืน auto purge และลบถาวร
-- Acceptance: Map อ้าง Admin/Boss permissions, restore conflicts, purge limits และ purchased-product tombstone จริง; panel มี `TRASH-RECOVERY-001`
-- ห้ามเปลี่ยน: retention, restore/delete semantics, purchased download preservation, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนหน้าสร้าง แก้ไข เปิด/ปิด จัดลำดับ และลบหมวดสินค้า
+- Acceptance: Map อ้าง slug/name validation, auto slug, product cascade, permissions และ used-category guard จริง; panel มี `CATEGORY-ADMIN-001`
+- ห้ามเปลี่ยน: category identity, product assignments, deletion guard, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
