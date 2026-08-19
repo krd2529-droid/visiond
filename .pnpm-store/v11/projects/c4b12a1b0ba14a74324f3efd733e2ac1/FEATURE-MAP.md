@@ -303,6 +303,36 @@
 - ห้ามกระทบ: AI ร่างข้อความเท่านั้น ผู้ดูแลต้องเลือกนำร่างไปใช้และส่งจริง
 - การทดสอบ: `scripts/test-v014326.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
 
+## V7-PROGRAM-001 — โปรแกรมและแพ็กเกจ Vision 7
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.327
+- หน้า/ไฟล์: `/vision7-admin.html`, `public/vision7-admin.js`, `functions/api/admin/vision7/programs.js`, `functions/_vision7_key_storefront.js`
+- API: `GET|POST|PATCH /api/admin/vision7/programs`, `GET /api/vision7/programs`
+- ฐานข้อมูล: `vision7_programs`, `vision7_plans`, `products`
+- สิทธิ์: Admin สร้าง/แก้ไข; รายการสาธารณะคืนเฉพาะโปรแกรมที่ active
+- ห้ามกระทบ: ห้ามสร้างสินค้าคีย์ซ้ำหรือเปิดโปรแกรมร่างขายเอง
+
+## V7-LICENSE-001 — ออกคีย์ ต่ออายุ ระงับ และจัดการอุปกรณ์
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.327
+- หน้า/ไฟล์: `/vision7-admin.html`, `public/vision7-admin.js`, `functions/api/admin/vision7/licenses.js`, `functions/api/admin/vision7/licenses/[id]/history.js`
+- ฐานข้อมูล: `vision7_licenses`, `vision7_license_devices`, `vision7_license_events`, `vision7_order_fulfillments`
+- สิทธิ์: Admin จัดการคีย์; คีย์จริงเก็บแบบเข้ารหัสและแสดงค่าจริงเฉพาะรอบออกคีย์
+- ห้ามกระทบ: ห้ามออกซ้ำจาก order item เดิม ห้ามเกินจำนวนอุปกรณ์ และห้ามคืน key hash/ciphertext
+
+## V7-RELEASE-001 — อัปโหลดและดาวน์โหลดไฟล์ติดตั้ง
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.327
+- หน้า/ไฟล์: `/vision7-admin.html`, `functions/api/admin/vision7/releases.js`, `functions/api/vision7/releases/[id]/download.js`
+- ฐานข้อมูล/ไฟล์: `vision7_releases`; R2 object พร้อม SHA-256
+- สิทธิ์: Admin อัปโหลด; สมาชิกดาวน์โหลดเมื่อมี license active/trial ของโปรแกรมเดียวกัน
+- ห้ามกระทบ: ห้ามคืน R2 object key และห้ามดาวน์โหลดข้ามสิทธิ์
+
+## V7-MEMBER-001 — โปรแกรมของฉันและการปิดอุปกรณ์
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.327
+- หน้า/ไฟล์: `/my-programs.html`, `public/my-programs.js`, `functions/api/vision7/my-programs.js`, `functions/api/vision7/activate.js`
+- API: `GET /api/vision7/my-programs`, `DELETE /api/vision7/activate`
+- Reads/Writes: อ่าน license/release/device ของสมาชิก; revoke เฉพาะอุปกรณ์ใต้ license ของตน
+- ห้ามกระทบ: ห้ามอ่านคีย์หรือปิดอุปกรณ์ข้ามบัญชี และห้าม license หมดอายุดาวน์โหลดไฟล์
+- การทดสอบ: `scripts/test-v014327.mjs`, `scripts/test-v014110-veasy-activation-contract.mjs`, `scripts/test-all-regressions.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

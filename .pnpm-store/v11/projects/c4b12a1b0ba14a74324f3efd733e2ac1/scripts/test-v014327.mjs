@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+assert.equal(read('VERSION.txt').trim(), 'v0.14.327');
+assert.match(read('public/index.html'), /WEB v0\.14\.327/);
+assert.match(read('public/admin.html'), /ADMIN v0\.14\.327/);
+for (const id of ['V7-PROGRAM-001','V7-LICENSE-001','V7-RELEASE-001','V7-MEMBER-001']) assert.match(read('FEATURE-MAP.md'), new RegExp(id));
+for (const table of ['vision7_programs','vision7_licenses','vision7_releases']) assert.match(read('functions/_vision7_schema.js'), new RegExp(table));
+assert.match(read('functions/api/vision7/my-programs.js'), /l\.user_id=\?/);
+assert.match(read('functions/api/vision7/releases/[id]/download.js'), /license/i);
+console.log('PASS v0.14.327 Vision 7 Feature Map');

@@ -1,5 +1,9 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.327 — Vision 7 Feature Map (IMPLEMENTED)
+- ลงทะเบียนเส้นทางโปรแกรม คีย์ อุปกรณ์ รีลีส และหน้าสมาชิกจากโค้ดจริง โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
+- Event Case Feature Map ยังต้องแพตต่อในระบบหลักส่วนที่ยังไม่มีรหัส
+
 Updated: 2026-08-18
 Current build: v0.14.250
 
