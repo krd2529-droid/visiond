@@ -148,18 +148,22 @@
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางย้อนหลังใน v0.14.304
 - หน้า: `/`, `/login.html`, `/register.html`, `/forgot-password.html`, `/reset-password.html`, `/dashboard.html`
-- ไฟล์: `public/app.js`, `public/member-auth.js`, `public/member-dashboard.js`, `functions/api/auth/register.js`, `functions/api/auth/login.js`, `functions/api/auth/logout.js`, `functions/api/auth/me.js`, `functions/api/auth/change-password.js`, `functions/api/auth/forgot-password.js`, `functions/api/auth/reset-password.js`
+- ไฟล์: `public/app.js`, `public/member-auth.js`, `public/member-dashboard.js`, `public/security.js`, `functions/_security.js`, `functions/api/security/config.js`, `functions/api/auth/register.js`, `functions/api/auth/login.js`, `functions/api/auth/logout.js`, `functions/api/auth/me.js`, `functions/api/auth/change-password.js`, `functions/api/auth/forgot-password.js`, `functions/api/auth/reset-password.js`
 - ฟังก์ชัน/ตัวควบคุม: `loadHomeAccount()`, `submitAuth()`, `onRequestPost()`, `requireUser()`
 - ปุ่ม/interaction: สมัครสมาชิก, เข้าสู่ระบบ, จำการเข้าสู่ระบบ, ลืม/ตั้งรหัสผ่านใหม่, เปลี่ยนรหัสผ่าน, ออกจากระบบ
-- API: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/change-password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`
+- API: `GET /api/security/config`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/change-password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1; `users.id`, `users.email`, `users.username`, `users.password_hash`, `users.role`, `sessions.id`, `sessions.user_id`, `sessions.expires_at`, `password_reset_tokens`, `user_terms_acceptances`
 - Input: ชื่อ นามสกุล ไอดี อีเมล โทรศัพท์ รหัสผ่าน Turnstile และการยอมรับข้อกำหนด
 - Output: เซสชันคุกกี้ `vd_session`, ข้อมูลสมาชิกที่ไม่เปิดเผย hash/token และผลดำเนินการ
 - Reads: บัญชีผู้ใช้ เซสชัน การยอมรับข้อกำหนด และ token รีเซ็ตรหัสผ่าน
 - Writes: สร้าง/แก้บัญชี สร้าง/ยกเลิกเซสชัน บันทึกการยอมรับและ security log
 - สิทธิ์: ผู้เยี่ยมชมทำรายการสมัคร/เข้าสู่ระบบ; ข้อมูลบัญชีและเปลี่ยนรหัสผ่านต้องเป็นเจ้าของเซสชัน
+- Turnstile client: login/register/forgot-password โหลด `security.js`; เมื่อพบ form และ public config มี site key จึงโหลด Cloudflare SDK แบบ explicit, แทรก light-theme widget ก่อน submit และ hidden `turnstile_token`; callback ตั้ง token และ expired callback ล้าง token; config/SDK/error อื่น fail-quiet
+- Turnstile server: register/login/forgot-password ส่ง token จาก FormData/JSON เข้า `verifyTurnstile()`; เมื่อไม่มี `TURNSTILE_SECRET_KEY` server คืน `{ok:true,disabled:true}`; เมื่อเปิดใช้ต้องมี token, ส่ง secret/response/remote IP ไป Siteverify และปฏิเสธ success false หรือ hostname ไม่ตรง request
+- Configuration boundary: client enablement ยึด `TURNSTILE_SITE_KEY` แต่ server enforcement ยึด `TURNSTILE_SECRET_KEY`; ต้องตั้งคู่กัน มิฉะนั้น site-only จะแสดง widgetแต่ server bypass ส่วน secret-only จะไม่มี widget/tokenและ auth request ถูกปฏิเสธ
+- รหัส UI: Turnstile slot ที่สร้างแบบ dynamic ใช้ `data-feature="AUTH-ACCOUNT-001"`; คง SDK URL, theme, inline spacing, callbacks และ form/button layout เดิม
 - ห้ามกระทบ: ห้ามส่ง `password_hash`, session ID หรือ reset token กลับ frontend; ห้ามข้าม rate limit/Turnstile; ห้ามลดสิทธิ์ตรวจ role
-- การทดสอบ: `scripts/test-v01447.mjs`, `scripts/test-v014110-b1.mjs`, `scripts/test-v014304.mjs`
+- การทดสอบ: `scripts/test-v01447.mjs`, `scripts/test-v014110-b1.mjs`, `scripts/test-v014304.mjs`, coverage correction `scripts/test-v014384.mjs`
 
 ## CATALOG-STOREFRONT-001 — แคตตาล็อกและหน้ารายละเอียดสินค้าดิจิทัล
 
