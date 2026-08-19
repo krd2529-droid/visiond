@@ -6,6 +6,16 @@ const bangkokDay = (offset = 0) => {
   const date = new Date(Date.now() + 7 * 60 * 60 * 1000 + offset * 86400000);
   return date.toISOString().slice(0, 10);
 };
+const partnerTeacherSql = "CAST(o.total / 2 AS INTEGER)";
+const payoutCycle = (today) => {
+  const cycleStart = `${today.slice(0, 8)}01`;
+  const next = new Date(`${cycleStart}T00:00:00Z`);
+  next.setUTCMonth(next.getUTCMonth() + 1);
+  const nextClearDate = next.toISOString().slice(0, 10);
+  const cleared = new Date(`${cycleStart}T00:00:00Z`);
+  cleared.setUTCDate(cleared.getUTCDate() - 1);
+  return { cycle_start: cycleStart, next_clear_date: nextClearDate, cleared_through: cleared.toISOString().slice(0, 10) };
+};
 const validDay = (value) => {
   if (!datePattern.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
@@ -28,7 +38,7 @@ export async function onRequestGet(ctx) {
   const where = "o.course_owner_user_id=? AND o.status='paid' AND date(o.updated_at,'+7 hours') BETWEEN ? AND ?";
   const rows = await ctx.env.DB.prepare(
     `SELECT o.id,o.order_no,o.updated_at paid_at,o.total gross_total,
-      CASE WHEN o.course_plan='partner' THEN o.teacher_revenue ELSE o.total END teacher_total,
+      CASE WHEN o.course_plan='partner' THEN ${partnerTeacherSql} ELSE o.total END teacher_total,
       o.course_plan,COALESCE((SELECT product_title FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1),p.title,'สินค้าเดิม') course_title,
       COALESCE(NULLIF(TRIM(u.name),''),NULLIF(TRIM(u.username),''),'สมาชิก') buyer_name
      FROM orders o JOIN users u ON u.id=o.user_id
@@ -37,13 +47,19 @@ export async function onRequestGet(ctx) {
   ).bind(auth.user.id, from, to).all();
   const summary = await ctx.env.DB.prepare(
     `SELECT COUNT(*) orders,COUNT(DISTINCT o.user_id) buyers,COALESCE(SUM(o.total),0) gross_total,
-      COALESCE(SUM(CASE WHEN o.course_plan='partner' THEN o.teacher_revenue ELSE o.total END),0) teacher_total
+      COALESCE(SUM(CASE WHEN o.course_plan='partner' THEN ${partnerTeacherSql} ELSE o.total END),0) teacher_total
      FROM orders o WHERE ${where}`,
   ).bind(auth.user.id, from, to).first();
+  const cycle = payoutCycle(bangkokDay());
+  const pending = await ctx.env.DB.prepare(
+    `SELECT COALESCE(SUM(CASE WHEN o.course_plan='partner' THEN ${partnerTeacherSql} ELSE o.total END),0) amount
+     FROM orders o WHERE o.course_owner_user_id=? AND o.status='paid' AND date(o.updated_at,'+7 hours')>=?`,
+  ).bind(auth.user.id, cycle.cycle_start).first();
   return json({
     from,
     to,
     max_days: 60,
+    payout: { ...cycle, pending_total: Number(pending?.amount) || 0, clear_day: 1 },
     items: rows.results || [],
     limited: (rows.results || []).length >= 500,
     summary: {
