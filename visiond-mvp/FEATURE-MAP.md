@@ -224,6 +224,7 @@
 - API: `GET /api/admin/product-sample-sources/:id`, `GET /api/admin/product-files/:fileId`
 - Reads: ตะกร้าเดี่ยวและ `product_files` ของตะกร้านั้นโดยตรง
 - Output: ZIP ชื่อตะกร้า ภายในเป็นโฟลเดอร์ชื่อตะกร้าและ JPEG ที่ประทับ SAMPLE 30 รูปแรก
+- ประวัติฝั่งผู้ดูแล: จดจำจำนวนดาวน์โหลดต่อตะกร้าใน browser และแสดง `โหลดแล้ว N ครั้ง` บนการ์ด โดยไม่ห้ามดาวน์โหลดซ้ำ
 - สิทธิ์: ผู้ดูแลเท่านั้น; API ตรวจสิทธิ์ซ้ำ
 - ห้ามกระทบ: ห้ามเลือกตะกร้าชุดรวม/คอร์ส ห้ามอ่านไฟล์สมาชิกของชุดรวม ห้ามเขียน/ลบ/แทนที่สินค้าและไฟล์ต้นฉบับ และห้ามคืน object key ของ R2
 - การทดสอบ: `scripts/test-v014320.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`

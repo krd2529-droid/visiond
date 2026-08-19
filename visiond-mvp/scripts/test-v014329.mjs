@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.329');
+assert.match(read('public/index.html'),/WEB v0\.14\.329/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.329/);
+const js=read('public/product-sample-archive.js');
+assert.match(js,/localStorage\.getItem\(downloadHistoryKey\)/);
+assert.match(js,/rememberDownload\(id\)/);
+assert.match(js,/โหลดแล้ว \$\{count\} ครั้ง/);
+assert.doesNotMatch(js,/if\(downloadCount\(id\)\).*return/);
+console.log('PASS v0.14.329 sample download memory without duplicate blocking');
