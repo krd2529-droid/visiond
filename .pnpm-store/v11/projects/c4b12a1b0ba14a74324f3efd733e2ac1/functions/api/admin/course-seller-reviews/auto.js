@@ -26,21 +26,19 @@ export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   if(auth.user.role!=='boss')return json({error:'เฉพาะ Boss ใช้การอนุมัติคอร์สอัตโนมัติได้'},403);
   const rows=await ctx.env.DB.prepare(`SELECT c.id,c.product_id,c.owner_user_id,c.license_entitlement_id,c.basket_binding_locked,c.submitted_at,c.expected_episodes,p.title,p.cover_url,p.deleted_at,
-    (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id) lesson_count,
-    (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id AND (TRIM(COALESCE(l.title,''))='' OR (l.video_key IS NULL AND l.pdf_key IS NULL AND NOT EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id)))) incomplete_lesson_count
+    (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id=c.id AND TRIM(COALESCE(l.title,''))<>'' AND (l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id))) lesson_count
     FROM courses c JOIN products p ON p.id=c.product_id
     WHERE c.course_type='online_course' AND c.course_origin='seller_rights' AND c.review_status='pending'
     ORDER BY c.submitted_at,c.id LIMIT ?`).bind(MAX_BATCH).all();
   const summary={checked:0,approved:0,not_approved:0,skipped:0,errors:0,items:[]};
   for(const course of rows.results||[]){
     summary.checked++;
-    const required=Math.max(1,Number(course.expected_episodes)||1),actual=Number(course.lesson_count)||0,incomplete=Number(course.incomplete_lesson_count)||0,reasons=[];
+    const required=1,actual=Number(course.lesson_count)||0,reasons=[];
     if(course.license_entitlement_id===null||!Number(course.basket_binding_locked)||!course.submitted_at)reasons.push('ยังไม่ได้ผูกสิทธิ์และส่งเผยแพร่ครบขั้นตอน');
     if(course.deleted_at)reasons.push('ตะกร้าถูกลบแล้ว');
     if(!String(course.title||'').trim())reasons.push('ไม่มีชื่อคอร์ส');
     if(!String(course.cover_url||'').trim())reasons.push('ไม่มีรูปปก');
-    if(actual!==required)reasons.push(`จำนวน EP ไม่ครบ ${actual}/${required}`);
-    if(incomplete)reasons.push(`มี ${incomplete} EP ที่ขาดชื่อหรือไฟล์เรียน`);
+    if(actual<required)reasons.push('ต้องมี EP ที่ใส่ชื่อและไฟล์เรียนจริงอย่างน้อย 1 EP');
     try{
       if(reasons.length){
         const changed=await markChanges(ctx.env,course,autoNote(reasons));

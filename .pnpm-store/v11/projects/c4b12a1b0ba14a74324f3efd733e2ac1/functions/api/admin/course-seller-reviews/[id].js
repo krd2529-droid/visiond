@@ -4,10 +4,8 @@ async function lessonValidation(env,courseId,expected){
   const rows=await env.DB.prepare(`SELECT l.id,l.title,l.sort_order,
     CASE WHEN l.video_key IS NOT NULL OR l.pdf_key IS NOT NULL OR EXISTS(SELECT 1 FROM course_lesson_files f WHERE f.lesson_id=l.id) THEN 1 ELSE 0 END has_media
     FROM course_lessons l WHERE l.course_id=? ORDER BY l.sort_order,l.id`).bind(courseId).all();
-  const lessons=rows.results||[],required=Math.max(1,Number(expected)||1),missing=[];
-  for(let index=0;index<lessons.length;index++)if(!String(lessons[index].title||'').trim()||!Number(lessons[index].has_media))missing.push(index+1);
-  if(lessons.length<required)for(let index=lessons.length;index<required;index++)missing.push(index+1);
-  return {complete:lessons.length===required&&!missing.length,actual:lessons.length,required,missing:[...new Set(missing)]};
+  const lessons=(rows.results||[]).filter(lesson=>String(lesson.title||'').trim()&&Number(lesson.has_media)),required=1,missing=lessons.length?[]:[1];
+  return {complete:lessons.length>=required,actual:lessons.length,required,missing};
 }
 async function courseTransition(env,{courseId,productId,from,to,courseSet,courseBindings=[],productStatus}){
   const fromList=Array.isArray(from)?from:[from],marks=fromList.map(()=>'?').join(',');

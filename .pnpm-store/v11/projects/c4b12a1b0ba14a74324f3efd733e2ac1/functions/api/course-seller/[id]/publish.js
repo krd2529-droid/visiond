@@ -10,20 +10,13 @@ async function lessonValidation(env, courseId, expected) {
   )
     .bind(courseId)
     .all();
-  const lessons = rows.results || [],
-    required = Math.max(1, Number(expected) || 1),
-    missing = [];
-  for (let index = 0; index < lessons.length; index++)
-    if (
-      !String(lessons[index].title || "").trim() ||
-      !Number(lessons[index].has_media)
-    )
-      missing.push(index + 1);
-  if (lessons.length < required)
-    for (let index = lessons.length; index < required; index++)
-      missing.push(index + 1);
+  const lessons = (rows.results || []).filter(
+      lesson => String(lesson.title || "").trim() && Number(lesson.has_media),
+    ),
+    required = 1,
+    missing = lessons.length ? [] : [1];
   return {
-    complete: lessons.length === required && !missing.length,
+    complete: lessons.length >= required,
     actual: lessons.length,
     required,
     missing: [...new Set(missing)],
