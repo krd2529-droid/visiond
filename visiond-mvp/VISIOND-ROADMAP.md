@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.356` System Health; `v0.14.357` Vision 2 Factory; `v0.14.358` Vision 4 Draft Factory
+- เสร็จแล้ว: `v0.14.357` Vision 2 Factory; `v0.14.358` Vision 4 Draft Factory; `v0.14.359` Trash Recovery
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.358 — Vision 4 Draft Factory Feature Map
+### v0.14.359 — Trash Recovery Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนระบบรับ ZIP/PDF หลายไฟล์ วิเคราะห์ สร้าง SAMPLE และ draft รอ Boss ตรวจ
-- Acceptance: Map อ้าง limits, low-content branch, analysis fallback, multipart lifecycle และ review handoff จริง; panel มี `V4-DRAFT-001`
-- ห้ามเปลี่ยน: classification/price formula, file limits, draft/review lifecycle, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน lifecycle ถังขยะ 30 วัน กู้คืน auto purge และลบถาวร
+- Acceptance: Map อ้าง Admin/Boss permissions, restore conflicts, purge limits และ purchased-product tombstone จริง; panel มี `TRASH-RECOVERY-001`
+- ห้ามเปลี่ยน: retention, restore/delete semantics, purchased download preservation, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

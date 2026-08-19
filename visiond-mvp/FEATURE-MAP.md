@@ -674,6 +674,19 @@
 - รหัส UI: Vision 4 panel มี `data-feature="V4-DRAFT-001"`
 - การทดสอบ: `scripts/test-v014358.mjs`
 
+## TRASH-RECOVERY-001 — ถังขยะ 30 วัน กู้คืน และลบถาวร
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.359
+- หน้า/ไฟล์: Trash section ใน `/admin.html`, `public/admin.js`, `functions/_trash.js`, `functions/api/admin/trash/index.js`, `functions/api/admin/trash/restore.js`; soft delete เริ่มจาก product/file/image admin endpoints
+- ฟังก์ชัน: แสดงสินค้า รูป และ PDF/ZIP ที่ลบ; กู้สถานะ/ไฟล์/ช่องรูป; purge รายการหมดอายุ; ลบถาวรทันทีโดย Boss
+- API: `GET/DELETE /api/admin/trash`, `POST /api/admin/trash/restore`
+- ฐานข้อมูล/ไฟล์: `products.deleted_at/deleted_prev_status`, `trash_items`, `product_files`, `downloads`, `entitlements`, `unlock_logs`, `product_bundle_items`, `product_slug_history`; R2 objects ของไฟล์/รูป
+- สิทธิ์: `requireAdmin` สำหรับดูและกู้คืน; `requireBoss` สำหรับ DELETE ถาวร; UI แสดงปุ่มลบถาวรเฉพาะ Boss และต้องยืนยันด้วยคำ `DELETE`
+- ห้ามกระทบ: retention 30 วัน; purge ต่อรอบจำกัด 20 `trash_items` และ 10 products; product restore คืน `deleted_prev_status` หรือ published; กู้ไฟล์/รูปต้องมี product ก่อนและห้ามทับของปัจจุบัน; อย่าลบ R2 ก่อนยืนยันกู้คืน/ลบถาวร
+- การรักษาสิทธิ์ผู้ซื้อ: product ที่มี `order_items` อ้างถึงห้ามลบ record, paid files หรือ bundle links; ให้เก็บเป็น hidden tombstone `status='draft'`, `deleted_at='9999-12-31 23:59:59'` เพื่อให้ผู้ซื้อเก่ายังดาวน์โหลดได้
+- รหัส UI: trash section มี `data-feature="TRASH-RECOVERY-001"`; คง confirmation/loading/error/card และ theme เดิม
+- การทดสอบ: `scripts/test-v014359.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
