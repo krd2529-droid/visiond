@@ -829,6 +829,20 @@
 - ความสัมพันธ์: checkout/approval อยู่ใต้ `COURSE-PARTNER-CHECKOUT-001`; ห้องเรียนและ private lesson media อยู่ใต้ `COURSE-LEARNING-001`
 - การทดสอบ: `scripts/test-v014370.mjs`
 
+## CUSTOMER-RECOMMENDATION-001 — สินค้าแนะนำเฉพาะบุคคลบน Storefront
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.371
+- หน้า/ไฟล์: `/digital-products.html`, `/product.html?slug=:slug`, `public/personalized-products.js`, `public/personalized-products.css`, `functions/api/recommendations.js`, `functions/api/analytics/event.js`, `functions/_analytics.js`, `functions/_promotion.js`
+- API: `GET /api/recommendations`; ผู้ไม่มีบัญชีใช้ visitor cookie ที่ตรวจ UUID และ hash ก่อน query, สมาชิกใช้ user id; ไม่มี identity หรือไม่มี interest คืน array ว่าง
+- Signals: อ่าน `product_view`, `add_to_cart`, `checkout_start` ย้อนหลัง 30 วัน ให้น้ำหนัก 1/4/6 แล้วรวมความสนใจตาม family และ category สูงสุด 5 กลุ่ม
+- Ranking: candidate ต้อง published, ไม่ถูกลบ, เป็น product ปกติ และไม่ใช่ resale-rights/online-course; ตัดสินค้าที่เคยมี signal หรือมี active entitlement แล้ว; family เดียวกันมาก่อน category ใกล้เคียง
+- Output: จัดอันดับจาก catalog สูงสุด 500 แล้วเลือก 6 รายการ ใช้ promotion จาก server ก่อนคืนราคา; client แสดงสูงสุด 4 การ์ดพร้อมเหตุผล
+- Telemetry: `recommendation_view` ส่งสูงสุดหนึ่งรอบต่อ session ผ่าน `vd_recommendation_seen_v1`; click ส่ง `recommendation_click`; analytics endpoint ยังคง dedupe event ซ้ำภายใน 10 วินาที
+- Privacy/Failure: ไม่คืน visitor key, user id หรือ raw event history; controller fail-quiet และไม่สร้าง section เมื่อไม่มีรายการหรือ request ล้มเหลว
+- รหัส UI: dynamic section ใช้ `data-feature="CUSTOMER-RECOMMENDATION-001"`; คง `.vd-personalized-products`, card link, responsive layout และ theme เดิม
+- ความสัมพันธ์: การเก็บ event/retention อยู่ใต้ `CUSTOMER-ANALYTICS-001`; catalog/ราคาอยู่ใต้ `CATALOG-STOREFRONT-001`
+- การทดสอบ: `scripts/test-v014371.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

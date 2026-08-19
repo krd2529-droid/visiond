@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.368` Course Seller Sales Reporting; `v0.14.369` V-Learning Runtime; `v0.14.370` Public Course Catalog/Detail
+- เสร็จแล้ว: `v0.14.369` V-Learning Runtime; `v0.14.370` Public Course Catalog/Detail; `v0.14.371` Personalized Product Recommendations
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.370 — Public Course Catalog/Detail Feature Map
+### v0.14.371 — Personalized Product Recommendations Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนแคตตาล็อกและหน้ารายละเอียดคอร์สสาธารณะ
-- Acceptance: Map อ้าง public visibility, owner continuity, EP privacy, filter/detail/cart และ surface สำคัญมีรหัส
-- ห้ามเปลี่ยน: catalog query, visibility, cart behavior, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนสินค้าแนะนำเฉพาะบุคคลจากพฤติกรรม storefront
+- Acceptance: Map อ้าง identity, 30-day signals, ranking/exclusions, server promotion และ impression/click telemetry; section มีรหัส
+- ห้ามเปลี่ยน: recommendation ranking, analytics, privacy, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
