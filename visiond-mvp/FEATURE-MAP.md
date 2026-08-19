@@ -527,6 +527,18 @@
 - รหัส UI: หน้าแก้ Vision 4 มี `data-feature="V4-REVIEW-001"`; คง form, preview, loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014346.mjs`
 
+## VEASY-SHOP-001 — Activation ร้านค้า Bot/Inbox และ Native Runtime ของ VEasy
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.347
+- หน้า/ไฟล์: `/veasy/login.html`, `public/veasy/login.js`, `functions/_veasy_shop.js`, `functions/_veasy_runtime.js`, `functions/_veasy_line_ai.js`, `functions/api/vision7/auth/veasy-activate.js`, `functions/api/vision7/auth/veasy-device.js`, `functions/api/vision7/shops/*`, `functions/api/vision7/runtime/*`
+- ฟังก์ชัน: activate บัญชี/คีย์/อุปกรณ์/ร้าน, bind หนึ่ง license ต่อหนึ่งร้าน, จัดการ shop/products/channels, bot start-stop-handoff, inbox owner reply และ native runtime lease/conversation/message/order claims
+- API: `/api/vision7/auth/veasy-*`, `/api/vision7/shops`, `/api/vision7/shops/:shopId/*`, `/api/vision7/runtime/*`
+- ฐานข้อมูล: `veasy_shops`, `veasy_shop_products`, `veasy_channels`, `veasy_bot_state`, `veasy_conversations`, `veasy_chat_messages`, `veasy_conversation_controls`, `veasy_runtime_leases`, `veasy_conversation_leases`, `veasy_audit_log` และ Vision 7 license/device tables
+- สิทธิ์: ใช้ Vision 7 auth; ทุก shop endpoint ตรวจ `shop_id + user_id`; activation ต้องเป็นโปรแกรม platform `veasy`, license ใช้งานได้และอยู่ใน device limit
+- ห้ามกระทบ: 1 คีย์ = 1 ร้าน; ห้ามอ่าน/แก้ร้านข้ามเจ้าของ; เปิด bot ได้เมื่อร้าน active มี channel connected, webhook ready และ AI configured; stop ต้องล้าง runtime/conversation leases; owner ส่งได้เมื่อ conversation เป็น human และรุ่นนี้ส่งใน inbox เฉพาะ LINE; claim/lease ต้องรักษา ownership, expiry และ idempotency ตาม runtime เดิม
+- รหัส UI: หน้า activation มี `data-feature="VEASY-SHOP-001"`; native app รับ handoff `veasy-auth-v1` โดยคง field เดิม
+- การทดสอบ: `scripts/test-v014347.mjs`, `scripts/test-v014110-veasy-activation-contract.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
