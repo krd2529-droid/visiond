@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.354` Category Member; `v0.14.355` ELON Control; `v0.14.356` System Health
+- เสร็จแล้ว: `v0.14.355` ELON Control; `v0.14.356` System Health; `v0.14.357` Vision 2 Factory
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.356 — System Health Feature Map
+### v0.14.357 — Vision 2 Factory Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนหน้าตรวจ readiness ของ binding, schema, encryption และ optional services
-- Acceptance: Map อ้าง Boss-only, no-store, required/recommended และการไม่เปิดเผย Secret จริง; health panel มี `SYSTEM-HEALTH-001`
-- ห้ามเปลี่ยน: environment, migrations, readiness criteria, authorization, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน Digital Product Factory ตั้งแต่ brief/prompt ถึงส่งต่อไฟล์เข้า product editor และ usage ledger
+- Acceptance: Map อ้าง generation/storage ownership, queue resume, sample/PDF/ZIP, usage validation และ API จริง; workspace มี `V2-FACTORY-001`
+- ห้ามเปลี่ยน: provider behavior, prompt/image limits, storage ownership, product handoff, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

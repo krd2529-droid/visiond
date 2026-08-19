@@ -648,6 +648,19 @@
 - รหัส UI: health section มี `data-feature="SYSTEM-HEALTH-001"`; คง refresh/loading/error/readiness cards และ theme เดิม
 - การทดสอบ: `scripts/test-v014356.mjs`
 
+## V2-FACTORY-001 — Digital Product Factory จาก Prompt ถึงไฟล์สินค้า
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.357
+- หน้า/ไฟล์: Vision 2 workspace ใน `/admin.html`, `public/vision2.js`, `public/vision2.css`, `public/vision2-font.css`, `public/vision2-character.css`, `functions/api/admin/vision2/generate.js`, `functions/api/admin/vision2/characters.js`, `functions/api/admin/vision2/image.js`, `functions/api/admin/prompt-usage.js`
+- ฟังก์ชัน: workflow 7 ขั้นจาก brief, prompt table, image queue, เลือก SAMPLE 3 รูป, รวม PDF, เติม product metadata และ handoff เข้า product editor; รองรับนำเข้ารูป/PDF/ZIP, สร้างรายชื่อตัวละคร, resume/retry queue และรายงาน Prompt usage
+- API: `POST /api/admin/vision2/generate`, `POST /api/admin/vision2/characters`, `GET /api/admin/vision2/image`, `GET/POST /api/admin/prompt-usage`; การบันทึกสินค้าส่งต่อไป `PROD-ADMIN-001`
+- ฐานข้อมูล/ไฟล์: R2 key `vision2/{user_id}/{project}/...`; D1 `prompt_usage_logs`; browser `localStorage` key `vision2_active_job_v2`; PDF/SAMPLE สร้างใน browser ก่อนส่งต่อ
+- สิทธิ์: ทุก API ใช้ `requireAdmin`; image read อนุญาตเฉพาะ key ที่ขึ้นต้นด้วย `vision2/{auth.user.id}/`; R2 response ใช้ private cache
+- ห้ามกระทบ: generation backend ปัจจุบันใช้ Gemini เท่านั้น (`gemini-3.1-flash-image`) และ API slot 1/2 ผูก `GEMINI_API_KEY`/`GEMINI_API_KEY_2`; prompt สูงสุด 12,000 ตัวอักษร, aspect ratio อยู่ใน allowlist, timeout 120 วินาที; character request สูงสุด 2,000 ตัวอักษร/200 รายการ; usage image/prompt count แต่ละค่า 1–1,000 และรายงานตามวันไทยสูงสุด 2,000 แถว
+- ห้ามกระทบ UI: คงลำดับขั้น, queue delay/retry, resume confirmation, SAMPLE watermark/selection, PDF/ZIP limits, product handoff, loading/error และ theme เดิม
+- รหัส UI: workspace มี `data-feature="V2-FACTORY-001"` ผ่าน `workspace.dataset.feature`
+- การทดสอบ: `scripts/test-v014357.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
