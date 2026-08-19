@@ -115,12 +115,6 @@ Rollback safety:
 - Before starting an unrelated new Event Case, warn Boss that the active Event Case remains unfinished and recommend completing it first.
 - Boss may explicitly reorder or pause work; record that decision as `PAUSED BY BOSS` without mislabeling the Event Case complete.
 - A new request that adds acceptance criteria to the active topic remains part of the same Event Case.
-# Content Removal Rule
-
-- เมื่อผู้ใช้สั่งเอาเนื้อหาหรือส่วนประกอบออก ให้ลบองค์ประกอบและการอ้างอิงที่เกี่ยวข้องออกจริง
-- ห้ามใช้ `hidden`, `display: none`, visibility, เงื่อนไข JavaScript หรือ DOM/template แฝงเพื่อทำเสมือนลบ เว้นแต่ผู้ใช้ระบุชัดเจนว่าให้ “ซ่อน”
-- การลบส่วนแสดงผลต้องไม่ลบข้อมูลฐานข้อมูลหรือ API โดยอัตโนมัติ เว้นแต่ผู้ใช้สั่งให้ลบข้อมูลด้วย
-- หลังลบต้องตรวจการอ้างอิง JavaScript, anchor, event และ test ที่อาจชี้ไปยังองค์ประกอบเดิม
 
 ## Course media and minimum-price rule (v0.14.288+)
 
@@ -131,7 +125,7 @@ Rollback safety:
 # กฎโครงสร้างหน้าเดียว (เพิ่มใน v0.14.297)
 
 - หนึ่งฟอร์มหรือหนึ่ง workflow ต้องมี controller ที่เขียน state และ submit handler เพียงชุดเดียว
-- เมื่อเปลี่ยน workflow ให้ค้นหา HTML, script tag, MutationObserver, event handler และไฟล์เสริมเดิมทุกจุด แล้วลบโครงสร้างที่เลิกใช้จริง ห้ามซ่อนทิ้งไว้
+- เมื่อเปลี่ยน workflow ให้ค้นหา HTML, script tag, MutationObserver, event handler และไฟล์เสริมทุกจุดที่มีผลต่อ runtime เพื่อระบุ controller เจ้าของงานให้ชัดเจน
 - ต้องมี regression test ยืนยันว่า asset เก่าไม่ถูกโหลดและไม่สามารถกลับมาเขียนหน้าทับหลังรีเฟรช
 
 ## กฎ EP ภายในตะกร้าคอร์ส (เพิ่มใน v0.14.298)
