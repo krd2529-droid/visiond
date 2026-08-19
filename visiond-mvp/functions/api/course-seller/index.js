@@ -69,12 +69,12 @@ export async function onRequestGet(ctx) {
     );
   }
   const sales = await ctx.env.DB.prepare(
-    `SELECT o.id,o.order_no,CASE WHEN o.course_plan='partner' THEN o.teacher_revenue ELSE o.total END total,o.total gross_total,o.course_plan,o.visiond_revenue,o.course_api_fee,o.updated_at paid_at,CASE WHEN o.slip_key IS NOT NULL AND TRIM(o.slip_key)<>'' THEN 1 ELSE 0 END has_slip,COALESCE((SELECT product_title FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1),p.title,'สินค้าเดิม') course_title,u.name buyer_name FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN products p ON p.id=(SELECT product_id FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1) WHERE o.course_owner_user_id=? AND o.status='paid' ORDER BY o.updated_at DESC LIMIT 200`,
+    `SELECT o.id,o.order_no,CASE WHEN o.course_plan='partner' THEN CAST(o.total / 2 AS INTEGER) ELSE o.total END total,o.total gross_total,o.course_plan,o.visiond_revenue,CASE WHEN o.course_plan='partner' THEN 0 ELSE o.course_api_fee END course_api_fee,o.updated_at paid_at,CASE WHEN o.slip_key IS NOT NULL AND TRIM(o.slip_key)<>'' THEN 1 ELSE 0 END has_slip,COALESCE((SELECT product_title FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1),p.title,'สินค้าเดิม') course_title,u.name buyer_name FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN products p ON p.id=(SELECT product_id FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1) WHERE o.course_owner_user_id=? AND o.status='paid' ORDER BY o.updated_at DESC LIMIT 200`,
   )
     .bind(auth.user.id)
     .all();
   const salesTotal = await ctx.env.DB.prepare(
-    `SELECT COUNT(*) orders,COALESCE(SUM(CASE WHEN course_plan='partner' THEN teacher_revenue ELSE total END),0) amount FROM orders WHERE course_owner_user_id=? AND status='paid'`,
+    `SELECT COUNT(*) orders,COALESCE(SUM(CASE WHEN course_plan='partner' THEN CAST(total / 2 AS INTEGER) ELSE total END),0) amount FROM orders WHERE course_owner_user_id=? AND status='paid'`,
   )
     .bind(auth.user.id)
     .first();

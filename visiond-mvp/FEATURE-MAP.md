@@ -71,20 +71,20 @@
 
 ## COURSE-BASKET-001 — สร้างและแก้ตะกร้าคอร์สพาร์ตเนอร์
 
-- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
+- สถานะ: `IMPLEMENTED`; แดชบอร์ดรายได้ 50/50 ไม่หักค่า API และแสดงรอบเคลียร์วันที่ 1 ใน v0.14.333
 - หน้า: `/course-center`, `/course-seller?type=1`, `/course-basket-edit?id=:courseId`
 - ไฟล์: `public/course-center.js`, `public/course-seller.html`, `public/course-seller.js`, `public/course-basket-edit.js`, `functions/api/course-seller/plans.js`, `functions/api/course-seller/index.js`, `functions/api/course-seller/[id].js`
 - ฟังก์ชัน/ตัวควบคุม: `openPlan()`, `sellerCourseForm.onsubmit`, `ensureCourseDraft()`, `loadOwnedCourses()`
 - ปุ่ม/interaction: เข้าสร้างคอร์สพาร์ตเนอร์ กรอกข้อมูลตะกร้า เพิ่ม EP บันทึกร่าง และเปิดตะกร้าเดิมกลับมาแก้ไข
-- API: `GET /api/course-seller/plans`, `GET/POST /api/course-seller`, `GET/PUT /api/course-seller/:courseId`
+- API: `GET /api/course-seller/plans`, `GET/POST /api/course-seller`, `GET/PUT /api/course-seller/:courseId`, `GET /api/course-seller/sales`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1; `products.id`, `products.product_kind`, `products.status`, `courses.id`, `courses.product_id`, `courses.owner_user_id`, `courses.plan_type`, `courses.review_status`
 - Input: แผนพาร์ตเนอร์ ข้อมูลตะกร้า รูปปก ราคา ช่องทางติดต่อ และจำนวน EP
-- Output: `product` สถานะร่างและ `course` ที่สัมพันธ์กันแบบหนึ่งต่อหนึ่ง
+- Output: `product` สถานะร่างและ `course` ที่สัมพันธ์กันแบบหนึ่งต่อหนึ่ง; ยอดผู้สอน 50% และยอดรอเคลียร์รอบปัจจุบัน
 - Reads: แผนที่เปิดใช้ คอร์สของเจ้าของ และข้อมูลตะกร้าเดิม
 - Writes: สร้าง/แก้ `products` และ `courses` โดยคงสถานะร่างจนส่งตรวจ
 - สิทธิ์: ต้องเข้าสู่ระบบและเป็นเจ้าของคอร์ส; รับเฉพาะแผน `partner`
 - ห้ามกระทบ: ห้ามสร้างสินค้าแยกจากคอร์ส; ห้ามเผยแพร่ตะกร้าอัตโนมัติ; ห้ามนำแผนเลิกใช้กลับมาแสดง
-- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`, `scripts/test-v014333.mjs`
 
 ## COURSE-REVIEW-001 — ส่งตรวจและอนุมัติคอร์สพาร์ตเนอร์
 

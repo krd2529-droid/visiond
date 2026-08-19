@@ -90,9 +90,9 @@ loadOwnedCourses().catch((error) => {
 });
 
 function renderSales(data) {
-  const summary = data.summary || {};
+  const summary = data.summary || {}, payout = data.payout || {};
   salesRange.textContent = `ช่วง ${new Date(`${data.from}T12:00:00`).toLocaleDateString("th-TH", { dateStyle: "medium" })} – ${new Date(`${data.to}T12:00:00`).toLocaleDateString("th-TH", { dateStyle: "medium" })}`;
-  salesSummary.innerHTML = `<article><small>ยอดขายรวม</small><b>${money(summary.gross_total)}</b></article><article><small>รายได้ส่วนผู้สอน</small><b>${money(summary.teacher_total)}</b></article><article><small>คำสั่งซื้อ</small><b>${Number(summary.orders) || 0}</b></article><article><small>สมาชิกที่ซื้อ</small><b>${Number(summary.buyers) || 0}</b></article>`;
+  salesSummary.innerHTML = `<article><small>ยอดขายรวม</small><b>${money(summary.gross_total)}</b></article><article><small>รายได้ส่วนผู้สอน 50% · ไม่หักค่า API</small><b>${money(summary.teacher_total)}</b></article><article><small>ยอดรอเคลียร์รอบนี้</small><b>${money(payout.pending_total)}</b><span>เคลียร์ทุกวันที่ 1 · รอบถัดไป ${payout.next_clear_date ? new Date(`${payout.next_clear_date}T12:00:00`).toLocaleDateString("th-TH", { dateStyle: "medium" }) : "-"}</span></article><article><small>คำสั่งซื้อ</small><b>${Number(summary.orders) || 0}</b></article><article><small>สมาชิกที่ซื้อ</small><b>${Number(summary.buyers) || 0}</b></article>`;
   salesRows.innerHTML = data.items?.length
     ? `<div class="course-sales-row course-sales-head"><b>วันเวลา</b><b>สมาชิกที่ซื้อ</b><b>คอร์ส</b><b>ยอดขาย</b><b>ส่วนผู้สอน</b></div>${data.items.map((item) => `<div class="course-sales-row"><time>${new Date(`${item.paid_at}Z`).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}</time><b>${esc(item.buyer_name)}</b><span>${esc(item.course_title)}</span><span>${money(item.gross_total)}</span><strong>${money(item.teacher_total)}</strong></div>`).join("")}${data.limited ? '<p class="course-sales-note">แสดง 500 รายการล่าสุดในช่วงที่เลือก</p>' : ""}`
     : '<p class="course-sales-empty">ช่วงวันที่เลือกยังไม่มียอดขายคอร์ส</p>';
