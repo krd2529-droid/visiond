@@ -1,0 +1,15 @@
+{
+  "version": "v0.14.313",
+  "feature": "PD-SET-001",
+  "summary": "แก้เครื่องมือสร้างตะกร้าตุ๊กตากระดาษให้ใช้ตัวสร้าง Slug ปกติ paper-doll-NNN โดยไม่แยกสาย Slug ใหม่",
+  "files": [
+    "functions/api/admin/products/index.js",
+    "public/admin.html",
+    "public/paper-doll-set-builder.js",
+    "FEATURE-MAP.md",
+    "VISIOND-ROADMAP.md",
+    "JARVIS-PATCH-PROTOCOL.md"
+  ],
+  "tests": ["scripts/test-v014313.mjs", "scripts/test-all-regressions.mjs", "scripts/predeploy-check.mjs"],
+  "rollback": "ย้อนกลับไป Commit ก่อน v0.14.313"
+}
