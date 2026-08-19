@@ -801,6 +801,20 @@
 - รหัส UI: sales section มี `data-feature="COURSE-SALES-001"`; คง filter/table/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014368.mjs`
 
+## COURSE-LEARNING-001 — ห้องเรียน V-Learning, Progress และ Lesson Media
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.369
+- หน้า/ไฟล์: `/my-courses.html`, `/learn.html?course=:id`, `public/my-courses.js`, `public/learn.js`, `functions/_courses.js`, `functions/api/courses/[id].js`, `progress.js`, lesson asset/file routes
+- API: `GET /api/courses/:id`, `POST /api/courses/:id/progress`, `GET /api/courses/:id/lesson/:lessonId/:asset`, `GET .../file/:fileId`
+- สิทธิ์: ต้อง login และมี active entitlement ของ product; Boss/Admin เข้าได้; unpublish/pause sale ไม่ถอนสิทธิ์ผู้ซื้อเดิม แต่ `review_status='suspended'` บล็อกผู้เรียนด้วย 423
+- ห้องเรียน: คืนบทเรียนตาม sort order, progress ต่อผู้ใช้, รายการไฟล์, completed %, resume lesson/position และ last activity; response `no-store`
+- Progress: lesson ต้องอยู่ใน course; position จำกัด 0–86,400 วินาที; upsert ใช้ `MAX` ทั้ง position/completed เพื่อห้าม resume ถอยหลังหรือยกเลิก completed
+- Video: ตรวจ asset/course ownership, รองรับ single byte range/suffix range, คืน 206 พร้อม Content-Range; range ผิดคืน 416
+- เอกสาร: legacy PDF inline/attachment ตาม MIME; additional files เป็น attachment แบบ UTF-8 พร้อม CSP sandbox
+- Privacy: lesson media ทุกชนิดผ่าน access guard, `private, no-store`, `nosniff`; ไม่คืน R2 object key ต่อ client
+- รหัส UI: `#learningApp` ได้ `data-feature="COURSE-LEARNING-001"` จาก controller; คง sidebar, player, progress save/retry, mobile menu และ theme เดิม
+- การทดสอบ: `scripts/test-v014369.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

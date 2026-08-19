@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.366` Seller Slip Auto-Verify Mapping; `v0.14.367` Course Owner Slip Review Mapping; `v0.14.368` Course Seller Sales Reporting
+- เสร็จแล้ว: `v0.14.367` Course Owner Slip Review Mapping; `v0.14.368` Course Seller Sales Reporting; `v0.14.369` V-Learning Runtime
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.368 — Course Seller Sales Reporting
+### v0.14.369 — V-Learning Runtime Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนแดชบอร์ดยอดขายและรอบเคลียร์รายได้ผู้สอน
-- Acceptance: Map อ้าง owner scope, paid-only, date guards, 50/50 formula และรอบวันที่ 1; section มีรหัส
-- ห้ามเปลี่ยน: revenue/payout formula, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนห้องเรียน สิทธิ์เข้าถึง progress/resume และ private lesson media
+- Acceptance: Map อ้าง entitlement/suspension, monotonic progress, byte range และ file privacy; learning app มีรหัส
+- ห้ามเปลี่ยน: learning access, progress, media delivery, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

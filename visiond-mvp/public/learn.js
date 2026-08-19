@@ -1,4 +1,5 @@
 const courseId=new URLSearchParams(location.search).get('course'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.querySelector('#learningApp')?.setAttribute('data-feature','COURSE-LEARNING-001');
 let data,current,timer,saveRetry,saving=false,queuedSave=null,navigationToken=0;
 const completedCount=()=>data?.lessons?.filter(x=>Number(x.completed)===1).length||0;
 const percent=()=>data?.lessons?.length?Math.round(completedCount()*100/data.lessons.length):0;
