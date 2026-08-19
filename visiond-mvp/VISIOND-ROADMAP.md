@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.383` NAV Shell Legacy Label Coverage; `v0.14.384` Auth Turnstile Coverage; `v0.14.385` V12 Channel Settings Coverage
+- เสร็จแล้ว: `v0.14.384` Auth Turnstile Coverage; `v0.14.385` V12 Channel Settings Coverage; `v0.14.386` Vision 4 Bundle
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.385 — V12 Channel Settings Coverage
+### v0.14.386 — Vision 4 Bundle Feature Map
 
-- เป้าหมายหลัก: ปิด settings controller/credential interaction coverage ใต้ `V12-CHANNEL-001`
-- Acceptance: Map อ้าง load/save/test, Boss guard, secret retention, validation/encryption, one-time verify token, Meta error projection และ webhook relation; form มีรหัสเดิม
-- ห้ามเปลี่ยน: fields/buttons, credential/API contract, encryption, secret retention/exposure, Meta test, webhook/HMAC และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน pending PDF/ZIP merge → sample → product → multipart → publish → consume lifecycle
+- Acceptance: Map อ้าง prerequisites, parsing/merge/sample, categories/pricing, API/data/auth, non-atomic boundary และ cleanup gaps; start/workspace มีรหัส
+- ห้ามเปลี่ยน: parsing/page order, samples, price, limits, request order, product/pending status, failure behavior และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

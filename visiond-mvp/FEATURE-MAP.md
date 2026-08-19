@@ -717,6 +717,24 @@
 - รหัส UI: Vision 4 panel มี `data-feature="V4-DRAFT-001"`
 - การทดสอบ: `scripts/test-v014358.mjs`
 
+## V4-BUNDLE-001 — รวม Pending PDF/ZIP เป็นสินค้า PDF พร้อมขาย
+
+- สถานะ: `IMPLEMENTED` พร้อม Known Gaps; ลงทะเบียน lifecycle จริงใน v0.14.386
+- หน้า/ไฟล์: Vision 4 pending queue/workspace ใน `/admin.html`, `public/vision4-bundle.js`; ใช้ V4 Review/pending-file/consume, admin category/product และ product multipart APIs
+- Bootstrap/decorate: ต้องมี pending queue, start/workspace/form และ `window.PDFLib`; MutationObserver เติม checkbox ให้ `.v3-review-card` ที่มี pending detail ครั้งเดียว และ count จาก checkbox ที่เลือก
+- Source processing: โหลด selected IDs ใหม่จาก `GET /api/admin/vision4-review` เพื่อกันรายการหาย; รองรับ PDF โดย copy ทุกหน้า และ ZIP central-directory entries ชนิด PDF/JPEG/PNG/WEBP ที่ไม่เข้ารหัสและ compression store/deflate; ข้าม directory/`__MACOSX`
+- Merge/sample: PDFLib รวมหน้า; PDF.js lazy-load render หน้าแรก/กลาง/สุดท้าย และรูปถูกแปลงเป็น JPEG ตามจำเป็น; SAMPLE watermark หมุนบน canvas; เก็บตัวอย่างสูงสุด 3 ต่อ source และต้องมี candidate อย่างน้อย 3
+- Product form: เลือกตัวอย่างต้องครบ 3 และเลือกเกิน 3 ไม่ได้; categories รับเฉพาะ active top-level และตัด legacy `dinosaur|paper-doll|document|set-coloring|set-tattoo`; ตั้ง pages/description และราคาเท่าจำนวนหน้า ยกเว้นไม่เกิน 100 และหาร 10 ลงตัวให้ลด 1 บาท
+- Create/upload/publish/consume: POST product เป็น `draft` พร้อม cover + preview 2/3, multipart PDF สูงสุด 1 GB ด้วย chunk 50 MB, PUT product เป็น `published`, แล้ว POST consume selected pending IDs; consume ตรวจ published product และทุก ID ยัง `waiting_bundle` ก่อน UPDATE เป็น `bundled`
+- API/ข้อมูล/สิทธิ์: admin APIs ใช้ `requireAdmin`; อ่าน/เขียน `vision4_pending_files`, `products`, `product_files`, categories และ R2 multipart object; multipart product flow ปฏิเสธ Vision 5 products
+- Success/failure: สำเร็จเก็บ session notice แล้ว redirect `/admin?preview_tab=vision3&done=...`; error แสดงใน workspace/create state, alert และคืนปุ่ม enabled
+- Transaction boundary: product draft creation, multipart parts/complete, publish และ pending consume เป็นคนละ request/transaction; controller ไม่มี compensating delete หรือ multipart abort ใน catch จึงห้ามอ้างว่า flow atomic และความล้มเหลวกลางทางอาจเหลือ draft/product file/object
+- Known Gap: object URLs ที่สร้างให้ sample picker ไม่ถูก revoke ใน controller ปัจจุบัน; แพตนี้บันทึก behavior เท่านั้น ไม่เปลี่ยน lifecycle
+- ห้ามกระทบ: source selection, ZIP/PDF parsing, page order, SAMPLE generation/limit, category filter, pricing, 1 GB/chunk limits, draft→upload→publish→consume order, errors และ UI/theme
+- รหัส UI: start button และ workspace ใช้ `data-feature="V4-BUNDLE-001"`; คง checkbox/form/button/component และ theme เดิม
+- ความสัมพันธ์: pending input มาจาก `V4-DRAFT-001`; review/download/consume routes อยู่ใน `V4-REVIEW-001`; multipart file contract อยู่ใน `PROD-FILE-001`; product create/publish อยู่ใน `PROD-ADMIN-001`
+- การทดสอบ: `scripts/test-v014386.mjs`; historical `scripts/test-v01471.mjs`, `scripts/test-v01496.mjs`
+
 ## TRASH-RECOVERY-001 — ถังขยะ 30 วัน กู้คืน และลบถาวร
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.359
