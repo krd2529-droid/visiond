@@ -1,4 +1,4 @@
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.body.dataset.feature='BUNDLE-PREVIEW-001';const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const root=document.getElementById('bundles'),dialog=document.getElementById('editor'),candidates=document.getElementById('candidates'),current=document.getElementById('current'),revisions=document.getElementById('revisions'),state=document.getElementById('state');
 let active=0,dataCache=null;
 const image=(url,label,checked=false)=>`<label data-url="${esc(url)}"><input type="checkbox" value="${esc(url)}" ${checked?'checked':''}><img crossorigin="anonymous" src="${esc(url)}" alt="${esc(label)}"><small>${esc(label)}</small><b class="badge">ยังไม่ตรวจ</b></label>`;

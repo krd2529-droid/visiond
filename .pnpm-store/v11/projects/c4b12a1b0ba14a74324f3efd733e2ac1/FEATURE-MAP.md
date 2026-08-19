@@ -112,22 +112,22 @@
 - ห้ามกระทบ: ห้ามสร้างสินค้าแยกจากคอร์ส; ห้ามเผยแพร่ตะกร้าอัตโนมัติ; ห้ามนำแผนเลิกใช้กลับมาแสดง
 - การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`, `scripts/test-v014333.mjs`
 
-## COURSE-REVIEW-001 — ส่งตรวจและอนุมัติคอร์สพาร์ตเนอร์
+## COURSE-REVIEW-001 — ส่งตรวจ อนุมัติ และควบคุมคอร์สพาร์ตเนอร์
 
-- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
-- หน้า: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-courses#sellerReview`
-- ไฟล์: `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/[id].js`
-- ฟังก์ชัน/ตัวควบคุม: ส่งตรวจหลังข้อมูลตะกร้าและ EP ครบ; Boss อนุมัติหรือส่งกลับแก้ไข
-- ปุ่ม/interaction: `ส่งตรวจ`, อนุมัติคอร์ส, ส่งกลับแก้ไข
-- API: `POST /api/course-seller/:courseId/publish`, `POST /api/admin/course-seller-reviews/:courseId`
-- ฐานข้อมูล / ตาราง / ฟิลด์: D1; `courses.review_status`, `courses.active`, `products.status`
-- Input: คอร์สที่ข้อมูลตะกร้าและ EP ครบ การยืนยันส่งตรวจ และคำสั่งของ Boss
-- Output: ผู้สร้างส่งแล้วเป็น `pending`; Boss อนุมัติแล้วคอร์ส `approved/active` และสินค้า `published`
-- Reads: ความครบถ้วนของคอร์ส EP ไฟล์ และสถานะตรวจ
-- Writes: สถานะตรวจคอร์ส สถานะเปิดใช้ และสถานะสินค้า
-- สิทธิ์: เจ้าของส่งตรวจได้เฉพาะคอร์สตน; เฉพาะ Boss อนุมัติ/ส่งกลับ
-- ห้ามกระทบ: ปุ่มส่งตรวจห้ามเผยแพร่เอง; ห้ามอนุมัติเมื่อ EP ไม่ครบ; ห้ามเปิดสินค้าก่อน Boss อนุมัติ
-- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
+- สถานะ: `IMPLEMENTED`; เติม auxiliary routes และ transition guards จากโค้ดจริงใน v0.14.364
+- หน้า/ไฟล์: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-courses#sellerReview`, `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/index.js`, `functions/api/admin/course-seller-reviews/auto.js`, `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/admin/course-seller-reviews/[id]/qr.js`
+- ฟังก์ชัน: เจ้าของส่งตรวจ; ผู้ดูแลอ่านคิว; Boss อนุมัติ/ส่งกลับ/ปฏิเสธ/ระงับ/คืนสถานะ และสั่งตรวจ pending สูงสุด 100 คอร์สอัตโนมัติ
+- API: `POST /api/course-seller/:courseId/publish`, `GET /api/admin/course-seller-reviews`, `POST /api/admin/course-seller-reviews/auto`, `POST /api/admin/course-seller-reviews/:id`, `GET /api/admin/course-seller-reviews/:id/qr`
+- ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `course_lesson_files`, `users`; R2 seller payment QR
+- ขอบเขตคอร์ส: เฉพาะ `online_course` ที่ `course_origin='seller_rights'` และ `course_plan='partner'`; คิวรวม `pending|changes_requested|approved|suspended` และเรียง pending ก่อน
+- สิทธิ์: เจ้าของส่งตรวจได้เฉพาะคอร์สตน; อ่านคิว/QR ใช้ `requireAdmin`; ทุก action เปลี่ยนสถานะและ auto review ตรวจ `role='boss'`
+- ห้ามกระทบ approval: ต้อง submitted + pending และมี EP ที่ชื่อไม่ว่างพร้อม video/PDF/lesson file อย่างน้อย 1 EP; transition update course แบบ conditional แล้วเปลี่ยน product เป็น published/draft ตามสถานะ; concurrent state change คืน 409
+- Auto review: ตรวจสูงสุด 100 pending ต่อรอบ; รายการขาดชื่อ/ปก/EP หรือไม่ได้ส่งตรวจต้องเป็น `changes_requested` + product draft; บันทึก security log และสรุป approved/not-approved/skipped/errors/remaining
+- Lifecycle: request changes/reject ทำได้จาก pending; suspend จาก approved; restore จาก suspended; ทุก branch ปรับ `courses.active`, `review_status`, `review_note` และ `products.status` คู่กัน
+- Auxiliary actions ใน controller เดิม: ตั้ง/ยกเลิก test account, approve/reject/reset seller payment profile; reset ล้างฟิลด์บัญชีและลบ QR เดิม; QR response เป็น `private, no-store`
+- ห้ามกระทบ: ปุ่มส่งตรวจห้ามเผยแพร่เอง; ห้ามอนุมัติเมื่อ EP ไม่พร้อม; ห้ามเปิดสินค้าก่อน Boss อนุมัติ; ห้ามนำ company course หรือ non-partner seller course เข้าคิวนี้
+- รหัส UI: `#sellerReview` ได้ `data-feature="COURSE-REVIEW-001"` จาก controller; คง confirmation, status, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`, `scripts/test-v014364.mjs`
 
 ## AUTH-ACCOUNT-001 — สมัครสมาชิก เข้าสู่ระบบ และจัดการเซสชัน
 
@@ -381,6 +381,397 @@
 - Reads/Writes: อ่าน license/release/device ของสมาชิก; revoke เฉพาะอุปกรณ์ใต้ license ของตน
 - ห้ามกระทบ: ห้ามอ่านคีย์หรือปิดอุปกรณ์ข้ามบัญชี และห้าม license หมดอายุดาวน์โหลดไฟล์
 - การทดสอบ: `scripts/test-v014327.mjs`, `scripts/test-v014110-veasy-activation-contract.mjs`, `scripts/test-all-regressions.mjs`
+
+## ELON-CHAT-001 — ผู้ช่วยขายและแชทช่วยเหลือบนหน้าเว็บ
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.336
+- หน้า: frontend surfaces ที่อนุญาตใน `FRONTEND_SURFACES` เช่น `/`, `/product`, `/courses`, `/cart`, `/dashboard`, `/bots`
+- ไฟล์: `public/elon-chat.js`, `public/elon-chat.css`, `functions/_elon.js`, `functions/_elon-provider.js`, `functions/_elon-member-store.js`, `functions/_elon_databases.js`, `functions/api/elon/chat.js`, `functions/api/elon/public-chat.js`, `functions/api/elon/conversations.js`, `functions/api/elon/clear.js`, `functions/api/elon/status.js`
+- ฟังก์ชัน/ตัวควบคุม: `mount()`, `frontendSurface()`, `getContext()`, `elonAccessDecision()`, `elonSystemPrompt()`, `requestElonProvider()`
+- ปุ่ม/interaction: launcher เปิด/ปิด dialog, แชทใหม่, quick questions, ส่งข้อความ, loading/error และลิงก์สมัคร/เข้าสู่ระบบสำหรับ guest
+- API: `GET/POST /api/elon/chat`, `POST /api/elon/public-chat`, `GET /api/elon/conversations`, `POST /api/elon/clear`, `GET /api/elon/status`
+- ฐานข้อมูล / ตาราง / ฟิลด์: ELON Web DB; `elon_web_conversations`, `elon_web_messages`, `elon_web_rate_limits`, `elon_web_usage_limits`, `elon_web_settings`
+- Input: ข้อความสูงสุดตาม `ELON_MAX_MESSAGE_LENGTH`, conversation ID และ page context ที่ตัด query string/ข้อมูลส่วนตัวออก
+- Output: คำตอบภาษาไทยที่กรองข้อมูลภายใน/ลิงก์/ข้อมูลส่วนตัว พร้อม conversation ID และประวัติของเจ้าของเท่านั้น
+- Reads: สถานะเปิดใช้ บริบทสมาชิก แคตตาล็อกขายที่เผยแพร่ และประวัติสนทนาของ subject เดียวกัน
+- Writes: conversation/message, rate/usage limits และ retention marker; ไม่มีสิทธิ์แก้ข้อมูลธุรกิจแทนผู้ใช้
+- สิทธิ์: guest ใช้ public endpoint แบบจำกัด; member endpoint ต้องมี session และตรวจ ownership; Boss/Admin internals ไม่เปิดเผย
+- ห้ามกระทบ: fail closed เฉพาะ frontend surface ที่อนุญาต; ห้ามส่ง query string, Secret, PII หรือลิงก์ภายนอก; ห้ามอ้างว่าดำเนินการ/อนุมัติ/ปลดล็อกแทนผู้ใช้; คง retention 60 วันและ rate/global budget gates
+- รหัส UI: root widget มี `data-feature="ELON-CHAT-001"`
+- การทดสอบ: `scripts/test-elon-access.mjs`, `scripts/test-elon-frontend-only.mjs`, `scripts/test-elon-provider.mjs`, `scripts/test-elon-widget-surfaces.mjs`, `scripts/test-v014336.mjs`
+
+## SALES-PAGE-001 — ศูนย์สร้าง Revision อนุมัติ เผยแพร่ และ A/B หน้าขาย
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.337
+- หน้า: `/sales-page-center.html`, `/sales-page-variants.html?id=:pageId`, public `/s/:slug`
+- ไฟล์: `public/sales-page-center.js`, `public/sales-page-variants.js`, `public/sales-page-public.js`, `functions/_sales_pages.js`, `functions/_sales_page_variants.js`, `functions/s/[slug].js`, `functions/api/admin/sales-pages/index.js`, `functions/api/admin/sales-pages/[id].js`, `functions/api/admin/sales-pages/[id]/variants.js`, `functions/api/sales-pages/[id]/variants.js`
+- ฟังก์ชัน/ตัวควบคุม: สร้าง/แก้ draft, revision history, `submit_review`, `approve`, `publish`, `pause`, `archive`, mobile preview และ Variant A/B
+- API: `GET/POST /api/admin/sales-pages`, `GET/PUT/PATCH /api/admin/sales-pages/:id`, `GET/PUT /api/admin/sales-pages/:id/variants`, `GET /api/sales-pages/:id/variants`, `GET /s/:slug`
+- ฐานข้อมูล: `sales_page_templates`, `sales_pages`, `sales_page_products`, `sales_page_revisions`, `sales_page_variants`, `customer_events`
+- Input/Output: ประเภท `ad_shortcut|seo_automation`, template, slug, content, product IDs, revision/lifecycle และ Variant A/B ที่น้ำหนัก active รวม 100
+- สิทธิ์: Admin จัดการ; เฉพาะ Boss อนุมัติ SEO Automation; public อ่านเฉพาะ Ad Shortcut ที่ published และ noindex
+- ห้ามกระทบ: SEO revision ปัจจุบันต้องอนุมัติก่อน publish; Ad Shortcut ต้อง `noindex`; public ห้ามแสดงสถานะหรือสินค้าที่ไม่พร้อม; หน้า published/archived ห้ามแก้ตรง; variant ต้อง A/B และน้ำหนัก active รวม 100
+- รหัส UI: public renderer มี `data-feature="SALES-PAGE-001"`; หลังบ้านยึด route/ID ที่ระบุข้างต้น
+- การทดสอบ: `scripts/test-v014234.mjs`, `scripts/test-v014235.mjs`, `scripts/test-v014236.mjs`, `scripts/test-v014337.mjs`
+
+## V13-INTAKE-001 — ตรวจ Approval Snapshot และผลิต EPUB จาก Vision 14 MIX
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.338
+- หน้า/ไฟล์: `/vision13-intake.html`, `public/vision13-intake.js`, `functions/_vision13_epub.js`, `functions/_vision14.js`, `functions/api/admin/vision13-intake/index.js`, `functions/api/admin/vision13-intake/[id].js`, `functions/api/admin/vision13-production/[id].js`
+- ฟังก์ชัน: กรองคิว, ตรวจ rights/PDF teaching/fingerprint/citation, `start_review|approve|reject`, Approval Snapshot, ผลิต/ดาวน์โหลด EPUB
+- API: `GET /api/admin/vision13-intake`, `GET/PUT /api/admin/vision13-intake/:id`, `GET/POST /api/admin/vision13-production/:id`
+- ฐานข้อมูล/ไฟล์: `vision13_intake_queue`, `vision13_intake_reviews`, `vision13_ebook_productions`, Vision 14 mix/source/item tables และ R2 `vision13/ebooks/*`
+- Input/Output: MIX ที่ไม่ internal-only พร้อมหลักฐานสิทธิ์และ citation; ได้ snapshot hash, EPUB artifact hash/size และสถานะ `ready|reviewing|approved|rejected|produced`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; object key ไม่ถูกส่งออกและดาวน์โหลดผ่าน endpoint ที่ตรวจสิทธิ์
+- ห้ามกระทบ: reject ต้องมีเหตุผล; อนุมัติเมื่อ evidence ครบเท่านั้น; ผลิตเฉพาะ approved snapshot ที่ hash ยังตรง; ห้ามผลิตซ้ำ; หาก DB ล้มหลังอัปโหลดต้องลบ R2 object
+- รหัส UI: หน้า Intake มี `data-feature="V13-INTAKE-001"`
+- การทดสอบ: `scripts/test-v014233.mjs`, `scripts/test-v014338.mjs`
+
+## V14-LIBRARY-001 — คลังต้นฉบับ PDF สิทธิ์ และข้อความรายหน้า
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.339
+- หน้า/ไฟล์: `/vision14-library.html`, `public/vision14-library.js`, `functions/_vision14.js`, `functions/api/admin/vision14-sources/index.js`, `functions/api/admin/vision14-sources/[id].js`, `functions/api/admin/vision14-sources/[id]/file.js`, `functions/api/admin/vision14-sources/[id]/extract.js`, `functions/api/admin/vision14-sources/[id]/ocr.js`
+- ฟังก์ชัน: รับ PDF เข้าคลัง, แก้สถานะ/หลักฐานสิทธิ์, เปิดไฟล์, extract text layer, OCR หน้าที่ค้าง, ล้างบรรทัดเครดิต และติดตามผลรายหน้า
+- API: `GET/POST /api/admin/vision14-sources`, `PUT /api/admin/vision14-sources/:id`, `GET /api/admin/vision14-sources/:id/file`, `GET/POST /api/admin/vision14-sources/:id/extract`, `POST /api/admin/vision14-sources/:id/ocr`
+- ฐานข้อมูล/ไฟล์: `vision14_sources`, `vision14_source_pages`; R2 `vision14/source/*`
+- Input/Output: PDF ไม่เกิน 100 MB พร้อม title/rights/note; ข้อความรายหน้า 1–500 หน้าและ OCR JPEG data URL ไม่เกินขอบเขต API
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; สิทธิ์ `owned|plr|public_domain|licensed` ผ่านด่านขายเบื้องต้น ส่วน `reference_only` ล็อกการขาย
+- ห้ามกระทบ: licensed ต้องมีหลักฐาน; ห้ามคืน object key; หากบันทึก DB ล้มหลังอัปโหลดต้องลบ R2 object; OCR ต้อง fail closed เมื่อไม่มี provider และห้ามแต่งข้อความเพิ่ม
+- รหัส UI: หน้า Library มี `data-feature="V14-LIBRARY-001"`; ใช้ปุ่ม/interaction เดิมของหน้าโดยไม่เพิ่ม theme หรือ component
+- การทดสอบ: `scripts/test-v014339.mjs`
+
+## V14-SUMMARY-001 — สรุปรายเล่มและ Teaching Document
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.340
+- หน้า/ไฟล์: `/vision14-summary.html`, `public/vision14-summary.js`, `public/vision14-teaching.js`, `functions/api/admin/vision14-summaries/index.js`, `functions/api/admin/vision14-summaries/[id].js`, `functions/api/admin/vision14-teaching/[id].js`
+- ฟังก์ชัน: สรุปจาก clean text แบบ extractive พร้อมเลขหน้า/keywords/missing pages, คำนวณ coverage และรับ/ดาวน์โหลด Teaching PDF
+- API: `GET /api/admin/vision14-summaries`, `GET/POST /api/admin/vision14-summaries/:id`, `GET/POST /api/admin/vision14-teaching/:id`
+- ฐานข้อมูล/ไฟล์: `vision14_book_summaries`, `vision14_teaching_documents`, `vision14_source_pages`; R2 `vision14/teaching/*`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; downstream sale ยึด rights ของ source
+- ห้ามกระทบ: ต้องมี clean text ก่อนสรุป; Teaching PDF ต้อง coverage อย่างน้อย 80%, เป็น PDF ไม่เกิน 25 MB และ 1–500 หน้า; replace สำเร็จจึงลบ object เก่า และ DB ล้มต้องลบ object ใหม่
+- รหัส UI: หน้า Summary มี `data-feature="V14-SUMMARY-001"`; คงปุ่มและ theme เดิม
+- การทดสอบ: `scripts/test-v014340.mjs`
+
+## V14-MIX-001 — รวมความรู้ ตัดซ้ำ และส่งคิว Vision 13
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.341
+- หน้า/ไฟล์: `/vision14-mix.html`, `public/vision14-mix.js`, `functions/api/admin/vision14-mixes/index.js`, `functions/api/admin/vision14-mixes/[id].js`
+- ฟังก์ชัน: เลือก 2–30 ต้นฉบับที่มี Teaching Document, normalize/token similarity, รวม citation, สร้าง SHA-256 fingerprint และแสดง Page Trace
+- API: `GET/POST /api/admin/vision14-mixes`, `GET /api/admin/vision14-mixes/:id`
+- ฐานข้อมูล: `vision14_mixes`, `vision14_mix_sources`, `vision14_mix_items`, `vision13_intake_queue`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; MIX ที่มี source ขายไม่ได้เป็น `internal_only` และไม่สร้างคิว Vision 13
+- ห้ามกระทบ: ต้องมีสรุปและ Teaching Document ทุก source; deduplicate เมื่อ normalized text ตรงหรือ Jaccard similarity อย่างน้อย 0.78; ต้องรักษา citation source/page; เฉพาะ MIX ที่สิทธิ์ผ่านทั้งหมดจึงเข้าคิว Vision 13 สถานะ ready
+- รหัส UI: หน้า MIX มี `data-feature="V14-MIX-001"`; คงปุ่ม loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014341.mjs`
+
+## ADS-ANALYTICS-001 — Meta Ads ingestion, attribution และ Ads Center
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.342
+- หน้า/ไฟล์: `/ads-center.html`, `public/ads-center.js`, `public/analytics.js`, `functions/_meta_ads.js`, `functions/api/analytics/event.js`, `functions/api/admin/ads-center.js`, `functions/api/admin/meta-ads-sync.js`
+- ฟังก์ชัน: เก็บ event/UTM แบบลดข้อมูลส่วนตัว, ซิงก์ Meta Ads Insights รายวัน, รวมค่าใช้จ่ายกับ purchase attribution และคำนวณ CTR/ROAS/profit พร้อมคำแนะนำ
+- API: `POST /api/analytics/event`, `GET /api/admin/ads-center`, `GET/POST /api/admin/meta-ads-sync`
+- ฐานข้อมูล: `customer_events`, `ad_campaign_costs`, `meta_ads_insights`, `meta_ads_sync_runs`, `orders`
+- สิทธิ์: event endpoint มี rate limit และ event allowlist; Ads Center/Sync ใช้ `requireAdmin`; Meta token/account/version อ่านจาก environment เท่านั้น
+- ห้ามกระทบ: event ซ้ำคน/ชนิด/path/product ภายใน 10 วินาทีไม่นับซ้ำ; sync ได้ไม่เกิน 93 วันและ upsert ต่อ date/account/ad; spend เก็บเป็นสตางค์; revenue นับเฉพาะ paid order ที่ attribution ตรง; ระบบให้คำแนะนำแต่ไม่แก้โฆษณาอัตโนมัติ
+- สูตร: `CTR = clicks / impressions × 100`, `ROAS = revenue / spend`, `profit = revenue - spend`; เมื่อ denominator เป็นศูนย์คืนค่า null ตาม API เดิม
+- รหัส UI: หน้า Ads Center มี `data-feature="ADS-ANALYTICS-001"`; คง loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014342.mjs`
+
+## WEBHOOK-HUB-001 — จัดการ Webhook endpoint และรับ LINE event ของร้าน VEasy
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.343
+- หน้า/ไฟล์: `/webhook-hub.html`, `public/webhook-hub.js`, `functions/_webhook_hub.js`, `functions/hooks/v1/[provider]/[publicId].js`, `functions/api/admin/webhook-hub.js`
+- ฟังก์ชัน: ออก URL สุ่ม, pause/resume/rotate/revoke, แสดง adapter state/event ล่าสุด, ตรวจ LINE signature และส่ง event ที่ผ่านไปยัง LINE AI processor
+- API: `GET/POST/PATCH /api/admin/webhook-hub`, `POST /hooks/v1/:provider/:publicId`
+- ฐานข้อมูล: `veasy_webhook_endpoints`, `veasy_webhook_events`, `veasy_channel_credentials`, `veasy_shops`
+- สิทธิ์: หน้าจัดการใช้ `requireAdmin`; public ID เป็น `wh_` ตามด้วย random hex 48 ตัว; callback ยอมรับเฉพาะ provider allowlist และ LINE adapter ที่พร้อม
+- ห้ามกระทบ: rotate ต้อง revoke URL เดิมแล้วสร้าง URL ใหม่; revoked คืน 404; LINE signature ผิดคืน 401 และบันทึก rejected; verify payload ว่างที่ลายเซ็นผ่านคืน 200; paused/not-ready fail closed; รับสูงสุด 100 events ต่อ payload และ dedup ด้วย endpoint/external event ID
+- สถานะ: endpoint `draft|active|paused|revoked`, adapter `pending|ready|error`; รับ event จริงได้เฉพาะ active + ready
+- รหัส UI: หน้า Webhook Hub มี `data-feature="WEBHOOK-HUB-001"`; คง confirmation, copy, success/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014343.mjs`
+
+## BUNDLE-PREVIEW-001 — ตรวจ แก้ และย้อนรูปพรีวิวตะกร้ารวม
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.344
+- หน้า/ไฟล์: `/bundle-preview-audit.html`, `public/bundle-preview-audit.js`, `functions/api/admin/bundle-preview-audit/index.js`, `functions/api/admin/bundle-preview-audit/[id].js`
+- ฟังก์ชัน: แสดงตะกร้าสมาชิกและรูป candidate, รับ JPG/PNG ที่ตรวจจาก PDF, เลือกรูป cover/preview, เก็บ revision และ rollback
+- API: `GET /api/admin/bundle-preview-audit`, `GET/PUT/POST/PATCH /api/admin/bundle-preview-audit/:id`
+- ฐานข้อมูล/ไฟล์: `products`, `product_bundle_items`, `product_files`, `bundle_preview_revisions`; R2 `bundle-preview-*`
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; ทำงานเฉพาะ product `source='bundle'` ที่ยังไม่ถูกลบ
+- ห้ามกระทบ: เลือก 1–30 รูปและรับเฉพาะ URL จากสมาชิกหรือรูปตรวจ PDF ของ bundle เดียวกัน; upload ต้องเป็น JPG/PNG ไม่เกิน 2 MB และ source ต้องเป็นสมาชิก; update แค่ `cover_url`, `preview_urls`, `updated_at`; ต้องเก็บ revision ก่อนแก้และ rollback ก็สร้าง revision ใหม่
+- ข้อมูลที่ต้องคงเดิม: `id`, `slug`, `title`, `created_at`, `price`, `category`, `pages`, `bundle_members`
+- รหัส UI: หน้า Audit มี `data-feature="BUNDLE-PREVIEW-001"`; คง dialog, selection, status และ theme เดิม
+- การทดสอบ: `scripts/test-v014344.mjs`
+
+## ELON-PAGE-001 — นักขาย Facebook Page และ Human Handoff
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.345
+- หน้า/ไฟล์: `/elon-page-admin.html`, `public/elon-page-admin.js`, `functions/_meta_messenger.js`, `functions/_meta_sender.js`, `functions/api/meta/messenger.js`, `functions/api/admin/elon-page/index.js`, `functions/api/admin/elon-page/[id]/send.js`
+- ฟังก์ชัน: verify Meta callback/signature, ingest/dedup event, เข้ารหัส participant, สร้าง AI job, ดูคิว, เปลี่ยน bot/human state และส่งตอบผ่าน idempotent outbox
+- API: `GET/POST /api/meta/messenger`, `GET/PATCH /api/admin/elon-page`, `POST /api/admin/elon-page/:id/send`
+- ฐานข้อมูล: `elon_page_conversations`, `elon_page_messages`, `elon_page_webhook_events`, `elon_page_ai_jobs`, `elon_page_outbox`
+- สิทธิ์: Meta POST ต้องผ่าน `x-hub-signature-256`; admin endpoints ใช้ `requireAdmin`; participant ID เก็บเป็น hash และ ciphertext
+- ห้ามกระทบ: payload ไม่เกิน 1 MB; event เดิมห้ามประมวลผลซ้ำ ยกเว้น failed/stale processing; conversation เก็บ 60 วัน; state เฉพาะ `bot_active|human_required|human_active|closed`; human_active ผูก admin; outbound ใช้ idempotency key และคิว retry เมื่อ provider ยังส่งไม่ได้
+- รหัส UI: หน้า ELON Page มี `data-feature="ELON-PAGE-001"`; คงตาราง สถานะ และ theme เดิม
+- การทดสอบ: `scripts/test-v014345.mjs`
+
+## V4-REVIEW-001 — คิวตรวจ Draft และ Pending File จาก Vision 4
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.346
+- หน้า/ไฟล์: `/vision4-edit.html`, `public/vision4-edit.js`, `functions/api/admin/vision4-review/index.js`, `functions/api/admin/vision4-review/[id].js`, `functions/api/admin/vision4-pending/[id].js`, `functions/api/admin/vision4-pending-file/[id].js`, `functions/api/admin/vision4-pending/consume.js`, `functions/api/admin/product-multipart/{init,part,complete,abort}.js`, `functions/api/admin/products/[id].js`
+- ฟังก์ชัน: แสดง draft/pending queue, multipart upload ไฟล์รอรวม, เพิ่ม preview, เปิดไฟล์, แก้ draft, รับ draft เข้า Product Admin และ mark pending files ว่ารวมชุดแล้ว
+- API: `GET /api/admin/vision4-review`, `POST /api/admin/vision4-review/:id`, `PUT /api/admin/vision4-pending/:id`, `GET /api/admin/vision4-pending-file/:id`, `POST /api/admin/vision4-pending/consume` และ multipart endpoints
+- ฐานข้อมูล/ไฟล์: `products` ที่ `source='vision4'`, `product_files`, `vision4_pending_files`; R2 `vision4-pending-*` และ preview objects
+- สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; หน้าแก้ยอมรับเฉพาะ `source='vision4'` + `status='draft'`
+- ห้ามกระทบ: multipart รับ PDF/ZIP ไม่เกิน 1 GB; preview รับ JPG/PNG/WEBP ไม่เกิน 5 MB; review เปลี่ยนเฉพาะ source เป็น admin ของ draft ที่ตรงเงื่อนไข; consume ต้องเป็น published product และ pending IDs ทุกตัวต้องยัง `waiting_bundle`; ไฟล์ที่รวมแล้วห้าม consume ซ้ำ
+- รหัส UI: หน้าแก้ Vision 4 มี `data-feature="V4-REVIEW-001"`; คง form, preview, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014346.mjs`
+
+## VEASY-SHOP-001 — Activation ร้านค้า Bot/Inbox และ Native Runtime ของ VEasy
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.347
+- หน้า/ไฟล์: `/veasy/login.html`, `public/veasy/login.js`, `functions/_veasy_shop.js`, `functions/_veasy_runtime.js`, `functions/_veasy_line_ai.js`, `functions/api/vision7/auth/veasy-activate.js`, `functions/api/vision7/auth/veasy-device.js`, `functions/api/vision7/shops/*`, `functions/api/vision7/runtime/*`
+- ฟังก์ชัน: activate บัญชี/คีย์/อุปกรณ์/ร้าน, bind หนึ่ง license ต่อหนึ่งร้าน, จัดการ shop/products/channels, bot start-stop-handoff, inbox owner reply และ native runtime lease/conversation/message/order claims
+- API: `/api/vision7/auth/veasy-*`, `/api/vision7/shops`, `/api/vision7/shops/:shopId/*`, `/api/vision7/runtime/*`
+- ฐานข้อมูล: `veasy_shops`, `veasy_shop_products`, `veasy_channels`, `veasy_bot_state`, `veasy_conversations`, `veasy_chat_messages`, `veasy_conversation_controls`, `veasy_runtime_leases`, `veasy_conversation_leases`, `veasy_audit_log` และ Vision 7 license/device tables
+- สิทธิ์: ใช้ Vision 7 auth; ทุก shop endpoint ตรวจ `shop_id + user_id`; activation ต้องเป็นโปรแกรม platform `veasy`, license ใช้งานได้และอยู่ใน device limit
+- ห้ามกระทบ: 1 คีย์ = 1 ร้าน; ห้ามอ่าน/แก้ร้านข้ามเจ้าของ; เปิด bot ได้เมื่อร้าน active มี channel connected, webhook ready และ AI configured; stop ต้องล้าง runtime/conversation leases; owner ส่งได้เมื่อ conversation เป็น human และรุ่นนี้ส่งใน inbox เฉพาะ LINE; claim/lease ต้องรักษา ownership, expiry และ idempotency ตาม runtime เดิม
+- รหัส UI: หน้า activation มี `data-feature="VEASY-SHOP-001"`; native app รับ handoff `veasy-auth-v1` โดยคง field เดิม
+- การทดสอบ: `scripts/test-v014347.mjs`, `scripts/test-v014110-veasy-activation-contract.mjs`
+
+## COURSE-INTEGRITY-001 — ตรวจความสอดคล้องคอร์ส สิทธิ์ และ Event Case
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.348
+- หน้า/ไฟล์: `/course-integrity.html`, `public/course-integrity.js`, `functions/api/admin/course-integrity.js`
+- ฟังก์ชัน: ตรวจ paid orders/slip evidence/learning rights, credit counts, unlock logs, entitlement ของ order ที่ไม่ paid, orphan orders และ sample Event Case `user1 / Vision 5 test`
+- API: `GET /api/admin/course-integrity`, `GET /api/admin/course-integrity?event_case=1`
+- Reads: `courses`, `products`, `users`, `orders`, `order_items`, `order_slip_evidence`, `entitlements`, `course_right_credits`, `unlock_logs`
+- สิทธิ์: ใช้ `requireAdmin`; endpoint เป็น read-only และตอบ `cache-control: no-store`
+- ห้ามกระทบ: ห้ามซ่อมหรือลบข้อมูลจากหน้า integrity; healthy เมื่อ paid=approved slips=learning rights และไม่มี invalid rights; system checks จำกัด 200 รายการต่อชนิด; Event Case จำกัด 20 คอร์สและ timeout 5 วินาที โดย timeout คืน 503 + `EVENT_CASE_QUERY_TIMEOUT`
+- รหัส UI: หน้า Course Integrity มี `data-feature="COURSE-INTEGRITY-001"`; คง loading/timeout/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014348.mjs`
+
+## CUSTOMER-INTELLIGENCE-001 — Visitor, Event, Funnel, Journey และ Product Demand
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.349
+- หน้า/ไฟล์: analytics sections ใน `/admin.html`, `public/admin.js`, `functions/_analytics.js`, `functions/api/analytics/view.js`, `functions/api/analytics/event.js`, `functions/api/admin/visitor-stats.js`, `functions/api/admin/daily-events.js`, `functions/api/admin/customer-analytics.js`
+- ฟังก์ชัน: aggregate page views, unique visitor, event explorer รายวัน, guest/member identity, conversion funnel/bottleneck, buyer mix, product performance, customer journey และ product-family demand recommendation
+- API: `POST /api/analytics/view`, `POST /api/analytics/event`, `GET /api/admin/visitor-stats`, `GET /api/admin/daily-events`, `GET /api/admin/customer-analytics`
+- ฐานข้อมูล: `page_views`, `analytics_daily`, `analytics_visitors`, `customer_events`, `products`, `orders`, `order_items`
+- สิทธิ์/ความเป็นส่วนตัว: public ingestion ใช้ hashed visitor key, event allowlist, sanitized path/referrer/metadata และ rate limit; dashboard endpoints ใช้ `requireAdmin`
+- ห้ามกระทบ: page view aggregate ตามวันไทย; raw retention 90 วันและประมวลผล batch 5,000; event เดิมภายใน 10 วินาทีไม่นับซ้ำ; daily explorer จำกัด 300 รายการ; customer window 1–90 วัน; conversion หารด้วยจำนวนคนของขั้นก่อนหน้า; recommendation เป็นข้อมูลช่วยตัดสินใจและห้ามผลิต/แก้สินค้าอัตโนมัติ
+- รหัส UI: events, visitor stats และ customer-intelligence sections มี `data-feature="CUSTOMER-INTELLIGENCE-001"`; คง filter/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014349.mjs`
+
+## BUSINESS-REPORT-001 — รายงานยอดขาย กำไร–ขาดทุน และ CSV Export
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.350
+- หน้า/ไฟล์: overview/sales sections ใน `/admin.html`, `public/admin.js`, `functions/api/admin/profit-dashboard.js`, `functions/api/admin/sales-report.js`
+- ฟังก์ชัน: สรุปยอดขาย/ค่าแอด/กำไร/ROAS รายวัน, บันทึกค่าแอด Facebook รายวัน, กรองยอดขายตามวัน/ชนิด, product summary, cursor pagination และ CSV export แบบหลาย batch
+- API: `GET/PUT /api/admin/profit-dashboard`, `GET /api/admin/sales-report`
+- ฐานข้อมูล: `orders`, `order_items`, `products`, `users`, `unlock_logs`, `ad_costs`
+- สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; slip URL คืนผ่าน admin endpoint ไม่เปิด object key
+- ห้ามกระทบ: profit dashboard นับเฉพาะ paid + `sale_price_recorded=1` + รายได้ VisionD; `profit=sales-facebook_cost`, `ROAS=sales/facebook_cost` และค่าแอดศูนย์คืน null; sales report นับเฉพาะ paid, แยก manual/slip และ VisionD/seller course; cursor ใช้ `paid_at|order_id`, limit สูงสุด 200; CSV client ต้องไล่ทุก cursor และหยุดเมื่อ cursor ซ้ำ
+- รหัส UI: overview และ sales sections มี `data-feature="BUSINESS-REPORT-001"`; คง filter/export/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014350.mjs`
+
+## PAYMENT-SETTINGS-001 — บัญชีรับโอน QR และสถานะรับคำสั่งซื้อ
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.351
+- หน้า/ไฟล์: payment form ใน `/admin.html`, `public/admin.js`, `functions/_payment.js`, `functions/api/admin/payment-settings.js`
+- ฟังก์ชัน: ตั้งบัญชีส่วนตัว/บริษัท, เลือก active account, เปิด/ปิดรับ order, ตั้งข้อความหลังส่งสลิป, สลับ Vision 3/Vision 5 EasySlip verification และอัปโหลด QR
+- API: `GET/PUT /api/admin/payment-settings`; public checkout อ่านผ่าน `loadPaymentSettings()` + `publicPaymentSettings()`
+- ฐานข้อมูล/ไฟล์: `settings`; R2 `payment-qr-*`; activity log เมื่อ Boss เปลี่ยน Vision 5 EasySlip toggle
+- สิทธิ์: `requireAdmin` อ่าน/บันทึก; เฉพาะ Boss เปลี่ยน active account และ auto-verification toggles; public projection คืนเฉพาะบัญชี active, QR, accepting-orders และข้อความ
+- ห้ามกระทบ: ต้องกรอกทั้งสอง profile ครบ; QR เฉพาะ JPG/PNG/WEBP ไม่เกิน 5 MB; validate request ทั้งหมดก่อนเขียน; อัปโหลด object ใหม่ก่อน commit settings, DB ล้มต้องลบ object ใหม่ และลบ QR เก่าแบบ best effort หลัง commit; ห้ามเปิดเผย profile ที่ inactive ต่อ public
+- รหัส UI: payment form มี `data-feature="PAYMENT-SETTINGS-001"`; คง role-disabled, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014351.mjs`
+
+## PROMOTION-SETTINGS-001 — ตั้งค่าโปรโมชั่นแคตตาล็อกและสวิตช์ซื้อครั้งแรก
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.352
+- หน้า/ไฟล์: promotion forms ใน `/admin.html`, `public/admin.js`, `functions/_promotion.js`, `functions/api/admin/promotion-settings.js`
+- ฟังก์ชัน: เปิด/ปิด catalog promotion, เลือกหมวดหลักหลายหมวดหรือ all, ตั้งส่วนลด 1–90%, แสดง first-order stats และเปิด/ปิด first-order promotion
+- API: `GET/PUT /api/admin/promotion-settings`
+- ฐานข้อมูล: `settings`, `categories`, `products`, `first_order_promo_state`
+- สิทธิ์: ใช้ `requireAdmin`; หน้า API คืนเฉพาะหมวด active ระดับบนที่อนุญาต
+- ห้ามกระทบ: scope ต้องไม่ว่างและหมวดต้อง active/อยู่ใน allowlist; all ต้องยุบเป็น scope เดียว; resale-rights ไม่ร่วม catalog promotion; course-selling-rights คงราคา 999→499 บาท และ bundle-deals ไม่ลดซ้ำ; ราคาลดต่ำสุด 1 สตางค์; first-order switch เปลี่ยนเฉพาะ enabled และห้ามเปลี่ยนขั้นต่ำ 399 บาท, 50%, cap 200 บาท, 2 ชั่วโมง หรือ eligibility contract เดิม
+- รหัส UI: catalog และ first-order forms มี `data-feature="PROMOTION-SETTINGS-001"`; คง validation/stats/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014352.mjs`, `scripts/test-first-order-promo.mjs`
+
+## MEMBER-ADMIN-001 — จัดการบัญชีสมาชิก เครดิตคอร์ส และปลดล็อกแบบ Manual
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.353
+- หน้า/ไฟล์: users section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/users.js`, `functions/api/admin/users/[id].js`, `functions/api/admin/users/test-user.js`, `functions/api/admin/users/[id]/course-credits.js`, `functions/api/admin/users/[id]/unlock.js`, `functions/api/admin/unlock-history.js`
+- ฟังก์ชัน: ดูรายชื่อ/แก้บัญชี, สร้างยูสทดสอบ, เพิ่มเครดิตสิทธิ์ลงขายคอร์ส, ปลดล็อกสินค้าให้ลูกค้าพร้อมราคาขาย/สลิป และดูประวัติปลดล็อก
+- API: `GET /api/admin/users`, `PATCH /api/admin/users/:id`, `POST /api/admin/users/test-user`, `POST /api/admin/users/:id/course-credits`, `POST /api/admin/users/:id/unlock`, `GET /api/admin/unlock-history`
+- ฐานข้อมูล/ไฟล์: `users`, `orders`, `order_items`, `entitlements`, `course_right_credits`, `unlock_logs`, `order_slip_evidence`; R2 `slips/manual/*`
+- สิทธิ์: รายชื่อ/ปลดล็อก/ประวัติใช้ `requireAdmin`; แก้บัญชี สร้างยูสทดสอบ และเพิ่มเครดิตคอร์สใช้ `requireBoss`; บัญชี Boss แก้จากตารางนี้ไม่ได้
+- ห้ามกระทบ: account type จำกัด `user|test|admin`; test user ใช้ชื่อกลางเดิม; เครดิตคอร์ส 1–100 ต่อครั้ง; manual unlock รับเฉพาะ published product, ไม่สร้าง entitlement ซ้ำยกเว้น resale-rights, สลิปต้องเป็นรูปไม่เกิน 10 MB และราคาขายที่เว้นว่างคง `sale_price_recorded=0`
+- รหัส UI: users section มี `data-feature="MEMBER-ADMIN-001"`; คง form/table/dialog/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014353.mjs`
+
+## CATEGORY-MEMBER-001 — สิทธิ์สมาชิกรายหมวดแบบรายเดือน/รายปี
+
+- สถานะ: `PARTIAL`; catalog, การสร้าง order, การอ่านสิทธิ์เดิม และ plan configuration มีแล้ว; ลงทะเบียนเส้นทางจริงใน v0.14.354
+- หน้า/ไฟล์: `/member`, `public/member.html`, `public/member.js`, `public/member-rights.js`, `functions/api/member/plans.js`, `functions/api/admin/member-plans.js`
+- ฟังก์ชัน: แสดงแพ็กเกจที่เผยแพร่, แสดงสิทธิ์ active ของผู้ใช้, สร้างออเดอร์ผ่าน commerce API เดิม และสร้าง/อัปเดต member product ตามหมวด
+- API: `GET /api/member/plans`, `GET/POST /api/admin/member-plans`, `POST /api/orders` สำหรับปุ่มซื้อ
+- ฐานข้อมูล: `products.product_kind/member_category/member_duration_months`, `categories`, `category_memberships`, `orders`
+- สิทธิ์: catalog เปิดอ่านได้; memberships คืนเฉพาะเมื่อ `requireUser` ผ่านและ query ผูก `auth.user.id`; plan configuration ใช้ `requireAdmin`
+- ห้ามกระทบ: public เห็นเฉพาะ plan `published` ในหมวด active; duration รับเฉพาะ 1 หรือ 12 เดือน; ราคาห้ามติดลบ; slug คงรูป `member-{category}-{months}m`; สิทธิ์ที่แสดงต้อง active, ไม่หมดอายุ และเป็นของผู้ใช้เท่านั้น
+- Known Gap: จาก Coverage Audit v0.14.354 ยังไม่พบ runtime ที่ `INSERT/UPDATE category_memberships` เมื่ออนุมัติ order; ห้ามอ้างว่า activation/renewal implemented จนกว่าจะมีโค้ดและทดสอบจริง
+- รหัส UI: document root ของหน้า member มี `data-feature="CATEGORY-MEMBER-001"` จาก `public/member.js`; คง card/button/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014354.mjs`
+
+## ELON-CONTROL-001 — สวิตช์ควบคุม ELON Web และ ELON V7 แยกฐาน
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.355
+- หน้า/ไฟล์: ELON Control Center ใน `/admin.html`, `public/admin.js`, `functions/api/admin/elon-controls.js`, `functions/_elon_databases.js`
+- ฟังก์ชัน: อ่านสถานะ configured/enabled และเปิด–ปิด ELON Web หรือ ELON V7 อิสระต่อกัน
+- API: `GET/PUT /api/admin/elon-controls`
+- ฐานข้อมูล: binding `ELON_WEB_DB` → `elon_web_settings`; binding `ELON_V7_DB` → `elon_v7_settings`; key `enabled` เก็บเป็น `1|0`
+- สิทธิ์: endpoint เรียก `requireAdmin` และปฏิเสธทุก role ที่ไม่ใช่ `boss`; UI ซ่อน control card เมื่อ viewer ไม่ใช่ Boss
+- ห้ามกระทบ: target รับเฉพาะ `web|v7` และ enabled ต้องเป็น boolean; ELON Web ไม่มีแถวตั้งค่าให้เปิดโดยปริยาย, V7 ให้ปิด; binding ขาดต้องแสดง configured=false/disabled และ PUT คืน 503; ห้ามเขียนสถานะข้ามฐาน
+- รหัส UI: control card มี `data-feature="ELON-CONTROL-001"`; คง toggle/status/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014355.mjs`
+
+## SYSTEM-HEALTH-001 — ตรวจความพร้อมของ Infrastructure และ Service Configuration
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.356
+- หน้า/ไฟล์: System Health section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/system-health.js`, `functions/_seller_token.js`, `functions/_channel_crypto.js`
+- ฟังก์ชัน: ตรวจ required readiness ของ D1, R2, encryption keys, migration tables/indexes; ตรวจ recommended readiness ของ Turnstile, company payment, EasySlip, AI provider, password email, APP_ORIGIN และ retention jobs
+- API: `GET /api/admin/system-health`
+- ข้อมูล: อ่านเฉพาะว่า binding/config มีค่าหรือไม่, `sqlite_master` และค่าบัญชีบริษัทใน `settings`; response คืน `ready|missing`, action, detail และจำนวนสรุป
+- สิทธิ์/ความลับ: ต้องมี DB และผ่าน `requireAdmin`; อนุญาตเฉพาะ role `boss`; response ใช้ `private, no-store` และห้ามคืนค่า Secret/config จริง
+- ห้ามกระทบ: endpoint เป็น read-only ห้ามแก้ environment, binding, migration หรือ settings; DB ขาดคืน 503; non-Boss คืน 403; schema query ล้มต้องแสดง missing โดยไม่ทำให้ทั้ง response ล้ม
+- รหัส UI: health section มี `data-feature="SYSTEM-HEALTH-001"`; คง refresh/loading/error/readiness cards และ theme เดิม
+- การทดสอบ: `scripts/test-v014356.mjs`
+
+## V2-FACTORY-001 — Digital Product Factory จาก Prompt ถึงไฟล์สินค้า
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.357
+- หน้า/ไฟล์: Vision 2 workspace ใน `/admin.html`, `public/vision2.js`, `public/vision2.css`, `public/vision2-font.css`, `public/vision2-character.css`, `functions/api/admin/vision2/generate.js`, `functions/api/admin/vision2/characters.js`, `functions/api/admin/vision2/image.js`, `functions/api/admin/prompt-usage.js`
+- ฟังก์ชัน: workflow 7 ขั้นจาก brief, prompt table, image queue, เลือก SAMPLE 3 รูป, รวม PDF, เติม product metadata และ handoff เข้า product editor; รองรับนำเข้ารูป/PDF/ZIP, สร้างรายชื่อตัวละคร, resume/retry queue และรายงาน Prompt usage
+- API: `POST /api/admin/vision2/generate`, `POST /api/admin/vision2/characters`, `GET /api/admin/vision2/image`, `GET/POST /api/admin/prompt-usage`; การบันทึกสินค้าส่งต่อไป `PROD-ADMIN-001`
+- ฐานข้อมูล/ไฟล์: R2 key `vision2/{user_id}/{project}/...`; D1 `prompt_usage_logs`; browser `localStorage` key `vision2_active_job_v2`; PDF/SAMPLE สร้างใน browser ก่อนส่งต่อ
+- สิทธิ์: ทุก API ใช้ `requireAdmin`; image read อนุญาตเฉพาะ key ที่ขึ้นต้นด้วย `vision2/{auth.user.id}/`; R2 response ใช้ private cache
+- ห้ามกระทบ: generation backend ปัจจุบันใช้ Gemini เท่านั้น (`gemini-3.1-flash-image`) และ API slot 1/2 ผูก `GEMINI_API_KEY`/`GEMINI_API_KEY_2`; prompt สูงสุด 12,000 ตัวอักษร, aspect ratio อยู่ใน allowlist, timeout 120 วินาที; character request สูงสุด 2,000 ตัวอักษร/200 รายการ; usage image/prompt count แต่ละค่า 1–1,000 และรายงานตามวันไทยสูงสุด 2,000 แถว
+- ห้ามกระทบ UI: คงลำดับขั้น, queue delay/retry, resume confirmation, SAMPLE watermark/selection, PDF/ZIP limits, product handoff, loading/error และ theme เดิม
+- รหัส UI: workspace มี `data-feature="V2-FACTORY-001"` ผ่าน `workspace.dataset.feature`
+- การทดสอบ: `scripts/test-v014357.mjs`
+
+## V4-DRAFT-001 — Auto Multi-Product Draft จาก ZIP/PDF
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.358 (ไฟล์ runtime/API ยังใช้ชื่อ legacy `vision3` แต่ UI/lifecycle เป็น Vision 4)
+- หน้า/ไฟล์: Vision 4 panel ใน `/admin.html`, `public/vision3.js`, `public/vision3.css`, `functions/api/admin/vision3/analyze.js`, multipart/product APIs และ V4 Review APIs ที่ handoff
+- ฟังก์ชัน: รับ ZIP/PDF แบบ batch, อ่านจำนวนหน้า/รูป, สุ่ม 3 ตัวอย่างและติด SAMPLE, วิเคราะห์ worksheet/game กับ metadata, สร้าง product draft, หรือเก็บไฟล์เนื้อหาน้อยรอรวมชุด
+- API: `POST /api/admin/vision3/analyze`, `POST /api/admin/products`, `POST /api/admin/product-multipart/init|complete|abort`, `PUT /api/admin/product-multipart/part`, V4 pending/review APIs สำหรับ handoff
+- ฐานข้อมูล/ไฟล์: `products` draft ที่ `source='vision4'`, product files/pending files ใน R2 ผ่าน multipart, preview URLs และ V4 review queue
+- สิทธิ์: analysis และปลายทาง admin ใช้ `requireAdmin`; แพตนี้ไม่เปลี่ยนสิทธิ์ของ V4 Review
+- ห้ามกระทบ: batch 1–30 ไฟล์, ไฟล์ละไม่เกิน 1 GB, รับเฉพาะ ZIP/PDF; ZIP ต้องไม่เข้ารหัสและใช้ store/deflate; ไฟล์ต่ำกว่า 20 หน้าไม่สร้างตะกร้า; classification fallback อิงชื่อไฟล์เมื่อ Gemini ไม่พร้อม/ล้ม; ราคาใช้จำนวนหน้า ยกเว้นไม่เกิน 100 หน้าและลงท้าย 0 ให้ลด 1 บาท; multipart ล้มต้องเรียก abort แบบ best effort
+- ห้ามกระทบ lifecycle: ผลลัพธ์จากรอบนี้เป็น draft/pending เท่านั้น; การย้ายเข้าสินค้าปกติต้องผ่าน `V4-REVIEW-001`; คง queue/progress/failure และ theme เดิม
+- รหัส UI: Vision 4 panel มี `data-feature="V4-DRAFT-001"`
+- การทดสอบ: `scripts/test-v014358.mjs`
+
+## TRASH-RECOVERY-001 — ถังขยะ 30 วัน กู้คืน และลบถาวร
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.359
+- หน้า/ไฟล์: Trash section ใน `/admin.html`, `public/admin.js`, `functions/_trash.js`, `functions/api/admin/trash/index.js`, `functions/api/admin/trash/restore.js`; soft delete เริ่มจาก product/file/image admin endpoints
+- ฟังก์ชัน: แสดงสินค้า รูป และ PDF/ZIP ที่ลบ; กู้สถานะ/ไฟล์/ช่องรูป; purge รายการหมดอายุ; ลบถาวรทันทีโดย Boss
+- API: `GET/DELETE /api/admin/trash`, `POST /api/admin/trash/restore`
+- ฐานข้อมูล/ไฟล์: `products.deleted_at/deleted_prev_status`, `trash_items`, `product_files`, `downloads`, `entitlements`, `unlock_logs`, `product_bundle_items`, `product_slug_history`; R2 objects ของไฟล์/รูป
+- สิทธิ์: `requireAdmin` สำหรับดูและกู้คืน; `requireBoss` สำหรับ DELETE ถาวร; UI แสดงปุ่มลบถาวรเฉพาะ Boss และต้องยืนยันด้วยคำ `DELETE`
+- ห้ามกระทบ: retention 30 วัน; purge ต่อรอบจำกัด 20 `trash_items` และ 10 products; product restore คืน `deleted_prev_status` หรือ published; กู้ไฟล์/รูปต้องมี product ก่อนและห้ามทับของปัจจุบัน; อย่าลบ R2 ก่อนยืนยันกู้คืน/ลบถาวร
+- การรักษาสิทธิ์ผู้ซื้อ: product ที่มี `order_items` อ้างถึงห้ามลบ record, paid files หรือ bundle links; ให้เก็บเป็น hidden tombstone `status='draft'`, `deleted_at='9999-12-31 23:59:59'` เพื่อให้ผู้ซื้อเก่ายังดาวน์โหลดได้
+- รหัส UI: trash section มี `data-feature="TRASH-RECOVERY-001"`; คง confirmation/loading/error/card และ theme เดิม
+- การทดสอบ: `scripts/test-v014359.mjs`
+
+## CATEGORY-ADMIN-001 — จัดการหมวดหมู่สินค้าและ Slug Cascade
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.360
+- หน้า/ไฟล์: Category section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/categories/index.js`, `functions/api/admin/categories/[id].js`
+- ฟังก์ชัน: แสดง product count, สร้าง/แก้ชื่อและ slug, กำหนหมวดแม่, file type เริ่มต้น, active และ sort order; เปลี่ยน slug พร้อมย้าย product references; ลบหมวดที่ว่าง
+- API: `GET/POST /api/admin/categories`, `PUT/DELETE /api/admin/categories/:id`
+- ฐานข้อมูล: `categories.id/slug/name/parent_slug/file_type/active/sort_order`, `products.category`; product count นับเฉพาะ published, non-deleted, normal product ตาม query เดิม
+- สิทธิ์: `requireAdmin` สำหรับอ่าน/สร้าง/แก้; `requireBoss` สำหรับลบ; UI ซ่อนปุ่มลบจาก non-Boss
+- ห้ามกระทบ: ชื่อห้ามว่าง/ซ้ำแบบ trim + case-insensitive; slug ต้องเป็น lowercase kebab-case; เว้น slug ตอนสร้างได้และระบบสร้าง `category-NNN` ถัดไป; slug ซ้ำต้อง 400/409; เมื่อแก้ slug ต้อง update `products.category` จากค่าเก่า; หมวดที่มีสินค้าอ้างถึงห้ามลบและคืน 409
+- รหัส UI: categories section มี `data-feature="CATEGORY-ADMIN-001"`; คง form/list/confirmation/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014360.mjs`
+
+## ORDER-ADMIN-001 — คิวตรวจสลิป อนุมัติ/ปฏิเสธ และล้างออเดอร์เปล่า
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.361
+- หน้า/ไฟล์: Orders section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/orders.js`, `functions/api/admin/orders/[id]/approve.js`, `functions/api/admin/orders/[id]/reject.js`, `functions/api/admin/orders/[id]/slip-evidence.js`, `functions/api/admin/orders/clear.js`, `functions/api/admin/slip.js`, `functions/_orders.js`
+- ฟังก์ชัน: คิว awaiting payment/pending review/rejected, ดูสลิปและหลักฐาน, อนุมัติแล้วสร้าง entitlement/เครดิตและ log, ปฏิเสธให้ส่งสลิปใหม่, ล้างออเดอร์เปล่าที่ยังไม่มีหลักฐาน
+- API: `GET /api/admin/orders`, `POST /api/admin/orders/:id/approve`, `POST /api/admin/orders/:id/reject`, `GET /api/admin/orders/:id/slip-evidence`, `POST /api/admin/orders/clear`, `GET /api/admin/slip`
+- ฐานข้อมูล/ไฟล์: `orders`, `order_items`, `order_slip_evidence`, `entitlements`, `course_right_credits`, `unlock_logs`, `customer_events`; R2 slip objects
+- สิทธิ์: คิว/ออเดอร์ปกติ/หลักฐานใช้ `requireAdmin`; resale-rights, partner course และ Vision 5 test-account manual review สงวนให้ Boss; seller course ปกติต้องให้เจ้าของคอร์สตรวจใน Vision 5; clear ใช้ `requireBoss`
+- ห้ามกระทบ approval: ต้องเป็น `pending_review` และมี slip; branch manual ต้อง `slip_verification_status='manual'` และ `confirmed=true`; reject ของ rights/partner ต้องมีเหตุผล; `grantOrder` claim ด้วย conditional status update และห้ามเพิ่มสิทธิ์/เครดิต/ล็อกซ้ำ; method ต้องสะท้อน branch จริง
+- ห้ามกระทบ evidence/clear: slip evidence response ห้ามคืน R2 `object_key` โดยตรง; สลิปต้อง private/no-store; clear รับได้สูงสุด 2,000 IDs และลบเฉพาะ `awaiting_payment|pending_review|rejected` ที่ `slip_key IS NULL`; ห้ามลบออเดอร์ที่เคยแนบสลิป/ชำระแล้ว
+- รหัส UI: orders section มี `data-feature="ORDER-ADMIN-001"`; คง confirmations, review warnings, selection, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014361.mjs`, `scripts/test-commerce-final.mjs`
+
+## AD-INTELLIGENCE-001 — ค่าแอด Campaign/Creative และ First-party Attribution
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.362
+- หน้า/ไฟล์: Ads Intelligence card ใน `/admin.html`, `public/admin.js`, `functions/api/admin/ad-intelligence.js`
+- ฟังก์ชัน: เลือกช่วงวันที่, กรอก/แก้ค่าแอดระดับ campaign, ad set และ creative, ลบรายการ และเทียบค่าใช้จ่ายกับ purchase attribution เพื่อสรุป spend/revenue/profit/ROAS/orders/buyers
+- API: `GET/PUT/DELETE /api/admin/ad-intelligence`; GET ใช้ช่วง 30 วันล่าสุดเมื่อไม่ระบุวันที่, PUT upsert ค่าใช้จ่าย และ DELETE รับ numeric `id`
+- ฐานข้อมูล: `ad_campaign_costs`, `customer_events`, `orders`; revenue นับ distinct paid order จาก event `purchase` และใช้วันที่เขตเวลาไทย `+7 hours`
+- สิทธิ์: ทุก method ใช้ `requireAdmin`; ไม่เปิดข้อมูลหรือคำสั่งนี้ต่อ public client
+- การจับคู่: normalize Facebook/FB/Meta และ referral aliases เป็น `facebook`, พร้อม TikTok/Google aliases; attribution key คือ source + campaign + creative โดยไม่ใช้ ad set ใน key ตามโค้ดเดิม
+- ห้ามกระทบ: วันที่เริ่มต้องไม่เกินวันสิ้นสุด; campaign ต้องมีค่า; cost รับจำนวนบาทไม่ติดลบแล้วเก็บเป็นสตางค์; upsert ตาม `(spend_date, platform, campaign, adset, creative)`; การลบต้องระบุ ID
+- สูตร: `profit = revenue - spend`, `ROAS = revenue / spend`; เมื่อ spend เป็นศูนย์คืน `null`; ระบบนี้แสดงผลและจัดการค่าใช้จ่ายเอง ไม่แก้โฆษณาภายนอก
+- ความสัมพันธ์: แยกจาก `ADS-ANALYTICS-001` ซึ่งดูแล Meta ingestion และ Ads Center; ระบบนี้คือ manual admin cost + first-party matching
+- รหัส UI: Ads Intelligence card มี `data-feature="AD-INTELLIGENCE-001"`; คง form, confirmation, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014362.mjs`
+
+## COURSE-ADMIN-001 — สร้างคอร์สบริษัทและจัดการบทเรียน
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.363
+- หน้า/ไฟล์: company-course grid และ lesson manager ใน `/admin-courses.html`, `public/admin-courses.js`, `functions/api/admin/courses/index.js`, `functions/api/admin/courses/[id].js`, `functions/api/admin/courses/[id]/lessons.js`, `functions/api/admin/courses/[id]/lessons/[lessonId].js`
+- ฟังก์ชัน: แสดง/สร้าง/แก้คอร์สบริษัท, เปิดหรือเก็บแบบร่าง, อัปโหลดรูปปก, เพิ่ม/แสดง/ลบบทเรียนและสื่อ, คำนวณนาทีรวมและจำนวนนักเรียน
+- API: `GET/POST /api/admin/courses`, `POST /api/admin/courses/:id`, `GET/POST /api/admin/courses/:id/lessons`, `DELETE /api/admin/courses/:id/lessons/:lessonId`
+- ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `entitlements`; R2 course cover, lesson video และ PDF
+- สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; route นี้รับเฉพาะคอร์สบริษัทที่ `owner_user_id IS NULL`, `course_origin='company'` และ `course_type='online_course'`
+- ห้ามข้ามขอบเขต: คอร์สผู้ขาย/Vision 5, `seller_rights` และ resale-rights เดิมต้องจัดการในระบบเฉพาะ; ห้ามสร้างหรือแปลง company course เป็นตะกร้าสิทธิ์ผ่านหน้านี้
+- ห้ามกระทบไฟล์: รูปปก JPG/PNG/WEBP สูงสุด 5 MB; บทเรียนต้องมี MP4/WEBM สูงสุด 200 MB หรือ PDF สูงสุด 100 MB อย่างน้อยหนึ่งไฟล์; ถ้าบันทึก DB หรือ PDF ล้มต้องล้าง object ที่เพิ่งสร้าง
+- ห้ามกระทบข้อมูล: product และ course ต้องสร้างสัมพันธ์กัน; active สะท้อน `products.status` published/draft; ลบบทเรียนเฉพาะ course เดียวกัน, ลบ DB ก่อน object และคำนวณ `total_minutes` ใหม่
+- ความสัมพันธ์: ไม่รวม seller review section ในหน้าเดียวกันซึ่งอยู่ใต้ `COURSE-REVIEW-001`; ไม่รวมตะกร้าผู้สอน/EP ซึ่งอยู่ใต้ `COURSE-BASKET-001` และ `COURSE-EP-001`
+- รหัส UI: company-course grid และ lesson manager มี `data-feature="COURSE-ADMIN-001"`; คง form, confirmation, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014363.mjs`
+
+## COURSE-PAYOUT-001 — บัญชีรับเงินผู้สอนและ Secure Payment QR
+
+- สถานะ: `PARTIAL`; ลงทะเบียน API จริงใน v0.14.365 แต่ client ตั้งค่าบัญชีใน `/course-center` ขาดจาก runtime ปัจจุบัน
+- หน้า/ไฟล์: ลิงก์ `/course-center#paymentProfilePanel` ใน `/dashboard.html`, publish/order flow, `functions/api/course-seller/payment-profile.js`, `functions/api/course-seller/payment-qr/[entitlementId].js`, `functions/api/course-seller/[id]/publish.js`
+- ฟังก์ชัน API: เจ้าของบันทึกธนาคาร/ชื่อบัญชี/เลขบัญชี/QR ของตน; publish ผูกข้อมูลรับเงินกับ seller-course binding; ผู้มีสิทธิ์เปิด QR ผ่าน entitlement binding
+- API: `POST /api/course-seller/payment-profile`, `GET /api/course-seller/payment-qr/:entitlementId`
+- ฐานข้อมูล/ไฟล์: `users.seller_bank_name/seller_account_name/seller_account_number/seller_payment_qr_url/seller_payment_status`, `courses.license_entitlement_id`, `orders`, `order_items`; R2 `seller-payment-qr-*`
+- สิทธิ์: บันทึกและอ่านใช้ `requireUser`; บันทึกได้เฉพาะบัญชีผู้ใช้ปัจจุบัน; QR เปิดได้เฉพาะ staff, เจ้าของคอร์ส หรือผู้ซื้อที่มีออเดอร์ของ course owner/product ใน `awaiting_payment|rejected|pending_review`
+- Validation: ธนาคารต้องอยู่ใน allowlist, ชื่อบัญชีต้องไม่ว่าง, เลขบัญชีมีตัวเลขอย่างน้อย 6 หลัก; QR รับ JPG/PNG/WEBP สูงสุด 8 MB
+- ห้ามกระทบ object lifecycle: อัปโหลด QR ใหม่ก่อน update DB; DB ไม่เปลี่ยนต้องลบ object ใหม่; update สำเร็จจึงลบ object เก่าแบบ best effort
+- ห้ามกระทบ privacy: QR lookup ใช้ entitlement binding ไม่รับ object key ตรง; response เป็น `private, no-store` และ `x-content-type-options: nosniff`; ผู้ไม่มีสิทธิ์คืน 403
+- ขอบเขต: แยกจาก `PAYMENT-SETTINGS-001` ซึ่งเป็นบัญชีรับเงินส่วนกลางของ VisionD และจาก review actions ใน `COURSE-REVIEW-001`
+- ช่องว่างที่พบ: `/dashboard.html` และ publish error ชี้ไป `#paymentProfilePanel` แต่ `/course-center.html` ไม่มี panel/form และ `public/course-center.js` ไม่เรียก payment-profile API; จึงห้ามรายงานเป็น end-to-end implemented จนมีแพตฟีเจอร์เฉพาะ
+- รหัส UI: ยังไม่มีจุด runtime ที่ถูกต้องให้ติด `data-feature`; ห้ามใส่ marker หลอกบนลิงก์ที่ปลายทางไม่มีฟอร์ม
+- การทดสอบ: `scripts/test-v014365.mjs`
+
+## SLIP-AUTO-VERIFY-001 — EasySlip Token ส่วนบุคคลและตรวจสลิปอัตโนมัติ
+
+- สถานะ: `PARTIAL`; API/token/verification มีจริง แต่ client ตั้งค่าปัจจุบันยังไม่ครบ contract
+- ไฟล์: `public/course-rights-product.js`, `functions/api/course-seller/slip-api.js`, `functions/_seller_token.js`, `functions/api/orders/[id]/slip.js`, `functions/api/course-seller/[id]/publish.js`
+- API: `GET/POST /api/course-seller/slip-api`; GET คืนเฉพาะสถานะ ไม่คืน token; POST เปิด/ปิด auto verify และบันทึก EasySlip token ของผู้ใช้
+- ความปลอดภัย: token ยาว 20–500 ตัว, เข้ารหัส AES-GCM ด้วย `VISION5_TOKEN_ENCRYPTION_KEY` + AAD, legacy plaintext ย้ายเป็น ciphertext เมื่อโหลดและมี key พร้อม
+- การเลือก token: partner course ใช้ API บริษัท; seller course ใช้ token เจ้าของเมื่อเปิดใช้และไม่ใช่ test account; rights order ใช้ token ผู้ซื้อเมื่อ Boss เปิดโหมด; กรณีอื่นใช้ API บริษัท
+- การตรวจ: จำกัดอัตรา, ตรวจชนิด/ขนาดรูป, account name/เลขท้ายอย่างน้อย 6 หลัก, amount, provider duplicate และ local `verified_slips`; ผ่านแล้วจึงเรียก idempotent `grantOrder`
+- Fail-safe: token/config/API/match ผิดหรือระบบขัดข้องต้องเปลี่ยนเป็น manual review พร้อม code; ห้าม auto approve จากเลขบัญชีสั้นหรือสลิปซ้ำ
+- ช่องว่าง client: endpoint เปิดใช้เฉพาะเมื่อ body มี `enabled:true` แต่ `course-rights-product.js` ส่งเพียง `{api_key}`; ปัจจุบันจึงเข้า branch ปิด auto verify
+- ช่องว่างหน้า: `/dashboard.html` ชี้ `/course-center#slipApiPanel` แต่หน้าและ controller ไม่มี panel นี้
+- ความสัมพันธ์: การอัปโหลดหลักฐานและ order lifecycle อยู่ใต้ `ORDER-PAYMENT-001`; toggle API บริษัทอยู่ใต้ `PAYMENT-SETTINGS-001`
+- รหัส UI: ยังไม่ติด marker บน flow ที่ contract ไม่ครบ; ต้องแก้เป็นแพตฟีเจอร์แยกก่อนเปลี่ยนเป็น `IMPLEMENTED`
+- การทดสอบ: `scripts/test-v014366.mjs`
 
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง

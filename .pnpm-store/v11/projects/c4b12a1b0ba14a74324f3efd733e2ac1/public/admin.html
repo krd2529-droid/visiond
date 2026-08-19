@@ -885,7 +885,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.335</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.366</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1043,7 +1043,7 @@
             <button class="danger-link boss-only-danger" data-admin-tab="trash"><span aria-hidden="true">🗑️</span><b>ถังขยะ / ลบถาวร</b><small>BOSS ONLY</small></button>
           </div>
         </section>
-        <section id="vision3Panel" hidden>
+        <section id="vision3Panel" data-feature="V4-DRAFT-001" hidden>
           <div class="section-head">
             <div>
               <p class="eyebrow">VISION 4 AUTO MULTI-PRODUCT DRAFT</p>
@@ -1178,7 +1178,7 @@
             </section>
           </section>
         </section>
-        <section id="eventsPanel" hidden>
+        <section id="eventsPanel" data-feature="CUSTOMER-INTELLIGENCE-001" hidden>
           <div class="section-head"><div><p class="eyebrow">DAILY ACTIVITY</p><h2>เหตุการณ์ในแต่ละวัน</h2><p>ดูว่าใครกดอะไร ที่หน้าไหน โดยไม่บันทึกรหัสผ่าน Token หรือข้อมูลที่กรอก</p></div></div>
           <form id="eventFilterForm" class="profit-filter">
             <label>วันที่<input id="eventDate" type="date" required></label>
@@ -1190,7 +1190,7 @@
           <div id="eventSummary" class="profit-summary"></div>
           <div id="eventTable" class="admin-event-list" role="region" aria-live="polite"><p>เลือกวันที่แล้วกดดูเหตุการณ์</p></div>
         </section>
-        <section id="overviewPanel" hidden>
+        <section id="overviewPanel" data-feature="BUSINESS-REPORT-001" hidden>
           <div class="section-head">
             <div>
               <p class="eyebrow">BUSINESS DASHBOARD</p>
@@ -1217,7 +1217,7 @@
             <article><small>ROAS รวม</small><b>—</b></article>
             <article><small>ออเดอร์รวม</small><b>—</b></article>
           </div>
-          <section class="visitor-stats-card">
+          <section class="visitor-stats-card" data-feature="CUSTOMER-INTELLIGENCE-001">
             <div class="section-head">
               <div>
                 <h3>สถิติผู้เข้าชมเว็บไซต์</h3>
@@ -1233,7 +1233,7 @@
               <p>กำลังโหลดสถิติ…</p>
             </div>
           </section>
-          <section class="customer-intelligence-card">
+          <section class="customer-intelligence-card" data-feature="CUSTOMER-INTELLIGENCE-001">
             <div class="section-head">
               <div>
                 <h3>Customer Intelligence</h3>
@@ -1268,7 +1268,7 @@
               <p>กำลังวิเคราะห์ Product Family…</p>
             </div>
           </section>
-          <section class="ads-intelligence-card">
+          <section class="ads-intelligence-card" data-feature="AD-INTELLIGENCE-001">
             <div class="section-head">
               <div>
                 <h3>Ads Intelligence</h3>
@@ -1707,7 +1707,7 @@
             </form>
           </div>
         </section>
-        <section id="categoriesPanel" hidden>
+        <section id="categoriesPanel" data-feature="CATEGORY-ADMIN-001" hidden>
           <div class="section-head">
             <div>
               <h2>จัดการหมวดหมู่สินค้า</h2>
@@ -1778,7 +1778,7 @@
             </form>
           </div>
         </section>
-        <section id="ordersPanel">
+        <section id="ordersPanel" data-feature="ORDER-ADMIN-001">
           <div class="section-head">
             <div>
               <h2>คำสั่งซื้อและตรวจสลิป</h2>
@@ -1803,7 +1803,7 @@
           </div>
           <div id="adminOrders"></div>
         </section>
-        <section id="salesPanel" hidden>
+        <section id="salesPanel" data-feature="BUSINESS-REPORT-001" hidden>
           <div class="section-head">
             <div>
               <h2>รายงานยอดขายสินค้า</h2>
@@ -1845,6 +1845,7 @@
           </div>
           <form
             id="promotionSettingsForm"
+            data-feature="PROMOTION-SETTINGS-001"
             class="payment-settings-card promotion-settings-card"
           >
             <div class="settings-status">
@@ -1891,6 +1892,7 @@
           </form>
           <form
             id="firstOrderPromotionForm"
+            data-feature="PROMOTION-SETTINGS-001"
             class="payment-settings-card promotion-settings-card"
           >
             <div class="settings-status">
@@ -1928,7 +1930,7 @@
               <p>Boss เลือกบัญชีรับโอนที่ต้องการให้ลูกค้าเห็นได้ทันที</p>
             </div>
           </div>
-          <form id="paymentSettingsForm" class="payment-settings-card">
+          <form id="paymentSettingsForm" class="payment-settings-card" data-feature="PAYMENT-SETTINGS-001">
             <div class="settings-status">
               <div>
                 <b>สถานะรับคำสั่งซื้อ</b
@@ -2016,7 +2018,7 @@
             </div>
           </form>
         </section>
-        <section id="usersPanel" hidden>
+        <section id="usersPanel" data-feature="MEMBER-ADMIN-001" hidden>
           <div class="section-head">
             <div>
               <h2>สมาชิกและระดับไอดี</h2>
@@ -2084,7 +2086,7 @@
           <div id="usersTable"></div>
         </section>
         <section id="elonPanel" class="elon-admin-panel" hidden>
-          <div class="elon-control-card" id="elonControlCard">
+          <div class="elon-control-card" id="elonControlCard" data-feature="ELON-CONTROL-001">
             <div class="elon-control-head"><div><span class="elon-control-icon" aria-hidden="true">⚡</span><div><p class="eyebrow">ELON CONTROL CENTER</p><h2>ควบคุม ELON แยกแต่ละระบบ</h2></div></div><small>ฐานข้อมูลแยกอิสระ · ปิดตัวหนึ่งไม่กระทบอีกตัว</small></div>
             <div class="elon-control-grid">
               <article class="elon-system-card" id="elonWebControl" data-state="off"><div class="elon-system-copy"><span class="elon-system-mark" aria-hidden="true">🌐</span><div><h3>ELON เว็บ</h3><p>ทีมขายหน้าร้าน VisionD สำหรับ Guest และลูกค้า</p><b class="elon-state-label" id="elonWebState">กำลังตรวจสอบ…</b></div></div><label class="elon-toggle"><input id="elonWebEnabled" type="checkbox" /><span aria-hidden="true"></span><em>เปิดหรือปิด ELON เว็บ</em></label></article>
@@ -2163,7 +2165,7 @@
             Admin ดูได้เฉพาะจำนวนรวม บทสนทนาเต็มเปิดได้ด้วยบัญชี Boss เท่านั้น
           </div>
         </section>
-        <section id="healthPanel" class="system-health-panel" hidden>
+        <section id="healthPanel" class="system-health-panel" data-feature="SYSTEM-HEALTH-001" hidden>
           <div class="section-head">
             <div>
               <p class="eyebrow">BOSS · SYSTEM HEALTH</p>
@@ -2179,7 +2181,7 @@
           <p id="systemHealthChecked" class="health-checked">ยังไม่ได้ตรวจ</p>
           <div id="systemHealthContent"><p>กำลังตรวจสถานะระบบ…</p></div>
         </section>
-        <section id="trashPanel" hidden>
+        <section id="trashPanel" data-feature="TRASH-RECOVERY-001" hidden>
           <div class="section-head">
             <div>
               <h2>ถังขยะ</h2>
@@ -2252,7 +2254,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-<script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014335"></script>
+<script src="/analytics.js?v=014138"></script><script src="/admin.js?v=014338"></script>
     <script src="/vision2.js?v=013330"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=01351"></script>

@@ -18,6 +18,7 @@
   const workspace = document.createElement("section");
   workspace.id = "vision2Workspace";
   workspace.className = "vision2-workspace";
+  workspace.dataset.feature = "V2-FACTORY-001";
   workspace.hidden = true;
   workspace.innerHTML = `
     <div id="v2ResumeNotice" class="v2-resume-notice" hidden><div><b>พบงาน Vision 2 ที่ยังไม่เสร็จ</b><small id="v2ResumeText">สามารถกลับมาทำงานต่อจากคิวเดิมได้</small></div><button id="v2ResumeSaved" type="button">ทำงานต่อ</button><button id="v2DiscardSaved" type="button">เริ่มงานใหม่</button></div>

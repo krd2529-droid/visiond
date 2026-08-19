@@ -1,0 +1,1 @@
+{"version":"v0.14.343","features":["WEBHOOK-HUB-001"],"summary":"ลงทะเบียน Feature Map ของ VEasy Webhook Hub endpoint lifecycle และ LINE ingestion","parent_commit":"d58b3cf8","safe_rollback_commit":"d58b3cf8","commit":"SELF","push":false,"deploy":false,"business_behavior_changed":false,"tests":["node scripts/test-v014343.mjs","node scripts/patch-gate.mjs"]}

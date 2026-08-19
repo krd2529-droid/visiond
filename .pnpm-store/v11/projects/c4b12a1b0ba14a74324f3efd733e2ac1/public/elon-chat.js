@@ -84,6 +84,7 @@
 
   function mount() {
     const root = el('div', 'elon-chat');
+    root.dataset.feature = 'ELON-CHAT-001';
     root.hidden = true;
 
     const launcher = el('button', 'elon-launcher');
