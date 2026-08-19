@@ -166,6 +166,52 @@
 - ห้ามกระทบ: ห้ามรวมข้อมูลสมาชิกอื่น; ห้ามแสดงรหัสผ่าน token เต็ม หรือข้อมูลบัญชีธนาคารของผู้ซื้อ; ห้ามใช้ข้อมูลหน้าจอแทน ownership ฝั่ง API
 - การทดสอบ: `scripts/test-v01447.mjs`, `scripts/test-v014109-licensed-installer-download.mjs`, `scripts/test-v014304.mjs`
 
+## PROD-ADMIN-001 — จัดการตะกร้าสินค้าในหลังบ้าน
+
+- สถานะ: `IMPLEMENTED`; ทำแผนที่เส้นทางจริงใน v0.14.325
+- หน้า: `/admin` ส่วนจัดการสินค้า ตะกร้าวางจำหน่าย และตะกร้าแบบร่าง
+- ไฟล์: `public/admin.html`, `public/admin.js`, `functions/api/admin/products/index.js`, `functions/api/admin/products/[id].js`
+- ฟังก์ชัน/ตัวควบคุม: `loadProducts()`, `renderProductAdminList()`, `editProduct()`, `saveProduct()`, `deleteProduct()`, `bulkDeleteSelectedProducts()`
+- API: `GET/POST /api/admin/products`, `GET/PUT/DELETE /api/admin/products/:id`
+- ฐานข้อมูล / ตาราง / ฟิลด์: D1; `products`, `categories`, `product_slug_history`, `products.status`, `products.deleted_at`, `products.deleted_prev_status`
+- Input: ข้อมูลตะกร้า หมวด สถานะ ราคา Slug รายละเอียด และการเลือกหลายตะกร้า
+- Output: ตะกร้าวางจำหน่าย/แบบร่างที่แบ่งหน้าได้ การแก้ไข และ soft delete ลงถังขยะ
+- Reads: สินค้าปกติที่ยังไม่ถูกลบ หมวด และจำนวนไฟล์; แยกคอร์ส Vision 5 ออกจากตัวแก้ไขสินค้าทั่วไป
+- Writes: สร้าง/แก้สินค้า เปลี่ยนสถานะ เก็บประวัติ Slug และตั้ง `deleted_at` แทนการลบถาวร
+- สิทธิ์: ผู้ดูแลเท่านั้น; API ทุกจุดตรวจ `requireAdmin`
+- ห้ามกระทบ: ห้าม hard delete สินค้าจากปุ่มทั่วไป ห้ามเผยแพร่ draft อัตโนมัติ ห้ามแก้คอร์ส Vision 5 ผ่าน generic product API และห้ามเปลี่ยนเลข product ID
+- การทดสอบ: `scripts/test-v014325.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
+
+## PROD-FILE-001 — จัดการรูปและไฟล์ของตะกร้าสินค้า
+
+- สถานะ: `IMPLEMENTED`; ทำแผนที่เส้นทางจริงใน v0.14.325
+- หน้า: `/admin` ตัวแก้ไขสินค้าและปุ่มอัปโหลดแยก
+- ไฟล์: `public/admin.js`, `functions/api/admin/products/index.js`, `functions/api/admin/product-upload/[id].js`, `functions/api/admin/product-images/[id].js`, `functions/api/admin/product-files/[id].js`, `functions/api/admin/product-multipart/init.js`, `functions/api/admin/product-multipart/part.js`, `functions/api/admin/product-multipart/complete.js`
+- ฟังก์ชัน/ตัวควบคุม: `uploadSelectedFile()`, `saveProduct()`, `saveUploads()`, `onRequestPost()`, `onRequestPut()`, `onRequestDelete()`
+- API: `POST /api/admin/product-upload/:id`, `POST/DELETE /api/admin/product-images/:id`, `GET/DELETE /api/admin/product-files/:id`, `POST /api/admin/product-multipart/init`, `PUT /api/admin/product-multipart/part`, `POST /api/admin/product-multipart/complete`
+- ฐานข้อมูล / ที่เก็บ: D1/R2; `product_files`, `downloads`, `products.cover_url`, `products.preview_urls`, bucket `FILES`
+- Input: รูป JPG/PNG/WEBP ไฟล์ PDF/ZIP หรือ multipart parts ที่ผูก product ID
+- Output: รูปปก รูปตัวอย่าง และไฟล์ดาวน์โหลดที่ผูกกับตะกร้าเดิม
+- ข้อจำกัดที่ตรวจพบ: รูป direct upload ไม่เกิน 5 MB; PDF/ZIP direct upload ไม่เกิน 100 MB; multipart upload รวมไม่เกิน 1 GB
+- สิทธิ์: ผู้ดูแลเท่านั้น; ตรวจ product และป้องกันการใช้ generic route กับคอร์ส Vision 5
+- ห้ามกระทบ: ห้ามคืน R2 object key สู่หน้าเว็บ ห้ามผูกไฟล์ข้าม product ห้ามลบไฟล์ต้นฉบับก่อนการแทนที่สำเร็จ และห้ามใช้เส้นทางนี้แก้คอร์ส Vision 5
+- การทดสอบ: `scripts/test-v014325.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
+
+## PROD-CATEGORY-MOVE-001 — ย้ายหมวดหลายตะกร้า
+
+- สถานะ: `IMPLEMENTED`; ทำแผนที่เส้นทางจริงใน v0.14.325
+- หน้า: `/admin` แถบเลือกหลายตะกร้าและหน้าต่างย้ายหมวด
+- ไฟล์: `public/admin.html`, `public/admin.js`, `functions/api/admin/products/bulk-category.js`
+- ฟังก์ชัน/ตัวควบคุม: `openBulkMoveCategory()`, `moveSelectedProductsCategory()`, `onRequestPost()`
+- API: `POST /api/admin/products/bulk-category`
+- ฐานข้อมูล / ตาราง: D1; `products`, `categories`, `product_slug_history`, `product_bundle_items`, `bundle_source_allocations`, `courses`
+- Input: product IDs ที่เลือก หมวดปลายทาง และ `confirmed=true`
+- Output: ชื่อ คำอธิบาย ประเภทไฟล์ หมวด และ Slug ที่สอดคล้องกับหมวดใหม่ โดยเลข product ID เดิมไม่เปลี่ยน
+- Writes: บันทึก Slug เดิมใน `product_slug_history` และเขียนการเปลี่ยนทั้งหมดด้วย `DB.batch`
+- สิทธิ์: ผู้ดูแลเท่านั้น; จำกัดครั้งละไม่เกิน 100 product IDs
+- ห้ามกระทบ: ห้ามย้ายชุดรวม สินค้าที่ถูกจัดสรรในชุด Vision 4 คอร์ส สิทธิ์ขาย และหมวด `set-*`; ห้ามทำ Slug ซ้ำ; ห้ามเปลี่ยนเลขรหัสสินค้า
+- การทดสอบ: `scripts/test-v014208.mjs`, `scripts/test-v014325.mjs`, `scripts/test-all-regressions.mjs`
+
 ## กฎบำรุงรักษา
 
 ## PROD-SAMPLE-001 — สร้างรูปตัวอย่างทั้งตะกร้าเดี่ยว

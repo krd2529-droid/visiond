@@ -1,5 +1,6 @@
 import { json, requireAdmin } from "../../../_lib.js";
 import { putTrash } from "../../../_trash.js";
+// Feature: PROD-FILE-001 — จัดการรูปปกและรูปตัวอย่างของตะกร้าสินค้า
 
 const imageTypes = ["image/jpeg", "image/png", "image/webp"];
 const extension = (file) => file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";

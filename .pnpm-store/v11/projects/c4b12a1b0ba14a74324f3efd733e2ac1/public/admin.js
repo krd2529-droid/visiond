@@ -219,6 +219,7 @@ function clearPendingUploads() {
     .querySelectorAll("[data-upload-selected]")
     .forEach((button) => (button.disabled = true));
 }
+// Feature: PROD-FILE-001 — อัปโหลด/แทนที่ไฟล์และรูปของตะกร้าสินค้าหลังบ้าน
 async function uploadSelectedFile(name, button) {
   const id = Number(productEditor.elements.id.value),
     input = productEditor.elements[name],
@@ -595,6 +596,7 @@ async function deleteCategory() {
   loadCategories();
 }
 
+// Feature: PROD-ADMIN-001 — โหลดและแยกตะกร้าวางจำหน่าย/แบบร่างสำหรับผู้ดูแล
 async function loadProducts() {
   publishedProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าที่วางจำหน่าย…</div>';
   draftProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าแบบร่าง…</div>';
@@ -657,12 +659,14 @@ function renderProductGroup(items, status) {
 }
 function renderProductPagination(status,totalPages,totalItems,perPage){const isPublished=status==='published',nav=isPublished?publishedProductPagination:draftProductPagination,currentPage=isPublished?publishedProductPage:draftProductPage,target=isPublished?publishedProductList:draftProductList;if(totalItems<=perPage){nav.innerHTML='';nav.hidden=true;return}nav.hidden=false;const pages=[];for(let page=1;page<=totalPages;page++)if(page===1||page===totalPages||Math.abs(page-currentPage)<=2)pages.push(page);let previous=0,html=`<button type="button" data-product-page="${currentPage-1}" ${currentPage===1?'disabled':''}>ก่อนหน้า</button>`;for(const page of pages){if(previous&&page-previous>1)html+='<span>…</span>';html+=`<button type="button" data-product-page="${page}" class="${page===currentPage?'active':''}" ${page===currentPage?'aria-current="page"':''}>${page}</button>`;previous=page}html+=`<button type="button" data-product-page="${currentPage+1}" ${currentPage===totalPages?'disabled':''}>ถัดไป</button>`;nav.innerHTML=html;nav.querySelectorAll('[data-product-page]:not([disabled])').forEach(button=>button.onclick=()=>{if(isPublished)publishedProductPage=Number(button.dataset.productPage);else draftProductPage=Number(button.dataset.productPage);renderProductAdminList(productSearchInput.value);target.scrollIntoView({behavior:'smooth',block:'start'})})}
 function updateBulkProductBar(){const count=bulkSelectedProducts.size,output=document.getElementById('bulkProductCount'),deleteButton=document.getElementById('bulkDeleteProducts'),moveButton=document.getElementById('bulkMoveCategoryButton');if(output)output.textContent=count?`เลือกแล้ว ${count} ตะกร้า · พร้อมย้ายหมวด`:'เลือกแล้ว 0 ตะกร้า · ค้นหาแล้วติ๊กช่องหน้าตะกร้าที่ต้องการย้าย';if(deleteButton)deleteButton.disabled=!count;if(moveButton){moveButton.disabled=false;moveButton.textContent=count?`ย้ายหมวด ${count} ตะกร้า`:'ย้ายหมวดหลายตะกร้า'}}
+// Feature: PROD-ADMIN-001 — soft delete ตะกร้าที่เลือกโดยไม่ลบข้อมูลจริงทันที
 async function bulkDeleteSelectedProducts(){const ids=[...bulkSelectedProducts];if(!ids.length)return;if(!confirm(`ย้ายตะกร้าที่เลือก ${ids.length} รายการไปถังขยะ 30 วันหรือไม่?`))return;const button=document.getElementById('bulkDeleteProducts');button.disabled=true;let deleted=0,failed=0;for(const id of ids){const response=await fetch('/api/admin/products/'+id,{method:'DELETE'});if(response.ok){deleted++;bulkSelectedProducts.delete(id)}else failed++}await loadProducts();alert(`ย้ายไปถังขยะแล้ว ${deleted} ตะกร้า${failed?` · ลบไม่สำเร็จ ${failed} ตะกร้า`:''}`)}
 document.getElementById('bulkClearProducts')?.addEventListener('click',()=>{bulkSelectedProducts.clear();renderProductAdminList(productSearchInput.value)});
 document.getElementById('bulkDeleteProducts')?.addEventListener('click',bulkDeleteSelectedProducts);
 const bulkMoveCategoryDialog=document.getElementById('bulkMoveCategoryDialog'),bulkMoveCategoryForm=document.getElementById('bulkMoveCategoryForm'),bulkMoveCategoryState=document.getElementById('bulkMoveCategoryState');
 function closeBulkMoveCategory(){bulkMoveCategoryDialog.close();bulkMoveCategoryState.textContent=''}
 function openBulkMoveCategory(){const ids=[...bulkSelectedProducts];if(!ids.length){productSearchInput.scrollIntoView({behavior:'smooth',block:'center'});productSearchInput.focus();return alert('พิมพ์ค้นหาตะกร้า แล้วติ๊กช่องสี่เหลี่ยมหน้าตะกร้าที่ต้องการ จากนั้นกด “ย้ายหมวดหลายตะกร้า” อีกครั้ง')}const selected=ids.map(id=>products.find(product=>Number(product.id)===Number(id))).filter(Boolean);bulkMoveCategoryForm.elements.category.innerHTML=categories.filter(category=>Number(category.active)&&!String(category.slug).startsWith('set-')&&category.slug!=='resale-rights').map(category=>`<option value="${esc(category.slug)}">${esc(category.name)} (${esc(category.slug)})</option>`).join('');bulkMoveCategoryForm.elements.confirmed.checked=false;document.getElementById('bulkMoveCategorySummary').textContent=`เลือก ${selected.length} ตะกร้า: ${selected.slice(0,5).map(product=>`#${product.id} ${product.title}`).join(' · ')}${selected.length>5?' …':''}`;bulkMoveCategoryDialog.showModal()}
+// Feature: PROD-CATEGORY-MOVE-001 — ย้ายหมวดหลายตะกร้าและคงเลขรหัสสินค้าเดิม
 async function moveSelectedProductsCategory(event){event.preventDefault();const ids=[...bulkSelectedProducts],category=bulkMoveCategoryForm.elements.category.value;if(!ids.length)return closeBulkMoveCategory();if(!bulkMoveCategoryForm.elements.confirmed.checked)return;const submit=bulkMoveCategoryForm.querySelector('[type="submit"]');submit.disabled=true;bulkMoveCategoryState.textContent='กำลังย้ายหมวดและปรับข้อมูลตะกร้า…';try{const response=await fetch('/api/admin/products/bulk-category',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ids,category,confirmed:true})}),data=await response.json().catch(()=>({}));if(!response.ok){bulkMoveCategoryState.textContent=data.error||'ย้ายหมวดไม่สำเร็จ';return}bulkSelectedProducts.clear();closeBulkMoveCategory();await loadProducts();alert(`ย้ายหมวดสำเร็จ ${Number(data.updated)||0} ตะกร้า · เลขรหัสสินค้าเดิมไม่เปลี่ยน`)}finally{submit.disabled=false}}
 document.getElementById('bulkMoveCategoryButton')?.addEventListener('click',openBulkMoveCategory);document.getElementById('bulkMoveCategoryClose')?.addEventListener('click',closeBulkMoveCategory);document.getElementById('bulkMoveCategoryCancel')?.addEventListener('click',closeBulkMoveCategory);bulkMoveCategoryForm?.addEventListener('submit',moveSelectedProductsCategory);
 function setBundleMode(active) {
@@ -952,6 +956,7 @@ async function uploadVision2ReplacementFiles(id,files,label){
     if(!response.ok)throw new Error(data.error||`อัปโหลด ${text} ไม่สำเร็จ`);
   }
 }
+// Feature: PROD-ADMIN-001 / PROD-FILE-001 — บันทึกตะกร้าและไฟล์ตามโหมดที่เลือก
 async function saveProduct(event) {
   event.preventDefault();
   setMessage("กำลังบันทึก…");

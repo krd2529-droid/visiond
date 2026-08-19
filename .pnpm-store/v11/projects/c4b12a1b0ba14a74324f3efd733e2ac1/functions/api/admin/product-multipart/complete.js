@@ -1,5 +1,6 @@
 import { json, requireAdmin } from "../../../_lib.js";
 import { ensureDatabase } from "../../../_schema.js";
+// Feature: PROD-FILE-001 — รวม multipart upload และผูกไฟล์กับตะกร้าสินค้า
 const vision5Product = (env,id) => env.DB.prepare(`SELECT p.id FROM products p WHERE p.id=? AND (p.category='resale-rights' OR EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')))`)
   .bind(id).first();
 

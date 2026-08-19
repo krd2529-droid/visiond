@@ -1,6 +1,7 @@
 import { json, requireAdmin } from "../../../_lib.js";
 import { putTrash } from "../../../_trash.js";
 import { ensureDatabase } from "../../../_schema.js";
+// Feature: PROD-ADMIN-001 — อ่าน แก้ไข และ soft delete ตะกร้าสินค้า
 const ext = (name, type) =>
   type === "image/png"
     ? "png"

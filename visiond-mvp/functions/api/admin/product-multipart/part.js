@@ -1,4 +1,5 @@
 import { json, requireAdmin } from "../../../_lib.js";
+// Feature: PROD-FILE-001 — รับแต่ละ part ของ multipart upload
 const vision5Product = (env,id) => env.DB.prepare(`SELECT p.id FROM products p WHERE p.id=? AND (p.category='resale-rights' OR EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights')))`)
   .bind(id).first();
 

@@ -1,5 +1,6 @@
 import {json,requireAdmin} from '../../../_lib.js';
 import {ensureDatabase} from '../../../_schema.js';
+// Feature: PROD-CATEGORY-MOVE-001 — ย้ายหมวดหลายตะกร้าโดยคง ID และประวัติ Slug
 
 const cleanIds=value=>[...new Set((Array.isArray(value)?value:[]).map(Number).filter(id=>Number.isInteger(id)&&id>0))].slice(0,100);
 const escapeRegex=value=>String(value||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');

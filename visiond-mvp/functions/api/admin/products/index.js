@@ -1,6 +1,7 @@
 import {json,requireAdmin} from '../../../_lib.js';
 import {ensureCatalogProducts} from '../../../_catalog.js';
 import {ensureDatabase} from '../../../_schema.js';
+// Feature: PROD-ADMIN-001 / PROD-FILE-001 — รายการ สร้าง และรับไฟล์สินค้าหลังบ้าน
 const ext=(name,type)=>type==='image/png'?'png':type==='image/webp'?'webp':type==='application/zip'?'zip':name?.toLowerCase().endsWith('.zip')?'zip':type==='application/pdf'?'pdf':'jpg';
 const validFile=(file,max,types)=>file&&typeof file.arrayBuffer==='function'&&file.size>0&&file.size<=max&&(types.includes(file.type)||(types.includes('application/zip')&&/\.zip$/i.test(file.name||''))||(types.includes('application/pdf')&&/\.pdf$/i.test(file.name||'')));
 

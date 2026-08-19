@@ -815,3 +815,9 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ทุกแพตช์ต้องผ่าน `npm run test:visible-version` ก่อน Commit
 - เลขที่มองเห็นไม่ตรงกันถือเป็นข้อผิดพลาดที่ห้าม Commit, Push และ Deploy
 - Feature: `REL-VERSION-001`
+# v0.14.325 — Feature Map ระบบจัดการสินค้าหลังบ้าน
+
+- เพิ่ม `PROD-ADMIN-001` สำหรับรายการ สร้าง แก้ไข และ Soft Delete ตะกร้าสินค้า
+- เพิ่ม `PROD-FILE-001` สำหรับรูปสินค้า ไฟล์สินค้า Direct Upload และ Multipart Upload
+- เพิ่ม `PROD-CATEGORY-MOVE-001` สำหรับย้ายหมวดหลายตะกร้าโดยคง Product ID และประวัติ Slug
+- เอกสารอ้างอิงเส้นทางโค้ดจริงและข้อห้ามกระทบ โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
