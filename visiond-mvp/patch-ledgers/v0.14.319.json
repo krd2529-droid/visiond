@@ -1,0 +1,15 @@
+{
+  "version": "v0.14.319",
+  "feature": "PROD-SAMPLE-001",
+  "summary": "สร้าง ZIP รูปตัวอย่าง JPEG ที่ประทับ SAMPLE จากทุกหน้าของตะกร้าเดี่ยวปกติ",
+  "parent_commit": "b3c53b2",
+  "safe_rollback_commit": "b3c53b2",
+  "commit": "SELF",
+  "push": false,
+  "deploy": false,
+  "tests": [
+    "node scripts/test-v014319.mjs",
+    "node scripts/test-all-regressions.mjs",
+    "node scripts/predeploy-check.mjs"
+  ]
+}
