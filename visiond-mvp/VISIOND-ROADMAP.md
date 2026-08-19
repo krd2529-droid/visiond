@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.382` Course Owner Entry (PARTIAL); `v0.14.383` NAV Shell Legacy Label Coverage; `v0.14.384` Auth Turnstile Coverage
+- เสร็จแล้ว: `v0.14.383` NAV Shell Legacy Label Coverage; `v0.14.384` Auth Turnstile Coverage; `v0.14.385` V12 Channel Settings Coverage
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.384 — Auth Turnstile Coverage
+### v0.14.385 — V12 Channel Settings Coverage
 
-- เป้าหมายหลัก: ปิด client/config/server Turnstile coverage ใต้ `AUTH-ACCOUNT-001`
-- Acceptance: Map อ้าง form targets, SDK/widget/token callbacks, server bypass/enforcement, Siteverify/hostname และ paired-key boundary; dynamic slot มีรหัสเดิม
-- ห้ามเปลี่ยน: config/API contract, SDK URL/theme, auth/rate-limit order, token verification, hostname guard, failure behavior และ UI/theme
+- เป้าหมายหลัก: ปิด settings controller/credential interaction coverage ใต้ `V12-CHANNEL-001`
+- Acceptance: Map อ้าง load/save/test, Boss guard, secret retention, validation/encryption, one-time verify token, Meta error projection และ webhook relation; form มีรหัสเดิม
+- ห้ามเปลี่ยน: fields/buttons, credential/API contract, encryption, secret retention/exposure, Meta test, webhook/HMAC และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
