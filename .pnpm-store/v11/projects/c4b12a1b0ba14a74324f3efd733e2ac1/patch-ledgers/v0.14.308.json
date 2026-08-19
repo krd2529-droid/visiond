@@ -1,0 +1,8 @@
+{
+  "version": "v0.14.308",
+  "feature": "COURSE-EP-CONTINUOUS-002",
+  "summary": "ป้องกัน Dashboard และ draft เก่าทับหน้าสร้างคอร์สหลังรีเฟรช",
+  "files": ["public/course-seller.js", "public/course-seller.html"],
+  "tests": ["scripts/test-v014308.mjs", "scripts/test-all-regressions.mjs", "scripts/predeploy-check.mjs"],
+  "rollback": "ย้อนกลับไป Commit ก่อน v0.14.308"
+}

@@ -186,7 +186,6 @@ function enterCourseCreatePage(plan) {
   sellerLessonManager.classList.add("seller-lesson-embedded");
   createPanel.after(publishPanel);
   sellerCourseForm.hidden = false;
-  showLessonDraftGate();
   publishPanel.hidden = true;
   if (!createPanel.querySelector("#coursePlanHeader")) {
     createPanel.insertAdjacentHTML(
@@ -215,7 +214,17 @@ function addCourseEpEditor() {
   list.insertAdjacentHTML("beforeend", courseEpEditorMarkup(list.querySelectorAll(".course-ep-draft").length + 1));
 }
 function setupContinuousLessonBuilder() {
-  if (!coursePlanPages[courseCreateMode] || sellerLessonManager.dataset.continuous === "1") return;
+  if (!coursePlanPages[courseCreateMode]) return;
+  sellerCourseForm.hidden = false;
+  sellerLessonManager.hidden = false;
+  sellerLessonManager.dataset.state = "continuous-course-editor";
+  sellerLessonCourseTitle.textContent = "EP ภายในตะกร้าคอร์ส";
+  sellerLessonIntro.textContent = "กรอกข้อมูลตะกร้าและ EP ในหน้าเดียวกัน แล้วส่งตรวจพร้อมกันครั้งเดียว";
+  if (sellerLessonManager.dataset.continuous === "1") {
+    sendCourseReview.disabled = false;
+    sendCourseReviewHelp.textContent = "กรอกข้อมูลตะกร้าและ EP ทั้งหมด แล้วส่งตรวจครั้งเดียว";
+    return;
+  }
   sellerLessonManager.dataset.continuous = "1";
   sellerLessonForm.noValidate = true;
   sellerLessonForm.innerHTML = `<div id="courseEpEditors" class="span2">${courseEpEditorMarkup(1)}</div><button id="addLessonButton" class="primary span2" type="button">+ เพิ่ม EP</button><p id="sellerLessonMessage" class="span2"></p>`;
@@ -291,14 +300,19 @@ async function load() {
     }
     return;
   }
+  // COURSE-EP-CONTINUOUS-002
+  // หน้า /course-seller?type=1 เป็นหน้าสร้างใหม่โดยเฉพาะ ห้าม render dashboard
+  // หรือเปิด draft เก่ามาทับฟอร์มตะกร้าและ EP ในระหว่าง/หลัง refresh
+  if (coursePlanPages[courseCreateMode]) {
+    enterCourseCreatePage(courseCreateMode);
+    sellerMessage.textContent = "พร้อมกรอกข้อมูลตะกร้าคอร์สและ EP แล้ว";
+    return;
+  }
   render(d);
   const params = new URLSearchParams(location.search),
     requestedId = Number(params.get("course_id")),
     rememberedId = Number(sessionStorage.getItem("vd_active_course_draft_id")),
     flow = document.querySelector("#vision5SellerFlow");
-  if (coursePlanPages[courseCreateMode]) {
-    enterCourseCreatePage(courseCreateMode);
-  }
   if (params.get("vision5") === "1" && flow && !flow.dataset.opened) {
     flow.dataset.opened = "1";
     flow.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -807,6 +821,6 @@ async function submitCurrentCourseForReview() {
 if(sendCourseReview)sendCourseReview.onclick=submitCurrentCourseForReview;
 if (coursePlanPages[courseCreateMode]) {
   enterCourseCreatePage(courseCreateMode);
-  sellerMessage.textContent = "กำลังตรวจสอบร่างคอร์สเดิม โดยฟอร์มตะกร้าพร้อมใช้งานแล้ว";
+  sellerMessage.textContent = "พร้อมกรอกข้อมูลตะกร้าคอร์สและ EP แล้ว";
 }
 load();
