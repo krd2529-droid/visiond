@@ -112,22 +112,22 @@
 - ห้ามกระทบ: ห้ามสร้างสินค้าแยกจากคอร์ส; ห้ามเผยแพร่ตะกร้าอัตโนมัติ; ห้ามนำแผนเลิกใช้กลับมาแสดง
 - การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`, `scripts/test-v014333.mjs`
 
-## COURSE-REVIEW-001 — ส่งตรวจและอนุมัติคอร์สพาร์ตเนอร์
+## COURSE-REVIEW-001 — ส่งตรวจ อนุมัติ และควบคุมคอร์สพาร์ตเนอร์
 
-- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
-- หน้า: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-courses#sellerReview`
-- ไฟล์: `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/[id].js`
-- ฟังก์ชัน/ตัวควบคุม: ส่งตรวจหลังข้อมูลตะกร้าและ EP ครบ; Boss อนุมัติหรือส่งกลับแก้ไข
-- ปุ่ม/interaction: `ส่งตรวจ`, อนุมัติคอร์ส, ส่งกลับแก้ไข
-- API: `POST /api/course-seller/:courseId/publish`, `POST /api/admin/course-seller-reviews/:courseId`
-- ฐานข้อมูล / ตาราง / ฟิลด์: D1; `courses.review_status`, `courses.active`, `products.status`
-- Input: คอร์สที่ข้อมูลตะกร้าและ EP ครบ การยืนยันส่งตรวจ และคำสั่งของ Boss
-- Output: ผู้สร้างส่งแล้วเป็น `pending`; Boss อนุมัติแล้วคอร์ส `approved/active` และสินค้า `published`
-- Reads: ความครบถ้วนของคอร์ส EP ไฟล์ และสถานะตรวจ
-- Writes: สถานะตรวจคอร์ส สถานะเปิดใช้ และสถานะสินค้า
-- สิทธิ์: เจ้าของส่งตรวจได้เฉพาะคอร์สตน; เฉพาะ Boss อนุมัติ/ส่งกลับ
-- ห้ามกระทบ: ปุ่มส่งตรวจห้ามเผยแพร่เอง; ห้ามอนุมัติเมื่อ EP ไม่ครบ; ห้ามเปิดสินค้าก่อน Boss อนุมัติ
-- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
+- สถานะ: `IMPLEMENTED`; เติม auxiliary routes และ transition guards จากโค้ดจริงใน v0.14.364
+- หน้า/ไฟล์: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-courses#sellerReview`, `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/index.js`, `functions/api/admin/course-seller-reviews/auto.js`, `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/admin/course-seller-reviews/[id]/qr.js`
+- ฟังก์ชัน: เจ้าของส่งตรวจ; ผู้ดูแลอ่านคิว; Boss อนุมัติ/ส่งกลับ/ปฏิเสธ/ระงับ/คืนสถานะ และสั่งตรวจ pending สูงสุด 100 คอร์สอัตโนมัติ
+- API: `POST /api/course-seller/:courseId/publish`, `GET /api/admin/course-seller-reviews`, `POST /api/admin/course-seller-reviews/auto`, `POST /api/admin/course-seller-reviews/:id`, `GET /api/admin/course-seller-reviews/:id/qr`
+- ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `course_lesson_files`, `users`; R2 seller payment QR
+- ขอบเขตคอร์ส: เฉพาะ `online_course` ที่ `course_origin='seller_rights'` และ `course_plan='partner'`; คิวรวม `pending|changes_requested|approved|suspended` และเรียง pending ก่อน
+- สิทธิ์: เจ้าของส่งตรวจได้เฉพาะคอร์สตน; อ่านคิว/QR ใช้ `requireAdmin`; ทุก action เปลี่ยนสถานะและ auto review ตรวจ `role='boss'`
+- ห้ามกระทบ approval: ต้อง submitted + pending และมี EP ที่ชื่อไม่ว่างพร้อม video/PDF/lesson file อย่างน้อย 1 EP; transition update course แบบ conditional แล้วเปลี่ยน product เป็น published/draft ตามสถานะ; concurrent state change คืน 409
+- Auto review: ตรวจสูงสุด 100 pending ต่อรอบ; รายการขาดชื่อ/ปก/EP หรือไม่ได้ส่งตรวจต้องเป็น `changes_requested` + product draft; บันทึก security log และสรุป approved/not-approved/skipped/errors/remaining
+- Lifecycle: request changes/reject ทำได้จาก pending; suspend จาก approved; restore จาก suspended; ทุก branch ปรับ `courses.active`, `review_status`, `review_note` และ `products.status` คู่กัน
+- Auxiliary actions ใน controller เดิม: ตั้ง/ยกเลิก test account, approve/reject/reset seller payment profile; reset ล้างฟิลด์บัญชีและลบ QR เดิม; QR response เป็น `private, no-store`
+- ห้ามกระทบ: ปุ่มส่งตรวจห้ามเผยแพร่เอง; ห้ามอนุมัติเมื่อ EP ไม่พร้อม; ห้ามเปิดสินค้าก่อน Boss อนุมัติ; ห้ามนำ company course หรือ non-partner seller course เข้าคิวนี้
+- รหัส UI: `#sellerReview` ได้ `data-feature="COURSE-REVIEW-001"` จาก controller; คง confirmation, status, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`, `scripts/test-v014364.mjs`
 
 ## AUTH-ACCOUNT-001 — สมัครสมาชิก เข้าสู่ระบบ และจัดการเซสชัน
 

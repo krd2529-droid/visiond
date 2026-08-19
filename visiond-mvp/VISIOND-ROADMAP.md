@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.361` Order Administration; `v0.14.362` Ad Intelligence Manual Cost; `v0.14.363` Company Course Administration
+- เสร็จแล้ว: `v0.14.362` Ad Intelligence Manual Cost; `v0.14.363` Company Course Administration; `v0.14.364` Partner Course Review Coverage
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.363 — Company Course Administration Feature Map
+### v0.14.364 — Partner Course Review Coverage
 
-- เป้าหมายหลัก: ลงทะเบียนการสร้าง/แก้คอร์สบริษัทและจัดการบทเรียนพร้อมสื่อ
-- Acceptance: Map อ้าง company-course boundary, product/course writes, media validation, cleanup และ total-minute recalculation จริง; จุดจัดการมี `COURSE-ADMIN-001`
-- ห้ามเปลี่ยน: course ownership boundary, upload limits, publication behavior, API contract และ UI/theme
+- เป้าหมายหลัก: เติม `COURSE-REVIEW-001` ให้ครอบคลุม queue, auto review, manual transitions, suspension และ auxiliary routes จริง
+- Acceptance: Map อ้าง permissions, conditional transitions, validation, batch cap และ QR privacy; section มี `COURSE-REVIEW-001`
+- ห้ามเปลี่ยน: review/payment/test-account behavior, publication state, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
