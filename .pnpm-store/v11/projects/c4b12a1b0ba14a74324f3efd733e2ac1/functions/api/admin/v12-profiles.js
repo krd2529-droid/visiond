@@ -17,3 +17,4 @@ export async function onRequestPost(ctx){
   for(let index=0;index<rows.length;index+=5){const batch=rows.slice(index,index+5),results=await Promise.all(batch.map(async row=>{try{if(row.platform==='facebook'&&!facebookToken)return {reason:'not_ready'};return row.platform==='line'?await line(ctx.env,row):await facebook(ctx.env,row,facebookToken)}catch{return {reason:'unexpected'}}}));for(const result of results){if(result.picture)pictureUpdated++;if(result.name)nameUpdated++;if(result.reason==='not_ready')notReady++;if(!result.picture&&result.reason!=='unchanged'&&result.reason!=='not_ready')failed++;const key=safeReason(result);reasons[key]=(reasons[key]||0)+1}}
   return json({ok:true,checked:rows.length,picture_updated:pictureUpdated,name_updated:nameUpdated,failed,not_ready:notReady,reasons,limitation:'ดึงไม่ได้เฉพาะลูกค้าและข้อความก่อนติดตั้ง Webhook ที่ไม่มี Conversation ID'},200,headers);
 }
+// V12-INBOX-001 — อัปเดตชื่อและรูปโปรไฟล์จากผู้ให้บริการ

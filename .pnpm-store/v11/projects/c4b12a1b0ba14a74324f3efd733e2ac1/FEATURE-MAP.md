@@ -274,6 +274,35 @@
 - ห้ามกระทบ: ห้ามเผยแพร่คอร์สที่ยังไม่ผ่าน Boss; ห้ามใช้บัญชีผู้สอนกับพาร์ตเนอร์; ห้ามให้ Boss ตรวจแทนคอร์สประเภทอื่น; ห้ามปลดล็อกก่อนชำระผ่านหรือปลดล็อกซ้ำ
 - การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v01486-vision5-two-account-e2e.mjs`, `scripts/test-v014324.mjs`
 
+## V12-CHANNEL-001 — ตั้งค่าช่องทาง Facebook และ Signed Webhook
+
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
+- หน้า/ไฟล์: `/v12-settings.html`, `functions/api/admin/v12-channel.js`, `functions/hooks/v12/facebook.js`, `functions/_v12_schema.js`
+- ฐานข้อมูล: `v12_channel_credentials`; เก็บ Token, App Secret และ Verify Token แบบเข้ารหัส
+- ห้ามกระทบ: ห้ามคืน credential เต็มสู่หน้าเว็บหรือ log และห้ามรับ event ที่ HMAC ไม่ถูกต้อง
+
+## V12-INBOX-001 — กล่องข้อความ LINE/Facebook และข้อมูลลูกค้า
+
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
+- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-connect.js`, `functions/api/admin/v12-profiles.js`, `functions/api/admin/v12-facebook-history.js`
+- ฐานข้อมูล: `veasy_conversations`, `veasy_chat_messages`, `veasy_conversation_controls`, `veasy_message_claims`
+- ห้ามกระทบ: ห้ามส่งซ้ำ ห้ามเปิดเผย target/credential และห้ามส่งเมื่อไม่ได้อยู่โหมด human
+
+## V12-BROADCAST-001 — Broadcast และคิวส่งหลายช่องทาง
+
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
+- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-broadcast.js`, `functions/_v12_schema.js`
+- ฐานข้อมูล: `v12_broadcast_campaigns`, `v12_broadcast_deliveries`
+- ห้ามกระทบ: ต้องยืนยันผู้รับก่อนส่งและต้องรักษาข้อจำกัดช่วงเวลาตอบของ Facebook
+
+## V12-SALES-AI-001 — AI ผู้ช่วยวิเคราะห์ Lead และร่างคำตอบ
+
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
+- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-sales-assistant.js`, `functions/api/admin/v12-sales-assistant.js`
+- ฐานข้อมูล: `v12_lead_insights`; อ่านข้อความล่าสุดและสินค้าที่เผยแพร่
+- ห้ามกระทบ: AI ร่างข้อความเท่านั้น ผู้ดูแลต้องเลือกนำร่างไปใช้และส่งจริง
+- การทดสอบ: `scripts/test-v014326.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

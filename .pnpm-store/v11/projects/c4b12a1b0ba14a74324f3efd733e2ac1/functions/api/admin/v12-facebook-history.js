@@ -19,3 +19,4 @@ export async function onRequestPost(ctx){
     return json({ok:true,conversations,messages,profiles,images,next_cursor:payload.paging?.cursors?.after||'',has_more:Boolean(payload.paging?.next)},200,headers);
   }catch(error){console.error('V12_FACEBOOK_HISTORY_FAILED',{error:clean(error?.message,80)});return json({error:'นำเข้าประวัติ Facebook ไม่สำเร็จ',code:clean(error?.message,80)},502,headers)}
 }
+// V12-INBOX-001 — นำเข้าประวัติ Facebook แบบ cursor และป้องกันข้อความซ้ำ
