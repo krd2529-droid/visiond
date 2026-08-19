@@ -19,7 +19,7 @@
   }
   function sync(){
     if(syncing)return;const header=document.querySelector('.topbar'),nav=header?.querySelector(':scope > nav');if(!header||!nav)return;
-    syncing=true;syncCart(header);
+    syncing=true;header.dataset.feature='NAV-SHELL-001';syncCart(header);
     document.querySelector('#visiond-admin-nav-style')?.remove();document.querySelector('#visiond-unified-account-actions')?.remove();
     header.classList.add('header-shell-ready');
     let utility=header.querySelector(':scope > .header-utility');if(!utility){utility=document.createElement('div');utility.className='header-utility';utility.setAttribute('aria-label','บัญชีและเครื่องมือ');header.insertBefore(utility,nav)}

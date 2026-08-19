@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.369` V-Learning Runtime; `v0.14.370` Public Course Catalog/Detail; `v0.14.371` Personalized Product Recommendations
+- เสร็จแล้ว: `v0.14.370` Public Course Catalog/Detail; `v0.14.371` Personalized Product Recommendations; `v0.14.372` Shared Navigation Shell
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.371 — Personalized Product Recommendations Feature Map
+### v0.14.372 — Shared Navigation Shell Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนสินค้าแนะนำเฉพาะบุคคลจากพฤติกรรม storefront
-- Acceptance: Map อ้าง identity, 30-day signals, ranking/exclusions, server promotion และ impression/click telemetry; section มีรหัส
-- ห้ามเปลี่ยน: recommendation ranking, analytics, privacy, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน header, account/cart utility, mobile navigation และ notification bell ร่วม
+- Acceptance: Map อ้าง canonical links, auth roles, cart cap, mobile focus/escape/current state และ notification boundary; header มีรหัส
+- ห้ามเปลี่ยน: navigation links, auth/logout, cart count, notification API, interaction และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

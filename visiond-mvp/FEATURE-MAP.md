@@ -843,6 +843,21 @@
 - ความสัมพันธ์: การเก็บ event/retention อยู่ใต้ `CUSTOMER-ANALYTICS-001`; catalog/ราคาอยู่ใต้ `CATALOG-STOREFRONT-001`
 - การทดสอบ: `scripts/test-v014371.mjs`
 
+## NAV-SHELL-001 — Header, Account Navigation และ Mobile Navigation ร่วม
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.372
+- หน้า/ไฟล์: public pages ที่มี `.topbar`; `public/shared-nav.js`, `public/nav-account.js`, `public/header-shell.js`, `public/mobile-storefront.js`, `public/notification-bell.js`, `public/header-shell.css`, `public/mobile-storefront.css`
+- API: `GET /api/auth/me`, `POST /api/auth/logout`, `GET/POST /api/notifications`; navigation ไม่เชื่อข้อมูล role/notification จาก DOM แทน API
+- Canonical nav: `shared-nav.js` สร้างลิงก์หลัก, login/register และ cart ชุดเดียว, ระบุ `aria-current` ตาม path, sync ปี footer และ cart จาก `vd_cart`
+- Account/role: เมื่อ login ซ่อน login/register, แสดงบัญชี, ศูนย์จัดการคอร์สตาม `is_course_owner`, หลังบ้านเฉพาะ Boss/Admin และ logout ผ่าน POST; auth ล้มเหลวคง guest navigation
+- Cart: normalize `/cart`, รวมรายการตาม slug/id, rights quantity ตามข้อมูลเดิม, จำกัด badge สูงสุด 30 และ sync เมื่อ DOM/cart/storage เปลี่ยน
+- Header shell: แยก primary/utility actions บน desktop, ย้าย utility เข้า nav บนจอไม่เกิน 800px, ลบ action/cart ซ้ำ และรักษา language/account/admin/notification controls
+- Mobile: toggle เชื่อม `aria-controls/expanded/hidden`, ปิดด้วย backdrop/link/Escape, trap Tab ภายในเมนู, คืน focus เมื่อปิด และ sync เมื่อ breakpoint เปลี่ยน
+- Notification bell: แสดงเฉพาะสมาชิกที่ API ตอบสำเร็จ, escape ข้อมูลก่อน render, อ่าน notification แบบ account-scoped และปิดด้วยปุ่ม/outside click/Escape; ศูนย์เต็มอยู่ใต้ `MEMBER-HUB-001`
+- รหัส UI: `.topbar` ได้ `data-feature="NAV-SHELL-001"` ระหว่าง shell sync; คง canonical styles, breakpoint, focus order และ theme เดิม
+- ความสัมพันธ์: auth/session อยู่ใต้ `AUTH-ACCOUNT-001`; notification data/reads อยู่ใต้ `MEMBER-HUB-001`; language content อยู่ใน controller เดิมแต่ไม่เปลี่ยนในแพตนี้
+- การทดสอบ: `scripts/test-v014372.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
