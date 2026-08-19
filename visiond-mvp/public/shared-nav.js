@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014302');
+import('/facebook-chat.js?v=014303');
 document.addEventListener('DOMContentLoaded',async()=>{
   const year=document.querySelector('[data-year]');
   if(year)year.textContent=new Date().getFullYear();
@@ -15,6 +15,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
     if(languageSwitcher)nav.append(languageSwitcher);
   }
   try{const items=JSON.parse(localStorage.getItem('vd_cart')||'[]'),count=(Array.isArray(items)?items:[]).reduce((sum,item)=>sum+(Number(item?.quantity)||1),0);document.querySelectorAll('[data-cart-count]').forEach(x=>x.textContent=Math.min(30,count))}catch{}
-  await import('/nav-account.js?v=014302');
+  await import('/nav-account.js?v=014303');
 });
-import('/i18n.js?v=014302');
+import('/i18n.js?v=014303');
