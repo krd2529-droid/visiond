@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.342` Ads/Analytics; `v0.14.343` Webhook Hub; `v0.14.344` Bundle Preview Audit
+- เสร็จแล้ว: `v0.14.343` Webhook Hub; `v0.14.344` Bundle Preview Audit; `v0.14.345` ELON Page
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.344 — Bundle Preview Audit Feature Map
+### v0.14.345 — ELON Page Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนการตรวจและย้อนรูปพรีวิวของตะกร้ารวม
-- Acceptance: Map อ้าง candidates/allowlist/revision/rollback/preserved fields จริง และหน้ามีรหัส `BUNDLE-PREVIEW-001`
-- ห้ามเปลี่ยน: bundle members, product identity, price, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียน Meta Page sales conversation และ human handoff
+- Acceptance: Map อ้าง signature/dedup/encryption/state/retention/outbox จริง และหน้ามีรหัส `ELON-PAGE-001`
+- ห้ามเปลี่ยน: Meta webhook, retention, state, provider, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

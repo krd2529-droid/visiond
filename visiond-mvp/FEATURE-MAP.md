@@ -503,6 +503,18 @@
 - รหัส UI: หน้า Audit มี `data-feature="BUNDLE-PREVIEW-001"`; คง dialog, selection, status และ theme เดิม
 - การทดสอบ: `scripts/test-v014344.mjs`
 
+## ELON-PAGE-001 — นักขาย Facebook Page และ Human Handoff
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.345
+- หน้า/ไฟล์: `/elon-page-admin.html`, `public/elon-page-admin.js`, `functions/_meta_messenger.js`, `functions/_meta_sender.js`, `functions/api/meta/messenger.js`, `functions/api/admin/elon-page/index.js`, `functions/api/admin/elon-page/[id]/send.js`
+- ฟังก์ชัน: verify Meta callback/signature, ingest/dedup event, เข้ารหัส participant, สร้าง AI job, ดูคิว, เปลี่ยน bot/human state และส่งตอบผ่าน idempotent outbox
+- API: `GET/POST /api/meta/messenger`, `GET/PATCH /api/admin/elon-page`, `POST /api/admin/elon-page/:id/send`
+- ฐานข้อมูล: `elon_page_conversations`, `elon_page_messages`, `elon_page_webhook_events`, `elon_page_ai_jobs`, `elon_page_outbox`
+- สิทธิ์: Meta POST ต้องผ่าน `x-hub-signature-256`; admin endpoints ใช้ `requireAdmin`; participant ID เก็บเป็น hash และ ciphertext
+- ห้ามกระทบ: payload ไม่เกิน 1 MB; event เดิมห้ามประมวลผลซ้ำ ยกเว้น failed/stale processing; conversation เก็บ 60 วัน; state เฉพาะ `bot_active|human_required|human_active|closed`; human_active ผูก admin; outbound ใช้ idempotency key และคิว retry เมื่อ provider ยังส่งไม่ได้
+- รหัส UI: หน้า ELON Page มี `data-feature="ELON-PAGE-001"`; คงตาราง สถานะ และ theme เดิม
+- การทดสอบ: `scripts/test-v014345.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
