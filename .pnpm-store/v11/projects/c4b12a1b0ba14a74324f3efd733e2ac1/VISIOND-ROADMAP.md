@@ -1,5 +1,8 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.328 — Basket Sample ZIP Folder and 30-image Limit (IMPLEMENTED)
+- ZIP ใช้ชื่อตะกร้า ภายในเป็นโฟลเดอร์ชื่อตะกร้าและเก็บ JPEG ติด SAMPLE 30 รูปแรก
+
 ## v0.14.327 — Vision 7 Feature Map (IMPLEMENTED)
 - ลงทะเบียนเส้นทางโปรแกรม คีย์ อุปกรณ์ รีลีส และหน้าสมาชิกจากโค้ดจริง โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
 - Event Case Feature Map ยังต้องแพตต่อในระบบหลักส่วนที่ยังไม่มีรหัส
