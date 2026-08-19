@@ -699,6 +699,19 @@
 - รหัส UI: categories section มี `data-feature="CATEGORY-ADMIN-001"`; คง form/list/confirmation/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014360.mjs`
 
+## ORDER-ADMIN-001 — คิวตรวจสลิป อนุมัติ/ปฏิเสธ และล้างออเดอร์เปล่า
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.361
+- หน้า/ไฟล์: Orders section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/orders.js`, `functions/api/admin/orders/[id]/approve.js`, `functions/api/admin/orders/[id]/reject.js`, `functions/api/admin/orders/[id]/slip-evidence.js`, `functions/api/admin/orders/clear.js`, `functions/api/admin/slip.js`, `functions/_orders.js`
+- ฟังก์ชัน: คิว awaiting payment/pending review/rejected, ดูสลิปและหลักฐาน, อนุมัติแล้วสร้าง entitlement/เครดิตและ log, ปฏิเสธให้ส่งสลิปใหม่, ล้างออเดอร์เปล่าที่ยังไม่มีหลักฐาน
+- API: `GET /api/admin/orders`, `POST /api/admin/orders/:id/approve`, `POST /api/admin/orders/:id/reject`, `GET /api/admin/orders/:id/slip-evidence`, `POST /api/admin/orders/clear`, `GET /api/admin/slip`
+- ฐานข้อมูล/ไฟล์: `orders`, `order_items`, `order_slip_evidence`, `entitlements`, `course_right_credits`, `unlock_logs`, `customer_events`; R2 slip objects
+- สิทธิ์: คิว/ออเดอร์ปกติ/หลักฐานใช้ `requireAdmin`; resale-rights, partner course และ Vision 5 test-account manual review สงวนให้ Boss; seller course ปกติต้องให้เจ้าของคอร์สตรวจใน Vision 5; clear ใช้ `requireBoss`
+- ห้ามกระทบ approval: ต้องเป็น `pending_review` และมี slip; branch manual ต้อง `slip_verification_status='manual'` และ `confirmed=true`; reject ของ rights/partner ต้องมีเหตุผล; `grantOrder` claim ด้วย conditional status update และห้ามเพิ่มสิทธิ์/เครดิต/ล็อกซ้ำ; method ต้องสะท้อน branch จริง
+- ห้ามกระทบ evidence/clear: slip evidence response ห้ามคืน R2 `object_key` โดยตรง; สลิปต้อง private/no-store; clear รับได้สูงสุด 2,000 IDs และลบเฉพาะ `awaiting_payment|pending_review|rejected` ที่ `slip_key IS NULL`; ห้ามลบออเดอร์ที่เคยแนบสลิป/ชำระแล้ว
+- รหัส UI: orders section มี `data-feature="ORDER-ADMIN-001"`; คง confirmations, review warnings, selection, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014361.mjs`, `scripts/test-commerce-final.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

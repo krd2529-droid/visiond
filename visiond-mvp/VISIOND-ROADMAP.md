@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.358` Vision 4 Draft Factory; `v0.14.359` Trash Recovery; `v0.14.360` Category Administration
+- เสร็จแล้ว: `v0.14.359` Trash Recovery; `v0.14.360` Category Administration; `v0.14.361` Order Administration
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.360 — Category Administration Feature Map
+### v0.14.361 — Order Administration Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนหน้าสร้าง แก้ไข เปิด/ปิด จัดลำดับ และลบหมวดสินค้า
-- Acceptance: Map อ้าง slug/name validation, auto slug, product cascade, permissions และ used-category guard จริง; panel มี `CATEGORY-ADMIN-001`
-- ห้ามเปลี่ยน: category identity, product assignments, deletion guard, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนคิวออเดอร์หลังบ้าน หลักฐานสลิป อนุมัติ/ปฏิเสธ และล้างออเดอร์เปล่า
+- Acceptance: Map อ้าง branch permissions, manual confirmation, idempotent grant, evidence privacy และ clear guard จริง; panel มี `ORDER-ADMIN-001`
+- ห้ามเปลี่ยน: approval/rejection, entitlement/credit/revenue behavior, evidence retention, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
