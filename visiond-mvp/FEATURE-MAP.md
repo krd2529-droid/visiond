@@ -136,16 +136,17 @@
 
 ## PROD-SAMPLE-001 — สร้างรูปตัวอย่างทั้งตะกร้าเดี่ยว
 
-- สถานะ: `IMPLEMENTED` ใน v0.14.319
+- สถานะ: `IMPLEMENTED` ใน v0.14.319 และเพิ่มตัวเลือกแบบการ์ดแคตตาล็อกใน v0.14.320
 - หน้า: `/admin` ส่วนการจัดการสินค้า
 - ไฟล์: `public/admin.html`, `public/product-sample-archive.js`, `public/product-sample-archive.css`, `functions/api/admin/product-sample-sources/[id].js`
-- ปุ่ม/interaction: `#productSampleArchiveButton`, `#productSampleCreate`
+- ปุ่ม/interaction: `#productSampleArchiveButton`, `#productSampleGrid`, `.product-sample-card`, `#productSampleCreate`
+- การเลือกตะกร้า: แสดงรูปปก ชื่อ เลขสินค้า Slug และจำนวนไฟล์เป็นการ์ดแบบแคตตาล็อกเท่านั้น ห้ามใช้ Dropdown
 - API: `GET /api/admin/product-sample-sources/:id`, `GET /api/admin/product-files/:fileId`
 - Reads: ตะกร้าเดี่ยวและ `product_files` ของตะกร้านั้นโดยตรง
 - Output: ZIP หนึ่งไฟล์ ภายในเป็น JPEG ทุกหน้าและทุกภาพที่ประทับ SAMPLE
 - สิทธิ์: ผู้ดูแลเท่านั้น; API ตรวจสิทธิ์ซ้ำ
 - ห้ามกระทบ: ห้ามเลือกตะกร้าชุดรวม/คอร์ส ห้ามอ่านไฟล์สมาชิกของชุดรวม ห้ามเขียน/ลบ/แทนที่สินค้าและไฟล์ต้นฉบับ และห้ามคืน object key ของ R2
-- การทดสอบ: `scripts/test-v014319.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
+- การทดสอบ: `scripts/test-v014320.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
 
 ## SHARE-OG-001 — พรีวิวลิงก์สินค้าดิจิทัลและพาร์ทเนอร์คอร์ส
 
