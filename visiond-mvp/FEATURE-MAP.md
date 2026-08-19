@@ -858,6 +858,20 @@
 - ความสัมพันธ์: auth/session อยู่ใต้ `AUTH-ACCOUNT-001`; notification data/reads อยู่ใต้ `MEMBER-HUB-001`; language content อยู่ใน controller เดิมแต่ไม่เปลี่ยนในแพตนี้
 - การทดสอบ: `scripts/test-v014372.mjs`
 
+## META-PIXEL-001 — Meta Pixel และ Storefront Conversion Tracking
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.373
+- หน้า/ไฟล์: public storefront/content/account pages ที่โหลด `public/meta-pixel.js`; event callers ใน `public/app.js`, `catalog-sync.js`, `product.js`, `cart.js`, `bots-storefront.js`, `home-course-rights.js`, `sales-page-public.js`, `member-dashboard.js`
+- Provider: client โหลด `https://connect.facebook.net/en_US/fbevents.js`, init Pixel ID สาธารณะที่กำหนดใน controller และสร้าง queue-compatible `fbq` เมื่อ SDK ยังไม่พร้อม
+- Events: ส่ง `PageView` เมื่อโหลด controller; `ViewContent` เมื่อ render สินค้าจริง; `AddToCart` หลังเพิ่มรายการ; `InitiateCheckout` หลังมีรายละเอียด checkout/order แล้ว
+- Purchase: dashboard ส่งเฉพาะ order สถานะ `paid`; payload มี content ids, จำนวนชิ้น, ยอดบาทและ THB; ใช้ `eventID='purchase-'+order_no`
+- Client dedupe: `vd_pixel_purchases` เก็บ order key ที่ส่งแล้วใน localStorage และรักษา 200 รายการล่าสุด; event อื่นไม่มี dedupe เพิ่มจาก wrapper
+- Payload/privacy: caller ส่ง product/order commerce metadata ที่ระบุไว้ในแต่ละ event; controller นี้ไม่อ่าน password, bank data, session token หรือส่งข้อมูลผู้ซื้อแบบ advanced matching
+- Failure boundary: event callers ใช้ optional `window.visiondPixel?.track`; wrapper ไม่ส่งเมื่อ `fbq` ไม่เป็น function; ไม่มี server-side Conversions API ใน flow นี้
+- รหัส runtime: `<script>` ที่กำลังรันได้ `data-feature="META-PIXEL-001"`; ไม่เปลี่ยน loader, Pixel ID, trigger, event payload หรือ page UI
+- ความสัมพันธ์: first-party events/retention อยู่ใต้ `CUSTOMER-INTELLIGENCE-001`; Meta Ads cost ingestion/attribution อยู่ใต้ `ADS-ANALYTICS-001`
+- การทดสอบ: `scripts/test-v014373.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

@@ -1,4 +1,5 @@
 (function () {
+  document.currentScript?.setAttribute("data-feature", "META-PIXEL-001");
   const PIXEL_ID = "37636461872667879";
   if (!window.fbq) {
     const fbq = (window.fbq = function () {

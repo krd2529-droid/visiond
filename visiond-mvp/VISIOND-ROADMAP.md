@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.370` Public Course Catalog/Detail; `v0.14.371` Personalized Product Recommendations; `v0.14.372` Shared Navigation Shell
+- เสร็จแล้ว: `v0.14.371` Personalized Product Recommendations; `v0.14.372` Shared Navigation Shell; `v0.14.373` Meta Pixel Conversion Tracking
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.372 — Shared Navigation Shell Feature Map
+### v0.14.373 — Meta Pixel Conversion Tracking Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน header, account/cart utility, mobile navigation และ notification bell ร่วม
-- Acceptance: Map อ้าง canonical links, auth roles, cart cap, mobile focus/escape/current state และ notification boundary; header มีรหัส
-- ห้ามเปลี่ยน: navigation links, auth/logout, cart count, notification API, interaction และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน client-side Meta Pixel และ storefront conversion events
+- Acceptance: Map อ้าง loader/Pixel ID, PageView, ViewContent, AddToCart, InitiateCheckout และ paid Purchase dedupe; script มีรหัส
+- ห้ามเปลี่ยน: Pixel ID, event payload/trigger, purchase dedupe, external loader, consent behavior และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
