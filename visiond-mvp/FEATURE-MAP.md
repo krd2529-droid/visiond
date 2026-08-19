@@ -712,6 +712,21 @@
 - รหัส UI: orders section มี `data-feature="ORDER-ADMIN-001"`; คง confirmations, review warnings, selection, loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014361.mjs`, `scripts/test-commerce-final.mjs`
 
+## AD-INTELLIGENCE-001 — ค่าแอด Campaign/Creative และ First-party Attribution
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.362
+- หน้า/ไฟล์: Ads Intelligence card ใน `/admin.html`, `public/admin.js`, `functions/api/admin/ad-intelligence.js`
+- ฟังก์ชัน: เลือกช่วงวันที่, กรอก/แก้ค่าแอดระดับ campaign, ad set และ creative, ลบรายการ และเทียบค่าใช้จ่ายกับ purchase attribution เพื่อสรุป spend/revenue/profit/ROAS/orders/buyers
+- API: `GET/PUT/DELETE /api/admin/ad-intelligence`; GET ใช้ช่วง 30 วันล่าสุดเมื่อไม่ระบุวันที่, PUT upsert ค่าใช้จ่าย และ DELETE รับ numeric `id`
+- ฐานข้อมูล: `ad_campaign_costs`, `customer_events`, `orders`; revenue นับ distinct paid order จาก event `purchase` และใช้วันที่เขตเวลาไทย `+7 hours`
+- สิทธิ์: ทุก method ใช้ `requireAdmin`; ไม่เปิดข้อมูลหรือคำสั่งนี้ต่อ public client
+- การจับคู่: normalize Facebook/FB/Meta และ referral aliases เป็น `facebook`, พร้อม TikTok/Google aliases; attribution key คือ source + campaign + creative โดยไม่ใช้ ad set ใน key ตามโค้ดเดิม
+- ห้ามกระทบ: วันที่เริ่มต้องไม่เกินวันสิ้นสุด; campaign ต้องมีค่า; cost รับจำนวนบาทไม่ติดลบแล้วเก็บเป็นสตางค์; upsert ตาม `(spend_date, platform, campaign, adset, creative)`; การลบต้องระบุ ID
+- สูตร: `profit = revenue - spend`, `ROAS = revenue / spend`; เมื่อ spend เป็นศูนย์คืน `null`; ระบบนี้แสดงผลและจัดการค่าใช้จ่ายเอง ไม่แก้โฆษณาภายนอก
+- ความสัมพันธ์: แยกจาก `ADS-ANALYTICS-001` ซึ่งดูแล Meta ingestion และ Ads Center; ระบบนี้คือ manual admin cost + first-party matching
+- รหัส UI: Ads Intelligence card มี `data-feature="AD-INTELLIGENCE-001"`; คง form, confirmation, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014362.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

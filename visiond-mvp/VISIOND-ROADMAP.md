@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.359` Trash Recovery; `v0.14.360` Category Administration; `v0.14.361` Order Administration
+- เสร็จแล้ว: `v0.14.360` Category Administration; `v0.14.361` Order Administration; `v0.14.362` Ad Intelligence Manual Cost
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.361 — Order Administration Feature Map
+### v0.14.362 — Ad Intelligence Manual Cost Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนคิวออเดอร์หลังบ้าน หลักฐานสลิป อนุมัติ/ปฏิเสธ และล้างออเดอร์เปล่า
-- Acceptance: Map อ้าง branch permissions, manual confirmation, idempotent grant, evidence privacy และ clear guard จริง; panel มี `ORDER-ADMIN-001`
-- ห้ามเปลี่ยน: approval/rejection, entitlement/credit/revenue behavior, evidence retention, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนการกรอกค่าแอดระดับ Campaign/Creative และจับคู่ยอดซื้อ First-party ในหลังบ้าน
+- Acceptance: Map อ้าง date range, source normalization, attribution key, cost upsert และสูตรจริง; card มี `AD-INTELLIGENCE-001`
+- ห้ามเปลี่ยน: การคำนวณ attribution/cost, validation, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
