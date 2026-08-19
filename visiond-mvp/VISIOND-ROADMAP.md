@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.384` Auth Turnstile Coverage; `v0.14.385` V12 Channel Settings Coverage; `v0.14.386` Vision 4 Bundle
+- เสร็จแล้ว: `v0.14.385` V12 Channel Settings Coverage; `v0.14.386` Vision 4 Bundle; `v0.14.387` V4 Card Actions Coverage
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.386 — Vision 4 Bundle Feature Map
+### v0.14.387 — V4 Card Actions Coverage
 
-- เป้าหมายหลัก: ลงทะเบียน pending PDF/ZIP merge → sample → product → multipart → publish → consume lifecycle
-- Acceptance: Map อ้าง prerequisites, parsing/merge/sample, categories/pricing, API/data/auth, non-atomic boundary และ cleanup gaps; start/workspace มีรหัส
-- ห้ามเปลี่ยน: parsing/page order, samples, price, limits, request order, product/pending status, failure behavior และ UI/theme
+- เป้าหมายหลัก: ผูก edit/soft-delete decorator ของ V4 draft cards เข้ากับ `V4-REVIEW-001`
+- Acceptance: Map อ้าง card eligibility, edit route, admin soft delete/Trash 30 วัน และ Known Gaps; dynamic controls มีรหัส
+- ห้ามเปลี่ยน: card eligibility, route, confirmation, soft-delete behavior, loading/error และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

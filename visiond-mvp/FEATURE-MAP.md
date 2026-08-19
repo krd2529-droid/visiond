@@ -546,14 +546,16 @@
 ## V4-REVIEW-001 — คิวตรวจ Draft และ Pending File จาก Vision 4
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.346
-- หน้า/ไฟล์: `/vision4-edit.html`, `public/vision4-edit.js`, `functions/api/admin/vision4-review/index.js`, `functions/api/admin/vision4-review/[id].js`, `functions/api/admin/vision4-pending/[id].js`, `functions/api/admin/vision4-pending-file/[id].js`, `functions/api/admin/vision4-pending/consume.js`, `functions/api/admin/product-multipart/{init,part,complete,abort}.js`, `functions/api/admin/products/[id].js`
+- หน้า/ไฟล์: V4 draft cards ใน `/admin.html`, `public/vision4-card-actions.js`, `/vision4-edit.html`, `public/vision4-edit.js`, `functions/api/admin/vision4-review/index.js`, `functions/api/admin/vision4-review/[id].js`, `functions/api/admin/vision4-pending/[id].js`, `functions/api/admin/vision4-pending-file/[id].js`, `functions/api/admin/vision4-pending/consume.js`, `functions/api/admin/product-multipart/{init,part,complete,abort}.js`, `functions/api/admin/products/[id].js`
 - ฟังก์ชัน: แสดง draft/pending queue, multipart upload ไฟล์รอรวม, เพิ่ม preview, เปิดไฟล์, แก้ draft, รับ draft เข้า Product Admin และ mark pending files ว่ารวมชุดแล้ว
 - API: `GET /api/admin/vision4-review`, `POST /api/admin/vision4-review/:id`, `PUT /api/admin/vision4-pending/:id`, `GET /api/admin/vision4-pending-file/:id`, `POST /api/admin/vision4-pending/consume` และ multipart endpoints
 - ฐานข้อมูล/ไฟล์: `products` ที่ `source='vision4'`, `product_files`, `vision4_pending_files`; R2 `vision4-pending-*` และ preview objects
 - สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; หน้าแก้ยอมรับเฉพาะ `source='vision4'` + `status='draft'`
 - ห้ามกระทบ: multipart รับ PDF/ZIP ไม่เกิน 1 GB; preview รับ JPG/PNG/WEBP ไม่เกิน 5 MB; review เปลี่ยนเฉพาะ source เป็น admin ของ draft ที่ตรงเงื่อนไข; consume ต้องเป็น published product และ pending IDs ทุกตัวต้องยัง `waiting_bundle`; ไฟล์ที่รวมแล้วห้าม consume ซ้ำ
-- รหัส UI: หน้าแก้ Vision 4 มี `data-feature="V4-REVIEW-001"`; คง form, preview, loading/error และ theme เดิม
-- การทดสอบ: `scripts/test-v014346.mjs`
+- การจัดการการ์ด Draft: decorator ทำงานเฉพาะ `.v3-review-draft` ที่มี `data-v4-detail`, เติมลิงก์แก้ไข `/vision4-edit.html?id=...` และปุ่มลบ; ปุ่มลบต้องยืนยันก่อนเรียก `DELETE /api/admin/products/:id` ซึ่งเป็น soft delete เข้า Trash 30 วันภายใต้ `requireAdmin`
+- Known Gap: network rejection ของปุ่มลบยังไม่มี `catch` จึงอาจค้าง disabled โดยไม่แจ้งข้อผิดพลาด; decorator mark `manageReady` ก่อนตรวจ action container จึงไม่ retry การ์ดที่ container มาช้า; style ของสองปุ่มยัง inject แบบ inline legacy แทน canonical component
+- รหัส UI: หน้าแก้ Vision 4 และปุ่มแก้ไข/ลบที่ decorator สร้างมี `data-feature="V4-REVIEW-001"`; คง form, preview, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014387.mjs`; historical `scripts/test-v014346.mjs`
 
 ## VEASY-SHOP-001 — Activation ร้านค้า Bot/Inbox และ Native Runtime ของ VEasy
 
