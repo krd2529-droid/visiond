@@ -972,6 +972,21 @@
 - ความสัมพันธ์: การลงทะเบียน Known Gap ไม่อนุญาตให้เปิด surface หรือเพิ่ม setting writer โดยไม่มี Patch Scope แยก
 - การทดสอบ: `scripts/test-v014379.mjs`
 
+## PRODUCT-PDF-COVER-001 — เครื่องมือสร้างภาพปกสำหรับสินค้า PDF
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.381
+- หน้า/ไฟล์: Products section ใน `/admin.html`, `public/admin-pdf-cover.js`, `public/admin-pdf-cover.css`
+- Interaction: ปุ่ม “สร้างปก PDF” เปิด modal dialog, focus ช่องชื่อใน animation frame ถัดไป, render preview ใหม่เมื่อชื่อ/แม่แบบ/รูปเปลี่ยน และ reset input/image/object URL เมื่อ dialog ปิด
+- Input: ชื่อสูงสุด 100 ตัวอักษร; รูปเดียวชนิด JPEG/PNG/WEBP ไม่เกิน 8 MB; แม่แบบ `modern`, `kids`, `elegant` โดย default เป็น modern
+- Rendering: Canvas 1000×1400 px วาด gradient/frame/title สูงสุด 3 บรรทัด, fit รูปแบบ contain ลงกรอบ และข้อความ `VISIOND • DIGITAL PDF`; download เปิดได้เมื่อมีทั้งชื่อและรูปที่อ่านสำเร็จ
+- Output: ใช้ `canvas.toBlob(..., "image/png")` ดาวน์โหลดไฟล์ PNG ชื่อ `ปก-PDF-{ชื่อที่ sanitize และตัดไม่เกิน 60 ตัวอักษร}.png`; ชื่อเครื่องมือสื่อถึงปกสำหรับ PDF แต่ controller นี้ไม่ได้สร้างไฟล์ PDF
+- Resource lifecycle: revoke object URL เก่าก่อนเลือกรูปใหม่, revoke download URL หลัง 1 วินาที และ revoke/reset เมื่อปิด dialog; รูป decode ล้มเหลวแสดงข้อความและไม่พร้อม download
+- API/ข้อมูล: client-only; ไม่มี API, database, upload หรือ server persistence และไม่ใช้ `pdf-lib` ใน controller นี้
+- สิทธิ์: ไม่มี auth check ภายใน controller; surface อาศัย page-level admin bootstrap/access control ของ `/admin.html`
+- ห้ามกระทบ: ขนาด canvas, validation, templates, typography/colors/frame geometry, contain scaling, filename sanitation, disabled/message, object URL cleanup และ responsive breakpoint 820px เดิม
+- รหัส UI: launcher และ dialog ใช้ `data-feature="PRODUCT-PDF-COVER-001"`; คง legacy classes, button states, modal layout และ theme เดิม
+- การทดสอบ: `scripts/test-v014381.mjs`, historical `scripts/test-v014262.mjs`, `scripts/test-v014265.mjs`, `scripts/test-v014267.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

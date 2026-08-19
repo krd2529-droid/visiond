@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.378` First-order Incentive; `v0.14.379` Homepage Facebook Video (PARTIAL); `v0.14.380` Global Pointer Interaction
+- เสร็จแล้ว: `v0.14.379` Homepage Facebook Video (PARTIAL); `v0.14.380` Global Pointer Interaction; `v0.14.381` Admin PDF Cover Maker
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.380 — Global Pointer Interaction Feature Map
+### v0.14.381 — Admin PDF Cover Maker Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน global cursor, mouse press, same-window navigation และ drag runtime
-- Acceptance: Map อ้าง loader/dedupe, pointer states, capture guards, pressed cleanup, drag guard และ coarse-pointer behavior; document root มีรหัสที่ไม่ทับ feature หน้า
-- ห้ามเปลี่ยน: import graph, navigation, event ordering, selectors, cursor assets, styles และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน client-side PDF product cover image maker ตาม output จริง
+- Acceptance: Map อ้าง dialog/input/templates/canvas, PNG output, validation, cleanup, client-only boundary และ access boundary; launcher/dialog มีรหัส
+- ห้ามเปลี่ยน: canvas/output, validation, templates, rendering, filename, cleanup, controls, responsive layout และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
