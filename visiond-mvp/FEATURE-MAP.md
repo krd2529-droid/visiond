@@ -900,6 +900,20 @@
 - ความสัมพันธ์: navigation placement อยู่ใต้ `NAV-SHELL-001`; controller นี้เป็น client translation layer ไม่เปลี่ยน API contract หรือสร้างข้อมูลภาษาแยก
 - การทดสอบ: `scripts/test-v014375.mjs`
 
+## BOSS-MOBILE-PREVIEW-001 — เครื่องมือ Boss ตรวจหน้าเว็บในกรอบมือถือ
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.376
+- หน้า/ไฟล์: public top-level pages ผ่าน `public/boss-mobile-preview.js`; Control Center ผ่าน `#mobilePreviewShell` ใน `public/admin.html` และ `setupBossMobilePreview()` ใน `public/admin.js`
+- สิทธิ์: public helper เรียก `GET /api/auth/me` และสร้าง UI เฉพาะ `user.role='boss'`; admin helper ใช้ viewer ที่ตรวจแล้วและรับเฉพาะ role Boss
+- Guard: public ไม่ทำงานใน iframe, `/admin*`, viewport ไม่เกิน 760px หรือ coarse pointer; admin ไม่เปิด launcher เมื่อมี query `mobile_preview` เพื่อป้องกัน preview ซ้อน
+- Routes: selector รวมหน้าบ้านและ admin tab routes; admin routes ใช้ `mobile_preview=1&preview_tab=...`; route ปัจจุบัน escape ก่อนใส่ option
+- Interaction: เปิด overlay แล้ว lock body scroll, lazy-load iframe เมื่อเปิดครั้งแรก, เปลี่ยน route, reload frame, เปิดแท็บใหม่ `noopener`, ปิดด้วยปุ่ม/backdrop/Escape แล้วคืน scroll
+- Frame: public device กว้าง 390px; admin iframe ใช้ shell/device เดิม; เครื่องมือนี้เป็น visual inspection ไม่แก้ข้อมูลหรือเรียก mutation API
+- Failure: auth ไม่สำเร็จ/non-Boss ไม่สร้าง public UI; exception fail-quiet พร้อม console warning; iframe page ยังคงบังคับ auth/authorization ของ route ปลายทางเอง
+- รหัส UI: public `.boss-mobile-overlay` และ admin `#mobilePreviewShell` ใช้ `data-feature="BOSS-MOBILE-PREVIEW-001"`; คง routes, controls, styles และ theme เดิม
+- ความสัมพันธ์: Sales Page preview อยู่ใน `SALES-PAGE-001`; เครื่องมือนี้เป็น site-wide Boss inspection shell ไม่ใช่ publication preview
+- การทดสอบ: `scripts/test-v014376.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
