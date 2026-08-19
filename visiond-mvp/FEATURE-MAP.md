@@ -624,6 +624,18 @@
 - รหัส UI: document root ของหน้า member มี `data-feature="CATEGORY-MEMBER-001"` จาก `public/member.js`; คง card/button/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014354.mjs`
 
+## ELON-CONTROL-001 — สวิตช์ควบคุม ELON Web และ ELON V7 แยกฐาน
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.355
+- หน้า/ไฟล์: ELON Control Center ใน `/admin.html`, `public/admin.js`, `functions/api/admin/elon-controls.js`, `functions/_elon_databases.js`
+- ฟังก์ชัน: อ่านสถานะ configured/enabled และเปิด–ปิด ELON Web หรือ ELON V7 อิสระต่อกัน
+- API: `GET/PUT /api/admin/elon-controls`
+- ฐานข้อมูล: binding `ELON_WEB_DB` → `elon_web_settings`; binding `ELON_V7_DB` → `elon_v7_settings`; key `enabled` เก็บเป็น `1|0`
+- สิทธิ์: endpoint เรียก `requireAdmin` และปฏิเสธทุก role ที่ไม่ใช่ `boss`; UI ซ่อน control card เมื่อ viewer ไม่ใช่ Boss
+- ห้ามกระทบ: target รับเฉพาะ `web|v7` และ enabled ต้องเป็น boolean; ELON Web ไม่มีแถวตั้งค่าให้เปิดโดยปริยาย, V7 ให้ปิด; binding ขาดต้องแสดง configured=false/disabled และ PUT คืน 503; ห้ามเขียนสถานะข้ามฐาน
+- รหัส UI: control card มี `data-feature="ELON-CONTROL-001"`; คง toggle/status/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014355.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
