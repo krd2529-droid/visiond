@@ -47,3 +47,4 @@ export async function onRequestPost(ctx){
     return json({insight:{...insight,source_message_count:messages.length},analysis_source:analysisSource,playbook_version:SALES_PLAYBOOK_VERSION,page_knowledge:{status:pageKnowledge.status,caption_count:pageKnowledge.captions.length},warning},200,headers);
   }catch(error){const code=clean(error?.message,80)||'UNKNOWN';console.error('V12_SALES_ASSISTANT_FAILED',{code});return json({error:`วิเคราะห์บทสนทนาไม่สำเร็จ (${code})`,code},502,headers)}
 }
+// V12-SALES-AI-001 — วิเคราะห์ lead จากข้อความและข้อมูลสินค้าที่เผยแพร่

@@ -239,6 +239,12 @@ Layer 2 first rechecks every task registered for the current patch, then compare
 
 EVENT CASE: ยังไม่เสร็จ — ต้องแพตต่อ
 
+### v0.14.326 — Feature Map V12 V Connect
+
+- ตรวจเส้นทางจริงของ Channel, Signed Webhook, Inbox, Broadcast และ AI ผู้ช่วยขาย
+- เพิ่มรหัส `V12-CHANNEL-001`, `V12-INBOX-001`, `V12-BROADCAST-001`, `V12-SALES-AI-001`
+- ไม่เปลี่ยนพฤติกรรมธุรกิจ; Event Case ยังต้องแพตต่อเพื่อทำ Feature Map ระบบที่เหลือ
+
 ### EVENT ROADMAP rotation
 - IMPLEMENTED — Growth/Data: v0.14.49 Personalized Product Engine.
 - IMPLEMENTED — Commerce/Conversion: v0.14.50 funnel leakage diagnostics + new/returning buyer mix.

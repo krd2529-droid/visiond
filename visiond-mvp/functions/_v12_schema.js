@@ -16,3 +16,4 @@ export async function ensureV12Schema(env){
   if(!credentialColumns.includes('secret_ciphertext'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN secret_ciphertext TEXT NOT NULL DEFAULT ''").run();
   if(!credentialColumns.includes('verify_token_ciphertext'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN verify_token_ciphertext TEXT NOT NULL DEFAULT ''").run();
 }
+// V12-CHANNEL-001 | V12-BROADCAST-001 — schema credential/campaign/delivery
