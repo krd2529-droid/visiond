@@ -1,1 +1,0 @@
-{"capture_id":"elon-control-ui-hotfix-v1","event_case":"ELON Admin control UI hotfix","intake_complete":true,"items":[{"source_id":"SRC-042","requirement_id":"EC-ELON-CONTROL-UI-001","atomic":true,"text":"ปุ่มเปิด/ปิดอีลอนกากมาก","acceptance":"แทน checkbox ที่ยืดเต็มหน้าด้วยการ์ดสวิตช์ ELON Web และ ELON V7 แยกกัน มีสีและข้อความสถานะ เปิด ปิด หรือฐานยังไม่พร้อม และรองรับมือถือ"}]}

@@ -1,1 +1,0 @@
-{"capture_id":"b1-session-shop-handoff-v1","event_case":"B1 three-file session and shop handoff","intake_complete":true,"items":[{"source_id":"SRC-034","requirement_id":"VE-AUTH-003","atomic":true,"text":"เริ่มแพต บ1 และสร้างเว็บ Source APK พร้อมกัน","acceptance":"ล็อกอิน ตรวจคีย์ ผูกร้าน ส่ง Session/Device/Account Scope กลับ APK และ Logout ได้ โดยทั้งสามไฟล์ผ่านการตรวจข้าม"}]}

@@ -1,1 +1,0 @@
-{"patch":"v0.14.82","tasks":[{"id":"P1482-001","scope":"BUG","source_instruction":"V Easy product dialog exits with X Android Back and after save","status":"DONE-VERIFIED","evidence":["scripts/test-v01482.mjs","work-history/visiond/patch-history/PATCH-v0.14.82-B1-PRODUCT-DIALOG-EXIT.md"]}]}

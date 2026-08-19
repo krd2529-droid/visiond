@@ -1,3 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';const read=file=>fs.readFileSync(file,'utf8');
-assert.equal(read('VERSION.txt').trim(),'v0.14.118');const schema=read('functions/_veasy_shop.js'),api=read('functions/api/vision7/shops/[shopId]/index.js');
-assert.match(schema,/ADD COLUMN slug TEXT NOT NULL DEFAULT ''/);assert.match(schema,/idx_veasy_shop_slug/);assert.match(api,/requireVision7User/);assert.match(api,/cleanCatalogSlug/);assert.match(api,/UPDATE veasy_shops SET name=\?,slug=\?/);assert.match(api,/VEASY_SHOP_SLUG_CONFLICT/);console.log('v0.14.118 live shop profile passed');

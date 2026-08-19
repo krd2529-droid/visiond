@@ -1,1 +1,0 @@
-{"patch":"v0.14.270","tasks":[{"id":"P14270-001","scope":"UI","source_instruction":"หน้าหลักแบบ 1 2 3 ให้เป็นทางเข้าเท่านั้น และย้ายปุ่มสร้างไปอยู่ข้างในแต่ละแบบ","status":"DONE-VERIFIED","evidence":["public/course-seller.js","scripts/test-v014270.mjs"]}]}

@@ -1,2 +1,0 @@
-ALTER TABLE users ADD COLUMN seller_slip_auto_verify INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE users ADD COLUMN vision5_test_account INTEGER NOT NULL DEFAULT 0;

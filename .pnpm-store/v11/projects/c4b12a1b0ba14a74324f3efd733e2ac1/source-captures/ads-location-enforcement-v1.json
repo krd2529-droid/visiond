@@ -1,1 +1,0 @@
-{"capture_id":"ads-location-enforcement-v1","event_case":"Ads Center location enforcement","intake_complete":true,"items":[{"source_id":"SRC-030","requirement_id":"EC-ADS-005","atomic":true,"text":"ศูนย์โฆษณาเอาปุ่มออกจาก Vision 7 ไปอยู่หลังบ้าน","acceptance":"Admin หลักมีปุ่มศูนย์โฆษณา และหน้า Vision 7 ไม่มีปุ่มนี้ทั้งไฟล์ปัจจุบันและ HTML เก่าที่อาจค้าง"}]}

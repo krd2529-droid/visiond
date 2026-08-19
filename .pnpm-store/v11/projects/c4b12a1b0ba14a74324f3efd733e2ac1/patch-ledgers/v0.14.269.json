@@ -1,1 +1,0 @@
-{"patch":"v0.14.269","tasks":[{"id":"P14269-001","scope":"UI","source_instruction":"อย่าซ่อนชุดงานคอร์สเพราะจะมีปัญหาทีหลัง ให้เอาออกจริง","status":"DONE-VERIFIED","evidence":["public/course-seller.html","public/course-center.html","public/course-seller.js","scripts/test-v014269.mjs"]}]}

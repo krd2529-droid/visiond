@@ -1,5 +1,0 @@
-{"patch":"v0.14.56","source_base":"v0.14.55","patch_type":"FEATURE-high-risk","tasks":[
-{"id":"P1456-001","scope":"DATABASE","source_instruction":"เก็บรีลีส เวอร์ชัน ไฟล์ SHA-256 และสถานะบังคับอัปเดต","status":"DONE-VERIFIED","evidence":["migrations/0022_vision7_release_delivery.sql","functions/_vision7_schema.js"]},
-{"id":"P1456-002","scope":"FEATURE","source_instruction":"ผู้ดูแลอัปโหลดและเผยแพร่ตัวติดตั้ง Vision 7","status":"DONE-VERIFIED","evidence":["functions/api/admin/vision7/releases.js","public/vision7-admin.html","public/vision7-admin.js"]},
-{"id":"P1456-003","scope":"SECURITY","source_instruction":"เฉพาะเจ้าของสิทธิ์ active/trial ดาวน์โหลดตัวติดตั้งและตรวจ SHA-256 ได้","status":"DONE-VERIFIED","evidence":["functions/api/vision7/releases/[id]/download.js","functions/api/vision7/my-programs.js","public/my-programs.js","scripts/test-v01456.mjs"]}
-]}

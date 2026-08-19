@@ -1,1 +1,0 @@
-{"patch":"v0.14.182","scope":"storefront-admin-category-count-parity","changed":["functions/api/admin/categories/index.js","public/admin.js","VERSION.txt","public/index.html","public/admin.html","scripts/test-v014182.mjs"],"result":"หลังบ้านนับจำนวนสินค้าในหมวดด้วยเงื่อนไขเดียวกับหน้าบ้านและซ่อนหมวดซ้ำที่ไม่มีสินค้าเมื่อมีหมวดประเภทเดียวกันใช้งานอยู่"}

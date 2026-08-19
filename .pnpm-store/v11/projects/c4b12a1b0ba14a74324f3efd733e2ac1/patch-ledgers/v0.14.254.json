@@ -1,1 +1,0 @@
-{"patch":"v0.14.254","tasks":[{"id":"P14254-001","scope":"UI","source_instruction":"แต่ละรูปแบบ 1 2 3 ต้องมีปุ่มสร้างคอร์สของตัวเอง","status":"DONE-VERIFIED","evidence":["public/course-seller.js","public/course-seller.css"]},{"id":"P14254-002","scope":"QA","source_instruction":"ใช้ลูปมาตรฐานก่อน Commit","status":"DONE-VERIFIED","evidence":["scripts/test-v014254.mjs"]}]}

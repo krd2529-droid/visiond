@@ -1,1 +1,0 @@
-(()=>{const fix=()=>{const button=document.querySelector('#navMember');if(button&&!button.hidden)button.textContent='ของฉัน'};fix();new MutationObserver(fix).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['hidden']})})();

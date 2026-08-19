@@ -1,1 +1,0 @@
-{"version":"0.14.166","scope":"persistent-mobile-settings","changed":["VERSION.txt","public/index.html","public/admin.html","functions/api/vision7/shops/[shopId]/line-connection.js","scripts/test-v014166.mjs","scripts/test-all-regressions.mjs","package.json"],"security":"LINE credentials remain encrypted server-side and are never returned to the APK"}

@@ -1,1 +1,0 @@
-{"patch":"v0.14.268","tasks":[{"id":"P14268-001","scope":"UI","source_instruction":"เอาชุดกล่องงานคอร์สที่เรียงมั่วออกไปก่อนเพื่อไล่งานใหม่","status":"DONE-VERIFIED","evidence":["public/course-seller.html","public/course-center.html","scripts/test-v014268.mjs"]}]}

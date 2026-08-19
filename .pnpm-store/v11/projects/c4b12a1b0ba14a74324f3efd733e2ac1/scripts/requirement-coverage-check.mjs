@@ -1,8 +1,0 @@
-import fs from 'node:fs';
-const close=process.argv.includes('--close-event-case'),ledger=JSON.parse(fs.readFileSync('requirements-ledger.json','utf8')),allowed=new Set(['DONE-VERIFIED','PENDING','BLOCKED','MISSING','UNCERTAIN','REMOVED-BY-BOSS']),ids=new Set();let invalid=0;
-for(const item of ledger.requirements||[]){if(!item.id||ids.has(item.id)){console.error('INVALID duplicate/missing id',item.id);invalid++}ids.add(item.id);if(!allowed.has(item.status)){console.error('INVALID status',item.id,item.status);invalid++}if(!item.source){console.error('INVALID missing source',item.id);invalid++}if(item.status==='DONE-VERIFIED'){if(!item.evidence?.length){console.error('INVALID done without evidence',item.id);invalid++}for(const file of item.evidence||[])if(!fs.existsSync(file)){console.error('MISSING evidence file',item.id,file);invalid++}}}
-const count=status=>ledger.requirements.filter(x=>x.status===status).length,total=ledger.requirements.length,verified=count('DONE-VERIFIED'),pending=count('PENDING'),blocked=count('BLOCKED'),missing=count('MISSING'),uncertain=count('UNCERTAIN'),removed=count('REMOVED-BY-BOSS');
-console.log(`REQUIREMENT COVERAGE: total=${total} verified=${verified} pending=${pending} blocked=${blocked} missing=${missing} uncertain=${uncertain} removed=${removed}`);
-if(missing||uncertain)console.error('งานหลุดหรือหลักฐานไม่แน่นอนถูกตรวจพบ ห้ามส่งแพตจนกว่าจะจัดสถานะ');
-if(close&&verified+removed!==total)console.error('ห้ามปิด Event Case: ยังมี Requirement ที่ไม่ได้ DONE-VERIFIED หรือ REMOVED-BY-BOSS');
-if(invalid||missing||uncertain||(close&&verified+removed!==total))process.exit(1);

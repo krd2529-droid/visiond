@@ -1,1 +1,0 @@
-{"patch":"v0.14.271","tasks":[{"id":"P14271-001","scope":"UI","source_instruction":"แต่ละปุ่มทางเข้าแบบคอร์สต้องบอกส่วนแบ่งรายได้","status":"DONE-VERIFIED","evidence":["public/course-seller.js","scripts/test-v014271.mjs"]}]}

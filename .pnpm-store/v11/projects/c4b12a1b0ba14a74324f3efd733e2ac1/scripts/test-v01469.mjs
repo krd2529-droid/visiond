@@ -1,9 +1,0 @@
-import assert from 'node:assert/strict';import fs from 'node:fs';
-const read=file=>fs.readFileSync(file,'utf8'),checks=[];const check=(name,fn)=>{try{fn();checks.push(true);console.log(`PASS ${name}`)}catch(error){checks.push(false);console.error(`FAIL ${name}: ${error.message}`)}};
-check('version is v0.14.69 or newer',()=>{const match=read('VERSION.txt').trim().match(/^v0\.14\.(\d+)$/);assert.ok(match);assert.ok(Number(match[1])>=69)});
-check('ads center entry is injected into main admin',()=>{const middleware=read('functions/_middleware.js');assert.match(middleware,/ADS_CENTER_ADMIN_ENTRY/);assert.match(middleware,/href="\/ads-center\.html"/);assert.match(middleware,/VISION7_ADMIN_ENTRY\+ADS_CENTER_ADMIN_ENTRY/)});
-check('ads center is removed from key center toolbar',()=>assert.doesNotMatch(read('public/vision7-admin.html'),/href="\/ads-center\.html"/));
-check('blocked issue-key click remains clickable and explains exact secret',()=>{const ui=read('public/vision7-admin.js');assert.doesNotMatch(ui,/newKey\.disabled\s*=/);assert.match(ui,/newKey\.setAttribute\("aria-disabled"/);assert.match(ui,/VISION7_LICENSE_ENCRYPTION_KEY อย่างน้อย 32 ตัวอักษร แล้ว Deploy ใหม่/)});
-check('no-program state gives actionable feedback',()=>assert.match(read('public/vision7-admin.js'),/ยังไม่มีโปรแกรม กรุณากด ‘เพิ่มโปรแกรม’ ก่อนออกคีย์/));
-check('new requirements are verified',()=>{const items=JSON.parse(read('requirements-ledger.json')).requirements;for(const id of ['EC-ADS-004','VE-KEYCENTER-002']){const item=items.find(x=>x.id===id);assert.equal(item?.status,'DONE-VERIFIED');assert.ok(item.evidence.includes('scripts/test-v01469.mjs'))}});
-const failed=checks.filter(x=>!x).length;console.log(`v0.14.69 RESULT: total=${checks.length} passed=${checks.length-failed} failed=${failed}`);if(failed)process.exit(1);

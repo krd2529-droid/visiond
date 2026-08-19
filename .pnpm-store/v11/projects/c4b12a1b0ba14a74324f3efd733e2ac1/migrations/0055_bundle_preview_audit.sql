@@ -1,2 +1,0 @@
-CREATE TABLE IF NOT EXISTS bundle_preview_revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,bundle_product_id INTEGER NOT NULL,old_cover_url TEXT NOT NULL,old_preview_urls TEXT NOT NULL,new_cover_url TEXT NOT NULL,new_preview_urls TEXT NOT NULL,changed_by INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(bundle_product_id) REFERENCES products(id),FOREIGN KEY(changed_by) REFERENCES users(id));
-CREATE INDEX IF NOT EXISTS idx_bundle_preview_revisions_product ON bundle_preview_revisions(bundle_product_id,created_at DESC);

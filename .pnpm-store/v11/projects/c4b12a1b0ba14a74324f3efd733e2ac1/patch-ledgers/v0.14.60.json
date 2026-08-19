@@ -1,8 +1,0 @@
-{
-  "patch": "v0.14.60",
-  "tasks": [
-    {"id":"P1460-001","scope":"DOC","source_instruction":"จัดเอกสารงานต่อเนื่องให้มีโฟลเดอร์ของตัวเอง","status":"DONE-VERIFIED","evidence":["work-history/visiond/history-manifest.json","START-HERE.md"]},
-    {"id":"P1460-002","scope":"QA","source_instruction":"คัดลอกระยะที่ 1 โดยไม่ลบต้นฉบับและตรวจ SHA-256","status":"DONE-VERIFIED","evidence":["scripts/test-v01460.mjs","work-history/visiond/qa-history/QA-v0.14.60-DOCUMENT-HISTORY-PHASE1.md"]},
-    {"id":"P1460-003","scope":"DOC","source_instruction":"บันทึกงานถัดไปให้ Phase 2 เปลี่ยนจุดอ้างอิงก่อนเก็บไฟล์ซ้ำ","status":"DONE-VERIFIED","evidence":["work-history/visiond/patch-history/PATCH-v0.14.60-DOCUMENT-HISTORY-PHASE1.md"]}
-  ]
-}

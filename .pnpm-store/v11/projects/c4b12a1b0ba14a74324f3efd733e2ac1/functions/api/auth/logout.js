@@ -1,1 +1,0 @@
-import {json,cookie} from '../../_lib.js';export async function onRequestPost(ctx){const id=cookie(ctx.request,'vd_session');if(id)await ctx.env.DB.prepare('DELETE FROM sessions WHERE id=?').bind(id).run();return json({ok:true},200,{'set-cookie':'vd_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0'})}

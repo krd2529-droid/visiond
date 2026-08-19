@@ -1,7 +1,0 @@
-import assert from 'node:assert/strict';import fs from 'node:fs';import {cleanVision14PageText} from '../functions/_vision14.js';
-const read=file=>fs.readFileSync(file,'utf8'),result=cleanVision14PageText('บทที่ 1\nผู้เขียน: คนทดสอบ\nเนื้อหาสำคัญ\nISBN 978-1-23456-789-0\nติดต่อ test@example.com');
-assert.equal(read('VERSION.txt').trim(),'v0.14.225');assert.equal(result.raw_text.includes('ผู้เขียน'),true);assert.equal(result.clean_text,'บทที่ 1\nเนื้อหาสำคัญ');assert.equal(result.removed_credit_lines.length,3);
-const api=read('functions/api/admin/vision14-sources/[id]/extract.js'),ui=read('public/vision14-library.js'),html=read('public/vision14-library.html'),migration=read('migrations/0053_vision14_text_pages.sql');
-assert.match(api,/requireBoss/);assert.match(api,/pages\.length>500/);assert.match(api,/seen\.has\(page\)/);assert.match(api,/text\.length>100000/);assert.match(api,/cleanVision14PageText/);assert.match(api,/processing_status='text_cleaned'/);assert.match(migration,/PRIMARY KEY\(source_id,page_number\)/);
-for(const token of['data-extract','dialog.showModal','---PAGE---','button.disabled=true','method:\'POST\''])assert.ok(ui.includes(token),token);assert.match(html,/id="extractDialog"/);assert.match(html,/aria-label="ปิด"/);assert.match(read('public/vision14-library.css'),/@media\(max-width:700px\)/);
-console.log('v0.14.225 Vision 14 page trace raw-clean split credit cleaner validation dialog and mobile contracts: PASS');

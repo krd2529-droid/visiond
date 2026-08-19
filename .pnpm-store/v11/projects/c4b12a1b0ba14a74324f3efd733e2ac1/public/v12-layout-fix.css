@@ -1,5 +1,0 @@
-.v12-list>.v12-filters,.v12-list>label,.v12-list>#v12ListState,.v12-list>#v12RefreshProfiles,.v12-list>#v12FacebookHistory{flex:0 0 auto}
-.v12-filters{min-height:46px;overflow-x:auto;overflow-y:hidden;align-items:flex-start;padding-bottom:2px}
-#v12RefreshProfiles,#v12FacebookHistory{width:100%;margin:0 0 8px;position:static;z-index:auto}
-#v12Conversations{flex:1 1 auto;min-height:0}
-@media(max-width:800px){.v12-filters{min-height:48px}#v12RefreshProfiles,#v12FacebookHistory{margin-bottom:7px}}

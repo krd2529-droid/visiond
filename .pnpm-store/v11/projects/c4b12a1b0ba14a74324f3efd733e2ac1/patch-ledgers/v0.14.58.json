@@ -1,5 +1,0 @@
-{"patch":"v0.14.58","source_base":"v0.14.57","patch_type":"FEATURE-high-risk","tasks":[
-{"id":"P1458-001","scope":"DATABASE","source_instruction":"รับข้อความ Meta เข้า AI job queue แบบ dedupe และ retry โดยไม่ค้าง Webhook","status":"DONE-VERIFIED","evidence":["migrations/0023_elon_page_sales_ai_jobs.sql","functions/_meta_messenger.js"]},
-{"id":"P1458-002","scope":"SECURITY","source_instruction":"PAGE_SALES ต้องตอบจากสินค้า ราคาโปรโมชัน และนโยบายจริง ห้ามแต่งข้อมูล","status":"DONE-VERIFIED","evidence":["functions/_elon_page_sales.js","scripts/test-v01458.mjs"]},
-{"id":"P1458-003","scope":"FEATURE","source_instruction":"ส่งคำตอบ AI ผ่าน Meta outbox แบบ idempotent/retry และไม่แย่งโหมด human handoff","status":"DONE-VERIFIED","evidence":["functions/_meta_sender.js","functions/api/internal/meta-outbox.js","scripts/test-v01458.mjs"]}
-]}

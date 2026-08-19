@@ -1,6 +1,0 @@
-import {json,requireBoss} from '../../../../_lib.js';
-import {ensureDatabase} from '../../../../_schema.js';
-import {encryptPartnerSecret,partnerEncryptionReady} from '../../../../_partner_crypto.js';
-import {ensurePartnerSchema,newPartnerCredential,partnerSecretHash} from '../../../../_partner_api.js';
-const headers={'cache-control':'private, no-store'};
-export async function onRequestPost(ctx){await ensureDatabase(ctx.env);await ensurePartnerSchema(ctx.env);const a=await requireBoss(ctx);if(a.error)return a.error;if(!partnerEncryptionReady(ctx.env))return json({error:'ระบบเข้ารหัส Partner API ยังไม่พร้อม'},503,headers);const row=await ctx.env.DB.prepare('SELECT id FROM partner_websites WHERE id=?').bind(ctx.params.id).first();if(!row)return json({error:'ไม่พบเว็บไซต์คู่ค้า'},404,headers);const credential=newPartnerCredential();await ctx.env.DB.prepare('UPDATE partner_websites SET client_id=?,secret_ciphertext=?,secret_hash=?,secret_last4=?,updated_at=CURRENT_TIMESTAMP,last_used_at=NULL WHERE id=?').bind(credential.clientId,await encryptPartnerSecret(ctx.env,credential.secret),await partnerSecretHash(credential.clientId,credential.secret),credential.secret.slice(-4),row.id).run();return json({ok:true,credential:{client_id:credential.clientId,client_secret:credential.secret,shown_once:true}},200,headers)}
