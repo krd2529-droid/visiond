@@ -173,7 +173,7 @@
   function languageButton(){
     if(document.querySelector('[data-language-switcher]'))return;
     const host=document.querySelector('.topbar nav .nav-utility-group,.topbar nav,.learning-header,.topbar')||document.body;
-    const wrap=document.createElement('span');wrap.className='vd-language-switcher';wrap.dataset.languageSwitcher='';
+    const wrap=document.createElement('span');wrap.className='vd-language-switcher';wrap.dataset.languageSwitcher='';wrap.dataset.feature='I18N-LANGUAGE-001';
     wrap.innerHTML=`<button type="button" data-lang="th" class="${lang==='th'?'active':''}" aria-label="ภาษาไทย">TH</button><i>|</i><button type="button" data-lang="en" class="${lang==='en'?'active':''}" aria-label="English">EN</button>`;
     host.append(wrap);
     window.VisionDSyncNavGroups?.();

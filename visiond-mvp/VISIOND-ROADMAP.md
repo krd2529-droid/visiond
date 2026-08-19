@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.372` Shared Navigation Shell; `v0.14.373` Meta Pixel Conversion Tracking; `v0.14.374` External Contact Dock
+- เสร็จแล้ว: `v0.14.373` Meta Pixel Conversion Tracking; `v0.14.374` External Contact Dock; `v0.14.375` Shared TH/EN Language Layer
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.374 — External Contact Dock Feature Map
+### v0.14.375 — Shared TH/EN Language Layer Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน LINE/Facebook external contact dock บน public pages
-- Acceptance: Map อ้าง URL source, external-only boundary, saved open state, accessibility และ responsive dock; root มีรหัส
-- ห้ามเปลี่ยน: contact URLs, open/close state, external navigation, chat systems และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนชั้นภาษาไทย/อังกฤษร่วมของ public UI
+- Acceptance: Map อ้าง language precedence, one-site state, DOM/attribute translation, dynamic observer, alert/confirm และ language event; switcher มีรหัส
+- ห้ามเปลี่ยน: dictionary, precedence, URL/storage, DOM traversal, navigation, business data และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

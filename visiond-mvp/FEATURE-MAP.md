@@ -886,6 +886,20 @@
 - ความสัมพันธ์: ELON web assistant อยู่ใต้ `ELON-CHAT-001`; Facebook Page inbox/handoff อยู่ใต้ `ELON-PAGE-001`/`V12-INBOX-001`; webhook ingestion อยู่ใต้ `WEBHOOK-HUB-001`
 - การทดสอบ: `scripts/test-v014374.mjs`
 
+## I18N-LANGUAGE-001 — ชั้นภาษาไทย/อังกฤษร่วมของเว็บไซต์
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.375
+- หน้า/ไฟล์: public pages/controllers ที่ import `public/i18n.js`; switcher ผูกกับ `.topbar`, learning header หรือ body ตาม surface ที่มี
+- Selection: รับเฉพาะ `lang=th|en`; precedence คือ query parameter, `visiond_language` ใน localStorage แล้วจึง auto จาก `vd_country` หรือ `navigator.language`
+- One-site boundary: เปลี่ยนเฉพาะภาษา UI บน origin/path เดิม ใช้บัญชี ตะกร้า API และข้อมูลชุดเดียว; switcher บันทึกภาษาแล้ว reload URL เดิมพร้อม `lang`
+- Translation: ใช้ exact dictionary, phrase replacement, word pairs และรูปแบบตัวเลข/หน่วย; โหมดไทยคงข้อความต้นฉบับ
+- DOM: โหมดอังกฤษแปล text nodes ยกเว้น script/style/noscript/textarea และ attributes `placeholder|title|aria-label|alt|content`; MutationObserver แปล node ที่เพิ่มภายหลัง
+- Runtime surfaces: ตั้ง `document.documentElement.lang` และ `data-lang`; แปล `alert`/`confirm` เฉพาะโหมดอังกฤษ; dispatch `visiond:language` เพื่อให้ navigation shell sync
+- Idempotency/failure: `window.VisionDI18n` ป้องกัน init ซ้ำ; localStorage อ่านล้มเหลวใช้ automatic language; switcher ไม่สร้างซ้ำเมื่อมี `[data-language-switcher]`
+- รหัส UI: `.vd-language-switcher` ใช้ `data-feature="I18N-LANGUAGE-001"`; คง TH/EN buttons, dictionary, selection precedence, observer และ theme เดิม
+- ความสัมพันธ์: navigation placement อยู่ใต้ `NAV-SHELL-001`; controller นี้เป็น client translation layer ไม่เปลี่ยน API contract หรือสร้างข้อมูลภาษาแยก
+- การทดสอบ: `scripts/test-v014375.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
