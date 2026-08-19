@@ -1,0 +1,14 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const r=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+assert.equal(r('VERSION.txt').trim(),'v0.14.378');
+assert.match(r('public/index.html'),/WEB v0\.14\.378/);assert.match(r('public/admin.html'),/ADMIN v0\.14\.378/);
+const map=r('FEATURE-MAP.md'),ui=r('public/first-order-promo.js'),core=r('functions/_first_order_promo.js'),statusApi=r('functions/api/first-order-promotion.js'),login=r('functions/api/auth/login.js'),orders=r('functions/api/orders/index.js'),grant=r('functions/_orders.js'),schema=r('functions/_schema.js'),notifications=r('functions/api/notifications.js');
+for(const x of['FIRST-ORDER-INCENTIVE-001','login สำเร็จครั้งที่ 2','399 บาท','50%','200 บาท','first-order discount ชนะ bundle discount','first_order_gift_granted','199 บาท','Atomicity boundary','คนละ DB batch'])assert.ok(map.includes(x),x);
+assert.equal((ui.match(/dataset\.feature='FIRST-ORDER-INCENTIVE-001'/g)||[]).length,1);
+assert.match(ui,/item\.stage==='none'\|\|item\.stage==='finished'/);assert.match(ui,/item\.stage==='offer'&&item\.active/);assert.match(ui,/Date\.parse\(item\.expires_at\)-Date\.now\(\)/);assert.match(ui,/visiond-visit-strip/);
+assert.match(core,/minimum:39900,percent:50,cap:20000,durationHours:2/);assert.match(core,/loginCount>=3&&expiresAt/);assert.match(core,/loginCount>=2\?'teaser':'none'/);assert.match(core,/Math\.min\(FIRST_ORDER_PROMO\.cap/);
+assert.match(statusApi,/requireUser/);assert.match(statusApi,/'cache-control':'no-store'/);assert.match(login,/await recordSuccessfulLogin\(ctx\.env,u\.id\)/);
+for(const x of["p.category!=='resale-rights'","p.category!=='bundle-deals'","p.product_kind!=='vision7-key'","firstOrderDiscount>0?firstOrderDiscount:bundleDiscount","'first_order_promo_applied'"])assert.ok(orders.includes(x),x);
+assert.match(grant,/Number\(customerPaid\?\.count\)!==1/);assert.match(grant,/first_order_gift_max_price/);assert.match(grant,/p\.category NOT IN \('resale-rights','online-course'\)/);assert.match(grant,/VALUES\(\?,\?,0,'paid'/);assert.match(grant,/try\{await grantFirstOrderGift/);
+assert.match(schema,/idx_orders_first_order_gift/);assert.match(notifications,/ของฟรีเปิดบิลแรกพร้อมแล้ว/);
+console.log('PASS v0.14.378 First-order Incentive Feature Map');

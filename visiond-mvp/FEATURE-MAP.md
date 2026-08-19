@@ -599,6 +599,21 @@
 - รหัส UI: catalog และ first-order forms มี `data-feature="PROMOTION-SETTINGS-001"`; คง validation/stats/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014352.mjs`, `scripts/test-first-order-promo.mjs`
 
+## FIRST-ORDER-INCENTIVE-001 — สิทธิส่วนลดและของขวัญสำหรับคำสั่งซื้อแรก
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.378
+- หน้า/ไฟล์: public storefront ที่โหลด `public/first-order-promo.js`, `functions/_first_order_promo.js`, `functions/api/first-order-promotion.js`, `functions/api/auth/login.js`, `functions/api/orders/index.js`, `functions/_orders.js`, `functions/api/notifications.js`
+- Customer lifecycle: login สำเร็จครั้งที่ 2 แสดง teaser; ครั้งที่ 3 grant offer อายุ 2 ชั่วโมง; `GET /api/first-order-promotion` คืนสถานะ authoritative แบบ no-store; client แสดง/ปิด/countdown เท่านั้นและไม่คำนวณสิทธิ์
+- Discount: order API คำนวณจากสินค้าที่ร่วมรายการเมื่อ subtotal อย่างน้อย 399 บาท ลด 50% สูงสุด 200 บาท; first-order discount ชนะ bundle discount และไม่ stack; เมื่อสร้าง order สำเร็จจึงบันทึก `used_order_id` กับ activity `first_order_promo_applied`
+- Gift after payment: เมื่อ `grantOrder()` เปลี่ยนบิลจริงใบแรกเป็น paid ระบบพยายามสร้าง paid gift order มูลค่า 0 หนึ่งใบ, grant entitlement และบันทึก `first_order_gift_granted`; เลือก published digital product ตาม interest ก่อน ราคาไม่เกิน setting/default 199 บาท และตัด resale-rights, online course, สินค้าที่มีสิทธิ์หรือเคยซื้อแล้ว
+- API/ฐานข้อมูล: `GET /api/first-order-promotion`; `first_order_promo_state`, `orders`, `order_items`, `entitlements`, `customer_events`, `user_activity_log`, `settings`; unique partial index `idx_orders_first_order_gift` กัน gift ซ้ำต่อสมาชิก
+- สิทธิ์: status API และ order flow ใช้ authenticated user; login counter เพิ่มหลังตรวจรหัสผ่านและสร้าง session สำเร็จ; การอนุมัติ paid gift ทำหลัง `grantOrder()` claim order ได้จริง
+- ห้ามกระทบ: switch ปิดทำให้ stage finished; ผู้ใช้ที่มี paid order หรือใช้ส่วนลดแล้วไม่ active; offer ที่หมดเวลาไม่ active; excluded discount categories คือ resale-rights, bundle-deals, Vision 7 key และ non-product; gift failure เป็น best effort และไม่ย้อน paid order; notification แยก gift order จาก order ปกติ
+- Atomicity boundary: การสร้าง customer order กับการ mark promotion-used เป็นคนละ DB batch; gift order header ถูกสร้างก่อน batch ของ item/entitlement/event ตามโค้ดปัจจุบัน จึงห้ามอ้างว่า lifecycle ทั้งชุด atomic
+- รหัส UI: runtime nudge ใช้ `data-feature="FIRST-ORDER-INCENTIVE-001"`; คงข้อความ, countdown, placement, close behavior, styles และ theme เดิม
+- ความสัมพันธ์: admin configuration/stats อยู่ใต้ `PROMOTION-SETTINGS-001`; pricing/order creation อยู่ใต้ `COMMERCE-ORDER-001`; ระบบนี้ลงทะเบียน lifecycle ของลูกค้าและ first-paid-order gift โดยไม่เปลี่ยน contract ของสองระบบนั้น
+- การทดสอบ: `scripts/test-v014378.mjs`, `scripts/test-first-order-promo.mjs`, `scripts/test-v01448.mjs`
+
 ## MEMBER-ADMIN-001 — จัดการบัญชีสมาชิก เครดิตคอร์ส และปลดล็อกแบบ Manual
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.353

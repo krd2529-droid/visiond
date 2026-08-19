@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.375` Shared TH/EN Language Layer; `v0.14.376` Boss Mobile Preview; `v0.14.377` Storefront Promo/Visit Strip
+- เสร็จแล้ว: `v0.14.376` Boss Mobile Preview; `v0.14.377` Storefront Promo/Visit Strip; `v0.14.378` First-order Incentive
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.377 — Storefront Promo/Visit Strip Feature Map
+### v0.14.378 — First-order Incentive Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน bundle promo banner และ public visit statistics strip
-- Acceptance: Map อ้าง static promotion boundary, GIF refresh, placement, analytics event/fallback และ failure state; สอง surface มีรหัส
-- ห้ามเปลี่ยน: promotion text/rules, target URL, analytics counting/API, fallback และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน customer lifecycle ของ first-order discount และ automatic first-paid-order gift
+- Acceptance: Map อ้าง login stages, authoritative status/discount, excluded items, non-stacking, used marker, gift selection/grant/notification และ atomicity boundary; runtime nudge มีรหัส
+- ห้ามเปลี่ยน: eligibility, สูตรราคา, API contract, login/order/payment behavior, gift selection, notification และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
