@@ -1,0 +1,8 @@
+{
+  "version": "v0.14.307",
+  "feature": "COURSE-EP-CONTINUOUS-001",
+  "summary": "รวมการกรอกตะกร้าคอร์สและ EP เป็นงานเดียว ส่งตรวจครั้งเดียว",
+  "files": ["public/course-seller.html", "public/course-seller.js"],
+  "tests": ["scripts/test-v014307.mjs", "scripts/test-all-regressions.mjs", "scripts/predeploy-check.mjs"],
+  "rollback": "ย้อนกลับไป Commit ก่อน v0.14.307"
+}

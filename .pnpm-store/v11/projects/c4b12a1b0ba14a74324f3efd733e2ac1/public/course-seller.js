@@ -203,7 +203,27 @@ function enterCourseCreatePage(plan) {
   formHeading.textContent = "กรอกข้อมูลคอร์สพาร์ตเนอร์";
   createPanel.querySelector(":scope > p").textContent = "กรอกข้อมูลตะกร้าและ EP ในงานเดียวกัน แล้วส่งให้ Boss ตรวจ";
   sellerCourseForm.elements.course_plan.value = plan;
+  setupContinuousLessonBuilder();
   document.title = "สร้างคอร์สพาร์ตเนอร์ 50/50 | VisionD";
+}
+function courseEpEditorMarkup(index) {
+  return `<article class="seller-card course-ep-draft" data-ep-index="${index}"><h3>EP.${String(index).padStart(2,"0")}</h3><div class="seller-form seller-lesson-editor"><label>ชื่อ EP<input name="ep_title"></label><label>คำอธิบายของ EP นี้<textarea name="ep_description" rows="3"></textarea></label><label>ความยาวโดยประมาณ (นาที)<input name="ep_duration" type="number" min="0"></label><label>วิดีโอ MP4/WEBM สูงสุด 2 GB · รับไม่เกิน 720p<input name="ep_video" type="file" accept="video/mp4,video/webm"></label><label>คุณภาพวิดีโอ<select name="ep_quality"><option value="720">720p (แนะนำ)</option><option value="480">480p</option></select></label><label>เอกสารแนบของ EP นี้<input name="ep_documents" type="file" multiple></label></div></article>`;
+}
+function addCourseEpEditor() {
+  const list = document.querySelector("#courseEpEditors");
+  if (!list) return;
+  list.insertAdjacentHTML("beforeend", courseEpEditorMarkup(list.querySelectorAll(".course-ep-draft").length + 1));
+}
+function setupContinuousLessonBuilder() {
+  if (!coursePlanPages[courseCreateMode] || sellerLessonManager.dataset.continuous === "1") return;
+  sellerLessonManager.dataset.continuous = "1";
+  sellerLessonForm.noValidate = true;
+  sellerLessonForm.innerHTML = `<div id="courseEpEditors" class="span2">${courseEpEditorMarkup(1)}</div><button id="addLessonButton" class="primary span2" type="button">+ เพิ่ม EP</button><p id="sellerLessonMessage" class="span2"></p>`;
+  document.querySelector("#addLessonButton").onclick = addCourseEpEditor;
+  window.sellerLessonMessage = document.querySelector("#sellerLessonMessage");
+  sellerLessonList.replaceChildren();
+  sendCourseReview.disabled = false;
+  sendCourseReviewHelp.textContent = "กรอกข้อมูลตะกร้าและ EP ทั้งหมด แล้วส่งตรวจครั้งเดียว";
 }
 function showLessonDraftGate(){
   activeLessonCourse=null;
@@ -587,12 +607,13 @@ async function validateLessonVideoResolution(file) {
       ? `คลิป ${width}×${height}px สูงเกิน 720p กรุณาแปลงเป็นไม่เกิน 1280×720 (แนวนอน) หรือ 720×1280 (แนวตั้ง)` : "";
   } catch (error) { return error.message; }
 }
-sellerLessonForm.elements.video.addEventListener("change", async () => {
+sellerLessonForm.elements.video?.addEventListener("change", async () => {
   const input = sellerLessonForm.elements.video, error = await validateLessonVideoResolution(input.files?.[0]);
   if (error) { sellerLessonMessage.textContent = error; input.value = ""; }
 });
 sellerLessonForm.onsubmit = async (e) => {
   e.preventDefault();
+  if (coursePlanPages[courseCreateMode]) return;
   let id = sellerLessonForm.elements.course_id.value;
   const lessonId = sellerLessonForm.elements.lesson_id.value,
     b = e.submitter;
@@ -699,6 +720,54 @@ publishForm.onsubmit = async (e) => {
   }
 };
 async function submitCurrentCourseForReview() {
+  if (coursePlanPages[courseCreateMode]) {
+    if (!sellerCourseForm.reportValidity()) {
+      sendCourseReviewHelp.textContent = "กรุณากรอกข้อมูลตะกร้าคอร์สให้ครบก่อนส่งตรวจ";
+      return;
+    }
+    const cards = [...document.querySelectorAll(".course-ep-draft")];
+    const episodes = cards.map((card) => ({
+      title: card.querySelector('[name="ep_title"]').value.trim(),
+      description: card.querySelector('[name="ep_description"]').value.trim(),
+      duration: card.querySelector('[name="ep_duration"]').value,
+      video: card.querySelector('[name="ep_video"]').files?.[0],
+      documents: [...(card.querySelector('[name="ep_documents"]').files || [])],
+      quality: card.querySelector('[name="ep_quality"]').value,
+    })).filter((ep) => ep.title || ep.description || ep.duration || ep.video || ep.documents.length);
+    if (!episodes.length) { sendCourseReviewHelp.textContent = "กรุณาเพิ่มข้อมูลอย่างน้อย 1 EP"; return; }
+    const invalid = episodes.find((ep) => !ep.title || (!ep.video && !ep.documents.length));
+    if (invalid) { sendCourseReviewHelp.textContent = "EP ที่มีข้อมูลต้องมีชื่อ และมีคลิปหรือเอกสารอย่างน้อย 1 ไฟล์"; return; }
+    sendCourseReview.disabled = true;
+    sendCourseReviewHelp.textContent = "กำลังสร้างตะกร้า อัปโหลด EP และส่งตรวจ…";
+    try {
+      const courseData = new FormData(sellerCourseForm);
+      courseData.set("expected_episodes", String(episodes.length));
+      const createResponse = await fetch("/api/course-seller", { method: "POST", body: courseData });
+      const course = await createResponse.json().catch(() => ({}));
+      if (!createResponse.ok) throw new Error(course.error || "สร้างตะกร้าคอร์สไม่สำเร็จ");
+      for (let index = 0; index < episodes.length; index += 1) {
+        const ep = episodes[index], data = new FormData();
+        data.set("title", ep.title); data.set("description", ep.description);
+        data.set("duration_seconds", String(Math.max(0, Number(ep.duration) || 0) * 60));
+        if (ep.video) data.set("video_upload_pending", "1");
+        ep.documents.forEach((file) => data.append("documents", file));
+        data.set("video_quality", ep.quality);
+        const response = await fetch(`/api/course-seller/${course.id}/lessons`, { method: "POST", body: data });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `อัปโหลด EP.${index + 1} ไม่สำเร็จ`);
+        if (ep.video) await uploadLessonVideo(course.id, result.id, ep.video, ep.quality);
+      }
+      const reviewResponse = await fetch(`/api/course-seller/${course.id}/publish`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ price_baht: sellerCourseForm.elements.price_baht.value, contact_info: sellerCourseForm.elements.contact_info.value.trim(), confirm_permanent: true }) });
+      const review = await reviewResponse.json().catch(() => ({}));
+      if (!reviewResponse.ok) throw new Error(review.error || "ส่งตรวจไม่สำเร็จ");
+      alert(review.message || "ส่งตะกร้าคอร์สและ EP ให้ Boss ตรวจแล้ว");
+      location.href = "/course-center";
+    } catch (error) {
+      sendCourseReview.disabled = false;
+      sendCourseReviewHelp.textContent = error.message;
+    }
+    return;
+  }
   if (!activeLessonCourse?.id) return;
   if (!sellerCourseForm.reportValidity()) {
     sendCourseReviewHelp.textContent = "กรุณากรอกข้อมูลตะกร้าคอร์สให้ครบก่อนส่งตรวจ";

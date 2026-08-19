@@ -165,10 +165,7 @@
           </div>
         </header>
         <p id="sellerLessonIntro">กรอกข้อมูล EP ให้ครบในตะกร้าคอร์สเดียวกัน แล้วกดส่งตรวจเมื่อพร้อม</p>
-        <form
-          id="sellerLessonForm"
-          class="seller-form seller-lesson-editor"
-        >
+        <form id="sellerLessonForm" class="seller-form seller-lesson-editor">
           <input name="course_id" type="hidden" /><input
             name="lesson_id"
             type="hidden"
@@ -193,14 +190,7 @@
               name="documents"
               type="file"
               multiple /></label
-          ><button class="primary span2" type="submit">เพิ่ม EP</button
-          ><button
-            id="cancelLessonEdit"
-            type="button"
-            class="secondary-button span2"
-          >
-            ยกเลิก
-          </button>
+          ><button id="addLessonButton" class="primary span2" type="button">+ เพิ่ม EP</button>
           <p id="sellerLessonMessage" class="span2"></p>
         </form>
         <div id="sellerLessonList" class="seller-lesson-list"></div>
@@ -252,7 +242,7 @@
     <link rel="stylesheet" href="/seller-lesson-files.css?v=014306" />
     <script src="/shared-nav.js?v=014305" defer></script>
     <script src="/header-shell.js?v=014305" defer></script>
-    <script src="/course-seller.js?v=014306"></script>
+    <script src="/course-seller.js?v=014307"></script>
     <script src="/elon-chat.js?v=014305" defer></script>
     <script src="/mobile-storefront.js?v=014305" defer></script>
     <script src="/visiond-design-system.js?v=014305" defer></script>
