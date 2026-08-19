@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const version = read("VERSION.txt"), html = read("public/admin.html"), js = read("public/paper-doll-set-builder.js"), api = read("functions/api/admin/products/index.js");
+assert.equal(version.trim(), "v0.14.314");
+assert.match(html, /accept="[^"]*image\/png[^"]*application\/pdf[^"]*application\/zip/);
+assert.match(html, /paper-doll-set-builder\.js\?v=014314/);
+for (const contract of [/const normalizeSources = async/, /const unzipEntries = async/, /const pngsToPdf = async/, /const pdfsToPdf = async/, /new DecompressionStream\("deflate-raw"\)/, /pngs\.length && pdfs\.length/, /loosePngs\.length/, /pageCount < basketCount/, /payload\.set\("category", "paper-doll"\)/, /payload\.set\("status", "draft"\)/]) assert.match(js, contract);
+assert.match(api, /const prefix=`\$\{category\}-`/);
+assert.doesNotMatch(api, /paper-doll-set-/);
+const allocation = (pages, baskets) => { const base = Math.floor(pages / baskets), remainder = pages % baskets; return Array.from({ length: baskets }, (_, i) => base + (i < remainder ? 1 : 0)); };
+assert.deepEqual(allocation(7, 3), [3, 2, 2]);
+assert.deepEqual(allocation(30, 5), [6, 6, 6, 6, 6]);
+console.log("v0.14.314 PNG/PDF/ZIP paper-doll normalization: PASS");

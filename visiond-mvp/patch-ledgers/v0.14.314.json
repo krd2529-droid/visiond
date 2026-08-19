@@ -1,0 +1,8 @@
+{
+  "version": "v0.14.314",
+  "feature": "PD-SET-001",
+  "summary": "รองรับ PNG, PDF, ZIP(PNG) และ ZIP(PDF) ก่อนแบ่งหน้าสร้างตะกร้าตุ๊กตากระดาษ",
+  "scope": ["public/admin.html", "public/paper-doll-set-builder.js"],
+  "invariants": ["ทุกตะกร้าได้รับหน้าจากทุกกลุ่ม", "ไม่มีหน้าซ้ำหรือตกหล่น", "ผลลัพธ์เป็น draft ในหมวด paper-doll", "Slug ใช้ paper-doll-NNN ตามระบบเดิม"],
+  "tests": ["node scripts/test-v014314.mjs", "node scripts/test-all-regressions.mjs", "node scripts/predeploy-check.mjs"]
+}
