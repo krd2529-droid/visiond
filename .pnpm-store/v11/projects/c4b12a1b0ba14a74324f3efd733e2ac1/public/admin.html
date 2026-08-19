@@ -2218,21 +2218,21 @@
     <dialog id="paperDollSetBuilderDialog" class="paper-doll-set-dialog" aria-labelledby="paperDollSetBuilderTitle">
       <form id="paperDollSetBuilderForm" class="paper-doll-set-shell">
         <header>
-          <div><small>PD-SET-001 · PRODUCT MANAGEMENT</small><h2 id="paperDollSetBuilderTitle">สร้างตะกร้าตุ๊กตากระดาษ</h2><p>PDF แต่ละไฟล์เป็นหนึ่งกลุ่ม ระบบแบ่งหน้าจากทุกไฟล์ให้ครบทุกตะกร้าโดยไม่ซ้ำและไม่ตกหล่น</p></div>
+          <div><small>PD-SET-001 · PRODUCT MANAGEMENT</small><h2 id="paperDollSetBuilderTitle">สร้างตะกร้าตุ๊กตากระดาษ</h2><p>รองรับ PNG, PDF, ZIP(PNG) และ ZIP(PDF) ระบบแปลงเป็นกลุ่มหน้าแล้วแบ่งให้ครบทุกตะกร้าโดยไม่ซ้ำและไม่ตกหล่น</p></div>
           <button id="paperDollSetBuilderClose" class="paper-doll-set-close" type="button" aria-label="ปิด">×</button>
         </header>
         <div class="paper-doll-set-controls">
-          <label>ไฟล์ PDF ต้นทาง<input id="paperDollSourceFiles" type="file" accept="application/pdf,.pdf" multiple required /><small>เลือกได้หลายไฟล์ · ไม่ต้องระบุประเภท · PDF แต่ละไฟล์จะถูกแบ่งแยกจากกัน</small></label>
+          <label>ไฟล์ต้นทาง<input id="paperDollSourceFiles" type="file" accept="image/png,.png,application/pdf,.pdf,application/zip,application/x-zip-compressed,.zip" multiple required /><small>PNG ที่เลือกพร้อมกันรวมเป็น 1 กลุ่ม · PDF/ZIP แต่ละไฟล์เป็น 1 กลุ่ม · ZIP ต้องมีเฉพาะ PNG หรือเฉพาะ PDF</small></label>
           <label>จำนวนตะกร้าที่ต้องการ<input id="paperDollBasketCount" type="number" min="2" max="50" value="5" required /></label>
           <label>รูปแบบราคา<select id="paperDollPriceMode"><option value="same">ราคาเดียวกันทุกตะกร้า</option><option value="separate">กำหนดราคาแยกรายตะกร้า</option></select></label>
           <label id="paperDollCommonPriceLabel">ราคาต่อชุด (บาท)<input id="paperDollCommonPrice" type="number" min="1" step="1" value="59" required /></label>
         </div>
         <div class="paper-doll-set-actions"><button id="paperDollAnalyzeButton" class="bundle-launch" type="button" data-feature="PD-SET-001">ตรวจไฟล์และ Preview</button><button id="paperDollCreateButton" class="primary" type="button" data-feature="PD-SET-001" disabled>สร้างตะกร้าร่างทั้งหมด</button></div>
-        <p id="paperDollSetMessage" class="form-message" aria-live="polite">เลือก PDF และระบุจำนวนตะกร้าก่อนตรวจไฟล์</p>
+        <p id="paperDollSetMessage" class="form-message" aria-live="polite">เลือก PNG, PDF หรือ ZIP และระบุจำนวนตะกร้าก่อนตรวจไฟล์</p>
         <section id="paperDollSetPreview" class="paper-doll-set-preview" hidden></section>
       </form>
     </dialog>
-    <link rel="stylesheet" href="/paper-doll-set-builder.css?v=014313" />
+    <link rel="stylesheet" href="/paper-doll-set-builder.css?v=014314" />
     <link rel="stylesheet" href="/vision2-font.css?v=01178" /><link
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
@@ -2244,6 +2244,6 @@
     <script src="/vision4-bundle.js?v=01471"></script>
     <script src="/vision4-card-actions.js?v=01372"></script>
     <script src="/admin-pdf-cover.js?v=014262"></script>
-    <script src="/paper-doll-set-builder.js?v=014313"></script>
+    <script src="/paper-doll-set-builder.js?v=014314"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>
