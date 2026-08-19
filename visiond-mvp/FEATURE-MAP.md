@@ -943,6 +943,20 @@
 - ความสัมพันธ์: page-view count/retention อยู่ใต้ `CUSTOMER-INTELLIGENCE-001`; promotion configuration อยู่ใต้ `PROMOTION-SETTINGS-001`; order discount อยู่ใต้ `COMMERCE-ORDER-001`
 - การทดสอบ: `scripts/test-v014377.mjs`
 
+## HOMEPAGE-VIDEO-001 — Facebook Video Embed บนหน้าแรก
+
+- สถานะ: `PARTIAL`; ลงทะเบียนเส้นทางที่มีอยู่จริงและ Known Gap ใน v0.14.379
+- ไฟล์: `public/homepage-video.js`, `functions/api/site-settings.js`
+- API: `GET /api/site-settings` อ่าน `settings.homepage_facebook_video_url`; เมื่อไม่มี row ใช้ Facebook share URL เริ่มต้น; response cache สาธารณะ 60 วินาที ขณะที่ client request ระบุ no-store
+- Controller: ต้องพบ `#homepageFacebookVideo`, `#homepageFacebookVideoFrame` และ `#homepageFacebookVideoLink` ครบก่อนเรียก API; URL ต้องเป็น HTTPS และ host `fb.watch`, `facebook.com` หรือ subdomain ของ Facebook
+- Embed: path แบบ `/share/p/` หรือ `/posts/` ใช้ Facebook `post.php` พร้อมข้อความ; path อื่นใช้ `video.php`; iframe lazy-load, allow fullscreen, strict-origin-when-cross-origin และแสดง section หลังสร้าง iframe สำเร็จ
+- Failure: DOM ไม่ครบ, API ล้ม, URL ว่าง/parse ไม่ได้, protocol หรือ host ไม่ผ่าน allowlist จะ fail-quiet และไม่แสดง section
+- Known Gap: จาก Coverage Audit v0.14.379 ไม่พบ public HTML ที่ประกาศสาม DOM IDs และไม่พบ HTML/JS อื่นที่โหลด `homepage-video.js`; controller/API จึงยังไม่มี active page route และห้ามอ้างว่าวิดีโอหน้าแรกเปิดใช้งานแล้ว
+- Known Gap: ไม่พบ admin/API write path สำหรับ `homepage_facebook_video_url`; ปัจจุบันพบเฉพาะ public read และ default URL
+- รหัส UI: controller กำหนด `data-feature="HOMEPAGE-VIDEO-001"` หลังพบ DOM contract ครบ; ไม่เพิ่ม DOM, loader, button, style หรือ theme ในแพตนี้
+- ความสัมพันธ์: การลงทะเบียน Known Gap ไม่อนุญาตให้เปิด surface หรือเพิ่ม setting writer โดยไม่มี Patch Scope แยก
+- การทดสอบ: `scripts/test-v014379.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

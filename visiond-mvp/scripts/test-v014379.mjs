@@ -1,0 +1,12 @@
+import fs from'node:fs';import path from'node:path';import{fileURLToPath}from'node:url';import assert from'node:assert/strict';
+const root=new URL('../',import.meta.url),r=p=>fs.readFileSync(new URL(p,root),'utf8');
+assert.equal(r('VERSION.txt').trim(),'v0.14.379');assert.match(r('public/index.html'),/WEB v0\.14\.379/);assert.match(r('public/admin.html'),/ADMIN v0\.14\.379/);
+const map=r('FEATURE-MAP.md'),ui=r('public/homepage-video.js'),api=r('functions/api/site-settings.js');
+for(const x of['HOMEPAGE-VIDEO-001','`PARTIAL`','สาม DOM IDs','active page route','admin/API write path','cache สาธารณะ 60 วินาที','fail-quiet'])assert.ok(map.includes(x),x);
+assert.match(ui,/homepageFacebookVideo/);assert.match(ui,/homepageFacebookVideoFrame/);assert.match(ui,/homepageFacebookVideoLink/);assert.match(ui,/dataset\.feature='HOMEPAGE-VIDEO-001'/);
+assert.match(ui,/url\.protocol!=='https:'/);assert.match(ui,/host==='fb\.watch'/);assert.match(ui,/host\.endsWith\('\.facebook\.com'\)/);assert.match(ui,/isPost\?'post\.php':'video\.php'/);assert.match(ui,/iframe\.loading='lazy'/);assert.match(ui,/strict-origin-when-cross-origin/);assert.match(ui,/section\.hidden=false/);assert.match(ui,/\.catch\(\(\)=>\{\}\)/);
+assert.match(api,/DEFAULT_FACEBOOK_VIDEO_URL='https:\/\/www\.facebook\.com/);assert.match(api,/key='homepage_facebook_video_url'/);assert.match(api,/'cache-control':'public, max-age=60'/);
+const publicDir=fileURLToPath(new URL('public/',root)),files=[];for(const name of fs.readdirSync(publicDir)){if(/\.(?:html|js)$/.test(name)&&name!=='homepage-video.js')files.push(path.join(publicDir,name))}const active=files.map(file=>fs.readFileSync(file,'utf8')).join('\n');
+assert.doesNotMatch(active,/homepage-video\.js/);assert.doesNotMatch(active,/homepageFacebookVideo(?:Frame|Link)?/);
+const source=[];function walk(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','.pnpm-store','work-history'].includes(entry.name))continue;const full=path.join(dir,entry.name);if(entry.isDirectory())walk(full);else if(/\.(?:js|html)$/.test(entry.name)&&!full.endsWith(path.join('public','homepage-video.js'))&&!full.endsWith(path.join('functions','api','site-settings.js')))source.push(fs.readFileSync(full,'utf8'))}}walk(fileURLToPath(root));assert.doesNotMatch(source.join('\n'),/homepage_facebook_video_url/);
+console.log('PASS v0.14.379 Homepage Facebook Video PARTIAL Feature Map');

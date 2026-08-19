@@ -1,6 +1,7 @@
 (() => {
   const section=document.querySelector('#homepageFacebookVideo'),frame=document.querySelector('#homepageFacebookVideoFrame'),link=document.querySelector('#homepageFacebookVideoLink');
   if(!section||!frame||!link)return;
+  section.dataset.feature='HOMEPAGE-VIDEO-001';
   fetch('/api/site-settings',{cache:'no-store'}).then(response=>response.ok?response.json():Promise.reject()).then(data=>{
     const raw=String(data.homepage_facebook_video_url||'').trim();
     if(!raw)return;
