@@ -4,24 +4,25 @@
 
 ## Current Event Case
 
-### GOV-UI-DESIGN-CONTRACT — ป้องกันธีมและปุ่มแตกเมื่อเพิ่มฟีเจอร์
+### FEATURE-MAP-COVERAGE — ไล่ Feature Map เทียบโค้ดจริงให้ครบก่อน Partner API/Web 2
 
-- สถานะ: `IMPLEMENTED`
-- เป้าหมาย: บังคับงาน Frontend/UI ใช้ canonical theme/button system และขออนุมัติก่อนสร้าง component ใหม่
-- เสร็จแล้ว: `v0.14.335` UI Design Contract Protocol และ routing แบบ WHEN-TOUCHING
+- สถานะ: `IN PROGRESS`
+- เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
+- เสร็จแล้ว: `v0.14.336` ELON Chat
+- ยังเหลือ: ระบบที่ Coverage Audit พบ เช่น Sales Page, Vision 13/14, Ads/Analytics, Webhook Hub, Security และ Partner API/Web 2
 
 ## Active Patch
 
-### v0.14.335 — UI Design Contract Protocol
+### v0.14.336 — ELON Chat Feature Map
 
-- เป้าหมายหลัก: ให้ฟีเจอร์ UI ใหม่รักษาธีมและปุ่มเดิมโดยไม่เพิ่มภาระให้แพตที่ไม่แตะ UI
-- Acceptance: มี canonical sources, button/interaction/layout contracts, stop condition ก่อนสร้าง component ใหม่ และ focused evidence
-- ห้ามเปลี่ยน: หน้าตา Production ปัจจุบัน, โค้ดธุรกิจ, API และ Database
+- เป้าหมายหลัก: ลงทะเบียน frontend widget, member/guest APIs, provider/store, security และ retention ของ ELON Chat
+- Acceptance: Feature Map อ้างไฟล์/API/ข้อมูล/สิทธิ์จริง; root widget มีรหัส `ELON-CHAT-001`; regression ELON ผ่าน
+- ห้ามเปลี่ยน: prompt, provider, API contract, rate limit, retention, สิทธิ์ และพฤติกรรม UI
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
 
-- ยังไม่มีคิวถัดไปที่ Boss อนุมัติ
+1. ระบบถัดไปจาก Coverage Audit ที่ยังไม่มีรหัส โดยต้องตรวจหลักฐานก่อนเลือกในแพตถัดไป
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 
@@ -32,6 +33,7 @@
 
 ## Recently Completed
 
+- `v0.14.335` — UI Design Contract Protocol
 - `v0.14.334` — Automated Patch Gate ก่อน Commit
 - `v0.14.333` — รายได้พาร์ตเนอร์ 50/50 ไม่หักค่า API และแสดงรอบเคลียร์วันที่ 1
 - `v0.14.332` — หน้าแก้ไขตะกร้าคอร์สใช้วิดีโอ Multipart สูงสุด 2 GB

@@ -382,6 +382,24 @@
 - ห้ามกระทบ: ห้ามอ่านคีย์หรือปิดอุปกรณ์ข้ามบัญชี และห้าม license หมดอายุดาวน์โหลดไฟล์
 - การทดสอบ: `scripts/test-v014327.mjs`, `scripts/test-v014110-veasy-activation-contract.mjs`, `scripts/test-all-regressions.mjs`
 
+## ELON-CHAT-001 — ผู้ช่วยขายและแชทช่วยเหลือบนหน้าเว็บ
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.336
+- หน้า: frontend surfaces ที่อนุญาตใน `FRONTEND_SURFACES` เช่น `/`, `/product`, `/courses`, `/cart`, `/dashboard`, `/bots`
+- ไฟล์: `public/elon-chat.js`, `public/elon-chat.css`, `functions/_elon.js`, `functions/_elon-provider.js`, `functions/_elon-member-store.js`, `functions/_elon_databases.js`, `functions/api/elon/chat.js`, `functions/api/elon/public-chat.js`, `functions/api/elon/conversations.js`, `functions/api/elon/clear.js`, `functions/api/elon/status.js`
+- ฟังก์ชัน/ตัวควบคุม: `mount()`, `frontendSurface()`, `getContext()`, `elonAccessDecision()`, `elonSystemPrompt()`, `requestElonProvider()`
+- ปุ่ม/interaction: launcher เปิด/ปิด dialog, แชทใหม่, quick questions, ส่งข้อความ, loading/error และลิงก์สมัคร/เข้าสู่ระบบสำหรับ guest
+- API: `GET/POST /api/elon/chat`, `POST /api/elon/public-chat`, `GET /api/elon/conversations`, `POST /api/elon/clear`, `GET /api/elon/status`
+- ฐานข้อมูล / ตาราง / ฟิลด์: ELON Web DB; `elon_web_conversations`, `elon_web_messages`, `elon_web_rate_limits`, `elon_web_usage_limits`, `elon_web_settings`
+- Input: ข้อความสูงสุดตาม `ELON_MAX_MESSAGE_LENGTH`, conversation ID และ page context ที่ตัด query string/ข้อมูลส่วนตัวออก
+- Output: คำตอบภาษาไทยที่กรองข้อมูลภายใน/ลิงก์/ข้อมูลส่วนตัว พร้อม conversation ID และประวัติของเจ้าของเท่านั้น
+- Reads: สถานะเปิดใช้ บริบทสมาชิก แคตตาล็อกขายที่เผยแพร่ และประวัติสนทนาของ subject เดียวกัน
+- Writes: conversation/message, rate/usage limits และ retention marker; ไม่มีสิทธิ์แก้ข้อมูลธุรกิจแทนผู้ใช้
+- สิทธิ์: guest ใช้ public endpoint แบบจำกัด; member endpoint ต้องมี session และตรวจ ownership; Boss/Admin internals ไม่เปิดเผย
+- ห้ามกระทบ: fail closed เฉพาะ frontend surface ที่อนุญาต; ห้ามส่ง query string, Secret, PII หรือลิงก์ภายนอก; ห้ามอ้างว่าดำเนินการ/อนุมัติ/ปลดล็อกแทนผู้ใช้; คง retention 60 วันและ rate/global budget gates
+- รหัส UI: root widget มี `data-feature="ELON-CHAT-001"`
+- การทดสอบ: `scripts/test-elon-access.mjs`, `scripts/test-elon-frontend-only.mjs`, `scripts/test-elon-provider.mjs`, `scripts/test-elon-widget-surfaces.mjs`, `scripts/test-v014336.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
