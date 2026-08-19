@@ -18,11 +18,19 @@
     preview = document.querySelector("#paperDollSetPreview");
   if (!button || !dialog || !globalThis.PDFLib) return;
 
-  const state = { groups: [], baskets: [], signature: "", creating: false, created: [] };
+  const state = { groups: [], baskets: [], signature: "", creating: false, results: [] };
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const setMessage = (text, error = false) => {
     message.textContent = text;
     message.classList.toggle("error", error);
+  };
+  const setBasketStatus = (index, status, detail = "") => {
+    state.results[index] = { ...state.results[index], status, detail };
+    const badge = preview.querySelector(`[data-basket="${index}"] .paper-doll-queue-status`);
+    if (!badge) return;
+    badge.dataset.status = status;
+    badge.textContent = ({ queued: "รอคิว", running: "กำลังสร้าง", success: "สำเร็จ", error: "ไม่สำเร็จ" })[status] || status;
+    badge.title = detail;
   };
   const signature = () => [...sourceInput.files].map((file) => `${file.name}:${file.size}:${file.lastModified}`).join("|") + `#${basketInput.value}`;
   const allocation = (pageCount, basketCount) => {
@@ -120,7 +128,7 @@
   };
   const renderPreview = async () => {
     preview.hidden = false;
-    preview.innerHTML = `<div class="paper-doll-source-summary">${state.groups.map((group, index) => `<article><b>กลุ่ม ${index + 1}: ${esc(group.label)}</b><small>${group.pageCount} หน้า · แบ่งครบทุกตะกร้า</small></article>`).join("")}</div><div class="paper-doll-basket-grid">${state.baskets.map((basket, index) => `<article class="paper-doll-basket-card" data-basket="${index}"><img alt="กำลังสร้างรูปตัวอย่างชุดที่ ${index + 1}" /><div><h3>ตุ๊กตากระดาษชุดที่ ${index + 1}</h3><b>รวม ${basket.pages} หน้า</b><ul>${basket.ranges.map((range, sourceIndex) => `<li>${esc(state.groups[sourceIndex].label)}: หน้า ${range.start + 1}–${range.end + 1} (${range.count} หน้า)</li>`).join("")}</ul><label class="paper-doll-separate-price" ${priceMode.value === "same" ? "hidden" : ""}>ราคาชุดนี้ (บาท)<input type="number" min="1" step="1" value="${Number(commonPrice.value) || 59}" /></label></div></article>`).join("")}</div>`;
+    preview.innerHTML = `<div class="paper-doll-source-summary">${state.groups.map((group, index) => `<article><b>กลุ่ม ${index + 1}: ${esc(group.label)}</b><small>${group.pageCount} หน้า · แบ่งครบทุกตะกร้า</small></article>`).join("")}</div><div class="paper-doll-basket-grid">${state.baskets.map((basket, index) => `<article class="paper-doll-basket-card" data-basket="${index}"><img alt="กำลังสร้างรูปตัวอย่างชุดที่ ${index + 1}" /><div><div class="paper-doll-card-heading"><h3>ตุ๊กตากระดาษชุดที่ ${index + 1}</h3><span class="paper-doll-queue-status" data-status="${state.results[index]?.status || "queued"}">${state.results[index]?.status === "success" ? "สำเร็จ" : "รอคิว"}</span></div><b>รวม ${basket.pages} หน้า</b><ul>${basket.ranges.map((range, sourceIndex) => `<li>${esc(state.groups[sourceIndex].label)}: หน้า ${range.start + 1}–${range.end + 1} (${range.count} หน้า)</li>`).join("")}</ul><label class="paper-doll-separate-price" ${priceMode.value === "same" ? "hidden" : ""}>ราคาชุดนี้ (บาท)<input type="number" min="1" step="1" value="${Number(commonPrice.value) || 59}" /></label></div></article>`).join("")}</div>`;
     await Promise.all(state.baskets.map(async (basket, index) => {
       const img = preview.querySelector(`[data-basket="${index}"] img`);
       try { img.src = await renderPage(state.groups[0].bytes, basket.ranges[0].start + 1); } catch { img.alt = "สร้างรูปตัวอย่างไม่สำเร็จ"; }
@@ -147,8 +155,9 @@
         const ranges = groups.map((group) => group.allocations[basketIndex]);
         return { ranges, pages: ranges.reduce((sum, range) => sum + range.count, 0) };
       });
-      state.signature = signature(); state.created = [];
+      state.signature = signature(); state.results = state.baskets.map(() => ({ status: "queued", detail: "", item: null }));
       await renderPreview();
+      createButton.textContent = "สร้างตะกร้าร่างทั้งหมด";
       createButton.disabled = false;
       setMessage(`ตรวจครบ ${groups.length} กลุ่ม · ${basketCount} ตะกร้า · ทุกหน้าถูกจัดสรรครั้งเดียว พร้อมสร้างเป็นร่าง`);
     } catch (error) {
@@ -170,29 +179,45 @@
     const samePrice = Number(commonPrice.value), separate = [...preview.querySelectorAll(".paper-doll-separate-price input")].map((input) => Number(input.value)), prices = state.baskets.map((_, index) => priceMode.value === "same" ? samePrice : separate[index]);
     if (prices.some((price) => !Number.isInteger(price) || price < 1)) return setMessage("ราคาทุกตะกร้าต้องเป็นจำนวนเต็มอย่างน้อย 1 บาท", true);
     state.creating = true; createButton.disabled = true; analyzeButton.disabled = true;
-    const startIndex = state.created.length;
+    const pendingIndexes = state.results.map((result, index) => result.status === "success" ? -1 : index).filter((index) => index >= 0);
+    if (!pendingIndexes.length) { state.creating = false; analyzeButton.disabled = false; return setMessage("ตะกร้าทุกรายการสร้างสำเร็จแล้ว ไม่มีรายการต้องสร้างซ้ำ"); }
+    state.results.forEach((result, index) => { if (result.status !== "success") setBasketStatus(index, "queued"); });
+    const failures = [];
     try {
-      for (let basketIndex = startIndex; basketIndex < state.baskets.length; basketIndex++) {
-        setMessage(`กำลังสร้าง PDF ตะกร้า ${basketIndex + 1}/${state.baskets.length}…`);
-        const output = await PDFLib.PDFDocument.create();
-        for (let groupIndex = 0; groupIndex < state.groups.length; groupIndex++) {
-          const range = state.baskets[basketIndex].ranges[groupIndex], indices = Array.from({ length: range.count }, (_, offset) => range.start + offset), pages = await output.copyPages(state.groups[groupIndex].pdf, indices);
-          pages.forEach((page) => output.addPage(page));
+      for (const basketIndex of pendingIndexes) {
+        setBasketStatus(basketIndex, "running");
+        setMessage(`กำลังสร้างตะกร้า ${basketIndex + 1}/${state.baskets.length} ตามคิว…`);
+        try {
+          const output = await PDFLib.PDFDocument.create();
+          for (let groupIndex = 0; groupIndex < state.groups.length; groupIndex++) {
+            const range = state.baskets[basketIndex].ranges[groupIndex], indices = Array.from({ length: range.count }, (_, offset) => range.start + offset), pages = await output.copyPages(state.groups[groupIndex].pdf, indices);
+            pages.forEach((page) => output.addPage(page));
+          }
+          const pdfBytes = await output.save();
+          if (pdfBytes.byteLength > 95 * 1024 * 1024) throw new Error(`PDF ตะกร้า ${basketIndex + 1} มีขนาดเกิน 95 MB กรุณาเพิ่มจำนวนตะกร้าแล้ว Preview ใหม่`);
+          const cover = await makeCover(pdfBytes, basketIndex), ranges = state.baskets[basketIndex].ranges.map((range, groupIndex) => `${state.groups[groupIndex].label}: หน้า ${range.start + 1}–${range.end + 1}`).join("\n"), payload = new FormData();
+          payload.set("source", "paper_doll_set"); payload.set("title", "ตุ๊กตากระดาษชุดใหม่"); payload.set("category", "paper-doll"); payload.set("file_type", "PDF"); payload.set("status", "draft"); payload.set("price_cents", String(prices[basketIndex] * 100)); payload.set("pages", String(state.baskets[basketIndex].pages)); payload.set("short_description", `ชุดตุ๊กตากระดาษ ${state.baskets[basketIndex].pages} หน้า ครบทุกกลุ่ม`); payload.set("description", `จัดชุดอัตโนมัติจาก ${state.groups.length} กลุ่มต้นทาง\n${ranges}`); payload.set("cover", cover); payload.set("product_file", new File([pdfBytes], `paper-doll-${basketIndex + 1}.pdf`, { type: "application/pdf" })); payload.set("file_label", "ไฟล์ตุ๊กตากระดาษฉบับเต็ม");
+          const response = await fetch("/api/admin/products", { method: "POST", body: payload }), data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.error || `สร้างตะกร้า ${basketIndex + 1} ไม่สำเร็จ`);
+          state.results[basketIndex] = { status: "success", detail: data.item?.slug || "สร้างร่างแล้ว", item: data.item || null };
+          setBasketStatus(basketIndex, "success", state.results[basketIndex].detail);
+        } catch (error) {
+          const detail = error.message || `สร้างตะกร้า ${basketIndex + 1} ไม่สำเร็จ`;
+          failures.push({ index: basketIndex, detail });
+          setBasketStatus(basketIndex, "error", detail);
         }
-        const pdfBytes = await output.save();
-        if (pdfBytes.byteLength > 95 * 1024 * 1024) throw new Error(`PDF ตะกร้า ${basketIndex + 1} มีขนาดเกิน 95 MB กรุณาเพิ่มจำนวนตะกร้าแล้ว Preview ใหม่`);
-        const cover = await makeCover(pdfBytes, basketIndex), ranges = state.baskets[basketIndex].ranges.map((range, groupIndex) => `${state.groups[groupIndex].label}: หน้า ${range.start + 1}–${range.end + 1}`).join("\n"), payload = new FormData();
-        payload.set("source", "paper_doll_set"); payload.set("title", "ตุ๊กตากระดาษชุดใหม่"); payload.set("category", "paper-doll"); payload.set("file_type", "PDF"); payload.set("status", "draft"); payload.set("price_cents", String(prices[basketIndex] * 100)); payload.set("pages", String(state.baskets[basketIndex].pages)); payload.set("short_description", `ชุดตุ๊กตากระดาษ ${state.baskets[basketIndex].pages} หน้า ครบทุกกลุ่ม`); payload.set("description", `จัดชุดอัตโนมัติจาก ${state.groups.length} กลุ่มต้นทาง\n${ranges}`); payload.set("cover", cover); payload.set("product_file", new File([pdfBytes], `paper-doll-${basketIndex + 1}.pdf`, { type: "application/pdf" })); payload.set("file_label", "ไฟล์ตุ๊กตากระดาษฉบับเต็ม");
-        const response = await fetch("/api/admin/products", { method: "POST", body: payload }), data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || `สร้างตะกร้า ${basketIndex + 1} ไม่สำเร็จ`);
-        state.created.push(data.item);
       }
-      setMessage(`สร้างร่างสำเร็จ ${state.created.length} ตะกร้า · ${state.created.map((item) => item.slug).join(", ")}`);
-      createButton.disabled = true;
-      if (typeof loadProducts === "function") await loadProducts();
-    } catch (error) {
-      setMessage(`${error.message || "สร้างตะกร้าไม่สำเร็จ"}${state.created.length ? ` · สำเร็จแล้ว ${state.created.length} ตะกร้า กดอีกครั้งเพื่อทำต่อจากตะกร้า ${state.created.length + 1} โดยไม่สร้างซ้ำ` : ""}`, true);
-      createButton.disabled = false;
+      const successes = state.results.filter((result) => result.status === "success"), slugs = successes.map((result) => result.item?.slug).filter(Boolean);
+      if (failures.length) {
+        setMessage(`สร้างสำเร็จ ${successes.length}/${state.baskets.length} ตะกร้า · ไม่สำเร็จ ${failures.length} ตะกร้า กด “ลองใหม่เฉพาะที่ไม่สำเร็จ” ได้โดยไม่สร้างรายการสำเร็จซ้ำ`, true);
+        createButton.textContent = "ลองใหม่เฉพาะที่ไม่สำเร็จ";
+        createButton.disabled = false;
+      } else {
+        setMessage(`สร้างร่างสำเร็จ ${successes.length} ตะกร้า${slugs.length ? ` · ${slugs.join(", ")}` : ""}`);
+        createButton.textContent = "สร้างตะกร้าร่างครบแล้ว";
+        createButton.disabled = true;
+      }
+      if (successes.length && typeof loadProducts === "function") await loadProducts();
     } finally { state.creating = false; analyzeButton.disabled = false; }
   };
   button.addEventListener("click", () => dialog.showModal());
