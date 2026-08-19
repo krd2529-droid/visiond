@@ -6,6 +6,17 @@
 
 `DOMAIN-CAPABILITY-NNN` เช่น `COURSE-EP-001`
 
+## GOV-PATCH-PROTOCOL-001 — กติกา Active และ routing เอกสารต่อแพต
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.330
+- ไฟล์: `START-HERE.md`, `JARVIS-PATCH-PROTOCOL.md`, `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md`
+- Input: คำสั่ง Boss, Patch Scope, Acceptance Test และระบบที่แตะ
+- Output: ลำดับอำนาจ กฎ `ALWAYS` และรายการเอกสาร `WHEN-TOUCHING`/`REFERENCE`
+- Reads: เอกสารเฉพาะระบบเท่าที่ routing กำหนด
+- Writes: เอกสารหรือโค้ดเฉพาะขอบเขตแพตที่ Boss อนุมัติ
+- ห้ามกระทบ: ห้ามให้ Roadmap/Marketing/History ขยายงาน ห้ามลดกฎความปลอดภัย และห้ามลบฉบับละเอียดเดิม
+- การทดสอบ: `scripts/test-v014330.mjs`, `scripts/test-document-history.mjs`, `scripts/test-all-regressions.mjs`
+
 - รหัสเดิมห้ามนำกลับไปใช้กับฟีเจอร์อื่น
 - หนึ่งฟีเจอร์ใช้รหัสเดียวกันข้าม frontend, backend, test และเอกสาร
 - งานย่อยที่มีขอบเขตข้อมูลหรือสิทธิ์ต่างกันให้แยกรหัส
