@@ -134,6 +134,18 @@
 
 ## กฎบำรุงรักษา
 
+## COURSE-PARTNER-CHECKOUT-001 — อนุมัติ แคตตาล็อก และชำระเงินคอร์สพาร์ตเนอร์
+
+- หน้า: `/course-center`, แคตตาล็อกคอร์สหน้าแรก, `/dashboard`, `/admin`
+- Controller/API: `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/courses/index.js`, `functions/api/orders/index.js`, `functions/api/orders/[id]/slip.js`, `functions/api/admin/orders.js`, `functions/api/admin/orders/[id]/approve.js`, `functions/api/admin/orders/[id]/reject.js`
+- Reads: คอร์ส ตะกร้าสินค้า ออเดอร์ บัญชีรับเงินกลาง ผลตรวจ EasySlip และสิทธิ์ Boss
+- Writes: สถานะคอร์ส/สินค้า ออเดอร์ ผลตรวจสลิป และ entitlement เมื่ออนุมัติการชำระ
+- Input: การอนุมัติคอร์ส การสั่งซื้อ รูปสลิป และการยืนยัน/เหตุผลของ Boss
+- Output: คอร์ส published ในแคตตาล็อก ออเดอร์พาร์ตเนอร์ บัญชี VisionD ผลตรวจอัตโนมัติ หรือคิวตรวจแมนนวล
+- สิทธิ์: ผู้ซื้อส่งสลิปได้เฉพาะออเดอร์ตน; เฉพาะ Boss อนุมัติ/ปฏิเสธ fallback ของคอร์สพาร์ตเนอร์
+- ห้ามกระทบ: ห้ามเผยแพร่คอร์สที่ยังไม่ผ่าน Boss; ห้ามใช้บัญชีผู้สอนกับพาร์ตเนอร์; ห้ามให้ Boss ตรวจแทนคอร์สผู้ขายประเภทอื่น; ห้ามปลดล็อกซ้ำ
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v01486-vision5-two-account-e2e.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

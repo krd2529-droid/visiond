@@ -1,0 +1,14 @@
+{
+  "version": "v0.14.310",
+  "feature": "COURSE-PARTNER-CHECKOUT-001",
+  "summary": "ยืนยันคอร์สที่อนุมัติให้ขึ้นแคตตาล็อก และเปิดทาง Boss ตรวจสลิปคอร์สพาร์ตเนอร์เมื่อ EasySlip ตรวจอัตโนมัติไม่สำเร็จ",
+  "files": [
+    "functions/api/admin/orders.js",
+    "functions/api/admin/orders/[id]/approve.js",
+    "functions/api/admin/orders/[id]/reject.js",
+    "public/admin.js",
+    "public/member-dashboard.js"
+  ],
+  "tests": ["scripts/test-v014310.mjs", "scripts/test-v01486-vision5-two-account-e2e.mjs", "scripts/test-all-regressions.mjs", "scripts/predeploy-check.mjs"],
+  "rollback": "ย้อนกลับไป Commit ก่อน v0.14.310"
+}

@@ -9,10 +9,12 @@ export async function onRequestGet(ctx) {
     order.item_count = order.items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
     order.has_resale_rights = order.items.some(item => item.category === 'resale-rights');
     order.vision5_managed = Boolean(order.course_owner_user_id || order.seller_course_id);
+    const partnerCourse = order.course_plan === 'partner';
     const manual = order.status === 'pending_review' && order.slip_key && order.slip_verification_status === 'manual';
     order.boss_can_review_rights = Boolean(order.has_resale_rights && auth.user.role === 'boss' && manual);
     order.boss_can_review_vision5_test = Boolean(Number(order.vision5_test_account) === 1 && auth.user.role === 'boss' && manual);
-    order.vision5_reason = order.boss_can_review_vision5_test ? 'บัญชีทดสอบ Vision 5 ต้องให้ Boss ตรวจและอนุมัติ' : order.vision5_managed ? 'เจ้าของคอร์สเป็นผู้ตรวจใน Vision 5' : order.has_resale_rights ? (auth.user.role === 'boss' ? 'Boss ตรวจสลิปและอนุมัติสิทธิ์แทนได้' : 'เฉพาะ Boss ตรวจสลิปตะกร้าสิทธิ์ได้') : 'VisionD ตรวจได้';
+    order.boss_can_review_partner = Boolean(partnerCourse && auth.user.role === 'boss' && manual);
+    order.vision5_reason = order.boss_can_review_partner ? 'คอร์สพาร์ตเนอร์รับเงินผ่าน VisionD และรอ Boss ตรวจสลิปแมนนวล' : order.boss_can_review_vision5_test ? 'บัญชีทดสอบ Vision 5 ต้องให้ Boss ตรวจและอนุมัติ' : order.vision5_managed ? 'เจ้าของคอร์สเป็นผู้ตรวจใน Vision 5' : order.has_resale_rights ? (auth.user.role === 'boss' ? 'Boss ตรวจสลิปและอนุมัติสิทธิ์แทนได้' : 'เฉพาะ Boss ตรวจสลิปตะกร้าสิทธิ์ได้') : 'VisionD ตรวจได้';
     order.status_label = statusLabel(order.status);
     order.slip_url = order.slip_key ? `/api/admin/slip?key=${encodeURIComponent(order.slip_key)}` : null;
   }
