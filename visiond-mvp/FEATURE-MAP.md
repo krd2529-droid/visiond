@@ -758,6 +758,21 @@
 - รหัส UI: ยังไม่มีจุด runtime ที่ถูกต้องให้ติด `data-feature`; ห้ามใส่ marker หลอกบนลิงก์ที่ปลายทางไม่มีฟอร์ม
 - การทดสอบ: `scripts/test-v014365.mjs`
 
+## SLIP-AUTO-VERIFY-001 — EasySlip Token ส่วนบุคคลและตรวจสลิปอัตโนมัติ
+
+- สถานะ: `PARTIAL`; API/token/verification มีจริง แต่ client ตั้งค่าปัจจุบันยังไม่ครบ contract
+- ไฟล์: `public/course-rights-product.js`, `functions/api/course-seller/slip-api.js`, `functions/_seller_token.js`, `functions/api/orders/[id]/slip.js`, `functions/api/course-seller/[id]/publish.js`
+- API: `GET/POST /api/course-seller/slip-api`; GET คืนเฉพาะสถานะ ไม่คืน token; POST เปิด/ปิด auto verify และบันทึก EasySlip token ของผู้ใช้
+- ความปลอดภัย: token ยาว 20–500 ตัว, เข้ารหัส AES-GCM ด้วย `VISION5_TOKEN_ENCRYPTION_KEY` + AAD, legacy plaintext ย้ายเป็น ciphertext เมื่อโหลดและมี key พร้อม
+- การเลือก token: partner course ใช้ API บริษัท; seller course ใช้ token เจ้าของเมื่อเปิดใช้และไม่ใช่ test account; rights order ใช้ token ผู้ซื้อเมื่อ Boss เปิดโหมด; กรณีอื่นใช้ API บริษัท
+- การตรวจ: จำกัดอัตรา, ตรวจชนิด/ขนาดรูป, account name/เลขท้ายอย่างน้อย 6 หลัก, amount, provider duplicate และ local `verified_slips`; ผ่านแล้วจึงเรียก idempotent `grantOrder`
+- Fail-safe: token/config/API/match ผิดหรือระบบขัดข้องต้องเปลี่ยนเป็น manual review พร้อม code; ห้าม auto approve จากเลขบัญชีสั้นหรือสลิปซ้ำ
+- ช่องว่าง client: endpoint เปิดใช้เฉพาะเมื่อ body มี `enabled:true` แต่ `course-rights-product.js` ส่งเพียง `{api_key}`; ปัจจุบันจึงเข้า branch ปิด auto verify
+- ช่องว่างหน้า: `/dashboard.html` ชี้ `/course-center#slipApiPanel` แต่หน้าและ controller ไม่มี panel นี้
+- ความสัมพันธ์: การอัปโหลดหลักฐานและ order lifecycle อยู่ใต้ `ORDER-PAYMENT-001`; toggle API บริษัทอยู่ใต้ `PAYMENT-SETTINGS-001`
+- รหัส UI: ยังไม่ติด marker บน flow ที่ contract ไม่ครบ; ต้องแก้เป็นแพตฟีเจอร์แยกก่อนเปลี่ยนเป็น `IMPLEMENTED`
+- การทดสอบ: `scripts/test-v014366.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
