@@ -935,3 +935,11 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - การ์ดที่เลือกต้องมีกรอบและพื้นหลังต่างจากรายการอื่นอย่างชัดเจน
 - ยังคงไม่รวมตะกร้าชุดรวมและตะกร้าคอร์ส
 - Feature: `PROD-SAMPLE-001`
+
+# v0.14.321 — บังคับเลขแพตช์ที่มองเห็นให้ตรง VERSION
+
+- แก้เลขหน้าเว็บหลักและหลังบ้านที่ค้างอยู่คนละแพตช์ให้ตรงกับ `VERSION.txt`
+- กำหนด `VERSION.txt` เป็นเลขอ้างอิงกลางของป้าย `WEB` และ `ADMIN`
+- เพิ่มตัวทดสอบกลาง `npm run test:visible-version` และบังคับรันทุกแพตช์ก่อน Commit
+- หากป้ายใดไม่ตรงกับ VERSION ให้ถือว่าเป็นข้อผิดพลาดที่ห้าม Commit, Push และ Deploy
+- Feature: `REL-VERSION-001`

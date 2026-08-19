@@ -6,7 +6,7 @@ When a VisionD ZIP is received with `J` or `เจ`:
 3. Preserve security boundaries, especially Boss/Admin/User/Guest and Elon isolation.
 4. Implement the selected patch with minimal regression surface.
 5. Run relevant QA, security/regression and predeploy checks.
-6. Update VERSION and patch notes.
+6. Update VERSION, every visible WEB/ADMIN version badge, and patch notes. Run `npm run test:visible-version`; a patch must not be committed while any visible badge differs from `VERSION.txt`.
 7. Update roadmap statuses: Implemented / Deployed / Validated separately.
 8. Update marketing plan from measured outcomes.
 9. Update customer-data analysis with privacy-minimized findings and the evidence window used.
@@ -156,3 +156,11 @@ Rollback safety:
 - ห้ามเดาฐานข้อมูล ตาราง ฟิลด์ หรือเจ้าของ state ต้องตรวจหลักฐานจาก schema, query และเส้นทาง runtime ก่อนบันทึก
 - ห้ามเปลี่ยนชื่อ API หรือฟิลด์ฐานข้อมูลเดิมจำนวนมากเพียงเพื่อให้เข้ากฎนี้ หากต้องเปลี่ยนต้องเป็น migration แยกพร้อม compatibility และ rollback
 - การทดสอบของฟีเจอร์ต้องอ้างรหัสฟีเจอร์และพิสูจน์ทั้งผลที่ต้องได้กับ `ห้ามกระทบ`; ฟีเจอร์ frontend ยังคงต้องผ่าน Button/Event coverage ตามกฎเดิม
+
+## Visible patch version parity rule (v0.14.321+)
+
+- `VERSION.txt` เป็นเลขแพตช์อ้างอิงกลาง
+- ป้าย `WEB` ที่ลูกค้าเห็นและป้าย `ADMIN` ที่ผู้ดูแลเห็นต้องตรงกับเลขอ้างอิงในแพตช์เดียวกัน
+- ทุกแพตช์ต้องรัน `npm run test:visible-version` แม้งานที่แก้ไม่เกี่ยวกับส่วนหัว
+- หากป้ายใดไม่ตรง ให้ถือเป็นข้อผิดพลาดที่ห้าม Commit, Push และ Deploy จนกว่าจะแก้ผ่าน
+- ห้ามให้เบราว์เซอร์ fetch `/VERSION.txt`; ให้ตรวจความตรงกันจาก source ก่อน Commit และ Deploy
