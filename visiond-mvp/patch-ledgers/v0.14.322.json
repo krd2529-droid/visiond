@@ -1,0 +1,20 @@
+{
+  "version": "v0.14.322",
+  "feature": "PROD-SAMPLE-001",
+  "summary": "เปลี่ยนชื่อ ZIP รูปตัวอย่างให้ตรงกับชื่อตะกร้าที่เลือกและรองรับภาษาไทย",
+  "parent_commit": "b9dc065",
+  "safe_rollback_commit": "b9dc065",
+  "commit": "SELF",
+  "push": false,
+  "deploy": false,
+  "evidence": {
+    "root_cause": "Frontend ใช้ product.slug และเติม -sample-all-pages เป็นชื่อไฟล์ ZIP โดยไม่อ่าน product.title",
+    "fix": "ใช้ product.title เป็นชื่อ ZIP รักษา Unicode และ fallback ไป Slug/เลขตะกร้าเฉพาะเมื่อชื่อว่าง"
+  },
+  "tests": [
+    "npm run test:visible-version",
+    "node scripts/test-v014322.mjs",
+    "node scripts/test-all-regressions.mjs",
+    "node scripts/predeploy-check.mjs"
+  ]
+}
