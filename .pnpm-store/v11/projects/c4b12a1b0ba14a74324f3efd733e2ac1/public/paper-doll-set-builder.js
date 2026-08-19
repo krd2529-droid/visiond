@@ -42,8 +42,8 @@
     if (ranges.reduce((sum, range) => sum + range.count, 0) !== pageCount) throw new Error("จำนวนหน้าหลังแบ่งไม่ตรงกับ PDF ต้นทาง");
   };
   const importPdfJs = async () => {
-    const pdfjs = await import("/vendor/pdfjs/pdf.mjs?v=014312");
-    pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.mjs?v=014312";
+    const pdfjs = await import("/vendor/pdfjs/pdf.mjs?v=014313");
+    pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.mjs?v=014313";
     return pdfjs;
   };
   const renderPage = async (bytes, pageNumber) => {

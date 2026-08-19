@@ -144,7 +144,7 @@
 - API: `POST /api/admin/products` โดย `source=paper_doll_set`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1/R2; `products.slug`, `products.category`, `products.status`, `products.source`, `products.pages`, `product_files.object_key`
 - Input: PDF หลายไฟล์ จำนวนตะกร้า และราคาเดียวหรือราคาแยกรายตะกร้า
-- Output: ตะกร้าร่างหมวด `paper-doll` ชื่อ `ตุ๊กตากระดาษชุดที่ N` และ Slug `paper-doll-set-NNN`
+- Output: ตะกร้าร่างหมวด `paper-doll` ชื่อ `ตุ๊กตากระดาษชุดที่ N` และ Slug ปกติของหมวด `paper-doll-NNN`
 - Reads: จำนวนหน้าและลำดับหน้าภายใน PDF แต่ละไฟล์ รวมถึง Slug ปัจจุบันและประวัติ Slug
 - Writes: สินค้าร่าง ไฟล์ PDF ที่ประกอบใหม่ และรูปปกหน้าแรกของแต่ละชุด
 - สิทธิ์: ใช้ได้เฉพาะผู้ดูแล; API ตรวจสิทธิ์ซ้ำฝั่งเซิร์ฟเวอร์
