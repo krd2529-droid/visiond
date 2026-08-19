@@ -773,6 +773,20 @@
 - รหัส UI: ยังไม่ติด marker บน flow ที่ contract ไม่ครบ; ต้องแก้เป็นแพตฟีเจอร์แยกก่อนเปลี่ยนเป็น `IMPLEMENTED`
 - การทดสอบ: `scripts/test-v014366.mjs`
 
+## COURSE-OWNER-REVIEW-001 — เจ้าของคอร์สตรวจสลิปผู้ซื้อ
+
+- สถานะ: `PARTIAL`; API และ controller มีจริง แต่ review panel ขาดจาก HTML runtime
+- ไฟล์: `public/course-seller.js`, `functions/api/course-seller/index.js`, `functions/api/course-seller/orders/[id]/slip.js`, `approve.js`, `reject.js`, `functions/_orders.js`
+- API: `GET /api/course-seller` คืน manual `slip_issues` สูงสุด 100; `GET .../orders/:id/slip`; `POST .../orders/:id/approve|reject`
+- สิทธิ์: `requireUser` และทุก query ผูก `course_owner_user_id` กับผู้ใช้ปัจจุบัน; ต้องเป็น seller course และมีสลิป
+- Approval: รับเฉพาะ `pending_review + manual`; ตัด test account ออกจาก owner approval; ใช้ idempotent `grantOrder` ด้วย role/method `course_owner/course_owner_slip_approval`
+- Rejection: รับเฉพาะ pending manual ของเจ้าของ, เก็บเหตุผลไม่เกิน 300 ตัว และเปลี่ยนเป็น `rejected` เพื่อให้ผู้ซื้อส่งใหม่
+- Evidence: โหลด R2 key จาก order ที่เป็นของเจ้าของเท่านั้น; response เป็น `private, no-store` และ `inline`
+- ช่องว่าง UI: controller รองรับ `#pendingSlipPanel`, `#slipIssueRows` และปุ่ม approve/reject แต่ `course-seller.html` ไม่มี element เหล่านี้ จึงไม่มี owner review surface จริง
+- ความสัมพันธ์: แยกจาก `ORDER-ADMIN-001`/`COURSE-PARTNER-CHECKOUT-001` ซึ่งเป็น admin/Boss review และใช้ grant contract เดียวกัน
+- รหัส UI: ยังไม่ติด marker เพราะ panel ไม่มีใน runtime; ต้องแก้เป็นแพตฟีเจอร์แยกก่อนเปลี่ยนเป็น `IMPLEMENTED`
+- การทดสอบ: `scripts/test-v014367.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

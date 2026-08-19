@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.364` Partner Course Review Coverage; `v0.14.365` Course Seller Payout Mapping; `v0.14.366` Seller Slip Auto-Verify Mapping
+- เสร็จแล้ว: `v0.14.365` Course Seller Payout Mapping; `v0.14.366` Seller Slip Auto-Verify Mapping; `v0.14.367` Course Owner Slip Review Mapping
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.366 — Seller Slip Auto-Verify Mapping
+### v0.14.367 — Course Owner Slip Review Mapping
 
-- เป้าหมายหลัก: ลงทะเบียน seller/buyer EasySlip token และ auto-verification พร้อม client gaps ตามจริง
-- Acceptance: Map อ้าง encryption, modes, verification guards และสถานะ PARTIAL จาก request mismatch/UI ที่ขาด
-- ห้ามเปลี่ยน: token, slip verification, order grant, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนเจ้าของคอร์สดู/อนุมัติ/ปฏิเสธสลิป พร้อม UI gap ตามจริง
+- Acceptance: Map อ้าง ownership, manual state, test-account exclusion, private evidence และสถานะ PARTIAL
+- ห้ามเปลี่ยน: approval/rejection, entitlement, evidence, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
