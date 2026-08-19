@@ -427,6 +427,19 @@
 - รหัส UI: หน้า Intake มี `data-feature="V13-INTAKE-001"`
 - การทดสอบ: `scripts/test-v014233.mjs`, `scripts/test-v014338.mjs`
 
+## V14-LIBRARY-001 — คลังต้นฉบับ PDF สิทธิ์ และข้อความรายหน้า
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.339
+- หน้า/ไฟล์: `/vision14-library.html`, `public/vision14-library.js`, `functions/_vision14.js`, `functions/api/admin/vision14-sources/index.js`, `functions/api/admin/vision14-sources/[id].js`, `functions/api/admin/vision14-sources/[id]/file.js`, `functions/api/admin/vision14-sources/[id]/extract.js`, `functions/api/admin/vision14-sources/[id]/ocr.js`
+- ฟังก์ชัน: รับ PDF เข้าคลัง, แก้สถานะ/หลักฐานสิทธิ์, เปิดไฟล์, extract text layer, OCR หน้าที่ค้าง, ล้างบรรทัดเครดิต และติดตามผลรายหน้า
+- API: `GET/POST /api/admin/vision14-sources`, `PUT /api/admin/vision14-sources/:id`, `GET /api/admin/vision14-sources/:id/file`, `GET/POST /api/admin/vision14-sources/:id/extract`, `POST /api/admin/vision14-sources/:id/ocr`
+- ฐานข้อมูล/ไฟล์: `vision14_sources`, `vision14_source_pages`; R2 `vision14/source/*`
+- Input/Output: PDF ไม่เกิน 100 MB พร้อม title/rights/note; ข้อความรายหน้า 1–500 หน้าและ OCR JPEG data URL ไม่เกินขอบเขต API
+- สิทธิ์: ทุก endpoint ใช้ `requireBoss`; สิทธิ์ `owned|plr|public_domain|licensed` ผ่านด่านขายเบื้องต้น ส่วน `reference_only` ล็อกการขาย
+- ห้ามกระทบ: licensed ต้องมีหลักฐาน; ห้ามคืน object key; หากบันทึก DB ล้มหลังอัปโหลดต้องลบ R2 object; OCR ต้อง fail closed เมื่อไม่มี provider และห้ามแต่งข้อความเพิ่ม
+- รหัส UI: หน้า Library มี `data-feature="V14-LIBRARY-001"`; ใช้ปุ่ม/interaction เดิมของหน้าโดยไม่เพิ่ม theme หรือ component
+- การทดสอบ: `scripts/test-v014339.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.336` ELON Chat; `v0.14.337` Sales Page Center; `v0.14.338` Vision 13 Intake
-- ยังเหลือ: ระบบที่ Coverage Audit พบ เช่น Sales Page, Vision 13/14, Ads/Analytics, Webhook Hub, Security และ Partner API/Web 2
+- เสร็จแล้ว: `v0.14.336` ELON Chat; `v0.14.337` Sales Page Center; `v0.14.338` Vision 13 Intake; `v0.14.339` Vision 14 Library
+- ยังเหลือ: Vision 14 Summary/MIX, Ads/Analytics, Webhook Hub, Security, Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ
 
 ## Active Patch
 
-### v0.14.338 — Vision 13 Intake Feature Map
+### v0.14.339 — Vision 14 Library Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนคิวตรวจ Approval Snapshot และการผลิต EPUB จาก Vision 14 MIX
-- Acceptance: Map อ้าง state/evidence/hash/R2/permission จริง และหน้า Intake มีรหัส `V13-INTAKE-001`
-- ห้ามเปลี่ยน: state machine, snapshot, rights gate, EPUB output, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียนคลังต้นฉบับ PDF, rights gate และการ extract/OCR รายหน้า
+- Acceptance: Map อ้าง R2/schema/rights/cleanup/OCR จริง และหน้า Library มีรหัส `V14-LIBRARY-001`
+- ห้ามเปลี่ยน: file limit, rights gate, extraction/OCR contract, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

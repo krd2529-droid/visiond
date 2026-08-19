@@ -1,4 +1,4 @@
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+document.body.dataset.feature='V14-LIBRARY-001';const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const form=document.getElementById('sourceForm'),state=document.getElementById('sourceState'),list=document.getElementById('sourceList'),reload=document.getElementById('reloadSources'),dialog=document.getElementById('extractDialog'),extractForm=document.getElementById('extractForm'),extractState=document.getElementById('extractState'),extractResult=document.getElementById('extractResult'),autoExtract=document.getElementById('autoExtract'),retryExtract=document.getElementById('retryExtract'),extractProgress=document.getElementById('extractProgress');
 let rights=[],activeSource='';
 const size=value=>new Intl.NumberFormat('th-TH',{maximumFractionDigits:1}).format((Number(value)||0)/1024/1024)+' MB';
