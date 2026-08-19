@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.334');
+assert.match(read('public/index.html'),/WEB v0\.14\.334/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.334/);
+const gate=read('scripts/patch-gate.mjs'),pkg=JSON.parse(read('package.json'));
+for(const token of ["git', ['diff', '--cached', '--name-only'",'.pnpm-store/','STAGED FILES','FOCUSED','VISIBLE VERSION','REGRESSION','PREDEPLOY','PATCH GATE: PASS']) assert.match(gate,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+assert.match(gate,/test-v\$\{version\.slice\(1\)\.replaceAll\('\.', ''\)\}\.mjs/);
+assert.equal(pkg.scripts['patch:gate'],'node scripts/patch-gate.mjs');
+console.log('PASS v0.14.334 automated staged patch gate contract');

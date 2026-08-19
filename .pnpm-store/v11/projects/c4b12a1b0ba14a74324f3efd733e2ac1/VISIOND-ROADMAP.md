@@ -4,26 +4,24 @@
 
 ## Current Event Case
 
-### GOV-LEAN-WORKFLOW — ลดภาระกฎและทำให้แต่ละแพตรันครบ
+### GOV-UI-DESIGN-CONTRACT — ป้องกันธีมและปุ่มแตกเมื่อเพิ่มฟีเจอร์
 
-- สถานะ: `PAUSED BY BOSS` เพื่อแก้บั๊กบัญชีรายได้พาร์ตเนอร์ v0.14.333
-- เป้าหมาย: แยกกฎ Active, Roadmap queue และ Automated Gate ออกจากกัน
-- เสร็จแล้ว: `v0.14.330` Lean Active Patch Protocol
-- เสร็จแล้ว: `v0.14.331` Active Roadmap Queue
-- ยังเหลือ: Automated Patch Gate เป็นแพตแยกหลัง Boss อนุมัติ
+- สถานะ: `IMPLEMENTED`
+- เป้าหมาย: บังคับงาน Frontend/UI ใช้ canonical theme/button system และขออนุมัติก่อนสร้าง component ใหม่
+- เสร็จแล้ว: `v0.14.335` UI Design Contract Protocol และ routing แบบ WHEN-TOUCHING
 
 ## Active Patch
 
-### v0.14.333 — รายได้พาร์ตเนอร์ไม่หักค่า API และรอบเคลียร์วันที่ 1
+### v0.14.335 — UI Design Contract Protocol
 
-- เป้าหมายหลัก: แบ่งยอดผู้สอน/VisionD 50/50 โดยไม่หัก 1 บาทเมื่อใช้ API ของ VisionD และแสดงยอดรอเคลียร์ทุกวันที่ 1
-- Acceptance: ออเดอร์ใหม่มี `course_api_fee=0`; แดชบอร์ดยอดเก่าและใหม่คำนวณผู้สอนจากยอดขายจริง 50%; แสดงวันเคลียร์รอบถัดไป
-- ห้ามเปลี่ยน: ราคาที่ลูกค้าชำระ, สถานะชำระเงิน, Database schema และระบบโอนเงินจริง
+- เป้าหมายหลัก: ให้ฟีเจอร์ UI ใหม่รักษาธีมและปุ่มเดิมโดยไม่เพิ่มภาระให้แพตที่ไม่แตะ UI
+- Acceptance: มี canonical sources, button/interaction/layout contracts, stop condition ก่อนสร้าง component ใหม่ และ focused evidence
+- ห้ามเปลี่ยน: หน้าตา Production ปัจจุบัน, โค้ดธุรกิจ, API และ Database
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. Automated Patch Gate — รวม focused test, version, staged-file, regression และ predeploy checks เป็นคำสั่งเดียว
+- ยังไม่มีคิวถัดไปที่ Boss อนุมัติ
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 
@@ -34,6 +32,8 @@
 
 ## Recently Completed
 
+- `v0.14.334` — Automated Patch Gate ก่อน Commit
+- `v0.14.333` — รายได้พาร์ตเนอร์ 50/50 ไม่หักค่า API และแสดงรอบเคลียร์วันที่ 1
 - `v0.14.332` — หน้าแก้ไขตะกร้าคอร์สใช้วิดีโอ Multipart สูงสุด 2 GB
 - `v0.14.330` — ย่อ Active Protocol และ routing เอกสารตามระบบ
 - `v0.14.331` — ย่อ Roadmap Active เป็นคิวและเก็บประวัติแยก
