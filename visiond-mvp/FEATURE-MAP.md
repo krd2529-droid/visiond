@@ -17,6 +17,17 @@
 - ห้ามกระทบ: ห้ามให้ Roadmap/Marketing/History ขยายงาน ห้ามลดกฎความปลอดภัย และห้ามลบฉบับละเอียดเดิม
 - การทดสอบ: `scripts/test-v014330.mjs`, `scripts/test-document-history.mjs`, `scripts/test-all-regressions.mjs`
 
+## GOV-ROADMAP-QUEUE-001 — Roadmap Active แบบคิว
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.331
+- ไฟล์: `VISIOND-ROADMAP.md`, `work-history/visiond/roadmap/VISIOND-ROADMAP.md`, `work-history/visiond/patch-history/`
+- Input: Event Case ที่ Boss อนุมัติ, Active Patch, blocker และคิวเสนอ
+- Output: Current Event Case, Active Patch, Next Queue, Blocked และ Recently Completed
+- Reads: ประวัติย้อนหลังเฉพาะเมื่อค้น regression/root cause/rollback
+- Writes: สถานะคิว Active และรายการล่าสุดเท่าที่เกี่ยวข้องกับแพต
+- ห้ามกระทบ: ห้าม Roadmap สั่งเริ่ม Next Queue เอง ห้ามลบประวัติ และห้ามรวม Marketing/กฎธุรกิจกลับเข้า Active Roadmap
+- การทดสอบ: `scripts/test-v014331.mjs`, `scripts/test-document-history.mjs`, `scripts/test-all-regressions.mjs`
+
 - รหัสเดิมห้ามนำกลับไปใช้กับฟีเจอร์อื่น
 - หนึ่งฟีเจอร์ใช้รหัสเดียวกันข้าม frontend, backend, test และเอกสาร
 - งานย่อยที่มีขอบเขตข้อมูลหรือสิทธิ์ต่างกันให้แยกรหัส
