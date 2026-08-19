@@ -987,6 +987,21 @@
 - รหัส UI: launcher และ dialog ใช้ `data-feature="PRODUCT-PDF-COVER-001"`; คง legacy classes, button states, modal layout และ theme เดิม
 - การทดสอบ: `scripts/test-v014381.mjs`, historical `scripts/test-v014262.mjs`, `scripts/test-v014265.mjs`, `scripts/test-v014267.mjs`
 
+## COURSE-OWNER-ENTRY-001 — ป้ายสถานะและทางเข้าสำหรับเจ้าของคอร์ส
+
+- สถานะ: `PARTIAL`; ลงทะเบียน active homepage badge และ dormant dashboard credit card ตาม source coverage ใน v0.14.382
+- หน้า/ไฟล์: `/index.html` โหลด `public/course-owner-badge.js`; `public/course-owner-dashboard.js` รองรับ `#dashIdentity` ใน `/dashboard.html` แต่ไม่มี loader; style badge ใช้ shared `.course-owner-badge`
+- Homepage identity: เรียก `GET /api/auth/me` แบบ no-store; ไม่สร้าง UI เมื่อ request ล้มเหลวหรือ `user.is_course_owner` ไม่จริง; เมื่อพบ `#navMember` และยังไม่มี badge ลูก จึง append ป้าย “เจ้าของคอร์ส”
+- Alternate badge target: controller รองรับ `#dashIdentity` โดยสร้างลิงก์ `/course-center` หลัง identity หาก parent ยังไม่มี `.member-course-owner-badge`; หน้าแรกที่โหลด controller ไม่มี target นี้
+- Dashboard credit CTA: dormant controller เรียก `GET /api/course-seller`, อ่าน `credit_balance`, สร้าง `.owner-credit-card` หลัง `#dashIdentity`; balance มากกว่า 0 ไป `/course-center?create=1`, มิฉะนั้น alert แล้วไปซื้อ `/product.html?slug=course-selling-rights`
+- API/ข้อมูล: `GET /api/auth/me`, `GET /api/course-seller`; API หลังใช้ `requireUser` และคำนวณ credit balance จาก active `course_right_credits`; controller ไม่เขียน API/database/storage
+- Failure/dedupe: badge helper fail-quiet พร้อม warning เมื่อ exception และกัน badge ซ้ำเฉพาะ target ของตน; credit card reuse element เดิมและคืนเงียบเมื่อ API/identity ไม่พร้อม
+- Known Gap: จาก Coverage Audit v0.14.382 ไม่พบ HTML หรือ JS ที่โหลด `course-owner-dashboard.js`; ห้ามอ้างว่า dashboard credit CTA active และห้ามเพิ่ม loader โดยไม่มี Patch Scope แยก
+- Overlap: homepage helper กับ `NAV-SHELL-001` ต่างเรียก auth และอาจสร้าง `.course-owner-badge` คนละตำแหน่งตามลำดับ async; แพตนี้บันทึก legacy behavior เท่านั้น ไม่อ้าง global dedupe และไม่เปลี่ยน race/navigation
+- รหัส UI: badge/card ที่ controller สร้างใช้ `data-feature="COURSE-OWNER-ENTRY-001"`; คง class, text, route และ theme เดิม
+- ความสัมพันธ์: canonical account/course-owner navigation อยู่ใต้ `NAV-SHELL-001`; member dashboard อยู่ใต้ `MEMBER-HUB-001`; create/edit course อยู่ใต้ `COURSE-BASKET-001`
+- การทดสอบ: `scripts/test-v014382.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

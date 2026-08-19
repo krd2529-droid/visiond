@@ -8,6 +8,7 @@
     if(sidebar&&!sidebar.parentElement.querySelector('.member-course-owner-badge')){
       const badge=document.createElement('a');
       badge.className='course-owner-badge member-course-owner-badge';
+      badge.dataset.feature='COURSE-OWNER-ENTRY-001';
       badge.href='/course-center';
       badge.textContent='เจ้าของคอร์ส';
       sidebar.insertAdjacentElement('afterend',badge);
@@ -16,6 +17,7 @@
     if(homeMember&&!homeMember.querySelector('.course-owner-badge')){
       const badge=document.createElement('span');
       badge.className='course-owner-badge';
+      badge.dataset.feature='COURSE-OWNER-ENTRY-001';
       badge.textContent='เจ้าของคอร์ส';
       homeMember.append(' ',badge);
     }
