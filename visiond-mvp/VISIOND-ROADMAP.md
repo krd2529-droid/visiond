@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.343` Webhook Hub; `v0.14.344` Bundle Preview Audit; `v0.14.345` ELON Page
+- เสร็จแล้ว: `v0.14.344` Bundle Preview Audit; `v0.14.345` ELON Page; `v0.14.346` Vision 4 Review
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.345 — ELON Page Feature Map
+### v0.14.346 — Vision 4 Review Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน Meta Page sales conversation และ human handoff
-- Acceptance: Map อ้าง signature/dedup/encryption/state/retention/outbox จริง และหน้ามีรหัส `ELON-PAGE-001`
-- ห้ามเปลี่ยน: Meta webhook, retention, state, provider, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียนคิว draft/pending และการรับงานจาก Vision 4
+- Acceptance: Map อ้าง multipart/pending/preview/consume/review จริง และหน้ามีรหัส `V4-REVIEW-001`
+- ห้ามเปลี่ยน: product/file lifecycle, upload limit, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
