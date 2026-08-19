@@ -28,3 +28,4 @@ export async function onRequestPost(ctx){
   return json({ok:true},200,{'set-cookie':`vd_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/${maxAge}`});
  }catch(error){console.error('AUTH_LOGIN_FAILED',error);return json({error:'ระบบเข้าสู่ระบบขัดข้อง [AUTH-LOGIN]'},500)}
 }
+// Feature: AUTH-ACCOUNT-001 — session login boundary

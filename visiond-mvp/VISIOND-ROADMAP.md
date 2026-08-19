@@ -830,3 +830,10 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - ทุกคิว Event Case และ Event Roadmap ต้องระบุ Inputs, Outputs, Reads, Writes, สิทธิ์ และสิ่งห้ามกระทบของฟีเจอร์ที่แตะ
 - การทดสอบต้องผูกกับรหัสฟีเจอร์และตรวจผลข้างเคียงที่ห้ามเกิด ไม่ถือว่าคอมเมนต์จำนวนมากแทนหลักฐานทดสอบได้
 - งานเก่าที่ถูกแตะและยังไม่มีรหัสต้องเพิ่ม Feature Map เฉพาะขอบเขตนั้นในแพตช์เดียวกัน โดยห้ามเดา schema หรือเปลี่ยนชื่อระบบเดิมแบบยกชุด
+
+# อัปเดต v0.14.304 — Current System Feature Map: Storefront and Member Core (IMPLEMENTED · EVENT CASE IN PROGRESS)
+
+- ลงทะเบียนเส้นทางจริงของ `AUTH-ACCOUNT-001`, `CATALOG-STOREFRONT-001`, `COMMERCE-ORDER-001`, `DELIVERY-DOWNLOAD-001` และ `MEMBER-HUB-001`
+- แต่ละรายการระบุหน้า ไฟล์ controller, API, ตาราง/ฟิลด์, Input/Output, Reads/Writes, สิทธิ์ สิ่งห้ามกระทบ และ focused tests
+- เพิ่ม Feature ID ไว้ที่ controller/backend หลัก เพื่อค้นจากโค้ดกลับมาที่ `FEATURE-MAP.md` ได้
+- Event Case การทำแผนที่ระบบปัจจุบันยังไม่ปิด: แพตช์ถัดไปต้องครอบคลุมระบบคอร์ส จากนั้นหลังบ้าน V12 Partner API และเครื่องมือ Vision อื่นทั้งหมด

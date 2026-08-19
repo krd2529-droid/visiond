@@ -209,3 +209,4 @@ export async function onRequestGet(ctx) {
   const last=results.at(-1);
   return json({items:results,bank:publicPaymentSettings(await loadPaymentSettings(ctx.env)),pagination:{limit,has_more:hasMore,next_cursor:hasMore&&last?String(last.id):null}},200,{"cache-control":"no-store"});
 }
+// Feature: COMMERCE-ORDER-001 — server-owned pricing and order boundary
