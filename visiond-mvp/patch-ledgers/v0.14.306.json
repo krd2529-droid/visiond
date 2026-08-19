@@ -1,0 +1,10 @@
+{
+  "version": "v0.14.306",
+  "summary": "แก้ปุ่มเพิ่ม EP ให้เพิ่มรายการทันทีโดยไม่บังคับกรอกช่อง และคงการนับเฉพาะ EP ที่มีข้อมูลตอนส่งตรวจ",
+  "changed_files": ["public/course-seller.html", "public/course-seller.js", "functions/api/course-seller/[id]/lessons.js", "VERSION.txt", "package.json", "VISIOND-ROADMAP.md", "scripts/test-v014306.mjs", "work-history/visiond/patch-history/PATCH-v0.14.306-ADD-EP-DIRECTLY.md"],
+  "tests": ["node scripts/test-v014306.mjs", "node scripts/test-all-regressions.mjs", "node scripts/predeploy-check.mjs"],
+  "security": "ไม่เพิ่ม credential, token, รหัสผ่าน, ข้อมูลบัตรหรือข้อมูลธนาคาร",
+  "push": false,
+  "deploy": false,
+  "rollback": "git revert <commit-v0.14.306> แล้วทดสอบใหม่; ห้าม reset หรือ Push/Deploy อัตโนมัติ"
+}
