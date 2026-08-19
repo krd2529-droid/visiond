@@ -587,6 +587,18 @@
 - รหัส UI: payment form มี `data-feature="PAYMENT-SETTINGS-001"`; คง role-disabled, loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014351.mjs`
 
+## PROMOTION-SETTINGS-001 — ตั้งค่าโปรโมชั่นแคตตาล็อกและสวิตช์ซื้อครั้งแรก
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.352
+- หน้า/ไฟล์: promotion forms ใน `/admin.html`, `public/admin.js`, `functions/_promotion.js`, `functions/api/admin/promotion-settings.js`
+- ฟังก์ชัน: เปิด/ปิด catalog promotion, เลือกหมวดหลักหลายหมวดหรือ all, ตั้งส่วนลด 1–90%, แสดง first-order stats และเปิด/ปิด first-order promotion
+- API: `GET/PUT /api/admin/promotion-settings`
+- ฐานข้อมูล: `settings`, `categories`, `products`, `first_order_promo_state`
+- สิทธิ์: ใช้ `requireAdmin`; หน้า API คืนเฉพาะหมวด active ระดับบนที่อนุญาต
+- ห้ามกระทบ: scope ต้องไม่ว่างและหมวดต้อง active/อยู่ใน allowlist; all ต้องยุบเป็น scope เดียว; resale-rights ไม่ร่วม catalog promotion; course-selling-rights คงราคา 999→499 บาท และ bundle-deals ไม่ลดซ้ำ; ราคาลดต่ำสุด 1 สตางค์; first-order switch เปลี่ยนเฉพาะ enabled และห้ามเปลี่ยนขั้นต่ำ 399 บาท, 50%, cap 200 บาท, 2 ชั่วโมง หรือ eligibility contract เดิม
+- รหัส UI: catalog และ first-order forms มี `data-feature="PROMOTION-SETTINGS-001"`; คง validation/stats/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014352.mjs`, `scripts/test-first-order-promo.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
