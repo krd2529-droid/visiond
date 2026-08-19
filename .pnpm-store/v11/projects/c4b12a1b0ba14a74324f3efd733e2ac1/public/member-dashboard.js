@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014298');
+import('/facebook-chat.js?v=014299');
 const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,profile:dashProfile,settings:dashSettings,createdCourses:dashCreatedCourses,learning:dashLearning,baskets:dashBaskets,sales:dashSales,rights:dashRights,notifications:dashNotifications,help:dashHelp};
 const roleLabel={boss:'Boss · เจ้าของระบบ',admin:'Admin · ผู้ดูแลระบบ',user:'User · สมาชิกทั่วไป',customer:'User · สมาชิกทั่วไป'};
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';

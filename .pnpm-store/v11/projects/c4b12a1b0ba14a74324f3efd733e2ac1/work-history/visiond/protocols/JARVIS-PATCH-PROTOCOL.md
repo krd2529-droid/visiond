@@ -1,5 +1,7 @@
 # JARVIS Patch Protocol — VisionD
 
+- หน้าสร้างงานต้องไม่ซ่อนฟอร์มหลักระหว่างรอ API ข้อมูลประกอบ หาก API ล้มเหลวต้องคงฟอร์มและข้อมูลที่ผู้ใช้กำลังกรอก พร้อมแสดงข้อผิดพลาดที่แก้ไขต่อได้
+
 When a VisionD ZIP is received with `J` or `เจ`:
 1. Read `VERSION.txt`, `START-HERE.md`, the latest note in `work-history/visiond/patch-history/`, `work-history/visiond/roadmap/VISIOND-ROADMAP.md`, `work-history/visiond/roadmap/VISIOND-MARKETING-PLAN.md`, and `work-history/visiond/roadmap/CUSTOMER-DATA-ANALYSIS.md`.
 2. Inspect available aggregate customer/business data before choosing work. Never invent production findings when data is unavailable.

@@ -34,7 +34,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014298">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014299">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -248,18 +248,19 @@ async function load() {
   const timeout = setTimeout(() => controller.abort(), 12000);
   let r;
   try {
-    r = await fetch("/api/course-seller", {
+    const apiUrl = coursePlanPages[courseCreateMode]
+      ? "/api/course-seller?scope=create"
+      : "/api/course-seller";
+    r = await fetch(apiUrl, {
       cache: "no-store",
       signal: controller.signal,
     });
   } catch (error) {
     if (coursePlanPages[courseCreateMode]) {
-      createPanel.hidden = false;
-      sellerCourseForm.hidden = true;
-      createPanel.querySelector(":scope > h2").textContent = "โหลดตะกร้าคอร์สไม่สำเร็จ";
-      createPanel.querySelector(":scope > p").textContent = error?.name === "AbortError"
-        ? "ระบบใช้เวลาโหลดนานเกินไป กรุณารีเฟรชอีกครั้ง โดยข้อมูลร่างเดิมยังไม่ถูกลบ"
-        : "เชื่อมต่อข้อมูลตะกร้าไม่ได้ กรุณารีเฟรชอีกครั้ง โดยข้อมูลร่างเดิมยังไม่ถูกลบ";
+      enterCourseCreatePage(courseCreateMode);
+      sellerMessage.textContent = error?.name === "AbortError"
+        ? "โหลดข้อมูลร่างเดิมนานเกินไป แต่ยังกรอกและบันทึกตะกร้าคอร์สใหม่ได้"
+        : "โหลดข้อมูลร่างเดิมไม่สำเร็จ แต่ฟอร์มตะกร้ายังใช้งานได้ กรุณาบันทึกงานตามปกติ";
     }
     return;
   } finally {
@@ -272,7 +273,12 @@ async function load() {
   }
   const d = await r.json().catch(() => ({}));
   if (!r.ok) {
-    licenseList.textContent = d.error || "โหลดไม่สำเร็จ";
+    if (coursePlanPages[courseCreateMode]) {
+      enterCourseCreatePage(courseCreateMode);
+      sellerMessage.textContent = d.error || "โหลดข้อมูลร่างเดิมไม่สำเร็จ แต่ฟอร์มตะกร้ายังใช้งานได้";
+    } else {
+      licenseList.textContent = d.error || "โหลดไม่สำเร็จ";
+    }
     return;
   }
   render(d);
@@ -690,9 +696,7 @@ publishForm.onsubmit = async (e) => {
 };
 if(sendCourseReview)sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
 if (coursePlanPages[courseCreateMode]) {
-  createPanel.hidden = false;
-  sellerCourseForm.hidden = true;
-  createPanel.querySelector(":scope > h2").textContent = "กำลังโหลดตะกร้าคอร์ส…";
-  createPanel.querySelector(":scope > p").textContent = "กำลังตรวจสถานะร่างเดิมก่อนแสดงขั้นตอนถัดไป";
+  enterCourseCreatePage(courseCreateMode);
+  sellerMessage.textContent = "กำลังตรวจสอบร่างคอร์สเดิม โดยฟอร์มตะกร้าพร้อมใช้งานแล้ว";
 }
 load();

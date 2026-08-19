@@ -47,6 +47,27 @@ export async function onRequestGet(ctx) {
   )
     .bind(auth.user.id, auth.user.id)
     .all();
+  const createOnly = new URL(ctx.request.url).searchParams.get("scope") === "create";
+  if (createOnly) {
+    const items = courses.results || [],
+      assignedDrafts = items.filter((x) => x.license_entitlement_id !== null);
+    return json(
+      {
+        licenses,
+        courses: items,
+        sales: [],
+        sales_list_limited: false,
+        slip_issues: [],
+        totals: { amount: 0, orders: 0 },
+        course_draft_limit: null,
+        course_draft_count: assignedDrafts.length,
+        credit_balance: licenses.filter((x) => x.available).length,
+        plans: Object.values(COURSE_PLANS).sort((a, b) => a.number - b.number),
+      },
+      200,
+      { "cache-control": "no-store" },
+    );
+  }
   const sales = await ctx.env.DB.prepare(
     `SELECT o.id,o.order_no,CASE WHEN o.course_plan='partner' THEN o.teacher_revenue ELSE o.total END total,o.total gross_total,o.course_plan,o.visiond_revenue,o.course_api_fee,o.updated_at paid_at,CASE WHEN o.slip_key IS NOT NULL AND TRIM(o.slip_key)<>'' THEN 1 ELSE 0 END has_slip,COALESCE((SELECT product_title FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1),p.title,'สินค้าเดิม') course_title,u.name buyer_name FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN products p ON p.id=(SELECT product_id FROM order_items WHERE order_id=o.id ORDER BY id LIMIT 1) WHERE o.course_owner_user_id=? AND o.status='paid' ORDER BY o.updated_at DESC LIMIT 200`,
   )
