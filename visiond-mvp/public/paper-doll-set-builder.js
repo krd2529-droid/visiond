@@ -19,7 +19,6 @@
   if (!button || !dialog || !globalThis.PDFLib) return;
 
   const state = { groups: [], baskets: [], signature: "", creating: false, created: [] };
-  const MAX_ZIP_ENTRIES = 500;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const setMessage = (text, error = false) => {
     message.textContent = text;
@@ -57,7 +56,7 @@
     for (let offset = bytes.length - 22; offset >= Math.max(0, bytes.length - 65557); offset--) if (readU32(view, offset) === 0x06054b50) { eocd = offset; break; }
     if (eocd < 0) throw new Error(`${file.name} ไม่ใช่ ZIP ที่สมบูรณ์`);
     const total = readU16(view, eocd + 10), centralOffset = readU32(view, eocd + 16);
-    if (!total || total > MAX_ZIP_ENTRIES) throw new Error(`${file.name} ต้องมีไฟล์ 1–${MAX_ZIP_ENTRIES} รายการ`);
+    if (!total) throw new Error(`${file.name} ไม่มีรายการไฟล์`);
     const decoder = new TextDecoder(), entries = []; let cursor = centralOffset;
     for (let index = 0; index < total; index++) {
       if (readU32(view, cursor) !== 0x02014b50) throw new Error(`${file.name} มีสารบัญ ZIP ไม่ถูกต้อง`);
