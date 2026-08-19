@@ -13,7 +13,6 @@ const esc = (v) =>
   money = (n) =>
     new Intl.NumberFormat("th-TH").format((Number(n) || 0) / 100) + " บาท";
 let courses = [];
-document.querySelector("#sellerPaymentReviews")?.closest("section")?.setAttribute("id", "sellerReview");
 async function auth() {
   const r = await fetch("/api/auth/me"),
     d = await r.json().catch(() => ({}));
@@ -31,7 +30,7 @@ async function loadCourses() {
     ? courses
         .map(
           (c) =>
-            `<article class="admin-course-item"><div><b>${esc(c.title)}</b><p>${money(c.price)} · ${Number(c.lesson_count) || 0} บท · นักเรียน ${Number(c.student_count) || 0} คน</p><small>${c.course_type === "resale_rights" ? `สิทธิ์ลงขายคอร์สออนไลน์ · ${Number(c.license_edit_days)===0?'ตลอดอายุระบบ':Number(c.license_edit_days)===365?'1 ปี':'30 วัน'}` : c.course_origin==='seller_rights'?'ตะกร้าคอร์สจากสิทธิ์':'ตะกร้าคอร์สของบริษัท'} · ${c.status === "published" ? "เปิดขาย" : "แบบร่าง"}</small></div>${c.course_origin==='seller_rights'?'<span>ระบบอัปโหลด EP จะทำขั้นถัดไป</span>':`<button data-lessons="${c.id}">จัดการบทเรียน</button>`}</article>`,
+            `<article class="admin-course-item"><div><b>${esc(c.title)}</b><p>${money(c.price)} · ${Number(c.lesson_count) || 0} บท · นักเรียน ${Number(c.student_count) || 0} คน</p><small>${c.course_type === "resale_rights" ? `สิทธิ์ลงขายคอร์สออนไลน์ · ${Number(c.license_edit_days)===0?'ตลอดอายุระบบ':Number(c.license_edit_days)===365?'1 ปี':'30 วัน'}` : c.course_plan==='partner'?'คอร์สพาร์ตเนอร์ 50/50':'คอร์สออนไลน์'} · ${c.status === "published" ? "เปิดขาย" : "แบบร่าง"}</small></div>${c.course_origin==='seller_rights'?'<span>ผู้สอนจัดการ EP ภายในตะกร้าคอร์ส</span>':`<button data-lessons="${c.id}">จัดการบทเรียน</button>`}</article>`,
         )
         .join("")
     : "<p>ยังไม่มีคอร์ส</p>";
