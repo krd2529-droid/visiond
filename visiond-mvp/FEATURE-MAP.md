@@ -661,6 +661,19 @@
 - รหัส UI: workspace มี `data-feature="V2-FACTORY-001"` ผ่าน `workspace.dataset.feature`
 - การทดสอบ: `scripts/test-v014357.mjs`
 
+## V4-DRAFT-001 — Auto Multi-Product Draft จาก ZIP/PDF
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.358 (ไฟล์ runtime/API ยังใช้ชื่อ legacy `vision3` แต่ UI/lifecycle เป็น Vision 4)
+- หน้า/ไฟล์: Vision 4 panel ใน `/admin.html`, `public/vision3.js`, `public/vision3.css`, `functions/api/admin/vision3/analyze.js`, multipart/product APIs และ V4 Review APIs ที่ handoff
+- ฟังก์ชัน: รับ ZIP/PDF แบบ batch, อ่านจำนวนหน้า/รูป, สุ่ม 3 ตัวอย่างและติด SAMPLE, วิเคราะห์ worksheet/game กับ metadata, สร้าง product draft, หรือเก็บไฟล์เนื้อหาน้อยรอรวมชุด
+- API: `POST /api/admin/vision3/analyze`, `POST /api/admin/products`, `POST /api/admin/product-multipart/init|complete|abort`, `PUT /api/admin/product-multipart/part`, V4 pending/review APIs สำหรับ handoff
+- ฐานข้อมูล/ไฟล์: `products` draft ที่ `source='vision4'`, product files/pending files ใน R2 ผ่าน multipart, preview URLs และ V4 review queue
+- สิทธิ์: analysis และปลายทาง admin ใช้ `requireAdmin`; แพตนี้ไม่เปลี่ยนสิทธิ์ของ V4 Review
+- ห้ามกระทบ: batch 1–30 ไฟล์, ไฟล์ละไม่เกิน 1 GB, รับเฉพาะ ZIP/PDF; ZIP ต้องไม่เข้ารหัสและใช้ store/deflate; ไฟล์ต่ำกว่า 20 หน้าไม่สร้างตะกร้า; classification fallback อิงชื่อไฟล์เมื่อ Gemini ไม่พร้อม/ล้ม; ราคาใช้จำนวนหน้า ยกเว้นไม่เกิน 100 หน้าและลงท้าย 0 ให้ลด 1 บาท; multipart ล้มต้องเรียก abort แบบ best effort
+- ห้ามกระทบ lifecycle: ผลลัพธ์จากรอบนี้เป็น draft/pending เท่านั้น; การย้ายเข้าสินค้าปกติต้องผ่าน `V4-REVIEW-001`; คง queue/progress/failure และ theme เดิม
+- รหัส UI: Vision 4 panel มี `data-feature="V4-DRAFT-001"`
+- การทดสอบ: `scripts/test-v014358.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
