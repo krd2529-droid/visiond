@@ -1,5 +1,5 @@
 (()=>{
-  const root=document.querySelector('#homeCourseCatalog'),search=document.querySelector('#homeCourseSearch'),clear=document.querySelector('#clearHomeCourseSearch'),count=document.querySelector('#homeCourseSearchCount');if(!root||!search||!clear||!count)return;
+  const root=document.querySelector('#homeCourseCatalog'),search=document.querySelector('#homeCourseSearch'),clear=document.querySelector('#clearHomeCourseSearch'),count=document.querySelector('#homeCourseSearchCount');if(!root||!search||!clear||!count)return;root.setAttribute('data-feature','COURSE-CATALOG-001');
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=value=>new Intl.NumberFormat('th-TH').format((Number(value)||0)/100)+' บาท';
   const planLabel=course=>course.course_plan==='partner'?'แบบ 2 · พาร์ตเนอร์ 50/50':'แบบ 1 · ผู้สอนรับ 100%';

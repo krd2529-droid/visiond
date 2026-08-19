@@ -815,6 +815,20 @@
 - รหัส UI: `#learningApp` ได้ `data-feature="COURSE-LEARNING-001"` จาก controller; คง sidebar, player, progress save/retry, mobile menu และ theme เดิม
 - การทดสอบ: `scripts/test-v014369.mjs`
 
+## COURSE-CATALOG-001 — แคตตาล็อกและหน้ารายละเอียดคอร์สสาธารณะ
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.370
+- หน้า/ไฟล์: course section หน้า `/`, `/courses.html`, `/course.html?id=:id|slug=:slug`, `public/home-course-catalog.js`, `public/courses.js`, `public/course-detail.js`, `functions/api/courses/index.js`
+- API: `GET /api/courses`; response ใช้ `cache-control: no-store` และ query เดียวรวมรายการ สิทธิ์ progress และ resume
+- Public visibility: ผู้เยี่ยมชมเห็นเฉพาะ `course_type='online_course'`, product ไม่ถูกลบ, course active และ product published; หน้าแรกตัด resale-rights ซ้ำก่อน render
+- Owner continuity: ผู้มี active entitlement ยังคงเห็นคอร์สที่ซื้อแม้หยุดขาย; Boss/Admin เห็นทุกคอร์สในขอบเขต online course เพื่อ preview และ suspension แสดง `access_blocked`
+- Privacy: catalog คืน metadata, ราคา, จำนวน EP และ aggregate progress แต่ไม่คืนชื่อ EP, video/PDF key หรือไฟล์ประกอบ; เนื้อหาใช้เส้นทาง `COURSE-LEARNING-001` หลังผ่าน access guard
+- UI: หน้าแรกค้นหาข้อความและแสดง 8 รายการแรก; หน้ารวมกรอง platform tag; หน้ารายละเอียดค้นด้วย id/slug แสดง EP lock ก่อนซื้อ และ owned action เข้าเรียน
+- Cart: client แปลง course เป็น product line; seller-rights ต้องชำระแยกและแทนตะกร้าหลังผู้ใช้ยืนยัน; รายการปกติจำกัดรวม 30 ชิ้นตาม contract เดิม
+- รหัส UI: `#homeCourseCatalog`, `#courseList` และ `#courseDetail` ได้ `data-feature="COURSE-CATALOG-001"` จาก controller; คง loading/error, cards, buttons, mobile layout และ theme เดิม
+- ความสัมพันธ์: checkout/approval อยู่ใต้ `COURSE-PARTNER-CHECKOUT-001`; ห้องเรียนและ private lesson media อยู่ใต้ `COURSE-LEARNING-001`
+- การทดสอบ: `scripts/test-v014370.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
