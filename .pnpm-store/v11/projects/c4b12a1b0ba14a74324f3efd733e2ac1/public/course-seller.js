@@ -24,8 +24,6 @@ const coursePlanPages = {
       number: "1",
       title: "พาร์ตเนอร์ 50/50",
       detail: "VisionD รับเงินและตรวจสลิปอัตโนมัติ แบ่งรายได้ผู้สอน 50% / VisionD 50%",
-      submit: "บันทึกข้อมูลและไปจัดการ EP",
-      steps: ["กรอกข้อมูลคอร์ส", "เพิ่ม EP พร้อมวิดีโอหรือเอกสาร", "ตรวจความพร้อมและส่งให้ Boss ตรวจ"],
     },
   },
   legacyCoursePlan = { number: "เดิม", title: "ซื้อสิทธิ์เดิม (ปิดรับใหม่)" },
@@ -34,7 +32,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014299">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014300">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -194,14 +192,16 @@ function enterCourseCreatePage(plan) {
     if (!planPanels.has(section)) section.remove();
   });
   createPanel.hidden = false;
-  createPanel.after(sellerLessonManager,publishPanel);
+  createPanel.append(sellerLessonManager);
+  sellerLessonManager.classList.add("seller-lesson-embedded");
+  createPanel.after(publishPanel);
   sellerCourseForm.hidden = false;
   showLessonDraftGate();
   publishPanel.hidden = true;
-  if (!createPanel.querySelector("#coursePlanFlow")) {
+  if (!createPanel.querySelector("#coursePlanHeader")) {
     createPanel.insertAdjacentHTML(
       "afterbegin",
-      `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header class="course-plan-page-head"><small>รูปแบบเดียว</small><h1>สร้างคอร์สพาร์ตเนอร์ 50/50</h1><p>${config.detail}</p></header><section id="coursePlanFlow" class="course-plan-flow" aria-label="ขั้นตอนสร้างคอร์สพาร์ตเนอร์">${config.steps.map((step,index)=>`<span><b>${index+1}</b>${step}</span>`).join("")}</section>`,
+      `<a class="course-create-back" href="/course-center">← กลับศูนย์จัดการคอร์ส</a><header id="coursePlanHeader" class="course-plan-page-head"><small>ตะกร้าคอร์ส</small><h1>สร้างคอร์สพาร์ตเนอร์ 50/50</h1><p>${config.detail}</p></header>`,
     );
   }
   const formHeading = createPanel.querySelector(":scope > h2");
@@ -211,10 +211,8 @@ function enterCourseCreatePage(plan) {
   if (!condition.isConnected) createPanel.insertBefore(condition, formHeading);
   createPanel.classList.remove("course-plan-legacy-form");
   formHeading.textContent = "กรอกข้อมูลคอร์สพาร์ตเนอร์";
-  createPanel.querySelector(":scope > p").textContent = "สร้างร่างคอร์สก่อน จากนั้นเพิ่ม EP พร้อมวิดีโอหรือเอกสาร แล้วส่งให้ Boss ตรวจ";
+  createPanel.querySelector(":scope > p").textContent = "กรอกข้อมูลตะกร้าและ EP ในงานเดียวกัน แล้วส่งให้ Boss ตรวจ";
   sellerCourseForm.elements.course_plan.value = plan;
-  sellerCourseForm.querySelector('button[type="submit"]').textContent = config.submit;
-  sellerCourseForm.querySelector('button[type="submit"]').disabled=false;
   document.title = "สร้างคอร์สพาร์ตเนอร์ 50/50 | VisionD";
 }
 function showLessonDraftGate(){
@@ -222,26 +220,29 @@ function showLessonDraftGate(){
   sellerLessonManager.hidden=false;
   sellerLessonManager.dataset.state="waiting-course";
   sellerLessonCourseTitle.textContent="EP ภายในตะกร้าคอร์ส";
-  sellerLessonIntro.textContent="บันทึกข้อมูลตะกร้าคอร์สด้านบนก่อน แล้วระบบจะเปิดส่วนสร้าง EP ให้ทันที";
+  sellerLessonIntro.textContent="กรอกรายละเอียด EP ให้ครบในตะกร้าคอร์สเดียวกัน แล้วกดส่งตรวจเมื่อพร้อม";
   addSellerLesson.disabled=true;
-  resetLessonEditor("",true);
-  sellerLessonList.innerHTML='<div class="seller-course-empty"><b>ยังไม่เริ่มสร้าง EP</b><p>EP เป็นส่วนหนึ่งของตะกร้าคอร์ส กรุณาบันทึกข้อมูลตะกร้าก่อน</p></div>';
+  resetLessonEditor("",false);
+  sellerLessonFormTitle.textContent="EP.01";
+  sellerLessonForm.querySelector('button[type="submit"]').textContent="เพิ่ม EP นี้ในตะกร้า";
+  sellerLessonList.innerHTML='<div class="seller-course-empty"><b>ยังไม่มี EP ที่เพิ่มแล้ว</b><p>กรอกรายละเอียด EP ด้านบน แล้วเพิ่มเข้าในตะกร้าคอร์สนี้</p></div>';
   if(sendCourseReview)sendCourseReview.disabled=true;
-  if(sendCourseReviewHelp)sendCourseReviewHelp.textContent="บันทึกข้อมูลตะกร้าก่อน จึงจะเพิ่ม EP และส่งตรวจได้";
+  if(sendCourseReviewHelp)sendCourseReviewHelp.textContent="เพิ่ม EP พร้อมคลิปหรือเอกสารให้ครบ แล้วจึงส่งตรวจได้";
 }
-function showCurrentCourseEditAction(course) {
-  const heading = createPanel.querySelector(".course-plan-page-head");
-  if (!heading || !course?.id) return;
-  let action = heading.querySelector("#currentCourseEditAction");
-  if (!action) {
-    action = document.createElement("a");
-    action.id = "currentCourseEditAction";
-    action.className = "course-step-action";
-    heading.append(action);
+function hydrateCourseForm(course) {
+  if (!course) return;
+  for (const [name, value] of Object.entries({
+    title: course.title,
+    teacher_name: course.teacher_name,
+    short_description: course.short_description,
+    expected_episodes: course.expected_episodes || course.planned_lesson_count,
+    description: course.description,
+    price_baht: Math.max(499, Number(course.price || 0) / 100),
+    contact_info: course.contact_info,
+  })) {
+    const input = sellerCourseForm.elements[name];
+    if (input && value != null) input.value = value;
   }
-  action.href = `/course-basket-edit.html?id=${encodeURIComponent(course.id)}`;
-  action.textContent = "แก้ไขข้อมูลตะกร้าคอร์สนี้";
-  action.setAttribute("aria-label", `แก้ไขตะกร้าคอร์ส ${course.title || course.id}`);
 }
 async function load() {
   const controller = new AbortController();
@@ -321,10 +322,10 @@ async function load() {
       }
       sellerLessonManager.dataset.autoOpened = "1";
       if(coursePlanPages[courseCreateMode]){
-        showCurrentCourseEditAction(course);
-        sellerCourseForm.hidden=true;
-        createPanel.querySelector(":scope > h2").textContent="สร้างข้อมูลคอร์สแล้ว";
-        createPanel.querySelector(":scope > p").textContent="เพิ่มรายละเอียด EP ต่อด้านล่าง จากนั้นกดส่งตรวจ";
+        hydrateCourseForm(course);
+        sellerCourseForm.hidden=false;
+        createPanel.querySelector(":scope > h2").textContent="ข้อมูลตะกร้าคอร์สและ EP";
+        createPanel.querySelector(":scope > p").textContent="ข้อมูลทั้งหมดอยู่ในตะกร้าคอร์สเดียวกัน แก้ไข EP ให้ครบแล้วส่งตรวจ";
       }
       if (params.get("publish") === "1") openPublish(course);
       else openLessons(course);
@@ -388,7 +389,7 @@ function resetLessonEditor(courseId, hide = true) {
   sellerLessonForm.elements.course_id.value = courseId || "";
   sellerLessonForm.elements.lesson_id.value = "";
   sellerLessonForm.querySelector('button[type="submit"]').textContent =
-    "บันทึก EP";
+    "เพิ่ม EP นี้ในตะกร้า";
   sellerLessonFormTitle.textContent = "สร้าง EP ใหม่";
   sellerLessonMessage.textContent = "";
   sellerLessonForm.hidden = hide;
@@ -441,8 +442,8 @@ async function loadLessons(id) {
         sellerLessonForm.elements.lesson_id.value = lesson.id;
         sellerLessonForm.elements.title.value = lesson.title || "";
         sellerLessonForm.elements.description.value = lesson.description || "";
-        sellerLessonForm.elements.duration_seconds.value =
-          Number(lesson.duration_seconds) || 0;
+        sellerLessonForm.elements.duration_minutes.value =
+          Math.ceil((Number(lesson.duration_seconds) || 0) / 60);
         sellerLessonForm.querySelector('button[type="submit"]').textContent =
           "บันทึกการแก้ไข EP";
         sellerLessonForm.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -522,36 +523,54 @@ for (const priceInput of document.querySelectorAll('input[name="price_baht"]')) 
     }
   });
 }
-sellerCourseForm.onsubmit = async (e) => {
-  e.preventDefault();
-  if (Number(sellerCourseForm.elements.price_baht.value) < minimumCoursePriceBaht) {
-    sellerMessage.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
-    return;
+async function ensureCourseDraft() {
+  const existingId = sellerLessonForm.elements.course_id.value;
+  if (existingId) {
+    return activeLessonCourse || {
+      id: Number(existingId),
+      title: sellerCourseForm.elements.title.value.trim(),
+      course_plan: "partner",
+      price: Number(sellerCourseForm.elements.price_baht.value) * 100,
+      contact_info: sellerCourseForm.elements.contact_info.value.trim(),
+    };
   }
-  const confirmation = "ยืนยันบันทึกข้อมูลคอร์สและไปจัดการ EP หรือไม่";
-  if (!confirm(confirmation)) return;
-  const b = e.submitter;
-  b.disabled = true;
+  if (!sellerCourseForm.reportValidity()) {
+    throw new Error("กรุณากรอกข้อมูลตะกร้าคอร์สให้ครบ");
+  }
+  if (Number(sellerCourseForm.elements.price_baht.value) < minimumCoursePriceBaht) {
+    throw new Error("ราคาคอร์สขั้นต่ำ 499 บาท");
+  }
+  sellerMessage.textContent = "กำลังเตรียมตะกร้าคอร์ส…";
   const r = await fetch("/api/course-seller", {
       method: "POST",
       body: new FormData(sellerCourseForm),
     }),
     d = await r.json().catch(() => ({}));
   sellerMessage.textContent = d.error || d.message || "";
-  b.disabled = false;
-  if (r.ok) {
-    sellerCourseForm.reset();
-    clearSellerCover();
-    createPanel.hidden = true;
-    if (coursePlanPages[courseCreateMode]) {
-      sessionStorage.setItem("vd_active_course_draft_id", String(d.id));
-      location.href = `/course-seller?type=${coursePlanPages[courseCreateMode].number}&course_id=${encodeURIComponent(d.id)}`;
-      return;
-    }
-    await load();
-    const course = state.courses.find((x) => Number(x.id) === Number(d.id));
-    if (course) openLessons(course);
-  }
+  if (!r.ok) throw new Error(d.error || "สร้างร่างตะกร้าคอร์สไม่สำเร็จ");
+  const course = {
+    id: Number(d.id),
+    title: sellerCourseForm.elements.title.value.trim(),
+    course_plan: "partner",
+    expected_episodes: Number(sellerCourseForm.elements.expected_episodes.value) || 1,
+    planned_lesson_count: Number(sellerCourseForm.elements.expected_episodes.value) || 1,
+    price: Number(sellerCourseForm.elements.price_baht.value) * 100,
+    contact_info: sellerCourseForm.elements.contact_info.value.trim(),
+    review_status: "draft",
+  };
+  activeLessonCourse = course;
+  sellerLessonForm.elements.course_id.value = String(course.id);
+  addSellerLesson.disabled = false;
+  sessionStorage.setItem("vd_active_course_draft_id", String(course.id));
+  const params = new URLSearchParams(location.search);
+  params.set("course_id", String(course.id));
+  history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+  sellerMessage.textContent = "เตรียมตะกร้าแล้ว กำลังเพิ่ม EP…";
+  return course;
+}
+sellerCourseForm.onsubmit = (e) => {
+  e.preventDefault();
+  sellerLessonForm.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 async function uploadLessonVideo(courseId, lessonId, file, quality) {
   const initResponse = await fetch(`/api/course-seller/${courseId}/lesson-video-multipart/init`, {
@@ -603,10 +622,20 @@ sellerLessonForm.elements.video.addEventListener("change", async () => {
 });
 sellerLessonForm.onsubmit = async (e) => {
   e.preventDefault();
-  const id = sellerLessonForm.elements.course_id.value,
-    lessonId = sellerLessonForm.elements.lesson_id.value,
+  let id = sellerLessonForm.elements.course_id.value;
+  const lessonId = sellerLessonForm.elements.lesson_id.value,
     b = e.submitter;
   b.disabled = true;
+  if (!id) {
+    try {
+      const course = await ensureCourseDraft();
+      id = String(course.id);
+    } catch (error) {
+      sellerLessonMessage.textContent = error.message;
+      b.disabled = false;
+      return;
+    }
+  }
   sellerLessonMessage.textContent =
     "กำลังบันทึกและอัปโหลด กรุณาอย่าปิดหน้านี้…";
   const video = sellerLessonForm.elements.video.files?.[0];
@@ -622,6 +651,8 @@ sellerLessonForm.onsubmit = async (e) => {
     return;
   }
   const lessonData = new FormData(sellerLessonForm);
+  lessonData.delete("duration_minutes");
+  lessonData.set("duration_seconds", String(Math.max(0, Number(sellerLessonForm.elements.duration_minutes.value) || 0) * 60));
   if (video) { lessonData.delete("video"); lessonData.set("video_upload_pending", "1"); }
   const r = await fetch(
       lessonId
@@ -646,9 +677,9 @@ sellerLessonForm.onsubmit = async (e) => {
         return;
       }
     }
-    resetLessonEditor(id);
+    resetLessonEditor(id, false);
+    sellerLessonFormTitle.textContent = "เพิ่ม EP ถัดไป";
     await loadLessons(id);
-    await load();
   }
   b.disabled = false;
 };
@@ -694,7 +725,44 @@ publishForm.onsubmit = async (e) => {
     await load();
   }
 };
-if(sendCourseReview)sendCourseReview.onclick=()=>{if(activeLessonCourse)openPublish(activeLessonCourse)};
+async function submitCurrentCourseForReview() {
+  if (!activeLessonCourse?.id) return;
+  if (!sellerCourseForm.reportValidity()) {
+    sendCourseReviewHelp.textContent = "กรุณากรอกข้อมูลตะกร้าคอร์สให้ครบก่อนส่งตรวจ";
+    return;
+  }
+  const price = Number(sellerCourseForm.elements.price_baht.value);
+  if (price < minimumCoursePriceBaht) {
+    sendCourseReviewHelp.textContent = "ราคาคอร์สขั้นต่ำ 499 บาท";
+    return;
+  }
+  if (!confirm("ยืนยันส่งตะกร้าคอร์สพร้อม EP ทั้งหมดให้ Boss ตรวจใช่ไหม")) return;
+  sendCourseReview.disabled = true;
+  sendCourseReviewHelp.textContent = "กำลังส่งตะกร้าคอร์สและ EP ทั้งหมดให้ Boss ตรวจ…";
+  const r = await fetch(`/api/course-seller/${activeLessonCourse.id}/publish`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        price_baht: price,
+        contact_info: sellerCourseForm.elements.contact_info.value.trim(),
+        confirm_permanent: true,
+      }),
+    }),
+    d = await r.json().catch(() => ({}));
+  if (d.credit_required) {
+    location.href = d.buy_url || "/product.html?slug=course-selling-rights";
+    return;
+  }
+  if (!r.ok) {
+    sendCourseReview.disabled = false;
+    sendCourseReviewHelp.textContent = d.error || "ส่งตรวจไม่สำเร็จ";
+    return;
+  }
+  alert(d.message || "ส่งตะกร้าคอร์สและ EP ให้ Boss ตรวจแล้ว");
+  sessionStorage.removeItem("vd_active_course_draft_id");
+  location.href = "/course-center";
+}
+if(sendCourseReview)sendCourseReview.onclick=submitCurrentCourseForReview;
 if (coursePlanPages[courseCreateMode]) {
   enterCourseCreatePage(courseCreateMode);
   sellerMessage.textContent = "กำลังตรวจสอบร่างคอร์สเดิม โดยฟอร์มตะกร้าพร้อมใช้งานแล้ว";
