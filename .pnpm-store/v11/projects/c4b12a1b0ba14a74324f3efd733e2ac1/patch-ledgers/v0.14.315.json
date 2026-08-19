@@ -1,0 +1,9 @@
+{
+  "version": "v0.14.315",
+  "summary": "ยกเลิกเพดาน 200 MB ของไฟล์ต้นทางในเครื่องมือแบ่งตะกร้าตุ๊กตากระดาษ",
+  "scope": ["PD-SET-001"],
+  "tests": ["node scripts/test-v014315.mjs", "node scripts/test-all-regressions.mjs", "node scripts/predeploy-check.mjs"],
+  "rollback": "git revert COMMIT_ID",
+  "push": false,
+  "deploy": false
+}
