@@ -32,7 +32,7 @@ const coursePlanPages = {
   courseCreateMode = coursePlanByNumber[courseParams.get("type")] || courseParams.get("create");
 document.head.insertAdjacentHTML(
   "beforeend",
-  '<link rel="stylesheet" href="/vision5-flow.css?v=014304">',
+  '<link rel="stylesheet" href="/vision5-flow.css?v=014305">',
 );
 const sellerShell = document.querySelector(".seller-shell");
 if (coursePlanPages[courseCreateMode]) {
@@ -94,13 +94,8 @@ function render(data) {
     mySellerCourses.innerHTML = data.courses.length
     ? data.courses
         .map((c) => {
-          const total = Math.max(
-              1,
-              Number(c.planned_lesson_count) ||
-                Number(c.expected_episodes) ||
-                1,
-            ),
-            ready = Number(c.lesson_count) || 0,
+          const ready = Number(c.lesson_count) || 0,
+            total = ready,
             plan = coursePlanPages[c.course_plan] || legacyCoursePlan;
           return `<article class="owned-course seller-course-card"><img src="${esc(c.cover_url || "/assets/product-placeholder.svg")}" alt="ปก ${esc(c.title)}"><div class="seller-course-card-body"><span class="seller-course-plan" data-plan="${esc(c.course_plan || "rights")}">${esc(plan.title)}</span><h3>${esc(c.title)}</h3><p class="seller-course-meta"><span>ผู้สอน ${esc(c.teacher_name || "-")}</span><b>${money(c.price)}</b></p><div class="seller-course-badges"><span class="seller-course-ep">สร้างแล้ว ${total} EP · พร้อมเผยแพร่ ${ready}/${total}</span><span class="seller-course-status" data-status="${esc(c.review_status || "draft")}">${c.review_status === "approved" ? "เปิดขายแล้ว" : c.review_status === "pending" ? "รอตรวจหลังเผยแพร่" : c.review_status === "changes_requested" ? "ต้องแก้ไขตามที่ Boss แจ้ง" : "กำลังจัดทำ"}</span></div><small>แก้ไขล่าสุด ${date(c.updated_at)}</small></div></article>`;
         })
@@ -108,13 +103,8 @@ function render(data) {
     : '<div class="seller-course-empty"><b>ยังไม่มีตะกร้าคอร์ส</b><p>เริ่มสร้างคอร์สพาร์ตเนอร์ 50/50 ด้านบน</p></div>';
     mySellerCourses.querySelectorAll(".owned-course").forEach((card, index) => {
     const course = data.courses[index],
-      total = Math.max(
-        1,
-        Number(course.planned_lesson_count) ||
-          Number(course.expected_episodes) ||
-          1,
-      ),
-      complete = Number(course.lesson_count) === total,
+      total = Number(course.lesson_count) || 0,
+      complete = total > 0,
       actions = document.createElement("div");
     actions.className = "seller-basket-actions";
     const edit = document.createElement("a");
@@ -221,10 +211,9 @@ function showLessonDraftGate(){
   sellerLessonManager.dataset.state="waiting-course";
   sellerLessonCourseTitle.textContent="EP ภายในตะกร้าคอร์ส";
   sellerLessonIntro.textContent="กรอกรายละเอียด EP ให้ครบในตะกร้าคอร์สเดียวกัน แล้วกดส่งตรวจเมื่อพร้อม";
-  addSellerLesson.disabled=false;
   resetLessonEditor("",false);
   sellerLessonFormTitle.textContent="EP.01";
-  sellerLessonForm.querySelector('button[type="submit"]').textContent="เพิ่ม EP นี้ในตะกร้า";
+  sellerLessonForm.querySelector('button[type="submit"]').textContent="เพิ่ม EP";
   sellerLessonList.replaceChildren();
   if(sendCourseReview)sendCourseReview.disabled=true;
   if(sendCourseReviewHelp)sendCourseReviewHelp.textContent="เพิ่ม EP พร้อมคลิปหรือเอกสารให้ครบ แล้วจึงส่งตรวจได้";
@@ -333,20 +322,9 @@ async function load() {
   }
 }
 function openPublish(course) {
-  const total = Math.max(
-    1,
-    Number(course.planned_lesson_count) ||
-      Number(course.expected_episodes) ||
-      1,
-  );
-  if (Number(course.lesson_count) !== total) {
-    alert(
-      "กรุณาอัปโหลดให้ครบ " +
-        (Number(course.lesson_count) || 0) +
-        "/" +
-        total +
-        " EP ก่อนเผยแพร่",
-    );
+  const total = Number(course.lesson_count) || 0;
+  if (total < 1) {
+    alert("กรุณาเพิ่ม EP ที่มีชื่อและคลิปหรือเอกสารอย่างน้อย 1 EP ก่อนส่งตรวจ");
     openLessons(course);
     return;
   }
@@ -389,25 +367,19 @@ function resetLessonEditor(courseId, hide = true) {
   sellerLessonForm.elements.course_id.value = courseId || "";
   sellerLessonForm.elements.lesson_id.value = "";
   sellerLessonForm.querySelector('button[type="submit"]').textContent =
-    "เพิ่ม EP นี้ในตะกร้า";
+    "เพิ่ม EP";
   sellerLessonFormTitle.textContent = "เพิ่ม EP";
   sellerLessonMessage.textContent = "";
   sellerLessonForm.hidden = hide;
 }
 cancelLessonEdit.onclick = () =>
-  resetLessonEditor(sellerLessonForm.elements.course_id.value, true);
-addSellerLesson.onclick = () => {
   resetLessonEditor(sellerLessonForm.elements.course_id.value, false);
-  sellerLessonForm.scrollIntoView({ behavior: "smooth", block: "start" });
-  sellerLessonForm.elements.title.focus();
-};
 async function openLessons(course) {
   activeLessonCourse=course;
   sellerLessonManager.hidden = false;
   sellerLessonManager.dataset.state="editing";
   sellerLessonCourseTitle.textContent = course.title;
   sellerLessonIntro.textContent="เพิ่ม EP ให้ครบตามจำนวนที่กำหนด แต่ละ EP ต้องมีชื่อ คำอธิบาย และคลิปหรือเอกสารประกอบ";
-  addSellerLesson.disabled=false;
   resetLessonEditor(course.id, false);
   sellerLessonManager.scrollIntoView({ behavior: "smooth" });
   await loadLessons(course.id);
@@ -421,7 +393,7 @@ async function loadLessons(id) {
     sellerLessonList.textContent = d.error || "โหลดบทเรียนไม่สำเร็จ";
     return;
   }
-  const ready=d.items.length>0&&d.items.every(x=>Number(x.is_complete)===1&&String(x.title||"").trim()),hasCredit=activeLessonCourse?.course_plan!=="rights"||activeLessonCourse?.license_entitlement_id!=null||Number(state?.credit_balance)>0;
+  const completeItems=d.items.filter(x=>Number(x.is_complete)===1&&String(x.title||"").trim()),ready=completeItems.length>0,hasCredit=activeLessonCourse?.course_plan!=="rights"||activeLessonCourse?.license_entitlement_id!=null||Number(state?.credit_balance)>0;
   if(sendCourseReview)sendCourseReview.disabled=!ready||!hasCredit;
   if(sendCourseReviewHelp)sendCourseReviewHelp.textContent=!ready?"ใส่ชื่อและอัปโหลดคลิปหรือเอกสารให้ครบทุก EP ก่อนส่งตรวจ":!hasCredit?"บันทึกร่างแล้ว — ต้องมี 1 เครดิตก่อนส่งเข้าหลังบ้านตรวจ":"ข้อมูลพร้อม กดส่งตรวจเพื่อกำหนดราคาและส่งไปเมนูตรวจคอร์สในหลังบ้าน";
   sellerLessonList.innerHTML = d.items.length
@@ -560,7 +532,6 @@ async function ensureCourseDraft() {
   };
   activeLessonCourse = course;
   sellerLessonForm.elements.course_id.value = String(course.id);
-  addSellerLesson.disabled = false;
   sessionStorage.setItem("vd_active_course_draft_id", String(course.id));
   const params = new URLSearchParams(location.search);
   params.set("course_id", String(course.id));
@@ -625,6 +596,18 @@ sellerLessonForm.onsubmit = async (e) => {
   let id = sellerLessonForm.elements.course_id.value;
   const lessonId = sellerLessonForm.elements.lesson_id.value,
     b = e.submitter;
+  const title = String(sellerLessonForm.elements.title.value || "").trim();
+  const video = sellerLessonForm.elements.video.files?.[0];
+  const documents = [...sellerLessonForm.elements.documents.files || []];
+  if (!title) {
+    sellerLessonMessage.textContent = "กรุณาใส่ชื่อ EP ก่อนเพิ่ม";
+    sellerLessonForm.elements.title.focus();
+    return;
+  }
+  if (!lessonId && !video && !documents.length) {
+    sellerLessonMessage.textContent = "กรุณาแนบคลิปหรือเอกสารอย่างน้อย 1 ไฟล์ก่อนเพิ่ม EP";
+    return;
+  }
   b.disabled = true;
   if (!id) {
     try {
@@ -638,7 +621,6 @@ sellerLessonForm.onsubmit = async (e) => {
   }
   sellerLessonMessage.textContent =
     "กำลังบันทึกและอัปโหลด กรุณาอย่าปิดหน้านี้…";
-  const video = sellerLessonForm.elements.video.files?.[0];
   if (video && (video.size > 2 * 1024 * 1024 * 1024 || !["video/mp4", "video/webm"].includes(video.type))) {
     sellerLessonMessage.textContent = "คลิปต้องเป็น MP4/WEBM และมีขนาดไม่เกิน 2 GB";
     b.disabled = false;
