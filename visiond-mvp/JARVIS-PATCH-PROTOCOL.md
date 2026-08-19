@@ -32,7 +32,7 @@
 
 - ฟีเจอร์เดิมหรือฟีเจอร์ใหม่: อ่านรายการที่เกี่ยวข้องใน `FEATURE-MAP.md`
 - Requirement หลายข้อหรือ Event Case ต่อเนื่อง: อ่าน `PATCH-WORK-LEDGER-PROTOCOL.md`, `REQUIREMENT-LEDGER-PROTOCOL.md` และ ledger ปัจจุบันเท่าที่เกี่ยวข้อง
-- Frontend/UI: ใช้ canonical template และตรวจ interaction, loading, success/error, keyboard และจอที่เกี่ยวข้อง
+- Frontend/UI: อ่าน `VISIOND-UI-DESIGN-PROTOCOL.md`, ใช้ canonical component และตรวจ interaction, loading, success/error, keyboard, Desktop/Mobile และจอที่เกี่ยวข้อง
 - Auth, เงิน, สิทธิ์,ข้อมูลลูกค้า หรือ API ภายนอก: ตรวจทั้งเส้นทางอนุญาตและปฏิเสธ พร้อมใช้ข้อมูลขั้นต่ำ
 - กฎธุรกิจ Course, EP และ Paper Doll: อ่านรายการ Feature Map และ Contract/โค้ดปัจจุบันของฟีเจอร์นั้น
 - กฎ Guest, First-order Gift, Course Plan และกฎ UI รุ่นเดิม: เปิดเฉพาะหัวข้อที่เกี่ยวข้องจาก `work-history/visiond/protocols/JARVIS-PATCH-PROTOCOL.md` และยืนยันกับ Feature Map/โค้ดปัจจุบันก่อนใช้

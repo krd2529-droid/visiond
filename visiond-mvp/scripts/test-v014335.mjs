@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.335');
+assert.match(read('public/index.html'),/WEB v0\.14\.335/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.335/);
+const protocol=read('VISIOND-UI-DESIGN-PROTOCOL.md'),active=read('JARVIS-PATCH-PROTOCOL.md'),buttons=read('public/visiond-button-system.css');
+for(const token of ['visiond-button-system.css','visiond-design-system.js','vds-btn--primary','vds-btn--secondary','vds-btn--danger','focus-visible','aria-disabled','type="button"','44px','Desktop','Mobile','หยุดและแจ้ง Boss','npm run patch:gate']) assert.match(protocol,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+assert.match(active,/Frontend\/UI: อ่าน `VISIOND-UI-DESIGN-PROTOCOL\.md`/);
+for(const contract of [':hover',':active',':focus-visible',':disabled','@media(max-width:800px)','prefers-reduced-motion','forced-colors']) assert.ok(buttons.includes(contract),contract);
+console.log('PASS v0.14.335 UI design contract protocol and canonical routing');

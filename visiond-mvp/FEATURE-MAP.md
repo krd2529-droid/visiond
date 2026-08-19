@@ -42,6 +42,18 @@
 - ห้ามกระทบ: ต้องหยุดเมื่อไม่มี staged files, พบ `.pnpm-store`, ไฟล์ลับ หรือไฟล์นอกขอบเขต repo ที่อนุญาต
 - การทดสอบ: `scripts/test-v014334.mjs` และรัน Gate จริงกับ staged patch
 
+## GOV-UI-DESIGN-001 — UI Design Contract Protocol
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.335
+- หน้า: ทุกหน้าที่เพิ่มหรือแก้ Frontend/UI
+- ไฟล์: `VISIOND-UI-DESIGN-PROTOCOL.md`, `public/visiond-button-system.css`, `public/visiond-button-system.js`, `public/visiond-design-system.css`, `public/visiond-design-system.js`
+- Input: Patch Scope ด้าน UI, canonical component และ interaction ที่ต้องเพิ่มหรือแก้
+- Output: UI ที่ใช้ theme/component เดิม พร้อมสถานะ interaction และหลักฐาน Desktop/Mobile ตามความเสี่ยง
+- Reads: canonical sources และหน้าเดิมของระบบที่แตะ
+- Writes: เฉพาะไฟล์ UI ใน Patch Scope; การเพิ่ม token/variant/component ใหม่ต้องแจ้ง Boss ก่อน
+- ห้ามกระทบ: ห้ามสร้าง button style/theme ย่อยเฉพาะหน้า ห้ามเปลี่ยน business behavior, API หรือ Database
+- การทดสอบ: focused UI contract test และ `npm run patch:gate`; โปรโตคอลตรวจด้วย `scripts/test-v014335.mjs`
+
 - รหัสเดิมห้ามนำกลับไปใช้กับฟีเจอร์อื่น
 - หนึ่งฟีเจอร์ใช้รหัสเดียวกันข้าม frontend, backend, test และเอกสาร
 - งานย่อยที่มีขอบเขตข้อมูลหรือสิทธิ์ต่างกันให้แยกรหัส

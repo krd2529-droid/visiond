@@ -4,21 +4,19 @@
 
 ## Current Event Case
 
-### GOV-LEAN-WORKFLOW — ลดภาระกฎและทำให้แต่ละแพตรันครบ
+### GOV-UI-DESIGN-CONTRACT — ป้องกันธีมและปุ่มแตกเมื่อเพิ่มฟีเจอร์
 
 - สถานะ: `IMPLEMENTED`
-- เป้าหมาย: แยกกฎ Active, Roadmap queue และ Automated Gate ออกจากกัน
-- เสร็จแล้ว: `v0.14.330` Lean Active Patch Protocol
-- เสร็จแล้ว: `v0.14.331` Active Roadmap Queue
-- เสร็จแล้ว: `v0.14.334` Automated Patch Gate
+- เป้าหมาย: บังคับงาน Frontend/UI ใช้ canonical theme/button system และขออนุมัติก่อนสร้าง component ใหม่
+- เสร็จแล้ว: `v0.14.335` UI Design Contract Protocol และ routing แบบ WHEN-TOUCHING
 
 ## Active Patch
 
-### v0.14.334 — Automated Patch Gate
+### v0.14.335 — UI Design Contract Protocol
 
-- เป้าหมายหลัก: รวม staged-file, focused, visible-version, regression และ predeploy checks เป็นคำสั่งเดียวก่อน Commit
-- Acceptance: Gate หยุดเมื่อไม่มี staged files หรือพบไฟล์ต้องห้าม; ทุก check รันตามลำดับและ fail-fast; ไม่ Push/Deploy
-- ห้ามเปลี่ยน: โค้ดธุรกิจ, API, Database และพฤติกรรม Production
+- เป้าหมายหลัก: ให้ฟีเจอร์ UI ใหม่รักษาธีมและปุ่มเดิมโดยไม่เพิ่มภาระให้แพตที่ไม่แตะ UI
+- Acceptance: มี canonical sources, button/interaction/layout contracts, stop condition ก่อนสร้าง component ใหม่ และ focused evidence
+- ห้ามเปลี่ยน: หน้าตา Production ปัจจุบัน, โค้ดธุรกิจ, API และ Database
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
@@ -34,6 +32,7 @@
 
 ## Recently Completed
 
+- `v0.14.334` — Automated Patch Gate ก่อน Commit
 - `v0.14.333` — รายได้พาร์ตเนอร์ 50/50 ไม่หักค่า API และแสดงรอบเคลียร์วันที่ 1
 - `v0.14.332` — หน้าแก้ไขตะกร้าคอร์สใช้วิดีโอ Multipart สูงสุด 2 GB
 - `v0.14.330` — ย่อ Active Protocol และ routing เอกสารตามระบบ
