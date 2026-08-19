@@ -148,7 +148,7 @@
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางย้อนหลังใน v0.14.304
 - หน้า: `/`, `/login.html`, `/register.html`, `/forgot-password.html`, `/reset-password.html`, `/dashboard.html`
-- ไฟล์: `public/app.js`, `public/member-auth.js`, `public/member-dashboard.js`, `public/security.js`, `functions/_security.js`, `functions/api/security/config.js`, `functions/api/auth/register.js`, `functions/api/auth/login.js`, `functions/api/auth/logout.js`, `functions/api/auth/me.js`, `functions/api/auth/change-password.js`, `functions/api/auth/forgot-password.js`, `functions/api/auth/reset-password.js`
+- ไฟล์: `public/app.js`, `public/member-auth.js`, `public/member-dashboard.js`, `public/security.js`, `public/reset-password.js`, `functions/_security.js`, `functions/api/security/config.js`, `functions/api/auth/register.js`, `functions/api/auth/login.js`, `functions/api/auth/logout.js`, `functions/api/auth/me.js`, `functions/api/auth/change-password.js`, `functions/api/auth/forgot-password.js`, `functions/api/auth/reset-password.js`
 - ฟังก์ชัน/ตัวควบคุม: `loadHomeAccount()`, `submitAuth()`, `onRequestPost()`, `requireUser()`
 - ปุ่ม/interaction: สมัครสมาชิก, เข้าสู่ระบบ, จำการเข้าสู่ระบบ, ลืม/ตั้งรหัสผ่านใหม่, เปลี่ยนรหัสผ่าน, ออกจากระบบ
 - API: `GET /api/security/config`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/change-password`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`
@@ -361,14 +361,14 @@
 ## V12-INBOX-001 — กล่องข้อความ LINE/Facebook และข้อมูลลูกค้า
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
-- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-connect.js`, `functions/api/admin/v12-profiles.js`, `functions/api/admin/v12-facebook-history.js`
+- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-connect.js`, `functions/api/admin/v12-profiles.js`, `functions/api/admin/v12-facebook-history.js`, `functions/api/media/v12-connect/outbound/[[path]].js`
 - ฐานข้อมูล: `veasy_conversations`, `veasy_chat_messages`, `veasy_conversation_controls`, `veasy_message_claims`
 - ห้ามกระทบ: ห้ามส่งซ้ำ ห้ามเปิดเผย target/credential และห้ามส่งเมื่อไม่ได้อยู่โหมด human
 
 ## V12-BROADCAST-001 — Broadcast และคิวส่งหลายช่องทาง
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
-- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-broadcast.js`, `functions/_v12_schema.js`
+- หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-broadcast.js`, `functions/api/media/[key].js`, `functions/api/media/v12-connect/broadcast/[file].js`, `functions/_v12_schema.js`
 - ฐานข้อมูล: `v12_broadcast_campaigns`, `v12_broadcast_deliveries`
 - ห้ามกระทบ: ต้องยืนยันผู้รับก่อนส่งและต้องรักษาข้อจำกัดช่วงเวลาตอบของ Facebook
 
@@ -414,7 +414,7 @@
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.336
 - หน้า: frontend surfaces ที่อนุญาตใน `FRONTEND_SURFACES` เช่น `/`, `/product`, `/courses`, `/cart`, `/dashboard`, `/bots`
-- ไฟล์: `public/elon-chat.js`, `public/elon-chat.css`, `functions/_elon.js`, `functions/_elon-provider.js`, `functions/_elon-member-store.js`, `functions/_elon_databases.js`, `functions/api/elon/chat.js`, `functions/api/elon/public-chat.js`, `functions/api/elon/conversations.js`, `functions/api/elon/clear.js`, `functions/api/elon/status.js`
+- ไฟล์: `public/elon-chat.js`, `public/elon-chat.css`, `functions/_elon.js`, `functions/_elon-provider.js`, `functions/_elon-member-store.js`, `functions/_elon_databases.js`, `functions/api/elon/chat.js`, `functions/api/elon/public-chat.js`, `functions/api/elon/conversations.js`, `functions/api/elon/clear.js`, `functions/api/elon/status.js`, `functions/api/internal/elon-retention.js`
 - ฟังก์ชัน/ตัวควบคุม: `mount()`, `frontendSurface()`, `getContext()`, `elonAccessDecision()`, `elonSystemPrompt()`, `requestElonProvider()`
 - ปุ่ม/interaction: launcher เปิด/ปิด dialog, แชทใหม่, quick questions, ส่งข้อความ, loading/error และลิงก์สมัคร/เข้าสู่ระบบสำหรับ guest
 - API: `GET/POST /api/elon/chat`, `POST /api/elon/public-chat`, `GET /api/elon/conversations`, `POST /api/elon/clear`, `GET /api/elon/status`
@@ -534,7 +534,7 @@
 ## ELON-PAGE-001 — นักขาย Facebook Page และ Human Handoff
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.345
-- หน้า/ไฟล์: `/elon-page-admin.html`, `public/elon-page-admin.js`, `functions/_meta_messenger.js`, `functions/_meta_sender.js`, `functions/api/meta/messenger.js`, `functions/api/admin/elon-page/index.js`, `functions/api/admin/elon-page/[id]/send.js`
+- หน้า/ไฟล์: `/elon-page-admin.html`, `public/elon-page-admin.js`, `functions/_meta_messenger.js`, `functions/_meta_sender.js`, `functions/api/meta/messenger.js`, `functions/api/admin/elon-page/index.js`, `functions/api/admin/elon-page/[id]/send.js`, `functions/api/internal/meta-outbox.js`
 - ฟังก์ชัน: verify Meta callback/signature, ingest/dedup event, เข้ารหัส participant, สร้าง AI job, ดูคิว, เปลี่ยน bot/human state และส่งตอบผ่าน idempotent outbox
 - API: `GET/POST /api/meta/messenger`, `GET/PATCH /api/admin/elon-page`, `POST /api/admin/elon-page/:id/send`
 - ฐานข้อมูล: `elon_page_conversations`, `elon_page_messages`, `elon_page_webhook_events`, `elon_page_ai_jobs`, `elon_page_outbox`
@@ -584,7 +584,7 @@
 ## CUSTOMER-INTELLIGENCE-001 — Visitor, Event, Funnel, Journey และ Product Demand
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.349
-- หน้า/ไฟล์: analytics sections ใน `/admin.html`, `public/admin.js`, `functions/_analytics.js`, `functions/api/analytics/view.js`, `functions/api/analytics/event.js`, `functions/api/admin/visitor-stats.js`, `functions/api/admin/daily-events.js`, `functions/api/admin/customer-analytics.js`
+- หน้า/ไฟล์: analytics sections ใน `/admin.html`, `public/admin.js`, `functions/_analytics.js`, `functions/api/analytics/view.js`, `functions/api/analytics/event.js`, `functions/api/admin/visitor-stats.js`, `functions/api/admin/daily-events.js`, `functions/api/admin/customer-analytics.js`, `functions/api/internal/analytics-retention.js`
 - ฟังก์ชัน: aggregate page views, unique visitor, event explorer รายวัน, guest/member identity, conversion funnel/bottleneck, buyer mix, product performance, customer journey และ product-family demand recommendation
 - API: `POST /api/analytics/view`, `POST /api/analytics/event`, `GET /api/admin/visitor-stats`, `GET /api/admin/daily-events`, `GET /api/admin/customer-analytics`
 - ฐานข้อมูล: `page_views`, `analytics_daily`, `analytics_visitors`, `customer_events`, `products`, `orders`, `order_items`
@@ -824,7 +824,7 @@
 ## SLIP-AUTO-VERIFY-001 — EasySlip Token ส่วนบุคคลและตรวจสลิปอัตโนมัติ
 
 - สถานะ: `PARTIAL`; API/token/verification มีจริง แต่ client ตั้งค่าปัจจุบันยังไม่ครบ contract
-- ไฟล์: `public/course-rights-product.js`, `functions/api/course-seller/slip-api.js`, `functions/_seller_token.js`, `functions/api/orders/[id]/slip.js`, `functions/api/course-seller/[id]/publish.js`
+- ไฟล์: `public/course-rights-product.js`, `functions/api/course-seller/slip-api.js`, `functions/_seller_token.js`, `functions/api/orders/[id]/slip.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/vision5/rights-payment-mode.js`
 - API: `GET/POST /api/course-seller/slip-api`; GET คืนเฉพาะสถานะ ไม่คืน token; POST เปิด/ปิด auto verify และบันทึก EasySlip token ของผู้ใช้
 - ความปลอดภัย: token ยาว 20–500 ตัว, เข้ารหัส AES-GCM ด้วย `VISION5_TOKEN_ENCRYPTION_KEY` + AAD, legacy plaintext ย้ายเป็น ciphertext เมื่อโหลดและมี key พร้อม
 - การเลือก token: partner course ใช้ API บริษัท; seller course ใช้ token เจ้าของเมื่อเปิดใช้และไม่ใช่ test account; rights order ใช้ token ผู้ซื้อเมื่อ Boss เปิดโหมด; กรณีอื่นใช้ API บริษัท
@@ -832,7 +832,7 @@
 - Fail-safe: token/config/API/match ผิดหรือระบบขัดข้องต้องเปลี่ยนเป็น manual review พร้อม code; ห้าม auto approve จากเลขบัญชีสั้นหรือสลิปซ้ำ
 - ช่องว่าง client: endpoint เปิดใช้เฉพาะเมื่อ body มี `enabled:true` แต่ `course-rights-product.js` ส่งเพียง `{api_key}`; ปัจจุบันจึงเข้า branch ปิด auto verify
 - ช่องว่างหน้า: `/dashboard.html` ชี้ `/course-center#slipApiPanel` แต่หน้าและ controller ไม่มี panel นี้
-- ความสัมพันธ์: การอัปโหลดหลักฐานและ order lifecycle อยู่ใต้ `ORDER-PAYMENT-001`; toggle API บริษัทอยู่ใต้ `PAYMENT-SETTINGS-001`
+- ความสัมพันธ์: การอัปโหลดหลักฐานและ order lifecycle อยู่ใต้ `COMMERCE-ORDER-001`; toggle API บริษัทอยู่ใต้ `PAYMENT-SETTINGS-001`
 - รหัส UI: ยังไม่ติด marker บน flow ที่ contract ไม่ครบ; ต้องแก้เป็นแพตฟีเจอร์แยกก่อนเปลี่ยนเป็น `IMPLEMENTED`
 - การทดสอบ: `scripts/test-v014366.mjs`
 
@@ -1052,6 +1052,14 @@
 - Known Boundary: Feature Map รอบนี้ยืนยัน contract ใน repository เท่านั้น ไม่ได้พิสูจน์ว่า Web 2 ภายนอกเชื่อม Production แล้ว; Push, Deploy, Production credential, E2E production และ monitoring 24 ชั่วโมงยังต้องทำเป็น Event Case แยก
 - รหัส UI: `main.partner-shell` ใช้ `data-feature="PARTNER-API-001"`; คง legacy forms/buttons, canonical button adapter, loading/error, Desktop/Mobile และ theme เดิม
 - การทดสอบ: `scripts/test-v014388.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
+
+## Coverage Audit v0.14.389
+
+- ผล: `PASS`; ไม่พบ root controller หรือ active business script ที่ยังไม่มี Feature Map ownership
+- ขอบเขตตรวจถาวร: root `public/*.js`, script loaders ใน HTML, `data-feature` IDs และ file-bearing `functions/api/*` domains
+- ข้อยกเว้น: `vendor/pdf-lib.min.js` เป็น third-party library ที่มี integrity coverage ใน focused tests ของระบบ PDF ไม่ใช่ระบบธุรกิจแยก
+- Coverage correction ที่พบ: `public/reset-password.js`; backend support ที่ผูก ownershipเพิ่มคือ analytics/ELON retention, Meta outbox, V12 outbound/broadcast media และ Vision5 rights payment mode
+- Verifier: `scripts/feature-map-coverage-audit.mjs`; เมื่อเพิ่ม root controller, active script, marker หรือ API domain ใหม่โดยไม่ลงทะเบียน audit ต้อง FAIL
 
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง

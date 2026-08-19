@@ -6,18 +6,18 @@
 
 ### FEATURE-MAP-COVERAGE — ไล่ Feature Map เทียบโค้ดจริงให้ครบก่อน Partner API/Web 2
 
-- สถานะ: `IN PROGRESS`
+- สถานะ: `IMPLEMENTED`; Coverage Audit รอบสุดท้ายผ่านใน v0.14.389
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.386` Vision 4 Bundle; `v0.14.387` V4 Card Actions Coverage; `v0.14.388` Partner API/Web 2 Feature Map
-- ยังเหลือ: Coverage Audit รอบสุดท้ายและระบบที่ audit พบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
+- เสร็จแล้ว: `v0.14.387` V4 Card Actions Coverage; `v0.14.388` Partner API/Web 2 Feature Map; `v0.14.389` Final Coverage Audit
+- ยังเหลือใน Event Case นี้: ไม่มี; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.388 — Partner API/Web 2 Feature Map
+### v0.14.389 — Final Feature Map Coverage Audit
 
-- เป้าหมายหลัก: ลงทะเบียน Partner Control Center, versioned APIs, sync, webhook, health, E2E และ Web 2 starter contract ใต้ `PARTNER-API-001`
-- Acceptance: Map อ้าง auth/scopes, metadata boundary, idempotency/PII/money, webhook/retry, Sandbox/E2E/health และ production boundary; control shell มีรหัส
-- ห้ามเปลี่ยน: API/schema/credential, sync/formula, webhook/retry, security/privacy, loading/error และ UI/theme
+- เป้าหมายหลัก: ตรวจ source coverage รอบสุดท้ายและทำ verifier ถาวรให้ระบบใหม่ที่ไม่ลง Feature Map ทำให้ audit ล้ม
+- Acceptance: root controllers, active scripts, marker IDs และ API domains มี ownership ครบ; vendor ถูกจำแนกชัด; audit และ Patch Gate ผ่าน
+- ห้ามเปลี่ยน: runtime, API/schema, business behavior, security/privacy, UI/theme และ deployment state
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
