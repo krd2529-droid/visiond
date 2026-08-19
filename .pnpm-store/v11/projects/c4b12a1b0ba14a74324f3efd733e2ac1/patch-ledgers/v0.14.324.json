@@ -1,0 +1,25 @@
+{
+  "version": "v0.14.324",
+  "features": [
+    "COURSE-BASKET-001",
+    "COURSE-EP-001",
+    "COURSE-REVIEW-001",
+    "COURSE-PARTNER-CHECKOUT-001"
+  ],
+  "summary": "ปรับ Feature Map ระบบคอร์สพาร์ตเนอร์ให้ตรงกับเส้นทางโค้ดและ API ปัจจุบัน",
+  "parent_commit": "831775039f057b5c0c28905bd280e30951db3891",
+  "safe_rollback_commit": "831775039f057b5c0c28905bd280e30951db3891",
+  "commit": "SELF",
+  "push": false,
+  "deploy": false,
+  "business_behavior_changed": false,
+  "tests": [
+    "node scripts/test-v014324.mjs",
+    "node scripts/test-document-history.mjs",
+    "node scripts/test-all-regressions.mjs",
+    "node scripts/visible-version-check.mjs",
+    "node scripts/predeploy-check.mjs",
+    "node scripts/partner-api-security-gate.mjs"
+  ]
+}
+

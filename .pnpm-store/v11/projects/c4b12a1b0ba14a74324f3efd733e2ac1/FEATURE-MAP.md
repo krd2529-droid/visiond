@@ -30,22 +30,56 @@
 - การทดสอบ:
 ```
 
-## COURSE-EP-001 — EP เป็นส่วนหนึ่งของตะกร้าคอร์ส
+## COURSE-EP-001 — EP เป็นส่วนหนึ่งของตะกร้าคอร์สพาร์ตเนอร์
 
-- สถานะ: `IMPLEMENTED`; ใช้เป็นรายการตั้งต้นของมาตรฐาน v0.14.303
-- หน้า: `/course-seller?type=1`, `/course-seller?type=2`
-- ไฟล์: `public/course-seller.js`, `functions/api/course-seller/index.js`, `functions/api/course-seller/[id]/lessons.js`, `functions/api/course-seller/[id]/lessons/[lessonId].js`
-- ฟังก์ชัน/ตัวควบคุม: `addSellerLesson.onclick`, `sellerLessonForm.onsubmit`, `resetLessonEditor()`, `renderLessons()`
-- ปุ่ม/interaction: ปุ่ม `เพิ่ม EP`, ฟอร์ม `sellerLessonForm`, แก้ไข/ลบ EP และไฟล์ประกอบ
-- API: `GET/POST /api/course-seller`, `GET/POST /api/course-seller/:courseId/lessons`, `POST/DELETE /api/course-seller/:courseId/lessons/:lessonId`
-- ฐานข้อมูล / ตาราง / ฟิลด์: D1; `courses.id`, `courses.expected_episodes`, `courses.total_minutes`, `course_lessons.course_id`, `course_lessons.title`, `course_lessons.description`, `course_lessons.duration_seconds`, `course_lessons.video_key`, `course_lessons.pdf_key`, `course_lesson_files.lesson_id`
-- Input: `course_id`, ชื่อ EP, คำอธิบาย, ระยะเวลา, คลิป และไฟล์ประกอบ
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
+- หน้า: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`
+- ไฟล์: `public/course-seller.html`, `public/course-seller.js`, `public/course-basket-edit.js`, `functions/api/course-seller/[id]/lessons.js`, `functions/api/course-seller/[id]/lessons/[lessonId].js`, `functions/api/course-seller/[id]/lessons/[lessonId]/files.js`
+- ฟังก์ชัน/ตัวควบคุม: `addCourseEpEditor()`, `sellerLessonForm.onsubmit`, `renderLessons()`, `loadLessons()`
+- ปุ่ม/interaction: `addLessonButton` เป็น `type="button"`; เพิ่ม แก้ไข ลบ EP และไฟล์ประกอบภายในตะกร้าเดียวกัน
+- API: `GET/POST /api/course-seller/:courseId/lessons`, `PUT/DELETE /api/course-seller/:courseId/lessons/:lessonId`, `DELETE /api/course-seller/:courseId/lessons/:lessonId/files`
+- ฐานข้อมูล / ตาราง / ฟิลด์: D1/R2; `courses.id`, `courses.expected_episodes`, `courses.total_minutes`, `course_lessons.course_id`, `course_lessons.title`, `course_lessons.description`, `course_lessons.duration_seconds`, `course_lessons.video_key`, `course_lessons.pdf_key`, `course_lesson_files.lesson_id`
+- Input: `course_id`, ชื่อ EP, คำอธิบาย, ระยะเวลา, คลิป และไฟล์ประกอบแบบ multipart
 - Output: รายการ EP ที่ผูกกับตะกร้าคอร์สเดียวกัน พร้อมสถานะความครบถ้วน
-- Reads: คอร์สของผู้ใช้, จำนวน/ลำดับ EP และไฟล์ประกอบ
-- Writes: เพิ่ม/แก้/ลบ `course_lessons` และ `course_lesson_files`; อัปเดตจำนวน EP/เวลาใน `courses` และจำนวนหน้า/สถานะร่างใน `products`
-- สิทธิ์: สมาชิกที่เป็นเจ้าของคอร์สเท่านั้น; API ตรวจ ownership และสถานะที่แก้ได้
-- ห้ามกระทบ: ห้ามสร้าง EP เปล่า, ห้ามแยก EP ออกจาก `course_id`, ห้ามทำลายไฟล์ของ EP อื่น, ห้ามเปิดคอร์สโดยข้ามการส่งตรวจ
-- การทดสอบ: `scripts/test-v014298.mjs`, `scripts/test-v014300.mjs`, `scripts/test-v014301.mjs`, `scripts/test-v014302.mjs`
+- Reads: คอร์สของผู้ใช้, จำนวน/ลำดับ EP, คลิป และไฟล์ประกอบ
+- Writes: เพิ่ม/แก้/ลบ `course_lessons` และ `course_lesson_files`; อัปเดตจำนวน EP/เวลาใน `courses`
+- สิทธิ์: สมาชิกเจ้าของคอร์สเท่านั้น; API ตรวจ ownership และสถานะที่แก้ได้
+- ห้ามกระทบ: ปุ่มเพิ่ม EP ห้าม submit ฟอร์ม/เปิด file picker; ห้ามแยก EP ออกจาก `course_id`; ห้ามทำลายไฟล์ของ EP อื่น; ห้ามเผยแพร่คอร์สอัตโนมัติ
+- การทดสอบ: `scripts/test-v014307.mjs`, `scripts/test-v014308.mjs`, `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
+
+## COURSE-BASKET-001 — สร้างและแก้ตะกร้าคอร์สพาร์ตเนอร์
+
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
+- หน้า: `/course-center`, `/course-seller?type=1`, `/course-basket-edit?id=:courseId`
+- ไฟล์: `public/course-center.js`, `public/course-seller.html`, `public/course-seller.js`, `public/course-basket-edit.js`, `functions/api/course-seller/plans.js`, `functions/api/course-seller/index.js`, `functions/api/course-seller/[id].js`
+- ฟังก์ชัน/ตัวควบคุม: `openPlan()`, `sellerCourseForm.onsubmit`, `ensureCourseDraft()`, `loadOwnedCourses()`
+- ปุ่ม/interaction: เข้าสร้างคอร์สพาร์ตเนอร์ กรอกข้อมูลตะกร้า เพิ่ม EP บันทึกร่าง และเปิดตะกร้าเดิมกลับมาแก้ไข
+- API: `GET /api/course-seller/plans`, `GET/POST /api/course-seller`, `GET/PUT /api/course-seller/:courseId`
+- ฐานข้อมูล / ตาราง / ฟิลด์: D1; `products.id`, `products.product_kind`, `products.status`, `courses.id`, `courses.product_id`, `courses.owner_user_id`, `courses.plan_type`, `courses.review_status`
+- Input: แผนพาร์ตเนอร์ ข้อมูลตะกร้า รูปปก ราคา ช่องทางติดต่อ และจำนวน EP
+- Output: `product` สถานะร่างและ `course` ที่สัมพันธ์กันแบบหนึ่งต่อหนึ่ง
+- Reads: แผนที่เปิดใช้ คอร์สของเจ้าของ และข้อมูลตะกร้าเดิม
+- Writes: สร้าง/แก้ `products` และ `courses` โดยคงสถานะร่างจนส่งตรวจ
+- สิทธิ์: ต้องเข้าสู่ระบบและเป็นเจ้าของคอร์ส; รับเฉพาะแผน `partner`
+- ห้ามกระทบ: ห้ามสร้างสินค้าแยกจากคอร์ส; ห้ามเผยแพร่ตะกร้าอัตโนมัติ; ห้ามนำแผนเลิกใช้กลับมาแสดง
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
+
+## COURSE-REVIEW-001 — ส่งตรวจและอนุมัติคอร์สพาร์ตเนอร์
+
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
+- หน้า: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-courses#sellerReview`
+- ไฟล์: `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/[id].js`
+- ฟังก์ชัน/ตัวควบคุม: ส่งตรวจหลังข้อมูลตะกร้าและ EP ครบ; Boss อนุมัติหรือส่งกลับแก้ไข
+- ปุ่ม/interaction: `ส่งตรวจ`, อนุมัติคอร์ส, ส่งกลับแก้ไข
+- API: `POST /api/course-seller/:courseId/publish`, `POST /api/admin/course-seller-reviews/:courseId`
+- ฐานข้อมูล / ตาราง / ฟิลด์: D1; `courses.review_status`, `courses.active`, `products.status`
+- Input: คอร์สที่ข้อมูลตะกร้าและ EP ครบ การยืนยันส่งตรวจ และคำสั่งของ Boss
+- Output: ผู้สร้างส่งแล้วเป็น `pending`; Boss อนุมัติแล้วคอร์ส `approved/active` และสินค้า `published`
+- Reads: ความครบถ้วนของคอร์ส EP ไฟล์ และสถานะตรวจ
+- Writes: สถานะตรวจคอร์ส สถานะเปิดใช้ และสถานะสินค้า
+- สิทธิ์: เจ้าของส่งตรวจได้เฉพาะคอร์สตน; เฉพาะ Boss อนุมัติ/ส่งกลับ
+- ห้ามกระทบ: ปุ่มส่งตรวจห้ามเผยแพร่เอง; ห้ามอนุมัติเมื่อ EP ไม่ครบ; ห้ามเปิดสินค้าก่อน Boss อนุมัติ
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
 
 ## AUTH-ACCOUNT-001 — สมัครสมาชิก เข้าสู่ระบบ และจัดการเซสชัน
 
@@ -182,15 +216,17 @@
 
 ## COURSE-PARTNER-CHECKOUT-001 — อนุมัติ แคตตาล็อก และชำระเงินคอร์สพาร์ตเนอร์
 
-- หน้า: `/course-center`, แคตตาล็อกคอร์สหน้าแรก, `/dashboard`, `/admin`
-- Controller/API: `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/courses/index.js`, `functions/api/orders/index.js`, `functions/api/orders/[id]/slip.js`, `functions/api/admin/orders.js`, `functions/api/admin/orders/[id]/approve.js`, `functions/api/admin/orders/[id]/reject.js`
-- Reads: คอร์ส ตะกร้าสินค้า ออเดอร์ บัญชีรับเงินกลาง ผลตรวจ EasySlip และสิทธิ์ Boss
-- Writes: สถานะคอร์ส/สินค้า ออเดอร์ ผลตรวจสลิป และ entitlement เมื่ออนุมัติการชำระ
+- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
+- หน้า: `/course-center`, แคตตาล็อกคอร์สหน้าแรก, `/dashboard`, `/admin-courses#sellerReview`, `/admin`
+- ไฟล์/API: `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/courses/index.js`, `functions/api/orders/index.js`, `functions/api/orders/[id]/slip.js`, `functions/api/admin/orders.js`, `functions/api/admin/orders/[id]/approve.js`, `functions/api/admin/orders/[id]/reject.js`
+- ฐานข้อมูล / ตาราง / ฟิลด์: D1; แผนและ `review_status` ของคอร์ส, `products.status`, `orders.status`, `orders.payment_method`, ส่วนแบ่งรายได้คอร์ส, `order_items`, `verified_slips`, `order_slip_evidence`, `entitlements`
 - Input: การอนุมัติคอร์ส การสั่งซื้อ รูปสลิป และการยืนยัน/เหตุผลของ Boss
-- Output: คอร์ส published ในแคตตาล็อก ออเดอร์พาร์ตเนอร์ บัญชี VisionD ผลตรวจอัตโนมัติ หรือคิวตรวจแมนนวล
+- Output: คอร์ส `published` ในแคตตาล็อก ออเดอร์พาร์ตเนอร์ บัญชีกลาง VisionD ผลตรวจอัตโนมัติ หรือคิวตรวจแมนนวล
+- Reads: คอร์ส ตะกร้าสินค้า ออเดอร์ บัญชีกลาง VisionD ผลตรวจ EasySlip และสิทธิ์ Boss
+- Writes: สถานะคอร์ส/สินค้า ออเดอร์ ผลตรวจสลิป และ entitlement เมื่ออนุมัติการชำระ
 - สิทธิ์: ผู้ซื้อส่งสลิปได้เฉพาะออเดอร์ตน; เฉพาะ Boss อนุมัติ/ปฏิเสธ fallback ของคอร์สพาร์ตเนอร์
-- ห้ามกระทบ: ห้ามเผยแพร่คอร์สที่ยังไม่ผ่าน Boss; ห้ามใช้บัญชีผู้สอนกับพาร์ตเนอร์; ห้ามให้ Boss ตรวจแทนคอร์สผู้ขายประเภทอื่น; ห้ามปลดล็อกซ้ำ
-- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v01486-vision5-two-account-e2e.mjs`
+- ห้ามกระทบ: ห้ามเผยแพร่คอร์สที่ยังไม่ผ่าน Boss; ห้ามใช้บัญชีผู้สอนกับพาร์ตเนอร์; ห้ามให้ Boss ตรวจแทนคอร์สประเภทอื่น; ห้ามปลดล็อกก่อนชำระผ่านหรือปลดล็อกซ้ำ
+- การทดสอบ: `scripts/test-v014310.mjs`, `scripts/test-v01486-vision5-two-account-e2e.mjs`, `scripts/test-v014324.mjs`
 
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง

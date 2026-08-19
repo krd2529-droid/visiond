@@ -240,7 +240,8 @@
     "test:visible-version": "node scripts/visible-version-check.mjs",
     "test:v014321": "node scripts/test-v014321.mjs",
     "test:v014322": "node scripts/test-v014322.mjs",
-    "test:v014323": "node scripts/test-v014323.mjs"
+    "test:v014323": "node scripts/test-v014323.mjs",
+    "test:v014324": "node scripts/test-v014324.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
