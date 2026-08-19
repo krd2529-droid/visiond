@@ -134,6 +134,23 @@
 
 ## กฎบำรุงรักษา
 
+## PD-SET-001 — สร้างตะกร้าตุ๊กตากระดาษจาก PDF หลายกลุ่ม
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.312
+- หน้า: `/admin` ส่วนการจัดการสินค้า
+- ไฟล์: `public/admin.html`, `public/paper-doll-set-builder.js`, `public/paper-doll-set-builder.css`, `functions/api/admin/products/index.js`
+- ฟังก์ชัน/ตัวควบคุม: `allocation()`, `analyze()`, `renderPreview()`, `createDrafts()`, `nextProductSlug()`, `onRequestPost()`
+- ปุ่ม/interaction: `#paperDollSetBuilderButton`, `#paperDollAnalyzeButton`, `#paperDollCreateButton`
+- API: `POST /api/admin/products` โดย `source=paper_doll_set`
+- ฐานข้อมูล / ตาราง / ฟิลด์: D1/R2; `products.slug`, `products.category`, `products.status`, `products.source`, `products.pages`, `product_files.object_key`
+- Input: PDF หลายไฟล์ จำนวนตะกร้า และราคาเดียวหรือราคาแยกรายตะกร้า
+- Output: ตะกร้าร่างหมวด `paper-doll` ชื่อ `ตุ๊กตากระดาษชุดที่ N` และ Slug `paper-doll-set-NNN`
+- Reads: จำนวนหน้าและลำดับหน้าภายใน PDF แต่ละไฟล์ รวมถึง Slug ปัจจุบันและประวัติ Slug
+- Writes: สินค้าร่าง ไฟล์ PDF ที่ประกอบใหม่ และรูปปกหน้าแรกของแต่ละชุด
+- สิทธิ์: ใช้ได้เฉพาะผู้ดูแล; API ตรวจสิทธิ์ซ้ำฝั่งเซิร์ฟเวอร์
+- ห้ามกระทบ: ห้ามรวมทุก PDF เป็นกองเดียว ห้ามทำหน้าซ้ำ/ตกหล่น ห้ามให้ตะกร้าขาด PDF กลุ่มใด ห้ามเผยแพร่อัตโนมัติ และห้ามสร้างใบที่สำเร็จแล้วซ้ำเมื่อทำต่อหลังข้อผิดพลาด
+- การทดสอบ: `scripts/test-v014312.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
+
 ## COURSE-PARTNER-CHECKOUT-001 — อนุมัติ แคตตาล็อก และชำระเงินคอร์สพาร์ตเนอร์
 
 - หน้า: `/course-center`, แคตตาล็อกคอร์สหน้าแรก, `/dashboard`, `/admin`
