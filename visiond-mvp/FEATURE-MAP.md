@@ -575,6 +575,18 @@
 - รหัส UI: overview และ sales sections มี `data-feature="BUSINESS-REPORT-001"`; คง filter/export/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014350.mjs`
 
+## PAYMENT-SETTINGS-001 — บัญชีรับโอน QR และสถานะรับคำสั่งซื้อ
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.351
+- หน้า/ไฟล์: payment form ใน `/admin.html`, `public/admin.js`, `functions/_payment.js`, `functions/api/admin/payment-settings.js`
+- ฟังก์ชัน: ตั้งบัญชีส่วนตัว/บริษัท, เลือก active account, เปิด/ปิดรับ order, ตั้งข้อความหลังส่งสลิป, สลับ Vision 3/Vision 5 EasySlip verification และอัปโหลด QR
+- API: `GET/PUT /api/admin/payment-settings`; public checkout อ่านผ่าน `loadPaymentSettings()` + `publicPaymentSettings()`
+- ฐานข้อมูล/ไฟล์: `settings`; R2 `payment-qr-*`; activity log เมื่อ Boss เปลี่ยน Vision 5 EasySlip toggle
+- สิทธิ์: `requireAdmin` อ่าน/บันทึก; เฉพาะ Boss เปลี่ยน active account และ auto-verification toggles; public projection คืนเฉพาะบัญชี active, QR, accepting-orders และข้อความ
+- ห้ามกระทบ: ต้องกรอกทั้งสอง profile ครบ; QR เฉพาะ JPG/PNG/WEBP ไม่เกิน 5 MB; validate request ทั้งหมดก่อนเขียน; อัปโหลด object ใหม่ก่อน commit settings, DB ล้มต้องลบ object ใหม่ และลบ QR เก่าแบบ best effort หลัง commit; ห้ามเปิดเผย profile ที่ inactive ต่อ public
+- รหัส UI: payment form มี `data-feature="PAYMENT-SETTINGS-001"`; คง role-disabled, loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014351.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
