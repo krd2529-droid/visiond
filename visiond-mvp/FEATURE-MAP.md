@@ -876,7 +876,7 @@
 ## NAV-SHELL-001 — Header, Account Navigation และ Mobile Navigation ร่วม
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.372
-- หน้า/ไฟล์: public pages ที่มี `.topbar`; `public/shared-nav.js`, `public/nav-account.js`, `public/header-shell.js`, `public/mobile-storefront.js`, `public/notification-bell.js`, `public/header-shell.css`, `public/mobile-storefront.css`
+- หน้า/ไฟล์: public pages ที่มี `.topbar`; `public/shared-nav.js`, `public/nav-account.js`, `public/header-shell.js`, `public/mobile-storefront.js`, `public/notification-bell.js`, `public/header-shell.css`, `public/mobile-storefront.css`; legacy `public/home-my-button.js`
 - API: `GET /api/auth/me`, `POST /api/auth/logout`, `GET/POST /api/notifications`; navigation ไม่เชื่อข้อมูล role/notification จาก DOM แทน API
 - Canonical nav: `shared-nav.js` สร้างลิงก์หลัก, login/register และ cart ชุดเดียว, ระบุ `aria-current` ตาม path, sync ปี footer และ cart จาก `vd_cart`
 - Account/role: เมื่อ login ซ่อน login/register, แสดงบัญชี, ศูนย์จัดการคอร์สตาม `is_course_owner`, หลังบ้านเฉพาะ Boss/Admin และ logout ผ่าน POST; auth ล้มเหลวคง guest navigation
@@ -884,9 +884,11 @@
 - Header shell: แยก primary/utility actions บน desktop, ย้าย utility เข้า nav บนจอไม่เกิน 800px, ลบ action/cart ซ้ำ และรักษา language/account/admin/notification controls
 - Mobile: toggle เชื่อม `aria-controls/expanded/hidden`, ปิดด้วย backdrop/link/Escape, trap Tab ภายในเมนู, คืน focus เมื่อปิด และ sync เมื่อ breakpoint เปลี่ยน
 - Notification bell: แสดงเฉพาะสมาชิกที่ API ตอบสำเร็จ, escape ข้อมูลก่อน render, อ่าน notification แบบ account-scoped และปิดด้วยปุ่ม/outside click/Escape; ศูนย์เต็มอยู่ใต้ `MEMBER-HUB-001`
+- Legacy label helper: `home-my-button.js` เรียก `fix()` ทันทีและเฝ้าเฉพาะการเปลี่ยน attribute `hidden` ทั่ว document เพื่อเปลี่ยนข้อความ `#navMember` ที่มองเห็นเป็น “ของฉัน”; ไม่อ่าน API และไม่เปลี่ยน href/visibility
+- Known Gap: จาก Coverage Audit v0.14.383 ไม่พบ HTML, controller หรือ module ใดโหลด `home-my-button.js`; helper จึง dormant และ canonical label/account rendering ยังคงมาจาก `app.js`/`nav-account.js`; ห้ามอ้างว่า MutationObserver นี้ active
 - รหัส UI: `.topbar` ได้ `data-feature="NAV-SHELL-001"` ระหว่าง shell sync; คง canonical styles, breakpoint, focus order และ theme เดิม
 - ความสัมพันธ์: auth/session อยู่ใต้ `AUTH-ACCOUNT-001`; notification data/reads อยู่ใต้ `MEMBER-HUB-001`; language content อยู่ใน controller เดิมแต่ไม่เปลี่ยนในแพตนี้
-- การทดสอบ: `scripts/test-v014372.mjs`
+- การทดสอบ: `scripts/test-v014372.mjs`, coverage correction `scripts/test-v014383.mjs`
 
 ## META-PIXEL-001 — Meta Pixel และ Storefront Conversion Tracking
 

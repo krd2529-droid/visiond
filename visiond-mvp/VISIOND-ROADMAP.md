@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.380` Global Pointer Interaction; `v0.14.381` Admin PDF Cover Maker; `v0.14.382` Course Owner Entry (PARTIAL)
+- เสร็จแล้ว: `v0.14.381` Admin PDF Cover Maker; `v0.14.382` Course Owner Entry (PARTIAL); `v0.14.383` NAV Shell Legacy Label Coverage
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.382 — Course Owner Entry Feature Map
+### v0.14.383 — NAV Shell Legacy Label Coverage
 
-- เป้าหมายหลัก: ลงทะเบียน active homepage owner badge และ dormant dashboard credit CTA ตามโค้ดจริง
-- Acceptance: Map อ้าง auth/credit sources, targets, dedupe/failure, routes, missing loader และ overlap กับ canonical nav; dynamic UI มีรหัส
-- ห้ามเปลี่ยน: loaders, auth/API, credit logic, routes, async ordering, dedupe, text, classes และ UI/theme
+- เป้าหมายหลัก: ปิด coverage ของ dormant `home-my-button.js` ใต้ `NAV-SHELL-001` โดยไม่สร้างรหัสซ้ำ
+- Acceptance: Map อ้าง target/text/MutationObserver scope และ missing loader พร้อม canonical source ที่ active
+- ห้ามเปลี่ยน: loaders, navigation labels, href/visibility, observers, canonical nav behavior และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

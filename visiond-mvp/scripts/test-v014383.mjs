@@ -1,0 +1,7 @@
+import fs from'node:fs';import path from'node:path';import{fileURLToPath}from'node:url';import assert from'node:assert/strict';const root=new URL('../',import.meta.url),r=p=>fs.readFileSync(new URL(p,root),'utf8');
+assert.equal(r('VERSION.txt').trim(),'v0.14.383');assert.match(r('public/index.html'),/WEB v0\.14\.383/);assert.match(r('public/admin.html'),/ADMIN v0\.14\.383/);
+const map=r('FEATURE-MAP.md'),helper=r('public/home-my-button.js'),app=r('public/app.js'),account=r('public/nav-account.js');for(const x of['NAV-SHELL-001','legacy `public/home-my-button.js`','Legacy label helper','attribute `hidden`','ไม่อ่าน API','ไม่เปลี่ยน href/visibility','ไม่พบ HTML, controller หรือ module ใดโหลด','helper จึง dormant','`app.js`/`nav-account.js`'])assert.ok(map.includes(x),x);
+assert.match(helper,/querySelector\('#navMember'\)/);assert.match(helper,/!button\.hidden/);assert.match(helper,/button\.textContent='ของฉัน'/);assert.match(helper,/new MutationObserver\(fix\)/);assert.match(helper,/subtree:true,attributes:true,attributeFilter:\['hidden'\]/);assert.doesNotMatch(helper,/fetch\(|location\.|href/);
+assert.match(app,/navMember\.textContent='บัญชีของฉัน'/);assert.match(account,/account\.innerHTML=.*บัญชีของฉัน/);
+const publicDir=fileURLToPath(new URL('public/',root)),loaders=fs.readdirSync(publicDir).filter(name=>/\.(?:html|js)$/.test(name)&&name!=='home-my-button.js').map(name=>fs.readFileSync(path.join(publicDir,name),'utf8')).join('\n');assert.doesNotMatch(loaders,/home-my-button\.js/);
+console.log('PASS v0.14.383 NAV Shell Legacy Home Label Coverage');
