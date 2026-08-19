@@ -1,0 +1,15 @@
+{
+  "version": "v0.14.311",
+  "feature": "COURSE-PARTNER-REVIEW-001",
+  "summary": "เปลี่ยนหน้าตรวจคอร์สหลังบ้านจากระบบตะกร้าสิทธิ์เป็นคิวตรวจคอร์สพาร์ตเนอร์ 50/50 และตัดเงื่อนไขเครดิตออกจากเส้นทางอนุมัติ",
+  "files": [
+    "public/admin-courses.html",
+    "public/admin-courses.js",
+    "public/course-review-admin.js",
+    "functions/api/admin/course-seller-reviews/index.js",
+    "functions/api/admin/course-seller-reviews/auto.js",
+    "functions/api/admin/course-seller-reviews/[id].js"
+  ],
+  "tests": ["scripts/test-v014311.mjs", "scripts/test-v014310.mjs", "scripts/test-all-regressions.mjs", "scripts/predeploy-check.mjs"],
+  "rollback": "ย้อนกลับไป Commit ก่อน v0.14.311"
+}
