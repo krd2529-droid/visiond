@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.336` ELON Chat
+- เสร็จแล้ว: `v0.14.336` ELON Chat; `v0.14.337` Sales Page Center
 - ยังเหลือ: ระบบที่ Coverage Audit พบ เช่น Sales Page, Vision 13/14, Ads/Analytics, Webhook Hub, Security และ Partner API/Web 2
 
 ## Active Patch
 
-### v0.14.336 — ELON Chat Feature Map
+### v0.14.337 — Sales Page Center Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน frontend widget, member/guest APIs, provider/store, security และ retention ของ ELON Chat
-- Acceptance: Feature Map อ้างไฟล์/API/ข้อมูล/สิทธิ์จริง; root widget มีรหัส `ELON-CHAT-001`; regression ELON ผ่าน
-- ห้ามเปลี่ยน: prompt, provider, API contract, rate limit, retention, สิทธิ์ และพฤติกรรม UI
+- เป้าหมายหลัก: ลงทะเบียน draft/revision/lifecycle, approval, public renderer และ A/B Variant ของ Sales Page
+- Acceptance: Map อ้าง route/API/data/permission จริง และ public renderer มีรหัส `SALES-PAGE-001`
+- ห้ามเปลี่ยน: lifecycle, robots, approval, variant rules, API และพฤติกรรม UI
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
@@ -33,6 +33,7 @@
 
 ## Recently Completed
 
+- `v0.14.336` — ELON Chat Feature Map
 - `v0.14.335` — UI Design Contract Protocol
 - `v0.14.334` — Automated Patch Gate ก่อน Commit
 - `v0.14.333` — รายได้พาร์ตเนอร์ 50/50 ไม่หักค่า API และแสดงรอบเคลียร์วันที่ 1

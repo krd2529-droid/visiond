@@ -400,6 +400,20 @@
 - รหัส UI: root widget มี `data-feature="ELON-CHAT-001"`
 - การทดสอบ: `scripts/test-elon-access.mjs`, `scripts/test-elon-frontend-only.mjs`, `scripts/test-elon-provider.mjs`, `scripts/test-elon-widget-surfaces.mjs`, `scripts/test-v014336.mjs`
 
+## SALES-PAGE-001 — ศูนย์สร้าง Revision อนุมัติ เผยแพร่ และ A/B หน้าขาย
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.337
+- หน้า: `/sales-page-center.html`, `/sales-page-variants.html?id=:pageId`, public `/s/:slug`
+- ไฟล์: `public/sales-page-center.js`, `public/sales-page-variants.js`, `public/sales-page-public.js`, `functions/_sales_pages.js`, `functions/_sales_page_variants.js`, `functions/s/[slug].js`, `functions/api/admin/sales-pages/index.js`, `functions/api/admin/sales-pages/[id].js`, `functions/api/admin/sales-pages/[id]/variants.js`, `functions/api/sales-pages/[id]/variants.js`
+- ฟังก์ชัน/ตัวควบคุม: สร้าง/แก้ draft, revision history, `submit_review`, `approve`, `publish`, `pause`, `archive`, mobile preview และ Variant A/B
+- API: `GET/POST /api/admin/sales-pages`, `GET/PUT/PATCH /api/admin/sales-pages/:id`, `GET/PUT /api/admin/sales-pages/:id/variants`, `GET /api/sales-pages/:id/variants`, `GET /s/:slug`
+- ฐานข้อมูล: `sales_page_templates`, `sales_pages`, `sales_page_products`, `sales_page_revisions`, `sales_page_variants`, `customer_events`
+- Input/Output: ประเภท `ad_shortcut|seo_automation`, template, slug, content, product IDs, revision/lifecycle และ Variant A/B ที่น้ำหนัก active รวม 100
+- สิทธิ์: Admin จัดการ; เฉพาะ Boss อนุมัติ SEO Automation; public อ่านเฉพาะ Ad Shortcut ที่ published และ noindex
+- ห้ามกระทบ: SEO revision ปัจจุบันต้องอนุมัติก่อน publish; Ad Shortcut ต้อง `noindex`; public ห้ามแสดงสถานะหรือสินค้าที่ไม่พร้อม; หน้า published/archived ห้ามแก้ตรง; variant ต้อง A/B และน้ำหนัก active รวม 100
+- รหัส UI: public renderer มี `data-feature="SALES-PAGE-001"`; หลังบ้านยึด route/ID ที่ระบุข้างต้น
+- การทดสอบ: `scripts/test-v014234.mjs`, `scripts/test-v014235.mjs`, `scripts/test-v014236.mjs`, `scripts/test-v014337.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
