@@ -539,6 +539,18 @@
 - รหัส UI: หน้า activation มี `data-feature="VEASY-SHOP-001"`; native app รับ handoff `veasy-auth-v1` โดยคง field เดิม
 - การทดสอบ: `scripts/test-v014347.mjs`, `scripts/test-v014110-veasy-activation-contract.mjs`
 
+## COURSE-INTEGRITY-001 — ตรวจความสอดคล้องคอร์ส สิทธิ์ และ Event Case
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.348
+- หน้า/ไฟล์: `/course-integrity.html`, `public/course-integrity.js`, `functions/api/admin/course-integrity.js`
+- ฟังก์ชัน: ตรวจ paid orders/slip evidence/learning rights, credit counts, unlock logs, entitlement ของ order ที่ไม่ paid, orphan orders และ sample Event Case `user1 / Vision 5 test`
+- API: `GET /api/admin/course-integrity`, `GET /api/admin/course-integrity?event_case=1`
+- Reads: `courses`, `products`, `users`, `orders`, `order_items`, `order_slip_evidence`, `entitlements`, `course_right_credits`, `unlock_logs`
+- สิทธิ์: ใช้ `requireAdmin`; endpoint เป็น read-only และตอบ `cache-control: no-store`
+- ห้ามกระทบ: ห้ามซ่อมหรือลบข้อมูลจากหน้า integrity; healthy เมื่อ paid=approved slips=learning rights และไม่มี invalid rights; system checks จำกัด 200 รายการต่อชนิด; Event Case จำกัด 20 คอร์สและ timeout 5 วินาที โดย timeout คืน 503 + `EVENT_CASE_QUERY_TIMEOUT`
+- รหัส UI: หน้า Course Integrity มี `data-feature="COURSE-INTEGRITY-001"`; คง loading/timeout/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014348.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

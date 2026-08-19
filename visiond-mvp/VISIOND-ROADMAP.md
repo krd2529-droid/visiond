@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.345` ELON Page; `v0.14.346` Vision 4 Review; `v0.14.347` VEasy Shop Runtime
+- เสร็จแล้ว: `v0.14.346` Vision 4 Review; `v0.14.347` VEasy Shop Runtime; `v0.14.348` Course Integrity
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.347 — VEasy Shop Runtime Feature Map
+### v0.14.348 — Course Integrity Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน activation, shop ownership, bot/inbox และ native runtime ของ VEasy
-- Acceptance: Map อ้าง license/shop/device/lease/claim/handoff จริง และหน้า activation มีรหัส `VEASY-SHOP-001`
-- ห้ามเปลี่ยน: license binding, ownership, lease, provider, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียน read-only integrity checks ของคอร์สและสิทธิ์
+- Acceptance: Map อ้าง course/credit/unlock/entitlement/order/Event Case checks จริง และหน้ามีรหัส `COURSE-INTEGRITY-001`
+- ห้ามเปลี่ยน: query semantics, timeout, business data, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
