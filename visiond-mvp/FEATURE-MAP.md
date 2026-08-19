@@ -134,6 +134,16 @@
 
 ## กฎบำรุงรักษา
 
+## SHARE-OG-001 — พรีวิวลิงก์สินค้าดิจิทัลและพาร์ทเนอร์คอร์ส
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.318
+- หน้า: `/` และพรีวิวเมื่อแชร์ `https://visiondonline.com/`
+- ไฟล์: `public/index.html`, `public/assets/visiond-marketplace-partner-og-v014318.png`
+- Reads: Open Graph/Twitter Card metadata จาก HTML หน้าแรก
+- Output: ภาพพรีวิวที่บอกหมวดใบงาน ระบายสี เกมเสริมพัฒนาการ ตุ๊กตากระดาษ ไฟล์ PDF และการเปิดรับพาร์ทเนอร์ลงคอร์สออนไลน์ 50/50
+- ห้ามกระทบ: canonical URL, robots, Facebook domain verification, ระบบสินค้า และระบบคอร์ส
+- การทดสอบ: `scripts/test-v014318.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
+
 ## PD-SET-001 — สร้างตะกร้าตุ๊กตากระดาษจาก PDF หลายกลุ่ม
 
 - สถานะ: `IMPLEMENTED` ใน v0.14.312
