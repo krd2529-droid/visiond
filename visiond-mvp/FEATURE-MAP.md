@@ -563,6 +563,18 @@
 - รหัส UI: events, visitor stats และ customer-intelligence sections มี `data-feature="CUSTOMER-INTELLIGENCE-001"`; คง filter/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014349.mjs`
 
+## BUSINESS-REPORT-001 — รายงานยอดขาย กำไร–ขาดทุน และ CSV Export
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.350
+- หน้า/ไฟล์: overview/sales sections ใน `/admin.html`, `public/admin.js`, `functions/api/admin/profit-dashboard.js`, `functions/api/admin/sales-report.js`
+- ฟังก์ชัน: สรุปยอดขาย/ค่าแอด/กำไร/ROAS รายวัน, บันทึกค่าแอด Facebook รายวัน, กรองยอดขายตามวัน/ชนิด, product summary, cursor pagination และ CSV export แบบหลาย batch
+- API: `GET/PUT /api/admin/profit-dashboard`, `GET /api/admin/sales-report`
+- ฐานข้อมูล: `orders`, `order_items`, `products`, `users`, `unlock_logs`, `ad_costs`
+- สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; slip URL คืนผ่าน admin endpoint ไม่เปิด object key
+- ห้ามกระทบ: profit dashboard นับเฉพาะ paid + `sale_price_recorded=1` + รายได้ VisionD; `profit=sales-facebook_cost`, `ROAS=sales/facebook_cost` และค่าแอดศูนย์คืน null; sales report นับเฉพาะ paid, แยก manual/slip และ VisionD/seller course; cursor ใช้ `paid_at|order_id`, limit สูงสุด 200; CSV client ต้องไล่ทุก cursor และหยุดเมื่อ cursor ซ้ำ
+- รหัส UI: overview และ sales sections มี `data-feature="BUSINESS-REPORT-001"`; คง filter/export/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014350.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

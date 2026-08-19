@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.347` VEasy Shop Runtime; `v0.14.348` Course Integrity; `v0.14.349` Customer Intelligence
+- เสร็จแล้ว: `v0.14.348` Course Integrity; `v0.14.349` Customer Intelligence; `v0.14.350` Business Reporting
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.349 — Customer Intelligence Feature Map
+### v0.14.350 — Business Reporting Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน visitor/event/funnel/journey/product demand analytics
-- Acceptance: Map อ้าง privacy/dedup/aggregation/retention/filter/permission จริง และ UI section มีรหัส `CUSTOMER-INTELLIGENCE-001`
-- ห้ามเปลี่ยน: event collection, formulas, retention, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียน profit dashboard และ sales report/export
+- Acceptance: Map อ้าง paid-sale filters/formulas/cursor/export/manual cost จริง และ UI sections มีรหัส `BUSINESS-REPORT-001`
+- ห้ามเปลี่ยน: revenue rules, formulas, pagination, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
