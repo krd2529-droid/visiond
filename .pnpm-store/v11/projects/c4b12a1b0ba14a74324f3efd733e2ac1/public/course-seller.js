@@ -400,7 +400,7 @@ async function loadLessons(id) {
     ? d.items
         .map(
           (x, i) =>
-            `<article class="seller-ep"><div class="seller-ep-number">${i + 1}</div><div><b>EP.${i + 1} · ${esc(x.title)}</b><small>${x.has_video ? "มีวิดีโอ" : ""}${x.has_video && x.file_count ? " · " : ""}${x.file_count ? `ไฟล์ประกอบ ${x.file_count} ไฟล์` : ""}${!x.has_video && !x.file_count ? "ยังไม่มีสื่อ" : ""}</small>${x.description ? `<p>${esc(x.description)}</p>` : ""}<div class="seller-file-list">${(x.files || []).map((f) => `<span>${esc(f.file_name)} <button type="button" data-file="${f.id}" data-lesson="${x.id}" ${d.editable ? "" : "disabled"}>ลบไฟล์</button></span>`).join("")}</div></div><div class="seller-ep-actions"><button type="button" data-edit="${x.id}" ${d.editable ? "" : "disabled"}>แก้ไข</button><button type="button" data-delete="${x.id}" ${d.editable ? "" : "disabled"}>ลบ EP</button></div></article>`,
+            `<article class="seller-ep"><div class="seller-ep-number">${i + 1}</div><div><b>EP.${i + 1}${x.title ? ` · ${esc(x.title)}` : ""}</b><small>${x.has_video ? "มีวิดีโอ" : ""}${x.has_video && x.file_count ? " · " : ""}${x.file_count ? `ไฟล์ประกอบ ${x.file_count} ไฟล์` : ""}${!x.has_video && !x.file_count ? "ยังไม่ได้กรอกข้อมูล" : ""}</small>${x.description ? `<p>${esc(x.description)}</p>` : ""}<div class="seller-file-list">${(x.files || []).map((f) => `<span>${esc(f.file_name)} <button type="button" data-file="${f.id}" data-lesson="${x.id}" ${d.editable ? "" : "disabled"}>ลบไฟล์</button></span>`).join("")}</div></div><div class="seller-ep-actions"><button type="button" data-edit="${x.id}" ${d.editable ? "" : "disabled"}>${x.is_complete ? "แก้ไข" : "กรอก EP"}</button><button type="button" data-delete="${x.id}" ${d.editable ? "" : "disabled"}>ลบ EP</button></div></article>`,
         )
         .join("")
     : "";
@@ -596,18 +596,8 @@ sellerLessonForm.onsubmit = async (e) => {
   let id = sellerLessonForm.elements.course_id.value;
   const lessonId = sellerLessonForm.elements.lesson_id.value,
     b = e.submitter;
-  const title = String(sellerLessonForm.elements.title.value || "").trim();
   const video = sellerLessonForm.elements.video.files?.[0];
   const documents = [...sellerLessonForm.elements.documents.files || []];
-  if (!title) {
-    sellerLessonMessage.textContent = "กรุณาใส่ชื่อ EP ก่อนเพิ่ม";
-    sellerLessonForm.elements.title.focus();
-    return;
-  }
-  if (!lessonId && !video && !documents.length) {
-    sellerLessonMessage.textContent = "กรุณาแนบคลิปหรือเอกสารอย่างน้อย 1 ไฟล์ก่อนเพิ่ม EP";
-    return;
-  }
   b.disabled = true;
   if (!id) {
     try {
@@ -661,6 +651,7 @@ sellerLessonForm.onsubmit = async (e) => {
     }
     resetLessonEditor(id, false);
     sellerLessonFormTitle.textContent = "เพิ่ม EP ถัดไป";
+    sellerLessonMessage.textContent = d.message || "เพิ่ม EP แล้ว";
     await loadLessons(id);
   }
   b.disabled = false;
