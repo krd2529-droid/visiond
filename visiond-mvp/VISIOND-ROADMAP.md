@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.365` Course Seller Payout Mapping; `v0.14.366` Seller Slip Auto-Verify Mapping; `v0.14.367` Course Owner Slip Review Mapping
+- เสร็จแล้ว: `v0.14.366` Seller Slip Auto-Verify Mapping; `v0.14.367` Course Owner Slip Review Mapping; `v0.14.368` Course Seller Sales Reporting
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.367 — Course Owner Slip Review Mapping
+### v0.14.368 — Course Seller Sales Reporting
 
-- เป้าหมายหลัก: ลงทะเบียนเจ้าของคอร์สดู/อนุมัติ/ปฏิเสธสลิป พร้อม UI gap ตามจริง
-- Acceptance: Map อ้าง ownership, manual state, test-account exclusion, private evidence และสถานะ PARTIAL
-- ห้ามเปลี่ยน: approval/rejection, entitlement, evidence, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนแดชบอร์ดยอดขายและรอบเคลียร์รายได้ผู้สอน
+- Acceptance: Map อ้าง owner scope, paid-only, date guards, 50/50 formula และรอบวันที่ 1; section มีรหัส
+- ห้ามเปลี่ยน: revenue/payout formula, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

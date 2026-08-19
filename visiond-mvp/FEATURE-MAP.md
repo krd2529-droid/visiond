@@ -787,6 +787,20 @@
 - รหัส UI: ยังไม่ติด marker เพราะ panel ไม่มีใน runtime; ต้องแก้เป็นแพตฟีเจอร์แยกก่อนเปลี่ยนเป็น `IMPLEMENTED`
 - การทดสอบ: `scripts/test-v014367.mjs`
 
+## COURSE-SALES-001 — แดชบอร์ดยอดขายและรอบเคลียร์ผู้สอน
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.368
+- หน้า/ไฟล์: sales dashboard ใน `/course-center`, `public/course-center.js`, `functions/api/course-seller/sales.js`
+- API: `GET /api/course-seller/sales?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- สิทธิ์/ข้อมูล: ใช้ `requireUser`; query เฉพาะ `course_owner_user_id` ของผู้ใช้และออเดอร์ `paid`; วันขายใช้เวลาไทย `+7 hours`
+- ช่วงเวลา: ค่าเริ่มต้น 30 วัน, เลือกได้สูงสุด 60 วัน, from ต้องไม่เกิน to และ to ห้ามเกินวันนี้; response `no-store`
+- สูตร: partner teacher share คือ `CAST(total / 2 AS INTEGER)`; แผนอื่นคือยอดเต็ม; ไม่หักค่า API จากรายได้ผู้สอน
+- รอบเคลียร์: เริ่มวันที่ 1 ของเดือน, `pending_total` รวม paid ตั้งแต่ cycle start, `clear_day=1`, next clear คือวันที่ 1 เดือนถัดไป
+- Output: orders/buyers/gross/teacher summary และรายการล่าสุดสูงสุด 500; `limited` แจ้งเมื่อแตะเพดาน
+- ความสัมพันธ์: แยก reporting จาก create/edit ใน `COURSE-BASKET-001`; ไม่มีคำสั่งเคลียร์เงินจริงใน endpoint นี้
+- รหัส UI: sales section มี `data-feature="COURSE-SALES-001"`; คง filter/table/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014368.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
