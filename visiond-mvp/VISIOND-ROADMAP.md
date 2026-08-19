@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.385` V12 Channel Settings Coverage; `v0.14.386` Vision 4 Bundle; `v0.14.387` V4 Card Actions Coverage
-- ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
+- เสร็จแล้ว: `v0.14.386` Vision 4 Bundle; `v0.14.387` V4 Card Actions Coverage; `v0.14.388` Partner API/Web 2 Feature Map
+- ยังเหลือ: Coverage Audit รอบสุดท้ายและระบบที่ audit พบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.387 — V4 Card Actions Coverage
+### v0.14.388 — Partner API/Web 2 Feature Map
 
-- เป้าหมายหลัก: ผูก edit/soft-delete decorator ของ V4 draft cards เข้ากับ `V4-REVIEW-001`
-- Acceptance: Map อ้าง card eligibility, edit route, admin soft delete/Trash 30 วัน และ Known Gaps; dynamic controls มีรหัส
-- ห้ามเปลี่ยน: card eligibility, route, confirmation, soft-delete behavior, loading/error และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียน Partner Control Center, versioned APIs, sync, webhook, health, E2E และ Web 2 starter contract ใต้ `PARTNER-API-001`
+- Acceptance: Map อ้าง auth/scopes, metadata boundary, idempotency/PII/money, webhook/retry, Sandbox/E2E/health และ production boundary; control shell มีรหัส
+- ห้ามเปลี่ยน: API/schema/credential, sync/formula, webhook/retry, security/privacy, loading/error และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
