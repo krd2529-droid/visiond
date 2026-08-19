@@ -464,6 +464,19 @@
 - รหัส UI: หน้า MIX มี `data-feature="V14-MIX-001"`; คงปุ่ม loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014341.mjs`
 
+## ADS-ANALYTICS-001 — Meta Ads ingestion, attribution และ Ads Center
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.342
+- หน้า/ไฟล์: `/ads-center.html`, `public/ads-center.js`, `public/analytics.js`, `functions/_meta_ads.js`, `functions/api/analytics/event.js`, `functions/api/admin/ads-center.js`, `functions/api/admin/meta-ads-sync.js`
+- ฟังก์ชัน: เก็บ event/UTM แบบลดข้อมูลส่วนตัว, ซิงก์ Meta Ads Insights รายวัน, รวมค่าใช้จ่ายกับ purchase attribution และคำนวณ CTR/ROAS/profit พร้อมคำแนะนำ
+- API: `POST /api/analytics/event`, `GET /api/admin/ads-center`, `GET/POST /api/admin/meta-ads-sync`
+- ฐานข้อมูล: `customer_events`, `ad_campaign_costs`, `meta_ads_insights`, `meta_ads_sync_runs`, `orders`
+- สิทธิ์: event endpoint มี rate limit และ event allowlist; Ads Center/Sync ใช้ `requireAdmin`; Meta token/account/version อ่านจาก environment เท่านั้น
+- ห้ามกระทบ: event ซ้ำคน/ชนิด/path/product ภายใน 10 วินาทีไม่นับซ้ำ; sync ได้ไม่เกิน 93 วันและ upsert ต่อ date/account/ad; spend เก็บเป็นสตางค์; revenue นับเฉพาะ paid order ที่ attribution ตรง; ระบบให้คำแนะนำแต่ไม่แก้โฆษณาอัตโนมัติ
+- สูตร: `CTR = clicks / impressions × 100`, `ROAS = revenue / spend`, `profit = revenue - spend`; เมื่อ denominator เป็นศูนย์คืนค่า null ตาม API เดิม
+- รหัส UI: หน้า Ads Center มี `data-feature="ADS-ANALYTICS-001"`; คง loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014342.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
