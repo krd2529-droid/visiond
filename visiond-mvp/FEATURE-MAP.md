@@ -636,6 +636,18 @@
 - รหัส UI: control card มี `data-feature="ELON-CONTROL-001"`; คง toggle/status/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014355.mjs`
 
+## SYSTEM-HEALTH-001 — ตรวจความพร้อมของ Infrastructure และ Service Configuration
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.356
+- หน้า/ไฟล์: System Health section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/system-health.js`, `functions/_seller_token.js`, `functions/_channel_crypto.js`
+- ฟังก์ชัน: ตรวจ required readiness ของ D1, R2, encryption keys, migration tables/indexes; ตรวจ recommended readiness ของ Turnstile, company payment, EasySlip, AI provider, password email, APP_ORIGIN และ retention jobs
+- API: `GET /api/admin/system-health`
+- ข้อมูล: อ่านเฉพาะว่า binding/config มีค่าหรือไม่, `sqlite_master` และค่าบัญชีบริษัทใน `settings`; response คืน `ready|missing`, action, detail และจำนวนสรุป
+- สิทธิ์/ความลับ: ต้องมี DB และผ่าน `requireAdmin`; อนุญาตเฉพาะ role `boss`; response ใช้ `private, no-store` และห้ามคืนค่า Secret/config จริง
+- ห้ามกระทบ: endpoint เป็น read-only ห้ามแก้ environment, binding, migration หรือ settings; DB ขาดคืน 503; non-Boss คืน 403; schema query ล้มต้องแสดง missing โดยไม่ทำให้ทั้ง response ล้ม
+- รหัส UI: health section มี `data-feature="SYSTEM-HEALTH-001"`; คง refresh/loading/error/readiness cards และ theme เดิม
+- การทดสอบ: `scripts/test-v014356.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

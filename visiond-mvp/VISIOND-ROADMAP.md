@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.353` Member Administration; `v0.14.354` Category Member; `v0.14.355` ELON Control
+- เสร็จแล้ว: `v0.14.354` Category Member; `v0.14.355` ELON Control; `v0.14.356` System Health
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.355 — ELON Control Feature Map
+### v0.14.356 — System Health Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียนสวิตช์ควบคุม ELON Web และ ELON V7 ที่แยกฐาน
-- Acceptance: Map อ้าง Boss-only, target/boolean validation, defaults และ binding failure จริง; control card มี `ELON-CONTROL-001`
-- ห้ามเปลี่ยน: enable defaults, database boundary, authorization, API contract และ UI/theme
+- เป้าหมายหลัก: ลงทะเบียนหน้าตรวจ readiness ของ binding, schema, encryption และ optional services
+- Acceptance: Map อ้าง Boss-only, no-store, required/recommended และการไม่เปิดเผย Secret จริง; health panel มี `SYSTEM-HEALTH-001`
+- ห้ามเปลี่ยน: environment, migrations, readiness criteria, authorization, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
