@@ -83,7 +83,8 @@
           <label>ชื่อ EP<input name="title" required /></label>
           <label>คำอธิบาย EP<textarea name="description" rows="3"></textarea></label>
           <label>ความยาวโดยประมาณ (วินาที)<input name="duration_seconds" type="number" min="0" max="86400" value="0" /></label>
-          <label>วิดีโอ MP4/WEBM ไม่เกิน 200 MB<input name="video" type="file" accept="video/mp4,video/webm" /></label>
+          <label>วิดีโอ MP4/WEBM ไม่เกิน 2 GB<input name="video" type="file" accept="video/mp4,video/webm" /></label>
+          <label>คุณภาพวิดีโอ<select name="video_quality"><option value="720">720p</option><option value="480">480p</option></select></label>
           <label class="span2">ไฟล์ประกอบ เลือกได้หลายไฟล์<input name="documents" type="file" multiple /></label>
           <button class="primary span2" type="submit">บันทึก EP</button>
           <button id="basketCancelEpisode" class="secondary-button span2" type="button">ยกเลิก</button>
@@ -97,7 +98,7 @@
         </section>
       </section>
     </main>
-    <script src="/course-basket-edit.js?v=014304"></script>
+    <script src="/course-basket-edit.js?v=014332"></script>
     <script src="/elon-chat.js?v=014304" defer></script>
     <script src="/mobile-storefront.js?v=014304" defer></script>
     <script src="/visiond-design-system.js?v=014304" defer></script>

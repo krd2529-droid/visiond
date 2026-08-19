@@ -120,6 +120,44 @@
     return response.ok;
   }
 
+  async function uploadEpisodeVideo(lessonId, file, quality) {
+    const initResponse = await fetch(`/api/course-seller/${id}/lesson-video-multipart/init`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ lesson_id: Number(lessonId), file_name: file.name, file_type: file.type, file_size: file.size, quality: Number(quality) }),
+    });
+    const init = await initResponse.json().catch(() => ({}));
+    if (!initResponse.ok) throw new Error(init.error || "เริ่มอัปโหลดวิดีโอไม่สำเร็จ");
+    const parts = [];
+    try {
+      for (let offset = 0, partNumber = 1; offset < file.size; offset += init.chunk_size, partNumber += 1) {
+        const end = Math.min(file.size, offset + init.chunk_size);
+        episodeMessage.textContent = `กำลังอัปโหลดวิดีโอ ${Math.round((offset / file.size) * 100)}% กรุณาอย่าปิดหน้านี้…`;
+        const partResponse = await fetch(`/api/course-seller/${id}/lesson-video-multipart/part?key=${encodeURIComponent(init.key)}&upload_id=${encodeURIComponent(init.upload_id)}&part_number=${partNumber}`, {
+          method: "PUT",
+          body: file.slice(offset, end),
+        });
+        const part = await partResponse.json().catch(() => ({}));
+        if (!partResponse.ok) throw new Error(part.error || `อัปโหลดส่วนที่ ${partNumber} ไม่สำเร็จ`);
+        parts.push(part);
+      }
+      const completeResponse = await fetch(`/api/course-seller/${id}/lesson-video-multipart/complete`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key: init.key, upload_id: init.upload_id, file_size: file.size, parts }),
+      });
+      const complete = await completeResponse.json().catch(() => ({}));
+      if (!completeResponse.ok) throw new Error(complete.error || "รวมไฟล์วิดีโอไม่สำเร็จ");
+    } catch (error) {
+      await fetch(`/api/course-seller/${id}/lesson-video-multipart/abort`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key: init.key, upload_id: init.upload_id }),
+      }).catch(() => {});
+      throw error;
+    }
+  }
+
   addEpisode.onclick = () => {
     if (!episodesEditable) return;
     resetEpisodeForm(true);
@@ -128,13 +166,30 @@
   cancelEpisode.onclick = () => resetEpisodeForm(false);
   episodeForm.onsubmit = async (event) => {
     event.preventDefault();
-    const button = event.submitter, lessonId = episodeForm.elements.lesson_id.value;
+    const button = event.submitter, lessonId = episodeForm.elements.lesson_id.value,
+      video = episodeForm.elements.video.files?.[0];
+    if (video && (video.size > 2 * 1024 * 1024 * 1024 || !["video/mp4", "video/webm"].includes(video.type))) {
+      episodeMessage.textContent = "คลิปต้องเป็น MP4/WEBM และมีขนาดไม่เกิน 2 GB";
+      return;
+    }
     button.disabled = true;
     try {
-      await episodeAction(
+      const lessonData = new FormData(episodeForm);
+      lessonData.delete("video");
+      if (video) lessonData.set("video_upload_pending", "1");
+      episodeMessage.textContent = "กำลังบันทึกข้อมูล EP…";
+      const response = await fetch(
         lessonId ? `/api/course-seller/${id}/lessons/${lessonId}` : `/api/course-seller/${id}/lessons`,
-        { method: lessonId ? "PUT" : "POST", body: new FormData(episodeForm) },
+        { method: lessonId ? "PUT" : "POST", body: lessonData },
       );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "บันทึกข้อมูล EP ไม่สำเร็จ");
+      if (video) await uploadEpisodeVideo(data.id || lessonId, video, episodeForm.elements.video_quality.value);
+      resetEpisodeForm(false);
+      await loadEpisodes();
+      episodeMessage.textContent = video ? "บันทึก EP และอัปโหลดวิดีโอสำเร็จ" : (data.message || "บันทึก EP แล้ว");
+    } catch (error) {
+      episodeMessage.textContent = `${error.message}${video ? " · ข้อมูล EP ถูกเก็บเป็นร่างแล้ว กดบันทึกใหม่เพื่ออัปโหลดซ้ำ" : ""}`;
     } finally {
       button.disabled = false;
     }

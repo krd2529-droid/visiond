@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.331');
+assert.match(read('public/index.html'),/WEB v0\.14\.331/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.331/);
+const active=read('VISIOND-ROADMAP.md'),history=read('work-history/visiond/roadmap/VISIOND-ROADMAP.md');
+for(const heading of ['Current Event Case','Active Patch','Next Queue','Blocked / Waiting','Recently Completed','Historical Sources'])assert.match(active,new RegExp(heading));
+assert.match(active,/ห้ามเริ่มเอง/);
+assert.match(active,/work-history\/visiond\/roadmap\/VISIOND-ROADMAP\.md/);
+assert.match(active,/work-history\/visiond\/patch-history\//);
+assert.ok(active.split(/\r?\n/).length<100,'Active Roadmap ต้องสั้นกว่า 100 บรรทัด');
+assert.ok(history.split(/\r?\n/).length>500,'Roadmap history เดิมต้องยังอยู่');
+assert.match(history,/v0\.14\.299/);
+assert.doesNotMatch(active,/^# v0\.14\.2\d\d/m,'Active Roadmap ต้องไม่รวม patch history จำนวนมาก');
+console.log('PASS v0.14.331 active roadmap queue and preserved history');

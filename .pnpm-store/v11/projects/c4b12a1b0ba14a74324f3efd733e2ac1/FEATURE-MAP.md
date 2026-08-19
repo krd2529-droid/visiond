@@ -17,6 +17,17 @@
 - ห้ามกระทบ: ห้ามให้ Roadmap/Marketing/History ขยายงาน ห้ามลดกฎความปลอดภัย และห้ามลบฉบับละเอียดเดิม
 - การทดสอบ: `scripts/test-v014330.mjs`, `scripts/test-document-history.mjs`, `scripts/test-all-regressions.mjs`
 
+## GOV-ROADMAP-QUEUE-001 — Roadmap Active แบบคิว
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.331
+- ไฟล์: `VISIOND-ROADMAP.md`, `work-history/visiond/roadmap/VISIOND-ROADMAP.md`, `work-history/visiond/patch-history/`
+- Input: Event Case ที่ Boss อนุมัติ, Active Patch, blocker และคิวเสนอ
+- Output: Current Event Case, Active Patch, Next Queue, Blocked และ Recently Completed
+- Reads: ประวัติย้อนหลังเฉพาะเมื่อค้น regression/root cause/rollback
+- Writes: สถานะคิว Active และรายการล่าสุดเท่าที่เกี่ยวข้องกับแพต
+- ห้ามกระทบ: ห้าม Roadmap สั่งเริ่ม Next Queue เอง ห้ามลบประวัติ และห้ามรวม Marketing/กฎธุรกิจกลับเข้า Active Roadmap
+- การทดสอบ: `scripts/test-v014331.mjs`, `scripts/test-document-history.mjs`, `scripts/test-all-regressions.mjs`
+
 - รหัสเดิมห้ามนำกลับไปใช้กับฟีเจอร์อื่น
 - หนึ่งฟีเจอร์ใช้รหัสเดียวกันข้าม frontend, backend, test และเอกสาร
 - งานย่อยที่มีขอบเขตข้อมูลหรือสิทธิ์ต่างกันให้แยกรหัส
@@ -43,20 +54,20 @@
 
 ## COURSE-EP-001 — EP เป็นส่วนหนึ่งของตะกร้าคอร์สพาร์ตเนอร์
 
-- สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
+- สถานะ: `IMPLEMENTED`; หน้าแก้ไขตะกร้าใช้วิดีโอ Multipart สูงสุด 2 GB ใน v0.14.332
 - หน้า: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`
-- ไฟล์: `public/course-seller.html`, `public/course-seller.js`, `public/course-basket-edit.js`, `functions/api/course-seller/[id]/lessons.js`, `functions/api/course-seller/[id]/lessons/[lessonId].js`, `functions/api/course-seller/[id]/lessons/[lessonId]/files.js`
+- ไฟล์: `public/course-seller.html`, `public/course-seller.js`, `public/course-basket-edit.html`, `public/course-basket-edit.js`, `functions/api/course-seller/[id]/lessons.js`, `functions/api/course-seller/[id]/lessons/[lessonId].js`, `functions/api/course-seller/[id]/lessons/[lessonId]/files.js`, `functions/api/course-seller/[id]/lesson-video-multipart/*`
 - ฟังก์ชัน/ตัวควบคุม: `addCourseEpEditor()`, `sellerLessonForm.onsubmit`, `renderLessons()`, `loadLessons()`
 - ปุ่ม/interaction: `addLessonButton` เป็น `type="button"`; เพิ่ม แก้ไข ลบ EP และไฟล์ประกอบภายในตะกร้าเดียวกัน
-- API: `GET/POST /api/course-seller/:courseId/lessons`, `PUT/DELETE /api/course-seller/:courseId/lessons/:lessonId`, `DELETE /api/course-seller/:courseId/lessons/:lessonId/files`
+- API: `GET/POST /api/course-seller/:courseId/lessons`, `PUT/DELETE /api/course-seller/:courseId/lessons/:lessonId`, `DELETE /api/course-seller/:courseId/lessons/:lessonId/files`; วิดีโอใช้ `lesson-video-multipart/init|part|complete|abort`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1/R2; `courses.id`, `courses.expected_episodes`, `courses.total_minutes`, `course_lessons.course_id`, `course_lessons.title`, `course_lessons.description`, `course_lessons.duration_seconds`, `course_lessons.video_key`, `course_lessons.pdf_key`, `course_lesson_files.lesson_id`
-- Input: `course_id`, ชื่อ EP, คำอธิบาย, ระยะเวลา, คลิป และไฟล์ประกอบแบบ multipart
+- Input: `course_id`, ชื่อ EP, คำอธิบาย, ระยะเวลา, คลิป MP4/WEBM สูงสุด 2 GB ผ่าน R2 Multipart และไฟล์ประกอบสูงสุด 200 MB ต่อไฟล์
 - Output: รายการ EP ที่ผูกกับตะกร้าคอร์สเดียวกัน พร้อมสถานะความครบถ้วน
 - Reads: คอร์สของผู้ใช้, จำนวน/ลำดับ EP, คลิป และไฟล์ประกอบ
 - Writes: เพิ่ม/แก้/ลบ `course_lessons` และ `course_lesson_files`; อัปเดตจำนวน EP/เวลาใน `courses`
 - สิทธิ์: สมาชิกเจ้าของคอร์สเท่านั้น; API ตรวจ ownership และสถานะที่แก้ได้
 - ห้ามกระทบ: ปุ่มเพิ่ม EP ห้าม submit ฟอร์ม/เปิด file picker; ห้ามแยก EP ออกจาก `course_id`; ห้ามทำลายไฟล์ของ EP อื่น; ห้ามเผยแพร่คอร์สอัตโนมัติ
-- การทดสอบ: `scripts/test-v014307.mjs`, `scripts/test-v014308.mjs`, `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`
+- การทดสอบ: `scripts/test-v014307.mjs`, `scripts/test-v014308.mjs`, `scripts/test-v014310.mjs`, `scripts/test-v014324.mjs`, `scripts/test-v014332.mjs`
 
 ## COURSE-BASKET-001 — สร้างและแก้ตะกร้าคอร์สพาร์ตเนอร์
 
