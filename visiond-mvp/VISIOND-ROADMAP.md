@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.340` Vision 14 Summary; `v0.14.341` Vision 14 MIX; `v0.14.342` Ads/Analytics
-- ยังเหลือ: Webhook Hub, Security, Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ
+- เสร็จแล้ว: `v0.14.341` Vision 14 MIX; `v0.14.342` Ads/Analytics; `v0.14.343` Webhook Hub
+- ยังเหลือ: Security, Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ
 
 ## Active Patch
 
-### v0.14.342 — Ads/Analytics Feature Map
+### v0.14.343 — Webhook Hub Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน Meta Ads ingestion, attribution และ Ads Center metrics
-- Acceptance: Map อ้าง sync/upsert/dedup/spend/revenue/ROAS/permission จริง และหน้ามีรหัส `ADS-ANALYTICS-001`
-- ห้ามเปลี่ยน: attribution, สูตร metric, sync range, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียน endpoint lifecycle และ LINE webhook ingestion ของ VEasy
+- Acceptance: Map อ้าง URL/rotation/state/signature/dedup/permission จริง และหน้ามีรหัส `WEBHOOK-HUB-001`
+- ห้ามเปลี่ยน: endpoint state, adapter gate, signature, ingestion, API และ UI behavior
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

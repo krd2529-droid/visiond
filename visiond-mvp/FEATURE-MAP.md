@@ -477,6 +477,19 @@
 - รหัส UI: หน้า Ads Center มี `data-feature="ADS-ANALYTICS-001"`; คง loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014342.mjs`
 
+## WEBHOOK-HUB-001 — จัดการ Webhook endpoint และรับ LINE event ของร้าน VEasy
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.343
+- หน้า/ไฟล์: `/webhook-hub.html`, `public/webhook-hub.js`, `functions/_webhook_hub.js`, `functions/hooks/v1/[provider]/[publicId].js`, `functions/api/admin/webhook-hub.js`
+- ฟังก์ชัน: ออก URL สุ่ม, pause/resume/rotate/revoke, แสดง adapter state/event ล่าสุด, ตรวจ LINE signature และส่ง event ที่ผ่านไปยัง LINE AI processor
+- API: `GET/POST/PATCH /api/admin/webhook-hub`, `POST /hooks/v1/:provider/:publicId`
+- ฐานข้อมูล: `veasy_webhook_endpoints`, `veasy_webhook_events`, `veasy_channel_credentials`, `veasy_shops`
+- สิทธิ์: หน้าจัดการใช้ `requireAdmin`; public ID เป็น `wh_` ตามด้วย random hex 48 ตัว; callback ยอมรับเฉพาะ provider allowlist และ LINE adapter ที่พร้อม
+- ห้ามกระทบ: rotate ต้อง revoke URL เดิมแล้วสร้าง URL ใหม่; revoked คืน 404; LINE signature ผิดคืน 401 และบันทึก rejected; verify payload ว่างที่ลายเซ็นผ่านคืน 200; paused/not-ready fail closed; รับสูงสุด 100 events ต่อ payload และ dedup ด้วย endpoint/external event ID
+- สถานะ: endpoint `draft|active|paused|revoked`, adapter `pending|ready|error`; รับ event จริงได้เฉพาะ active + ready
+- รหัส UI: หน้า Webhook Hub มี `data-feature="WEBHOOK-HUB-001"`; คง confirmation, copy, success/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014343.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
