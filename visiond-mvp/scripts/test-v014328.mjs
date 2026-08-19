@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+assert.equal(read('VERSION.txt').trim(), 'v0.14.328');
+assert.match(read('public/index.html'), /WEB v0\.14\.328/);
+assert.match(read('public/admin.html'), /ADMIN v0\.14\.328/);
+const js=read('public/product-sample-archive.js');
+assert.match(js, /output\.length<30/);
+assert.match(js, /pages\.slice\(0,30-output\.length\)/);
+assert.match(js, /name:`\$\{basketName\}\/\$\{file\.name\}`/);
+assert.match(js, /anchor\.download=`\$\{basketName\}\.zip`/);
+assert.match(read('FEATURE-MAP.md'), /JPEG ที่ประทับ SAMPLE 30 รูปแรก/);
+console.log('PASS v0.14.328 basket sample ZIP folder and 30-image limit');
