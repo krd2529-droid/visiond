@@ -858,6 +858,15 @@ td {
   display: grid;
   gap: 14px;
 }
+.seller-lesson-workspace.seller-lesson-embedded {
+  margin: 28px 0 0;
+  padding: 28px 0 0;
+  border: 0;
+  border-top: 1px solid #a9e0dd;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
 .seller-lesson-workspace[hidden] {
   display: none;
 }
