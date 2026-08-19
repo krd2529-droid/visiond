@@ -822,3 +822,18 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - EP เป็นข้อมูลลูกของตะกร้าคอร์ส ต้องมีชื่อ คำอธิบาย ระยะเวลา คลิปไม่เกิน 2 GB/720p หรือเอกสารประกอบ
 - ห้ามสร้าง EP เปล่าอัตโนมัติในฐานข้อมูล และห้ามมีปุ่มพับส่วน EP
 - ส่งตรวจได้ต่อเมื่อมี EP อย่างน้อยหนึ่งรายการและทุก EP มีชื่อพร้อมสื่อประกอบ
+
+# อัปเดต v0.14.303 — Traceable Feature and Code Ownership Standard (IMPLEMENTED · PROTOCOL)
+
+- เพิ่ม `FEATURE-MAP.md` เป็นแผนที่กลางสำหรับตามหน้า → interaction → controller → API → ฐานข้อมูล → test
+- ฟีเจอร์ใหม่และฟีเจอร์ที่แก้สาระสำคัญต้องมีรหัส `DOMAIN-CAPABILITY-NNN` พร้อมชื่อไฟล์/ฟังก์ชัน/ฟิลด์ที่สื่อหน้าที่
+- ทุกคิว Event Case และ Event Roadmap ต้องระบุ Inputs, Outputs, Reads, Writes, สิทธิ์ และสิ่งห้ามกระทบของฟีเจอร์ที่แตะ
+- การทดสอบต้องผูกกับรหัสฟีเจอร์และตรวจผลข้างเคียงที่ห้ามเกิด ไม่ถือว่าคอมเมนต์จำนวนมากแทนหลักฐานทดสอบได้
+- งานเก่าที่ถูกแตะและยังไม่มีรหัสต้องเพิ่ม Feature Map เฉพาะขอบเขตนั้นในแพตช์เดียวกัน โดยห้ามเดา schema หรือเปลี่ยนชื่อระบบเดิมแบบยกชุด
+
+# อัปเดต v0.14.304 — Current System Feature Map: Storefront and Member Core (IMPLEMENTED · EVENT CASE IN PROGRESS)
+
+- ลงทะเบียนเส้นทางจริงของ `AUTH-ACCOUNT-001`, `CATALOG-STOREFRONT-001`, `COMMERCE-ORDER-001`, `DELIVERY-DOWNLOAD-001` และ `MEMBER-HUB-001`
+- แต่ละรายการระบุหน้า ไฟล์ controller, API, ตาราง/ฟิลด์, Input/Output, Reads/Writes, สิทธิ์ สิ่งห้ามกระทบ และ focused tests
+- เพิ่ม Feature ID ไว้ที่ controller/backend หลัก เพื่อค้นจากโค้ดกลับมาที่ `FEATURE-MAP.md` ได้
+- Event Case การทำแผนที่ระบบปัจจุบันยังไม่ปิด: แพตช์ถัดไปต้องครอบคลุมระบบคอร์ส จากนั้นหลังบ้าน V12 Partner API และเครื่องมือ Vision อื่นทั้งหมด

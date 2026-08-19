@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014302');
+import('/facebook-chat.js?v=014304');
 const authMessage=document.querySelector('#pageAuthMsg');
 const returnTo=()=>{
   const saved=String(sessionStorage.getItem('vd_return_to')||'').trim();
@@ -76,3 +76,4 @@ document.querySelector('#forgotForm')?.addEventListener('submit',async event=>{
   }catch(error){if(authMessage)authMessage.textContent=error.message}
   finally{button.disabled=false;button.textContent=original}
 });
+// Feature: AUTH-ACCOUNT-001 — สมัครสมาชิก เข้าสู่ระบบ และกู้รหัสผ่าน

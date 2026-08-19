@@ -1,4 +1,4 @@
-import('/facebook-chat.js?v=014302');
+import('/facebook-chat.js?v=014304');
 const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,profile:dashProfile,settings:dashSettings,createdCourses:dashCreatedCourses,learning:dashLearning,baskets:dashBaskets,sales:dashSales,rights:dashRights,notifications:dashNotifications,help:dashHelp};
 const roleLabel={boss:'Boss · เจ้าของระบบ',admin:'Admin · ผู้ดูแลระบบ',user:'User · สมาชิกทั่วไป',customer:'User · สมาชิกทั่วไป'};
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
@@ -41,3 +41,4 @@ hubMenuBackdrop?.addEventListener('click',()=>closeHubMenu({restoreFocus:true}))
 hubSidebar?.querySelectorAll('[data-dash],a').forEach(item=>item.addEventListener('click',()=>{if(innerWidth<=850)closeHubMenu()}));
 addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('hub-menu-open')){event.preventDefault();closeHubMenu({restoreFocus:true});return}if(event.key==='Tab'&&document.body.classList.contains('hub-menu-open')&&hubSidebar){const focusable=[...hubSidebar.querySelectorAll('button:not([disabled]),a[href]')].filter(node=>!node.hidden),first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()}}});
 addEventListener('resize',()=>{if(innerWidth>850)closeHubMenu()});
+// Feature: MEMBER-HUB-001 — ศูนย์สมาชิกและออเดอร์ของบัญชีปัจจุบัน

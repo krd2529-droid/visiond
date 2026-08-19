@@ -38,3 +38,4 @@ export async function onRequestPost(ctx){
   await ctx.env.DB.batch(keys.slice(0,100).map(key=>ctx.env.DB.prepare('INSERT OR REPLACE INTO notification_reads(user_id,notification_key,read_at) VALUES(?,?,CURRENT_TIMESTAMP)').bind(auth.user.id,key)));
   return json({ok:true,count:keys.length});
 }
+// Feature: MEMBER-HUB-001 — account-scoped notification boundary
