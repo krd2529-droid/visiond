@@ -406,8 +406,12 @@ function resetLessonEditor(courseId, hide = true) {
   sellerLessonMessage.textContent = "";
   sellerLessonForm.hidden = hide;
 }
-cancelLessonEdit.onclick = () =>
-  resetLessonEditor(sellerLessonForm.elements.course_id.value, false);
+// COURSE-EP-CONTINUOUS-003 — ปุ่มนี้ไม่มีในหน้าสร้างแบบต่อเนื่อง ต้องไม่ทำให้สคริปต์หยุด
+const cancelLessonEditButton = document.querySelector("#cancelLessonEdit");
+if (cancelLessonEditButton) {
+  cancelLessonEditButton.onclick = () =>
+    resetLessonEditor(sellerLessonForm.elements.course_id.value, false);
+}
 async function openLessons(course) {
   activeLessonCourse=course;
   sellerLessonManager.hidden = false;
@@ -756,6 +760,13 @@ async function submitCurrentCourseForReview() {
     try {
       const courseData = new FormData(sellerCourseForm);
       courseData.set("expected_episodes", String(episodes.length));
+      courseData.set("episodes_json", JSON.stringify(episodes.map((episode, index) => ({
+        title: episode.title,
+        description: episode.description,
+        duration_seconds: Math.max(0, Number(episode.duration) || 0) * 60,
+        position: index + 1,
+        sort_order: (index + 1) * 10,
+      }))));
       const createResponse = await fetch("/api/course-seller", { method: "POST", body: courseData });
       const course = await createResponse.json().catch(() => ({}));
       if (!createResponse.ok) throw new Error(course.error || "สร้างตะกร้าคอร์สไม่สำเร็จ");
