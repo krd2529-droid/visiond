@@ -6,19 +6,19 @@
 
 ### GOV-LEAN-WORKFLOW — ลดภาระกฎและทำให้แต่ละแพตรันครบ
 
-- สถานะ: `IN PROGRESS`
+- สถานะ: `PAUSED BY BOSS` เพื่อแก้บั๊กเร่งด่วน v0.14.332
 - เป้าหมาย: แยกกฎ Active, Roadmap queue และ Automated Gate ออกจากกัน
 - เสร็จแล้ว: `v0.14.330` Lean Active Patch Protocol
-- กำลังทำ: `v0.14.331` Active Roadmap Queue
+- เสร็จแล้ว: `v0.14.331` Active Roadmap Queue
 - ยังเหลือ: Automated Patch Gate เป็นแพตแยกหลัง Boss อนุมัติ
 
 ## Active Patch
 
-### v0.14.331 — Active Roadmap Queue
+### v0.14.332 — แก้หน้าแก้ไข EP ที่ยังจำกัดวิดีโอ 200 MB
 
-- เป้าหมายหลัก: ให้ Roadmap รากแสดงเฉพาะ Current Event Case, Active Patch, Next Queue, Blocked และ Recently Completed
-- Acceptance: Roadmap Active สั้นกว่า 100 บรรทัด; ไม่บรรจุ Patch History จำนวนมาก; ชี้ตำแหน่งประวัติครบ; tests เดิมยังผ่าน
-- ห้ามเปลี่ยน: โค้ดธุรกิจ, API, Database, Feature behavior, Marketing Plan และไฟล์ Roadmap ประวัติ
+- เป้าหมายหลัก: ให้หน้าแก้ไขตะกร้าคอร์สอัปโหลดวิดีโอผ่าน R2 Multipart สูงสุด 2 GB เหมือนหน้าสร้าง
+- Acceptance: วิดีโอไม่ถูกส่งเข้า API lessons แบบก้อน; ใช้ init/part/complete/abort; ไฟล์ประกอบยังจำกัด 200 MB ต่อไฟล์
+- ห้ามเปลี่ยน: API contract เดิม, Database, การอนุมัติ/เผยแพร่ และสิทธิ์เจ้าของคอร์ส
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
@@ -35,6 +35,7 @@
 ## Recently Completed
 
 - `v0.14.330` — ย่อ Active Protocol และ routing เอกสารตามระบบ
+- `v0.14.331` — ย่อ Roadmap Active เป็นคิวและเก็บประวัติแยก
 - `v0.14.329` — จดจำจำนวนดาวน์โหลดรูปตัวอย่างต่อตะกร้า
 - `v0.14.328` — ZIP รูปตัวอย่างเป็นโฟลเดอร์ชื่อตะกร้าและจำกัด 30 รูป
 - `v0.14.327` — Feature Map ระบบ Vision 7
