@@ -872,6 +872,20 @@
 - ความสัมพันธ์: first-party events/retention อยู่ใต้ `CUSTOMER-INTELLIGENCE-001`; Meta Ads cost ingestion/attribution อยู่ใต้ `ADS-ANALYTICS-001`
 - การทดสอบ: `scripts/test-v014373.mjs`
 
+## CONTACT-DOCK-001 — LINE/Facebook External Contact Dock
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.374
+- หน้า/ไฟล์: public pages ที่โหลดหรือ import `public/facebook-chat.js`; controller สร้าง `.vd-contact-dock` และ responsive styles แบบ dynamic
+- ช่องทาง: LINE ใช้ `window.VISIOND_LINE_URL` หรือ fallback `https://lin.ee/RJZwr1p`; Facebook ใช้ `window.VISIOND_FACEBOOK_PAGE_URL` หรือ fallback Messenger page URL
+- Boundary: เป็น external contact launcher เท่านั้น; ไม่อ่าน/เก็บ/ส่งข้อความลูกค้า, ไม่มี API call, access token, webhook, inbox หรือ AI response ใน controller นี้
+- Navigation safety: ลิงก์ภายนอกเปิด `_blank` พร้อม `rel="noopener noreferrer"`; URL ใช้ค่าที่ runtime/config กำหนดหรือ fallback เดิมโดยไม่รับ user input ใน widget
+- Interaction: launcher เปิด panel, ปุ่มย่อ/ปิดซ่อน panel, ซ่อน Facebook launcher เมื่อ panel เปิด และจำสถานะด้วย `visiond_facebook_chat_open` ใน localStorage
+- Accessibility: aside/nav/panel มี label, ปุ่มเป็น `type="button"`, launcher sync `aria-expanded`, panel ใช้ `hidden`; mobile ไม่เกิน 560px ย่อ launcher เป็น icon และ panel พอดี viewport
+- Failure/idempotency: ไม่สร้าง dock ซ้ำเมื่อพบ `[data-visiond-contact-dock]`; localStorage อ่าน/เขียนล้มเหลวแล้วใช้สถานะปิดต่อได้
+- รหัส UI: root dock ใช้ `data-feature="CONTACT-DOCK-001"`; คง text, URLs, open/close behavior, responsive styles และ theme เดิม
+- ความสัมพันธ์: ELON web assistant อยู่ใต้ `ELON-CHAT-001`; Facebook Page inbox/handoff อยู่ใต้ `ELON-PAGE-001`/`V12-INBOX-001`; webhook ingestion อยู่ใต้ `WEBHOOK-HUB-001`
+- การทดสอบ: `scripts/test-v014374.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน

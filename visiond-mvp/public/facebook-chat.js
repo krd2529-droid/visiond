@@ -7,6 +7,7 @@ import('/i18n.js?v=014304');
     if(document.querySelector('[data-visiond-contact-dock]'))return;
     const root=document.createElement('aside');
     root.className='vd-contact-dock';
+    root.dataset.feature='CONTACT-DOCK-001';
     root.dataset.visiondContactDock='';
     root.innerHTML=`<section class="vd-facebook-chat-panel" aria-label="แชทเพจ VisionD">
       <header><span class="vd-facebook-chat-avatar" aria-hidden="true">f</span><span><b>VisionD Online</b><small>Facebook Messenger</small></span><button type="button" data-chat-min aria-label="ย่อหน้าต่างแชท" title="ย่อ">−</button><button type="button" data-chat-close aria-label="ปิดหน้าต่างแชท" title="ปิด">×</button></header>
