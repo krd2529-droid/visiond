@@ -28,6 +28,20 @@
 - ห้ามกระทบ: ห้าม Roadmap สั่งเริ่ม Next Queue เอง ห้ามลบประวัติ และห้ามรวม Marketing/กฎธุรกิจกลับเข้า Active Roadmap
 - การทดสอบ: `scripts/test-v014331.mjs`, `scripts/test-document-history.mjs`, `scripts/test-all-regressions.mjs`
 
+## GOV-PATCH-GATE-001 — Automated Patch Gate
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.334
+- หน้า: ไม่มี; ใช้งานจาก CLI ใน `visiond-mvp`
+- ไฟล์: `scripts/patch-gate.mjs`, `scripts/test-all-regressions.mjs`, `scripts/visible-version-check.mjs`, `scripts/predeploy-check.mjs`
+- ฟังก์ชัน/ตัวควบคุม: `npm run patch:gate`
+- Input: ไฟล์ที่ Stage แล้ว, `VERSION.txt` และ focused test ของเวอร์ชันปัจจุบัน
+- Output: PASS/FAIL ของ staged files, focused, visible-version, regression และ predeploy
+- Reads: Git staged index และไฟล์ source/test; ไม่อ่าน Secret หรือ environment variables
+- Writes: ไม่มี
+- สิทธิ์: ใช้ก่อน Commit; ไม่ Push และไม่ Deploy
+- ห้ามกระทบ: ต้องหยุดเมื่อไม่มี staged files, พบ `.pnpm-store`, ไฟล์ลับ หรือไฟล์นอกขอบเขต repo ที่อนุญาต
+- การทดสอบ: `scripts/test-v014334.mjs` และรัน Gate จริงกับ staged patch
+
 - รหัสเดิมห้ามนำกลับไปใช้กับฟีเจอร์อื่น
 - หนึ่งฟีเจอร์ใช้รหัสเดียวกันข้าม frontend, backend, test และเอกสาร
 - งานย่อยที่มีขอบเขตข้อมูลหรือสิทธิ์ต่างกันให้แยกรหัส

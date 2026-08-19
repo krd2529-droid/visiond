@@ -19,6 +19,7 @@
     "test:mobile-frontend": "node scripts/test-mobile-frontend.mjs",
     "test:first-order-promo": "node scripts/test-first-order-promo.mjs",
     "predeploy:check": "node scripts/predeploy-check.mjs",
+    "patch:gate": "node scripts/patch-gate.mjs",
     "test:v01445": "node scripts/test-v01445.mjs",
     "test:v01446": "node scripts/test-v01446.mjs",
     "test:v01447": "node scripts/test-v01447.mjs",
@@ -250,7 +251,8 @@
     "test:v014330": "node scripts/test-v014330.mjs",
     "test:v014331": "node scripts/test-v014331.mjs",
     "test:v014332": "node scripts/test-v014332.mjs",
-    "test:v014333": "node scripts/test-v014333.mjs"
+    "test:v014333": "node scripts/test-v014333.mjs",
+    "test:v014334": "node scripts/test-v014334.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
