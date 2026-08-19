@@ -1,5 +1,9 @@
 # VisionD Roadmap — Living Plan
 
+## v0.14.330 — Lean Active Patch Protocol (IMPLEMENTED)
+- ย่อกฎ Active เป็นลำดับอำนาจ กฎถาวร 10 ข้อ และ routing แบบ `WHEN-TOUCHING`; ฉบับละเอียดเดิมคงเป็น Reference ใน work-history
+- Roadmap restructuring และ Automated Patch Gate ยังไม่รวมในแพตนี้
+
 ## v0.14.329 — Basket Sample Download Memory (IMPLEMENTED)
 - จดจำจำนวนครั้งที่ดาวน์โหลดรูปตัวอย่างของแต่ละตะกร้าใน browser และเตือนบนการ์ดโดยไม่บล็อกการโหลดซ้ำ
 
