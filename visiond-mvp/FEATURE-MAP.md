@@ -742,6 +742,22 @@
 - รหัส UI: company-course grid และ lesson manager มี `data-feature="COURSE-ADMIN-001"`; คง form, confirmation, loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014363.mjs`
 
+## COURSE-PAYOUT-001 — บัญชีรับเงินผู้สอนและ Secure Payment QR
+
+- สถานะ: `PARTIAL`; ลงทะเบียน API จริงใน v0.14.365 แต่ client ตั้งค่าบัญชีใน `/course-center` ขาดจาก runtime ปัจจุบัน
+- หน้า/ไฟล์: ลิงก์ `/course-center#paymentProfilePanel` ใน `/dashboard.html`, publish/order flow, `functions/api/course-seller/payment-profile.js`, `functions/api/course-seller/payment-qr/[entitlementId].js`, `functions/api/course-seller/[id]/publish.js`
+- ฟังก์ชัน API: เจ้าของบันทึกธนาคาร/ชื่อบัญชี/เลขบัญชี/QR ของตน; publish ผูกข้อมูลรับเงินกับ seller-course binding; ผู้มีสิทธิ์เปิด QR ผ่าน entitlement binding
+- API: `POST /api/course-seller/payment-profile`, `GET /api/course-seller/payment-qr/:entitlementId`
+- ฐานข้อมูล/ไฟล์: `users.seller_bank_name/seller_account_name/seller_account_number/seller_payment_qr_url/seller_payment_status`, `courses.license_entitlement_id`, `orders`, `order_items`; R2 `seller-payment-qr-*`
+- สิทธิ์: บันทึกและอ่านใช้ `requireUser`; บันทึกได้เฉพาะบัญชีผู้ใช้ปัจจุบัน; QR เปิดได้เฉพาะ staff, เจ้าของคอร์ส หรือผู้ซื้อที่มีออเดอร์ของ course owner/product ใน `awaiting_payment|rejected|pending_review`
+- Validation: ธนาคารต้องอยู่ใน allowlist, ชื่อบัญชีต้องไม่ว่าง, เลขบัญชีมีตัวเลขอย่างน้อย 6 หลัก; QR รับ JPG/PNG/WEBP สูงสุด 8 MB
+- ห้ามกระทบ object lifecycle: อัปโหลด QR ใหม่ก่อน update DB; DB ไม่เปลี่ยนต้องลบ object ใหม่; update สำเร็จจึงลบ object เก่าแบบ best effort
+- ห้ามกระทบ privacy: QR lookup ใช้ entitlement binding ไม่รับ object key ตรง; response เป็น `private, no-store` และ `x-content-type-options: nosniff`; ผู้ไม่มีสิทธิ์คืน 403
+- ขอบเขต: แยกจาก `PAYMENT-SETTINGS-001` ซึ่งเป็นบัญชีรับเงินส่วนกลางของ VisionD และจาก review actions ใน `COURSE-REVIEW-001`
+- ช่องว่างที่พบ: `/dashboard.html` และ publish error ชี้ไป `#paymentProfilePanel` แต่ `/course-center.html` ไม่มี panel/form และ `public/course-center.js` ไม่เรียก payment-profile API; จึงห้ามรายงานเป็น end-to-end implemented จนมีแพตฟีเจอร์เฉพาะ
+- รหัส UI: ยังไม่มีจุด runtime ที่ถูกต้องให้ติด `data-feature`; ห้ามใส่ marker หลอกบนลิงก์ที่ปลายทางไม่มีฟอร์ม
+- การทดสอบ: `scripts/test-v014365.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
