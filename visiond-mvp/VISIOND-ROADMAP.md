@@ -8,16 +8,16 @@
 
 - สถานะ: `IN PROGRESS`
 - เป้าหมาย: ลงทะเบียนระบบจริงทีละระบบด้วยรหัส `DOMAIN-CAPABILITY-NNN` โดยไม่เปลี่ยนพฤติกรรมธุรกิจ
-- เสร็จแล้ว: `v0.14.350` Business Reporting; `v0.14.351` Payment Settings; `v0.14.352` Promotion Settings
+- เสร็จแล้ว: `v0.14.351` Payment Settings; `v0.14.352` Promotion Settings; `v0.14.353` Member Administration
 - ยังเหลือ: Partner API/Web 2 และระบบที่ Coverage Audit รอบสุดท้ายพบ; Security ถูกจัดอยู่ใต้ `AUTH-ACCOUNT-001`
 
 ## Active Patch
 
-### v0.14.352 — Promotion Settings Feature Map
+### v0.14.353 — Member Administration Feature Map
 
-- เป้าหมายหลัก: ลงทะเบียน catalog promotion configuration และ first-order enable switch
-- Acceptance: Map อ้าง scopes/validation/exclusions/pricing/permission จริง และ forms มีรหัส `PROMOTION-SETTINGS-001`
-- ห้ามเปลี่ยน: discount formulas, eligibility, first-order contract, API และ UI behavior
+- เป้าหมายหลัก: ลงทะเบียนระบบจัดการบัญชีสมาชิก เครดิตคอร์ส การปลดล็อกแบบ manual และประวัติ
+- Acceptance: Map อ้าง role/validation/order/evidence/entitlement contract จริง และ `usersPanel` มีรหัส `MEMBER-ADMIN-001`
+- ห้ามเปลี่ยน: role permissions, validation, order/unlock behavior, API contract และ UI/theme
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง

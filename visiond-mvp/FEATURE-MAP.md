@@ -599,6 +599,18 @@
 - รหัส UI: catalog และ first-order forms มี `data-feature="PROMOTION-SETTINGS-001"`; คง validation/stats/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014352.mjs`, `scripts/test-first-order-promo.mjs`
 
+## MEMBER-ADMIN-001 — จัดการบัญชีสมาชิก เครดิตคอร์ส และปลดล็อกแบบ Manual
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.353
+- หน้า/ไฟล์: users section ใน `/admin.html`, `public/admin.js`, `functions/api/admin/users.js`, `functions/api/admin/users/[id].js`, `functions/api/admin/users/test-user.js`, `functions/api/admin/users/[id]/course-credits.js`, `functions/api/admin/users/[id]/unlock.js`, `functions/api/admin/unlock-history.js`
+- ฟังก์ชัน: ดูรายชื่อ/แก้บัญชี, สร้างยูสทดสอบ, เพิ่มเครดิตสิทธิ์ลงขายคอร์ส, ปลดล็อกสินค้าให้ลูกค้าพร้อมราคาขาย/สลิป และดูประวัติปลดล็อก
+- API: `GET /api/admin/users`, `PATCH /api/admin/users/:id`, `POST /api/admin/users/test-user`, `POST /api/admin/users/:id/course-credits`, `POST /api/admin/users/:id/unlock`, `GET /api/admin/unlock-history`
+- ฐานข้อมูล/ไฟล์: `users`, `orders`, `order_items`, `entitlements`, `course_right_credits`, `unlock_logs`, `order_slip_evidence`; R2 `slips/manual/*`
+- สิทธิ์: รายชื่อ/ปลดล็อก/ประวัติใช้ `requireAdmin`; แก้บัญชี สร้างยูสทดสอบ และเพิ่มเครดิตคอร์สใช้ `requireBoss`; บัญชี Boss แก้จากตารางนี้ไม่ได้
+- ห้ามกระทบ: account type จำกัด `user|test|admin`; test user ใช้ชื่อกลางเดิม; เครดิตคอร์ส 1–100 ต่อครั้ง; manual unlock รับเฉพาะ published product, ไม่สร้าง entitlement ซ้ำยกเว้น resale-rights, สลิปต้องเป็นรูปไม่เกิน 10 MB และราคาขายที่เว้นว่างคง `sale_price_recorded=0`
+- รหัส UI: users section มี `data-feature="MEMBER-ADMIN-001"`; คง form/table/dialog/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014353.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
