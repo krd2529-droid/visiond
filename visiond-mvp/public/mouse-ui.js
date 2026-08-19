@@ -1,3 +1,5 @@
+document.documentElement.dataset.uiPointerFeature='UI-POINTER-001';
+
 if (!document.querySelector('link[data-visiond-mouse-ui]')) {
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';

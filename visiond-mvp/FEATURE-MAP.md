@@ -54,6 +54,21 @@
 - ห้ามกระทบ: ห้ามสร้าง button style/theme ย่อยเฉพาะหน้า ห้ามเปลี่ยน business behavior, API หรือ Database
 - การทดสอบ: focused UI contract test และ `npm run patch:gate`; โปรโตคอลตรวจด้วย `scripts/test-v014335.mjs`
 
+## UI-POINTER-001 — Global Pointer, Press และ Drag Interaction Layer
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียน runtime จริงใน v0.14.380
+- หน้า/ไฟล์: public/admin/member/content surfaces ที่โหลดผ่าน `public/account.js`, `public/admin.js`, `public/catalog-sync.js` หรือ `public/facebook-chat.js`; runtime `public/mouse-ui.js` และ `public/mouse-ui.css`
+- Loading: controller ใช้ dynamic import `/mouse-ui.js?v=014304`; ES module cache ป้องกัน execute ซ้ำเมื่อ `catalog-sync.js` และ `facebook-chat.js` import ซ้อน; runtime inject stylesheet เฉพาะเมื่อไม่มี `link[data-visiond-mouse-ui]`
+- Pointer presentation: arrow/hand/text SVG cursors, hover/focus/disabled/selection states, checkbox/radio/range accent, pressed transform และ card hover; coarse pointer คืน cursor เป็น auto และปิด card lift
+- Navigation interaction: capture-phase `mousedown` ทำงานเฉพาะปุ่มเมาส์ซ้าย; same-window anchor ที่มี href จริงและไม่ใช่ download/target/hash/javascript ถูก `preventDefault`, หยุด listener ที่เหลือ และไปด้วย `location.assign(control.href)`
+- Press interaction: control อื่นเพิ่ม `.vd-mouse-pressed` แล้วล้างครั้งเดียวเมื่อ mouseup หรือ window blur; CSS ใช้ state เดียวกับ `:active`
+- Drag interaction: ป้องกัน native drag เมื่อ target อยู่ใน image หรือ anchor; CSS ปิด `-webkit-user-drag` บน image/link
+- API/ข้อมูล/สิทธิ์: ไม่มี API, database, storage, auth หรือ mutation ธุรกิจ
+- ห้ามกระทบ: ลำดับ capture, anchor eligibility, location navigation, pressed cleanup, drag guard, selectors, cursor assets, styles และ coarse-pointer behavior เดิม
+- รหัส UI: document root ใช้ `data-ui-pointer-feature="UI-POINTER-001"` เพื่อไม่ทับ `data-feature` ของระบบหน้า; stylesheet dedupe marker เดิมคง `data-visiond-mouse-ui`
+- ความสัมพันธ์: `GOV-UI-DESIGN-001` เป็นกติกา/canonical design contract; รหัสนี้เป็น runtime interaction layer ที่ใช้งานจริงและไม่ขยายกติกา UI
+- การทดสอบ: `scripts/test-v014380.mjs`
+
 - รหัสเดิมห้ามนำกลับไปใช้กับฟีเจอร์อื่น
 - หนึ่งฟีเจอร์ใช้รหัสเดียวกันข้าม frontend, backend, test และเอกสาร
 - งานย่อยที่มีขอบเขตข้อมูลหรือสิทธิ์ต่างกันให้แยกรหัส
