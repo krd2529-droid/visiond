@@ -182,7 +182,12 @@
       if (authenticated && previousId) {
         try {
           await fetch('/api/elon/clear', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: previousId }), signal: AbortSignal.timeout(12000) });
-        } catch (_) {}
+        } catch (error) {
+          console.warn(
+            '[ELON-CHAT-CLEAR-001] ล้างประวัติฝั่งเซิร์ฟเวอร์ไม่สำเร็จ แต่เริ่มแชทใหม่ในหน้าเว็บแล้ว',
+            error instanceof Error ? error.message : String(error),
+          );
+        }
       }
       reset.disabled = false;
     });

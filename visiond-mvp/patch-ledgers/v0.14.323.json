@@ -1,0 +1,23 @@
+{
+  "version": "v0.14.323",
+  "feature": "SYS-AUDIT-001",
+  "summary": "ปรับ Regression ให้ยึดสัญญาฟังก์ชันปัจจุบัน แก้เอกสารเริ่มต้น Cache key และข้อผิดพลาดที่ถูกกลืน",
+  "parent_commit": "24b3c37",
+  "safe_rollback_commit": "24b3c37",
+  "commit": "SELF",
+  "push": false,
+  "deploy": false,
+  "evidence": {
+    "regression": "เลือกชุดทดสอบเชิงฟังก์ชันกลางและเทสต์ของ VERSION ปัจจุบันอัตโนมัติ โดยไม่ฝังเลขแพตเก่า",
+    "cache_keys": "เพิ่ม cache key ให้ vision7.css และสคริปต์ของ ads-center, elon-page-admin และ my-programs รวม 6 จุด",
+    "silent_errors": "บันทึกข้อผิดพลาดแบบไม่เปิดเผยข้อมูลสำคัญ โดยยังคง fallback และพฤติกรรมเดิม"
+  },
+  "tests": [
+    "node scripts/test-v014323.mjs",
+    "node scripts/test-document-history.mjs",
+    "node scripts/test-all-regressions.mjs",
+    "node scripts/visible-version-check.mjs",
+    "node scripts/predeploy-check.mjs",
+    "node scripts/partner-api-security-gate.mjs"
+  ]
+}

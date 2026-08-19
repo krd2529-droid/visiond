@@ -13,14 +13,10 @@ const evergreen = new Set([
   'test-first-order-promo.mjs',
   'test-maintenance-worker.mjs',
   'test-mobile-frontend.mjs',
-  'test-v01486-vision5-two-account-e2e.mjs',
-  'test-v014187.mjs',
-  'test-v014188.mjs',
-  'test-v014189.mjs',
-  'test-v014190.mjs',
-  'test-v014191.mjs',
-  'test-v014192.mjs',
 ]);
+const currentVersion = fs.readFileSync('VERSION.txt', 'utf8').trim();
+const currentReleaseTest = `test-v${currentVersion.replace(/^v/, '').replaceAll('.', '')}.mjs`;
+evergreen.add(currentReleaseTest);
 const all = fs.readdirSync('scripts').filter(x => /^test-.*\.mjs$/.test(x) && x !== 'test-all-regressions.mjs').sort();
 const files = all.filter(x => evergreen.has(x));
 const skipped = all.filter(x => !evergreen.has(x));

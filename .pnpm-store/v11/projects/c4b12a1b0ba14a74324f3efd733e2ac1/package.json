@@ -41,7 +41,7 @@
     "test:v01458": "node scripts/test-v01458.mjs",
     "test:v01459": "node scripts/test-v01459.mjs",
     "test:v01460": "node scripts/test-v01460.mjs",
-    "docs:history-check": "node scripts/test-v01461.mjs",
+    "docs:history-check": "node scripts/test-document-history.mjs",
     "docs:migrate": "node scripts/migrate-document-history.mjs",
     "test:v01461": "node scripts/test-v01461.mjs",
     "test:v01462": "node scripts/test-v01462.mjs",
@@ -239,7 +239,8 @@
     "test:v014320": "node scripts/test-v014320.mjs",
     "test:visible-version": "node scripts/visible-version-check.mjs",
     "test:v014321": "node scripts/test-v014321.mjs",
-    "test:v014322": "node scripts/test-v014322.mjs"
+    "test:v014322": "node scripts/test-v014322.mjs",
+    "test:v014323": "node scripts/test-v014323.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

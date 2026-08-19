@@ -950,3 +950,11 @@ Deploy v0.14.48–49 and validate guest acquisition plus recommendation behavior
 - รองรับชื่อภาษาไทยและตัดเฉพาะอักขระที่ระบบไฟล์ไม่อนุญาต
 - หากชื่อตะกร้าว่างจึงค่อยใช้ Slug หรือเลขตะกร้าเป็นชื่อสำรอง
 - Feature: `PROD-SAMPLE-001`
+
+# v0.14.323 — แก้ผลตรวจทั้งระบบก่อนเริ่ม Feature Map
+
+- Regression runner อ่าน `VERSION.txt` และเลือกเทสต์รุ่นปัจจุบันอัตโนมัติแทนรายชื่อเลขแพตเก่า
+- START-HERE ทั้งสองตำแหน่งชี้เลขเวอร์ชันและ Patch ledger จริง
+- เติม cache key ที่ตกหล่น 6 จุด และทำให้ข้อผิดพลาด fallback 3 จุดมีหลักฐานใน Console
+- ไม่เปลี่ยนพฤติกรรมธุรกิจ และยังไม่เริ่ม Feature Map
+- Feature: `SYS-AUDIT-001`

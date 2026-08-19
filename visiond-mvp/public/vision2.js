@@ -2002,7 +2002,12 @@
           height: bitmap.height,
           close: () => bitmap.close?.(),
         };
-      } catch (error) {}
+      } catch (error) {
+        console.debug(
+          "[V2-IMAGE-DECODE-001] createImageBitmap ใช้ไม่ได้ จึงใช้ Image fallback",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     }
     const url = URL.createObjectURL(file),
       image = new Image();
@@ -2039,7 +2044,12 @@
       const fontSize = Math.max(64, Math.round(canvas.width * 0.2));
       try {
         await document.fonts?.load(`400 ${fontSize}px Anton`);
-      } catch (error) {}
+      } catch (error) {
+        console.debug(
+          "[V2-WATERMARK-FONT-001] โหลด Anton ไม่สำเร็จ จึงใช้ฟอนต์ fallback",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
       context.save();
       context.translate(canvas.width / 2, canvas.height / 2);
       context.rotate(-Math.PI / 7);
