@@ -551,6 +551,18 @@
 - รหัส UI: หน้า Course Integrity มี `data-feature="COURSE-INTEGRITY-001"`; คง loading/timeout/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014348.mjs`
 
+## CUSTOMER-INTELLIGENCE-001 — Visitor, Event, Funnel, Journey และ Product Demand
+
+- สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.349
+- หน้า/ไฟล์: analytics sections ใน `/admin.html`, `public/admin.js`, `functions/_analytics.js`, `functions/api/analytics/view.js`, `functions/api/analytics/event.js`, `functions/api/admin/visitor-stats.js`, `functions/api/admin/daily-events.js`, `functions/api/admin/customer-analytics.js`
+- ฟังก์ชัน: aggregate page views, unique visitor, event explorer รายวัน, guest/member identity, conversion funnel/bottleneck, buyer mix, product performance, customer journey และ product-family demand recommendation
+- API: `POST /api/analytics/view`, `POST /api/analytics/event`, `GET /api/admin/visitor-stats`, `GET /api/admin/daily-events`, `GET /api/admin/customer-analytics`
+- ฐานข้อมูล: `page_views`, `analytics_daily`, `analytics_visitors`, `customer_events`, `products`, `orders`, `order_items`
+- สิทธิ์/ความเป็นส่วนตัว: public ingestion ใช้ hashed visitor key, event allowlist, sanitized path/referrer/metadata และ rate limit; dashboard endpoints ใช้ `requireAdmin`
+- ห้ามกระทบ: page view aggregate ตามวันไทย; raw retention 90 วันและประมวลผล batch 5,000; event เดิมภายใน 10 วินาทีไม่นับซ้ำ; daily explorer จำกัด 300 รายการ; customer window 1–90 วัน; conversion หารด้วยจำนวนคนของขั้นก่อนหน้า; recommendation เป็นข้อมูลช่วยตัดสินใจและห้ามผลิต/แก้สินค้าอัตโนมัติ
+- รหัส UI: events, visitor stats และ customer-intelligence sections มี `data-feature="CUSTOMER-INTELLIGENCE-001"`; คง filter/loading/error และ theme เดิม
+- การทดสอบ: `scripts/test-v014349.mjs`
+
 1. เริ่มแก้ด้วยการค้นหารหัสฟีเจอร์นี้ใน repository
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
