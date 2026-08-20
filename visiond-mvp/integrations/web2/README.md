@@ -12,6 +12,9 @@ const visiond=new VisionDPartnerClient({
 });
 
 const catalog=await visiond.products({limit:50});
+for await (const page of visiond.productPages({limit:100})) {
+  // ประมวลผล page.items ทีละหน้า จน pagination.has_more เป็น false
+}
 await visiond.syncCustomer(customer,{idempotencyKey:`customer-${customer.id}-v1`});
 await visiond.syncOrder(order,{idempotencyKey:`order-${order.id}-${order.updated_at}`});
 await visiond.signedEvent({type:'order',external_id:order.external_order_id,data:order});

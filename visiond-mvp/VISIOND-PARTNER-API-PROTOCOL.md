@@ -32,6 +32,7 @@
 - Partner catalog: `GET /api/partner/v1/products`
 - Authentication: `X-VisionD-Client-ID` และ `Authorization: Bearer <Client Secret>`
 - Scope: `products:read`
+- Pagination: `limit` ค่าเริ่มต้น 50 สูงสุด 100; cursor เป็น product ID จำนวนเต็มไม่ติดลบ; response คืน `has_more` และ `next_cursor`; Web 2 ต้องไล่หน้าจน `has_more=false`
 
 ## Phase 2 Contract
 

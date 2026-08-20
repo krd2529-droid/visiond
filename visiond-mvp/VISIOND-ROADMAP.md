@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.396 — Catalog Read Optimization
+### v0.14.397 — Partner Products Scale Safety
 
-- เป้าหมายหลัก: ลด catalog hot-read โดยรวม aggregate query, cache response และไม่ purge Trash บน public GET
-- Acceptance: response contract ยังคืนสินค้าครบ, cache hit ก่อน D1, query ไม่มี correlated aggregate ต่อสินค้า และ daily maintenance รับช่วง Trash purge
-- ห้ามเปลี่ยน: Product visibility/price/promotion, cart contract, UI/theme, Partner API contract และ deployment state
-- สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน D1 Query Insights
+- เป้าหมายหลัก: ให้ Web 2 ไล่สินค้าเกิน 100 รายการอย่างปลอดภัยและไม่รัน Partner schema DDL ซ้ำ
+- Acceptance: limit/cursor เป็นจำนวนเต็มที่มีขอบเขต, response มี has_more/next_cursor, Starter Kit ไล่หลายหน้าได้ และ schema version 66 ข้าม DDL
+- ห้ามเปลี่ยน: Partner Auth/scope/audit, product visibility/metadata, write/idempotency contracts, UI/theme และ deployment state
+- สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. Production Validation: ตรวจ D1 Query Insights และ Rows read/written หลัง Deploy ก่อนกำหนดแพตถัดไป
+1. Production Validation: Push/Deploy migrations 0065–0066, รัน Partner E2E และตรวจ D1 Query Insights/Rows read-written
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

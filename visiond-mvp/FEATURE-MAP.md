@@ -1045,7 +1045,7 @@
 - หน้า/ไฟล์: `/partner-api.html`, `public/partner-api.js`, `public/partner-webhook.js`, `functions/_partner_{api,crypto,sync,sandbox,webhook,health}.js`, `functions/api/admin/partner-websites/**`, `functions/api/partner/v1/{products,customers/sync,orders/sync,webhooks/events}.js`, `integrations/web2/`, `docs/PARTNER-API-WEB2-INTEGRATION.md`
 - Control Center: registry/create/update/status/credential rotation, masked customer/order data, isolated Sandbox, signed webhook queue/health/alerts และ E2E อยู่ในศูนย์ควบคุมเดียว; admin endpoints ทุกเส้นทางใช้ `requireBoss`
 - Credential/Auth: แยก credential ต่อเว็บไซต์, Client Secret แสดงครั้งเดียวและเก็บ AES-GCM พร้อม hash/last4; Partner API รับ `X-VisionD-Client-ID` + Bearer secret, เว็บไซต์ต้อง `active`, ใช้ least-privilege scopes `products:read`, `customers:write`, `orders:write`
-- Catalog: `GET /api/partner/v1/products` คืนเฉพาะ metadata ของ published, non-deleted product/vision7-key ที่ไม่ใช่ resale-rights; pagination สูงสุด 100, cache private 60 วินาที และไม่คืนไฟล์ดาวน์โหลด, token, ข้อมูลธนาคารหรือลูกค้า
+- Catalog: `GET /api/partner/v1/products` คืนเฉพาะ metadata ของ published, non-deleted product/vision7-key ที่ไม่ใช่ resale-rights; pagination ค่าเริ่มต้น 50/สูงสุด 100 พร้อม `has_more` + `next_cursor`, cache private 60 วินาที และไม่คืนไฟล์ดาวน์โหลด, token, ข้อมูลธนาคารหรือลูกค้า; Starter Kit มี `productPages()` สำหรับไล่เกิน 100 รายการ
 - Customer/Order sync: คำขอเขียนต้องมี External ID และ `Idempotency-Key` 8–100 ตัว; key เดิม payload เดิม replay ผลเดิม แต่ payload ต่างตอบ 409; ห้าม sensitive fields, PII ลูกค้าเข้ารหัส AES-GCM, เงินเป็นจำนวนเต็มสตางค์ THB และตรวจ item/discount/refund totals ก่อน batch write
 - Signed Webhook: HMAC-SHA256 แบบ `timestamp.raw_body`, constant-time compare และเวลาไม่เกิน ±5 นาที; signature hash/idempotency unique ต่อเว็บไซต์, payload queue เข้ารหัส, retry exponential backoff และ Dead Letter เมื่อครบ 5 ครั้ง
 - Sandbox/E2E: scenarios ลูกค้า ออเดอร์ ชำระเงิน ยกเลิก คืนเงินแยกจาก Production; E2E ต้อง active + scopes ครบ ตรวจ catalog, replay/conflict, signed webhook, retry/dead และ alerts โดยไม่คืน credential/signature/PII
@@ -1053,7 +1053,7 @@
 - Starter Kit: `integrations/web2/visiond-partner-client.mjs` ใช้เฉพาะ Backend, HTTPS config และ Secret Manager; ห้าม import เข้า browser bundle หรือ log config/authorization/signature/private payload
 - Known Boundary: Feature Map รอบนี้ยืนยัน contract ใน repository เท่านั้น ไม่ได้พิสูจน์ว่า Web 2 ภายนอกเชื่อม Production แล้ว; Push, Deploy, Production credential, E2E production และ monitoring 24 ชั่วโมงยังต้องทำเป็น Event Case แยก
 - รหัส UI: `main.partner-shell` ใช้ `data-feature="PARTNER-API-001"`; คง legacy forms/buttons, canonical button adapter, loading/error, Desktop/Mobile และ theme เดิม
-- การทดสอบ: `scripts/test-v014388.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
+- การทดสอบ: `scripts/test-v014388.mjs`, `scripts/test-v014397.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
 
 ## Coverage Audit v0.14.389
 
