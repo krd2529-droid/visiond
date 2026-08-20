@@ -1053,7 +1053,7 @@
 - Starter Kit: `integrations/web2/visiond-partner-client.mjs` ใช้เฉพาะ Backend, HTTPS config และ Secret Manager; ห้าม import เข้า browser bundle หรือ log config/authorization/signature/private payload
 - Known Boundary: Feature Map รอบนี้ยืนยัน contract ใน repository เท่านั้น ไม่ได้พิสูจน์ว่า Web 2 ภายนอกเชื่อม Production แล้ว; Push, Deploy, Production credential, E2E production และ monitoring 24 ชั่วโมงยังต้องทำเป็น Event Case แยก
 - รหัส UI: `main.partner-shell` ใช้ `data-feature="PARTNER-API-001"`; คง legacy forms/buttons, canonical button adapter, loading/error, Desktop/Mobile และ theme เดิม
-- การทดสอบ: `scripts/test-v014388.mjs`, `scripts/test-v014397.mjs`, `scripts/test-v014398.mjs`, `scripts/test-v014399.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
+- การทดสอบ: `scripts/test-v014388.mjs`, `scripts/test-v014397.mjs`, `scripts/test-v014398.mjs`, `scripts/test-v014399.mjs`, `scripts/test-v014400.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
 
 ## Coverage Audit v0.14.389
 

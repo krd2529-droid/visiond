@@ -1,7 +1,7 @@
 import {json,requireBoss} from '../../../../_lib.js';
 import {ensureDatabase} from '../../../../_schema.js';
 import {cleanId,idempotencyKey} from '../../../../_partner_sync.js';
-import {ensurePartnerSandboxSchema,maskedExternalId,SANDBOX_SCENARIOS,sandboxHash,sandboxPayload} from '../../../../_partner_sandbox.js';
+import {ensurePartnerSandboxReady as ensurePartnerSandboxSchema,maskedExternalId,SANDBOX_SCENARIOS,sandboxHash,sandboxPayload} from '../../../../_partner_sandbox.js';
 const headers={'cache-control':'private, no-store'};
 async function auth(ctx){
   await ensureDatabase(ctx.env); await ensurePartnerSandboxSchema(ctx.env);

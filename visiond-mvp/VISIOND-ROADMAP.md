@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.399 — Partner Sync Schema Hot-Path Guard
+### v0.14.400 — Partner Sandbox Schema Hot-Path Guard
 
-- เป้าหมายหลัก: ตัด Partner Customer/Order Sync CREATE TABLE/INDEX ออกจาก request path เมื่อ runtime schema v66 พร้อม
-- Acceptance: customer sync, order sync และ admin partner data ใช้ schema probe ร่วมหนึ่งครั้งต่อ isolateและไม่รัน Sync DDL เมื่อ schemaพร้อม
-- ห้ามเปลี่ยน: Partner Auth/scope/audit, validation/idempotency/encryption/order totals, UI/theme และ deployment state
+- เป้าหมายหลัก: ตัด Partner Sandbox CREATE TABLE/INDEX ออกจาก request path เมื่อ runtime schema v66 พร้อม
+- Acceptance: admin sandbox ใช้ schema probe ร่วมหนึ่งครั้งต่อ isolate และไม่รัน Sandbox/Sync DDL เมื่อ schema พร้อม
+- ห้ามเปลี่ยน: Sandbox scenarios/payload/hash/history, Partner Auth, UI/theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
