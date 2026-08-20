@@ -309,7 +309,8 @@
     "test:v014388": "node scripts/test-v014388.mjs && node scripts/partner-api-security-gate.mjs",
     "feature-map:audit": "node scripts/feature-map-coverage-audit.mjs",
     "test:v014389": "node scripts/test-v014389.mjs",
-    "test:v014390": "node scripts/test-v014390.mjs"
+    "test:v014390": "node scripts/test-v014390.mjs",
+    "test:v014391": "node scripts/test-v014391.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

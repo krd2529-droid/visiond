@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.390 — V12 Facebook Bot Reply
+### v0.14.391 — Analytics Request Deduplication
 
-- เป้าหมายหลัก: ให้ Facebook Page bot ตอบ text message เมื่อร้านและ conversation อยู่โหมด bot
-- Acceptance: แชทใหม่เริ่ม bot, human mode ไม่ถูกทับ, image ไม่เข้า AI, risk turn ส่งต่อคน, reply/error มี ledger และ focused test
-- ห้ามเปลี่ยน: LINE, Broadcast, manual composer, credential contract, Meta signature, UI/theme และ deployment state
-- สถานะ: `IMPLEMENTED`
+- เป้าหมายหลัก: หยุดคำนวณสถิติซ้ำใน page-view ingest และหยุด Promo/Business Event ยิง Analytics ซ้ำ
+- Acceptance: POST view ไม่อ่าน aggregate stats, Bot ไม่แตะ D1, หน้าใช้ stats promise ร่วมหนึ่งชุด และ Business Event ไม่ยิง ui_click ซ้ำ
+- ห้ามเปลี่ยน: รูปลักษณ์/ธีม, Auth/Payment rate limit, Event taxonomy, schema และ deployment state
+- สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. ระบบถัดไปจาก Coverage Audit ที่ยังไม่มีรหัส โดยต้องตรวจหลักฐานก่อนเลือกในแพตถัดไป
+1. `v0.14.392` ลด low-value Analytics Events และตัด telemetry จากหน้าที่ไม่จำเป็น
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

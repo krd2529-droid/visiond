@@ -28,14 +28,16 @@ async function viewStats(env,product){
 }
 
 export async function onRequestPost(ctx){
+  const userAgent=ctx.request.headers.get('user-agent')||'',isBot=/bot|crawler|spider|slurp|preview|facebookexternalhit/i.test(userAgent);
+  if(isBot)return json({ok:true,counted:false,bot:true},200,{'cache-control':'no-store'});
   await ensureDatabase(ctx.env);
   const limited=await rateLimitIdentity(ctx.env,ctx.request,'analytics-view-ip',requestIp(ctx.request),90,1,5);if(limited.error)return limited.error;
   const body=await ctx.request.json().catch(()=>({})),path=cleanPath(body.path),product=await productFromSlug(ctx.env,body.product_slug);
-  const userAgent=ctx.request.headers.get('user-agent')||'',isBot=/bot|crawler|spider|slurp|preview|facebookexternalhit/i.test(userAgent),visitor=visitorIdentity(ctx.request),visitorKey=await sha256(`${visitor.id}|visiond-view-v2`);
+  const visitor=visitorIdentity(ctx.request),visitorKey=await sha256(`${visitor.id}|visiond-view-v2`);
   const duplicate=await ctx.env.DB.prepare("SELECT id FROM page_views WHERE visitor_key=? AND path=? AND COALESCE(product_id,0)=? AND viewed_at>=datetime('now','-30 minutes') LIMIT 1").bind(visitorKey,path,product?.id||0).first();
-  if(!duplicate&&!isBot)await recordPageView(ctx.env,{path,productId:product?.id,visitorKey});
-  const stats=await viewStats(ctx.env,product),headers={'cache-control':'no-store'};if(visitor.setCookie)headers['set-cookie']=visitor.setCookie;
-  return json({ok:true,counted:!duplicate&&!isBot,...stats},200,headers);
+  if(!duplicate)await recordPageView(ctx.env,{path,productId:product?.id,visitorKey});
+  const headers={'cache-control':'no-store'};if(visitor.setCookie)headers['set-cookie']=visitor.setCookie;
+  return json({ok:true,counted:!duplicate},200,headers);
 }
 
 export async function onRequestGet(ctx){
