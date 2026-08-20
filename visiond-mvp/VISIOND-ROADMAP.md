@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.391 — Analytics Request Deduplication
+### v0.14.392 — Analytics Event Scope
 
-- เป้าหมายหลัก: หยุดคำนวณสถิติซ้ำใน page-view ingest และหยุด Promo/Business Event ยิง Analytics ซ้ำ
-- Acceptance: POST view ไม่อ่าน aggregate stats, Bot ไม่แตะ D1, หน้าใช้ stats promise ร่วมหนึ่งชุด และ Business Event ไม่ยิง ui_click ซ้ำ
-- ห้ามเปลี่ยน: รูปลักษณ์/ธีม, Auth/Payment rate limit, Event taxonomy, schema และ deployment state
+- เป้าหมายหลัก: ลด low-value click telemetry และไม่โหลด Storefront Analytics ใน Admin/Login/Register
+- Acceptance: `ui_click` ส่งเฉพาะ element ที่ opt-in, Business Event เดิมยังทำงาน และ Auth success ยังบันทึกจาก API
+- ห้ามเปลี่ยน: รูปลักษณ์/ธีม, Auth/Payment/Security event, Event API contract, schema และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. `v0.14.392` ลด low-value Analytics Events และตัด telemetry จากหน้าที่ไม่จำเป็น
+1. `v0.14.393` ย้าย schema migration/seed/data repair ออกจาก request path
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 
