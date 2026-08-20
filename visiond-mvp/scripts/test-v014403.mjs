@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.403');
+assert.match(read('public/index.html'),/WEB v0\.14\.403/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.403/);
+assert.match(read('public/v12-connect.html'),/v0\.14\.403[\s\S]*?v12-connect\.js\?v=014403/);
+const ui=read('public/v12-connect.js'),api=read('functions/api/admin/v12-conversations.js'),migration=read('migrations/0039_veasy_line_ai_messages.sql');
+assert.match(ui,/fetch\(`\/api\/admin\/v12-conversations\?platform=/);
+assert.match(api,/requireAdmin/);
+assert.equal((api.match(/SELECT m\.id FROM veasy_chat_messages/g)||[]).length,1,'one latest-message index probe per conversation');
+assert.match(api,/LEFT JOIN veasy_chat_messages lm ON lm\.id=\(SELECT m\.id/);
+assert.match(api,/lm\.content last_message,lm\.message_type last_message_type/);
+assert.match(api,/ORDER BY m\.created_at DESC,m\.id DESC LIMIT 1/);
+assert.match(api,/ORDER BY c\.updated_at DESC LIMIT 200/);
+assert.match(migration,/idx_veasy_chat_history[\s\S]*?shop_id,conversation_id,created_at DESC/);
+assert.match(read('FEATURE-MAP.md'),/List query:[\s\S]*?subquery เดียว/);
+console.log('PASS v0.14.403 V12 inbox latest-message read budget');

@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.402 — V12 Adaptive Inbox Polling
+### v0.14.403 — V12 Inbox Latest-Message Read Budget
 
-- เป้าหมายหลัก: ลด D1 reads จากหน้า V12 Connect ที่เปิดค้างด้วย adaptive polling
-- Acceptance: ใช้งานล่าสุด poll ทุก 60 วินาที, idle เกิน 5 นาที poll ทุก 5 นาที, hidden tab ไม่ยิง API และกัน request ซ้อน
-- ห้ามเปลี่ยน: webhook/AI reply, ข้อมูลรายการแชต, handoff, global bot toggle, UI theme และ deployment state
+- เป้าหมายหลัก: ลด latest-message lookup ของ V12 conversation list จาก 2 เหลือ 1 ครั้งต่อบทสนทนา
+- Acceptance: list endpoint ใหม่คืน contract เดิม, ใช้ latest message join เพียงหนึ่ง subquery และ index key shop/conversation/time
+- ห้ามเปลี่ยน: thread detail/history, webhook/AI reply, handoff, global bot toggle, UI theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
