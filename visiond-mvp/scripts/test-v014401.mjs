@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.401');
+assert.match(read('public/index.html'),/WEB v0\.14\.401/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.401/);
+const html=read('public/v12-connect.html'),ui=read('public/v12-connect.js'),api=read('functions/api/admin/v12-bot.js'),hook=read('functions/hooks/v12/facebook.js');
+assert.match(html,/id="v12BotToggle"[\s\S]*?กำลังตรวจ V12/);
+assert.match(html,/v12-connect\.js\?v=014401/);
+for(const token of['ปิดการใช้งาน V12','เปิดใช้งาน V12','/api/admin/v12-bot','action=running'])assert.ok(ui.includes(token),token);
+for(const token of['requireBoss','veasy_bot_state','V12_BOT_NOT_READY','veasy_audit_log','DELETE FROM veasy_runtime_leases'])assert.ok(api.includes(token),token);
+assert.match(api,/action==='start'[\s\S]*?current\.ready/);
+assert.match(api,/action==='stop'[\s\S]*?'stopped'/);
+assert.match(hook,/state\?\.state!=='running'[\s\S]*?finish/,'stopped V12 must continue ingest and skip AI reply');
+assert.match(read('FEATURE-MAP.md'),/Bot control:[\s\S]*?ปิดแล้ว.*ไม่ตอบ AI/);
+console.log('PASS v0.14.401 V12 global bot toggle');

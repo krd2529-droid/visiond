@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.400 — Partner Sandbox Schema Hot-Path Guard
+### v0.14.401 — V12 Global Bot Toggle
 
-- เป้าหมายหลัก: ตัด Partner Sandbox CREATE TABLE/INDEX ออกจาก request path เมื่อ runtime schema v66 พร้อม
-- Acceptance: admin sandbox ใช้ schema probe ร่วมหนึ่งครั้งต่อ isolate และไม่รัน Sandbox/Sync DDL เมื่อ schema พร้อม
-- ห้ามเปลี่ยน: Sandbox scenarios/payload/hash/history, Partner Auth, UI/theme และ deployment state
+- เป้าหมายหลัก: เพิ่มปุ่มเปิด/ปิด V12 ทั้งร้านบนหน้า V12 Connect โดยใช้ bot state เดิม
+- Acceptance: Boss เห็นสถานะจริง, ปิดแล้ว webhook ยังบันทึกแต่ AI ไม่ตอบ, เปิดต้องผ่าน Facebook/Webhook/Shop/AI readiness และทุกการเปลี่ยนมี audit
+- ห้ามเปลี่ยน: ปุ่มรับช่วงรายบทสนทนา, Facebook credential, webhook signature/message ingest, UI theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง

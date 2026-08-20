@@ -345,18 +345,19 @@
 ## V12-CHANNEL-001 — ตั้งค่าช่องทาง Facebook และ Signed Webhook
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.326
-- หน้า/ไฟล์: `/v12-settings.html`, `public/v12-settings.js`, `functions/api/admin/v12-channel.js`, `functions/hooks/v12/facebook.js`, `functions/_channel_crypto.js`, `functions/_v12_schema.js`
+- หน้า/ไฟล์: `/v12-settings.html`, `public/v12-settings.js`, `functions/api/admin/v12-channel.js`, `functions/api/admin/v12-bot.js`, `functions/hooks/v12/facebook.js`, `functions/_channel_crypto.js`, `functions/_v12_schema.js`
 - Controller load: GET เติม Page ID/active shops/callback และสถานะ token/app-secret/webhook/encryption; escape ชื่อร้านก่อนสร้าง option; secret inputs required เฉพาะเมื่อยังไม่มีค่าที่บันทึก
 - Save: PUT ส่ง FormData เป็น JSON; สำเร็จแล้วล้าง secret inputs, เปลี่ยน saved/required state และแสดง verify token เฉพาะเมื่อ API คืน token ที่สร้างใหม่ มิฉะนั้นแจ้งว่าใช้ค่าลับเดิม
 - Connection test: POST ใช้ credential ที่บันทึกแล้วเรียก Meta `/me/messenger_profile?fields=get_started`; UI แสดงชื่อ/ID เมื่อผ่านหรือ error/HTTP status เมื่อไม่ผ่าน
-- API/สิทธิ์: GET/PUT/POST ผ่าน `requireBoss` และตอบ `private, no-store`; GET คืนเฉพาะ flags, IDs, active shops, verified/callback status ไม่คืน token, app secret, verify token หรือ ciphertext
+- API/สิทธิ์: Channel GET/PUT/POST และ Bot GET/PATCH ผ่าน `requireBoss` และตอบ `private, no-store`; GET คืนเฉพาะ flags, IDs, active shops, verified/callback/bot status ไม่คืน token, app secret, verify token หรือ ciphertext
+- Bot control: หน้า V12 Connect แสดงปุ่มเปิด/ปิดทั้งร้านจาก `veasy_bot_state`; เปิดได้เมื่อ Facebook webhook, ร้าน และ AI Provider พร้อม; ปิดแล้วยังรับ/บันทึกข้อความแต่ไม่ตอบ AI, ล้าง runtime leases และบันทึก `veasy_audit_log`
 - Validation/persistence: PUT ต้องมี encryption key อย่างน้อย 32 ตัว, Page ID 5–30 digits, active shop, token ใหม่อย่างน้อย 40 และ app secret ใหม่อย่างน้อย 20; ช่อง secret ว่างใช้ ciphertext เดิมและ token ใหม่จะ reset `verified_at`
 - Encryption/one-time value: AES-GCM ใช้ random IV, derived SHA-256 key, AAD และ prefix `vdch1:`; verify token สร้าง/เข้ารหัสครั้งแรกและคืน plaintext เพียง response ที่สร้างใหม่ หลังจากนั้น GET/PUT ไม่เปิดเผยอีก
 - ฐานข้อมูล: `v12_channel_credentials`; เก็บ Token, App Secret และ Verify Token แบบเข้ารหัส
 - Failure: load/save/test แสดง state ที่ผู้ใช้รับรู้; API log เฉพาะ error code ที่ตัดความยาว ไม่ log credential; Meta error projection จำกัด code/subcode/type และข้อความจำแนก token/permission/rate limit
 - รหัส UI: settings form ใช้ `data-feature="V12-CHANNEL-001"`; คง field/button/status, responsive layout และ theme เดิม
 - ห้ามกระทบ: ห้ามคืน credential/ciphertext เต็มสู่หน้าเว็บหรือ log, ห้ามเปลี่ยน retention/one-time verify token, encryption, Boss guard, Meta test และห้ามรับ event ที่ HMAC ไม่ถูกต้อง
-- การทดสอบ: `scripts/test-v014385.mjs`; historical `scripts/test-v014241.mjs`, `scripts/test-v014244.mjs`, `scripts/test-v014195.mjs`, `scripts/test-v014198.mjs`
+- การทดสอบ: `scripts/test-v014385.mjs`, `scripts/test-v014401.mjs`; historical `scripts/test-v014241.mjs`, `scripts/test-v014244.mjs`, `scripts/test-v014195.mjs`, `scripts/test-v014198.mjs`
 
 ## V12-INBOX-001 — กล่องข้อความ LINE/Facebook และข้อมูลลูกค้า
 
