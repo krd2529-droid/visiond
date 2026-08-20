@@ -4,6 +4,12 @@
 
 ## Current Event Case
 
+### V12-FACEBOOK-BOT-REPLY — Facebook Page รับข้อความแต่บอทไม่ตอบ
+
+- สถานะ: `IMPLEMENTED` ใน v0.14.390; รอ Push/Deploy และ Production Validation
+- Root cause: webhook เดิมบังคับทุก conversation เป็น `human` และไม่มี AI/send pipeline
+- แก้แล้ว: แชทใหม่เริ่ม bot, รักษา human handoff เดิม, ตอบ text เมื่อ shop bot running และบันทึก reply/error
+
 ### FEATURE-MAP-COVERAGE — ไล่ Feature Map เทียบโค้ดจริงให้ครบก่อน Partner API/Web 2
 
 - สถานะ: `IMPLEMENTED`; Coverage Audit รอบสุดท้ายผ่านใน v0.14.389
@@ -13,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.389 — Final Feature Map Coverage Audit
+### v0.14.390 — V12 Facebook Bot Reply
 
-- เป้าหมายหลัก: ตรวจ source coverage รอบสุดท้ายและทำ verifier ถาวรให้ระบบใหม่ที่ไม่ลง Feature Map ทำให้ audit ล้ม
-- Acceptance: root controllers, active scripts, marker IDs และ API domains มี ownership ครบ; vendor ถูกจำแนกชัด; audit และ Patch Gate ผ่าน
-- ห้ามเปลี่ยน: runtime, API/schema, business behavior, security/privacy, UI/theme และ deployment state
+- เป้าหมายหลัก: ให้ Facebook Page bot ตอบ text message เมื่อร้านและ conversation อยู่โหมด bot
+- Acceptance: แชทใหม่เริ่ม bot, human mode ไม่ถูกทับ, image ไม่เข้า AI, risk turn ส่งต่อคน, reply/error มี ledger และ focused test
+- ห้ามเปลี่ยน: LINE, Broadcast, manual composer, credential contract, Meta signature, UI/theme และ deployment state
 - สถานะ: `IMPLEMENTED`
 
 ## Next Queue — ห้ามเริ่มเอง
