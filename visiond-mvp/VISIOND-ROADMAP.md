@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.397 — Partner Products Scale Safety
+### v0.14.398 — Partner Health Schema Hot-Path Guard
 
-- เป้าหมายหลัก: ให้ Web 2 ไล่สินค้าเกิน 100 รายการอย่างปลอดภัยและไม่รัน Partner schema DDL ซ้ำ
-- Acceptance: limit/cursor เป็นจำนวนเต็มที่มีขอบเขต, response มี has_more/next_cursor, Starter Kit ไล่หลายหน้าได้ และ schema version 66 ข้าม DDL
-- ห้ามเปลี่ยน: Partner Auth/scope/audit, product visibility/metadata, write/idempotency contracts, UI/theme และ deployment state
+- เป้าหมายหลัก: ตัด Partner Health PRAGMA/ALTER/CREATE INDEX ออกจาก request path เมื่อ runtime schema v66 พร้อม
+- Acceptance: health/webhook request ใช้ schema probe ร่วมหนึ่งครั้งต่อ isolate และไม่รัน Partner DDL เมื่อ schema พร้อม
+- ห้ามเปลี่ยน: Partner Auth/scope/audit, webhook processing/retry/alerts, UI/theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
