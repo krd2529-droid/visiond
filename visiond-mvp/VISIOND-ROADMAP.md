@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.392 — Analytics Event Scope
+### v0.14.393 — Persistent Schema Readiness
 
-- เป้าหมายหลัก: ลด low-value click telemetry และไม่โหลด Storefront Analytics ใน Admin/Login/Register
-- Acceptance: `ui_click` ส่งเฉพาะ element ที่ opt-in, Business Event เดิมยังทำงาน และ Auth success ยังบันทึกจาก API
-- ห้ามเปลี่ยน: รูปลักษณ์/ธีม, Auth/Payment/Security event, Event API contract, schema และ deployment state
-- สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน D1 Query Insights
+- เป้าหมายหลัก: ไม่รัน schema, seed และ data repair ซ้ำทุก Worker cold isolate เมื่อฐานผ่าน runtime schema แล้ว
+- Acceptance: ฐาน version 65 ใช้ readiness SELECT เดียวต่อ isolate, initializer fallback ยังรองรับฐานเก่า และ marker เขียนหลัง initialization สำเร็จเท่านั้น
+- ห้ามเปลี่ยน: schema/business data ปัจจุบัน, API contract, Auth/Payment/Security และ deployment state
+- สถานะ: `IMPLEMENTED`; รอ Push/Deploy, migration 0065 และ Production Validation ผ่าน D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. `v0.14.393` ย้าย schema migration/seed/data repair ออกจาก request path
+1. `v0.14.394` ทำ Analytics Summary และ Cache
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 
@@ -36,6 +36,7 @@
 
 - ไม่มี blocker ของแพต Active
 - Push, Deploy และ Production Validation รอคำสั่ง Boss
+- `DISCOVERED`: migration chain ปัจจุบัน replay จากฐานว่างไม่ได้เพราะ `0001` มี `username` แต่ `0002` เพิ่มซ้ำ ต้องทำ rebaseline เป็นแพตแยกก่อนสร้าง environment ใหม่
 
 ## Recently Completed
 

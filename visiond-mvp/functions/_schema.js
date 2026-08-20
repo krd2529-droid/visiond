@@ -2,11 +2,23 @@
 // checks only need to run once per D1 binding in that isolate, not on every API
 // call. A rejected initialization is removed so the next request can retry.
 const schemaReadyByDatabase=new WeakMap();
+const RUNTIME_SCHEMA_VERSION=65;
+
+async function persistentSchemaReady(env){
+  try{
+    const state=await env.DB.prepare("SELECT version FROM runtime_schema_state WHERE schema_key='core'").first();
+    return Number(state?.version)>=RUNTIME_SCHEMA_VERSION;
+  }catch(error){
+    if(/no such table[^]*runtime_schema_state/i.test(String(error?.message||error)))return false;
+    throw error;
+  }
+}
+
 export async function ensureDatabase(env) {
   if (!env.DB) throw new Error('D1_NOT_CONNECTED');
   let ready=schemaReadyByDatabase.get(env.DB);
   if(!ready){
-    ready=initializeDatabase(env).catch(error=>{schemaReadyByDatabase.delete(env.DB);throw error});
+    ready=(async()=>{if(!await persistentSchemaReady(env))await initializeDatabase(env)})().catch(error=>{schemaReadyByDatabase.delete(env.DB);throw error});
     schemaReadyByDatabase.set(env.DB,ready);
   }
   return ready;
@@ -250,4 +262,6 @@ async function initializeDatabase(env) {
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('paper-doll','ตุ๊กตากระดาษ',NULL,'PDF',1,27)").run();
   await env.DB.prepare("UPDATE categories SET name='ตุ๊กตากระดาษ',parent_slug=NULL,file_type='PDF',active=1,sort_order=27 WHERE slug='paper-doll'").run();
   await env.DB.prepare("INSERT OR IGNORE INTO categories(slug,name,parent_slug,file_type,active,sort_order) VALUES('document','เอกสารและแบบฟอร์ม',NULL,'PDF',1,40)").run();
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS runtime_schema_state (schema_key TEXT PRIMARY KEY,version INTEGER NOT NULL,initialized_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run();
+  await env.DB.prepare("INSERT INTO runtime_schema_state(schema_key,version) VALUES('core',?) ON CONFLICT(schema_key) DO UPDATE SET version=excluded.version,updated_at=CURRENT_TIMESTAMP").bind(RUNTIME_SCHEMA_VERSION).run();
 }

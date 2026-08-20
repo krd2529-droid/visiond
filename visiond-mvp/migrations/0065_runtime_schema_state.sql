@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS runtime_schema_state (
+  schema_key TEXT PRIMARY KEY,
+  version INTEGER NOT NULL,
+  initialized_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
