@@ -365,8 +365,10 @@
 - หน้า/ไฟล์: `/v12-connect.html`, `public/v12-connect.js`, `functions/api/admin/v12-connect.js`, `functions/api/admin/v12-profiles.js`, `functions/api/admin/v12-facebook-history.js`, `functions/hooks/v12/facebook.js`, `functions/_veasy_line_ai.js`, `functions/api/media/v12-connect/outbound/[[path]].js`
 - ฐานข้อมูล: `veasy_conversations`, `veasy_chat_messages`, `veasy_conversation_controls`, `veasy_message_claims`
 - Bot reply: LINE และ Facebook text message ตอบด้วย provider ที่ตั้งค่าเมื่อ `veasy_bot_state.state='running'` และ conversation mode เป็น `bot`; แชทใหม่เริ่ม bot แต่ `ON CONFLICT` ต้องรักษา mode เดิมเพื่อไม่แย่งแชทที่คนรับช่วง
+- Inbox refresh: หน้า V12 Connect โหลดครั้งแรกทันที; เมื่อเปิดค้างใช้ adaptive polling 60 วินาทีขณะใช้งานและ 5 นาทีเมื่อ idle, ไม่ยิงเมื่อแท็บซ่อน/กำลังค้นหา และกัน request ซ้อน
 - Handoff/Error: ข้อความ payment/refund/complaint ส่งข้อความมาตรฐานแล้วเปลี่ยน mode เป็น human; รูปภาพรับเข้า inbox แต่ไม่ส่งเข้า AI; provider/Meta ส่งล้มบันทึก claim failed และ `veasy_bot_state.last_error`
 - ห้ามกระทบ: ห้ามส่งซ้ำ ห้ามเปิดเผย target/credential และห้ามส่งเมื่อไม่ได้อยู่โหมด human
+- การทดสอบ: `scripts/test-v014402.mjs`; historical `scripts/test-v014326.mjs`, `scripts/test-v014390.mjs`, `scripts/test-v014401.mjs`
 
 ## V12-BROADCAST-001 — Broadcast และคิวส่งหลายช่องทาง
 

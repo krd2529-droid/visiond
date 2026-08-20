@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.402');
+assert.match(read('public/index.html'),/WEB v0\.14\.402/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.402/);
+assert.match(read('public/v12-connect.html'),/v0\.14\.402[\s\S]*?v12-connect\.js\?v=014402/);
+const ui=read('public/v12-connect.js');
+assert.doesNotMatch(ui,/setInterval\([\s\S]*?loadList/,'fixed inbox polling must be removed');
+for(const token of['v12LastInteraction','activeRecently','60000','300000','document.hidden','v12AutoRefreshing','visibilitychange','scheduleV12Refresh'])assert.ok(ui.includes(token),token);
+assert.match(ui,/if\(!document\.hidden&&!v12AutoRefreshing&&!search\.value&&document\.activeElement!==search\)/);
+assert.match(read('FEATURE-MAP.md'),/Inbox refresh:[\s\S]*?adaptive polling/);
+console.log('PASS v0.14.402 V12 adaptive inbox polling');

@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.401 — V12 Global Bot Toggle
+### v0.14.402 — V12 Adaptive Inbox Polling
 
-- เป้าหมายหลัก: เพิ่มปุ่มเปิด/ปิด V12 ทั้งร้านบนหน้า V12 Connect โดยใช้ bot state เดิม
-- Acceptance: Boss เห็นสถานะจริง, ปิดแล้ว webhook ยังบันทึกแต่ AI ไม่ตอบ, เปิดต้องผ่าน Facebook/Webhook/Shop/AI readiness และทุกการเปลี่ยนมี audit
-- ห้ามเปลี่ยน: ปุ่มรับช่วงรายบทสนทนา, Facebook credential, webhook signature/message ingest, UI theme และ deployment state
+- เป้าหมายหลัก: ลด D1 reads จากหน้า V12 Connect ที่เปิดค้างด้วย adaptive polling
+- Acceptance: ใช้งานล่าสุด poll ทุก 60 วินาที, idle เกิน 5 นาที poll ทุก 5 นาที, hidden tab ไม่ยิง API และกัน request ซ้อน
+- ห้ามเปลี่ยน: webhook/AI reply, ข้อมูลรายการแชต, handoff, global bot toggle, UI theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
