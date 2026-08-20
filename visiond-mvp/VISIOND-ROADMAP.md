@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.395 — Analytics Write Reduction
+### v0.14.396 — Catalog Read Optimization
 
-- เป้าหมายหลัก: ลด D1 writes/reads ของ Public Analytics โดยย้าย rate limit และ duplicate window ไป edge
-- Acceptance: View ใหม่เขียน D1 สอง statements, ไม่เขียน raw page_views, View/Event duplicate ไม่ query D1 และ Auth security limiter เดิมไม่เปลี่ยน
-- ห้ามเปลี่ยน: Auth/Payment/Download rate limit, day-local aggregate, Event allowlist, UI/theme และ deployment state
+- เป้าหมายหลัก: ลด catalog hot-read โดยรวม aggregate query, cache response และไม่ purge Trash บน public GET
+- Acceptance: response contract ยังคืนสินค้าครบ, cache hit ก่อน D1, query ไม่มี correlated aggregate ต่อสินค้า และ daily maintenance รับช่วง Trash purge
+- ห้ามเปลี่ยน: Product visibility/price/promotion, cart contract, UI/theme, Partner API contract และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. `v0.14.396` ปรับ Catalog query, cache/pagination และย้าย Trash purge ออกจาก hot read
+1. Production Validation: ตรวจ D1 Query Insights และ Rows read/written หลัง Deploy ก่อนกำหนดแพตถัดไป
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

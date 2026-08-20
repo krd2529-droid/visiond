@@ -169,18 +169,18 @@
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางย้อนหลังใน v0.14.304
 - หน้า: `/`, `/digital-products.html`, `/product.html?slug=:slug`
-- ไฟล์: `public/catalog-sync.js`, `public/product.js`, `functions/api/products/index.js`, `functions/api/products/[slug].js`, `functions/_catalog.js`, `functions/_promotion.js`
+- ไฟล์: `public/catalog-sync.js`, `public/product.js`, `functions/api/products/index.js`, `functions/api/products/[slug].js`, `functions/_catalog.js`, `functions/_promotion.js`, `functions/api/internal/analytics-retention.js`
 - ฟังก์ชัน/ตัวควบคุม: `renderProduct()`, `renderProductError()`, `onRequestGet()`
 - ปุ่ม/interaction: ตัวกรองหมวด ค้นหา เปิดการ์ดสินค้า เลื่อนภาพตัวอย่าง เพิ่มตะกร้า และซื้อทันที
 - API: `GET /api/products`, `GET /api/products/:slug`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1; `products.id`, `products.slug`, `products.title`, `products.price`, `products.cover_url`, `products.preview_urls`, `products.category`, `products.product_kind`, `products.status`, `categories.slug`, `analytics_daily`, `page_views`
 - Input: `slug`, หมวด คำค้น และสถานะหน้าแคตตาล็อก
 - Output: เฉพาะสินค้าที่ `published`, ไม่ถูกลบ และข้อมูลราคา/โปรโมชันสำหรับแสดงผล
-- Reads: สินค้า หมวด โปรโมชัน จำนวนเข้าชม และรายการในชุดรวม
-- Writes: endpoint สาธารณะไม่เขียนสินค้า; การนับ analytics แยกอยู่ระบบ analytics
+- Reads: สินค้า หมวด โปรโมชัน จำนวนเข้าชม และรายการในชุดรวม; list endpoint รวมยอดด้วย aggregate CTE รอบเดียวและ cache response 60 วินาที
+- Writes: endpoint สาธารณะไม่เขียนสินค้าและไม่ purge ถังขยะ; trash purge ทำใน daily maintenance และหน้า Admin trash เท่านั้น; การนับ analytics แยกอยู่ระบบ analytics
 - สิทธิ์: เปิดอ่านสาธารณะ; สินค้าร่าง/ลบแล้วต้องไม่ออก API สาธารณะ
 - ห้ามกระทบ: ห้ามเปิดเผย object key ของไฟล์จริง; ห้ามนำคอร์สร่างหรือสินค้าหลังบ้านออกหน้าร้าน; ห้ามแก้ราคาเฉพาะ frontend
-- การทดสอบ: `scripts/test-commerce-final.mjs`, `scripts/test-v014181.mjs`, `scripts/test-v014304.mjs`
+- การทดสอบ: `scripts/test-commerce-final.mjs`, `scripts/test-v014181.mjs`, `scripts/test-v014304.mjs`, `scripts/test-v014396.mjs`
 
 ## COMMERCE-ORDER-001 — ตะกร้า ออเดอร์ ชำระเงิน และตรวจสลิป
 

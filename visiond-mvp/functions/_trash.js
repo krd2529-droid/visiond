@@ -8,6 +8,7 @@ export async function purgeExpiredTrash(env) {
   }
   const {results: products=[]} = await env.DB.prepare("SELECT * FROM products WHERE deleted_at IS NOT NULL AND deleted_at<=datetime('now','-30 days') ORDER BY deleted_at LIMIT 10").all();
   for (const product of products) await permanentlyDeleteProduct(env, product);
+  return {trash_items_removed:items.length,products_processed:products.length};
 }
 
 export async function permanentlyDeleteProduct(env, product) {
