@@ -589,11 +589,11 @@
 - หน้า/ไฟล์: analytics sections ใน `/admin.html`, `public/admin.js`, `functions/_analytics.js`, `functions/api/analytics/view.js`, `functions/api/analytics/event.js`, `functions/api/admin/visitor-stats.js`, `functions/api/admin/daily-events.js`, `functions/api/admin/customer-analytics.js`, `functions/api/internal/analytics-retention.js`
 - ฟังก์ชัน: aggregate page views, unique visitor, event explorer รายวัน, guest/member identity, conversion funnel/bottleneck, buyer mix, product performance, customer journey และ product-family demand recommendation
 - API: `POST /api/analytics/view`, `POST /api/analytics/event`, `GET /api/admin/visitor-stats`, `GET /api/admin/daily-events`, `GET /api/admin/customer-analytics`
-- ฐานข้อมูล: `page_views`, `analytics_daily`, `analytics_visitors`, `customer_events`, `products`, `orders`, `order_items`
+- ฐานข้อมูล: `page_views`, `analytics_daily`, `analytics_visitors`, `analytics_summary`, `customer_events`, `products`, `orders`, `order_items`; unique visitor อ่านจาก materialized `analytics_summary` และเพิ่มเฉพาะ visitor ใหม่
 - สิทธิ์/ความเป็นส่วนตัว: public ingestion ใช้ hashed visitor key, event allowlist, sanitized path/referrer/metadata และ rate limit; dashboard endpoints ใช้ `requireAdmin`
 - ห้ามกระทบ: page view aggregate ตามวันไทย; raw retention 90 วันและประมวลผล batch 5,000; event เดิมภายใน 10 วินาทีไม่นับซ้ำ; daily explorer จำกัด 300 รายการ; customer window 1–90 วัน; conversion หารด้วยจำนวนคนของขั้นก่อนหน้า; recommendation เป็นข้อมูลช่วยตัดสินใจและห้ามผลิต/แก้สินค้าอัตโนมัติ
 - รหัส UI: events, visitor stats และ customer-intelligence sections มี `data-feature="CUSTOMER-INTELLIGENCE-001"`; คง filter/loading/error และ theme เดิม
-- การทดสอบ: `scripts/test-v014349.mjs`
+- การทดสอบ: `scripts/test-v014349.mjs`, `scripts/test-v014391.mjs`, `scripts/test-v014392.mjs`, `scripts/test-v014394.mjs`
 
 ## BUSINESS-REPORT-001 — รายงานยอดขาย กำไร–ขาดทุน และ CSV Export
 
@@ -989,7 +989,7 @@
 - Boundary: controller นี้ไม่คำนวณ eligibility, discount หรือ order total และไม่อ่าน promotion settings; สูตร/ข้อยกเว้นจริงยังบังคับที่ commerce/promotion flow
 - Placement: วาง banner หลัง `.topbar` หรือหน้า body เมื่อไม่มี header แล้ววาง visit strip ต่อท้าย; ป้องกัน init ซ้ำด้วย `[data-visiond-promo]`
 - Statistics: แสดง today, latest 7 days และ latest 30 days; ใช้ `visiond:analytics-counted` ครั้งเดียวหรือ `window.__visiondAnalytics` เมื่อพร้อมแล้ว
-- Fallback: หาก analytics data ยังไม่มีให้เรียก `GET /api/analytics/view` แบบ no-store; response ล้มเหลวแสดง 0 ทั้งสามค่าโดยไม่บล็อกหน้า
+- Fallback: หาก analytics data ยังไม่มีให้เรียก `GET /api/analytics/view` ซึ่งใช้ public cache 5 นาที; response ล้มเหลวแสดง 0 ทั้งสามค่าโดยไม่บล็อกหน้า
 - Accessibility/responsive: banner มี aria-label และ image alt อธิบายระดับโปร; strip มี aria-label; banner breakpoint 600px และ strip 520px ตาม layout เดิม
 - รหัส UI: `.visiond-promo-banner` และ `.visiond-visit-strip` ใช้ `data-feature="STOREFRONT-PROMO-001"`; คงข้อความ, GIF, URL, styles และ theme เดิม
 - ความสัมพันธ์: page-view count/retention อยู่ใต้ `CUSTOMER-INTELLIGENCE-001`; promotion configuration อยู่ใต้ `PROMOTION-SETTINGS-001`; order discount อยู่ใต้ `COMMERCE-ORDER-001`

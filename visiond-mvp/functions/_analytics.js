@@ -27,7 +27,7 @@ export async function analyticsStats(env,productId=0){
       COALESCE(SUM(CASE WHEN date(viewed_at,'+7 hours')>=date('now','+7 hours','-6 days') THEN 1 ELSE 0 END),0) last7,
       COALESCE(SUM(CASE WHEN date(viewed_at,'+7 hours')>=date('now','+7 hours','-29 days') THEN 1 ELSE 0 END),0) last30
       FROM page_views WHERE aggregated_at IS NULL${productFilter}`)).first(),
-    product?null:env.DB.prepare("SELECT COUNT(*) count FROM (SELECT visitor_key FROM analytics_visitors UNION SELECT visitor_key FROM page_views WHERE aggregated_at IS NULL)").first()
+    product?null:env.DB.prepare("SELECT unique_visitors count FROM analytics_summary WHERE summary_key='site'").first()
   ]);
   return {
     total:number(aggregate?.total)+number(legacy?.total),

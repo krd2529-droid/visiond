@@ -4,6 +4,7 @@ import {rateLimitIdentity,requestIp} from '../../_security.js';
 import {analyticsStats,recordPageView} from '../../_analytics.js';
 
 const VISITOR_COOKIE='__Host-vd_vid';
+const STATS_CACHE_SECONDS=300;
 
 const cleanPath=value=>{
   const path=String(value||'/').split('?')[0].slice(0,160);
@@ -27,6 +28,12 @@ async function viewStats(env,product){
   return {site_views:site.total,today_views:site.today,last7_views:site.last7,last30_views:site.last30,product_views:productStats?.total||0};
 }
 
+const statsCacheKey=request=>{
+  const url=new URL(request.url),slug=String(url.searchParams.get('product_slug')||'');
+  if(slug&&!/^[a-z0-9-]{1,120}$/i.test(slug))return null;
+  return new Request(`${url.origin}/api/analytics/view${slug?`?product_slug=${encodeURIComponent(slug)}`:''}`,{method:'GET'});
+};
+
 export async function onRequestPost(ctx){
   const userAgent=ctx.request.headers.get('user-agent')||'',isBot=/bot|crawler|spider|slurp|preview|facebookexternalhit/i.test(userAgent);
   if(isBot)return json({ok:true,counted:false,bot:true},200,{'cache-control':'no-store'});
@@ -41,8 +48,12 @@ export async function onRequestPost(ctx){
 }
 
 export async function onRequestGet(ctx){
+  const cacheKey=statsCacheKey(ctx.request);if(!cacheKey)return json({error:'product_slug ไม่ถูกต้อง'},400,{'cache-control':'no-store'});
+  const cache=globalThis.caches?.default,cached=cache?await cache.match(cacheKey):null;if(cached)return cached;
   await ensureDatabase(ctx.env);
   const limited=await rateLimitIdentity(ctx.env,ctx.request,'analytics-read-ip',requestIp(ctx.request),120,1,5);if(limited.error)return limited.error;
   const url=new URL(ctx.request.url),product=await productFromSlug(ctx.env,url.searchParams.get('product_slug'));
-  return json(await viewStats(ctx.env,product),200,{'cache-control':'no-store'});
+  const response=json(await viewStats(ctx.env,product),200,{'cache-control':`public, max-age=60, s-maxage=${STATS_CACHE_SECONDS}, stale-while-revalidate=60`});
+  if(cache){const write=cache.put(cacheKey,response.clone());if(ctx.waitUntil)ctx.waitUntil(write);else await write}
+  return response;
 }

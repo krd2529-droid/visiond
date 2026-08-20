@@ -2,7 +2,7 @@
 // checks only need to run once per D1 binding in that isolate, not on every API
 // call. A rejected initialization is removed so the next request can retry.
 const schemaReadyByDatabase=new WeakMap();
-const RUNTIME_SCHEMA_VERSION=65;
+const RUNTIME_SCHEMA_VERSION=66;
 
 async function persistentSchemaReady(env){
   try{
@@ -58,6 +58,7 @@ async function initializeDatabase(env) {
     ,`CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT,path TEXT NOT NULL,product_id INTEGER,visitor_key TEXT NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,aggregated_at TEXT,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL)`
     ,`CREATE TABLE IF NOT EXISTS analytics_daily (day_local TEXT NOT NULL,path TEXT NOT NULL,product_id INTEGER NOT NULL DEFAULT 0,views INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(day_local,path,product_id))`
     ,`CREATE TABLE IF NOT EXISTS analytics_visitors (visitor_key TEXT PRIMARY KEY,first_seen_at TEXT NOT NULL,last_seen_at TEXT NOT NULL)`
+    ,`CREATE TABLE IF NOT EXISTS analytics_summary (summary_key TEXT PRIMARY KEY,unique_visitors INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`
     ,`CREATE TABLE IF NOT EXISTS customer_events (id INTEGER PRIMARY KEY AUTOINCREMENT,visitor_key TEXT,user_id INTEGER,event_type TEXT NOT NULL,path TEXT NOT NULL DEFAULT '',product_id INTEGER,order_id INTEGER,source TEXT NOT NULL DEFAULT '',medium TEXT NOT NULL DEFAULT '',campaign TEXT NOT NULL DEFAULT '',content TEXT NOT NULL DEFAULT '',referrer TEXT NOT NULL DEFAULT '',metadata TEXT NOT NULL DEFAULT '{}',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL,FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE SET NULL)`
     ,`CREATE TABLE IF NOT EXISTS ad_campaign_costs (id INTEGER PRIMARY KEY AUTOINCREMENT,spend_date TEXT NOT NULL,platform TEXT NOT NULL DEFAULT 'facebook',campaign TEXT NOT NULL DEFAULT '',adset TEXT NOT NULL DEFAULT '',creative TEXT NOT NULL DEFAULT '',cost INTEGER NOT NULL DEFAULT 0,note TEXT NOT NULL DEFAULT '',updated_by INTEGER,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(spend_date,platform,campaign,adset,creative),FOREIGN KEY(updated_by) REFERENCES users(id) ON DELETE SET NULL)`
     ,`CREATE TABLE IF NOT EXISTS user_terms_acceptances (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,terms_version TEXT NOT NULL,accepted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,ip_hash TEXT NOT NULL,UNIQUE(user_id,terms_version),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`
@@ -135,6 +136,8 @@ async function initializeDatabase(env) {
   if(!pageViewColumns.includes('aggregated_at'))await env.DB.prepare('ALTER TABLE page_views ADD COLUMN aggregated_at TEXT').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_page_views_aggregation ON page_views(aggregated_at,id)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_analytics_daily_product_day ON analytics_daily(product_id,day_local)').run();
+  await env.DB.prepare("INSERT INTO analytics_summary(summary_key,unique_visitors) SELECT 'site',COUNT(*) FROM analytics_visitors WHERE true ON CONFLICT(summary_key) DO UPDATE SET unique_visitors=excluded.unique_visitors,updated_at=CURRENT_TIMESTAMP").run();
+  await env.DB.prepare("CREATE TRIGGER IF NOT EXISTS trg_analytics_visitors_summary AFTER INSERT ON analytics_visitors BEGIN INSERT INTO analytics_summary(summary_key,unique_visitors) VALUES('site',1) ON CONFLICT(summary_key) DO UPDATE SET unique_visitors=unique_visitors+1,updated_at=CURRENT_TIMESTAMP; END").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_type_time ON customer_events(event_type,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_user_time ON customer_events(user_id,created_at DESC)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_customer_events_visitor_time ON customer_events(visitor_key,created_at DESC)').run();

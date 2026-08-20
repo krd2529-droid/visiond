@@ -23,5 +23,5 @@
   const paintStats=data=>{const number=value=>new Intl.NumberFormat('th-TH').format(Number(value)||0);stats.querySelector('[data-visit-today]').textContent=number(data.today_views);stats.querySelector('[data-visit-7]').textContent=number(data.last7_views);stats.querySelector('[data-visit-30]').textContent=number(data.last30_views)};
   document.addEventListener('visiond:analytics-counted',event=>paintStats(event.detail),{once:true});
   const unavailable=()=>stats.querySelectorAll('b').forEach(node=>node.textContent='0');
-  if(window.__visiondAnalytics)paintStats(window.__visiondAnalytics);else setTimeout(()=>{const shared=window.__visiondAnalyticsStats;if(shared)shared.then(paintStats).catch(unavailable);else fetch('/api/analytics/view',{cache:'no-store'}).then(response=>response.ok?response.json():Promise.reject()).then(paintStats).catch(unavailable)},0);
+  if(window.__visiondAnalytics)paintStats(window.__visiondAnalytics);else setTimeout(()=>{const shared=window.__visiondAnalyticsStats;if(shared)shared.then(paintStats).catch(unavailable);else fetch('/api/analytics/view').then(response=>response.ok?response.json():Promise.reject()).then(paintStats).catch(unavailable)},0);
 })();
