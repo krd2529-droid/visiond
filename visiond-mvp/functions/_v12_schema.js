@@ -1,6 +1,10 @@
 import {ensureVEasyRuntimeSchema} from './_veasy_runtime.js';
+const v12SchemaReady=new WeakMap();
 
 export async function ensureV12Schema(env){
+  let ready=v12SchemaReady.get(env.DB);if(ready)return ready;
+  ready=(async()=>{
+  try{const state=await env.DB.prepare("SELECT version FROM runtime_schema_state WHERE schema_key='core'").first();if(Number(state?.version)>=66)return true}catch(error){if(!/no such table[^]*runtime_schema_state/i.test(String(error?.message||error)))throw error}
   await ensureVEasyRuntimeSchema(env);
   const conversationColumns=(await env.DB.prepare('PRAGMA table_info(veasy_conversations)').all()).results?.map(x=>x.name)||[];
   if(!conversationColumns.includes('profile_url'))await env.DB.prepare("ALTER TABLE veasy_conversations ADD COLUMN profile_url TEXT NOT NULL DEFAULT ''").run();
@@ -15,5 +19,7 @@ export async function ensureV12Schema(env){
   if(!credentialColumns.includes('shop_id'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN shop_id TEXT NOT NULL DEFAULT ''").run();
   if(!credentialColumns.includes('secret_ciphertext'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN secret_ciphertext TEXT NOT NULL DEFAULT ''").run();
   if(!credentialColumns.includes('verify_token_ciphertext'))await env.DB.prepare("ALTER TABLE v12_channel_credentials ADD COLUMN verify_token_ciphertext TEXT NOT NULL DEFAULT ''").run();
+  return false;
+  })().catch(error=>{v12SchemaReady.delete(env.DB);throw error});v12SchemaReady.set(env.DB,ready);return ready;
 }
 // V12-CHANNEL-001 | V12-BROADCAST-001 — schema credential/campaign/delivery

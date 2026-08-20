@@ -354,10 +354,11 @@
 - Validation/persistence: PUT ต้องมี encryption key อย่างน้อย 32 ตัว, Page ID 5–30 digits, active shop, token ใหม่อย่างน้อย 40 และ app secret ใหม่อย่างน้อย 20; ช่อง secret ว่างใช้ ciphertext เดิมและ token ใหม่จะ reset `verified_at`
 - Encryption/one-time value: AES-GCM ใช้ random IV, derived SHA-256 key, AAD และ prefix `vdch1:`; verify token สร้าง/เข้ารหัสครั้งแรกและคืน plaintext เพียง response ที่สร้างใหม่ หลังจากนั้น GET/PUT ไม่เปิดเผยอีก
 - ฐานข้อมูล: `v12_channel_credentials`; เก็บ Token, App Secret และ Verify Token แบบเข้ารหัส
+- Schema hot path: `ensureV12Schema` ใช้ `runtime_schema_state` v66 เป็น persistent readiness marker และ memoize ต่อ isolate; Settings/Profile/Broadcast ไม่รัน runtime bootstrap, PRAGMA หรือ DDL เมื่อ migration พร้อม
 - Failure: load/save/test แสดง state ที่ผู้ใช้รับรู้; API log เฉพาะ error code ที่ตัดความยาว ไม่ log credential; Meta error projection จำกัด code/subcode/type และข้อความจำแนก token/permission/rate limit
 - รหัส UI: settings form ใช้ `data-feature="V12-CHANNEL-001"`; คง field/button/status, responsive layout และ theme เดิม
 - ห้ามกระทบ: ห้ามคืน credential/ciphertext เต็มสู่หน้าเว็บหรือ log, ห้ามเปลี่ยน retention/one-time verify token, encryption, Boss guard, Meta test และห้ามรับ event ที่ HMAC ไม่ถูกต้อง
-- การทดสอบ: `scripts/test-v014385.mjs`, `scripts/test-v014401.mjs`; historical `scripts/test-v014241.mjs`, `scripts/test-v014244.mjs`, `scripts/test-v014195.mjs`, `scripts/test-v014198.mjs`
+- การทดสอบ: `scripts/test-v014385.mjs`, `scripts/test-v014401.mjs`, `scripts/test-v014404.mjs`; historical `scripts/test-v014241.mjs`, `scripts/test-v014244.mjs`, `scripts/test-v014195.mjs`, `scripts/test-v014198.mjs`
 
 ## V12-INBOX-001 — กล่องข้อความ LINE/Facebook และข้อมูลลูกค้า
 

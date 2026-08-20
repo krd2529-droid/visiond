@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.403 — V12 Inbox Latest-Message Read Budget
+### v0.14.404 — V12 Runtime Schema Guard
 
-- เป้าหมายหลัก: ลด latest-message lookup ของ V12 conversation list จาก 2 เหลือ 1 ครั้งต่อบทสนทนา
-- Acceptance: list endpoint ใหม่คืน contract เดิม, ใช้ latest message join เพียงหนึ่ง subquery และ index key shop/conversation/time
-- ห้ามเปลี่ยน: thread detail/history, webhook/AI reply, handoff, global bot toggle, UI theme และ deployment state
+- เป้าหมายหลัก: ตัด V12 runtime schema/PRAGMA/CREATE/ALTER ออกจาก request path เมื่อ schema v66 พร้อม
+- Acceptance: V12 Settings, Profile และ Broadcast ใช้ persistent schema probe ร่วมหนึ่งครั้งต่อ isolate และไม่รัน DDL เมื่อพร้อม
+- ห้ามเปลี่ยน: credential/broadcast/profile contracts, webhook/AI reply, UI theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
