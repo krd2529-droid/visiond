@@ -6,7 +6,6 @@ const number=value=>Number(value)||0;
 export async function recordPageView(env,{path,productId,visitorKey}){
   const product=Number(productId)||0;
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO page_views(path,product_id,visitor_key,aggregated_at) VALUES(?,NULLIF(?,0),?,CURRENT_TIMESTAMP)").bind(path,product,visitorKey),
     env.DB.prepare("INSERT INTO analytics_daily(day_local,path,product_id,views) VALUES(date('now','+7 hours'),?,?,1) ON CONFLICT(day_local,path,product_id) DO UPDATE SET views=views+1").bind(path,product),
     env.DB.prepare("INSERT INTO analytics_visitors(visitor_key,first_seen_at,last_seen_at) VALUES(?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT(visitor_key) DO UPDATE SET last_seen_at=CURRENT_TIMESTAMP").bind(visitorKey)
   ]);

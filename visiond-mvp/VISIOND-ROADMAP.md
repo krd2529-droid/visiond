@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.394 — Analytics Summary และ Cache
+### v0.14.395 — Analytics Write Reduction
 
-- เป้าหมายหลัก: หยุดนับ unique visitor จากตารางเต็มทุกครั้งและ cache GET สถิติสาธารณะ
-- Acceptance: unique ใช้ point lookup จาก summary, cache hit เกิดก่อน D1/schema/rate limit และ visitor ใหม่เพิ่ม summary เพียงครั้งเดียว
-- ห้ามเปลี่ยน: Page View/Event contract, day-local aggregate, UI/theme, Auth/Payment/Security และ deployment state
-- สถานะ: `IMPLEMENTED`; รอ Push/Deploy, migration 0066 และ Production Validation ผ่าน D1 Query Insights
+- เป้าหมายหลัก: ลด D1 writes/reads ของ Public Analytics โดยย้าย rate limit และ duplicate window ไป edge
+- Acceptance: View ใหม่เขียน D1 สอง statements, ไม่เขียน raw page_views, View/Event duplicate ไม่ query D1 และ Auth security limiter เดิมไม่เปลี่ยน
+- ห้ามเปลี่ยน: Auth/Payment/Download rate limit, day-local aggregate, Event allowlist, UI/theme และ deployment state
+- สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. `v0.14.395` ลด Analytics writes, ปรับ duplicate index และย้าย public Analytics rate limit ออกจาก D1
+1. `v0.14.396` ปรับ Catalog query, cache/pagination และย้าย Trash purge ออกจาก hot read
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

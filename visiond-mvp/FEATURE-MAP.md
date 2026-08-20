@@ -589,11 +589,11 @@
 - หน้า/ไฟล์: analytics sections ใน `/admin.html`, `public/admin.js`, `functions/_analytics.js`, `functions/api/analytics/view.js`, `functions/api/analytics/event.js`, `functions/api/admin/visitor-stats.js`, `functions/api/admin/daily-events.js`, `functions/api/admin/customer-analytics.js`, `functions/api/internal/analytics-retention.js`
 - ฟังก์ชัน: aggregate page views, unique visitor, event explorer รายวัน, guest/member identity, conversion funnel/bottleneck, buyer mix, product performance, customer journey และ product-family demand recommendation
 - API: `POST /api/analytics/view`, `POST /api/analytics/event`, `GET /api/admin/visitor-stats`, `GET /api/admin/daily-events`, `GET /api/admin/customer-analytics`
-- ฐานข้อมูล: `page_views`, `analytics_daily`, `analytics_visitors`, `analytics_summary`, `customer_events`, `products`, `orders`, `order_items`; unique visitor อ่านจาก materialized `analytics_summary` และเพิ่มเฉพาะ visitor ใหม่
+- ฐานข้อมูล: `page_views` เป็น legacy retention เท่านั้น; View ใหม่เขียน `analytics_daily` + `analytics_visitors`, unique อ่านจาก `analytics_summary`; Event เขียน `customer_events`; duplicate/rate limit ของ public telemetry ใช้ edge cache หรือ memory ต่อ isolate โดยไม่เขียน D1
 - สิทธิ์/ความเป็นส่วนตัว: public ingestion ใช้ hashed visitor key, event allowlist, sanitized path/referrer/metadata และ rate limit; dashboard endpoints ใช้ `requireAdmin`
-- ห้ามกระทบ: page view aggregate ตามวันไทย; raw retention 90 วันและประมวลผล batch 5,000; event เดิมภายใน 10 วินาทีไม่นับซ้ำ; daily explorer จำกัด 300 รายการ; customer window 1–90 วัน; conversion หารด้วยจำนวนคนของขั้นก่อนหน้า; recommendation เป็นข้อมูลช่วยตัดสินใจและห้ามผลิต/แก้สินค้าอัตโนมัติ
+- ห้ามกระทบ: page view aggregate ตามวันไทย; raw legacy retention 90 วันและประมวลผล batch 5,000; View ซ้ำภายใน 30 นาทีและ Event ซ้ำภายใน 10 วินาทีไม่นับซ้ำแบบ best-effort ต่อ edge; daily explorer จำกัด 300 รายการ; customer window 1–90 วัน; conversion หารด้วยจำนวนคนของขั้นก่อนหน้า; recommendation เป็นข้อมูลช่วยตัดสินใจและห้ามผลิต/แก้สินค้าอัตโนมัติ
 - รหัส UI: events, visitor stats และ customer-intelligence sections มี `data-feature="CUSTOMER-INTELLIGENCE-001"`; คง filter/loading/error และ theme เดิม
-- การทดสอบ: `scripts/test-v014349.mjs`, `scripts/test-v014391.mjs`, `scripts/test-v014392.mjs`, `scripts/test-v014394.mjs`
+- การทดสอบ: `scripts/test-v014349.mjs`, `scripts/test-v014391.mjs`, `scripts/test-v014392.mjs`, `scripts/test-v014394.mjs`, `scripts/test-v014395.mjs`
 
 ## BUSINESS-REPORT-001 — รายงานยอดขาย กำไร–ขาดทุน และ CSV Export
 
