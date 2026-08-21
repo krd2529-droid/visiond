@@ -1058,9 +1058,11 @@
 - Sandbox/E2E: scenarios ลูกค้า ออเดอร์ ชำระเงิน ยกเลิก คืนเงินแยกจาก Production; E2E ต้อง active + scopes ครบ ตรวจ catalog, replay/conflict, signed webhook, retry/dead และ alerts โดยไม่คืน credential/signature/PII
 - Health/Privacy: dashboard 24 ชั่วโมงแสดง total/completed/retry/dead/error rate/response time/latest event; audit ใช้ request ID และ hash IP; UI/log ปิดบัง credential, External ID และไม่คืน raw payload, secret, token หรือข้อมูลส่วนตัว
 - Starter Kit: `integrations/web2/visiond-partner-client.mjs` ใช้เฉพาะ Backend, HTTPS config และ Secret Manager; ห้าม import เข้า browser bundle หรือ log config/authorization/signature/private payload
+- Digital commerce boundary: v0.14.407 ล็อก contract สำหรับ product detail, order create/status, payment state และ one-time entitlement claim แต่ยังไม่เปิด runtime; `/orders/sync` เป็น reconciliation เท่านั้นและห้ามสร้างออเดอร์/อนุมัติชำระ/ออกสิทธิ์; VisionD คำนวณราคาและอนุมัติเอง, API 1 บาทไม่หักลูกค้า, Partner API ห้ามคืนไฟล์หรือ permanent download URL
+- Commerce query budget: list ทุกชนิดต้อง cursor pagination ค่าเริ่มต้น 50 สูงสุด 100, read ต้อง scope ด้วย Website ID + External ID และห้าม full-table scan; implementation ต้องแยก product detail, order, payment, entitlement และ Production E2E คนละแพต
 - Known Boundary: Feature Map รอบนี้ยืนยัน contract ใน repository เท่านั้น ไม่ได้พิสูจน์ว่า Web 2 ภายนอกเชื่อม Production แล้ว; Push, Deploy, Production credential, E2E production และ monitoring 24 ชั่วโมงยังต้องทำเป็น Event Case แยก
 - รหัส UI: `main.partner-shell` ใช้ `data-feature="PARTNER-API-001"`; คง legacy forms/buttons, canonical button adapter, loading/error, Desktop/Mobile และ theme เดิม
-- การทดสอบ: `scripts/test-v014388.mjs`, `scripts/test-v014397.mjs`, `scripts/test-v014398.mjs`, `scripts/test-v014399.mjs`, `scripts/test-v014400.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
+- การทดสอบ: `scripts/test-v014388.mjs`, `scripts/test-v014397.mjs`, `scripts/test-v014398.mjs`, `scripts/test-v014399.mjs`, `scripts/test-v014400.mjs`, `scripts/test-v014407.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
 
 ## Coverage Audit v0.14.389
 

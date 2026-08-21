@@ -19,17 +19,17 @@
 
 ## Active Patch
 
-### v0.14.406 — V12 Query-Budget Regression Lock
+### v0.14.407 — Web 2 Digital Product Commerce Contract
 
-- เป้าหมายหลัก: ล็อก query budget ของ V12 inbox/schema/history ด้วย regression test รวม
-- Acceptance: test ต้อง fail หาก fixed polling, list lookup ซ้ำ, thread เกิน 51 rows/page, schema guard หาย หรือ AI/import history เกินเพดาน
-- ห้ามเปลี่ยน: runtime behavior, webhook/AI reply, message retention, UI theme และ deployment state
-- สถานะ: `IMPLEMENTED`; โค้ดลด D1 ของ V12 ครบตาม static budget รอ Push/Deploy และ Production Query Insights
-- สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
+- เป้าหมายหลัก: ล็อกขอบเขต API ขายสินค้าดิจิทัลให้ Web 2 ก่อนเขียน runtime เพื่อกันการออกสิทธิ์หรือเผยไฟล์ผิดทาง
+- Acceptance: แยก Catalog/Sync เดิมออกจาก Checkout ชัดเจน, กำหนด order state/idempotency/source of truth/claim handoff/query budget และ API 1 บาทไม่หักลูกค้า
+- ห้ามเปลี่ยน: endpoint runtime, ราคา, payment approval, entitlement/download, Partner scopes ปัจจุบัน, UI theme และ deployment state
+- สถานะ: `IMPLEMENTED CONTRACT`; ยังไม่เปิด `/commerce/*` บน Production
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. Production Validation: Push/Deploy v0.14.405–406 แล้วตรวจ D1 Query Insights/Rows read-written ของ V12 เป็นเวลา 24 ชั่วโมง
+1. v0.14.408 Product Detail API: เพิ่ม `GET /api/partner/v1/products/{id}` แบบ metadata-only, website-scoped audit และ focused query-budget test
+2. Production Validation: ตรวจ D1 Query Insights/Rows read-written ของ V12 v0.14.405–406 เป็นเวลา 24 ชั่วโมง
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

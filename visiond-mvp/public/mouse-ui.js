@@ -3,7 +3,7 @@ document.documentElement.dataset.uiPointerFeature='UI-POINTER-001';
 if (!document.querySelector('link[data-visiond-mouse-ui]')) {
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
-  stylesheet.href = '/mouse-ui.css?v=014304';
+  stylesheet.href = '/mouse-ui.css?v=014407';
   stylesheet.dataset.visiondMouseUi = 'true';
   document.head.append(stylesheet);
 }

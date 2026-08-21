@@ -87,3 +87,16 @@
 - Client รองรับสินค้า ลูกค้า ออเดอร์ Signed Event, Request ID และ Idempotency Key
 - ห้าม import Starter Kit เข้า Browser bundle และห้าม Log Config, Authorization Header, Signature หรือ Payload ส่วนตัว
 - Starter Kit ต้องผ่าน `npm run security:partner-api` และ `npm run test:v014223`
+
+## Phase 9 Digital Product Commerce Contract (Design Locked; Runtime Not Open)
+
+- Phase นี้กำหนด contract ก่อน implementation; endpoint ใต้ `/commerce/*` ยังห้าม Web 2 เรียก Production จนกว่าแต่ละ endpoint จะมี migration, audit, focused test และ E2E ผ่าน
+- Catalog เดิม `GET /products` เป็น metadata read-only และไล่เกิน 100 รายการด้วย cursor; เพิ่มรายละเอียดสินค้าในอนาคตที่ `GET /products/{id}` โดยยังห้ามคืน `product_files.object_key`, download URL หรือ token
+- Checkout ในอนาคตใช้ `POST /commerce/orders` พร้อม Scope ใหม่ `commerce:write`, `Idempotency-Key`, `external_order_id`, `external_customer_id` และรายการ `product_id`; VisionD ต้องคำนวณราคาจากฐานข้อมูลตัวเอง ห้ามเชื่อยอดราคาจาก Web 2
+- ตรวจสถานะในอนาคตใช้ `GET /commerce/orders/{external_order_id}` พร้อม Scope `commerce:read`; คืนเฉพาะ state, totals, entitlement readiness และ request ID โดยไม่คืนข้อมูลลูกค้ารายอื่น
+- State machine: `created -> pending_payment -> pending_review -> paid -> fulfilled`; ทางออกคือ `cancelled|rejected|refunded`; ห้ามข้ามไป `paid|fulfilled` จากคำขอ Web 2 โดยตรง
+- การ sync ที่ `POST /orders/sync` เป็นข้อมูลยอดขายภายนอกเพื่อ reconciliation เท่านั้น และต้องไม่สร้าง VisionD order, payment approval, entitlement หรือสิทธิ์ดาวน์โหลด
+- การชำระและอนุมัติใช้ระบบ VisionD เดิมเป็น source of truth; Web 2 ห้ามส่งคำว่า paid เพื่อออกสิทธิ์เอง และค่าบริการ API 1 บาทไม่หักจากลูกค้าหรือเพิ่มในยอดชำระ
+- เมื่อ VisionD อนุมัติแล้วจึงสร้าง entitlement แบบ idempotent; การส่งมอบในอนาคตใช้ one-time claim handoff อายุสั้นไปยังหน้า VisionD ที่บังคับผูก/เข้าสู่ระบบ ห้ามส่งไฟล์ JPEG/PDF/ZIP หรือ permanent download URL ผ่าน Partner API
+- ทุก commerce read ต้อง scope ด้วย Website ID และ External ID; list endpoint ต้อง cursor pagination ค่าเริ่มต้น 50 สูงสุด 100 และมี query budget แบบ bounded ห้าม scan orders, items หรือ entitlements ทั้งตาราง
+- Phase implementation แบ่งทีละแพต: product detail -> order create/status -> payment state handoff -> entitlement claim/download -> reconciliation/production E2E; ห้ามรวมเปิดขายครบวงจรในแพตเดียว

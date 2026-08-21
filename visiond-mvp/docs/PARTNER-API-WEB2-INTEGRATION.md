@@ -58,3 +58,23 @@ Starter Kit สำหรับ Backend เว็บ 2 อยู่ที่ `int
 ## Rollback
 
 Pause เว็บไซต์จาก VisionD ก่อน จากนั้นหยุดส่ง Event ที่เว็บ 2 โดยไม่ลบ External ID หรือ Idempotency record เพื่อรักษาความถูกต้องของข้อมูลเดิม
+
+## 7. ขอบเขตการขายสินค้าดิจิทัล
+
+API ที่เปิดใช้อยู่ในปัจจุบันรองรับการอ่าน Catalog และ sync ข้อมูลลูกค้า/ยอดขาย แต่ `POST /orders/sync` ไม่ใช่ Checkout และไม่ออกสิทธิ์ดาวน์โหลดให้ลูกค้า
+
+Contract สำหรับ Digital Product Commerce ถูกล็อกไว้สำหรับ implementation ระยะถัดไปดังนี้:
+
+`GET /products/{id}` อ่านรายละเอียดสินค้า Metadata โดยไม่คืนไฟล์หรือ Token
+
+`POST /commerce/orders` ให้ Backend ของ Web 2 สร้างออเดอร์ด้วย External ID และ Idempotency Key โดย VisionD คำนวณราคาจริงเอง
+
+`GET /commerce/orders/{external_order_id}` ตรวจสถานะออเดอร์ของเว็บไซต์นั้นเท่านั้น
+
+หลัง VisionD ตรวจชำระและออกสิทธิ์สำเร็จ Web 2 จะได้รับเพียงสถานะพร้อม one-time claim handoff อายุสั้น ลูกค้าต้องเข้าสู่ระบบหรือผูกบัญชีที่ VisionD ก่อนดาวน์โหลด ไฟล์จริงและ permanent download URL จะไม่ออกผ่าน Partner API
+
+สถานะปกติคือ `created -> pending_payment -> pending_review -> paid -> fulfilled` โดย Web 2 ไม่มีสิทธิ์สั่งให้ออเดอร์เป็น `paid` หรือ `fulfilled` เอง
+
+ค่าบริการ API 1 บาทเป็นต้นทุนภายในและไม่หักจากลูกค้า ไม่ต้องส่งเป็น line item, fee หรือยอดหักใน payload ของ Web 2
+
+หมายเหตุ: endpoint ใต้ `/commerce/*` ยังเป็น contract ที่ยังไม่เปิด Production ห้ามเขียน integration ที่สมมติว่าเรียกใช้งานได้จนกว่าจะมีประกาศ implementation และ E2E ผ่าน

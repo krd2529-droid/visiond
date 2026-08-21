@@ -120,4 +120,4 @@ closeLessons.onclick = () => (lessonManager.hidden = true);
   if (new URLSearchParams(location.search).get("category") === "resale-rights") courseForm.elements.course_type.value="resale_rights";
   if (await auth()) loadCourses();
 })();
-import("/i18n.js?v=014304");
+import("/i18n.js?v=014407");
