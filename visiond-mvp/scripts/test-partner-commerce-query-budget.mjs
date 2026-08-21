@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+const catalog=read('functions/api/partner/v1/products/index.js'),detail=read('functions/api/partner/v1/products/[id].js'),create=read('functions/api/partner/v1/commerce/orders/index.js'),status=read('functions/api/partner/v1/commerce/orders/[externalId].js'),admin=read('functions/api/admin/partner-websites/[id]/commerce.js'),fulfill=read('functions/api/admin/partner-websites/[id]/commerce/[orderId]/fulfill.js'),claim=read('functions/api/commerce/claim.js');
+assert.match(catalog,/Math\.min\(max,Math\.max\(min,parsed\)\)/);assert.match(catalog,/limit\+1/);assert.match(catalog,/ORDER BY p\.id LIMIT \?/);
+assert.match(detail,/p\.id=\?/);assert.match(detail,/LIMIT 1/);
+assert.match(create,/items\.length>100/);assert.match(create,/quantity!==1/);assert.equal((create.match(/SELECT id,title,price FROM products/g)||[]).length,1);assert.match(create,/WHERE website_id=\? AND external_order_id=\? LIMIT 1/);
+assert.match(status,/WHERE website_id=\? AND external_order_id=\? LIMIT 1/);assert.match(status,/ORDER BY line_index LIMIT 100/);assert.match(status,/partner_commerce_claims[^]*LIMIT 1/);
+assert.match(admin,/WHERE o\.website_id=\? ORDER BY o\.updated_at DESC LIMIT 100/);
+for(const source of[fulfill,claim])assert.doesNotMatch(source,/SELECT \*/);
+for(const pattern of[/partner_commerce_order_items[^]*LIMIT 100/,/order_items[^]*LIMIT 100/,/entitlements[^]*LIMIT 100/])assert.match(fulfill,pattern);
+assert.match(claim,/ORDER BY i\.line_index LIMIT 100/);assert.match(claim,/WHERE claim_hash=\? AND user_id=\? AND consumed_at IS NULL/);
+console.log('PASS PARTNER COMMERCE QUERY BUDGET — catalog<=101, detail=1, create<=100 items/1 product query, status<=100, admin<=100, fulfill<=100, claim<=100');

@@ -62,6 +62,8 @@ Starter Kit สำหรับ Backend เว็บ 2 อยู่ที่ `int
 
 Pause เว็บไซต์จาก VisionD ก่อน จากนั้นหยุดส่ง Event ที่เว็บ 2 โดยไม่ลบ External ID หรือ Idempotency record เพื่อรักษาความถูกต้องของข้อมูลเดิม
 
+ก่อน Deploy ให้รัน `npm run test:partner-commerce-e2e`, `npm run test:partner-commerce-query-budget` และ `npm run security:partner-api` ทั้งสามคำสั่งต้องผ่าน
+
 ## 7. ขอบเขตการขายสินค้าดิจิทัล
 
 API ที่เปิดใช้อยู่ในปัจจุบันรองรับการอ่าน Catalog และ sync ข้อมูลลูกค้า/ยอดขาย แต่ `POST /orders/sync` ไม่ใช่ Checkout และไม่ออกสิทธิ์ดาวน์โหลดให้ลูกค้า

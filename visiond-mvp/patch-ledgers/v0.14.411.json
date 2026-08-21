@@ -1,0 +1,13 @@
+{
+  "patch":"v0.14.411",
+  "parent_commit":"340ed953",
+  "safe_rollback_commit":"340ed953",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014411-QA-001","scope":"QA","source_instruction":"เพิ่ม Commerce handler E2E ครบ flow","status":"DONE-VERIFIED","evidence":["scripts/test-partner-commerce-e2e.mjs","scripts/test-v014411.mjs"]},
+    {"id":"V014411-QA-002","scope":"QA","source_instruction":"เพิ่ม bounded query budget ทุก Commerce endpoint","status":"DONE-VERIFIED","evidence":["scripts/test-partner-commerce-query-budget.mjs","FEATURE-MAP.md"]},
+    {"id":"V014411-DOC-001","scope":"DOC","source_instruction":"ปิด Feature Map Roadmap Protocol Integration และ Requirement evidence","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","VISIOND-ROADMAP.md","VISIOND-PARTNER-API-PROTOCOL.md","docs/PARTNER-API-WEB2-INTEGRATION.md","requirements-ledger.json"]},
+    {"id":"V014411-CONFIG-001","scope":"CONFIG","source_instruction":"ไม่ Push/Deploy และแยก Production rollout เป็นคิว","status":"DONE-VERIFIED","evidence":["VISIOND-ROADMAP.md","work-history/visiond/patch-history/PATCH-v0.14.411-web2-commerce-completion-gate.md"]}
+  ]
+}

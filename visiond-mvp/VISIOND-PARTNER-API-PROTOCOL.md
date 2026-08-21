@@ -101,3 +101,4 @@
 - การส่งมอบใช้ one-time claim อายุ 24 ชั่วโมง เก็บ token แบบ AES-GCM + hash, ส่งผ่าน URL fragment, บังคับ login เป็น native order owner และตรวจ entitlement ซ้ำก่อน consume; ห้ามส่งไฟล์ JPEG/PDF/ZIP, object key หรือ permanent download URL ผ่าน Partner API
 - ทุก commerce read ต้อง scope ด้วย Website ID และ External ID; list endpoint ต้อง cursor pagination ค่าเริ่มต้น 50 สูงสุด 100 และมี query budget แบบ bounded ห้าม scan orders, items หรือ entitlements ทั้งตาราง
 - Phase implementation แบ่งทีละแพต: product detail -> order create/status -> payment state handoff -> entitlement claim/download -> reconciliation/production E2E; ห้ามรวมเปิดขายครบวงจรในแพตเดียว
+- Local E2E gate ต้องเรียก handler จริงบน SQLite/D1-compatible adapter ครบ create, idempotent replay, pending/fulfilled status, native paid match, wrong-account deny, owner consume และ token reuse deny; query-budget test ต้องล็อกทุก list ≤100 (catalog ใช้ 100+1) และ point read ด้วย indexed scope

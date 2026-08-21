@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.410 — Payment-safe Entitlement Claim
+### v0.14.411 — Commerce E2E + Query-Budget Gate
 
-- เป้าหมายหลัก: ส่งมอบสิทธิ์ Web 2 โดยยึด native paid order และ entitlement จริง ไม่มีช่องลัด paid
-- Acceptance: Boss-only exact match, native order ห้าม reuse, encrypted+hashed 24h one-time claim, account-bound consume และไม่คืนไฟล์/object key
-- ห้ามเปลี่ยน: native payment approval/grantOrder/download permission, `/orders/sync`, API 1 บาท, canonical UI theme และ deployment state
-- สถานะ: `IMPLEMENTED`; migration 0068 และ runtime รอ E2E security/query-budget gate
+- เป้าหมายหลัก: พิสูจน์ flow Web2 commerce แบบ handler E2E และล็อก statement/row bounds ก่อนส่ง Production
+- Acceptance: create/replay/status/paid-match/wrong-account/consume/reuse ผ่านจริง; catalog/detail/order/status/admin/fulfill/claim มี bounded query tests
+- ห้ามเปลี่ยน: runtime behavior, payment/grant/download, API 1 บาท, canonical UI theme และ deployment state
+- สถานะ: `IMPLEMENTED + LOCAL VERIFIED`; contract v0.14.407 ครบทุก implementation requirement แล้ว
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. v0.14.411 Commerce E2E + Query Budget Production Gate: ทดสอบ create/replay/status/paid-match/wrong-account/consume/reuse และ bounded reads/writes ก่อนปิด implementation
+1. Production Rollout: Push v0.14.407–411, apply migrations 0067–0068, ตั้ง Partner encryption secret/scopes, รัน Sandbox/Production E2E และติดตาม D1 Query Insights 24 ชั่วโมง
 2. Production Validation: ตรวจ D1 Query Insights/Rows read-written ของ V12 v0.14.405–406 เป็นเวลา 24 ชั่วโมง
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต

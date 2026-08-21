@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.411');
+assert.match(read('public/index.html'),/WEB v0\.14\.411/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.411/);
+await import('./test-partner-commerce-query-budget.mjs');
+await import('./test-partner-commerce-e2e.mjs');
+assert.match(read('requirements-ledger.json'),/"WEB2-QUERY-001"[^]*?"status":"DONE-VERIFIED"/);
+assert.match(read('requirements-ledger.json'),/"WEB2-E2E-001"[^]*?"status":"DONE-VERIFIED"/);
+console.log('PASS v0.14.411 Web2 commerce local completion gate');
