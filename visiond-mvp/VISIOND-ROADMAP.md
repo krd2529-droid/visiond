@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.407 — Web 2 Digital Product Commerce Contract
+### v0.14.408 — Web 2 Product Detail API
 
-- เป้าหมายหลัก: ล็อกขอบเขต API ขายสินค้าดิจิทัลให้ Web 2 ก่อนเขียน runtime เพื่อกันการออกสิทธิ์หรือเผยไฟล์ผิดทาง
-- Acceptance: แยก Catalog/Sync เดิมออกจาก Checkout ชัดเจน, กำหนด order state/idempotency/source of truth/claim handoff/query budget และ API 1 บาทไม่หักลูกค้า
-- ห้ามเปลี่ยน: endpoint runtime, ราคา, payment approval, entitlement/download, Partner scopes ปัจจุบัน, UI theme และ deployment state
-- สถานะ: `IMPLEMENTED CONTRACT`; ยังไม่เปิด `/commerce/*` บน Production
+- เป้าหมายหลัก: เพิ่ม point-read รายละเอียดสินค้าสำหรับ Backend Web 2 โดยใช้ Catalog security boundary เดิม
+- Acceptance: `GET /api/partner/v1/products/{id}` ใช้ `products:read`, คืนเฉพาะ published metadata, point query bounded และไม่คืนไฟล์/token
+- ห้ามเปลี่ยน: list catalog, order/payment/entitlement/download, Partner scopes, ราคา, UI theme และ deployment state
+- สถานะ: `IMPLEMENTED`; รอ Commit/Push/Deploy และ Partner Production E2E
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. v0.14.408 Product Detail API: เพิ่ม `GET /api/partner/v1/products/{id}` แบบ metadata-only, website-scoped audit และ focused query-budget test
+1. v0.14.409 Commerce Order Create/Status: schema + `POST /commerce/orders` + `GET /commerce/orders/{external_order_id}` โดยยังไม่อนุมัติชำระหรือออกสิทธิ์
 2. Production Validation: ตรวจ D1 Query Insights/Rows read-written ของ V12 v0.14.405–406 เป็นเวลา 24 ชั่วโมง
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต

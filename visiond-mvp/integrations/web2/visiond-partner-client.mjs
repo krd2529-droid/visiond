@@ -37,6 +37,7 @@ export class VisionDPartnerClient{
     return data;
   }
   products({limit=50,cursor=0,category=''}={}){const query=new URLSearchParams({limit:String(limit),cursor:String(cursor)});if(category)query.set('category',category);return this.#request(`/products?${query}`)}
+  product(id){if(!Number.isSafeInteger(Number(id))||Number(id)<1)throw new Error('VISIOND_PRODUCT_ID_INVALID');return this.#request(`/products/${Number(id)}`)}
   async *productPages({limit=100,category=''}={}){let cursor=0;const seen=new Set();for(let page=0;page<10000;page++){const result=await this.products({limit,cursor,category});yield result;const next=result?.pagination?.next_cursor;if(!result?.pagination?.has_more||!Number.isSafeInteger(Number(next))||seen.has(String(next)))return;seen.add(String(next));cursor=Number(next)}throw new Error('VISIOND_PRODUCT_PAGINATION_LIMIT')}
   syncCustomer(customer,{idempotencyKey=newIdempotencyKey('customer'),requestId}={}){return this.#request('/customers/sync',{method:'POST',body:customer,idempotencyKey,requestId})}
   syncOrder(order,{idempotencyKey=newIdempotencyKey('order'),requestId}={}){return this.#request('/orders/sync',{method:'POST',body:order,idempotencyKey,requestId})}

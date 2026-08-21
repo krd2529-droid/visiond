@@ -19,6 +19,7 @@ Base URL: `https://visiondonline.com/api/partner/v1`
 ## 3. Endpoints
 
 - `GET /products` — Scope `products:read`
+- `GET /products/{id}` — Scope `products:read`; คืน Metadata ของสินค้าที่เผยแพร่และไม่คืนไฟล์/Token
 - `POST /customers/sync` — Scope `customers:write`
 - `POST /orders/sync` — Scope `orders:write`; ใช้ส่งออเดอร์ ชำระเงิน ยกเลิก และคืนเงิน
 - `POST /webhooks/events` — Signed Webhook ด้วย HMAC-SHA256
@@ -65,7 +66,7 @@ API ที่เปิดใช้อยู่ในปัจจุบันร�
 
 Contract สำหรับ Digital Product Commerce ถูกล็อกไว้สำหรับ implementation ระยะถัดไปดังนี้:
 
-`GET /products/{id}` อ่านรายละเอียดสินค้า Metadata โดยไม่คืนไฟล์หรือ Token
+`GET /products/{id}` เปิดใช้งานแล้วใน v0.14.408 สำหรับอ่านรายละเอียดสินค้า Metadata โดยไม่คืนไฟล์หรือ Token; หากสินค้าไม่เผยแพร่ ถูกลบ เป็น resale-rights หรือไม่มีอยู่ จะตอบ `PRODUCT_NOT_FOUND`
 
 `POST /commerce/orders` ให้ Backend ของ Web 2 สร้างออเดอร์ด้วย External ID และ Idempotency Key โดย VisionD คำนวณราคาจริงเอง
 

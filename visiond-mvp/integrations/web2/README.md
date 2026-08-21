@@ -12,6 +12,7 @@ const visiond=new VisionDPartnerClient({
 });
 
 const catalog=await visiond.products({limit:50});
+const detail=await visiond.product(catalog.items[0].id);
 for await (const page of visiond.productPages({limit:100})) {
   // ประมวลผล page.items ทีละหน้า จน pagination.has_more เป็น false
 }

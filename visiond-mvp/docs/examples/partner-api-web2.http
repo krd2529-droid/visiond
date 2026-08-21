@@ -8,6 +8,12 @@ X-VisionD-Client-ID: {{clientId}}
 Authorization: Bearer {{clientSecret}}
 X-Request-ID: web2-products-0001
 
+### อ่านรายละเอียดสินค้า Metadata (ไม่คืนไฟล์ดาวน์โหลด)
+GET {{baseUrl}}/products/1
+X-VisionD-Client-ID: {{clientId}}
+Authorization: Bearer {{clientSecret}}
+X-Request-ID: web2-product-detail-0001
+
 ### ซิงก์ลูกค้า
 POST {{baseUrl}}/customers/sync
 Content-Type: application/json
