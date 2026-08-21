@@ -369,9 +369,10 @@
 - Inbox refresh: หน้า V12 Connect โหลดครั้งแรกทันที; เมื่อเปิดค้างใช้ adaptive polling 60 วินาทีขณะใช้งานและ 5 นาทีเมื่อ idle, ไม่ยิงเมื่อแท็บซ่อน/กำลังค้นหา และกัน request ซ้อน
 - List query: `/api/admin/v12-conversations` ใช้ latest-message ID subquery เดียวแล้ว join เพื่อคืนทั้ง content/type แทน correlated lookup ซ้ำสองครั้ง; จำกัด 200 บทสนทนาและคง thread detail แยก endpoint
 - Thread query: `/api/admin/v12-thread` คืนข้อความล่าสุดหน้าละ 50 พร้อม bounded `before` cursor ที่ตรวจว่าอยู่ใน shop/conversation เดียวกัน; UI โหลดข้อความเก่าย้อนหลังทีละหน้าและกัน response ห้องเก่าทับห้องใหม่
+- Query budget regression: `scripts/test-v12-query-budget.mjs` ล็อก adaptive polling, list ≤200, latest probe 1 ครั้ง/บทสนทนา, thread ≤51 rows/page, AI history ≤10 และ Facebook import แบบ manual 25×100
 - Handoff/Error: ข้อความ payment/refund/complaint ส่งข้อความมาตรฐานแล้วเปลี่ยน mode เป็น human; รูปภาพรับเข้า inbox แต่ไม่ส่งเข้า AI; provider/Meta ส่งล้มบันทึก claim failed และ `veasy_bot_state.last_error`
 - ห้ามกระทบ: ห้ามส่งซ้ำ ห้ามเปิดเผย target/credential และห้ามส่งเมื่อไม่ได้อยู่โหมด human
-- การทดสอบ: `scripts/test-v014402.mjs`, `scripts/test-v014403.mjs`, `scripts/test-v014405.mjs`; historical `scripts/test-v014326.mjs`, `scripts/test-v014390.mjs`, `scripts/test-v014401.mjs`
+- การทดสอบ: `scripts/test-v014402.mjs`, `scripts/test-v014403.mjs`, `scripts/test-v014405.mjs`, `scripts/test-v014406.mjs`, `scripts/test-v12-query-budget.mjs`; historical `scripts/test-v014326.mjs`, `scripts/test-v014390.mjs`, `scripts/test-v014401.mjs`
 
 ## V12-BROADCAST-001 — Broadcast และคิวส่งหลายช่องทาง
 

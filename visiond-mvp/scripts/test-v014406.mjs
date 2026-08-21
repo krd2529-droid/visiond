@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.406');
+assert.match(read('public/index.html'),/WEB v0\.14\.406/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.406/);
+assert.match(read('public/v12-connect.html'),/v0\.14\.406/);
+await import('./test-v12-query-budget.mjs');
+assert.match(read('FEATURE-MAP.md'),/Query budget regression:[\s\S]*?test-v12-query-budget/);
+console.log('PASS v0.14.406 V12 query-budget regression lock');

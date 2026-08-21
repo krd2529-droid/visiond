@@ -19,16 +19,17 @@
 
 ## Active Patch
 
-### v0.14.405 — V12 Thread Message Pagination
+### v0.14.406 — V12 Query-Budget Regression Lock
 
-- เป้าหมายหลัก: ลดการเปิดห้องแชตจากอ่านสูงสุด 300 ข้อความซ้ำเป็น cursor pagination หน้าละ 50
-- Acceptance: เปิดห้องเห็น 50 ข้อความล่าสุด, โหลดเก่าย้อนหลังทีละหน้า, cursor ผูกกับ shop/conversation และกัน response แข่ง
-- ห้ามเปลี่ยน: webhook/AI reply, message retention, handoff, global bot toggle, UI theme และ deployment state
+- เป้าหมายหลัก: ล็อก query budget ของ V12 inbox/schema/history ด้วย regression test รวม
+- Acceptance: test ต้อง fail หาก fixed polling, list lookup ซ้ำ, thread เกิน 51 rows/page, schema guard หาย หรือ AI/import history เกินเพดาน
+- ห้ามเปลี่ยน: runtime behavior, webhook/AI reply, message retention, UI theme และ deployment state
+- สถานะ: `IMPLEMENTED`; โค้ดลด D1 ของ V12 ครบตาม static budget รอ Push/Deploy และ Production Query Insights
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. Production Validation: Push/Deploy migrations 0065–0066, รัน Partner E2E และตรวจ D1 Query Insights/Rows read-written
+1. Production Validation: Push/Deploy v0.14.405–406 แล้วตรวจ D1 Query Insights/Rows read-written ของ V12 เป็นเวลา 24 ชั่วโมง
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+const ui=read('public/v12-connect.js'),list=read('functions/api/admin/v12-conversations.js'),thread=read('functions/api/admin/v12-thread.js'),schema=read('functions/_v12_schema.js'),hook=read('functions/hooks/v12/facebook.js'),history=read('functions/api/admin/v12-facebook-history.js');
+assert.doesNotMatch(ui,/setInterval\([\s\S]*?loadList/,'V12 list must not use fixed polling');
+for(const token of['60000','300000','document.hidden','v12AutoRefreshing'])assert.ok(ui.includes(token),`adaptive:${token}`);
+assert.equal((list.match(/SELECT m\.id FROM veasy_chat_messages/g)||[]).length,1,'list latest-message probes per conversation');
+assert.match(list,/ORDER BY c\.updated_at DESC LIMIT 200/,'conversation list bound');
+assert.match(thread,/PAGE_SIZE=50/,'thread page bound');
+assert.match(thread,/PAGE_SIZE\+1/,'bounded has_more probe');
+assert.match(thread,/WHERE shop_id=\? AND conversation_id=\? AND id=\?/,'thread cursor scope');
+assert.match(ui,/fetch\(`\/api\/admin\/v12-thread\?/,'UI must use paged thread endpoint');
+assert.match(schema,/runtime_schema_state/,'persistent schema marker');
+assert.match(schema,/v12SchemaReady=new WeakMap/,'one schema probe per isolate');
+assert.match(hook,/ORDER BY created_at DESC LIMIT 10/,'AI history bound');
+assert.match(history,/limit:'25'/,'manual Facebook conversation import bound');
+assert.match(history,/messages\.limit\(100\)/,'manual Facebook message import bound');
+console.log('PASS V12 QUERY BUDGET — list poll active=60s idle=300s hidden=0; conversations<=200; latest_probe=1/conversation; thread<=51 rows/page; AI history<=10; Facebook import manual 25x100');
