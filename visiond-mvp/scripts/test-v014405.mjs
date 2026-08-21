@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.405');
+assert.match(read('public/index.html'),/WEB v0\.14\.405/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.405/);
+assert.match(read('public/v12-connect.html'),/v0\.14\.405[\s\S]*?v12-connect\.js\?v=014405/);
+const api=read('functions/api/admin/v12-thread.js'),ui=read('public/v12-connect.js');
+for(const token of['requireAdmin','PAGE_SIZE=50','before','PAGE_SIZE+1','has_more','Cursor ข้อความไม่ถูกต้อง'])assert.ok(api.includes(token),token);
+assert.match(api,/WHERE shop_id=\? AND conversation_id=\? AND id=\?/,'cursor must be scoped to the active thread');
+assert.match(api,/ORDER BY created_at DESC,id DESC LIMIT \?/);
+assert.match(ui,/\/api\/admin\/v12-thread\?/);
+for(const token of['โหลดข้อความเก่ากว่า','v12ThreadRequest','request!==v12ThreadRequest','v12ThreadBefore','v12ThreadHasMore'])assert.ok(ui.includes(token),token);
+assert.match(read('FEATURE-MAP.md'),/Thread query:[\s\S]*?หน้าละ 50/);
+console.log('PASS v0.14.405 V12 thread message pagination');

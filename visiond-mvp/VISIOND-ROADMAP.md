@@ -19,11 +19,11 @@
 
 ## Active Patch
 
-### v0.14.404 — V12 Runtime Schema Guard
+### v0.14.405 — V12 Thread Message Pagination
 
-- เป้าหมายหลัก: ตัด V12 runtime schema/PRAGMA/CREATE/ALTER ออกจาก request path เมื่อ schema v66 พร้อม
-- Acceptance: V12 Settings, Profile และ Broadcast ใช้ persistent schema probe ร่วมหนึ่งครั้งต่อ isolate และไม่รัน DDL เมื่อพร้อม
-- ห้ามเปลี่ยน: credential/broadcast/profile contracts, webhook/AI reply, UI theme และ deployment state
+- เป้าหมายหลัก: ลดการเปิดห้องแชตจากอ่านสูงสุด 300 ข้อความซ้ำเป็น cursor pagination หน้าละ 50
+- Acceptance: เปิดห้องเห็น 50 ข้อความล่าสุด, โหลดเก่าย้อนหลังทีละหน้า, cursor ผูกกับ shop/conversation และกัน response แข่ง
+- ห้ามเปลี่ยน: webhook/AI reply, message retention, handoff, global bot toggle, UI theme และ deployment state
 - สถานะ: `IMPLEMENTED`; รอ Push/Deploy และ Production Validation ผ่าน Partner E2E/D1 Query Insights
 
 ## Next Queue — ห้ามเริ่มเอง
