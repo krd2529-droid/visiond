@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.409 — Web 2 Commerce Order Create/Status
+### v0.14.410 — Payment-safe Entitlement Claim
 
-- เป้าหมายหลัก: ให้ Backend Web 2 สร้าง Checkout และอ่านสถานะ โดยยังไม่เปิด payment/entitlement
-- Acceptance: ตารางแยกจาก sync, scope read/write แยก, idempotency, authoritative product price, สูงสุด 100 items, Website+External ID point read และเริ่ม `pending_payment` เท่านั้น
-- ห้ามเปลี่ยน: payment approval, entitlement/download, `/orders/sync`, API 1 บาท, UI theme และ deployment state
-- สถานะ: `IMPLEMENTED`; migration 0067 และ runtime รอ Push/Deploy
+- เป้าหมายหลัก: ส่งมอบสิทธิ์ Web 2 โดยยึด native paid order และ entitlement จริง ไม่มีช่องลัด paid
+- Acceptance: Boss-only exact match, native order ห้าม reuse, encrypted+hashed 24h one-time claim, account-bound consume และไม่คืนไฟล์/object key
+- ห้ามเปลี่ยน: native payment approval/grantOrder/download permission, `/orders/sync`, API 1 บาท, canonical UI theme และ deployment state
+- สถานะ: `IMPLEMENTED`; migration 0068 และ runtime รอ E2E security/query-budget gate
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. v0.14.410 Payment-safe Entitlement Claim: ผูก VisionD payment approval กับ commerce order และออก one-time claim โดยไม่คืนไฟล์ตรง
+1. v0.14.411 Commerce E2E + Query Budget Production Gate: ทดสอบ create/replay/status/paid-match/wrong-account/consume/reuse และ bounded reads/writes ก่อนปิด implementation
 2. Production Validation: ตรวจ D1 Query Insights/Rows read-written ของ V12 v0.14.405–406 เป็นเวลา 24 ชั่วโมง
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต

@@ -1,0 +1,5 @@
+import {json,requireBoss} from '../../../../_lib.js';
+import {ensureDatabase} from '../../../../_schema.js';
+import {ensurePartnerCommerceClaimSchema} from '../../../../_partner_commerce.js';
+
+export async function onRequestGet(ctx){await ensureDatabase(ctx.env);await ensurePartnerCommerceClaimSchema(ctx.env);const auth=await requireBoss(ctx);if(auth.error)return auth.error;const website=await ctx.env.DB.prepare('SELECT id,name FROM partner_websites WHERE id=?').bind(ctx.params.id).first();if(!website)return json({error:'ไม่พบเว็บไซต์คู่ค้า'},404,{'cache-control':'no-store'});const items=(await ctx.env.DB.prepare(`SELECT o.id,o.external_order_id,o.status,o.total,o.native_order_id,o.fulfilled_at,o.created_at,(SELECT COUNT(*) FROM partner_commerce_order_items i WHERE i.order_id=o.id) item_count FROM partner_commerce_orders o WHERE o.website_id=? ORDER BY o.updated_at DESC LIMIT 100`).bind(website.id).all()).results||[];return json({website,items},200,{'cache-control':'private, no-store'})}

@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {ensurePartnerCommerceClaimSchema} from '../functions/_partner_commerce.js';
+
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+const fulfill=read('functions/api/admin/partner-websites/[id]/commerce/[orderId]/fulfill.js');
+const status=read('functions/api/partner/v1/commerce/orders/[externalId].js');
+const claim=read('functions/api/commerce/claim.js');
+const claimUi=read('public/partner-commerce-claim.js');
+const claimHtml=read('public/partner-commerce-claim.html');
+const partnerUi=read('public/partner-api.js');
+const create=read('functions/api/partner/v1/commerce/orders/index.js');
+const migration=read('migrations/0068_partner_commerce_claim.sql');
+
+assert.equal(read('VERSION.txt').trim(),'v0.14.410');
+assert.match(read('public/index.html'),/WEB v0\.14\.410/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.410/);
+assert.match(create,/quantity!==1/);
+assert.match(create,/COALESCE\(product_kind,'product'\)='product'/);
+assert.match(fulfill,/requireBoss/);
+assert.match(fulfill,/status='paid'/);
+assert.match(fulfill,/Native Order ยังไม่ได้รับอนุมัติชำระ/);
+assert.match(fulfill,/Number\(native\.total\)!==Number\(commerce\.total\)/);
+assert.match(fulfill,/สินค้า ราคา หรือ entitlement ของ Native Order ไม่ตรงกัน/);
+assert.match(fulfill,/partner_commerce_orders WHERE native_order_id=\?/);
+assert.match(fulfill,/encryptPartnerData/);
+assert.match(fulfill,/claim_returned:false/);
+assert.doesNotMatch(fulfill,/INSERT INTO entitlements|grantOrder\(/);
+assert.match(status,/decryptPartnerData/);
+assert.match(status,/partner-commerce-claim\.html#token=/);
+assert.match(claim,/requireUser/);
+assert.match(claim,/c\.user_id=\?/);
+assert.match(claim,/EXISTS\(SELECT 1 FROM entitlements/);
+assert.match(claim,/consumed_at=CURRENT_TIMESTAMP/);
+assert.doesNotMatch(status+claim,/object_key|product_files|\/api\/downloads\/file/);
+assert.match(migration,/idx_partner_commerce_native_order_unique/);
+assert.match(migration,/VALUES\('core',68\)/);
+assert.match(claimHtml,/vds-btn vds-btn--primary/);
+assert.match(claimUi,/button\.disabled=true/);
+assert.match(claimUi,/aria-busy/);
+assert.match(claimUi,/sessionStorage\.setItem\('vd_return_to'/);
+assert.match(partnerUi,/vds-btn vds-btn--primary[^>]+data-fulfill/);
+assert.doesNotThrow(()=>new Function(partnerUi),'Partner Control Center browser script syntax');
+assert.doesNotThrow(()=>new Function(claimUi),'Claim browser script syntax');
+
+const calls=[];const DB={prepare(sql){calls.push(sql);return{first:async()=>({version:68})}},exec:async()=>{throw new Error('CLAIM_DDL_MUST_NOT_RUN')}};
+assert.equal(await ensurePartnerCommerceClaimSchema({DB}),true);
+assert.equal(await ensurePartnerCommerceClaimSchema({DB}),true);
+assert.equal(calls.filter(sql=>sql.includes('runtime_schema_state')).length,3,'core, commerce and claim readiness probe once per isolate');
+
+console.log('PASS v0.14.410 payment-safe account-bound one-time claim');

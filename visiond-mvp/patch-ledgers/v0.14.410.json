@@ -1,0 +1,15 @@
+{
+  "patch":"v0.14.410",
+  "parent_commit":"53115ac4",
+  "safe_rollback_commit":"53115ac4",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014410-DB-001","scope":"DATABASE","source_instruction":"เพิ่ม payment-safe entitlement claim","status":"DONE-VERIFIED","evidence":["migrations/0068_partner_commerce_claim.sql","functions/_partner_commerce.js"]},
+    {"id":"V014410-SEC-001","scope":"SECURITY","source_instruction":"ห้าม Web2 ลัด paid หรือออกสิทธิ์ผิดบัญชี","status":"DONE-VERIFIED","evidence":["functions/api/admin/partner-websites/[id]/commerce/[orderId]/fulfill.js","scripts/test-v014410.mjs"]},
+    {"id":"V014410-FEAT-001","scope":"FEATURE","source_instruction":"เพิ่ม one-time claim/download handoff","status":"DONE-VERIFIED","evidence":["functions/api/commerce/claim.js","functions/api/partner/v1/commerce/orders/[externalId].js"]},
+    {"id":"V014410-UI-001","scope":"UI","source_instruction":"เพิ่ม claim และ control ด้วย canonical UI","status":"DONE-VERIFIED","evidence":["public/partner-commerce-claim.html","public/partner-commerce-claim.js","public/partner-api.js","scripts/test-v014410.mjs"]},
+    {"id":"V014410-QA-001","scope":"QA","source_instruction":"เพิ่ม focused security/query boundary regression","status":"DONE-VERIFIED","evidence":["scripts/test-v014410.mjs","scripts/partner-api-security-gate.mjs"]},
+    {"id":"V014410-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map Roadmap Protocol และ Integration Guide","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","VISIOND-ROADMAP.md","VISIOND-PARTNER-API-PROTOCOL.md","docs/PARTNER-API-WEB2-INTEGRATION.md"]}
+  ]
+}

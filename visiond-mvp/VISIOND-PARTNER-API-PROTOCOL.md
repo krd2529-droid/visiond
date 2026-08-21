@@ -96,7 +96,8 @@
 - ตรวจสถานะ `GET /commerce/orders/{external_order_id}` เปิด runtime ใน v0.14.409 พร้อม Scope `commerce:read`; คืนเฉพาะ state, totals, entitlement readiness และ request ID โดย scope ด้วย Website ID ไม่คืนข้อมูลลูกค้ารายอื่น
 - State machine: `created -> pending_payment -> pending_review -> paid -> fulfilled`; ทางออกคือ `cancelled|rejected|refunded`; ห้ามข้ามไป `paid|fulfilled` จากคำขอ Web 2 โดยตรง
 - การ sync ที่ `POST /orders/sync` เป็นข้อมูลยอดขายภายนอกเพื่อ reconciliation เท่านั้น และต้องไม่สร้าง VisionD order, payment approval, entitlement หรือสิทธิ์ดาวน์โหลด
-- การชำระและอนุมัติใช้ระบบ VisionD เดิมเป็น source of truth; Web 2 ห้ามส่งคำว่า paid เพื่อออกสิทธิ์เอง และค่าบริการ API 1 บาทไม่หักจากลูกค้าหรือเพิ่มในยอดชำระ
-- เมื่อ VisionD อนุมัติแล้วจึงสร้าง entitlement แบบ idempotent; การส่งมอบในอนาคตใช้ one-time claim handoff อายุสั้นไปยังหน้า VisionD ที่บังคับผูก/เข้าสู่ระบบ ห้ามส่งไฟล์ JPEG/PDF/ZIP หรือ permanent download URL ผ่าน Partner API
+- การชำระและอนุมัติใช้ native VisionD order เดิมเป็น source of truth; Web 2 ห้ามส่งคำว่า paid เพื่อออกสิทธิ์เอง และค่าบริการ API 1 บาทไม่หักจากลูกค้าหรือเพิ่มในยอดชำระ
+- v0.14.410 ให้ Boss เชื่อม Commerce Order กับ native order ที่ `paid` และมี entitlement จริง เมื่อยอด สินค้า จำนวน และ line total ตรงทั้งหมด; native order หนึ่งรายการใช้เชื่อมได้ครั้งเดียว
+- การส่งมอบใช้ one-time claim อายุ 24 ชั่วโมง เก็บ token แบบ AES-GCM + hash, ส่งผ่าน URL fragment, บังคับ login เป็น native order owner และตรวจ entitlement ซ้ำก่อน consume; ห้ามส่งไฟล์ JPEG/PDF/ZIP, object key หรือ permanent download URL ผ่าน Partner API
 - ทุก commerce read ต้อง scope ด้วย Website ID และ External ID; list endpoint ต้อง cursor pagination ค่าเริ่มต้น 50 สูงสุด 100 และมี query budget แบบ bounded ห้าม scan orders, items หรือ entitlements ทั้งตาราง
 - Phase implementation แบ่งทีละแพต: product detail -> order create/status -> payment state handoff -> entitlement claim/download -> reconciliation/production E2E; ห้ามรวมเปิดขายครบวงจรในแพตเดียว

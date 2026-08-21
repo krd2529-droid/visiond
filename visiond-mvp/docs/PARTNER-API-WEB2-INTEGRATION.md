@@ -74,10 +74,12 @@ Contract สำหรับ Digital Product Commerce ถูกล็อกไว
 
 `GET /commerce/orders/{external_order_id}` เปิดใช้งานแล้วใน v0.14.409 และตรวจสถานะออเดอร์ของเว็บไซต์นั้นเท่านั้น
 
-หลัง VisionD ตรวจชำระและออกสิทธิ์สำเร็จ Web 2 จะได้รับเพียงสถานะพร้อม one-time claim handoff อายุสั้น ลูกค้าต้องเข้าสู่ระบบหรือผูกบัญชีที่ VisionD ก่อนดาวน์โหลด ไฟล์จริงและ permanent download URL จะไม่ออกผ่าน Partner API
+หลัง native VisionD order ตรวจชำระและออก entitlement สำเร็จ Boss เชื่อมรายการจาก `Commerce Checkout` ในศูนย์ควบคุมเว็บพาร์ทเนอร์ ระบบตรวจยอด สินค้า จำนวน ราคา และ entitlement ให้ตรงกันก่อนเปลี่ยนเป็น `fulfilled`
+
+เมื่อ Web 2 อ่านสถานะ fulfilled จะได้รับ `claim_url` อายุ 24 ชั่วโมงเพียงชั่วคราว ลูกค้าต้องเปิดลิงก์และเข้าสู่ระบบด้วยบัญชีเจ้าของ native order จากนั้นกดรับครั้งเดียว ไฟล์จริง, object key และ permanent download URL จะไม่ออกผ่าน Partner API
 
 สถานะปกติคือ `created -> pending_payment -> pending_review -> paid -> fulfilled` โดย Web 2 ไม่มีสิทธิ์สั่งให้ออเดอร์เป็น `paid` หรือ `fulfilled` เอง
 
 ค่าบริการ API 1 บาทเป็นต้นทุนภายในและไม่หักจากลูกค้า ไม่ต้องส่งเป็น line item, fee หรือยอดหักใน payload ของ Web 2
 
-หมายเหตุ: order create/status มี runtime แล้ว แต่ payment approval และ entitlement claim ยังไม่เปิด Production; ห้ามสมมติว่า `pending_payment` คือชำระแล้วจนกว่า API ระยะถัดไปจะยืนยัน
+หมายเหตุ: Web 2 ยังไม่มีสิทธิ์อนุมัติ payment หรือ entitlement เอง; `pending_payment` ไม่ใช่หลักฐานชำระ และ claim จะเกิดได้ต่อเมื่อ native order เป็น `paid` พร้อม entitlement ครบเท่านั้น
