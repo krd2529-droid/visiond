@@ -1,5 +1,5 @@
 import {json,sha256} from './_lib.js';
-export const PARTNER_SCOPES=['products:read','customers:write','orders:write'];
+export const PARTNER_SCOPES=['products:read','customers:write','orders:write','commerce:read','commerce:write'];
 const partnerSchemaReady=new WeakMap();
 export async function ensurePartnerSchema(env){
   let ready=partnerSchemaReady.get(env.DB);if(ready)return ready;

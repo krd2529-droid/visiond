@@ -92,8 +92,8 @@
 
 - Phase นี้กำหนด contract ก่อน implementation; endpoint ใต้ `/commerce/*` ยังห้าม Web 2 เรียก Production จนกว่าแต่ละ endpoint จะมี migration, audit, focused test และ E2E ผ่าน
 - Catalog เดิม `GET /products` เป็น metadata read-only และไล่เกิน 100 รายการด้วย cursor; `GET /products/{id}` เปิดใช้ใน v0.14.408 ด้วย Scope `products:read` และยังห้ามคืน `product_files.object_key`, download URL หรือ token
-- Checkout ในอนาคตใช้ `POST /commerce/orders` พร้อม Scope ใหม่ `commerce:write`, `Idempotency-Key`, `external_order_id`, `external_customer_id` และรายการ `product_id`; VisionD ต้องคำนวณราคาจากฐานข้อมูลตัวเอง ห้ามเชื่อยอดราคาจาก Web 2
-- ตรวจสถานะในอนาคตใช้ `GET /commerce/orders/{external_order_id}` พร้อม Scope `commerce:read`; คืนเฉพาะ state, totals, entitlement readiness และ request ID โดยไม่คืนข้อมูลลูกค้ารายอื่น
+- Checkout `POST /commerce/orders` เปิด runtime ใน v0.14.409 พร้อม Scope `commerce:write`, `Idempotency-Key`, `external_order_id`, `external_customer_id` และรายการ `product_id`; VisionD คำนวณราคาจากฐานข้อมูลตัวเองและไม่รับยอดราคาจาก Web 2
+- ตรวจสถานะ `GET /commerce/orders/{external_order_id}` เปิด runtime ใน v0.14.409 พร้อม Scope `commerce:read`; คืนเฉพาะ state, totals, entitlement readiness และ request ID โดย scope ด้วย Website ID ไม่คืนข้อมูลลูกค้ารายอื่น
 - State machine: `created -> pending_payment -> pending_review -> paid -> fulfilled`; ทางออกคือ `cancelled|rejected|refunded`; ห้ามข้ามไป `paid|fulfilled` จากคำขอ Web 2 โดยตรง
 - การ sync ที่ `POST /orders/sync` เป็นข้อมูลยอดขายภายนอกเพื่อ reconciliation เท่านั้น และต้องไม่สร้าง VisionD order, payment approval, entitlement หรือสิทธิ์ดาวน์โหลด
 - การชำระและอนุมัติใช้ระบบ VisionD เดิมเป็น source of truth; Web 2 ห้ามส่งคำว่า paid เพื่อออกสิทธิ์เอง และค่าบริการ API 1 บาทไม่หักจากลูกค้าหรือเพิ่มในยอดชำระ

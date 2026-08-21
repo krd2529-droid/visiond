@@ -19,16 +19,16 @@
 
 ## Active Patch
 
-### v0.14.408 — Web 2 Product Detail API
+### v0.14.409 — Web 2 Commerce Order Create/Status
 
-- เป้าหมายหลัก: เพิ่ม point-read รายละเอียดสินค้าสำหรับ Backend Web 2 โดยใช้ Catalog security boundary เดิม
-- Acceptance: `GET /api/partner/v1/products/{id}` ใช้ `products:read`, คืนเฉพาะ published metadata, point query bounded และไม่คืนไฟล์/token
-- ห้ามเปลี่ยน: list catalog, order/payment/entitlement/download, Partner scopes, ราคา, UI theme และ deployment state
-- สถานะ: `IMPLEMENTED`; รอ Commit/Push/Deploy และ Partner Production E2E
+- เป้าหมายหลัก: ให้ Backend Web 2 สร้าง Checkout และอ่านสถานะ โดยยังไม่เปิด payment/entitlement
+- Acceptance: ตารางแยกจาก sync, scope read/write แยก, idempotency, authoritative product price, สูงสุด 100 items, Website+External ID point read และเริ่ม `pending_payment` เท่านั้น
+- ห้ามเปลี่ยน: payment approval, entitlement/download, `/orders/sync`, API 1 บาท, UI theme และ deployment state
+- สถานะ: `IMPLEMENTED`; migration 0067 และ runtime รอ Push/Deploy
 
 ## Next Queue — ห้ามเริ่มเอง
 
-1. v0.14.409 Commerce Order Create/Status: schema + `POST /commerce/orders` + `GET /commerce/orders/{external_order_id}` โดยยังไม่อนุมัติชำระหรือออกสิทธิ์
+1. v0.14.410 Payment-safe Entitlement Claim: ผูก VisionD payment approval กับ commerce order และออก one-time claim โดยไม่คืนไฟล์ตรง
 2. Production Validation: ตรวจ D1 Query Insights/Rows read-written ของ V12 v0.14.405–406 เป็นเวลา 24 ชั่วโมง
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต

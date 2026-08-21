@@ -14,6 +14,22 @@ X-VisionD-Client-ID: {{clientId}}
 Authorization: Bearer {{clientSecret}}
 X-Request-ID: web2-product-detail-0001
 
+### สร้าง Commerce Order (VisionD คำนวณราคาเอง)
+POST {{baseUrl}}/commerce/orders
+Content-Type: application/json
+X-VisionD-Client-ID: {{clientId}}
+Authorization: Bearer {{clientSecret}}
+Idempotency-Key: web2-commerce-order-0001-v1
+X-Request-ID: web2-commerce-order-0001
+
+{"external_order_id":"CHECKOUT-0001","external_customer_id":"CUSTOMER-0001","items":[{"product_id":1,"quantity":1}]}
+
+### อ่านสถานะ Commerce Order
+GET {{baseUrl}}/commerce/orders/CHECKOUT-0001
+X-VisionD-Client-ID: {{clientId}}
+Authorization: Bearer {{clientSecret}}
+X-Request-ID: web2-commerce-status-0001
+
 ### ซิงก์ลูกค้า
 POST {{baseUrl}}/customers/sync
 Content-Type: application/json

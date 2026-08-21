@@ -1,7 +1,7 @@
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const money=value=>new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB'}).format((Number(value)||0)/100);
 const state=document.getElementById('partnerCreateState'),output=document.getElementById('partnerCredential'),list=document.getElementById('partnerList');
-const scopeFields={products_read:'products:read',customers_write:'customers:write',orders_write:'orders:write'};
+const scopeFields={products_read:'products:read',customers_write:'customers:write',orders_write:'orders:write',commerce_read:'commerce:read',commerce_write:'commerce:write'};
 const selectedScopes=form=>Object.entries(scopeFields).filter(([name])=>form.elements[name]?.checked).map(([,scope])=>scope);
 const scopeMarkup=scopes=>`<div class="partner-scope-grid">${Object.entries(scopeFields).map(([name,scope])=>`<label class="partner-scopes"><input name="${name}" type="checkbox" ${scopes.includes(scope)?'checked':''}> ${scope}</label>`).join('')}</div>`;
 function credentialBox(value){output.hidden=false;output.innerHTML=`<b>Credential แสดงครั้งเดียว</b><code>Client ID: ${esc(value.client_id)}</code><code>Client Secret: ${esc(value.client_secret)}</code><button type="button">คัดลอกทั้งสองค่า</button><p>หากออกจากหน้านี้ Secret จะไม่แสดงอีก</p>`;output.querySelector('button').onclick=async()=>{await navigator.clipboard.writeText(`VISIOND_CLIENT_ID=${value.client_id}\nVISIOND_CLIENT_SECRET=${value.client_secret}`);output.querySelector('button').textContent='คัดลอกแล้ว ✓'}}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const files=['VISIOND-PARTNER-API-PROTOCOL.md','docs/PARTNER-API-WEB2-INTEGRATION.md','docs/examples/partner-api-web2.http','integrations/web2/.env.example','integrations/web2/README.md','integrations/web2/visiond-partner-client.mjs','functions/_partner_api.js','functions/_partner_sync.js','functions/_partner_webhook.js','functions/api/partner/v1/products/index.js','functions/api/partner/v1/products/[id].js','functions/api/partner/v1/customers/sync.js','functions/api/partner/v1/orders/sync.js','functions/api/admin/partner-websites/[id]/e2e.js'];
+const files=['VISIOND-PARTNER-API-PROTOCOL.md','docs/PARTNER-API-WEB2-INTEGRATION.md','docs/examples/partner-api-web2.http','integrations/web2/.env.example','integrations/web2/README.md','integrations/web2/visiond-partner-client.mjs','functions/_partner_api.js','functions/_partner_sync.js','functions/_partner_commerce.js','functions/_partner_webhook.js','functions/api/partner/v1/products/index.js','functions/api/partner/v1/products/[id].js','functions/api/partner/v1/commerce/orders/index.js','functions/api/partner/v1/commerce/orders/[externalId].js','functions/api/partner/v1/customers/sync.js','functions/api/partner/v1/orders/sync.js','functions/api/admin/partner-websites/[id]/e2e.js'];
 const source=files.map(file=>fs.readFileSync(file,'utf8')).join('\n');
 const examples=fs.readFileSync('docs/examples/partner-api-web2.http','utf8');
 for(const token of ['<CLIENT_ID_FROM_SECRET_MANAGER>','<CLIENT_SECRET_FROM_SECRET_MANAGER>','<UNIX_SECONDS>','<HMAC_SHA256_HEX>'])assert.ok(examples.includes(token),`placeholder missing: ${token}`);

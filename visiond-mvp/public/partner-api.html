@@ -28,6 +28,8 @@
           <label class="partner-scopes"><input name="products_read" type="checkbox" checked> products:read — อ่านสินค้า</label>
           <label class="partner-scopes"><input name="customers_write" type="checkbox"> customers:write — ซิงก์ลูกค้า</label>
           <label class="partner-scopes"><input name="orders_write" type="checkbox"> orders:write — ซิงก์ยอดขาย/ยกเลิก/คืนเงิน</label>
+          <label class="partner-scopes"><input name="commerce_read" type="checkbox"> commerce:read — อ่านสถานะ Checkout</label>
+          <label class="partner-scopes"><input name="commerce_write" type="checkbox"> commerce:write — สร้าง Checkout</label>
         </div>
         <div class="partner-actions"><button class="primary" type="submit">สร้างเว็บไซต์และ Credential</button></div>
         <p id="partnerCreateState" class="status"></p>
@@ -59,7 +61,7 @@ X-Request-ID: &lt;REQUEST_ID&gt;</pre></details>
       <p class="status">Starter Kit ฝั่ง Backend เว็บ 2: <code>integrations/web2/</code> (ห้ามใส่ Credential ใน Frontend)</p>
     </section>
   </main>
-  <script src="/partner-api.js?v=014223"></script>
+  <script src="/partner-api.js?v=014409"></script>
   <script src="/partner-webhook.js?v=014223" defer></script>
 </body>
 </html>

@@ -22,6 +22,8 @@ Base URL: `https://visiondonline.com/api/partner/v1`
 - `GET /products/{id}` — Scope `products:read`; คืน Metadata ของสินค้าที่เผยแพร่และไม่คืนไฟล์/Token
 - `POST /customers/sync` — Scope `customers:write`
 - `POST /orders/sync` — Scope `orders:write`; ใช้ส่งออเดอร์ ชำระเงิน ยกเลิก และคืนเงิน
+- `POST /commerce/orders` — Scope `commerce:write`; สร้าง Checkout จาก product ID โดย VisionD คำนวณราคาเอง
+- `GET /commerce/orders/{external_order_id}` — Scope `commerce:read`; อ่านสถานะออเดอร์ของเว็บไซต์นั้น
 - `POST /webhooks/events` — Signed Webhook ด้วย HMAC-SHA256
 
 ตัวอย่างที่คัดลอกได้อยู่ใน `docs/examples/partner-api-web2.http` และใช้ placeholder เท่านั้น
@@ -68,9 +70,9 @@ Contract สำหรับ Digital Product Commerce ถูกล็อกไว
 
 `GET /products/{id}` เปิดใช้งานแล้วใน v0.14.408 สำหรับอ่านรายละเอียดสินค้า Metadata โดยไม่คืนไฟล์หรือ Token; หากสินค้าไม่เผยแพร่ ถูกลบ เป็น resale-rights หรือไม่มีอยู่ จะตอบ `PRODUCT_NOT_FOUND`
 
-`POST /commerce/orders` ให้ Backend ของ Web 2 สร้างออเดอร์ด้วย External ID และ Idempotency Key โดย VisionD คำนวณราคาจริงเอง
+`POST /commerce/orders` เปิดใช้งานแล้วใน v0.14.409 ให้ Backend ของ Web 2 สร้างออเดอร์ด้วย External ID และ Idempotency Key โดย VisionD คำนวณราคาจริงเอง สถานะเริ่มต้นเป็น `pending_payment` เท่านั้น
 
-`GET /commerce/orders/{external_order_id}` ตรวจสถานะออเดอร์ของเว็บไซต์นั้นเท่านั้น
+`GET /commerce/orders/{external_order_id}` เปิดใช้งานแล้วใน v0.14.409 และตรวจสถานะออเดอร์ของเว็บไซต์นั้นเท่านั้น
 
 หลัง VisionD ตรวจชำระและออกสิทธิ์สำเร็จ Web 2 จะได้รับเพียงสถานะพร้อม one-time claim handoff อายุสั้น ลูกค้าต้องเข้าสู่ระบบหรือผูกบัญชีที่ VisionD ก่อนดาวน์โหลด ไฟล์จริงและ permanent download URL จะไม่ออกผ่าน Partner API
 
@@ -78,4 +80,4 @@ Contract สำหรับ Digital Product Commerce ถูกล็อกไว
 
 ค่าบริการ API 1 บาทเป็นต้นทุนภายในและไม่หักจากลูกค้า ไม่ต้องส่งเป็น line item, fee หรือยอดหักใน payload ของ Web 2
 
-หมายเหตุ: endpoint ใต้ `/commerce/*` ยังเป็น contract ที่ยังไม่เปิด Production ห้ามเขียน integration ที่สมมติว่าเรียกใช้งานได้จนกว่าจะมีประกาศ implementation และ E2E ผ่าน
+หมายเหตุ: order create/status มี runtime แล้ว แต่ payment approval และ entitlement claim ยังไม่เปิด Production; ห้ามสมมติว่า `pending_payment` คือชำระแล้วจนกว่า API ระยะถัดไปจะยืนยัน
