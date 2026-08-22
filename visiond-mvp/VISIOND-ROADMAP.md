@@ -19,12 +19,12 @@
 
 ## Active Patch
 
-### v0.14.411 — Commerce E2E + Query-Budget Gate
+### v0.14.412 — Partner Product Delivery Contract
 
-- เป้าหมายหลัก: พิสูจน์ flow Web2 commerce แบบ handler E2E และล็อก statement/row bounds ก่อนส่ง Production
-- Acceptance: create/replay/status/paid-match/wrong-account/consume/reuse ผ่านจริง; catalog/detail/order/status/admin/fulfill/claim มี bounded query tests
-- ห้ามเปลี่ยน: runtime behavior, payment/grant/download, API 1 บาท, canonical UI theme และ deployment state
-- สถานะ: `IMPLEMENTED + LOCAL VERIFIED`; contract v0.14.407 ครบทุก implementation requirement แล้ว
+- เป้าหมายหลัก: ให้ Web2 รู้ว่าสินค้าเดี่ยว/ชุดส่งมอบแบบใด จำนวนไฟล์/หน้า/ขนาดเท่าไร โดยไม่เปิดเผยไฟล์จริง
+- Acceptance: Catalog และ Detail มี `delivery`; Detail ชุดมีรายการย่อยสูงสุด 30; ไม่มี object key/token/download URL; focused/regression/security/predeploy ผ่าน
+- ห้ามเปลี่ยน: Checkout, payment, entitlement, claim behavior, API 1 บาท, UI theme และ deployment state
+- สถานะ: `IMPLEMENTED + LOCAL VERIFIED`; รอ Commit โดยไม่ Push/Deploy
 
 ## Next Queue — ห้ามเริ่มเอง
 

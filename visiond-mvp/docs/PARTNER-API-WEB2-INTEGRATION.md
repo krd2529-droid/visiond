@@ -24,6 +24,18 @@ Base URL: `https://visiondonline.com/api/partner/v1`
 - `POST /orders/sync` — Scope `orders:write`; ใช้ส่งออเดอร์ ชำระเงิน ยกเลิก และคืนเงิน
 - `POST /commerce/orders` — Scope `commerce:write`; สร้าง Checkout จาก product ID โดย VisionD คำนวณราคาเอง
 - `GET /commerce/orders/{external_order_id}` — Scope `commerce:read`; อ่านสถานะออเดอร์ของเว็บไซต์นั้น
+
+### Product Delivery Contract
+
+`GET /products` และ `GET /products/{id}` คืน `delivery` สำหรับแสดงหัวข้อ “คุณจะได้รับ” บนเว็บ 2 โดย `method` เป็น `visiond_claim` เสมอในสัญญาปัจจุบัน ตัวอย่าง:
+
+```json
+{"delivery":{"method":"visiond_claim","content_type":"digital_download","package_type":"bundle","file_format":"ชุด PDF","file_count":3,"page_count":120,"total_size_bytes":15728640,"bundle_item_count":2,"access_note":"รับสิทธิ์และดาวน์โหลดผ่าน VisionD หลังยืนยันการชำระเงิน"}}
+```
+
+Product Detail ของชุดอาจมี `delivery.items` สูงสุด 30 รายการ โดยแต่ละรายการมีเฉพาะ `id`, `title`, `file_format`, `file_count`, `page_count` ค่า count/size เป็น metadata ปัจจุบันและอาจเป็น `0` เมื่อผู้ขายยังไม่ได้แนบไฟล์ เว็บ 2 ต้องไม่ตีความว่าเป็น URL ดาวน์โหลด
+
+ห้าม API และเว็บ 2 คืนหรือบันทึก `object_key`, download token, permanent download URL หรือ Credential ใน HTML/Browser/Log หลังสถานะ `fulfilled` ลูกค้ารับสิทธิ์ผ่าน `claim_url` อายุจำกัดตาม Commerce Contract เดิม
 - `POST /webhooks/events` — Signed Webhook ด้วย HMAC-SHA256
 
 ตัวอย่างที่คัดลอกได้อยู่ใน `docs/examples/partner-api-web2.http` และใช้ placeholder เท่านั้น

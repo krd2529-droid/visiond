@@ -92,6 +92,8 @@
 
 - Phase นี้กำหนด contract ก่อน implementation; endpoint ใต้ `/commerce/*` ยังห้าม Web 2 เรียก Production จนกว่าแต่ละ endpoint จะมี migration, audit, focused test และ E2E ผ่าน
 - Catalog เดิม `GET /products` เป็น metadata read-only และไล่เกิน 100 รายการด้วย cursor; `GET /products/{id}` เปิดใช้ใน v0.14.408 ด้วย Scope `products:read` และยังห้ามคืน `product_files.object_key`, download URL หรือ token
+- Product Delivery Contract v0.14.412: Catalog และ Product Detail คืน `delivery` เพื่อบอกวิธีรับงานโดยไม่เปิดไฟล์จริง ได้แก่ `method=visiond_claim`, `content_type=digital_download`, `package_type`, `file_format`, `file_count`, `page_count`, `total_size_bytes`, `bundle_item_count` และคำอธิบายการรับสิทธิ์; Detail ของชุดคืน `items` สูงสุด 30 รายการเฉพาะ id/title/format/count/pages
+- `delivery` เป็น metadata เพื่อสื่อสาร “ลูกค้าจะได้รับอะไร” เท่านั้น ห้ามคืน object key, download token, permanent download URL หรือใช้ข้อมูลนี้ข้ามขั้นยืนยันชำระเงิน/entitlement
 - Checkout `POST /commerce/orders` เปิด runtime ใน v0.14.409 พร้อม Scope `commerce:write`, `Idempotency-Key`, `external_order_id`, `external_customer_id` และรายการ `product_id`; VisionD คำนวณราคาจากฐานข้อมูลตัวเองและไม่รับยอดราคาจาก Web 2
 - ตรวจสถานะ `GET /commerce/orders/{external_order_id}` เปิด runtime ใน v0.14.409 พร้อม Scope `commerce:read`; คืนเฉพาะ state, totals, entitlement readiness และ request ID โดย scope ด้วย Website ID ไม่คืนข้อมูลลูกค้ารายอื่น
 - State machine: `created -> pending_payment -> pending_review -> paid -> fulfilled`; ทางออกคือ `cancelled|rejected|refunded`; ห้ามข้ามไป `paid|fulfilled` จากคำขอ Web 2 โดยตรง

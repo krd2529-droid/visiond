@@ -333,7 +333,8 @@
     "test:v014410": "node scripts/test-v014410.mjs",
     "test:partner-commerce-e2e": "node scripts/test-partner-commerce-e2e.mjs",
     "test:partner-commerce-query-budget": "node scripts/test-partner-commerce-query-budget.mjs",
-    "test:v014411": "node scripts/test-v014411.mjs"
+    "test:v014411": "node scripts/test-v014411.mjs",
+    "test:v014412": "node scripts/test-v014412.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
