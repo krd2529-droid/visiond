@@ -1,0 +1,12 @@
+{
+  "patch":"v0.14.413",
+  "parent_commit":"bc49421b",
+  "safe_rollback_commit":"bc49421b",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014413-UI-001","scope":"FEATURE","source_instruction":"เพิ่มปุ่มและหน้าออกใบเสร็จรับเงินค่าบริการโดยกรอกเฉพาะรายการบริการกับยอดชำระ","status":"DONE-VERIFIED","evidence":["public/admin.html","public/service-receipt.html","public/service-receipt.js","public/service-receipt.css","scripts/test-v014413.mjs"]},
+    {"id":"V014413-TAX-001","scope":"BUSINESS-SAFETY","source_instruction":"VisionD ยังไม่จด VAT ต้องไม่ออกใบกำกับภาษีหรือคำนวณ VAT","status":"DONE-VERIFIED","evidence":["public/service-receipt.html","FEATURE-MAP.md","scripts/test-v014413.mjs"]},
+    {"id":"V014413-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map, ledger และ visible version","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","START-HERE.md","VERSION.txt","public/index.html","public/admin.html"]}
+  ]
+}

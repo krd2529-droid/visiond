@@ -626,6 +626,17 @@
 - รหัส UI: payment form มี `data-feature="PAYMENT-SETTINGS-001"`; คง role-disabled, loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014351.mjs`
 
+## SERVICE-RECEIPT-001 — ใบเสร็จรับเงินค่าบริการ VisionD
+
+- ผู้ใช้: Boss และ Admin
+- ทางเข้า: เมนูหลังบ้าน “ออกใบเสร็จค่าบริการ” → `/service-receipt.html`
+- Input ขั้นต่ำ: รายการบริการและยอดชำระเป็นบาท ระบบสร้างเลขเอกสารกับวันเวลาให้อัตโนมัติ
+- Output: ตัวอย่างใบเสร็จและคำสั่งพิมพ์/บันทึกเป็น PDF ผ่านเบราว์เซอร์
+- Tax boundary: VisionD ยังไม่จด VAT เอกสารต้องใช้คำว่า “ใบเสร็จรับเงิน” เท่านั้น ไม่ใช้คำว่า “ใบกำกับภาษี” ไม่แสดงหรือคำนวณ VAT
+- Data boundary: ทำงานฝั่งเบราว์เซอร์ ไม่บันทึกรายการบริการหรือยอดเงินลงฐานข้อมูล และไม่ผูกกับ Order/Payment Contract
+- รหัส UI: หน้าและปุ่มทางเข้ามี `data-feature="SERVICE-RECEIPT-001"`; ปุ่มใช้ canonical `.vds-btn` เท่านั้น
+- การทดสอบ: `scripts/test-v014413.mjs`
+
 ## PROMOTION-SETTINGS-001 — ตั้งค่าโปรโมชั่นแคตตาล็อกและสวิตช์ซื้อครั้งแรก
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.352
