@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.417",
+  "parent_commit":"389e692a",
+  "safe_rollback_commit":"389e692a",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014417-GIF-001","scope":"BUGFIX","source_instruction":"แก้สีช่อง 5 ตะกร้าและช่องไฮไลต์ใน GIF ที่เกิดแถบสีค้าง","status":"DONE-VERIFIED","evidence":["public/assets/visiond-bundle-promo.gif","scripts/generate-bundle-promo-gif.py","scripts/test-v014417.mjs"]},
+    {"id":"V014417-CACHE-001","scope":"UI","source_instruction":"บังคับหน้า cart รับ GIF รุ่นแก้สี","status":"DONE-VERIFIED","evidence":["public/cart.html","scripts/test-v014417.mjs"]}
+  ]
+}

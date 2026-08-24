@@ -5,10 +5,10 @@ ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "public" / "assets" / "visiond-bundle-promo.gif"
 FONT = ImageFont.truetype(r"C:\Windows\Fonts\tahomabd.ttf", 29)
 CARDS = [
-    ((440, 143, 590, 181), "ลด 15%", (20, 185, 184), (255, 255, 255)),
-    ((623, 143, 773, 181), "ลด 25%", (220, 227, 229), (0, 72, 69)),
-    ((805, 143, 955, 181), "ลด 50%", (220, 227, 229), (0, 72, 69)),
-    ((987, 143, 1137, 181), "ลด 75%", (220, 227, 229), (0, 72, 69)),
+    ((440, 143, 590, 181), "ลด 15%"),
+    ((623, 143, 773, 181), "ลด 25%"),
+    ((805, 143, 955, 181), "ลด 50%"),
+    ((987, 143, 1137, 181), "ลด 75%"),
 ]
 
 source = Image.open(TARGET)
@@ -18,7 +18,9 @@ for index in range(source.n_frames):
     source.seek(index)
     frame = source.convert("RGB")
     draw = ImageDraw.Draw(frame)
-    for box, text, background, foreground in CARDS:
+    for box, text in CARDS:
+        background = frame.getpixel((box[0] + 4, box[1] + 4))
+        foreground = (255, 255, 255) if background[1] > background[0] * 1.35 else (0, 72, 69)
         draw.rectangle(box, fill=background)
         center_x = (box[0] + box[2]) // 2
         center_y = (box[1] + box[3]) // 2

@@ -1004,7 +1004,7 @@
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.377
 - หน้า/ไฟล์: public storefront/content pages ที่โหลด `public/promo-banner.js`; GIF `/assets/visiond-bundle-promo.gif`; statistics source `GET /api/analytics/view`
-- Promotion surface: สร้าง banner link ไป `/digital-products.html`, แสดง GIF 4 เฟรมระดับ 5/10/20/30 ตะกร้าและส่วนลด 15/25/50/75%; เติม motion timestamp เพื่อเริ่ม GIF ใหม่
+- Promotion surface: สร้าง banner link ไป `/digital-products.html`, แสดง GIF 4 เฟรมระดับ 5/10/20/30 ตะกร้าและส่วนลด 15/25/50/75%; แต่ละเฟรมอ่านสีพื้นของการ์ดก่อนวางเปอร์เซ็นต์เพื่อไม่ให้เกิดแถบสีค้าง; เติม motion timestamp เพื่อเริ่ม GIF ใหม่
 - Boundary: controller นี้ไม่คำนวณ eligibility, discount หรือ order total และไม่อ่าน promotion settings; สูตร/ข้อยกเว้นจริงยังบังคับที่ commerce/promotion flow
 - Placement: วาง banner หลัง `.topbar` หรือหน้า body เมื่อไม่มี header แล้ววาง visit strip ต่อท้าย; ป้องกัน init ซ้ำด้วย `[data-visiond-promo]`
 - Statistics: แสดง today, latest 7 days และ latest 30 days; ใช้ `visiond:analytics-counted` ครั้งเดียวหรือ `window.__visiondAnalytics` เมื่อพร้อมแล้ว
