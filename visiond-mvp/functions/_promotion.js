@@ -15,7 +15,6 @@ export async function loadPromotion(env){
 export function promotionPrice(product,promotion){
   const original=Math.max(0,Number(product?.price)||0);
   if(product?.slug==='course-selling-rights')return {...product,original_price:99900,sale_price:49900,promotion_percent:50,standalone_promotion:true};
-  if(product?.category==='bundle-deals')return {...product,original_price:original,sale_price:original,promotion_percent:0,standalone_promotion:true};
   const scopes=Array.isArray(promotion?.scopes)&&promotion.scopes.length?promotion.scopes:[promotion?.scope||'all'];
   const eligible=promotion?.enabled&&product?.category!=='resale-rights'&&(!product?.product_kind||product.product_kind==='product')&&(scopes.includes('all')||scopes.includes(product?.category));
   if(!eligible||!original)return {...product,original_price:original,sale_price:original,promotion_percent:0};

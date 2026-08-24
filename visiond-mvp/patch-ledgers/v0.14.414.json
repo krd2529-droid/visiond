@@ -1,0 +1,12 @@
+{
+  "patch":"v0.14.414",
+  "parent_commit":"c0679537",
+  "safe_rollback_commit":"c0679537",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014414-PROMO-001","scope":"BUGFIX","source_instruction":"โปร 75% ที่เลือกหมวดโปรยกชุดต้องนำไปใช้ได้","status":"DONE-VERIFIED","evidence":["functions/_promotion.js","scripts/test-v014414.mjs"]},
+    {"id":"V014414-SAFETY-001","scope":"BUSINESS-SAFETY","source_instruction":"ห้ามส่วนลดโปรยกชุดซ้อนกับส่วนลดตามจำนวนสินค้าและห้ามกระทบตะกร้าสิทธิ์","status":"DONE-VERIFIED","evidence":["functions/api/orders/index.js","scripts/test-v014414.mjs"]},
+    {"id":"V014414-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map, ledger และ visible version","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","START-HERE.md","VERSION.txt","public/index.html","public/admin.html"]}
+  ]
+}

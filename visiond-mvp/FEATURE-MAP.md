@@ -645,7 +645,7 @@
 - API: `GET/PUT /api/admin/promotion-settings`
 - ฐานข้อมูล: `settings`, `categories`, `products`, `first_order_promo_state`
 - สิทธิ์: ใช้ `requireAdmin`; หน้า API คืนเฉพาะหมวด active ระดับบนที่อนุญาต
-- ห้ามกระทบ: scope ต้องไม่ว่างและหมวดต้อง active/อยู่ใน allowlist; all ต้องยุบเป็น scope เดียว; resale-rights ไม่ร่วม catalog promotion; course-selling-rights คงราคา 999→499 บาท และ bundle-deals ไม่ลดซ้ำ; ราคาลดต่ำสุด 1 สตางค์; first-order switch เปลี่ยนเฉพาะ enabled และห้ามเปลี่ยนขั้นต่ำ 399 บาท, 50%, cap 200 บาท, 2 ชั่วโมง หรือ eligibility contract เดิม
+- ห้ามกระทบ: scope ต้องไม่ว่างและหมวดต้อง active/อยู่ใน allowlist; all ต้องยุบเป็น scope เดียว; resale-rights ไม่ร่วม catalog promotion; course-selling-rights คงราคา 999→499 บาท; bundle-deals ใช้ catalog promotion ได้เมื่อเลือก scope นี้ แต่ยังถูกตัดออกจากส่วนลดตามจำนวนสินค้าเพื่อไม่ให้ส่วนลดซ้อน; ราคาลดต่ำสุด 1 สตางค์; first-order switch เปลี่ยนเฉพาะ enabled และห้ามเปลี่ยนขั้นต่ำ 399 บาท, 50%, cap 200 บาท, 2 ชั่วโมง หรือ eligibility contract เดิม
 - รหัส UI: catalog และ first-order forms มี `data-feature="PROMOTION-SETTINGS-001"`; คง validation/stats/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014352.mjs`, `scripts/test-first-order-promo.mjs`
 
