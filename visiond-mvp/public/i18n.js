@@ -131,8 +131,8 @@
     ['กรอกอีเมลที่ใช้สมัคร ระบบจะส่งขั้นตอนตั้งรหัสผ่านใหม่','Enter your registered email to receive password reset instructions.'],
     ['สิทธิ์ Member ดาวน์โหลดสินค้าทั้งหมวด รวมสินค้าใหม่ในอนาคต เลือกแพ็กเกจรายเดือนหรือรายปี','Membership includes downloads across a category, including future products. Choose a monthly or annual plan.'],
     ['เลือกได้สูงสุด 30 ตะกร้า','Select up to 30 products'],
-    ['ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 30% แล้ว','30 products selected · Maximum 30% discount applied'],
-    ['โปรจัดชุดสินค้า เลือก 5 ถึง 30 ตะกร้า รับส่วนลดสูงสุด 30 เปอร์เซ็นต์','Bundle 5–30 products and save up to 30 percent'],
+    ['ครบ 30 ตะกร้า · รับส่วนลดสูงสุด 75% แล้ว','30 products selected · Maximum 75% discount applied'],
+    ['โปรรถเข็น เลือก 5 ถึง 30 ตะกร้า รับส่วนลดสูงสุด 75 เปอร์เซ็นต์','Bundle 5–30 products and save up to 75 percent'],
     ['กำลังไปหน้าเข้าสู่ระบบ…','Redirecting to login…'],
     ['กดที่นี่','Click here']
   ];

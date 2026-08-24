@@ -125,13 +125,13 @@ export async function onRequestPost(ctx) {
     discountableCount = discountableItems.length,
     discountRate =
       discountableCount >= 30
-        ? 30
+        ? 75
         : discountableCount >= 20
-          ? 20
+          ? 50
           : discountableCount >= 10
-            ? 10
+            ? 25
             : discountableCount >= 5
-              ? 5
+              ? 15
               : 0,
     discountBase = discountableItems.reduce((sum,p)=>sum+Number(p.sale_price),0),
     bundleDiscount = Math.round((discountBase * discountRate) / 100),

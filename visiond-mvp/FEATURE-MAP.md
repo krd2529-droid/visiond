@@ -196,6 +196,7 @@
 - Reads: สินค้าที่เผยแพร่ โปรโมชัน ออเดอร์เดิม สิทธิ์เดิม บัญชีรับเงิน และแผนรายได้คอร์ส
 - Writes: `orders`, `order_items`, หลักฐานสลิป/ผลตรวจ และ `entitlements` ตามเส้นทางอนุมัติ
 - สิทธิ์: ต้องเข้าสู่ระบบ; อ่าน/ส่งสลิปได้เฉพาะออเดอร์ของตน; การอนุมัติอยู่ API ผู้ดูแล/เจ้าของคอร์ส
+- โปรรถเข็น: สินค้าที่ร่วมรายการครบ 5/10/20/30 ตะกร้า ลด 15/25/50/75% ตามลำดับ; คำนวณจากรายการที่ร่วมโปรเท่านั้น; bundle-deals, resale-rights, Vision 7 key, course และ non-product ไม่ร่วมคำนวณ; first-order discount ชนะโปรรถเข็นและไม่ stack
 - ห้ามกระทบ: ห้ามเชื่อราคารวมจาก browser; ห้ามซื้อสินค้าที่ไม่เผยแพร่; ห้ามสร้างสิทธิ์ก่อนชำระผ่าน; ห้ามบันทึกข้อมูลบัตร/ธนาคารของผู้ซื้อ
 - การทดสอบ: `scripts/test-commerce-final.mjs`, `scripts/test-first-order-promo.mjs`, `scripts/test-v014304.mjs`
 
@@ -1002,14 +1003,14 @@
 ## STOREFRONT-PROMO-001 — Bundle Promo Banner และ Visit Statistics Strip
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.377
-- หน้า/ไฟล์: public storefront/content pages ที่โหลด `public/promo-banner.js`; GIF `/assets/visiond-bundle-promo.gif`; statistics source `GET /api/analytics/view`
-- Promotion surface: สร้าง banner link ไป `/digital-products.html`, แสดงระดับ 5/10/20/30 ตะกร้าและส่วนลดสูงสุด 30% จากข้อความ/ภาพ static, เติม motion timestamp เพื่อเริ่ม GIF ใหม่
+- หน้า/ไฟล์: public storefront/content pages ที่โหลด `public/promo-banner.js`; statistics source `GET /api/analytics/view`
+- Promotion surface: สร้าง banner HTML link ไป `/digital-products.html`, แสดงระดับ 5/10/20/30 ตะกร้าและส่วนลด 15/25/50/75% ด้วยข้อความที่ responsive
 - Boundary: controller นี้ไม่คำนวณ eligibility, discount หรือ order total และไม่อ่าน promotion settings; สูตร/ข้อยกเว้นจริงยังบังคับที่ commerce/promotion flow
 - Placement: วาง banner หลัง `.topbar` หรือหน้า body เมื่อไม่มี header แล้ววาง visit strip ต่อท้าย; ป้องกัน init ซ้ำด้วย `[data-visiond-promo]`
 - Statistics: แสดง today, latest 7 days และ latest 30 days; ใช้ `visiond:analytics-counted` ครั้งเดียวหรือ `window.__visiondAnalytics` เมื่อพร้อมแล้ว
 - Fallback: หาก analytics data ยังไม่มีให้เรียก `GET /api/analytics/view` ซึ่งใช้ public cache 5 นาที; response ล้มเหลวแสดง 0 ทั้งสามค่าโดยไม่บล็อกหน้า
-- Accessibility/responsive: banner มี aria-label และ image alt อธิบายระดับโปร; strip มี aria-label; banner breakpoint 600px และ strip 520px ตาม layout เดิม
-- รหัส UI: `.visiond-promo-banner` และ `.visiond-visit-strip` ใช้ `data-feature="STOREFRONT-PROMO-001"`; คงข้อความ, GIF, URL, styles และ theme เดิม
+- Accessibility/responsive: banner และ strip มี aria-label; banner เปลี่ยนเป็น 2 คอลัมน์ที่ breakpoint 600px และ strip ใช้ breakpoint 520px
+- รหัส UI: `.visiond-promo-banner`, `.visiond-promo-levels` และ `.visiond-visit-strip` ใช้ `data-feature="STOREFRONT-PROMO-001"`; คง URL และ theme เดิม
 - ความสัมพันธ์: page-view count/retention อยู่ใต้ `CUSTOMER-INTELLIGENCE-001`; promotion configuration อยู่ใต้ `PROMOTION-SETTINGS-001`; order discount อยู่ใต้ `COMMERCE-ORDER-001`
 - การทดสอบ: `scripts/test-v014377.mjs`
 

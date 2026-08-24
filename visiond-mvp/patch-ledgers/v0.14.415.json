@@ -1,0 +1,12 @@
+{
+  "patch":"v0.14.415",
+  "parent_commit":"f4b737ec",
+  "safe_rollback_commit":"f4b737ec",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014415-CART-001","scope":"BUSINESS-RULE","source_instruction":"ปรับโปรรถเข็น 5/10/20/30 ตะกร้าเป็น 15/25/50/75 เปอร์เซ็นต์","status":"DONE-VERIFIED","evidence":["functions/api/orders/index.js","public/cart.js","public/catalog-sync.js","scripts/test-v014415.mjs"]},
+    {"id":"V014415-SAFETY-001","scope":"BUSINESS-SAFETY","source_instruction":"โปรยกชุดต้องไม่ลดซ้ำในโปรรถเข็น","status":"DONE-VERIFIED","evidence":["functions/api/orders/index.js","public/cart.js","public/catalog-sync.js","scripts/test-v014415.mjs"]},
+    {"id":"V014415-UI-001","scope":"UI","source_instruction":"ข้อความและป้ายโปรต้องตรงกับเรทใหม่ทั้ง Desktop และ Mobile","status":"DONE-VERIFIED","evidence":["public/promo-banner.js","public/cart.html","public/checkout.css","public/i18n.js","scripts/test-v014415.mjs"]}
+  ]
+}
