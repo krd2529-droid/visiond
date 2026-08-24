@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.418",
+  "parent_commit":"0e9ef777",
+  "safe_rollback_commit":"0e9ef777",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014418-CACHE-001","scope":"BUGFIX","source_instruction":"รถเข็นยังแสดงส่วนลดเก่าเพราะโหลดสคริปต์จาก cache key เดิม","status":"DONE-VERIFIED","evidence":["public/index.html","public/digital-products.html","public/cart.html","scripts/test-v014418.mjs"]},
+    {"id":"V014418-SAFETY-001","scope":"REGRESSION","source_instruction":"สูตรแสดงผลใหม่ต้องยังเป็น 15/25/50/75 และตรงกับ API","status":"DONE-VERIFIED","evidence":["public/cart.js","public/catalog-sync.js","functions/api/orders/index.js","scripts/test-v014418.mjs","scripts/test-commerce-final.mjs"]}
+  ]
+}
