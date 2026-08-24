@@ -1003,14 +1003,14 @@
 ## STOREFRONT-PROMO-001 — Bundle Promo Banner และ Visit Statistics Strip
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.377
-- หน้า/ไฟล์: public storefront/content pages ที่โหลด `public/promo-banner.js`; statistics source `GET /api/analytics/view`
-- Promotion surface: สร้าง banner HTML link ไป `/digital-products.html`, แสดงระดับ 5/10/20/30 ตะกร้าและส่วนลด 15/25/50/75% ด้วยข้อความที่ responsive
+- หน้า/ไฟล์: public storefront/content pages ที่โหลด `public/promo-banner.js`; GIF `/assets/visiond-bundle-promo.gif`; statistics source `GET /api/analytics/view`
+- Promotion surface: สร้าง banner link ไป `/digital-products.html`, แสดง GIF 4 เฟรมระดับ 5/10/20/30 ตะกร้าและส่วนลด 15/25/50/75%; เติม motion timestamp เพื่อเริ่ม GIF ใหม่
 - Boundary: controller นี้ไม่คำนวณ eligibility, discount หรือ order total และไม่อ่าน promotion settings; สูตร/ข้อยกเว้นจริงยังบังคับที่ commerce/promotion flow
 - Placement: วาง banner หลัง `.topbar` หรือหน้า body เมื่อไม่มี header แล้ววาง visit strip ต่อท้าย; ป้องกัน init ซ้ำด้วย `[data-visiond-promo]`
 - Statistics: แสดง today, latest 7 days และ latest 30 days; ใช้ `visiond:analytics-counted` ครั้งเดียวหรือ `window.__visiondAnalytics` เมื่อพร้อมแล้ว
 - Fallback: หาก analytics data ยังไม่มีให้เรียก `GET /api/analytics/view` ซึ่งใช้ public cache 5 นาที; response ล้มเหลวแสดง 0 ทั้งสามค่าโดยไม่บล็อกหน้า
-- Accessibility/responsive: banner และ strip มี aria-label; banner เปลี่ยนเป็น 2 คอลัมน์ที่ breakpoint 600px และ strip ใช้ breakpoint 520px
-- รหัส UI: `.visiond-promo-banner`, `.visiond-promo-levels` และ `.visiond-visit-strip` ใช้ `data-feature="STOREFRONT-PROMO-001"`; คง URL และ theme เดิม
+- Accessibility/responsive: banner มี aria-label และ image alt บอกเรทครบ; strip มี aria-label; banner breakpoint 600px และ strip 520px ตาม layout เดิม
+- รหัส UI: `.visiond-promo-banner` และ `.visiond-visit-strip` ใช้ `data-feature="STOREFRONT-PROMO-001"`; คง URL, styles และ theme เดิม
 - ความสัมพันธ์: page-view count/retention อยู่ใต้ `CUSTOMER-INTELLIGENCE-001`; promotion configuration อยู่ใต้ `PROMOTION-SETTINGS-001`; order discount อยู่ใต้ `COMMERCE-ORDER-001`
 - การทดสอบ: `scripts/test-v014377.mjs`
 

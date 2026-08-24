@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.416",
+  "parent_commit":"02e2fe07",
+  "safe_rollback_commit":"02e2fe07",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014416-ASSET-001","scope":"UI-ASSET","source_instruction":"แก้ GIF โปรรถเข็นให้แสดงเรทใหม่ 15/25/50/75","status":"DONE-VERIFIED","evidence":["public/assets/visiond-bundle-promo.gif","scripts/generate-bundle-promo-gif.py","scripts/test-v014416.mjs"]},
+    {"id":"V014416-UI-001","scope":"UI","source_instruction":"นำ GIF กลับมาใช้บน banner และหน้ารถเข็นโดยคงธีมเดิม","status":"DONE-VERIFIED","evidence":["public/promo-banner.js","public/cart.html","public/checkout.css","scripts/test-v014416.mjs"]}
+  ]
+}
