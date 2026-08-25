@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const [version,index,admin,html,js,css,map]=await Promise.all(['VERSION.txt','public/index.html','public/admin.html','public/service-receipt.html','public/service-receipt.js','public/service-receipt.css','FEATURE-MAP.md'].map(read));
+for(const token of ['name="customer_name"','name="tax_id"','pattern="[0-9]{13}"','id="receiptCustomerName"','id="receiptTaxId"','service-receipt.js?v=014419'])assert.ok(html.includes(token),token);
+for(const token of ["data.get('customer_name')","data.get('tax_id')","taxId.length!==13","customerNameNode.textContent=customerName","taxIdNode.textContent=taxId","form.elements.customer_name.focus()"] )assert.ok(js.includes(token),token);
+assert.doesNotMatch(js,/innerHTML\s*=\s*(?:customerName|taxId)/);
+assert.match(css,/@media print/);assert.match(css,/@media\(max-width:800px\)/);
+assert.match(map,/ไม่บันทึกชื่อลูกค้า เลขประจำตัวผู้เสียภาษี/);
+assert.doesNotMatch(html+js,/VAT\s*7|ภาษีมูลค่าเพิ่ม\s*7|ใบกำกับภาษีเต็มรูป/);
+assert.equal(version.trim(),'v0.14.419');assert.match(index,/WEB v0\.14\.419/);assert.match(admin,/ADMIN v0\.14\.419/);
+console.log('PASS v0.14.419 service receipt customer name and tax ID');

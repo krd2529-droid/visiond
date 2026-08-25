@@ -6,19 +6,21 @@
   <title>ออกใบเสร็จรับเงิน | VisionD Control</title>
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/service-receipt.css?v=014413">
+  <link rel="stylesheet" href="/service-receipt.css?v=014419">
 </head>
 <body>
   <header class="receipt-toolbar no-print">
     <a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a>
     <div><small>VISIOND CONTROL · SERVICE-RECEIPT-001</small><h1>ออกใบเสร็จรับเงิน</h1></div>
-    <span>v0.14.413</span>
+    <span>v0.14.419</span>
   </header>
   <main class="receipt-shell" data-feature="SERVICE-RECEIPT-001">
     <section id="receiptAccess" class="receipt-access no-print" role="status">กำลังตรวจสอบสิทธิ์…</section>
     <section id="receiptWorkspace" class="receipt-workspace" hidden>
       <form id="receiptForm" class="receipt-form no-print">
-        <div><h2>กรอกข้อมูล 2 ช่อง</h2><p>ระบบเติมเลขเอกสาร วันที่ และยอดรวมให้อัตโนมัติ</p></div>
+        <div><h2>กรอกข้อมูล 4 ช่อง</h2><p>ระบบเติมเลขเอกสาร วันที่ และยอดรวมให้อัตโนมัติ โดยไม่บันทึกข้อมูลลูกค้าลงฐานข้อมูล</p></div>
+        <label>ชื่อลูกค้า / ชื่อผู้เสียภาษี<input name="customer_name" type="text" maxlength="200" autocomplete="off" required placeholder="เช่น บริษัท ตัวอย่าง จำกัด"></label>
+        <label>เลขประจำตัวผู้เสียภาษี<input name="tax_id" type="text" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" autocomplete="off" required placeholder="เลข 13 หลัก"></label>
         <label>รายการบริการ<textarea name="service" rows="3" maxlength="300" required placeholder="เช่น ค่าบริการออกแบบสื่อดิจิทัล"></textarea></label>
         <label>ยอดชำระ (บาท)<input name="amount" type="number" min="0.01" max="99999999.99" step="0.01" inputmode="decimal" required placeholder="เช่น 1500"></label>
         <div class="receipt-actions">
@@ -36,7 +38,8 @@
         <dl class="receipt-meta">
           <div><dt>เลขที่เอกสาร</dt><dd id="receiptNumber">—</dd></div>
           <div><dt>วันที่ออก</dt><dd id="receiptDate">—</dd></div>
-          <div><dt>ผู้รับบริการ</dt><dd>ลูกค้า / ผู้รับบริการ</dd></div>
+          <div><dt>ชื่อลูกค้า / ชื่อผู้เสียภาษี</dt><dd id="receiptCustomerName">—</dd></div>
+          <div><dt>เลขประจำตัวผู้เสียภาษี</dt><dd id="receiptTaxId">—</dd></div>
         </dl>
         <table>
           <thead><tr><th>รายการบริการ</th><th>จำนวนเงิน</th></tr></thead>
@@ -52,7 +55,7 @@
       </article>
     </section>
   </main>
-  <script src="/service-receipt.js?v=014413" type="module"></script>
+  <script src="/service-receipt.js?v=014419" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>

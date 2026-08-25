@@ -1,0 +1,12 @@
+{
+  "patch":"v0.14.419",
+  "parent_commit":"4cb40b63",
+  "safe_rollback_commit":"4cb40b63",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014419-RECEIPT-001","scope":"FEATURE","source_instruction":"เพิ่มชื่อลูกค้าและเลขประจำตัวผู้เสียภาษีในฟอร์มและเอกสารค่าบริการ","status":"DONE-VERIFIED","evidence":["public/service-receipt.html","public/service-receipt.js","scripts/test-v014419.mjs"]},
+    {"id":"V014419-PRIVACY-001","scope":"DATA-SAFETY","source_instruction":"ข้อมูลลูกค้าใช้สร้างเอกสารฝั่งเบราว์เซอร์และไม่บันทึกฐานข้อมูล","status":"DONE-VERIFIED","evidence":["public/service-receipt.js","FEATURE-MAP.md","scripts/test-v014419.mjs"]},
+    {"id":"V014419-TAX-001","scope":"BUSINESS-SAFETY","source_instruction":"ยังคงเป็นใบเสร็จรับเงิน ไม่ใช่ใบกำกับภาษี VAT","status":"DONE-VERIFIED","evidence":["public/service-receipt.html","FEATURE-MAP.md","scripts/test-v014419.mjs"]}
+  ]
+}
