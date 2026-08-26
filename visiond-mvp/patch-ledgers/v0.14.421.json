@@ -1,0 +1,14 @@
+{
+  "patch":"v0.14.421",
+  "parent_commit":"28135e86",
+  "safe_rollback_commit":"28135e86",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014421-DATABASE-001","scope":"DATABASE","source_instruction":"เก็บสถานะงานรายวันแยกตามบัญชีและวันที่","status":"DONE-VERIFIED","evidence":["migrations/0069_daily_personal_tasks.sql","functions/api/admin/daily-tasks.js","scripts/test-v014421.mjs"]},
+    {"id":"V014421-FEATURE-001","scope":"FEATURE","source_instruction":"เพิ่มตารางงานรายวัน 8 งานตั้งต้น เพิ่มงานเอง และกดทำแล้วหรือยกเลิกได้","status":"DONE-VERIFIED","evidence":["public/daily-tasks.html","public/daily-tasks.js","functions/api/admin/daily-tasks.js","scripts/test-v014421.mjs"]},
+    {"id":"V014421-UI-001","scope":"UI","source_instruction":"รายการที่ยังไม่ทำต้องเป็นสีแดงและปุ่มใช้ธีมมาตรฐาน VisionD","status":"DONE-VERIFIED","evidence":["public/daily-tasks.css","public/daily-tasks.html","scripts/test-v014421.mjs"]},
+    {"id":"V014421-SECURITY-001","scope":"SECURITY","source_instruction":"ห้ามอ่านหรือแก้รายการข้ามบัญชีและข้ามวันที่","status":"DONE-VERIFIED","evidence":["functions/api/admin/daily-tasks.js","migrations/0069_daily_personal_tasks.sql","scripts/test-v014421.mjs"]},
+    {"id":"V014421-DOC-001","scope":"DOC","source_instruction":"ลงทะเบียน Feature Map, requirement และเวอร์ชันของแพต","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","requirements-ledger.json","VERSION.txt","START-HERE.md"]}
+  ]
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ตารางงานประจำวัน | VisionD Control</title>
+  <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
+  <link rel="stylesheet" href="/daily-tasks.css?v=014421">
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
+</head>
+<body>
+  <header class="daily-toolbar">
+    <a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a>
+    <div><small>VISIOND CONTROL · DAILY-TASKS-001</small><h1>ตารางงานประจำวัน</h1></div>
+    <span>v0.14.421</span>
+  </header>
+  <main class="daily-shell" data-feature="DAILY-TASKS-001">
+    <section class="daily-controls" aria-label="เลือกวันที่">
+      <label>วันที่<input id="taskDate" type="date"></label>
+      <button id="todayButton" class="vds-btn vds-btn--secondary" type="button">วันนี้</button>
+      <strong id="taskSummary">กำลังโหลด…</strong>
+    </section>
+    <p id="taskStatus" class="daily-status" role="status" aria-live="polite">กำลังโหลดรายการงาน…</p>
+    <section class="daily-table-wrap" aria-label="รายการงานประจำวัน">
+      <table class="daily-table">
+        <thead><tr><th>สถานะ</th><th>รายการงาน</th><th>จัดการ</th></tr></thead>
+        <tbody id="dailyTaskRows"></tbody>
+      </table>
+    </section>
+    <form id="customTaskForm" class="daily-add">
+      <label for="customTaskLabel">เพิ่มกิจกรรมอื่น</label>
+      <input id="customTaskLabel" maxlength="100" required placeholder="เช่น ตอบแชตลูกค้า">
+      <button class="vds-btn vds-btn--primary" type="submit">เพิ่มรายการ</button>
+    </form>
+  </main>
+  <script src="/daily-tasks.js?v=014421" type="module"></script>
+  <script src="/visiond-button-system.js?v=014407" defer></script>
+</body>
+</html>

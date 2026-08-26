@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "event_case": "Vision 7 Key Center + V Easy Binding",
-  "updated_at": "2026-08-10",
+  "updated_at": "2026-08-26",
   "requirements": [
     {"id":"EC-V7-001","source":"1 key supports 3 concurrent devices","status":"DONE-VERIFIED","evidence":["functions/api/vision7/activate.js","scripts/test-v01451.mjs"]},
     {"id":"EC-V7-002","source":"license belongs to VisionD account and device","status":"DONE-VERIFIED","evidence":["functions/api/vision7/activate.js","functions/_vision7.js"]},
@@ -166,6 +166,7 @@
     {"id":"WEB2-PAYMENT-001","source":"Web2 ห้ามสั่ง paid หรือออก entitlement; fulfillment ต้องอ้าง native paid order ที่ยอดสินค้าและสิทธิ์ตรง","status":"DONE-VERIFIED","evidence":["functions/api/admin/partner-websites/[id]/commerce/[orderId]/fulfill.js","scripts/test-v014410.mjs"]},
     {"id":"WEB2-CLAIM-001","source":"ส่งมอบด้วย one-time account-bound claim โดยไม่คืนไฟล์ object key หรือ permanent download URL","status":"DONE-VERIFIED","evidence":["functions/api/commerce/claim.js","public/partner-commerce-claim.js","scripts/test-v014410.mjs"]},
     {"id":"WEB2-QUERY-001","source":"Catalog order status fulfillment และ claim มี bounded query budget และจำกัดรายการไม่เกิน 100","status":"DONE-VERIFIED","evidence":["scripts/test-partner-commerce-query-budget.mjs","scripts/test-partner-commerce-e2e.mjs"]},
-    {"id":"WEB2-E2E-001","source":"Commerce E2E ครอบคลุม create replay status paid-match wrong-account consume token reuse และ deny paths","status":"DONE-VERIFIED","evidence":["scripts/test-partner-commerce-e2e.mjs","scripts/test-v014411.mjs"]}
+    {"id":"WEB2-E2E-001","source":"Commerce E2E ครอบคลุม create replay status paid-match wrong-account consume token reuse และ deny paths","status":"DONE-VERIFIED","evidence":["scripts/test-partner-commerce-e2e.mjs","scripts/test-v014411.mjs"]},
+    {"id":"EC-DAILY-TASKS-001","source":"Boss/Admin ต้องมีตารางงานประจำวันส่วนตัวใน VisionD แยกตามวันที่ มีงานลง Zippo ทำแคตตาล็อก Toyskub ทำสินค้าดิจิทัล ยิงแอด บอท TikTok ขายของ และกิจกรรมอื่น เพิ่มรายการเองได้ กดทำแล้วได้ และรายการที่ยังไม่ทำเป็นสีแดง","status":"DONE-VERIFIED","evidence":["public/daily-tasks.html","public/daily-tasks.js","public/daily-tasks.css","functions/api/admin/daily-tasks.js","migrations/0069_daily_personal_tasks.sql","scripts/test-v014421.mjs"]}
   ]
 }

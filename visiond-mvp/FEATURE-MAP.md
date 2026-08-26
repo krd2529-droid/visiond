@@ -1059,6 +1059,17 @@
 - ความสัมพันธ์: canonical account/course-owner navigation อยู่ใต้ `NAV-SHELL-001`; member dashboard อยู่ใต้ `MEMBER-HUB-001`; create/edit course อยู่ใต้ `COURSE-BASKET-001`
 - การทดสอบ: `scripts/test-v014382.mjs`
 
+## DAILY-TASKS-001 — ตารางงานประจำวันส่วนตัว
+
+- ผู้ใช้/ทางเข้า: Boss หรือ Admin ที่ผ่าน `requireAdmin`; เมนู “ตารางงานประจำวัน” ในหลังบ้าน → `/daily-tasks.html`
+- งานตั้งต้น: ลง Zippo, ทำแคตตาล็อก, Toyskub, ทำสินค้าดิจิทัล, ยิงแอด, บอท TikTok, ขายของ และกิจกรรมอื่นๆ แสดงทุกวันที่เลือก
+- สถานะ: งานที่ยังไม่ทำแสดงพื้นและกรอบสีแดง; กด “ทำแล้ว” เพื่อบันทึกเวลาเสร็จ และกดยกเลิกสถานะได้
+- งานเพิ่มเอง: เพิ่มได้ไม่เกิน 100 ตัวอักษร และลบได้เฉพาะรายการ custom ของบัญชีและวันเดียวกัน
+- Data boundary: `daily_personal_tasks` unique ด้วย `user_id + task_date + task_key`; API ทุก read/write/delete ผูก `auth.user.id` และวันที่ที่ตรวจรูปแบบแล้ว จึงไม่อ่านหรือแก้งานของบัญชีอื่น
+- หน้า/ไฟล์/API: `public/daily-tasks.{html,css,js}`, `functions/api/admin/daily-tasks.js`, `migrations/0069_daily_personal_tasks.sql`
+- รหัส UI: `main.daily-shell` และเมนูหลังบ้านใช้ `data-feature="DAILY-TASKS-001"`; ปุ่มใช้ canonical `.vds-btn`
+- การทดสอบ: `scripts/test-v014421.mjs`
+
 ## PARTNER-API-001 — ศูนย์ควบคุม Partner API และ Web 2 Integration
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียน end-to-end contract จาก runtime จริงใน v0.14.388
