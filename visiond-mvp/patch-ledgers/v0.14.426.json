@@ -1,0 +1,6 @@
+{"patch":"v0.14.426","parent_commit":"de863ddd","safe_rollback_commit":"de863ddd","push":false,"deploy":false,"tasks":[
+  {"id":"V014426-UI-001","scope":"UI","source_instruction":"เอาส่วนตรวจพาร์ตเนอร์ 50/50 ออกจากหน้าตะกร้าคอร์ส VisionD","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-course-reviews.html"]},
+  {"id":"V014426-FEATURE-001","scope":"FEATURE","source_instruction":"คง EP 1 ชื่อ EP รายละเอียด คลิป เอกสาร เพิ่ม EP และเผยแพร่ทันทีไม่ต้องตรวจ","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","functions/api/admin/courses/[id]/publish.js"]},
+  {"id":"V014426-REGRESSION-001","scope":"QA","source_instruction":"ระบบตรวจพาร์ตเนอร์ยังอยู่แต่แยกหน้าและเมนูชี้ถูกหน้า","status":"DONE-VERIFIED","evidence":["public/admin-course-reviews.html","public/admin.html","public/course-review-admin.js"]},
+  {"id":"V014426-QA-001","scope":"QA","source_instruction":"ทดสอบขอบเขตหน้าคอร์ส VisionD และหน้าตรวจพาร์ตเนอร์","status":"DONE-VERIFIED","evidence":["scripts/test-v014426.mjs"]}
+]}

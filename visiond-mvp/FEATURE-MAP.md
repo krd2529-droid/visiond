@@ -130,7 +130,7 @@
 ## COURSE-REVIEW-001 — ส่งตรวจ อนุมัติ และควบคุมคอร์สพาร์ตเนอร์
 
 - สถานะ: `IMPLEMENTED`; เติม auxiliary routes และ transition guards จากโค้ดจริงใน v0.14.364
-- หน้า/ไฟล์: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-courses#sellerReview`, `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/index.js`, `functions/api/admin/course-seller-reviews/auto.js`, `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/admin/course-seller-reviews/[id]/qr.js`
+- หน้า/ไฟล์: `/course-seller?type=1`, `/course-basket-edit?id=:courseId`, `/admin-course-reviews.html`, `public/course-seller.js`, `public/course-basket-edit.js`, `public/course-review-admin.js`, `functions/api/course-seller/[id]/publish.js`, `functions/api/admin/course-seller-reviews/index.js`, `functions/api/admin/course-seller-reviews/auto.js`, `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/admin/course-seller-reviews/[id]/qr.js`
 - ฟังก์ชัน: เจ้าของส่งตรวจ; ผู้ดูแลอ่านคิว; Boss อนุมัติ/ส่งกลับ/ปฏิเสธ/ระงับ/คืนสถานะ และสั่งตรวจ pending สูงสุด 100 คอร์สอัตโนมัติ
 - API: `POST /api/course-seller/:courseId/publish`, `GET /api/admin/course-seller-reviews`, `POST /api/admin/course-seller-reviews/auto`, `POST /api/admin/course-seller-reviews/:id`, `GET /api/admin/course-seller-reviews/:id/qr`
 - ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `course_lesson_files`, `users`; R2 seller payment QR
@@ -333,7 +333,7 @@
 ## COURSE-PARTNER-CHECKOUT-001 — อนุมัติ แคตตาล็อก และชำระเงินคอร์สพาร์ตเนอร์
 
 - สถานะ: `IMPLEMENTED`; ตรวจเส้นทางจริงซ้ำใน v0.14.324
-- หน้า: `/course-center`, แคตตาล็อกคอร์สหน้าแรก, `/dashboard`, `/admin-courses#sellerReview`, `/admin`
+- หน้า: `/course-center`, แคตตาล็อกคอร์สหน้าแรก, `/dashboard`, `/admin-course-reviews.html`, `/admin`
 - ไฟล์/API: `functions/api/admin/course-seller-reviews/[id].js`, `functions/api/courses/index.js`, `functions/api/orders/index.js`, `functions/api/orders/[id]/slip.js`, `functions/api/admin/orders.js`, `functions/api/admin/orders/[id]/approve.js`, `functions/api/admin/orders/[id]/reject.js`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1; แผนและ `review_status` ของคอร์ส, `products.status`, `orders.status`, `orders.payment_method`, ส่วนแบ่งรายได้คอร์ส, `order_items`, `verified_slips`, `order_slip_evidence`, `entitlements`
 - Input: การอนุมัติคอร์ส การสั่งซื้อ รูปสลิป และการยืนยัน/เหตุผลของ Boss
@@ -826,6 +826,7 @@
 - ห้ามกระทบข้อมูล: product และ course ต้องสร้างสัมพันธ์กัน; active สะท้อน `products.status` published/draft; `total_minutes` เป็นเวลาเนื้อหารวมที่ Boss ระบุตอนสร้างและไม่ถูกการเพิ่ม/ลบ EP เขียนทับ; ลบบทเรียนเฉพาะ course เดียวกันและลบ DB ก่อน object
 - ความสัมพันธ์: ไม่รวม seller review section ในหน้าเดียวกันซึ่งอยู่ใต้ `COURSE-REVIEW-001`; ไม่รวมตะกร้าผู้สอน/EP ซึ่งอยู่ใต้ `COURSE-BASKET-001` และ `COURSE-EP-001`
 - รหัส UI: company-course grid และ lesson manager มี `data-feature="COURSE-ADMIN-001"`; คง form, confirmation, loading/error และ theme เดิม
+- การแยกระบบ: หน้า `/admin-courses.html` ไม่มี seller review หรือข้อความ 50/50; ลำดับ EP คือชื่อ EP รายละเอียด คลิป/เอกสาร เพิ่ม EP และเผยแพร่ทันทีโดยไม่ส่งตรวจ ส่วน review พาร์ตเนอร์อยู่ `/admin-course-reviews.html`
 - การทดสอบ: `scripts/test-v014363.mjs`, `scripts/test-v014424.mjs`
 
 ## COURSE-PAYOUT-001 — บัญชีรับเงินผู้สอนและ Secure Payment QR

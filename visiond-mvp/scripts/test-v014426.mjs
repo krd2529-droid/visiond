@@ -1,0 +1,7 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),company=read('public/admin-courses.html'),partner=read('public/admin-course-reviews.html'),ui=read('public/admin-courses.js'),publish=read('functions/api/admin/courses/[id]/publish.js'),admin=read('public/admin.html');
+assert.equal(read('VERSION.txt').trim(),'v0.14.426');assert.match(read('public/index.html'),/WEB v0\.14\.426/);assert.match(admin,/ADMIN v0\.14\.426/);
+assert.doesNotMatch(company,/id="sellerReview"|sellerCourseReviews|course-review-admin\.js|ตรวจคอร์สพาร์ตเนอร์ 50\/50/);assert.match(company,/EP 1 · ชื่อ EP/);assert.match(company,/name="description"/);assert.match(company,/name="video"/);assert.match(company,/name="pdf"/);assert.match(company,/>เพิ่ม EP</);assert.match(company,/เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ/);assert.match(company,/admin-courses\.js\?v=014426/);
+assert.match(ui,/EP \$\{items\.length \+ 1\} · ชื่อ EP/);assert.match(ui,/\/publish`/);assert.match(publish,/requireAdmin\(ctx\)/);assert.match(publish,/review_status='approved'/);
+assert.match(partner,/id="sellerReview"/);assert.match(partner,/ใช้เฉพาะคอร์สพาร์ตเนอร์/);assert.match(partner,/course-review-admin\.js\?v=014426/);assert.match(admin,/href="\/admin-course-reviews\.html"/);assert.doesNotMatch(admin,/admin-courses\.html#sellerReview/);
+console.log('PASS v0.14.426 separate VisionD instant publish from partner review');
