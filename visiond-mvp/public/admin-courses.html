@@ -6,6 +6,7 @@
     <title>จัดการคอร์ส | VisionD</title>
     <link rel="stylesheet" href="/style.css?v=01414" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
     <link rel="stylesheet" href="/course.css?v=014425" />
+    <link rel="stylesheet" href="/course-seller.css?v=014427" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
   <link rel="stylesheet" href="/visiond-button-system.css?v=014189" /><script src="/visiond-button-system.js?v=014190" defer></script></head>
   <body>
@@ -16,7 +17,7 @@
         ><a href="/courses.html" target="_blank">ดูหน้าขายคอร์ส</a>
       </nav>
     </header>
-    <main class="course-admin-shell">
+    <main class="seller-shell company-course-workspace">
       <div class="course-toolbar">
         <div>
           <p class="eyebrow">ONLINE COURSE</p>
@@ -24,23 +25,21 @@
           <p>สร้างคอร์ส กำหนดราคา และแนบคลิปหรือสไลด์ PDF แยกเป็นรายบท</p>
         </div>
       </div>
-      <div class="course-admin-grid" data-feature="COURSE-ADMIN-001">
-        <section class="course-admin-card">
+      <div data-feature="COURSE-ADMIN-001">
+        <section class="seller-card">
           <h2 id="companyCourseCreate">สร้างตะกร้าคอร์ส VisionD</h2>
-          <p>คอร์สของ Boss/VisionD เท่านั้น · สร้างตะกร้า เพิ่ม EP ให้ครบ แล้วกดเผยแพร่ได้ทันทีโดยไม่เข้าคิวพาร์ตเนอร์ 50/50</p>
-          <form id="courseForm" class="course-admin-form">
+          <p>กรอกข้อมูลคอร์สแล้วเพิ่ม EP ได้เลย ระบบจะสร้างฉบับร่างให้อัตโนมัติเมื่อเพิ่ม EP แรก</p>
+          <form id="courseForm" class="seller-form course-basket-form">
             <input name="course_type" type="hidden" value="online_course" />
-            <label>ชื่อคอร์ส<input name="title" required /></label
-            ><label>ชื่อผู้สอน<input name="teacher_name" required /></label>
-            <div class="course-form-two">
-              <label>จำนวนบทเรียน (EP)<input name="expected_episodes" type="number" min="1" max="200" value="1" required /></label>
-              <label>เวลาเนื้อหารวม (นาที)<input name="content_minutes" type="number" min="1" max="100000" value="30" required /></label>
-            </div>
-            <label>คำโปรย<input name="short_description" /></label
-            ><label
-              >รายละเอียด<textarea
+            <label class="course-cover-upload span2">รูปปกตะกร้าคอร์ส <small>JPG, PNG หรือ WEBP ไม่เกิน 5 MB</small><input name="cover" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+            <label class="course-basket-title">ชื่อคอร์ส<input name="title" required /></label
+            ><label class="course-basket-teacher">ชื่อผู้สอน<input name="teacher_name" required /></label>
+            <label class="course-basket-summary">คำอธิบายสั้น<input name="short_description" /></label>
+            <label>ช่องทางติดต่อ<input name="contact_info" /></label>
+            <label class="span2"
+              >รายละเอียดคอร์ส<textarea
                 name="description"
-                rows="4"
+                rows="6"
               ></textarea></label
             ><label
               >ราคา (บาท)<input
@@ -48,38 +47,35 @@
                 type="number"
                 min="0"
                 step="1"
-                required /></label
-            ><label
-              >รูปปก (คอร์ส 16:9 / สิทธิ์ลงขายคอร์สออนไลน์แนวตั้ง 4:5)<input
-                name="cover"
-                type="file"
-                accept="image/jpeg,image/png,image/webp" /></label
-            ><fieldset class="course-payment-choice">
+                required /></label>
+            <label>เวลาเนื้อหารวม (นาที)<input name="content_minutes" type="number" min="1" max="100000" value="30" required /></label>
+            <label>จำนวนบทเรียน (EP)<input name="expected_episodes" type="number" min="1" max="200" value="1" required /></label>
+            <fieldset class="span2"><legend>หัวข้อหรือแพลตฟอร์มที่สอน</legend><div class="platform-tags"><label><input type="checkbox" name="platform_tags" value="Shopee"> Shopee</label><label><input type="checkbox" name="platform_tags" value="TikTok"> TikTok</label><label><input type="checkbox" name="platform_tags" value="Lazada"> Lazada</label><label><input type="checkbox" name="platform_tags" value="YouTube"> YouTube</label><label><input type="checkbox" name="platform_tags" value="ChatGPT"> ChatGPT</label><label><input type="checkbox" name="platform_tags" value="Facebook"> Facebook</label><label><input type="checkbox" name="platform_tags" value="Canva"> Canva</label></div><label>อื่น ๆ<input name="platform_other"></label></fieldset>
+            <fieldset class="course-payment-choice span2">
               <legend>บัญชีรับเงินของคอร์สนี้</legend>
               <label><input name="payment_account" type="radio" value="boss_krungsri" checked /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
               <label><input name="payment_account" type="radio" value="visiond" /><span><b>บัญชีบริษัท VisionD</b><small>ใช้ข้อมูลบัญชีบริษัทที่ตั้งค่าในหลังบ้าน</small></span></label>
             </fieldset>
-            <button class="vds-btn vds-btn--primary vds-btn--wide" type="submit">สร้างตะกร้าและเพิ่ม EP</button>
-            <p id="courseMessage"></p>
+            <p id="courseMessage">ยังไม่สร้างฉบับร่าง · กด “เพิ่ม EP” ด้านล่างเมื่อกรอกข้อมูลครบ</p>
           </form>
         </section>
-        <section class="course-admin-card">
+        <section class="seller-card company-existing-courses">
           <h2>คอร์สที่มีอยู่</h2>
           <div id="adminCourseList" class="admin-course-list">
             <p>กำลังโหลด…</p>
           </div>
         </section>
       </div>
-      <section id="lessonManager" class="course-admin-card" data-feature="COURSE-ADMIN-001" hidden>
-        <div class="course-toolbar">
+      <section id="lessonManager" class="seller-card seller-lesson-workspace" data-feature="COURSE-ADMIN-001">
+        <div class="seller-lesson-head">
           <div>
-            <small>จัดการบทเรียนของ</small>
-            <h2 id="lessonCourseTitle"></h2>
+            <small>เพิ่มเนื้อหาคอร์ส</small>
+            <h2 id="lessonCourseTitle">คอร์สใหม่</h2>
           </div>
-          <button id="closeLessons" type="button">ปิด</button>
+          <button id="closeLessons" type="button" hidden>กลับไปสร้างคอร์สใหม่</button>
         </div>
-        <div id="coursePublishSummary" class="course-publish-summary" role="status"></div>
-        <form id="coursePaymentForm" class="course-admin-form course-payment-editor">
+        <div id="coursePublishSummary" class="course-publish-summary" role="status"><b>ยังไม่มี EP</b><span>เพิ่ม EP แรกเพื่อสร้างฉบับร่างอัตโนมัติ</span></div>
+        <form id="coursePaymentForm" class="seller-form course-payment-editor" hidden>
           <fieldset class="course-payment-choice">
             <legend>สลับบัญชีรับเงินของคอร์สนี้ได้ตลอด</legend>
             <label><input name="payment_account" type="radio" value="boss_krungsri" /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
@@ -88,7 +84,7 @@
           <button class="vds-btn vds-btn--secondary" type="submit">บันทึกบัญชีรับเงิน</button>
           <p id="coursePaymentMessage" role="status" aria-live="polite"></p>
         </form>
-        <form id="lessonForm" class="course-admin-form">
+        <form id="lessonForm" class="seller-form seller-lesson-editor">
           <input name="course_id" type="hidden" /><label
             ><span id="lessonFormTitle">EP 1 · ชื่อ EP</span><input name="title" required /></label
           ><label
@@ -107,10 +103,10 @@
           <p id="lessonMessage"></p>
         </form>
         <div id="lessonList"></div>
-        <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion vds-btn--wide" type="button">เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ</button>
+        <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion vds-btn--wide" type="button" disabled>เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ</button>
         <p id="publishCourseMessage" role="status" aria-live="polite"></p>
       </section>
     </main>
-    <script src="/admin-courses.js?v=014426"></script>
+    <script src="/admin-courses.js?v=014427"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

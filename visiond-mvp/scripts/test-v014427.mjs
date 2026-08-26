@@ -1,0 +1,8 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),html=read('public/admin-courses.html'),ui=read('public/admin-courses.js'),api=read('functions/api/admin/courses/index.js'),publish=read('functions/api/admin/courses/[id]/publish.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.427');assert.match(read('public/index.html'),/WEB v0\.14\.427/);assert.match(read('public/admin.html'),/ADMIN v0\.14\.427/);
+assert.match(html,/seller-form course-basket-form/);assert.match(html,/seller-card seller-lesson-workspace/);assert.match(html,/ชื่อคอร์ส/);assert.match(html,/ชื่อผู้สอน/);assert.match(html,/ช่องทางติดต่อ/);assert.match(html,/หัวข้อหรือแพลตฟอร์มที่สอน/);assert.match(html,/EP 1 · ชื่อ EP/);assert.match(html,/รายละเอียดเนื้อหา/);assert.match(html,/name="video"/);assert.match(html,/name="pdf"/);assert.match(html,/>เพิ่ม EP</);assert.match(html,/เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ/);
+assert.doesNotMatch(html,/สร้างตะกร้าและเพิ่ม EP|sellerReview|course-review-admin|ตรวจคอร์สพาร์ตเนอร์ 50\/50/);assert.match(html,/admin-courses\.js\?v=014427/);
+assert.match(ui,/async function createDraft/);assert.match(ui,/if\(!id\)id=await createDraft\(\)/);assert.match(ui,/fetch\('\/api\/admin\/courses'/);assert.doesNotMatch(ui,/api\/course-seller/);
+assert.match(api,/course_origin,review_status/);assert.match(api,/'company','draft'/);assert.match(api,/platform_tags/);assert.match(api,/contact_info/);assert.match(publish,/review_status='approved'/);assert.match(publish,/owner_user_id IS NULL/);
+console.log('PASS v0.14.427 company course basket workspace without duplicate create step');

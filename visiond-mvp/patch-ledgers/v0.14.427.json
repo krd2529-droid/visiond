@@ -1,0 +1,6 @@
+{"patch":"v0.14.427","parent_commit":"fa204633","safe_rollback_commit":"fa204633","push":false,"deploy":false,"tasks":[
+  {"id":"V014427-UI-001","scope":"UI","source_instruction":"ใช้โครงฟอร์มและการ์ด EP แบบภาพอ้างอิงในหลังบ้านตะกร้าบริษัท","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/course.css"]},
+  {"id":"V014427-FEATURE-001","scope":"FEATURE","source_instruction":"เอาปุ่มสร้างซ้ำออกและสร้าง draft อัตโนมัติเมื่อเพิ่ม EP แรก","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/index.js"]},
+  {"id":"V014427-SECURITY-001","scope":"SECURITY","source_instruction":"ใช้เฉพาะ Admin company API ไม่เรียก seller/partner 50/50","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/index.js","functions/api/admin/courses/[id]/publish.js","scripts/test-v014427.mjs"]},
+  {"id":"V014427-QA-001","scope":"QA","source_instruction":"ทดสอบโครง UI auto draft company boundary และ direct publish","status":"DONE-VERIFIED","evidence":["scripts/test-v014427.mjs"]}
+]}
