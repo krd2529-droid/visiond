@@ -349,8 +349,8 @@
       mergedFile = new File([bytes], `vision4-combined-${Date.now()}.pdf`, {
         type: "application/pdf",
       });
-      if (mergedFile.size > 1024 * 1024 * 1024)
-        throw new Error("PDF รวมมีขนาดเกิน 1 GB กรุณาแบ่งชุด");
+      if (mergedFile.size > 2 * 1024 * 1024 * 1024)
+        throw new Error("PDF รวมมีขนาดเกิน 2 GB กรุณาแบ่งชุด");
       picker.innerHTML = candidates
         .map(
           (candidate, index) =>

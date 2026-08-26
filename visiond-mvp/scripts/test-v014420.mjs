@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const [version,index,admin,vision3,bundle,init,complete,map]=await Promise.all(['VERSION.txt','public/index.html','public/admin.html','public/vision3.js','public/vision4-bundle.js','functions/api/admin/product-multipart/init.js','functions/api/admin/product-multipart/complete.js','FEATURE-MAP.md'].map(read));
+assert.match(init,/MAX_SIZE = 2 \* 1024 \* 1024 \* 1024/);assert.match(init,/ไม่เกิน 2 GB/);
+assert.match(complete,/size > 2 \* 1024 \* 1024 \* 1024/);
+assert.match(vision3,/file\.size>2\*1024\*1024\*1024/);assert.match(vision3,/ZIP เกิน 1 GB ระบบจะข้ามการแตกตัวอย่างใน browser/);assert.match(vision3,/ขนาดรวมเกิน 2 GB/);
+assert.match(bundle,/mergedFile\.size > 2 \* 1024 \* 1024 \* 1024/);assert.match(bundle,/ขนาดเกิน 2 GB/);
+assert.match(admin,/ไฟล์ละไม่เกิน 2 GB/);assert.match(admin,/vision3\.js\?v=014420/);assert.match(admin,/vision4-bundle\.js\?v=014420/);
+assert.match(map,/multipart upload รวมไม่เกิน 2 GB/);assert.match(map,/ป้องกันหน่วยความจำเต็ม/);
+assert.equal(version.trim(),'v0.14.420');assert.match(index,/WEB v0\.14\.420/);assert.match(admin,/ADMIN v0\.14\.420/);
+console.log('PASS v0.14.420 Vision 4 multipart upload limit 2 GB');

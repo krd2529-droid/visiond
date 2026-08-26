@@ -1,0 +1,12 @@
+{
+  "patch":"v0.14.420",
+  "parent_commit":"adbb9295",
+  "safe_rollback_commit":"adbb9295",
+  "push":false,
+  "deploy":false,
+  "tasks":[
+    {"id":"V014420-UPLOAD-001","scope":"FEATURE","source_instruction":"เพิ่มเพดานอัปโหลดไฟล์รูป/ZIP/PDF ของ Vision 4 จาก 1 GB เป็น 2 GB","status":"DONE-VERIFIED","evidence":["public/vision3.js","public/vision4-bundle.js","functions/api/admin/product-multipart/init.js","functions/api/admin/product-multipart/complete.js","scripts/test-v014420.mjs"]},
+    {"id":"V014420-MEMORY-001","scope":"SAFETY","source_instruction":"ZIP ขนาดใหญ่ต้องไม่ถูกอ่านทั้งก้อนจน browser หน่วยความจำเต็ม","status":"DONE-VERIFIED","evidence":["public/vision3.js","FEATURE-MAP.md","scripts/test-v014420.mjs"]},
+    {"id":"V014420-UI-001","scope":"UI","source_instruction":"ข้อความเพดานและ cache key ต้องตรงกับ 2 GB","status":"DONE-VERIFIED","evidence":["public/admin.html","scripts/test-v014420.mjs"]}
+  ]
+}

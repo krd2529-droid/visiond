@@ -261,7 +261,7 @@
 - ฐานข้อมูล / ที่เก็บ: D1/R2; `product_files`, `downloads`, `products.cover_url`, `products.preview_urls`, bucket `FILES`
 - Input: รูป JPG/PNG/WEBP ไฟล์ PDF/ZIP หรือ multipart parts ที่ผูก product ID
 - Output: รูปปก รูปตัวอย่าง และไฟล์ดาวน์โหลดที่ผูกกับตะกร้าเดิม
-- ข้อจำกัดที่ตรวจพบ: รูป direct upload ไม่เกิน 5 MB; PDF/ZIP direct upload ไม่เกิน 100 MB; multipart upload รวมไม่เกิน 1 GB
+- ข้อจำกัดที่ตรวจพบ: รูป direct upload ไม่เกิน 5 MB; PDF/ZIP direct upload ไม่เกิน 100 MB; multipart upload รวมไม่เกิน 2 GB
 - สิทธิ์: ผู้ดูแลเท่านั้น; ตรวจ product และป้องกันการใช้ generic route กับคอร์ส Vision 5
 - ห้ามกระทบ: ห้ามคืน R2 object key สู่หน้าเว็บ ห้ามผูกไฟล์ข้าม product ห้ามลบไฟล์ต้นฉบับก่อนการแทนที่สำเร็จ และห้ามใช้เส้นทางนี้แก้คอร์ส Vision 5
 - การทดสอบ: `scripts/test-v014325.mjs`, `scripts/test-all-regressions.mjs`, `scripts/predeploy-check.mjs`
@@ -562,7 +562,7 @@
 - API: `GET /api/admin/vision4-review`, `POST /api/admin/vision4-review/:id`, `PUT /api/admin/vision4-pending/:id`, `GET /api/admin/vision4-pending-file/:id`, `POST /api/admin/vision4-pending/consume` และ multipart endpoints
 - ฐานข้อมูล/ไฟล์: `products` ที่ `source='vision4'`, `product_files`, `vision4_pending_files`; R2 `vision4-pending-*` และ preview objects
 - สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; หน้าแก้ยอมรับเฉพาะ `source='vision4'` + `status='draft'`
-- ห้ามกระทบ: multipart รับ PDF/ZIP ไม่เกิน 1 GB; preview รับ JPG/PNG/WEBP ไม่เกิน 5 MB; review เปลี่ยนเฉพาะ source เป็น admin ของ draft ที่ตรงเงื่อนไข; consume ต้องเป็น published product และ pending IDs ทุกตัวต้องยัง `waiting_bundle`; ไฟล์ที่รวมแล้วห้าม consume ซ้ำ
+- ห้ามกระทบ: multipart รับ PDF/ZIP ไม่เกิน 2 GB; preview รับ JPG/PNG/WEBP ไม่เกิน 5 MB; review เปลี่ยนเฉพาะ source เป็น admin ของ draft ที่ตรงเงื่อนไข; consume ต้องเป็น published product และ pending IDs ทุกตัวต้องยัง `waiting_bundle`; ไฟล์ที่รวมแล้วห้าม consume ซ้ำ
 - การจัดการการ์ด Draft: decorator ทำงานเฉพาะ `.v3-review-draft` ที่มี `data-v4-detail`, เติมลิงก์แก้ไข `/vision4-edit.html?id=...` และปุ่มลบ; ปุ่มลบต้องยืนยันก่อนเรียก `DELETE /api/admin/products/:id` ซึ่งเป็น soft delete เข้า Trash 30 วันภายใต้ `requireAdmin`
 - Known Gap: network rejection ของปุ่มลบยังไม่มี `catch` จึงอาจค้าง disabled โดยไม่แจ้งข้อผิดพลาด; decorator mark `manageReady` ก่อนตรวจ action container จึงไม่ retry การ์ดที่ container มาช้า; style ของสองปุ่มยัง inject แบบ inline legacy แทน canonical component
 - รหัส UI: หน้าแก้ Vision 4 และปุ่มแก้ไข/ลบที่ decorator สร้างมี `data-feature="V4-REVIEW-001"`; คง form, preview, loading/error และ theme เดิม
@@ -736,7 +736,7 @@
 - API: `POST /api/admin/vision3/analyze`, `POST /api/admin/products`, `POST /api/admin/product-multipart/init|complete|abort`, `PUT /api/admin/product-multipart/part`, V4 pending/review APIs สำหรับ handoff
 - ฐานข้อมูล/ไฟล์: `products` draft ที่ `source='vision4'`, product files/pending files ใน R2 ผ่าน multipart, preview URLs และ V4 review queue
 - สิทธิ์: analysis และปลายทาง admin ใช้ `requireAdmin`; แพตนี้ไม่เปลี่ยนสิทธิ์ของ V4 Review
-- ห้ามกระทบ: batch 1–30 ไฟล์, ไฟล์ละไม่เกิน 1 GB, รับเฉพาะ ZIP/PDF; ZIP ต้องไม่เข้ารหัสและใช้ store/deflate; ไฟล์ต่ำกว่า 20 หน้าไม่สร้างตะกร้า; classification fallback อิงชื่อไฟล์เมื่อ Gemini ไม่พร้อม/ล้ม; ราคาใช้จำนวนหน้า ยกเว้นไม่เกิน 100 หน้าและลงท้าย 0 ให้ลด 1 บาท; multipart ล้มต้องเรียก abort แบบ best effort
+- ห้ามกระทบ: batch 1–30 ไฟล์, ไฟล์ละไม่เกิน 2 GB, รับเฉพาะ ZIP/PDF; ZIP ต้องไม่เข้ารหัสและใช้ store/deflate; ZIP เกิน 1 GB ข้ามการอ่านทั้งก้อนใน browser และอัปโหลดเข้าคิวรอตรวจเพื่อป้องกันหน่วยความจำเต็ม; ไฟล์ต่ำกว่า 20 หน้าไม่สร้างตะกร้า; classification fallback อิงชื่อไฟล์เมื่อ Gemini ไม่พร้อม/ล้ม; ราคาใช้จำนวนหน้า ยกเว้นไม่เกิน 100 หน้าและลงท้าย 0 ให้ลด 1 บาท; multipart ล้มต้องเรียก abort แบบ best effort
 - ห้ามกระทบ lifecycle: ผลลัพธ์จากรอบนี้เป็น draft/pending เท่านั้น; การย้ายเข้าสินค้าปกติต้องผ่าน `V4-REVIEW-001`; คง queue/progress/failure และ theme เดิม
 - รหัส UI: Vision 4 panel มี `data-feature="V4-DRAFT-001"`
 - การทดสอบ: `scripts/test-v014358.mjs`
@@ -749,12 +749,12 @@
 - Source processing: โหลด selected IDs ใหม่จาก `GET /api/admin/vision4-review` เพื่อกันรายการหาย; รองรับ PDF โดย copy ทุกหน้า และ ZIP central-directory entries ชนิด PDF/JPEG/PNG/WEBP ที่ไม่เข้ารหัสและ compression store/deflate; ข้าม directory/`__MACOSX`
 - Merge/sample: PDFLib รวมหน้า; PDF.js lazy-load render หน้าแรก/กลาง/สุดท้าย และรูปถูกแปลงเป็น JPEG ตามจำเป็น; SAMPLE watermark หมุนบน canvas; เก็บตัวอย่างสูงสุด 3 ต่อ source และต้องมี candidate อย่างน้อย 3
 - Product form: เลือกตัวอย่างต้องครบ 3 และเลือกเกิน 3 ไม่ได้; categories รับเฉพาะ active top-level และตัด legacy `dinosaur|paper-doll|document|set-coloring|set-tattoo`; ตั้ง pages/description และราคาเท่าจำนวนหน้า ยกเว้นไม่เกิน 100 และหาร 10 ลงตัวให้ลด 1 บาท
-- Create/upload/publish/consume: POST product เป็น `draft` พร้อม cover + preview 2/3, multipart PDF สูงสุด 1 GB ด้วย chunk 50 MB, PUT product เป็น `published`, แล้ว POST consume selected pending IDs; consume ตรวจ published product และทุก ID ยัง `waiting_bundle` ก่อน UPDATE เป็น `bundled`
+- Create/upload/publish/consume: POST product เป็น `draft` พร้อม cover + preview 2/3, multipart PDF สูงสุด 2 GB ด้วย chunk 50 MB, PUT product เป็น `published`, แล้ว POST consume selected pending IDs; consume ตรวจ published product และทุก ID ยัง `waiting_bundle` ก่อน UPDATE เป็น `bundled`
 - API/ข้อมูล/สิทธิ์: admin APIs ใช้ `requireAdmin`; อ่าน/เขียน `vision4_pending_files`, `products`, `product_files`, categories และ R2 multipart object; multipart product flow ปฏิเสธ Vision 5 products
 - Success/failure: สำเร็จเก็บ session notice แล้ว redirect `/admin?preview_tab=vision3&done=...`; error แสดงใน workspace/create state, alert และคืนปุ่ม enabled
 - Transaction boundary: product draft creation, multipart parts/complete, publish และ pending consume เป็นคนละ request/transaction; controller ไม่มี compensating delete หรือ multipart abort ใน catch จึงห้ามอ้างว่า flow atomic และความล้มเหลวกลางทางอาจเหลือ draft/product file/object
 - Known Gap: object URLs ที่สร้างให้ sample picker ไม่ถูก revoke ใน controller ปัจจุบัน; แพตนี้บันทึก behavior เท่านั้น ไม่เปลี่ยน lifecycle
-- ห้ามกระทบ: source selection, ZIP/PDF parsing, page order, SAMPLE generation/limit, category filter, pricing, 1 GB/chunk limits, draft→upload→publish→consume order, errors และ UI/theme
+- ห้ามกระทบ: source selection, ZIP/PDF parsing, page order, SAMPLE generation/limit, category filter, pricing, 2 GB/chunk limits, draft→upload→publish→consume order, errors และ UI/theme
 - รหัส UI: start button และ workspace ใช้ `data-feature="V4-BUNDLE-001"`; คง checkbox/form/button/component และ theme เดิม
 - ความสัมพันธ์: pending input มาจาก `V4-DRAFT-001`; review/download/consume routes อยู่ใน `V4-REVIEW-001`; multipart file contract อยู่ใน `PROD-FILE-001`; product create/publish อยู่ใน `PROD-ADMIN-001`
 - การทดสอบ: `scripts/test-v014386.mjs`; historical `scripts/test-v01471.mjs`, `scripts/test-v01496.mjs`
