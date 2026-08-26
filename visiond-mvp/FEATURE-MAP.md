@@ -719,7 +719,7 @@
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.357
 - หน้า/ไฟล์: Vision 2 workspace ใน `/admin.html`, `public/vision2.js`, `public/vision2.css`, `public/vision2-font.css`, `public/vision2-character.css`, `functions/api/admin/vision2/generate.js`, `functions/api/admin/vision2/characters.js`, `functions/api/admin/vision2/image.js`, `functions/api/admin/prompt-usage.js`
-- ฟังก์ชัน: workflow 7 ขั้นจาก brief, prompt table, image queue, เลือก SAMPLE 3 รูป, รวม PDF, เติม product metadata และ handoff เข้า product editor; รองรับนำเข้ารูป/PDF/ZIP, สร้างรายชื่อตัวละคร, resume/retry queue และรายงาน Prompt usage
+- ฟังก์ชัน: workflow 7 ขั้นจาก brief, prompt table, image queue, เลือก SAMPLE 3 รูป, รวม PDF, เติม product metadata และ handoff เข้า product editor; รองรับนำเข้ารูป/PDF/ZIP สูงสุด 2 GB โดย ZIP อ่านเฉพาะ central directory และไฟล์ตัวเลือก ไม่อ่าน archive ทั้งก้อน, สร้างรายชื่อตัวละคร, resume/retry queue และรายงาน Prompt usage
 - API: `POST /api/admin/vision2/generate`, `POST /api/admin/vision2/characters`, `GET /api/admin/vision2/image`, `GET/POST /api/admin/prompt-usage`; การบันทึกสินค้าส่งต่อไป `PROD-ADMIN-001`
 - ฐานข้อมูล/ไฟล์: R2 key `vision2/{user_id}/{project}/...`; D1 `prompt_usage_logs`; browser `localStorage` key `vision2_active_job_v2`; PDF/SAMPLE สร้างใน browser ก่อนส่งต่อ
 - สิทธิ์: ทุก API ใช้ `requireAdmin`; image read อนุญาตเฉพาะ key ที่ขึ้นต้นด้วย `vision2/{auth.user.id}/`; R2 response ใช้ private cache

@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),js=read('public/vision2.js'),admin=read('public/admin.html');
+assert.equal(read('VERSION.txt').trim(),'v0.14.422');
+assert.match(read('public/index.html'),/WEB v0\.14\.422/);assert.match(admin,/ADMIN v0\.14\.422/);
+assert.match(admin,/vision2\.js\?v=014422/,'Vision 2 cache key must refresh');
+assert.match(js,/source\.size > 2 \* 1024 \* 1024 \* 1024/,'ready ZIP limit must be 2 GB');
+assert.match(js,/zipFile\.slice\(tailStart\)/,'ZIP reader must only read EOCD tail');
+assert.match(js,/zipFile\.slice\(centralOffset, centralOffset \+ centralSize\)/,'ZIP reader must slice central directory');
+assert.match(js,/zipFile\.slice\(dataStart, dataEnd\)/,'ZIP reader must slice only selected entry data');
+assert.doesNotMatch(js,/new Uint8Array\(await zipFile\.arrayBuffer\(\)\)/,'must not load the complete ZIP into memory');
+assert.match(js,/renderSampleSelection\(\);\s*show\(4\)/,'import must render candidates before opening SAMPLE step');
+assert.match(js,/selected\.size\}\/3 รูป/);console.log('PASS v0.14.422 Vision 2 ZIP SAMPLE picker');

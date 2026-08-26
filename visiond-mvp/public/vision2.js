@@ -821,32 +821,42 @@
   };
   const unzipImageFiles = async (zipFile, selectionSpec = "1-30") => {
     if (!zipFile) throw new Error("กรุณาเลือกไฟล์ ZIP");
-    if (zipFile.size > 500 * 1024 * 1024)
-      throw new Error("ไฟล์ ZIP ต้องมีขนาดไม่เกิน 500 MB");
-    const bytes = new Uint8Array(await zipFile.arrayBuffer()),
-      view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    if (zipFile.size > 2 * 1024 * 1024 * 1024)
+      throw new Error("ไฟล์ ZIP ต้องมีขนาดไม่เกิน 2 GB");
+    const tailSize = Math.min(zipFile.size, 65557),
+      tailStart = zipFile.size - tailSize,
+      tail = new Uint8Array(await zipFile.slice(tailStart).arrayBuffer()),
+      tailView = new DataView(tail.buffer, tail.byteOffset, tail.byteLength);
     let eocd = -1;
     for (
-      let index = bytes.length - 22;
-      index >= Math.max(0, bytes.length - 65557);
+      let index = tail.length - 22;
+      index >= 0;
       index--
     )
-      if (view.getUint32(index, true) === 0x06054b50) {
+      if (tailView.getUint32(index, true) === 0x06054b50) {
         eocd = index;
         break;
       }
     if (eocd < 0) throw new Error("ไฟล์ ZIP ไม่สมบูรณ์หรืออ่านไม่ได้");
-    const entryCount = view.getUint16(eocd + 10, true),
-      centralOffset = view.getUint32(eocd + 16, true);
+    const entryCount = tailView.getUint16(eocd + 10, true),
+      centralSize = tailView.getUint32(eocd + 12, true),
+      centralOffset = tailView.getUint32(eocd + 16, true);
     if (
       entryCount === 0xffff ||
+      centralSize === 0xffffffff ||
       centralOffset === 0xffffffff ||
-      entryCount > 30000
+      entryCount > 30000 ||
+      centralSize > 32 * 1024 * 1024 ||
+      centralOffset + centralSize > zipFile.size
     )
       throw new Error("ZIP นี้มีรูปแบบหรือจำนวนไฟล์ที่ระบบยังไม่รองรับ");
-    const decoder = new TextDecoder("utf-8"),
+    const bytes = new Uint8Array(
+        await zipFile.slice(centralOffset, centralOffset + centralSize).arrayBuffer(),
+      ),
+      view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength),
+      decoder = new TextDecoder("utf-8"),
       entries = [];
-    let position = centralOffset,
+    let position = 0,
       totalSize = 0;
     for (let entryIndex = 0; entryIndex < entryCount; entryIndex++) {
       if (
@@ -905,18 +915,25 @@
       if (totalSize > 750 * 1024 * 1024)
         throw new Error("ไฟล์ที่เลือกจาก ZIP มีขนาดรวมเกิน 750 MB");
       const offset = entry.localOffset;
-      if (
-        offset + 30 > bytes.length ||
-        view.getUint32(offset, true) !== 0x04034b50
-      )
+      const localHeader = new Uint8Array(
+          await zipFile.slice(offset, offset + 30).arrayBuffer(),
+        ),
+        localView = new DataView(
+          localHeader.buffer,
+          localHeader.byteOffset,
+          localHeader.byteLength,
+        );
+      if (localHeader.length !== 30 || localView.getUint32(0, true) !== 0x04034b50)
         throw new Error(`อ่านไฟล์ ${entry.name} ไม่สำเร็จ`);
-      const nameLength = view.getUint16(offset + 26, true),
-        extraLength = view.getUint16(offset + 28, true),
+      const nameLength = localView.getUint16(26, true),
+        extraLength = localView.getUint16(28, true),
         dataStart = offset + 30 + nameLength + extraLength,
         dataEnd = dataStart + entry.compressedSize;
-      if (dataEnd > bytes.length)
+      if (dataEnd > zipFile.size)
         throw new Error(`ข้อมูลไฟล์ ${entry.name} ไม่ครบ`);
-      const compressed = bytes.slice(dataStart, dataEnd);
+      const compressed = new Uint8Array(
+        await zipFile.slice(dataStart, dataEnd).arrayBuffer(),
+      );
       let raw;
       if (entry.method === 0) raw = compressed;
       else {
@@ -1070,8 +1087,8 @@
     try {
       const source = externalZip.files?.[0];
       if (!source) throw new Error("กรุณาเลือกไฟล์ ZIP หรือ PDF");
-      if (source.size > 100 * 1024 * 1024)
-        throw new Error("ไฟล์สำหรับตะกร้าต้องมีขนาดไม่เกิน 100 MB");
+      if (source.size > 2 * 1024 * 1024 * 1024)
+        throw new Error("ไฟล์สำหรับตะกร้าต้องมีขนาดไม่เกิน 2 GB");
       const name = externalName.value.trim();
       if (!name) throw new Error("กรุณากรอกชื่อสินค้า");
       const isPdf = source.type === "application/pdf" || /\.pdf$/i.test(source.name);

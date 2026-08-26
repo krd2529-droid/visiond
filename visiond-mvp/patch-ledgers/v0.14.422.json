@@ -1,0 +1,9 @@
+{
+  "patch":"v0.14.422","parent_commit":"0101b3bd","safe_rollback_commit":"0101b3bd","push":false,"deploy":false,
+  "tasks":[
+    {"id":"V014422-BUG-001","scope":"BUG","source_instruction":"Vision 2 ใส่ ZIP แล้วต้องมีรูปให้เลือก SAMPLE 3 รูป","status":"DONE-VERIFIED","evidence":["public/vision2.js","scripts/test-v014422.mjs"]},
+    {"id":"V014422-SAFETY-001","scope":"BUG","source_instruction":"ZIP สูงสุด 2 GB ต้องไม่ถูกอ่านทั้งก้อนเข้าหน่วยความจำ","status":"DONE-VERIFIED","evidence":["public/vision2.js","scripts/test-v014422.mjs"]},
+    {"id":"V014422-UI-001","scope":"UI","source_instruction":"อัปเดต cache key ให้ browser รับตัวแก้ Vision 2","status":"DONE-VERIFIED","evidence":["public/admin.html","scripts/test-v014422.mjs"]},
+    {"id":"V014422-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map requirement และเวอร์ชัน","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","requirements-ledger.json","VERSION.txt","START-HERE.md"]}
+  ]
+}
