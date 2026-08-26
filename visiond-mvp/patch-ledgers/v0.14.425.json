@@ -1,0 +1,6 @@
+{"patch":"v0.14.425","parent_commit":"0ad308ac","safe_rollback_commit":"0ad308ac","push":false,"deploy":false,"tasks":[
+  {"id":"V014425-FEATURE-001","scope":"FEATURE","source_instruction":"สลับบัญชีรับเงินคอร์สระหว่างรัฐสิทธิและ VisionD ได้ตลอด","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","functions/api/admin/courses/[id]/payment.js"]},
+  {"id":"V014425-SECURITY-001","scope":"SECURITY","source_instruction":"แก้บัญชีได้เฉพาะ admin company course และไม่แก้ออเดอร์ย้อนหลัง","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/payment.js","functions/api/orders/index.js"]},
+  {"id":"V014425-QA-001","scope":"QA","source_instruction":"ทดสอบตัวเลือก UI ขอบเขต API และ order snapshot","status":"DONE-VERIFIED","evidence":["scripts/test-v014425.mjs"]},
+  {"id":"V014425-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map และเวอร์ชัน","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","VERSION.txt","START-HERE.md"]}
+]}

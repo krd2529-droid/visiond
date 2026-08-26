@@ -19,6 +19,8 @@ async function loadLessons(id) {
   lessonList.innerHTML = items.length ? items.map((l, i) => `<div class="lesson-admin-item"><span><b>EP ${i + 1} · ${esc(l.title)}</b><small> ${l.has_video ? "คลิป " : ""}${l.has_pdf ? "เอกสาร PDF" : ""}</small></span><button data-delete="${l.id}">ลบ</button></div>`).join("") : "<p>ยังไม่มี EP</p>";
   lessonFormTitle.textContent = `EP ${items.length + 1} · ชื่อ EP`; const expected = Number(course?.expected_episodes) || 1, complete = items.filter((l) => l.has_video || l.has_pdf).length;
   coursePublishSummary.innerHTML = `<b>${items.length}/${expected} EP</b><span>เวลาเนื้อหา ${Number(course?.total_minutes) || 0} นาที</span><span>บัญชีรับเงิน: ${esc(course?.payment_bank_name || "-")} · ${esc(course?.payment_account_name || "-")} · ${esc(course?.payment_account_number || "-")}</span>`;
+  const bossAccount = String(course?.payment_account_number || '').replace(/\D/g, '') === '4441181181';
+  coursePaymentForm.elements.payment_account.value = bossAccount ? 'boss_krungsri' : 'visiond';
   const published = course?.status === "published"; publishCompanyCourse.disabled = published || complete < expected; publishCompanyCourse.textContent = published ? "เผยแพร่แล้ว" : complete < expected ? `เพิ่ม EP ที่มีไฟล์อีก ${expected - complete} EP` : "เผยแพร่ตะกร้า";
   lessonList.querySelectorAll("[data-delete]").forEach((b) => b.onclick = async () => { if (!confirm("ลบ EP นี้และไฟล์ที่แนบใช่ไหม")) return; await fetch(`/api/admin/courses/${id}/lessons/${b.dataset.delete}`, { method: "DELETE" }); await loadCourses(); await loadLessons(id); });
 }
@@ -26,6 +28,11 @@ lessonForm.onsubmit = async (e) => {
   e.preventDefault(); const id = lessonForm.elements.course_id.value, btn = lessonForm.querySelector("button[type=submit]"), original = btn.textContent; btn.disabled = true; btn.textContent = "กำลังอัปโหลด…"; lessonMessage.textContent = "กำลังอัปโหลด กรุณาอย่าปิดหน้านี้…";
   const r = await fetch(`/api/admin/courses/${id}/lessons`, { method: "POST", body: new FormData(lessonForm) }), d = await r.json().catch(() => ({})); btn.disabled = false; btn.textContent = original; lessonMessage.textContent = r.ok ? "เพิ่ม EP เรียบร้อย" : d.error || "อัปโหลดไม่สำเร็จ";
   if (r.ok) { lessonForm.reset(); lessonForm.elements.course_id.value = id; await loadCourses(); await loadLessons(id); }
+};
+coursePaymentForm.onsubmit = async (e) => {
+  e.preventDefault(); if (!currentCourseId) return; const btn=coursePaymentForm.querySelector('button[type=submit]'),original=btn.textContent; btn.disabled=true;btn.textContent='กำลังบันทึก…';coursePaymentMessage.textContent='';
+  const r=await fetch(`/api/admin/courses/${currentCourseId}/payment`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({payment_account:coursePaymentForm.elements.payment_account.value})}),d=await r.json().catch(()=>({}));
+  btn.disabled=false;btn.textContent=original;coursePaymentMessage.textContent=r.ok?'เปลี่ยนบัญชีรับเงินแล้ว ออเดอร์ใหม่จะใช้บัญชีนี้':d.error||'บันทึกไม่สำเร็จ';if(r.ok){await loadCourses();await loadLessons(currentCourseId);}
 };
 publishCompanyCourse.onclick = async () => {
   if (!currentCourseId || !confirm("เผยแพร่ตะกร้าคอร์สนี้และเปิดขายทันทีใช่ไหม")) return; const original = publishCompanyCourse.textContent; publishCompanyCourse.disabled = true; publishCompanyCourse.textContent = "กำลังเผยแพร่…"; publishCourseMessage.textContent = "";

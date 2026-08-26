@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>จัดการคอร์ส | VisionD</title>
     <link rel="stylesheet" href="/style.css?v=01414" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
-    <link rel="stylesheet" href="/course.css?v=014424" />
+    <link rel="stylesheet" href="/course.css?v=014425" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
   <link rel="stylesheet" href="/visiond-button-system.css?v=014189" /><script src="/visiond-button-system.js?v=014190" defer></script></head>
   <body>
@@ -80,6 +80,15 @@
           <button id="closeLessons" type="button">ปิด</button>
         </div>
         <div id="coursePublishSummary" class="course-publish-summary" role="status"></div>
+        <form id="coursePaymentForm" class="course-admin-form course-payment-editor">
+          <fieldset class="course-payment-choice">
+            <legend>สลับบัญชีรับเงินของคอร์สนี้ได้ตลอด</legend>
+            <label><input name="payment_account" type="radio" value="boss_krungsri" /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
+            <label><input name="payment_account" type="radio" value="visiond" /><span><b>บัญชีบริษัท VisionD</b><small>ใช้งานบัญชีบริษัทล่าสุดที่ตั้งไว้ในหลังบ้าน</small></span></label>
+          </fieldset>
+          <button class="vds-btn vds-btn--secondary" type="submit">บันทึกบัญชีรับเงิน</button>
+          <p id="coursePaymentMessage" role="status" aria-live="polite"></p>
+        </form>
         <form id="lessonForm" class="course-admin-form">
           <input name="course_id" type="hidden" /><label
             ><span id="lessonFormTitle">EP 1 · ชื่อ EP</span><input name="title" required /></label
@@ -103,6 +112,6 @@
         <p id="publishCourseMessage" role="status" aria-live="polite"></p>
       </section>
     </main>
-    <script src="/admin-courses.js?v=014424"></script><script src="/course-review-admin.js?v=014311"></script>
+    <script src="/admin-courses.js?v=014425"></script><script src="/course-review-admin.js?v=014311"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

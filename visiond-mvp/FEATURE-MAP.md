@@ -817,8 +817,8 @@
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.363
 - หน้า/ไฟล์: company-course grid และ lesson manager ใน `/admin-courses.html`, `public/admin-courses.js`, `functions/api/admin/courses/index.js`, `functions/api/admin/courses/[id].js`, `functions/api/admin/courses/[id]/lessons.js`, `functions/api/admin/courses/[id]/lessons/[lessonId].js`
 - ฟังก์ชัน: แสดง/สร้างคอร์สบริษัทเป็นฉบับร่างพร้อมชื่อคอร์ส ชื่อผู้สอน จำนวน EP และเวลาเนื้อหา; เพิ่ม EP พร้อมชื่อ รายละเอียด คลิปหรือ PDF; เมื่อ EP ที่มีสื่อครบจำนวน Boss จึงกด “เผยแพร่ตะกร้า” เพื่อเปิดขายได้ทันทีโดยไม่เข้าคิว seller review
-- บัญชีรับเงิน: เลือกต่อคอร์สระหว่างกรุงศรีของ Boss (รัฐสิทธิ ดำรงรถการ · 444-118-1181) หรือบัญชีบริษัท VisionD; snapshot บัญชีติดกับคอร์สและออเดอร์คอร์สบริษัทต้องชำระแยก โดยไม่เข้า payout พาร์ตเนอร์ 50/50
-- API: `GET/POST /api/admin/courses`, `POST /api/admin/courses/:id`, `POST /api/admin/courses/:id/publish`, `GET/POST /api/admin/courses/:id/lessons`, `DELETE /api/admin/courses/:id/lessons/:lessonId`
+- บัญชีรับเงิน: เลือกและสลับได้ตลอดต่อคอร์สระหว่างกรุงศรีของ Boss (รัฐสิทธิ ดำรงรถการ · 444-118-1181) หรือบัญชีบริษัท VisionD; ออเดอร์ใหม่ snapshot บัญชีล่าสุด ส่วนออเดอร์เดิมไม่ถูกย้อนแก้ และคอร์สบริษัทไม่เข้า payout พาร์ตเนอร์ 50/50
+- API: `GET/POST /api/admin/courses`, `POST /api/admin/courses/:id`, `POST /api/admin/courses/:id/payment`, `POST /api/admin/courses/:id/publish`, `GET/POST /api/admin/courses/:id/lessons`, `DELETE /api/admin/courses/:id/lessons/:lessonId`
 - ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `entitlements`; R2 course cover, lesson video และ PDF
 - สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; route นี้รับเฉพาะคอร์สบริษัทที่ `owner_user_id IS NULL`, `course_origin='company'` และ `course_type='online_course'`
 - ห้ามข้ามขอบเขต: explicit publish ใช้เฉพาะ Admin company course ที่ผ่าน `requireAdmin`; คอร์สผู้ขาย/Vision 5, partner, `seller_rights` และ resale-rights เดิมต้องจัดการและตรวจในระบบเฉพาะ; ห้ามสร้างหรือแปลง company course เป็นตะกร้าสิทธิ์ผ่านหน้านี้
