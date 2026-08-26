@@ -26,7 +26,8 @@
       </div>
       <div class="course-admin-grid" data-feature="COURSE-ADMIN-001">
         <section class="course-admin-card">
-          <h2>สร้างคอร์สใหม่</h2>
+          <h2 id="companyCourseCreate">สร้างตะกร้าคอร์ส VisionD</h2>
+          <p>คอร์สของ VisionD เท่านั้น · เมื่อสร้างสำเร็จจะอนุมัติและเปิดขายทันทีโดยไม่เข้าคิวตรวจคอร์สผู้ขาย</p>
           <form id="courseForm" class="course-admin-form">
             <label
               >หมวดคอร์ส<select name="course_type">
@@ -55,10 +56,8 @@
                 name="cover"
                 type="file"
                 accept="image/jpeg,image/png,image/webp" /></label
-            ><label
-              ><input name="active" type="checkbox" checked />
-              เปิดขายทันที</label
-            ><button class="primary" type="submit">สร้างคอร์ส</button>
+            ><input name="active" type="hidden" value="1" />
+            <button class="vds-btn vds-btn--primary vds-btn--wide" type="submit">สร้างตะกร้าและลงขายทันที</button>
             <p id="courseMessage"></p>
           </form>
         </section>
@@ -104,6 +103,6 @@
         <div id="lessonList"></div>
       </section>
     </main>
-    <script src="/admin-courses.js?v=014311"></script><script src="/course-review-admin.js?v=014311"></script>
+    <script src="/admin-courses.js?v=014423"></script><script src="/course-review-admin.js?v=014311"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

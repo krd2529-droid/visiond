@@ -40,22 +40,23 @@ async function loadCourses() {
 }
 courseForm.onsubmit = async (e) => {
   e.preventDefault();
-  const btn = courseForm.querySelector("button"), keepType=courseForm.elements.course_type.value,keepDays=courseForm.elements.license_edit_days.value;
+  const btn = courseForm.querySelector("button[type=submit]"), keepType=courseForm.elements.course_type.value,keepDays=courseForm.elements.license_edit_days.value;
   btn.disabled = true;
-  courseMessage.textContent = "กำลังสร้างคอร์ส…";
+  const originalLabel=btn.textContent;btn.textContent="กำลังสร้างและลงขาย…";
+  courseMessage.textContent = "กำลังสร้างตะกร้าคอร์ส VisionD และเปิดขาย…";
   const fd = new FormData(courseForm);
-  fd.set("active", courseForm.elements.active.checked ? "1" : "0");
+  fd.set("active", "1");
   const r = await fetch("/api/admin/courses", { method: "POST", body: fd }),
     d = await r.json().catch(() => ({}));
   btn.disabled = false;
+  btn.textContent=originalLabel;
   courseMessage.textContent = r.ok
-    ? "สร้างคอร์สเรียบร้อย"
+    ? "สร้างตะกร้าคอร์ส VisionD และเปิดขายเรียบร้อย"
     : d.error || "สร้างไม่สำเร็จ";
   if (r.ok) {
     courseForm.reset();
     courseForm.elements.course_type.value = keepType;
     courseForm.elements.license_edit_days.value = keepDays;
-    courseForm.elements.active.checked = true;
     await loadCourses();
     openLessons(d.id);
   }

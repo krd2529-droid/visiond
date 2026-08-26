@@ -1,0 +1,10 @@
+{
+  "patch":"v0.14.423","parent_commit":"7b3577e8","safe_rollback_commit":"7b3577e8","push":false,"deploy":false,
+  "tasks":[
+    {"id":"V014423-FEATURE-001","scope":"FEATURE","source_instruction":"เพิ่มปุ่มสร้างตะกร้าคอร์ส VisionD และสร้างแล้วเปิดขายทันที","status":"DONE-VERIFIED","evidence":["public/admin.html","public/admin-courses.html","public/admin-courses.js","functions/api/admin/courses/index.js","scripts/test-v014423.mjs"]},
+    {"id":"V014423-SECURITY-001","scope":"SECURITY","source_instruction":"เปิดทางตรงเฉพาะคอร์สบริษัทที่สร้างผ่าน requireAdmin ห้ามกระทบคอร์สพาร์ตเนอร์หรือผู้สอน","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/index.js","FEATURE-MAP.md","scripts/test-v014423.mjs"]},
+    {"id":"V014423-UI-001","scope":"UI","source_instruction":"ปุ่มใหม่ใช้ canonical VisionD พร้อม loading success และ error ที่รับรู้ได้","status":"DONE-VERIFIED","evidence":["public/admin.html","public/admin-courses.html","public/admin-courses.js","scripts/test-v014423.mjs"]},
+    {"id":"V014423-QA-001","scope":"QA","source_instruction":"ทดสอบ published approved company boundary และ visible version","status":"DONE-VERIFIED","evidence":["scripts/test-v014423.mjs"]},
+    {"id":"V014423-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map requirement และเวอร์ชัน","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","requirements-ledger.json","VERSION.txt","START-HERE.md"]}
+  ]
+}
