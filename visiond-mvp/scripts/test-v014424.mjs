@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/admin-courses.html'),ui=read('public/admin-courses.js'),api=read('functions/api/admin/courses/index.js'),publish=read('functions/api/admin/courses/[id]/publish.js'),lessons=read('functions/api/admin/courses/[id]/lessons.js'),orders=read('functions/api/orders/index.js'),feature=read('FEATURE-MAP.md');
+assert.equal(read('VERSION.txt').trim(),'v0.14.424');assert.match(read('public/index.html'),/WEB v0\.14\.424/);assert.match(read('public/admin.html'),/ADMIN v0\.14\.424/);
+for(const value of ['title','teacher_name','expected_episodes','content_minutes','payment_account','video','pdf'])assert.match(html,new RegExp(`name="${value}"`));
+assert.match(html,/EP 1 · ชื่อ EP/);assert.match(html,/id="publishCompanyCourse"[^>]*vds-btn/);assert.match(html,/รัฐสิทธิ ดำรงรถการ · 444-118-1181/);assert.match(html,/admin-courses\.js\?v=014424/);
+assert.match(ui,/สร้างตะกร้าแล้ว เพิ่ม EP ให้ครบก่อนเผยแพร่/);assert.match(ui,/กำลังเผยแพร่/);assert.match(ui,/complete < expected/);assert.match(ui,/\/publish`/);
+assert.match(api,/requireAdmin\(ctx\)/);assert.match(api,/'draft','course-admin'/);assert.match(api,/0,'online_course'/);assert.match(api,/boss_krungsri/);assert.match(api,/444-118-1181/);assert.match(api,/profiles\.company/);
+assert.match(lessons,/duration_seconds\) VALUES\(\?,\?,\?,\?,\?,\?,\?,\?,0\)/);assert.match(publish,/requireAdmin\(ctx\)/);assert.match(publish,/owner_user_id IS NULL/);assert.match(publish,/count<expected/);assert.match(publish,/status='published'/);
+assert.match(orders,/companyCourseItems/);assert.match(orders,/คอร์ส VisionD ต้องชำระแยก/);assert.match(orders,/companyCourse\.payment_bank_name/);assert.match(orders,/seller\?revenue\.teacher:0/);
+assert.match(feature,/snapshot บัญชีติดกับคอร์ส/);assert.match(feature,/ไม่เข้า payout พาร์ตเนอร์ 50\/50/);
+console.log('PASS v0.14.424 VisionD course workspace and direct payment');

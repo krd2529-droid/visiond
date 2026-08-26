@@ -59,7 +59,7 @@ export async function onRequestPost(ctx) {
     `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
       (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
       (SELECT q.offer_price FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
-     FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.owner_user_id IS NOT NULL
+     FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.course_type='online_course'
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')<>'member'`,
   )
     .bind(...slugs)
@@ -89,6 +89,8 @@ export async function onRequestPost(ctx) {
     }
   }
   const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
+  const companyCourseItems=orderedResults.filter(p=>p.seller_course_id&&!p.course_owner_user_id);
+  if(companyCourseItems.length&&(companyCourseItems.length!==1||orderedResults.length!==1))return json({error:'คอร์ส VisionD ต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   if(sellerItems.length && (orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   if(sellerItems.some(product=>!Number.isFinite(Number(product.price))||Number(product.price)<100))return json({error:'คอร์สจากผู้ขายต้องมีราคาอย่างน้อย 1 บาท กรุณาแจ้งผู้ขายให้แก้ราคา'},409);
   if(sellerItems.some(product=>Number(product.course_owner_user_id)===Number(a.user.id)))return json({error:'ไม่สามารถซื้อคอร์สของบัญชีตนเองได้'},409);
@@ -146,7 +148,7 @@ export async function onRequestPost(ctx) {
       Date.now().toString().slice(-10) +
       "-" +
       Math.floor(Math.random() * 90 + 10);
-  const seller=sellerItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
+  const seller=sellerItems[0],companyCourse=companyCourseItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=companyCourse?{active_account:'bank',bank_name:companyCourse.payment_bank_name,account_name:companyCourse.payment_account_name,account_number:companyCourse.payment_account_number,qr_url:''}:seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
   const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
   const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount,course_plan,teacher_revenue,visiond_revenue,course_api_fee)
     SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
@@ -174,7 +176,7 @@ export async function onRequestPost(ctx) {
       total,
       items: pricedResults.map(p=>({...p,price:p.sale_price})),
       promotion,
-      bank: seller?paymentTarget:publicPaymentSettings(payment),coursePlan:seller?.course_plan||null,revenue:seller?revenue:null,
+      bank: seller||companyCourse?paymentTarget:publicPaymentSettings(payment),coursePlan:seller?.course_plan||null,revenue:seller?revenue:null,
     },
     201,
   );

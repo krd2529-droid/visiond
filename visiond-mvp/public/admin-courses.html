@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>จัดการคอร์ส | VisionD</title>
     <link rel="stylesheet" href="/style.css?v=01414" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
-    <link rel="stylesheet" href="/course.css?v=013140" />
+    <link rel="stylesheet" href="/course.css?v=014424" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
   <link rel="stylesheet" href="/visiond-button-system.css?v=014189" /><script src="/visiond-button-system.js?v=014190" defer></script></head>
   <body>
@@ -27,23 +27,21 @@
       <div class="course-admin-grid" data-feature="COURSE-ADMIN-001">
         <section class="course-admin-card">
           <h2 id="companyCourseCreate">สร้างตะกร้าคอร์ส VisionD</h2>
-          <p>คอร์สของ VisionD เท่านั้น · เมื่อสร้างสำเร็จจะอนุมัติและเปิดขายทันทีโดยไม่เข้าคิวตรวจคอร์สผู้ขาย</p>
+          <p>คอร์สของ Boss/VisionD เท่านั้น · สร้างตะกร้า เพิ่ม EP ให้ครบ แล้วกดเผยแพร่ได้ทันทีโดยไม่เข้าคิวพาร์ตเนอร์ 50/50</p>
           <form id="courseForm" class="course-admin-form">
-            <label
-              >หมวดคอร์ส<select name="course_type">
-                <option value="online_course">คอร์สออนไลน์</option>
-                <option value="resale_rights">สิทธิ์ลงขายคอร์สออนไลน์</option>
-              </select></label
-            >
-            <label>ระยะเวลาแก้ไขของสิทธิ์<select name="license_edit_days"><option value="30">30 วัน (แพ็กเกจ 499)</option><option value="365">1 ปี (แพ็กเกจ 999)</option><option value="0">ตลอดอายุระบบ (แพ็กเกจ 1,499)</option></select></label>
+            <input name="course_type" type="hidden" value="online_course" />
             <label>ชื่อคอร์ส<input name="title" required /></label
-            ><label>คำโปรย<input name="short_description" /></label
+            ><label>ชื่อผู้สอน<input name="teacher_name" required /></label>
+            <div class="course-form-two">
+              <label>จำนวนบทเรียน (EP)<input name="expected_episodes" type="number" min="1" max="200" value="1" required /></label>
+              <label>เวลาเนื้อหารวม (นาที)<input name="content_minutes" type="number" min="1" max="100000" value="30" required /></label>
+            </div>
+            <label>คำโปรย<input name="short_description" /></label
             ><label
               >รายละเอียด<textarea
                 name="description"
                 rows="4"
               ></textarea></label
-            ><label>ชื่อผู้สอน<input name="teacher_name" /></label
             ><label
               >ราคา (บาท)<input
                 name="price_baht"
@@ -56,8 +54,12 @@
                 name="cover"
                 type="file"
                 accept="image/jpeg,image/png,image/webp" /></label
-            ><input name="active" type="hidden" value="1" />
-            <button class="vds-btn vds-btn--primary vds-btn--wide" type="submit">สร้างตะกร้าและลงขายทันที</button>
+            ><fieldset class="course-payment-choice">
+              <legend>บัญชีรับเงินของคอร์สนี้</legend>
+              <label><input name="payment_account" type="radio" value="boss_krungsri" checked /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
+              <label><input name="payment_account" type="radio" value="visiond" /><span><b>บัญชีบริษัท VisionD</b><small>ใช้ข้อมูลบัญชีบริษัทที่ตั้งค่าในหลังบ้าน</small></span></label>
+            </fieldset>
+            <button class="vds-btn vds-btn--primary vds-btn--wide" type="submit">สร้างตะกร้าและเพิ่ม EP</button>
             <p id="courseMessage"></p>
           </form>
         </section>
@@ -77,32 +79,30 @@
           </div>
           <button id="closeLessons" type="button">ปิด</button>
         </div>
+        <div id="coursePublishSummary" class="course-publish-summary" role="status"></div>
         <form id="lessonForm" class="course-admin-form">
           <input name="course_id" type="hidden" /><label
-            >ชื่อบทเรียน<input name="title" required /></label
+            ><span id="lessonFormTitle">EP 1 · ชื่อ EP</span><input name="title" required /></label
           ><label
-            >คำอธิบายบท<textarea name="description" rows="3"></textarea></label
+            >รายละเอียดเนื้อหา<textarea name="description" rows="3"></textarea></label
           ><label
-            >ความยาวโดยประมาณ (วินาที)<input
-              name="duration_seconds"
-              type="number"
-              min="0" /></label
-          ><label
-            >คลิป MP4/WEBM ไม่เกิน 200 MB<input
+            >อัปโหลดคลิป MP4/WEBM ไม่เกิน 200 MB<input
               name="video"
               type="file"
               accept="video/mp4,video/webm" /></label
           ><label
-            >สไลด์ PDF ไม่เกิน 100 MB<input
+            >อัปโหลดไฟล์เอกสาร PDF ไม่เกิน 100 MB<input
               name="pdf"
               type="file"
               accept="application/pdf" /></label
-          ><button class="primary" type="submit">เพิ่มบทเรียน</button>
+          ><button class="vds-btn vds-btn--primary" type="submit">เพิ่ม EP</button>
           <p id="lessonMessage"></p>
         </form>
         <div id="lessonList"></div>
+        <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion vds-btn--wide" type="button">เผยแพร่ตะกร้า</button>
+        <p id="publishCourseMessage" role="status" aria-live="polite"></p>
       </section>
     </main>
-    <script src="/admin-courses.js?v=014423"></script><script src="/course-review-admin.js?v=014311"></script>
+    <script src="/admin-courses.js?v=014424"></script><script src="/course-review-admin.js?v=014311"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

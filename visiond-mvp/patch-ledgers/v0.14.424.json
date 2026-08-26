@@ -1,0 +1,11 @@
+{
+  "patch":"v0.14.424","parent_commit":"a3f26bf1","safe_rollback_commit":"a3f26bf1","push":false,"deploy":false,
+  "tasks":[
+    {"id":"V014424-FEATURE-001","scope":"FEATURE","source_instruction":"รวมข้อมูลคอร์สและ EP ใน workflow สร้างตะกร้าคอร์ส VisionD พร้อมปุ่มเพิ่ม EP และเผยแพร่ท้ายงาน","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","functions/api/admin/courses/[id]/publish.js"]},
+    {"id":"V014424-PAYMENT-001","scope":"FEATURE","source_instruction":"เลือกบัญชีกรุงศรีของ Boss หรือบัญชีบริษัท VisionD ต่อคอร์สและ snapshot ลงออเดอร์","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/index.js","functions/api/orders/index.js"]},
+    {"id":"V014424-SECURITY-001","scope":"SECURITY","source_instruction":"publish ตรงได้เฉพาะ company course ผ่าน requireAdmin และไม่กระทบ seller/partner review","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/publish.js","scripts/test-v014424.mjs"]},
+    {"id":"V014424-UI-001","scope":"UI","source_instruction":"ฟอร์มและปุ่มใช้ canonical พร้อม loading success error disabled และ mobile flow","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","public/course.css"]},
+    {"id":"V014424-QA-001","scope":"QA","source_instruction":"ทดสอบ draft-to-published, EP completeness, payment routing และ regression","status":"DONE-VERIFIED","evidence":["scripts/test-v014424.mjs"]},
+    {"id":"V014424-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map requirement และเวอร์ชัน","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","START-HERE.md","VERSION.txt"]}
+  ]
+}
