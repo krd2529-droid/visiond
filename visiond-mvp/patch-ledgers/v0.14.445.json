@@ -1,0 +1,4 @@
+{"patch":"v0.14.445","parent_commit":"0448ae06","safe_rollback_commit":"0448ae06","push":false,"deploy":false,"tasks":[
+  {"id":"V014445-UI-001","scope":"UI","source_instruction":"แก้หัวข้อช่องกรอกชื่อบทเรียนให้เป็น ชื่อ EP เท่านั้น","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014445-QA-001","scope":"QA","source_instruction":"ตรวจหัวข้อชื่อ EP ทั้งตอนเพิ่มและแก้ไข พร้อม cache key ใหม่","status":"DONE-VERIFIED","evidence":["scripts/test-v014445.mjs"]}
+]}
