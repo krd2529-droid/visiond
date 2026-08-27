@@ -1,0 +1,5 @@
+{"patch":"v0.14.443","parent_commit":"86c9067d","safe_rollback_commit":"86c9067d","push":false,"deploy":false,"tasks":[
+  {"id":"V014443-UI-001","scope":"UI","source_instruction":"เอาเฉพาะช่องคำอธิบายสั้นออก และคงช่องทางติดต่อ","status":"DONE-VERIFIED","evidence":["public/admin-courses.html"]},
+  {"id":"V014443-FEATURE-001","scope":"FEATURE","source_instruction":"การซ่อนช่องต้องไม่ล้างคำอธิบายสั้นเดิมของคอร์สเก่าระหว่างบันทึก","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014443-QA-001","scope":"QA","source_instruction":"ตรวจว่าช่องคำอธิบายสั้นหาย ช่องทางติดต่อยังอยู่ และค่าซ่อนยังถูกเติมเมื่อแก้ไข","status":"DONE-VERIFIED","evidence":["scripts/test-v014443.mjs"]}
+]}
