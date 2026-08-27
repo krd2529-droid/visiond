@@ -1,0 +1,5 @@
+{"patch":"v0.14.430","parent_commit":"b7c0c77a","safe_rollback_commit":"b7c0c77a","push":false,"deploy":false,"tasks":[
+  {"id":"V014430-FEATURE-001","scope":"FEATURE","source_instruction":"เอกสาร EP อัปโหลด JPEG ได้ด้วย","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","functions/api/admin/courses/[id]/lessons.js"]},
+  {"id":"V014430-DATA-001","scope":"FEATURE","source_instruction":"เก็บ MIME และชื่อไฟล์ JPEG จริง ไม่ปลอมเป็น PDF","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/lessons.js","functions/api/courses/[id]/lesson/[lessonId]/[asset].js"]},
+  {"id":"V014430-QA-001","scope":"QA","source_instruction":"ทดสอบ input MIME persistence และ inline delivery","status":"DONE-VERIFIED","evidence":["scripts/test-v014430.mjs"]}
+]}

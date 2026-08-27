@@ -822,7 +822,7 @@
 - ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `entitlements`; R2 course cover, lesson video และ PDF
 - สิทธิ์: ทุก endpoint ใช้ `requireAdmin`; route นี้รับเฉพาะคอร์สบริษัทที่ `owner_user_id IS NULL`, `course_origin='company'` และ `course_type='online_course'`
 - ห้ามข้ามขอบเขต: explicit publish ใช้เฉพาะ Admin company course ที่ผ่าน `requireAdmin`; คอร์สผู้ขาย/Vision 5, partner, `seller_rights` และ resale-rights เดิมต้องจัดการและตรวจในระบบเฉพาะ; ห้ามสร้างหรือแปลง company course เป็นตะกร้าสิทธิ์ผ่านหน้านี้
-- ห้ามกระทบไฟล์: รูปปก JPG/PNG/WEBP สูงสุด 5 MB; บทเรียนต้องมี MP4/WEBM สูงสุด 200 MB หรือ PDF สูงสุด 100 MB อย่างน้อยหนึ่งไฟล์; ถ้าบันทึก DB หรือ PDF ล้มต้องล้าง object ที่เพิ่งสร้าง
+- ห้ามกระทบไฟล์: รูปปก JPG/PNG/WEBP สูงสุด 5 MB; บทเรียนต้องมี MP4/WEBM สูงสุด 200 MB หรือเอกสาร PDF/JPEG สูงสุด 100 MB อย่างน้อยหนึ่งไฟล์; เก็บ MIME และชื่อเอกสารจริงเพื่อเปิด PDF/JPEG แบบ inline; ถ้าบันทึก DB หรือเอกสารล้มต้องล้าง object ที่เพิ่งสร้าง
 - ห้ามกระทบข้อมูล: product และ course ต้องสร้างสัมพันธ์กัน; active สะท้อน `products.status` published/draft; `total_minutes` เป็นเวลาเนื้อหารวมที่ Boss ระบุตอนสร้างและไม่ถูกการเพิ่ม/ลบ EP เขียนทับ; ลบบทเรียนเฉพาะ course เดียวกันและลบ DB ก่อน object
 - ความสัมพันธ์: ไม่รวม seller review section ในหน้าเดียวกันซึ่งอยู่ใต้ `COURSE-REVIEW-001`; ไม่รวมตะกร้าผู้สอน/EP ซึ่งอยู่ใต้ `COURSE-BASKET-001` และ `COURSE-EP-001`
 - รหัส UI: company-course grid และ lesson manager มี `data-feature="COURSE-ADMIN-001"`; คง form, confirmation, loading/error และ theme เดิม
