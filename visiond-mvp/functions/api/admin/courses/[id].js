@@ -1,14 +1,20 @@
 import { json, requireAdmin } from '../../../_lib.js';
 import { ensureDatabase } from '../../../_schema.js';
 
+const ext=(name,type)=>String(name||'').split('.').pop()?.toLowerCase()||({"image/jpeg":'jpg',"image/png":'png',"image/webp":'webp'}[type]||'bin');
+
 export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
-  const body=await ctx.request.json().catch(()=>({})),course=await ctx.env.DB.prepare('SELECT * FROM courses WHERE id=?').bind(ctx.params.id).first();if(!course)return json({error:'ไม่พบคอร์ส'},404);
+  const multipart=String(ctx.request.headers.get('content-type')||'').includes('multipart/form-data'),body=multipart?await ctx.request.formData():await ctx.request.json().catch(()=>({})),get=name=>multipart?body.get(name):body[name],course=await ctx.env.DB.prepare('SELECT * FROM courses WHERE id=?').bind(ctx.params.id).first();if(!course)return json({error:'ไม่พบคอร์ส'},404);
   if(course.owner_user_id!=null||course.course_origin==='seller_rights'||course.course_type==='resale_rights')return json({error:'คอร์ส Vision 5 ต้องจัดการผ่านระบบตรวจคอร์ส Vision 5 เท่านั้น'},403);
-  if(body.course_type==='resale_rights')return json({error:'ไม่สามารถเปลี่ยนคอร์สบริษัทเป็นตะกร้าสิทธิ์ Vision 5 ผ่านหน้านี้'},403);
-  const price=Math.round(Number(body.price_baht)*100);if(!body.title||!Number.isFinite(price)||price<0)return json({error:'ข้อมูลคอร์สไม่ถูกต้อง'},400);
+  if(get('course_type')==='resale_rights')return json({error:'ไม่สามารถเปลี่ยนคอร์สบริษัทเป็นตะกร้าสิทธิ์ Vision 5 ผ่านหน้านี้'},403);
+  const title=String(get('title')||'').trim(),teacher=String(get('teacher_name')||'').trim(),price=Math.round(Number(get('price_baht'))*100),minutes=Number(get('content_minutes')),episodes=Number(get('expected_episodes'));if(!title||!teacher||!Number.isFinite(price)||price<0)return json({error:'ข้อมูลคอร์สไม่ถูกต้อง'},400);if(multipart&&(!Number.isFinite(minutes)||minutes<1||!Number.isInteger(episodes)||episodes<1||episodes>200))return json({error:'เวลาเนื้อหาหรือจำนวน EP ไม่ถูกต้อง'},400);
+  if(multipart){const tags=body.getAll('platform_tags').map(String).filter(Boolean),other=String(body.get('platform_other')||'').trim();if(other)tags.push(other);let cover=null,key='';const file=body.get('cover');if(file?.size){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)return json({error:'รูปปกต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB'},400);key=`course-cover-${crypto.randomUUID()}.${ext(file.name,file.type)}`;await ctx.env.FILES.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:file.type}});cover='/api/media/'+key}try{await ctx.env.DB.batch([
+    ctx.env.DB.prepare("UPDATE courses SET subtitle=?,teacher_name=?,total_minutes=?,expected_episodes=?,contact_info=?,platform_tags=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id IS NULL AND COALESCE(course_origin,'company')='company'").bind(String(get('short_description')||''),teacher,Math.round(minutes),episodes,String(get('contact_info')||''),JSON.stringify([...new Set(tags)]),course.id),
+    cover?ctx.env.DB.prepare('UPDATE products SET title=?,short_description=?,description=?,price=?,cover_url=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(title,String(get('short_description')||''),String(get('description')||''),price,cover,course.product_id):ctx.env.DB.prepare('UPDATE products SET title=?,short_description=?,description=?,price=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(title,String(get('short_description')||''),String(get('description')||''),price,course.product_id)
+  ])}catch(error){if(key)await ctx.env.FILES.delete(key).catch(()=>{});return json({error:'บันทึกร่างไม่สำเร็จ กรุณาลองใหม่'},500)}return json({ok:true,status:'draft-saved'});}
   await ctx.env.DB.batch([
-    ctx.env.DB.prepare("UPDATE courses SET subtitle=?,teacher_name=?,active=?,course_type='online_course',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(String(body.subtitle||''),String(body.teacher_name||''),body.active?1:0,course.id),
-    ctx.env.DB.prepare('UPDATE products SET title=?,short_description=?,description=?,price=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(String(body.title).trim(),String(body.short_description||''),String(body.description||''),price,body.active?'published':'draft',course.product_id)
+    ctx.env.DB.prepare("UPDATE courses SET subtitle=?,teacher_name=?,active=?,course_type='online_course',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(String(body.subtitle||''),teacher,body.active?1:0,course.id),
+    ctx.env.DB.prepare('UPDATE products SET title=?,short_description=?,description=?,price=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(title,String(body.short_description||''),String(body.description||''),price,body.active?'published':'draft',course.product_id)
   ]);return json({ok:true});
 }

@@ -1,0 +1,6 @@
+{"patch":"v0.14.429","parent_commit":"775250dd","safe_rollback_commit":"775250dd","push":false,"deploy":false,"tasks":[
+  {"id":"V014429-FEATURE-001","scope":"FEATURE","source_instruction":"เพิ่มปุ่มบันทึกร่างให้ตะกร้าคอร์ส VisionD","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","functions/api/admin/courses/[id].js"]},
+  {"id":"V014429-UX-001","scope":"UI","source_instruction":"แจ้งเงื่อนไขที่ทำให้ปุ่มเผยแพร่เปิดใช้งานอย่างชัดเจน","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014429-SECURITY-001","scope":"SECURITY","source_instruction":"บันทึกร่างได้เฉพาะ Admin company course และไม่เข้าระบบพาร์ตเนอร์","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id].js","scripts/test-v014429.mjs"]},
+  {"id":"V014429-QA-001","scope":"QA","source_instruction":"ทดสอบ create/update draft และ publish readiness contract","status":"DONE-VERIFIED","evidence":["scripts/test-v014429.mjs"]}
+]}

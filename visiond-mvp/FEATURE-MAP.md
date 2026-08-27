@@ -826,7 +826,7 @@
 - ห้ามกระทบข้อมูล: product และ course ต้องสร้างสัมพันธ์กัน; active สะท้อน `products.status` published/draft; `total_minutes` เป็นเวลาเนื้อหารวมที่ Boss ระบุตอนสร้างและไม่ถูกการเพิ่ม/ลบ EP เขียนทับ; ลบบทเรียนเฉพาะ course เดียวกันและลบ DB ก่อน object
 - ความสัมพันธ์: ไม่รวม seller review section ในหน้าเดียวกันซึ่งอยู่ใต้ `COURSE-REVIEW-001`; ไม่รวมตะกร้าผู้สอน/EP ซึ่งอยู่ใต้ `COURSE-BASKET-001` และ `COURSE-EP-001`
 - รหัส UI: company-course grid และ lesson manager มี `data-feature="COURSE-ADMIN-001"`; คง form, confirmation, loading/error และ theme เดิม
-- การแยกระบบ: หน้า `/admin-courses.html` ใช้โครงฟอร์มตะกร้าและการ์ด EP แบบเดียวกับ workspace คอร์ส แต่บันทึกผ่าน Admin company API เท่านั้น ไม่มี seller review หรือข้อความ 50/50; ไม่มีปุ่มสร้างขั้นกลาง—การกดเพิ่ม EP แรกสร้าง draft ให้อัตโนมัติ แล้วเผยแพร่ทันทีท้ายหน้าโดยไม่ส่งตรวจ ส่วน review พาร์ตเนอร์อยู่ `/admin-course-reviews.html`
+- การแยกระบบ: หน้า `/admin-courses.html` ใช้โครงฟอร์มตะกร้าและการ์ด EP แบบเดียวกับ workspace คอร์ส แต่บันทึกผ่าน Admin company API เท่านั้น ไม่มี seller review หรือข้อความ 50/50; ปุ่ม “บันทึกร่าง” สร้าง/อัปเดต draft ได้ก่อนมี EP และการกดเพิ่ม EP แรกยังสร้าง draft อัตโนมัติได้; ปุ่มเผยแพร่เปิดเมื่อ EP ที่มีสื่อครบจำนวน แล้วอนุมัติ/เปิดขายตรงโดยไม่ส่งตรวจ ส่วน review พาร์ตเนอร์อยู่ `/admin-course-reviews.html`
 - การทดสอบ: `scripts/test-v014363.mjs`, `scripts/test-v014424.mjs`
 
 ## COURSE-PAYOUT-001 — บัญชีรับเงินผู้สอนและ Secure Payment QR
