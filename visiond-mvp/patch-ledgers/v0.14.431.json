@@ -1,0 +1,4 @@
+{"patch":"v0.14.431","parent_commit":"9257deb1","safe_rollback_commit":"9257deb1","push":false,"deploy":false,"tasks":[
+  {"id":"V014431-UI-001","scope":"UI","source_instruction":"EP ต้องอยู่ในตะกร้าคอร์สเดียวกับข้อมูลคอร์ส","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/course-seller.css"]},
+  {"id":"V014431-QA-001","scope":"QA","source_instruction":"ตรวจว่า EP บันทึกร่าง และเผยแพร่อยู่ในตะกร้าเดียวกันโดยไม่มี ID ซ้ำ","status":"DONE-VERIFIED","evidence":["scripts/test-v014431.mjs"]}
+]}

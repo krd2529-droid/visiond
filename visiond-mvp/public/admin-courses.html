@@ -60,6 +60,46 @@
             <button id="saveCourseDraft" class="vds-btn vds-btn--secondary span2" type="button">บันทึกร่าง</button>
             <p id="courseMessage">ยังไม่สร้างฉบับร่าง · กด “เพิ่ม EP” ด้านล่างเมื่อกรอกข้อมูลครบ</p>
           </form>
+          <div id="lessonManager" class="seller-lesson-workspace seller-lesson-embedded" data-feature="COURSE-ADMIN-001">
+            <div class="seller-lesson-head">
+              <div>
+                <small>EP ภายในตะกร้าคอร์สนี้</small>
+                <h2 id="lessonCourseTitle">คอร์สใหม่</h2>
+              </div>
+              <button id="closeLessons" type="button" hidden>กลับไปสร้างคอร์สใหม่</button>
+            </div>
+            <div id="coursePublishSummary" class="course-publish-summary" role="status"><b>ยังไม่มี EP</b><span>เพิ่ม EP แรกเพื่อสร้างฉบับร่างอัตโนมัติ</span></div>
+            <form id="coursePaymentForm" class="seller-form course-payment-editor" hidden>
+              <fieldset class="course-payment-choice">
+                <legend>สลับบัญชีรับเงินของคอร์สนี้ได้ตลอด</legend>
+                <label><input name="payment_account" type="radio" value="boss_krungsri" /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
+                <label><input name="payment_account" type="radio" value="visiond" /><span><b>บัญชีบริษัท VisionD</b><small>ใช้งานบัญชีบริษัทล่าสุดที่ตั้งไว้ในหลังบ้าน</small></span></label>
+              </fieldset>
+              <button class="vds-btn vds-btn--secondary" type="submit">บันทึกบัญชีรับเงิน</button>
+              <p id="coursePaymentMessage" role="status" aria-live="polite"></p>
+            </form>
+            <form id="lessonForm" class="seller-form seller-lesson-editor">
+              <input name="course_id" type="hidden" /><label
+                ><span id="lessonFormTitle">EP 1 · ชื่อ EP</span><input name="title" required /></label
+              ><label
+                >รายละเอียดเนื้อหา<textarea name="description" rows="3"></textarea></label
+              ><label
+                >อัปโหลดคลิป MP4/WEBM ไม่เกิน 200 MB<input
+                  name="video"
+                  type="file"
+                  accept="video/mp4,video/webm" /></label
+              ><label
+                >อัปโหลดเอกสาร PDF หรือ JPEG ไม่เกิน 100 MB<input
+                  name="pdf"
+                  type="file"
+                  accept="application/pdf,image/jpeg,.pdf,.jpg,.jpeg" /></label
+              ><button class="vds-btn vds-btn--primary" type="submit">เพิ่ม EP</button>
+              <p id="lessonMessage"></p>
+            </form>
+            <div id="lessonList"></div>
+            <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion vds-btn--wide" type="button" disabled>เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ</button>
+            <p id="publishCourseMessage" role="status" aria-live="polite">เผยแพร่ได้เมื่อบันทึกร่างและเพิ่ม EP พร้อมคลิปหรือเอกสารครบตามจำนวน</p>
+          </div>
         </section>
         <section class="seller-card company-existing-courses">
           <h2>คอร์สที่มีอยู่</h2>
@@ -68,47 +108,7 @@
           </div>
         </section>
       </div>
-      <section id="lessonManager" class="seller-card seller-lesson-workspace" data-feature="COURSE-ADMIN-001">
-        <div class="seller-lesson-head">
-          <div>
-            <small>เพิ่มเนื้อหาคอร์ส</small>
-            <h2 id="lessonCourseTitle">คอร์สใหม่</h2>
-          </div>
-          <button id="closeLessons" type="button" hidden>กลับไปสร้างคอร์สใหม่</button>
-        </div>
-        <div id="coursePublishSummary" class="course-publish-summary" role="status"><b>ยังไม่มี EP</b><span>เพิ่ม EP แรกเพื่อสร้างฉบับร่างอัตโนมัติ</span></div>
-        <form id="coursePaymentForm" class="seller-form course-payment-editor" hidden>
-          <fieldset class="course-payment-choice">
-            <legend>สลับบัญชีรับเงินของคอร์สนี้ได้ตลอด</legend>
-            <label><input name="payment_account" type="radio" value="boss_krungsri" /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
-            <label><input name="payment_account" type="radio" value="visiond" /><span><b>บัญชีบริษัท VisionD</b><small>ใช้งานบัญชีบริษัทล่าสุดที่ตั้งไว้ในหลังบ้าน</small></span></label>
-          </fieldset>
-          <button class="vds-btn vds-btn--secondary" type="submit">บันทึกบัญชีรับเงิน</button>
-          <p id="coursePaymentMessage" role="status" aria-live="polite"></p>
-        </form>
-        <form id="lessonForm" class="seller-form seller-lesson-editor">
-          <input name="course_id" type="hidden" /><label
-            ><span id="lessonFormTitle">EP 1 · ชื่อ EP</span><input name="title" required /></label
-          ><label
-            >รายละเอียดเนื้อหา<textarea name="description" rows="3"></textarea></label
-          ><label
-            >อัปโหลดคลิป MP4/WEBM ไม่เกิน 200 MB<input
-              name="video"
-              type="file"
-              accept="video/mp4,video/webm" /></label
-          ><label
-            >อัปโหลดเอกสาร PDF หรือ JPEG ไม่เกิน 100 MB<input
-              name="pdf"
-              type="file"
-              accept="application/pdf,image/jpeg,.pdf,.jpg,.jpeg" /></label
-          ><button class="vds-btn vds-btn--primary" type="submit">เพิ่ม EP</button>
-          <p id="lessonMessage"></p>
-        </form>
-        <div id="lessonList"></div>
-        <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion vds-btn--wide" type="button" disabled>เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ</button>
-        <p id="publishCourseMessage" role="status" aria-live="polite">เผยแพร่ได้เมื่อบันทึกร่างและเพิ่ม EP พร้อมคลิปหรือเอกสารครบตามจำนวน</p>
-      </section>
     </main>
-    <script src="/admin-courses.js?v=014430"></script>
+    <script src="/admin-courses.js?v=014431"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>
