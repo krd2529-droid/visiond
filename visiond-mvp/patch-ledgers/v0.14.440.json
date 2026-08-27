@@ -1,0 +1,5 @@
+{"patch":"v0.14.440","parent_commit":"cce89f8e","safe_rollback_commit":"cce89f8e","push":false,"deploy":false,"tasks":[
+  {"id":"V014440-UI-001","scope":"UI","source_instruction":"เอาช่องกรอกเวลาเนื้อหารวมออกและใส่เวลาราย EP","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014440-FEATURE-001","scope":"FEATURE","source_instruction":"รวมเวลาทุก EP อัตโนมัติเมื่อเพิ่ม แก้ หรือลบ","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/lessons.js","functions/api/admin/courses/[id]/lessons/[lessonId].js"]},
+  {"id":"V014440-QA-001","scope":"QA","source_instruction":"ตรวจไม่มี manual total และมี derived duration contract","status":"DONE-VERIFIED","evidence":["scripts/test-v014440.mjs"]}
+]}
