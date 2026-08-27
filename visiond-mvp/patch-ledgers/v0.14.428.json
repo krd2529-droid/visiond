@@ -1,0 +1,5 @@
+{"patch":"v0.14.428","parent_commit":"ef5812ac","safe_rollback_commit":"ef5812ac","push":false,"deploy":false,"tasks":[
+  {"id":"V014428-UI-001","scope":"UI","source_instruction":"ทำโลโก้บนแถบเว็บแทนรูปโลกสีเทา","status":"DONE-VERIFIED","evidence":["public/favicon.svg","scripts/test-v014428.mjs"]},
+  {"id":"V014428-COVERAGE-001","scope":"QA","source_instruction":"ผูก favicon ให้ครบทุกหน้าเว็บและหลังบ้าน","status":"DONE-VERIFIED","evidence":["scripts/test-v014428.mjs"]},
+  {"id":"V014428-DOC-001","scope":"DOC","source_instruction":"อัปเดต Feature Map และเวอร์ชัน","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","VERSION.txt","START-HERE.md"]}
+]}

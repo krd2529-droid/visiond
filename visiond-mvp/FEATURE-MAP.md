@@ -1090,6 +1090,14 @@
 - รหัส UI: `main.partner-shell` ใช้ `data-feature="PARTNER-API-001"`; คง legacy forms/buttons, canonical button adapter, loading/error, Desktop/Mobile และ theme เดิม
 - การทดสอบ: `scripts/test-v014388.mjs`, `scripts/test-v014397.mjs`, `scripts/test-v014398.mjs`, `scripts/test-v014399.mjs`, `scripts/test-v014400.mjs`, `scripts/test-v014407.mjs`–`scripts/test-v014411.mjs`, `scripts/test-partner-commerce-{e2e,query-budget}.mjs`, `scripts/partner-api-security-gate.mjs`; historical Phase tests `scripts/test-v014217.mjs`–`scripts/test-v014223.mjs`
 
+## SITE-FAVICON-001 — ไอคอนแท็บ VisionD
+
+- สถานะ: `IMPLEMENTED`; เพิ่มใน v0.14.428
+- หน้า/ไฟล์: `public/favicon.svg` และเอกสาร HTML ใต้ `public/` ทุกหน้า
+- ฟังก์ชัน: แสดงตรา V สีขาวบนพื้น Tiffany พร้อมจุดสีทองในแท็บเบราว์เซอร์แทนไอคอนโลกเริ่มต้น; ใช้ SVG เดียวกันทั้งหน้าร้าน หลังบ้าน บทความ และ V Easy
+- ขอบเขต: เป็นภาพประจำแท็บเท่านั้น ไม่เปลี่ยนโลโก้ header, theme หรือพฤติกรรมธุรกิจ
+- การทดสอบ: `scripts/test-v014428.mjs`
+
 ## Coverage Audit v0.14.389
 
 - ผล: `PASS`; ไม่พบ root controller หรือ active business script ที่ยังไม่มี Feature Map ownership
