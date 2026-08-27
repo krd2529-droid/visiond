@@ -1,0 +1,4 @@
+{"patch":"v0.14.436","parent_commit":"529f8535","safe_rollback_commit":"529f8535","push":false,"deploy":false,"tasks":[
+  {"id":"V014436-UI-001","scope":"UI","source_instruction":"เอาปุ่มกลับไปสร้างคอร์สใหม่ออก","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014436-QA-001","scope":"QA","source_instruction":"ตรวจว่าไม่มี element และ handler ค้าง","status":"DONE-VERIFIED","evidence":["scripts/test-v014436.mjs"]}
+]}
