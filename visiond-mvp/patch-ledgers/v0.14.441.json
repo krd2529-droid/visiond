@@ -1,0 +1,5 @@
+{"patch":"v0.14.441","parent_commit":"69ccbf0e","safe_rollback_commit":"69ccbf0e","push":false,"deploy":false,"tasks":[
+  {"id":"V014441-FEATURE-001","scope":"FEATURE","source_instruction":"อัปโหลดเอกสาร EP เป็น PNG ได้ด้วย","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","functions/api/admin/courses/[id]/lessons.js","functions/api/admin/courses/[id]/lessons/[lessonId].js"]},
+  {"id":"V014441-SECURITY-001","scope":"SECURITY","source_instruction":"เก็บ MIME PNG จริงและเปิด inline โดยไม่ปลอมชนิดไฟล์","status":"DONE-VERIFIED","evidence":["functions/api/courses/[id]/lesson/[lessonId]/[asset].js"]},
+  {"id":"V014441-QA-001","scope":"QA","source_instruction":"ตรวจ accept MIME extension label และ inline delivery","status":"DONE-VERIFIED","evidence":["scripts/test-v014441.mjs"]}
+]}
