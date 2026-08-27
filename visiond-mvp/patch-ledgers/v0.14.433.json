@@ -1,0 +1,4 @@
+{"patch":"v0.14.433","parent_commit":"caa5acb3","safe_rollback_commit":"caa5acb3","push":false,"deploy":false,"tasks":[
+  {"id":"V014433-UI-001","scope":"UI","source_instruction":"ปรับตัวเลือกบัญชีรับเงินให้สวย อ่านง่าย และเลือกชัด","status":"DONE-VERIFIED","evidence":["public/course-seller.css","public/admin-courses.html"]},
+  {"id":"V014433-QA-001","scope":"QA","source_instruction":"ตรวจ alignment selected state focus และ cache version","status":"DONE-VERIFIED","evidence":["scripts/test-v014433.mjs"]}
+]}
