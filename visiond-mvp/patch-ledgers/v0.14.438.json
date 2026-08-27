@@ -1,0 +1,5 @@
+{"patch":"v0.14.438","parent_commit":"ecfed283","safe_rollback_commit":"ecfed283","push":false,"deploy":false,"tasks":[
+  {"id":"V014438-BUG-001","scope":"BUG","source_instruction":"ปุ่มเพิ่ม EP ต้องไม่ล็อกฟิลด์ให้กรอกชื่อก่อน","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014438-FEATURE-001","scope":"FEATURE","source_instruction":"ชื่อ EP ว่างให้สร้างชื่อชั่วคราวตามลำดับและแก้ภายหลังได้","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/[id]/lessons.js"]},
+  {"id":"V014438-QA-001","scope":"QA","source_instruction":"ตรวจ add EP partial course และ draft-only contract","status":"DONE-VERIFIED","evidence":["scripts/test-v014438.mjs"]}
+]}
