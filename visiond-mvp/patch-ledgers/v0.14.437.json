@@ -1,0 +1,4 @@
+{"patch":"v0.14.437","parent_commit":"be9925b8","safe_rollback_commit":"be9925b8","push":false,"deploy":false,"tasks":[
+  {"id":"V014437-UI-001","scope":"UI","source_instruction":"ย้ายบันทึกร่างไปไว้ข้างเผยแพร่ตะกร้า","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/course-seller.css"]},
+  {"id":"V014437-QA-001","scope":"QA","source_instruction":"ตรวจลำดับปุ่ม desktop/mobile และ ID ไม่ซ้ำ","status":"DONE-VERIFIED","evidence":["scripts/test-v014437.mjs"]}
+]}

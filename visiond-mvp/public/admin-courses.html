@@ -57,7 +57,6 @@
               <label><input name="payment_account" type="radio" value="boss_krungsri" checked /><span><b>บัญชีกรุงศรีของ Boss</b><small>รัฐสิทธิ ดำรงรถการ · 444-118-1181</small></span></label>
               <label><input name="payment_account" type="radio" value="visiond" /><span><b>บัญชีบริษัท VisionD</b><small>ใช้ข้อมูลบัญชีบริษัทที่ตั้งค่าในหลังบ้าน</small></span></label>
             </fieldset>
-            <button id="saveCourseDraft" class="vds-btn vds-btn--secondary span2" type="button">บันทึกร่างทั้งตะกร้า</button>
             <p id="courseMessage">ยังไม่สร้างฉบับร่าง · กด “เพิ่ม EP” ด้านล่างเมื่อกรอกข้อมูลครบ</p>
           </form>
           <div id="lessonManager" class="seller-lesson-workspace seller-lesson-embedded" data-feature="COURSE-ADMIN-001">
@@ -87,7 +86,10 @@
               <p id="lessonMessage"></p>
             </form>
             <div id="lessonList"></div>
-            <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion vds-btn--wide" type="button" disabled>เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ</button>
+            <div class="company-course-final-actions">
+              <button id="saveCourseDraft" class="vds-btn vds-btn--secondary" type="button">บันทึกร่างทั้งตะกร้า</button>
+              <button id="publishCompanyCourse" class="vds-btn vds-btn--promotion" type="button" disabled>เผยแพร่ตะกร้าทันที · ไม่ต้องส่งตรวจ</button>
+            </div>
             <p id="publishCourseMessage" role="status" aria-live="polite">เผยแพร่ได้เมื่อบันทึกร่างและเพิ่ม EP พร้อมคลิปหรือเอกสารครบตามจำนวน</p>
           </div>
         </section>
@@ -99,6 +101,6 @@
         </section>
       </div>
     </main>
-    <script src="/admin-courses.js?v=014436"></script>
+    <script src="/admin-courses.js?v=014437"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

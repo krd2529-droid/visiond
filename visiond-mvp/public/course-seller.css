@@ -941,6 +941,21 @@ td {
   overflow-wrap: normal;
   word-break: keep-all;
 }
+.company-course-final-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 4px;
+}
+.company-course-final-actions .vds-btn {
+  width: 100%;
+  min-height: 50px;
+}
+@media (max-width: 620px) {
+  .company-course-final-actions {
+    grid-template-columns: 1fr;
+  }
+}
 .seller-lesson-head {
   display: flex;
   align-items: center;
