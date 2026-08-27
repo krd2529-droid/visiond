@@ -1,0 +1,5 @@
+{"patch":"v0.14.432","parent_commit":"650f3d85","safe_rollback_commit":"650f3d85","push":false,"deploy":false,"tasks":[
+  {"id":"V014432-FEATURE-001","scope":"FEATURE","source_instruction":"บันทึกร่างต้องเก็บ EP ในตะกร้าด้วยแม้ยังไม่มีไฟล์","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/[id]/lessons.js"]},
+  {"id":"V014432-FEATURE-002","scope":"FEATURE","source_instruction":"EP ร่างต้องกลับมาแก้และเติมคลิปหรือเอกสารได้","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/[id]/lessons/[lessonId].js"]},
+  {"id":"V014432-QA-001","scope":"QA","source_instruction":"publish ยังคงบังคับให้ EP มีไฟล์ครบ","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/publish.js","scripts/test-v014432.mjs"]}
+]}

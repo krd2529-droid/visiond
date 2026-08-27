@@ -7,14 +7,14 @@ export async function onRequestGet(ctx){await ensureDatabase(ctx.env);const auth
 export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const exists=await ctx.env.DB.prepare('SELECT id FROM courses WHERE id=?').bind(ctx.params.id).first();if(!exists)return json({error:'ไม่พบคอร์ส'},404);const course=await companyCourse(ctx);if(!course)return json({error:'คอร์ส Vision 5 ต้องจัดการบทเรียนผ่านหน้าของเจ้าของคอร์สเท่านั้น'},403);
   const form=await ctx.request.formData(),title=String(form.get('title')||'').trim();if(!title)return json({error:'กรุณาใส่ชื่อบทเรียน'},400);
-  const video=form.get('video'),pdf=form.get('pdf');if(!video?.size&&!pdf?.size)return json({error:'แนบคลิป เอกสาร PDF หรือ JPEG อย่างน้อยหนึ่งไฟล์'},400);
+  const video=form.get('video'),pdf=form.get('pdf'),draftOnly=String(form.get('draft_only')||'')==='1';if(!video?.size&&!pdf?.size&&!draftOnly)return json({error:'แนบคลิป เอกสาร PDF หรือ JPEG อย่างน้อยหนึ่งไฟล์'},400);
   let videoKey=null,pdfKey=null;
   if(video?.size){if(!['video/mp4','video/webm'].includes(video.type)||video.size>200*1024*1024)return json({error:'คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 200 MB'},400);videoKey=`course-${course.id}-video-${crypto.randomUUID()}.${extension(video.name,video.type)}`;await ctx.env.FILES.put(videoKey,video.stream(),{httpMetadata:{contentType:video.type}});}
   if(pdf?.size){if(!['application/pdf','image/jpeg'].includes(pdf.type)||pdf.size>100*1024*1024){if(videoKey)await ctx.env.FILES.delete(videoKey);return json({error:'เอกสารต้องเป็น PDF หรือ JPEG ไม่เกิน 100 MB'},400);}pdfKey=`course-${course.id}-document-${crypto.randomUUID()}.${extension(pdf.name,pdf.type)}`;try{await ctx.env.FILES.put(pdfKey,pdf.stream(),{httpMetadata:{contentType:pdf.type}})}catch(error){if(videoKey)await ctx.env.FILES.delete(videoKey);throw error}}
   const max=await ctx.env.DB.prepare('SELECT COALESCE(MAX(sort_order),0) n FROM course_lessons WHERE course_id=?').bind(course.id).first();
   try{
     const result=await ctx.env.DB.prepare(`INSERT INTO course_lessons(course_id,title,description,sort_order,video_key,pdf_key,video_mime,pdf_mime,document_name,duration_seconds) VALUES(?,?,?,?,?,?,?,?,?,0)`).bind(course.id,title,String(form.get('description')||''),Number(max.n)+10,videoKey,pdfKey,video?.type||null,pdfKey?pdf.type:null,pdfKey?String(pdf.name||'document').slice(0,240):'').run();
-    return json({ok:true,id:result.meta?.last_row_id},201);
+    return json({ok:true,id:result.meta?.last_row_id,status:videoKey||pdfKey?'ready':'draft'},201);
   }catch(error){
     if(videoKey)await ctx.env.FILES.delete(videoKey).catch(()=>{});
     if(pdfKey)await ctx.env.FILES.delete(pdfKey).catch(()=>{});
