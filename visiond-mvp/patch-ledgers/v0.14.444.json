@@ -1,0 +1,6 @@
+{"patch":"v0.14.444","parent_commit":"2983c60e","safe_rollback_commit":"2983c60e","push":false,"deploy":false,"tasks":[
+  {"id":"V014444-FEATURE-001","scope":"FEATURE","source_instruction":"เพิ่มเลข EP แบบกำหนดเอง เช่น 1.1 และ 1.2 โดยไม่เปลี่ยนลำดับภายใน","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","functions/api/admin/courses/[id]/lessons.js","functions/api/admin/courses/[id]/lessons/[lessonId].js"]},
+  {"id":"V014444-FEATURE-003","scope":"FEATURE","source_instruction":"เพิ่ม episode_label โดยรองรับฐานข้อมูลเดิมและไม่แก้ sort_order","status":"DONE-VERIFIED","evidence":["migrations/0070_course_lesson_episode_label.sql","functions/_schema.js","scripts/test-v014444.mjs"]},
+  {"id":"V014444-FEATURE-002","scope":"FEATURE","source_instruction":"ส่งและแสดงเลข EP กำหนดเองในห้องเรียน พร้อม fallback สำหรับ EP เก่า","status":"DONE-VERIFIED","evidence":["functions/api/courses/[id].js","public/learn.js","public/learn.html"]},
+  {"id":"V014444-QA-001","scope":"QA","source_instruction":"ตรวจ validation, migration, admin rendering, learner rendering และ fallback","status":"DONE-VERIFIED","evidence":["scripts/test-v014444.mjs"]}
+]}
