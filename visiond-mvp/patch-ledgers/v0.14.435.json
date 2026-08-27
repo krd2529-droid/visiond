@@ -1,0 +1,5 @@
+{"patch":"v0.14.435","parent_commit":"b5e7a7c5","safe_rollback_commit":"b5e7a7c5","push":false,"deploy":false,"tasks":[
+  {"id":"V014435-UI-001","scope":"UI","source_instruction":"เอาตัวเลือกบัญชีรับเงินชุดซ้ำออก ให้เหลือชุดเดียว","status":"DONE-VERIFIED","evidence":["public/admin-courses.html"]},
+  {"id":"V014435-FEATURE-001","scope":"FEATURE","source_instruction":"ตัวเลือกชุดเดียวต้องสลับบัญชีภายหลังได้เมื่อบันทึกร่าง","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/[id]/payment.js"]},
+  {"id":"V014435-QA-001","scope":"QA","source_instruction":"ตรวจจำนวนตัวเลือกและไม่มี payment form ซ้ำ","status":"DONE-VERIFIED","evidence":["scripts/test-v014435.mjs"]}
+]}
