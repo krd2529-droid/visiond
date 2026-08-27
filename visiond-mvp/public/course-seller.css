@@ -951,8 +951,28 @@ td {
   width: 100%;
   min-height: 50px;
 }
+.admin-course-actions {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 72px;
+  align-items: stretch;
+  gap: 8px;
+}
+.admin-course-actions button {
+  min-height: 46px;
+}
+.admin-course-actions .admin-course-delete {
+  border-color: #e06464;
+  background: #fff5f5;
+  color: #a72028;
+}
+.admin-course-actions .admin-course-delete:hover {
+  background: #ffe4e4;
+}
 @media (max-width: 620px) {
   .company-course-final-actions {
+    grid-template-columns: 1fr;
+  }
+  .admin-course-item {
     grid-template-columns: 1fr;
   }
 }

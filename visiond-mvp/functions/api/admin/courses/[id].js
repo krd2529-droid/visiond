@@ -3,6 +3,11 @@ import { ensureDatabase } from '../../../_schema.js';
 
 const ext=(name,type)=>String(name||'').split('.').pop()?.toLowerCase()||({"image/jpeg":'jpg',"image/png":'png',"image/webp":'webp'}[type]||'bin');
 
+export async function onRequestDelete(ctx){
+  await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const course=await ctx.env.DB.prepare("SELECT c.id,c.product_id FROM courses c JOIN products p ON p.id=c.product_id WHERE c.id=? AND c.owner_user_id IS NULL AND COALESCE(c.course_origin,'company')='company' AND c.course_type='online_course' AND p.deleted_at IS NULL").bind(ctx.params.id).first();if(!course)return json({error:'ไม่พบตะกร้าคอร์ส VisionD หรือคอร์สนี้ไม่ใช่ของบริษัท'},404);
+  try{await ctx.env.DB.batch([ctx.env.DB.prepare("UPDATE courses SET active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id IS NULL AND COALESCE(course_origin,'company')='company'").bind(course.id),ctx.env.DB.prepare("UPDATE products SET status='draft',deleted_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL").bind(course.product_id)])}catch(error){return json({error:'ลบตะกร้าคอร์สไม่สำเร็จ กรุณาลองใหม่'},500)}return json({ok:true,id:course.id,deleted:true,mode:'soft-delete'});
+}
+
 export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   const multipart=String(ctx.request.headers.get('content-type')||'').includes('multipart/form-data'),body=multipart?await ctx.request.formData():await ctx.request.json().catch(()=>({})),get=name=>multipart?body.get(name):body[name],course=await ctx.env.DB.prepare('SELECT * FROM courses WHERE id=?').bind(ctx.params.id).first();if(!course)return json({error:'ไม่พบคอร์ส'},404);

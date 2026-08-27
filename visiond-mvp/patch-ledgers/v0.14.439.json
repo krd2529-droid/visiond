@@ -1,0 +1,5 @@
+{"patch":"v0.14.439","parent_commit":"a40c07d2","safe_rollback_commit":"a40c07d2","push":false,"deploy":false,"tasks":[
+  {"id":"V014439-UI-001","scope":"UI","source_instruction":"เปลี่ยนจัดการ EP เป็นแก้ไขตะกร้าคอร์สและเพิ่มปุ่มลบ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","public/course-seller.css"]},
+  {"id":"V014439-SECURITY-001","scope":"SECURITY","source_instruction":"ลบเฉพาะคอร์สบริษัทและรักษาข้อมูลสัมพันธ์ด้วย soft delete","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id].js"]},
+  {"id":"V014439-QA-001","scope":"QA","source_instruction":"ตรวจปุ่มยืนยัน DELETE scope และ cache version","status":"DONE-VERIFIED","evidence":["scripts/test-v014439.mjs"]}
+]}
