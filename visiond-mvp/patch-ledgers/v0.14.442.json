@@ -1,0 +1,4 @@
+{"patch":"v0.14.442","parent_commit":"033a389f","safe_rollback_commit":"033a389f","push":false,"deploy":false,"tasks":[
+  {"id":"V014442-UI-001","scope":"UI","source_instruction":"บัญชีรับเงินต้องอยู่กับตะกร้าคอร์สเพียงชุดเดียว ไม่แสดงซ้ำในส่วน EP","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014442-QA-001","scope":"QA","source_instruction":"ตรวจว่าตัวเลือกบัญชีมีชุดเดียวและสรุป EP ไม่มีรายละเอียดบัญชี","status":"DONE-VERIFIED","evidence":["scripts/test-v014442.mjs"]}
+]}
