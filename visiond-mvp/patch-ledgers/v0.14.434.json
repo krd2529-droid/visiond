@@ -1,0 +1,5 @@
+{"patch":"v0.14.434","parent_commit":"bebc0528","safe_rollback_commit":"bebc0528","push":false,"deploy":false,"tasks":[
+  {"id":"V014434-FEATURE-001","scope":"FEATURE","source_instruction":"บันทึกร่างคอร์สได้แม้ข้อมูล required ยังไม่ครบ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/index.js","functions/api/admin/courses/[id].js"]},
+  {"id":"V014434-SECURITY-001","scope":"SECURITY","source_instruction":"ห้ามร่างข้อมูลไม่ครบหลุดเผยแพร่","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/publish.js"]},
+  {"id":"V014434-QA-001","scope":"QA","source_instruction":"ทดสอบ partial draft และ strict publish gate","status":"DONE-VERIFIED","evidence":["scripts/test-v014434.mjs"]}
+]}
