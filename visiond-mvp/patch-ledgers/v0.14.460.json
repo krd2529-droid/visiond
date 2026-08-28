@@ -1,0 +1,5 @@
+{"patch":"v0.14.460","parent_commit":"25c6eadf","safe_rollback_commit":"25c6eadf","push":false,"deploy":false,"tasks":[
+  {"id":"V014460-FEATURE-001","scope":"FEATURE","source_instruction":"บันทึกรูป 3 EP ต้อง retry และทำ EP ถัดไปต่อ ไม่หยุดทั้งชุดเมื่อรายการเดียวล้ม","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014460-SECURITY-001","scope":"SECURITY","source_instruction":"เก็บเฉพาะบล็อกที่ล้มพร้อม File และ lesson id เดิม ไม่สร้างซ้ำ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014460-QA-001","scope":"QA","source_instruction":"ตรวจ two-attempt loop, continue queue, visible error, cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014460.mjs"]}
+]}

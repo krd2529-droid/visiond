@@ -1092,6 +1092,7 @@ td {
   outline-offset: 3px;
 }
 .saved-upload-status{display:block;margin-top:7px;padding:8px 10px;border-radius:9px;background:#dcf8ec;color:#14613d;font-weight:800}.saved-upload-status[hidden]{display:none}
+.pending-lesson-error{margin:0;padding:10px 12px;border:1px solid #e05252;border-radius:10px;background:#fff0f0;color:#a51f1f;font-weight:900}
 .company-pending-lesson-full{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}.pending-lesson-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.pending-lesson-heading h3{margin:0}.pending-lesson-heading button{padding:10px 16px;border:1px solid #e03131;border-radius:12px;background:#fff;color:#b42323;font-weight:800}.pending-lesson-field{display:grid;align-content:start;gap:7px;min-height:72px;padding:12px;border:1px solid #bce8e5;border-radius:12px;background:#fff;font-weight:700;color:#315b59}.pending-lesson-field input,.pending-lesson-field textarea{width:100%;box-sizing:border-box}.pending-lesson-field small{font-weight:700;color:#075f5a;overflow-wrap:anywhere}.pending-lesson-preview{width:min(240px,100%);max-height:180px;object-fit:contain;border:1px solid #bce8e5;border-radius:10px;background:#f8ffff}@media(max-width:700px){.company-pending-lesson-full{grid-template-columns:1fr}.company-pending-lesson-full .span2{grid-column:1}}
 .seller-lesson-list {
   display: grid;
