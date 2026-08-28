@@ -1,0 +1,5 @@
+{"patch":"v0.14.453","parent_commit":"1716aa54","safe_rollback_commit":"1716aa54","push":false,"deploy":false,"tasks":[
+  {"id":"V014453-FEATURE-001","scope":"FEATURE","source_instruction":"Boss กดเผยแพร่เองได้ตลอดโดยไม่ล็อกปุ่มตาม EP หรือไฟล์","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js"]},
+  {"id":"V014453-SECURITY-001","scope":"SECURITY","source_instruction":"API ไม่ตรวจความครบเนื้อหา แต่ยังบังคับแอดมินและตะกร้าบริษัท","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/publish.js"]},
+  {"id":"V014453-QA-001","scope":"QA","source_instruction":"ตรวจปุ่มไม่ disabled, ไม่มี completeness guards, ownership guard และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014453.mjs"]}
+]}
