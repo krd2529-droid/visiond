@@ -1,0 +1,5 @@
+{"patch":"v0.14.459","parent_commit":"06342a0c","safe_rollback_commit":"06342a0c","push":false,"deploy":false,"tasks":[
+  {"id":"V014459-FEATURE-001","scope":"FEATURE","source_instruction":"รูปของ EP หลายบล็อกต้องถูกยืนยันว่าบันทึกจริงก่อนล้างออกจากฉบับร่าง","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014459-SECURITY-001","scope":"SECURITY","source_instruction":"retry หลังบันทึกบางส่วนต้องใช้ lesson id เดิมเพื่อไม่สร้าง EP ซ้ำ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014459-QA-001","scope":"QA","source_instruction":"ตรวจ verify-before-shift, media flags, idempotent retry, cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014459.mjs"]}
+]}

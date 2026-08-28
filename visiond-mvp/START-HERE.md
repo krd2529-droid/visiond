@@ -1,12 +1,12 @@
 # VisionD — จุดเริ่มต้นก่อนทำงาน
 
-เวอร์ชันปัจจุบัน: **v0.14.458**
+เวอร์ชันปัจจุบัน: **v0.14.459**
 
 ## ลำดับที่ต้องอ่าน
 
 1. `VERSION.txt`
 2. กติกา Active: `JARVIS-PATCH-PROTOCOL.md`
-3. Patch ledgerล่าสุด: `patch-ledgers/v0.14.458.json`
+3. Patch ledgerล่าสุด: `patch-ledgers/v0.14.459.json`
 
 เอกสารอื่นโหลดตาม `WHEN-TOUCHING` เท่านั้น ไม่ต้องอ่าน Roadmap, Marketing Plan, Customer Data, Requirement ทั้งหมด หรือประวัติเก่าทุกแพต
 
