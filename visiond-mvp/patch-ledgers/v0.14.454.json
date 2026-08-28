@@ -1,0 +1,5 @@
+{"patch":"v0.14.454","parent_commit":"94c32286","safe_rollback_commit":"94c32286","push":false,"deploy":false,"tasks":[
+  {"id":"V014454-FEATURE-001","scope":"FEATURE","source_instruction":"บล็อก EP รอบันทึกต้องแก้เลข ชื่อ รายละเอียด คลิป และเอกสารได้ตรงบล็อก","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","public/course-seller.css"]},
+  {"id":"V014454-SECURITY-001","scope":"SECURITY","source_instruction":"เปลี่ยนเอกสารต้อง revoke preview เดิมและรักษา File object ที่เลือกไว้จนบันทึก","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014454-QA-001","scope":"QA","source_instruction":"ตรวจ editable fields, file replacement, responsive cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014454.mjs"]}
+]}
