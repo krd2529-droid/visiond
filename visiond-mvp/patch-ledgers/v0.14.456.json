@@ -1,0 +1,5 @@
+{"patch":"v0.14.456","parent_commit":"840e78d7","safe_rollback_commit":"840e78d7","push":false,"deploy":false,"tasks":[
+  {"id":"V014456-FEATURE-001","scope":"FEATURE","source_instruction":"เอาช่องจำนวน EP ออกจากฟอร์มเพราะรก","status":"DONE-VERIFIED","evidence":["public/admin-courses.html"]},
+  {"id":"V014456-SECURITY-001","scope":"SECURITY","source_instruction":"จำนวนที่แสดงต้องมาจากรายการ EP จริง ไม่รับค่าที่กรอกเองจาก UI","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014456-QA-001","scope":"QA","source_instruction":"ตรวจไม่มี expected input/reference และแสดง actual count พร้อม cache/version","status":"DONE-VERIFIED","evidence":["scripts/test-v014456.mjs"]}
+]}
