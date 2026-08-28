@@ -1,0 +1,6 @@
+{"patch":"v0.14.446","parent_commit":"791bf240","safe_rollback_commit":"791bf240","push":false,"deploy":false,"tasks":[
+  {"id":"V014446-FEATURE-001","scope":"FEATURE","source_instruction":"เปลี่ยนวิดีโอ EP ตะกร้าบริษัทจาก 200 MB เป็น Multipart สูงสุด 2 GB ตามตะกร้าพาร์ตเนอร์ 50/50","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","functions/_course_rules.js"]},
+  {"id":"V014446-SECURITY-001","scope":"SECURITY","source_instruction":"Multipart ทุก endpoint ต้อง requireAdmin และตรวจว่าเป็น EP ของ company course ที่กำหนด","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/lesson-video-multipart/init.js","functions/api/admin/courses/[id]/lesson-video-multipart/part.js","functions/api/admin/courses/[id]/lesson-video-multipart/complete.js","functions/api/admin/courses/[id]/lesson-video-multipart/abort.js"]},
+  {"id":"V014446-FEATURE-002","scope":"FEATURE","source_instruction":"แสดง progress, abort upload ที่ล้ม และไม่แสดง Unexpected token เมื่อ upstream ส่ง HTML","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014446-QA-001","scope":"QA","source_instruction":"ตรวจ limit, chunk flow, endpoint ownership, cache key และการเลิกใช้ 200 MB","status":"DONE-VERIFIED","evidence":["scripts/test-v014446.mjs"]}
+]}
