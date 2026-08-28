@@ -1,0 +1,6 @@
+{"patch":"v0.14.448","parent_commit":"b8e6831b","safe_rollback_commit":"b8e6831b","push":false,"deploy":false,"tasks":[
+  {"id":"V014448-UI-001","scope":"UI","source_instruction":"เอาช่องกรอกความยาว EP ออกจากหน้า","status":"DONE-VERIFIED","evidence":["public/admin-courses.html"]},
+  {"id":"V014448-FEATURE-001","scope":"FEATURE","source_instruction":"อ่านระยะเวลาจริงจาก metadata วิดีโอและส่งให้ backend รวมทุก EP","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","functions/api/admin/courses/[id]/lessons.js"]},
+  {"id":"V014448-FEATURE-002","scope":"FEATURE","source_instruction":"แก้ EP โดยไม่เลือกคลิปใหม่ต้องรักษาความยาวเดิม","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/lessons/[lessonId].js"]},
+  {"id":"V014448-QA-001","scope":"QA","source_instruction":"ตรวจ hidden transport, metadata lifecycle, timeout, seconds conversion และ preserve behavior","status":"DONE-VERIFIED","evidence":["scripts/test-v014448.mjs"]}
+]}

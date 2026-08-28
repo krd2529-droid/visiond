@@ -32,6 +32,7 @@ async function loadLessons(id) {
 courseForm.elements.cover.addEventListener('change',()=>{const file=courseForm.elements.cover.files[0];if(!file)return hideImagePreview(companyCoverPreview,'cover');clearObjectUrl('cover');coverPreviewUrl=URL.createObjectURL(file);showImagePreview(companyCoverPreview,coverPreviewUrl,file.name)});
 lessonForm.elements.pdf.addEventListener('change',()=>{const file=lessonForm.elements.pdf.files[0];if(!file)return hideImagePreview(lessonDocumentPreview,'document');if(['image/jpeg','image/png'].includes(file.type)){clearObjectUrl('document');lessonDocumentPreviewUrl=URL.createObjectURL(file);showImagePreview(lessonDocumentPreview,lessonDocumentPreviewUrl,file.name)}else showImagePreview(lessonDocumentPreview,'',`${file.name} · PDF ไม่มีรูปตัวอย่าง`,{objectName:'document',image:false})});
 async function responseData(response,fallback){return response.json().catch(()=>({error:response.status===413?'ไฟล์ใหญ่เกินกว่าที่เซิร์ฟเวอร์รับในคำขอเดียว':fallback}))}
+function videoDurationSeconds(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file),timer=setTimeout(()=>done(new Error('อ่านความยาวคลิปไม่สำเร็จ กรุณาลองเลือกไฟล์ใหม่')),15000),done=value=>{clearTimeout(timer);URL.revokeObjectURL(url);video.removeAttribute('src');video.load();value instanceof Error?reject(value):resolve(value)};video.preload='metadata';video.onloadedmetadata=()=>Number.isFinite(video.duration)&&video.duration>0?done(video.duration):done(new Error('อ่านความยาวคลิปไม่สำเร็จ'));video.onerror=()=>done(new Error('อ่านความยาวคลิปไม่สำเร็จ กรุณาตรวจว่าไฟล์ MP4/WEBM เปิดเล่นได้'));video.src=url})}
 async function uploadLessonVideo(courseId,lessonId,file){
   let session;
   try{
@@ -42,6 +43,7 @@ async function uploadLessonVideo(courseId,lessonId,file){
 }
 async function persistLesson(id){
   const video=lessonForm.elements.video.files[0];if(video&&(!['video/mp4','video/webm'].includes(video.type)||video.size>2*1024*1024*1024))throw new Error('คลิปต้องเป็น MP4 หรือ WEBM ไม่เกิน 2 GB');
+  if(video){lessonMessage.textContent='กำลังอ่านความยาวคลิป…';lessonForm.elements.duration_minutes.value=String((await videoDurationSeconds(video))/60)}
   const form=new FormData(lessonForm),fallbackTitle=`EP ${currentLessonId?Math.max(1,currentLessons.findIndex(item=>Number(item.id)===Number(currentLessonId))+1):currentLessons.length+1}`;form.delete('video');form.set('title',String(form.get('title')||'').trim()||fallbackTitle);form.set('draft_only','1');if(video)form.set('video_upload_pending','1');const endpoint=currentLessonId?`/api/admin/courses/${id}/lessons/${currentLessonId}`:`/api/admin/courses/${id}/lessons`,response=await fetch(endpoint,{method:'POST',body:form}),data=await responseData(response,'บันทึกร่าง EP ไม่สำเร็จ');if(!response.ok)throw new Error(data.error||'บันทึกร่าง EP ไม่สำเร็จ');if(video)await uploadLessonVideo(id,data.id,video);return data;
 }
 lessonForm.onsubmit = async (e) => {

@@ -73,9 +73,7 @@
                 ><span id="lessonFormTitle">ชื่อ EP</span><input name="title" placeholder="เว้นว่างได้ ระบบจะตั้งชื่อ EP ตามลำดับ" /></label
               ><label
                 >รายละเอียดเนื้อหา<textarea name="description" rows="3"></textarea></label
-              ><label
-                >ความยาว EP (นาที)<input name="duration_minutes" type="number" min="0" max="100000" step="1" value="0" /></label
-              ><label
+              ><input name="duration_minutes" type="hidden" value="0" /><label
                 >อัปโหลดคลิป MP4/WEBM ไม่เกิน 2 GB<input
                   name="video"
                   type="file"
@@ -104,6 +102,6 @@
         </section>
       </div>
     </main>
-    <script src="/admin-courses.js?v=014447"></script>
+    <script src="/admin-courses.js?v=014448"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>
