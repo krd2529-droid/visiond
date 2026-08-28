@@ -1,0 +1,5 @@
+{"patch":"v0.14.462","parent_commit":"25c9f674","safe_rollback_commit":"25c9f674","push":false,"deploy":false,"tasks":[
+  {"id":"V014462-BUGFIX-001","scope":"BUGFIX","source_instruction":"บันทึกร่างแล้วกลับมาแก้ไขต้องโหลด EP ขึ้นจริง ไม่ล้มเพราะ production D1 ขาดคอลัมน์ที่เพิ่มภายหลัง","status":"DONE-VERIFIED","evidence":["functions/_course_rules.js","functions/api/admin/courses/[id]/lessons.js","functions/api/admin/courses/[id]/lessons/[lessonId].js"]},
+  {"id":"V014462-UX-001","scope":"UX","source_instruction":"ปุ่มแก้ไขต้องเลื่อนไปต้นฟอร์มและแสดง error จาก API หากโหลด EP ไม่สำเร็จ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014462-QA-001","scope":"QA","source_instruction":"ทดสอบสร้าง บันทึกร่าง โหลดกลับ แก้ไข และเผยแพร่ 20 EP พร้อมไฟล์","status":"DONE-VERIFIED","evidence":["scripts/test-company-course-e2e.mjs","scripts/test-v014462.mjs"]}
+]}
