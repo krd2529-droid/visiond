@@ -1,0 +1,5 @@
+{"patch":"v0.14.457","parent_commit":"8bcf5c58","safe_rollback_commit":"8bcf5c58","push":false,"deploy":false,"tasks":[
+  {"id":"V014457-FEATURE-001","scope":"FEATURE","source_instruction":"ไม่ต้องแสดงจำนวน EP รวมเพราะมี EP ย่อยและดูรก","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014457-SECURITY-001","scope":"SECURITY","source_instruction":"เปลี่ยนเฉพาะข้อความแสดงผล ไม่แตะลำดับหรือข้อมูล EP จริง","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014457-QA-001","scope":"QA","source_instruction":"ตรวจไม่มี count ในรายการ/summary พร้อม cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014457.mjs"]}
+]}
