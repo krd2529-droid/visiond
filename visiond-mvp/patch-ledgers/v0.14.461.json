@@ -1,0 +1,5 @@
+{"patch":"v0.14.461","parent_commit":"4537637f","safe_rollback_commit":"4537637f","push":false,"deploy":false,"tasks":[
+  {"id":"V014461-FEATURE-001","scope":"FEATURE","source_instruction":"ปุ่มเผยแพร่ต้องบันทึกข้อมูลคอร์ส บัญชี และ EP ที่ค้างทั้งหมดก่อนเปิดขายในคลิกเดียว","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014461-QA-001","scope":"QA","source_instruction":"ทดสอบเส้นทางสร้าง แก้ไข อัปโหลด บันทึก โหลดกลับ ลบ เพิ่มใหม่ และเผยแพร่ 20 EP","status":"DONE-VERIFIED","evidence":["scripts/test-company-course-e2e.mjs","scripts/test-v014461.mjs"]},
+  {"id":"V014461-DOCS-001","scope":"DOCS","source_instruction":"อัปเดตสัญญา COURSE-ADMIN-001 และ requirement สำหรับ one-click publish","status":"DONE-VERIFIED","evidence":["FEATURE-MAP.md","requirements-ledger.json"]}
+]}

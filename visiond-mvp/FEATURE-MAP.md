@@ -816,7 +816,7 @@
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียนเส้นทางจริงใน v0.14.363
 - หน้า/ไฟล์: company-course grid และ lesson manager ใน `/admin-courses.html`, `public/admin-courses.js`, `functions/api/admin/courses/index.js`, `functions/api/admin/courses/[id].js`, `functions/api/admin/courses/[id]/lessons.js`, `functions/api/admin/courses/[id]/lessons/[lessonId].js`
-- ฟังก์ชัน: แสดง/สร้างคอร์สบริษัทเป็นฉบับร่างพร้อมชื่อคอร์ส ชื่อผู้สอน จำนวน EP และเวลาเนื้อหา; เพิ่ม EP พร้อมชื่อ รายละเอียด คลิปหรือ PDF; เมื่อ EP ที่มีสื่อครบจำนวน Boss จึงกด “เผยแพร่ตะกร้า” เพื่อเปิดขายได้ทันทีโดยไม่เข้าคิว seller review
+- ฟังก์ชัน: แสดง/สร้างคอร์สบริษัทเป็นฉบับร่างพร้อมชื่อคอร์ส ชื่อผู้สอน และเวลาเนื้อหา; เพิ่ม EP พร้อมชื่อ รายละเอียด คลิปหรือเอกสาร; Boss กด “เผยแพร่ตะกร้า” เพื่อบันทึกข้อมูลคอร์ส บัญชี และ EP ที่ค้างทั้งหมดก่อนเปิดขายทันทีโดยไม่เข้าคิว seller review
 - บัญชีรับเงิน: เลือกและสลับได้ตลอดต่อคอร์สระหว่างกรุงศรีของ Boss (รัฐสิทธิ ดำรงรถการ · 444-118-1181) หรือบัญชีบริษัท VisionD; ออเดอร์ใหม่ snapshot บัญชีล่าสุด ส่วนออเดอร์เดิมไม่ถูกย้อนแก้ และคอร์สบริษัทไม่เข้า payout พาร์ตเนอร์ 50/50
 - API: `GET/POST /api/admin/courses`, `POST/DELETE /api/admin/courses/:id`, `POST /api/admin/courses/:id/payment`, `POST /api/admin/courses/:id/publish`, `GET/POST /api/admin/courses/:id/lessons`, `POST/DELETE /api/admin/courses/:id/lessons/:lessonId`
 - ฐานข้อมูล/ไฟล์: `courses`, `products`, `course_lessons`, `entitlements`; R2 course cover, lesson video และ PDF
@@ -833,7 +833,7 @@
 - จำนวน EP: หลังบ้านตะกร้าคอร์สบริษัทห้ามแสดงช่องกรอกหรือจำนวน EP รวมทั้งในการ์ดรายการและแถบสรุป เพราะรองรับเลข EP ย่อย เช่น 1.1/1.2 และยอดรวมทำให้รก; คงข้อมูลและเลขประจำแต่ละ EP ไว้ตามจริง
 - การเผยแพร่: Boss เป็นผู้ตัดสินใจกดเผยแพร่เอง ปุ่มต้องเปิดให้กดเสมอและ API ห้ามบังคับความครบของชื่อ ราคา เวลา จำนวน EP ไฟล์ หรือบัญชีรับเงินก่อนเปลี่ยนสถานะ; คงเฉพาะ `requireAdmin` และการตรวจว่าเป็นตะกร้าบริษัท ไม่ใช่คอร์สพาร์ตเนอร์
 - การแยกระบบ: หน้า `/admin-courses.html` ใช้โครงฟอร์มตะกร้าและการ์ด EP แบบเดียวกับ workspace คอร์ส แต่บันทึกผ่าน Admin company API เท่านั้น ไม่มี seller review หรือข้อความ 50/50; ปุ่ม “บันทึกร่าง” สร้าง/อัปเดต draft ได้ก่อนมี EP; ปุ่มเผยแพร่อนุมัติ/เปิดขายตรงโดยไม่ส่งตรวจ ส่วน review พาร์ตเนอร์อยู่ `/admin-course-reviews.html`
-- การทดสอบ: `scripts/test-v014363.mjs`, `scripts/test-v014424.mjs`
+- การทดสอบ: `scripts/test-v014363.mjs`, `scripts/test-v014424.mjs`, `scripts/test-company-course-e2e.mjs`
 
 ## COURSE-PAYOUT-001 — บัญชีรับเงินผู้สอนและ Secure Payment QR
 

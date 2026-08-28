@@ -13,6 +13,7 @@ const evergreen = new Set([
   'test-first-order-promo.mjs',
   'test-maintenance-worker.mjs',
   'test-mobile-frontend.mjs',
+  'test-company-course-e2e.mjs',
 ]);
 const currentVersion = fs.readFileSync('VERSION.txt', 'utf8').trim();
 const currentReleaseTest = `test-v${currentVersion.replace(/^v/, '').replaceAll('.', '')}.mjs`;
