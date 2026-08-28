@@ -1,0 +1,5 @@
+{"patch":"v0.14.458","parent_commit":"0209d708","safe_rollback_commit":"0209d708","push":false,"deploy":false,"tasks":[
+  {"id":"V014458-FEATURE-001","scope":"FEATURE","source_instruction":"บันทึกร่างต้องแสดงว่าจำคลิปและเอกสาร EP ที่บันทึกไว้แล้ว","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","public/course-seller.css"]},
+  {"id":"V014458-SECURITY-001","scope":"SECURITY","source_instruction":"ห้ามพยายามเติม file input เดิม; แสดงสถานะจาก DB และรักษาไฟล์เดิมเมื่อไม่เลือกใหม่","status":"DONE-VERIFIED","evidence":["functions/api/admin/courses/[id]/lessons.js","public/admin-courses.js"]},
+  {"id":"V014458-QA-001","scope":"QA","source_instruction":"ตรวจ saved media flags, MIME status, cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014458.mjs"]}
+]}

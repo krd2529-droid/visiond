@@ -7,7 +7,7 @@
     <title>จัดการคอร์ส | VisionD</title>
     <link rel="stylesheet" href="/style.css?v=01414" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
     <link rel="stylesheet" href="/course.css?v=014425" />
-    <link rel="stylesheet" href="/course-seller.css?v=014454" />
+    <link rel="stylesheet" href="/course-seller.css?v=014458" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
   <link rel="stylesheet" href="/visiond-button-system.css?v=014189" /><script src="/visiond-button-system.js?v=014190" defer></script></head>
   <body>
@@ -78,12 +78,12 @@
                 >อัปโหลดคลิป MP4/WEBM ไม่เกิน 2 GB<input
                   name="video"
                   type="file"
-                  accept="video/mp4,video/webm" /></label
+                  accept="video/mp4,video/webm" /><small id="lessonVideoSavedStatus" class="saved-upload-status" hidden></small></label
               ><label
                 >อัปโหลดเอกสาร PDF, JPEG หรือ PNG ไม่เกิน 100 MB<input
                   name="pdf"
                   type="file"
-                  accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" /><figure id="lessonDocumentPreview" class="upload-image-preview upload-image-preview--document" hidden><img alt="ตัวอย่างเอกสารรูปภาพของ EP" /><figcaption>ยังไม่ได้เลือกเอกสาร</figcaption></figure></label
+                  accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" /><small id="lessonDocumentSavedStatus" class="saved-upload-status" hidden></small><figure id="lessonDocumentPreview" class="upload-image-preview upload-image-preview--document" hidden><img alt="ตัวอย่างเอกสารรูปภาพของ EP" /><figcaption>ยังไม่ได้เลือกเอกสาร</figcaption></figure></label
               ><button class="vds-btn vds-btn--primary" type="submit">เพิ่ม EP</button>
               <p id="lessonMessage"></p>
             </form>
@@ -102,6 +102,6 @@
         </section>
       </div>
     </main>
-    <script src="/admin-courses.js?v=014457"></script>
+    <script src="/admin-courses.js?v=014458"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>
