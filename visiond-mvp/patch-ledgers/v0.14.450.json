@@ -1,0 +1,5 @@
+{"patch":"v0.14.450","parent_commit":"4d5cf3e6","safe_rollback_commit":"4d5cf3e6","push":false,"deploy":false,"tasks":[
+  {"id":"V014450-FEATURE-001","scope":"FEATURE","source_instruction":"เมื่อ browser อ่านความยาว MP4 ไม่ได้ ให้ fallback อ่าน moov/mvhd ก่อน Multipart","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014450-SECURITY-001","scope":"SECURITY","source_instruction":"ตัวอ่าน fallback ต้องใช้ File.slice ตาม box offset และห้ามอ่านไฟล์ใหญ่มาทั้งก้อน","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","scripts/test-v014450.mjs"]},
+  {"id":"V014450-QA-001","scope":"QA","source_instruction":"ตรวจ browser-first fallback, MP4 box parsing, large-size guard, cache key และ multipart continuation","status":"DONE-VERIFIED","evidence":["scripts/test-v014450.mjs"]}
+]}
