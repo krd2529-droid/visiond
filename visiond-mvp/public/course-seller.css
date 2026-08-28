@@ -854,6 +854,36 @@ td {
   border-color: #e88383;
   color: #9b2026;
 }
+.upload-image-preview {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 320px);
+  margin: 10px 0 0;
+  padding: 10px;
+  border: 1px solid #8edbd6;
+  border-radius: 14px;
+  background: #fff;
+}
+.upload-image-preview[hidden] {
+  display: none;
+}
+.upload-image-preview img {
+  display: block;
+  width: 100%;
+  height: 240px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #effaf9;
+}
+.upload-image-preview--document img {
+  height: 180px;
+}
+.upload-image-preview figcaption {
+  overflow-wrap: anywhere;
+  color: #315b59;
+  font-size: 13px;
+  font-weight: 700;
+}
 .seller-lesson-workspace {
   display: grid;
   gap: 14px;

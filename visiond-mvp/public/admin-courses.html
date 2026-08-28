@@ -7,7 +7,7 @@
     <title>จัดการคอร์ส | VisionD</title>
     <link rel="stylesheet" href="/style.css?v=01414" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
     <link rel="stylesheet" href="/course.css?v=014425" />
-    <link rel="stylesheet" href="/course-seller.css?v=014439" />
+    <link rel="stylesheet" href="/course-seller.css?v=014447" />
     <link rel="stylesheet" href="/admin-mobile.css?v=01430" />
   <link rel="stylesheet" href="/visiond-button-system.css?v=014189" /><script src="/visiond-button-system.js?v=014190" defer></script></head>
   <body>
@@ -32,7 +32,7 @@
           <p>กรอกข้อมูลคอร์สแล้วเพิ่ม EP ได้เลย ระบบจะสร้างฉบับร่างให้อัตโนมัติเมื่อเพิ่ม EP แรก</p>
           <form id="courseForm" class="seller-form course-basket-form">
             <input name="course_type" type="hidden" value="online_course" />
-            <label class="course-cover-upload span2">รูปปกตะกร้าคอร์ส <small>JPG, PNG หรือ WEBP ไม่เกิน 5 MB</small><input name="cover" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+            <label class="course-cover-upload span2">รูปปกตะกร้าคอร์ส <small>JPG, PNG หรือ WEBP ไม่เกิน 5 MB</small><input name="cover" type="file" accept="image/jpeg,image/png,image/webp" /><figure id="companyCoverPreview" class="upload-image-preview" hidden><img alt="ตัวอย่างรูปปกตะกร้าคอร์ส" /><figcaption>ยังไม่ได้เลือกรูป</figcaption></figure></label>
             <label class="course-basket-title">ชื่อคอร์ส<input name="title" required /></label
             ><label class="course-basket-teacher">ชื่อผู้สอน<input name="teacher_name" required /></label>
             <input name="short_description" type="hidden" />
@@ -84,7 +84,7 @@
                 >อัปโหลดเอกสาร PDF, JPEG หรือ PNG ไม่เกิน 100 MB<input
                   name="pdf"
                   type="file"
-                  accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" /></label
+                  accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" /><figure id="lessonDocumentPreview" class="upload-image-preview upload-image-preview--document" hidden><img alt="ตัวอย่างเอกสารรูปภาพของ EP" /><figcaption>ยังไม่ได้เลือกเอกสาร</figcaption></figure></label
               ><button class="vds-btn vds-btn--primary" type="submit">เพิ่ม EP</button>
               <p id="lessonMessage"></p>
             </form>
@@ -104,6 +104,6 @@
         </section>
       </div>
     </main>
-    <script src="/admin-courses.js?v=014446"></script>
+    <script src="/admin-courses.js?v=014447"></script>
   <script src="/visiond-design-system.js?v=01489" defer></script></body>
 </html>

@@ -1,0 +1,5 @@
+{"patch":"v0.14.447","parent_commit":"68e919ad","safe_rollback_commit":"68e919ad","push":false,"deploy":false,"tasks":[
+  {"id":"V014447-UI-001","scope":"UI","source_instruction":"เพิ่มกรอบพรีวิวให้ช่องอัปโหลดรูปปกและเอกสารรูปภาพ EP","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","public/course-seller.css"]},
+  {"id":"V014447-FEATURE-001","scope":"FEATURE","source_instruction":"แสดงรูปเดิมเมื่อแก้คอร์สหรือ EP และแสดงชื่อไฟล์แทนภาพสำหรับ PDF","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014447-QA-001","scope":"QA","source_instruction":"ตรวจ local object URL lifecycle, saved image URL, PDF fallback, CSS และ cache keys","status":"DONE-VERIFIED","evidence":["scripts/test-v014447.mjs"]}
+]}
