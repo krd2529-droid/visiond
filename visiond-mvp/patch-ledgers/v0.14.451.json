@@ -1,0 +1,5 @@
+{"patch":"v0.14.451","parent_commit":"3203c689","safe_rollback_commit":"3203c689","push":false,"deploy":false,"tasks":[
+  {"id":"V014451-FEATURE-001","scope":"FEATURE","source_instruction":"เปิดด้วย EP 1 และกดเพิ่ม EP แต่ละครั้งต้องคงบล็อกเดิมพร้อมสร้างบล็อกถัดไปทันที","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","public/admin-courses.html"]},
+  {"id":"V014451-SECURITY-001","scope":"SECURITY","source_instruction":"ส่งคิว EP ตามลำดับเมื่อบันทึกร่าง และนำรายการสำเร็จออกเพื่อไม่บันทึกซ้ำเมื่อ retry","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014451-QA-001","scope":"QA","source_instruction":"ตรวจบล็อกเริ่มต้น คิวซ้ำได้ ไม่มี API ใน add handler cache และเวอร์ชัน","status":"DONE-VERIFIED","evidence":["scripts/test-v014451.mjs"]}
+]}
