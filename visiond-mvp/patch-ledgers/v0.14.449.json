@@ -1,0 +1,5 @@
+{"patch":"v0.14.449","parent_commit":"04204af4","safe_rollback_commit":"04204af4","push":false,"deploy":false,"tasks":[
+  {"id":"V014449-UI-001","scope":"UI","source_instruction":"กดเพิ่ม EP แล้วคง EP เดิมเป็นบล็อกเต็มและสร้างบล็อก EP ถัดไปด้านล่าง","status":"DONE-VERIFIED","evidence":["public/admin-courses.html","public/admin-courses.js","public/course-seller.css"]},
+  {"id":"V014449-FEATURE-001","scope":"FEATURE","source_instruction":"บล็อก EP ต้องแสดงรูปเอกสารเมื่อมีหรือชนิดสื่อ พร้อมแก้ไขและลบ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014449-QA-001","scope":"QA","source_instruction":"ตรวจลำดับ DOM, เลข EP ถัดไป, saved block media/actions, mobile layout และไม่คืนช่องนาที","status":"DONE-VERIFIED","evidence":["scripts/test-v014449.mjs"]}
+]}

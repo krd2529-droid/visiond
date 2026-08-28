@@ -1030,6 +1030,60 @@ td {
   border-radius: 16px;
   background: #f4fdfc;
 }
+.company-lesson-blocks {
+  display: grid;
+  gap: 12px;
+}
+.company-lesson-block {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #8edbd6;
+  border-radius: 16px;
+  background: #f4fdfc;
+}
+.company-lesson-block > img,
+.company-lesson-file-mark {
+  width: 150px;
+  height: 105px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #bce8e5;
+}
+.company-lesson-file-mark {
+  display: grid;
+  place-items: center;
+  color: #087e79;
+  font-weight: 900;
+}
+.company-lesson-block__body {
+  display: grid;
+  gap: 5px;
+}
+.company-lesson-block__body p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.company-lesson-block__actions {
+  display: grid;
+  gap: 8px;
+}
+.company-lesson-block__actions button {
+  min-height: 42px;
+}
+.company-lesson-block__actions button:last-child {
+  border-color: #e88383;
+  color: #9b2026;
+}
+.company-lesson-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed #8edbd6;
+  border-radius: 14px;
+}
 .seller-lesson-editor[hidden] {
   display: none !important;
 }
@@ -1130,6 +1184,18 @@ td {
   }
   .seller-lesson-editor {
     padding: 14px;
+  }
+  .company-lesson-block {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+  .company-lesson-block > img,
+  .company-lesson-file-mark {
+    width: 90px;
+    height: 90px;
+  }
+  .company-lesson-block__actions {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
   }
   .course-cover-preview figcaption {
     grid-template-columns: 1fr;
