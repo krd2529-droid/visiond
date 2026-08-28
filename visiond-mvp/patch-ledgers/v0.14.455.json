@@ -1,0 +1,5 @@
+{"patch":"v0.14.455","parent_commit":"14a10b95","safe_rollback_commit":"14a10b95","push":false,"deploy":false,"tasks":[
+  {"id":"V014455-FEATURE-001","scope":"FEATURE","source_instruction":"บันทึกร่างทั้งตะกร้าต้องจำ EP ที่กำลังแก้และไฟล์ที่อัปโหลดไว้","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014455-SECURITY-001","scope":"SECURITY","source_instruction":"ต้องรอ persistLesson และ multipart สำเร็จก่อนรีเซ็ต editor","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014455-QA-001","scope":"QA","source_instruction":"ตรวจ active EP save order, description-only draft, cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014455.mjs"]}
+]}
