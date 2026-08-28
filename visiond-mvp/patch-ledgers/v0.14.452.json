@@ -1,0 +1,5 @@
+{"patch":"v0.14.452","parent_commit":"223c13bc","safe_rollback_commit":"223c13bc","push":false,"deploy":false,"tasks":[
+  {"id":"V014452-FEATURE-001","scope":"FEATURE","source_instruction":"EP ที่กดเพิ่มแล้วต้องคงแสดงเต็ม ไม่ย่อเป็นการ์ดสรุป","status":"DONE-VERIFIED","evidence":["public/admin-courses.js","public/course-seller.css"]},
+  {"id":"V014452-SECURITY-001","scope":"SECURITY","source_instruction":"รูปตัวอย่างเอกสารในบล็อกรอส่งต้อง revoke object URL เมื่อลบหรือส่งสำเร็จ","status":"DONE-VERIFIED","evidence":["public/admin-courses.js"]},
+  {"id":"V014452-QA-001","scope":"QA","source_instruction":"ตรวจฟิลด์เต็ม รูปตัวอย่าง responsive cache และ version","status":"DONE-VERIFIED","evidence":["scripts/test-v014452.mjs"]}
+]}
