@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/index.html');
+assert.equal(read('VERSION.txt').trim(),'v0.14.468');
+assert.match(html,/WEB v0\.14\.468/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.468/);
+assert.equal((html.match(/class="home-member-offer home-ai-section"/g)||[]).length,1);
+assert.ok(html.indexOf('class="home-member-offer home-ai-section"')<html.indexOf('class="course-owner-feature home-ai-section"'));
+console.log('PASS v0.14.468 places the Member basket directly above the partner-course basket');

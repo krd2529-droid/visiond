@@ -1,0 +1,3 @@
+{"patch":"v0.14.468","parent_commit":"8cf54e49","safe_rollback_commit":"8cf54e49","push":false,"deploy":false,"tasks":[
+  {"id":"V014468-HOME-MEMBER-ORDER-001","scope":"WEB","source_instruction":"ย้ายตะกร้า Member ไปไว้เหนือตะกร้าพาร์ตเนอร์บนหน้าแรก","status":"DONE-VERIFIED","evidence":["public/index.html","scripts/test-v014468.mjs"]}
+]}
