@@ -36,3 +36,4 @@ body{color:var(--vd-text)}
 @media(max-width:560px){.home-page .vd-cover-slider>.vd-slide-prev,.home-page .vd-cover-slider>.vd-slide-next{width:44px!important;height:48px!important}}
 @media(max-width:420px){.home-page .vd-grid{grid-template-columns:1fr!important}.home-page .vd-cover,.home-page .vd-cover img{height:320px!important;max-height:320px!important}.home-page .vd-bottom a,.home-page [data-add-cart]{min-height:44px!important}}
 @media(prefers-reduced-motion:reduce){.vd-card{transition:none}.vd-card:hover{transform:none}}
+.home-member-cover img{max-height:560px;aspect-ratio:4/5}

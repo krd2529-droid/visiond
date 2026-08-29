@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const plan=read('functions/_member_plan.js'),home=read('public/index.html'),member=read('public/member.html'),css=read('public/member.css');
+assert.equal(read('VERSION.txt').trim(),'v0.14.469');
+assert.match(home,/WEB v0\.14\.469/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.469/);
+assert.match(plan,/LIFETIME_MEMBER_PRICE=29900/);
+assert.match(plan,/member-3-categories-lifetime-v014469\.png/);
+assert.match(home,/member-3-categories-lifetime-v014469\.png/);
+assert.match(home,/299 บาท/);
+assert.match(member,/ปลดล็อก 3 หมวด 299 บาท/);
+assert.match(css,/grid-template-columns:minmax\(240px,380px\) 1fr/);
+assert.ok(fs.statSync(new URL('../public/assets/member-3-categories-lifetime-v014469.png',import.meta.url)).size>100000);
+console.log('PASS v0.14.469 uses the supplied large Member cover and charges 299 baht');

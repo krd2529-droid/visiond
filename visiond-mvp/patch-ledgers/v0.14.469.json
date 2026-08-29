@@ -1,0 +1,3 @@
+{"patch":"v0.14.469","parent_commit":"bc1b1808","safe_rollback_commit":"bc1b1808","push":false,"deploy":false,"tasks":[
+  {"id":"V014469-MEMBER-COVER-PRICE-001","scope":"COMMERCE","source_instruction":"ใช้รูปที่ผู้ใช้ส่งทำหน้าตะกร้า Member และตั้งราคา 299 บาท","status":"DONE-VERIFIED","evidence":["public/assets/member-3-categories-lifetime-v014469.png","public/index.html","public/member.html","public/member.css","functions/_member_plan.js","scripts/test-v014469.mjs"]}
+]}

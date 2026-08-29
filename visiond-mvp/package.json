@@ -392,7 +392,8 @@
     "test:v014466-lifetime-member": "node scripts/test-v014466-lifetime-member.mjs",
     "test:v014466": "node scripts/test-v014466.mjs",
     "test:v014467": "node scripts/test-v014467.mjs",
-    "test:v014468": "node scripts/test-v014468.mjs"
+    "test:v014468": "node scripts/test-v014468.mjs",
+    "test:v014469": "node scripts/test-v014469.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

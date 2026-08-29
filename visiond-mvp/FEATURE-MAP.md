@@ -682,11 +682,11 @@
 
 - สถานะ: `IMPLEMENTED`; v0.14.466 ปิดเส้นทางซื้อ–อนุมัติ–ปลดสิทธิ์–ดาวน์โหลดครบ
 - หน้า/ไฟล์: `/member`, `public/member.html`, `public/member.js`, `public/member-rights.js`, `public/member.css`, `functions/_member_plan.js`, `functions/_orders.js`, `functions/api/member/plans.js`, `functions/api/admin/member-plans.js`, `functions/api/downloads/product/[id].js`, `functions/api/downloads/file/[id].js`
-- ฟังก์ชัน: แพ็กเกจ 499 บาทชำระครั้งเดียว ปลดล็อกเกมเสริมพัฒนาการ แบบฝึกหัด และระบายสีตลอดชีพ; เมื่ออนุมัติสลิปสร้างสิทธิ์ทั้ง 3 หมวดและใช้สิทธิ์ดาวน์โหลดสินค้าเดิม/ใหม่ในหมวด
+- ฟังก์ชัน: แพ็กเกจ 299 บาทชำระครั้งเดียว ปลดล็อกเกมเสริมพัฒนาการ แบบฝึกหัด และระบายสีตลอดชีพ; เมื่ออนุมัติสลิปสร้างสิทธิ์ทั้ง 3 หมวดและใช้สิทธิ์ดาวน์โหลดสินค้าเดิม/ใหม่ในหมวด
 - API: `GET /api/member/plans`, `GET/POST /api/admin/member-plans`, `POST /api/orders` สำหรับปุ่มซื้อ
 - ฐานข้อมูล: `products.product_kind/member_category/member_duration_months`, `categories`, `category_memberships`, `orders`
 - สิทธิ์: catalog เปิดอ่านได้; memberships คืนเฉพาะเมื่อ `requireUser` ผ่านและ query ผูก `auth.user.id`; plan configuration ใช้ `requireAdmin`
-- ห้ามกระทบ: แพ็กเกจตลอดชีพต้องซื้อแยก 1 รายการ ราคา 49,900 สตางค์; expiry ใช้ `9999-12-31 23:59:59`; สิทธิ์ดาวน์โหลดต้อง active, ไม่หมดอายุ, เป็นของผู้ใช้ และตรงหมวดสินค้า; หมวดรอยสักไม่รวมในแพ็กเกจ
+- ห้ามกระทบ: แพ็กเกจตลอดชีพต้องซื้อแยก 1 รายการ ราคา 29,900 สตางค์; expiry ใช้ `9999-12-31 23:59:59`; สิทธิ์ดาวน์โหลดต้อง active, ไม่หมดอายุ, เป็นของผู้ใช้ และตรงหมวดสินค้า; หมวดรอยสักไม่รวมในแพ็กเกจ
 - รหัส UI: document root ของหน้า member มี `data-feature="CATEGORY-MEMBER-001"` จาก `public/member.js`; คง card/button/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014466-lifetime-member.mjs`
 
