@@ -1,0 +1,3 @@
+{"patch":"v0.14.473","parent_commit":"759c2a6c","safe_rollback_commit":"759c2a6c","push":false,"deploy":false,"tasks":[
+  {"id":"V014473-BROADCAST-IMAGE-RESIZE-001","scope":"V12","source_instruction":"รูปบรอดแคสต์เกิน 2 MB ให้ย่อให้อัตโนมัติ","status":"DONE-VERIFIED","evidence":["public/v12-connect.html","public/v12-connect.js","functions/api/admin/v12-broadcast.js","scripts/test-v014473.mjs"]}
+]}

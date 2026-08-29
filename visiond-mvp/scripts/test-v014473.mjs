@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/v12-connect.html'),js=read('public/v12-connect.js'),api=read('functions/api/admin/v12-broadcast.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.473');
+assert.match(read('public/index.html'),/WEB v0\.14\.473/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.473/);
+assert.match(html,/รูป JPG\/PNG ไม่เกิน 2 MB/);
+assert.match(html,/v12-connect\.js\?v=014473/);
+assert.match(js,/async function shrinkBroadcastImage/);
+assert.match(js,/file\.size<=2\*1024\*1024/);
+assert.match(js,/limit=1900\*1024/);
+assert.match(js,/canvas\.toBlob\(resolve,'image\/jpeg',quality\)/);
+assert.match(js,/new DataTransfer\(\)/);
+assert.match(js,/ย่อรูปแล้ว/);
+assert.match(api,/image\.size>2\*1024\*1024/);
+assert.match(api,/ไม่เกิน 2 MB/);
+console.log('PASS v0.14.473 auto-resizes V12 broadcast images above the 2 MB limit');
