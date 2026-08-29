@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const ui=read('public/v12-connect.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.475');
+assert.match(read('public/index.html'),/WEB v0\.14\.475/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.475/);
+assert.match(read('public/v12-connect.html'),/v0\.14\.475/);
+assert.doesNotMatch(ui,/if\(ids\.length\)v12Broadcast\.audience\.value='selected'/);
+assert.match(ui,/เลือกผู้รับทดสอบแล้ว/);
+assert.match(ui,/การส่งจริงยังใช้กลุ่มผู้รับด้านบน/);
+assert.match(ui,/ลูกค้าทุกคนที่เคยแชท/);
+console.log('PASS v0.14.475 keeps the final broadcast audience independent from the test recipient');
