@@ -8,6 +8,7 @@ import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {loadSellerToken} from '../../_seller_token.js';
 import {firstOrderPromoStatus,calculateFirstOrderDiscount} from '../../_first_order_promo.js';
 import {courseRevenue} from '../../_course_plans.js';
+import {ensureLifetimeMemberPlan} from '../../_member_plan.js';
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -18,6 +19,7 @@ async function ensureStarterProducts(env, slugs) {
 }
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
+  await ensureLifetimeMemberPlan(ctx.env);
   await ensureVision7Schema(ctx.env);
   const a = await requireUser(ctx);
   if (a.error) return a.error;
@@ -56,11 +58,11 @@ export async function onRequestPost(ctx) {
   await ensureStarterProducts(ctx.env, slugs);
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
-    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
+    `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,p.member_category,p.member_duration_months,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
       (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
       (SELECT q.offer_price FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.course_type='online_course'
-     WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')<>'member'`,
+     WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
   )
     .bind(...slugs)
     .all();
@@ -90,6 +92,8 @@ export async function onRequestPost(ctx) {
   }
   const sellerItems=orderedResults.filter(p=>p.course_owner_user_id);
   const companyCourseItems=orderedResults.filter(p=>p.seller_course_id&&!p.course_owner_user_id);
+  const memberItems=orderedResults.filter(p=>p.product_kind==='member');
+  if(memberItems.length&&(memberItems.length!==1||orderedResults.length!==1))return json({error:'ตะกร้า Member ต้องชำระแยกครั้งละ 1 แพ็กเกจ'},400);
   if(companyCourseItems.length&&(companyCourseItems.length!==1||orderedResults.length!==1))return json({error:'คอร์ส VisionD ต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   if(sellerItems.length && (orderedResults.length!==1||sellerItems.length!==1))return json({error:'คอร์สจากผู้ขายต้องชำระแยกครั้งละ 1 คอร์ส'},400);
   if(sellerItems.some(product=>!Number.isFinite(Number(product.price))||Number(product.price)<100))return json({error:'คอร์สจากผู้ขายต้องมีราคาอย่างน้อย 1 บาท กรุณาแจ้งผู้ขายให้แก้ราคา'},409);

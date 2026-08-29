@@ -1,10 +1,11 @@
 import {json,requireAdmin} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
+import {ensureLifetimeMemberPlan,LIFETIME_MEMBER_SLUG} from '../../_member_plan.js';
 
 const cleanSlug=value=>String(value||'').trim().toLowerCase();
 export async function onRequestGet(ctx){
-  await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
-  const plans=(await ctx.env.DB.prepare("SELECT p.id,p.slug,p.title,p.price,p.status,p.member_category category_slug,p.member_duration_months duration_months,c.name category_name,(SELECT COUNT(*) FROM category_memberships cm WHERE cm.category_slug=p.member_category AND cm.active=1 AND cm.expires_at>CURRENT_TIMESTAMP) active_members FROM products p LEFT JOIN categories c ON c.slug=p.member_category WHERE p.product_kind='member' AND p.deleted_at IS NULL ORDER BY c.sort_order,p.member_duration_months").all()).results;
+  await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;await ensureLifetimeMemberPlan(ctx.env);
+  const plans=(await ctx.env.DB.prepare("SELECT p.id,p.slug,p.title,p.price,p.status,p.member_category category_slug,p.member_duration_months duration_months,CASE WHEN p.slug=? THEN 'เกม · แบบฝึกหัด · ระบายสี' ELSE c.name END category_name,(SELECT COUNT(DISTINCT cm.user_id) FROM category_memberships cm WHERE (cm.category_slug=p.member_category OR (p.slug=? AND instr(','||p.member_category||',',','||cm.category_slug||',')>0)) AND cm.active=1 AND cm.expires_at>CURRENT_TIMESTAMP) active_members FROM products p LEFT JOIN categories c ON c.slug=p.member_category WHERE p.product_kind='member' AND p.deleted_at IS NULL ORDER BY CASE WHEN p.slug=? THEN 0 ELSE 1 END,c.sort_order,p.member_duration_months").bind(LIFETIME_MEMBER_SLUG,LIFETIME_MEMBER_SLUG,LIFETIME_MEMBER_SLUG).all()).results;
   const categories=(await ctx.env.DB.prepare("SELECT slug,name FROM categories WHERE active=1 AND parent_slug IS NULL AND slug NOT LIKE 'set-%' ORDER BY sort_order,name").all()).results;
   return json({plans,categories});
 }

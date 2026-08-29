@@ -678,18 +678,17 @@
 - รหัส UI: users section มี `data-feature="MEMBER-ADMIN-001"`; คง form/table/dialog/loading/error และ theme เดิม
 - การทดสอบ: `scripts/test-v014353.mjs`
 
-## CATEGORY-MEMBER-001 — สิทธิ์สมาชิกรายหมวดแบบรายเดือน/รายปี
+## CATEGORY-MEMBER-001 — Member 3 หมวดตลอดชีพ
 
-- สถานะ: `PARTIAL`; catalog, การสร้าง order, การอ่านสิทธิ์เดิม และ plan configuration มีแล้ว; ลงทะเบียนเส้นทางจริงใน v0.14.354
-- หน้า/ไฟล์: `/member`, `public/member.html`, `public/member.js`, `public/member-rights.js`, `functions/api/member/plans.js`, `functions/api/admin/member-plans.js`
-- ฟังก์ชัน: แสดงแพ็กเกจที่เผยแพร่, แสดงสิทธิ์ active ของผู้ใช้, สร้างออเดอร์ผ่าน commerce API เดิม และสร้าง/อัปเดต member product ตามหมวด
+- สถานะ: `IMPLEMENTED`; v0.14.466 ปิดเส้นทางซื้อ–อนุมัติ–ปลดสิทธิ์–ดาวน์โหลดครบ
+- หน้า/ไฟล์: `/member`, `public/member.html`, `public/member.js`, `public/member-rights.js`, `public/member.css`, `functions/_member_plan.js`, `functions/_orders.js`, `functions/api/member/plans.js`, `functions/api/admin/member-plans.js`, `functions/api/downloads/product/[id].js`, `functions/api/downloads/file/[id].js`
+- ฟังก์ชัน: แพ็กเกจ 499 บาทชำระครั้งเดียว ปลดล็อกเกมเสริมพัฒนาการ แบบฝึกหัด และระบายสีตลอดชีพ; เมื่ออนุมัติสลิปสร้างสิทธิ์ทั้ง 3 หมวดและใช้สิทธิ์ดาวน์โหลดสินค้าเดิม/ใหม่ในหมวด
 - API: `GET /api/member/plans`, `GET/POST /api/admin/member-plans`, `POST /api/orders` สำหรับปุ่มซื้อ
 - ฐานข้อมูล: `products.product_kind/member_category/member_duration_months`, `categories`, `category_memberships`, `orders`
 - สิทธิ์: catalog เปิดอ่านได้; memberships คืนเฉพาะเมื่อ `requireUser` ผ่านและ query ผูก `auth.user.id`; plan configuration ใช้ `requireAdmin`
-- ห้ามกระทบ: public เห็นเฉพาะ plan `published` ในหมวด active; duration รับเฉพาะ 1 หรือ 12 เดือน; ราคาห้ามติดลบ; slug คงรูป `member-{category}-{months}m`; สิทธิ์ที่แสดงต้อง active, ไม่หมดอายุ และเป็นของผู้ใช้เท่านั้น
-- Known Gap: จาก Coverage Audit v0.14.354 ยังไม่พบ runtime ที่ `INSERT/UPDATE category_memberships` เมื่ออนุมัติ order; ห้ามอ้างว่า activation/renewal implemented จนกว่าจะมีโค้ดและทดสอบจริง
+- ห้ามกระทบ: แพ็กเกจตลอดชีพต้องซื้อแยก 1 รายการ ราคา 49,900 สตางค์; expiry ใช้ `9999-12-31 23:59:59`; สิทธิ์ดาวน์โหลดต้อง active, ไม่หมดอายุ, เป็นของผู้ใช้ และตรงหมวดสินค้า; หมวดรอยสักไม่รวมในแพ็กเกจ
 - รหัส UI: document root ของหน้า member มี `data-feature="CATEGORY-MEMBER-001"` จาก `public/member.js`; คง card/button/loading/error และ theme เดิม
-- การทดสอบ: `scripts/test-v014354.mjs`
+- การทดสอบ: `scripts/test-v014466-lifetime-member.mjs`
 
 ## ELON-CONTROL-001 — สวิตช์ควบคุม ELON Web และ ELON V7 แยกฐาน
 

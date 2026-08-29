@@ -1,0 +1,32 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const plan=read('functions/_member_plan.js');
+const orders=read('functions/_orders.js');
+const createOrder=read('functions/api/orders/index.js');
+const productDownload=read('functions/api/downloads/product/[id].js');
+const fileDownload=read('functions/api/downloads/file/[id].js');
+const memberApi=read('functions/api/member/plans.js');
+const memberHtml=read('public/member.html');
+const memberJs=read('public/member.js');
+const home=read('public/index.html');
+assert.equal(read('VERSION.txt').trim(),'v0.14.466');
+assert.match(home,/WEB v0\.14\.466/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.466/);
+assert.match(plan,/LIFETIME_MEMBER_PRICE=49900/);
+for(const slug of ['development-game','worksheet','coloring'])assert.match(plan,new RegExp(`['"]${slug}['"]`));
+assert.match(plan,/member_duration_months,updated_at[\s\S]*?,0,CURRENT_TIMESTAMP/);
+assert.match(createOrder,/memberItems\.length!==1\|\|orderedResults\.length!==1/);
+assert.match(orders,/INSERT INTO category_memberships/);
+assert.match(orders,/9999-12-31 23:59:59/);
+assert.match(orders,/memberCategories\(item\.member_category\)/);
+for(const source of [productDownload,fileDownload]){
+  assert.match(source,/category_memberships/);
+  assert.match(source,/cm\.active=1/);
+  assert.match(source,/cm\.expires_at>CURRENT_TIMESTAMP/);
+}
+assert.match(memberApi,/ensureLifetimeMemberPlan/);
+assert.match(memberHtml,/ปลดล็อก 3 หมวด 499 บาท/);
+assert.match(memberJs,/สิทธิ์ตลอดชีพ/);
+assert.match(home,/ดูตะกร้า Member/);
+console.log('PASS v0.14.466 lifetime Member unlocks exactly three categories for 499 baht and authorizes downloads');
