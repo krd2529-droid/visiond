@@ -13,7 +13,7 @@
     />
     <link rel="stylesheet" href="/style.css?v=014136" /><link rel="stylesheet" href="/visiond-design-system.css?v=01489">
     <link rel="stylesheet" href="/course-owner-badge.css?v=01369" />
-    <link rel="stylesheet" href="/admin-products.css?v=014183" />
+    <link rel="stylesheet" href="/admin-products.css?v=014464" />
     <link rel="stylesheet" href="/admin-pdf-cover.css?v=014262" />
     <link rel="stylesheet" href="/admin-payment.css?v=01444" />
     <link rel="stylesheet" href="/promotion.css?v=01336" />
@@ -886,7 +886,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.463</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.14.464</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -1406,6 +1406,14 @@
               </button>
             </div>
           </div>
+          <section class="product-pdf-inventory" data-feature="PROD-PDF-INVENTORY-001" aria-labelledby="productPdfInventoryTitle">
+            <div class="product-pdf-inventory-head">
+              <div><small>PDF INVENTORY</small><h3 id="productPdfInventoryTitle">จำนวน PDF และหน้ารวมแต่ละหมวด</h3></div>
+              <b id="productPdfInventoryTotal">กำลังคำนวณ…</b>
+            </div>
+            <div id="productPdfInventoryGrid" class="product-pdf-inventory-grid" aria-live="polite"><p>กำลังโหลดข้อมูลสินค้า…</p></div>
+            <small class="product-pdf-inventory-note">นับจากตะกร้าที่ระบุประเภทไฟล์ PDF ทั้งที่เปิดขายและแบบร่าง · รวมหมวดรอยสัก</small>
+          </section>
           <div class="preview-export-bar">
             <label
               >ดาวน์โหลดรูปตัวอย่างตามหมวด<select id="previewExportCategory">
@@ -2259,7 +2267,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-<script src="/admin.js?v=014338"></script>
+<script src="/admin.js?v=014464"></script>
     <script src="/vision2.js?v=014422"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=014420"></script>

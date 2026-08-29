@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/admin.html'),js=read('public/admin.js'),css=read('public/admin-products.css');
+assert.equal(read('VERSION.txt').trim(),'v0.14.464');
+assert.match(read('public/index.html'),/WEB v0\.14\.464/);
+assert.match(html,/ADMIN v0\.14\.464/);
+assert.match(html,/data-feature="PROD-PDF-INVENTORY-001"/);
+assert.match(html,/id="productPdfInventoryGrid"/);
+assert.match(html,/รวมหมวดรอยสัก/);
+assert.match(html,/admin-products\.css\?v=014464/);
+assert.match(html,/admin\.js\?v=014464/);
+assert.match(js,/function renderProductPdfInventory/);
+assert.match(js,/toUpperCase\(\)\.includes\('PDF'\)/);
+assert.match(js,/group\.pages\+=Math\.max\(0,Number\(product\.pages\)\|\|0\)/);
+assert.match(js,/เปิดขาย.*ร่าง/);
+assert.match(css,/\.product-pdf-inventory-grid/);
+console.log('PASS v0.14.464 shows PDF product and page totals for every admin category including tattoo');

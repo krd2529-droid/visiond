@@ -1,0 +1,3 @@
+{"patch":"v0.14.464","parent_commit":"8460596a","safe_rollback_commit":"8460596a","push":false,"deploy":false,"tasks":[
+  {"id":"V014464-PDF-INVENTORY-001","scope":"ADMIN","source_instruction":"หน้าจัดการสินค้าต้องมีบล็อกแจ้งจำนวน PDF และหน้ารวมแยกทุกหมวด รวมหมวดรอยสัก","status":"DONE-VERIFIED","evidence":["public/admin.html","public/admin.js","public/admin-products.css","scripts/test-v014464.mjs"]}
+]}

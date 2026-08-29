@@ -610,9 +610,18 @@ async function loadProducts() {
     return;
   }
   products = d.items || [];
+  renderProductPdfInventory();
   for(const id of [...bulkSelectedProducts])if(!products.some(product=>Number(product.id)===Number(id)))bulkSelectedProducts.delete(id);
   updateProductSlugPreview();
   renderProductAdminList(productSearchInput.value);
+}
+function renderProductPdfInventory(){
+  const grid=document.getElementById('productPdfInventoryGrid'),total=document.getElementById('productPdfInventoryTotal');if(!grid||!total)return;
+  const categoryNames=new Map(categories.map(category=>[String(category.slug),String(category.name||category.slug)])),pdfProducts=products.filter(product=>String(product.file_type||'').toUpperCase().includes('PDF')&&product.slug!=='course-selling-rights'),groups=new Map();
+  for(const product of pdfProducts){const slug=String(product.category||'uncategorized'),group=groups.get(slug)||{slug,name:categoryNames.get(slug)||product.category_label||slug||'ไม่ระบุหมวด',products:0,pages:0,published:0,drafts:0};group.products++;group.pages+=Math.max(0,Number(product.pages)||0);if(product.status==='published')group.published++;else group.drafts++;groups.set(slug,group)}
+  const rows=[...groups.values()].sort((a,b)=>b.pages-a.pages||a.name.localeCompare(b.name,'th')),pages=rows.reduce((sum,row)=>sum+row.pages,0);
+  total.textContent=`${pdfProducts.length.toLocaleString('th-TH')} PDF · ${pages.toLocaleString('th-TH')} หน้า`;
+  grid.innerHTML=rows.length?rows.map(row=>`<article class="product-pdf-stat" data-category="${esc(row.slug)}"><b>${esc(row.name)}</b><strong>${row.pages.toLocaleString('th-TH')} หน้า</strong><small>${row.products.toLocaleString('th-TH')} PDF · เปิดขาย ${row.published.toLocaleString('th-TH')} · ร่าง ${row.drafts.toLocaleString('th-TH')}</small></article>`).join(''):'<div class="admin-empty">ยังไม่มีสินค้าที่ระบุประเภทไฟล์ PDF</div>';
 }
 function renderProductAdminList(search = "") {
   const query = String(search || "").trim().toLocaleLowerCase("th-TH"),
