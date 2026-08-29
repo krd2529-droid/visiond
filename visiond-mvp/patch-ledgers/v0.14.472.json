@@ -1,0 +1,3 @@
+{"patch":"v0.14.472","parent_commit":"8c060d66","safe_rollback_commit":"8c060d66","push":false,"deploy":false,"tasks":[
+  {"id":"V014472-PAGE-BROADCAST-BUTTON-001","scope":"V12","source_instruction":"เพิ่มปุ่มบรอดแคสต์เพจใน V12 สำหรับคนที่เคยทักแชท","status":"DONE-VERIFIED","evidence":["public/v12-connect.html","public/v12-connect.js","public/v12-page-broadcast.css","functions/api/admin/v12-broadcast.js","scripts/test-v014472.mjs"]}
+]}

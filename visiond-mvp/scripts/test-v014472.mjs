@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/v12-connect.html'),js=read('public/v12-connect.js'),api=read('functions/api/admin/v12-broadcast.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.472');
+assert.match(read('public/index.html'),/WEB v0\.14\.472/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.472/);
+assert.match(html,/id="v12PageBroadcast"[\s\S]*บรอดแคสต์เพจ/);
+assert.match(html,/v12-page-broadcast\.css\?v=014472/);
+assert.match(html,/v12-connect\.js\?v=014472/);
+assert.match(js,/v12Broadcast\.provider\.value='facebook'/);
+assert.match(js,/Member 3 หมวด ตลอดชีพ 299 บาท/);
+assert.match(js,/visiondonline\.com\/member/);
+assert.match(js,/กรุณาส่งทดสอบก่อนส่งจริง/);
+assert.match(api,/c\.updated_at>=datetime\('now','-24 hours'\)/);
+assert.match(api,/testedRecipientSignature|action==='test'/);
+console.log('PASS v0.14.472 adds a V12 Facebook Page broadcast quick action with the Member offer preset');

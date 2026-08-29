@@ -20,6 +20,17 @@ v12Broadcast.onsubmit=async event=>{event.preventDefault();if(!v12Confirm.checke
 v12TestSend.onclick=async()=>{if(!v12Confirm.checked)return v12BroadcastState.textContent='กรุณายืนยันก่อนส่งทดสอบ';const body=new FormData(v12Broadcast);if(!String(body.get('conversation_ids')||'').trim())return v12BroadcastState.textContent='กรุณาใส่ Conversation ID ผู้รับทดสอบ';body.set('action','test');v12BroadcastState.textContent='กำลังสร้างคิวทดสอบ 1 ราย…';const response=await fetch('/api/admin/v12-broadcast',{method:'POST',body}),data=await response.json().catch(()=>({}));v12BroadcastState.textContent=response.ok?'ส่งทดสอบเข้าคิวแล้ว':data.error||'ส่งทดสอบไม่สำเร็จ';if(response.ok)loadBroadcast()};
 async function retryCampaign(id){const body=new FormData();body.set('action','retry');body.set('campaign_id',id);await fetch('/api/admin/v12-broadcast',{method:'POST',body});loadBroadcast()}
 v12Refresh.onclick=loadBroadcast;
+const v12PageBroadcast=document.querySelector('#v12PageBroadcast');
+if(v12PageBroadcast)v12PageBroadcast.onclick=()=>{
+  document.querySelector('[data-view="broadcast"]')?.click();
+  v12Broadcast.provider.value='facebook';
+  v12Broadcast.provider.dispatchEvent(new Event('change'));
+  if(!v12Broadcast.title.value)v12Broadcast.title.value='Member 3 หมวด ตลอดชีพ 299 บาท';
+  if(!v12Broadcast.text.value)v12Broadcast.text.value='สินค้าดิจิทัลกว่า 25,000 หน้า ทั้งแบบฝึกหัด ระบายสี และเกมฝึกทักษะ ปลดล็อกตลอดชีพเพียง 299 บาท ดูรายละเอียดและสั่งซื้อได้ที่ https://visiondonline.com/member';
+  v12Broadcast.audience.value='conversations';
+  v12BroadcastState.textContent='เลือก Facebook Page แล้ว · ระบบจะส่งเฉพาะผู้ที่ทักเพจภายในช่วงเวลาที่ Meta อนุญาต กรุณาส่งทดสอบก่อนส่งจริง';
+  document.querySelector('#broadcast')?.scrollIntoView({behavior:'smooth',block:'start'});
+};
 v12Settings.onsubmit=async event=>{event.preventDefault();v12SettingsState.textContent='กำลังบันทึก…';const raw=Object.fromEntries(new FormData(v12Settings));const response=await fetch('/api/admin/v12-channel',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(raw)}),data=await response.json().catch(()=>({}));v12SettingsState.textContent=response.ok?'บันทึกแล้ว คัดลอก Callback URL และ Verify Token ไป Meta ก่อนออกจากหน้านี้':data.error||'บันทึกไม่สำเร็จ';if(response.ok){v12Settings.page_access_token.value='';v12Settings.app_secret.value='';v12WebhookOutput.hidden=false;v12CallbackUrl.value=data.callback_url;v12VerifyToken.value=data.verify_token}};
 v12TestFacebook.onclick=async()=>{v12SettingsState.textContent='กำลังทดสอบ…';const response=await fetch('/api/admin/v12-channel',{method:'POST'}),data=await response.json().catch(()=>({}));v12SettingsState.textContent=response.ok?`เชื่อมต่อ ${data.page.name||data.page.id} สำเร็จ`:data.error||`ทดสอบไม่ผ่าน (HTTP ${response.status})`};
 let v12AutoRefreshing=false,v12LastInteraction=Date.now(),v12RefreshTimer=0;for(const eventName of['pointerdown','keydown'])document.addEventListener(eventName,()=>{v12LastInteraction=Date.now()},{passive:true});function scheduleV12Refresh(){clearTimeout(v12RefreshTimer);const activeRecently=Date.now()-v12LastInteraction<300000,delay=activeRecently?60000:300000;v12RefreshTimer=setTimeout(async()=>{if(!document.hidden&&!v12AutoRefreshing&&!search.value&&document.activeElement!==search){v12AutoRefreshing=true;try{await loadList()}finally{v12AutoRefreshing=false}}scheduleV12Refresh()},delay)}document.addEventListener('visibilitychange',()=>{if(!document.hidden){v12LastInteraction=Date.now();scheduleV12Refresh()}});scheduleV12Refresh();
