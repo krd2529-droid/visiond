@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const js=read('public/admin.js'),html=read('public/admin.html');
+assert.equal(read('VERSION.txt').trim(),'v0.14.465');
+assert.match(read('public/index.html'),/WEB v0\.14\.465/);
+assert.match(html,/ADMIN v0\.14\.465/);
+assert.match(html,/admin\.js\?v=014465/);
+assert.match(js,/\['development-game',1\],\['worksheet',2\],\['coloring',3\],\['bundle-deals',4\]/);
+assert.match(js,/categoryOrder\.get\(a\.slug\)/);
+console.log('PASS v0.14.465 orders coloring third and bundle deals fourth in PDF inventory');
