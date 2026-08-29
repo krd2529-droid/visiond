@@ -1,0 +1,3 @@
+{"patch":"v0.14.470","parent_commit":"65e5e822","safe_rollback_commit":"65e5e822","push":false,"deploy":false,"tasks":[
+  {"id":"V014470-MEMBER-BADGE-UI-001","scope":"WEB","source_instruction":"ป้ายตลอดชีพสีเหลืองไม่สวย ให้แก้รูปทรงและสี","status":"DONE-VERIFIED","evidence":["public/member.css","public/member.html","scripts/test-v014470.mjs"]}
+]}

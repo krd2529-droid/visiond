@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const css=read('public/member.css'),html=read('public/member.html');
+assert.equal(read('VERSION.txt').trim(),'v0.14.470');
+assert.match(read('public/index.html'),/WEB v0\.14\.470/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.470/);
+assert.match(html,/member\.css\?v=014470/);
+assert.match(css,/\.member-plan-copy\{align-content:start;grid-auto-rows:max-content\}/);
+assert.match(css,/\.member-duration\{display:inline-flex[\s\S]*background:linear-gradient\(135deg,#064f4b,#087d77\);color:#fff/);
+assert.match(css,/\.member-plan-categories span\{display:inline-flex;align-items:center;min-height:28px/);
+console.log('PASS v0.14.470 replaces the stretched yellow lifetime badge with a compact teal pill');
