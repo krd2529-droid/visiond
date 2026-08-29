@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const api=read('functions/api/admin/v12-broadcast.js'),ui=read('public/v12-connect.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.474');
+assert.match(read('public/index.html'),/WEB v0\.14\.474/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.474/);
+assert.match(read('public/v12-connect.html'),/v0\.14\.474/);
+assert.match(api,/CASE WHEN c\.platform!='facebook' OR c\.updated_at>=datetime\('now','-24 hours'\) THEN 1 ELSE 0 END send_eligible/);
+assert.match(api,/shopId=provider==='facebook'\?'':clean\(form\.get\('shop_id'\),80\)/);
+assert.match(api,/ผู้รับ Facebook ที่เลือกพ้นช่วงส่งข้อความ 24 ชั่วโมงแล้ว/);
+assert.match(ui,/all\.filter\(x=>Number\(x\.send_eligible\)!==0\)/);
+assert.match(ui,/พ้นช่วง Facebook 24 ชั่วโมง/);
+console.log('PASS v0.14.474 filters ineligible Facebook test recipients');
