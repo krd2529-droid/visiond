@@ -1,0 +1,3 @@
+{"patch":"v0.14.467","parent_commit":"6f110b11","safe_rollback_commit":"6f110b11","push":false,"deploy":false,"tasks":[
+  {"id":"V014467-HOME-MEMBER-CARD-001","scope":"WEB","source_instruction":"ทำตะกร้า Member หน้าแรกให้คล้ายตะกร้าพาร์ตเนอร์และใช้รูปใหญ่","status":"DONE-VERIFIED","evidence":["public/index.html","public/home-modern-ai.css","scripts/test-v014467.mjs"]}
+]}

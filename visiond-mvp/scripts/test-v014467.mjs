@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/index.html'),css=read('public/home-modern-ai.css');
+assert.equal(read('VERSION.txt').trim(),'v0.14.467');
+assert.match(html,/WEB v0\.14\.467/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.467/);
+assert.match(html,/class="home-member-cover"[\s\S]*member-3-categories-lifetime\.svg/);
+assert.match(html,/เกมเสริมพัฒนาการ[\s\S]*แบบฝึกหัด[\s\S]*ระบายสี[\s\S]*499 บาท/);
+assert.match(html,/ดูตะกร้า Member/);
+assert.match(css,/grid-template-columns:minmax\(240px,360px\) 1fr/);
+assert.match(css,/max-height:500px/);
+assert.match(css,/@media\(max-width:760px\)/);
+console.log('PASS v0.14.467 renders the homepage Member basket as a large partner-style feature card');
