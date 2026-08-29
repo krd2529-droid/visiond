@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const html=read('public/index.html'),js=read('public/home-member-buy.js'),orders=read('functions/api/orders/index.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.471');
+assert.match(html,/WEB v0\.14\.471/);
+assert.match(read('public/admin.html'),/ADMIN v0\.14\.471/);
+assert.match(html,/id="buyLifetimeMember"[\s\S]*ซื้อสินค้านี้/);
+assert.match(html,/ดูรายละเอียด/);
+assert.match(html,/home-member-buy\.js\?v=014471/);
+assert.match(js,/productSlugs:\['member-3-categories-lifetime'\]/);
+assert.match(js,/fetch\('\/api\/orders'/);
+assert.match(js,/dashboard\.html#orders/);
+assert.match(orders,/memberItems\.length!==1\|\|orderedResults\.length!==1/);
+assert.match(html,/ไม่ร่วมโปรโมชั่นหรือส่วนลดอื่น/);
+console.log('PASS v0.14.471 adds a functional direct-buy button to the homepage Member basket');
