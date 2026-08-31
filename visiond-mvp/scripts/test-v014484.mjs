@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const html=read('public/tiktok-analyzer.html'),client=read('public/tiktok-analyzer.js'),css=read('public/tiktok-analyzer.css'),provider=read('functions/_tiktok_analyzer.js'),api=read('functions/api/admin/tiktok-analyzer/index.js');
+assert.match(html,/ตารางสินค้าแยกแนว A–F/);assert.match(html,/แสดงชื่อสินค้าเต็มโดยไม่ตัดย่อ/);
+for(const label of['ชื่อสินค้าเต็ม','เพศลูกค้า','ช่วงอายุลูกค้า'])assert.match(client,new RegExp(label));
+assert.match(client,/resultProductTable/);assert.match(client,/customer_gender\|\|'ยังระบุไม่ได้'/);assert.match(client,/customer_age_range\|\|'ยังระบุไม่ได้'/);
+assert.match(css,/\.product-full-name/);assert.match(css,/white-space:normal/);assert.match(css,/overflow-wrap:anywhere/);
+assert.match(provider,/ใช้ชื่อสินค้าเต็มตามหลักฐานเท่านั้น/);assert.match(provider,/ห้ามย่อชื่อ/);assert.match(provider,/ห้ามเดาเพศหรืออายุ/);
+assert.match(api,/customer_gender,customer_age_range/);assert.match(api,/productName=text\(item\?\.name,500\)/);
+assert.equal(read('VERSION.txt').trim(),'v0.14.484');console.log('v0.14.484 product table, full names, gender and age analysis: PASS');
