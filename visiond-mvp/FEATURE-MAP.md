@@ -452,6 +452,8 @@
 - ห้ามกระทบ: SEO revision ปัจจุบันต้องอนุมัติก่อน publish; Ad Shortcut ต้อง `noindex`; public ห้ามแสดงสถานะหรือสินค้าที่ไม่พร้อม; หน้า published/archived ห้ามแก้ตรง; variant ต้อง A/B และน้ำหนัก active รวม 100
 - รหัส UI: public renderer มี `data-feature="SALES-PAGE-001"`; หลังบ้านยึด route/ID ที่ระบุข้างต้น
 - การทดสอบ: `scripts/test-v014234.mjs`, `scripts/test-v014235.mjs`, `scripts/test-v014236.mjs`, `scripts/test-v014337.mjs`
+- Auto SEO v0.14.476: สร้างร่างจากสินค้าที่ published แบบ deterministic, ตรวจ title/keyword/meta/body/FAQ/product, ป้องกัน keyword/slug ซ้ำ, Boss approval, public index renderer พร้อม canonical และ Schema.org, dynamic `/sitemap.xml` แสดงเฉพาะ revision ที่อนุมัติและ published
+- การทดสอบ Auto SEO: `scripts/test-v014476.mjs`
 
 ## V13-INTAKE-001 — ตรวจ Approval Snapshot และผลิต EPUB จาก Vision 14 MIX
 

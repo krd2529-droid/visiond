@@ -1,3 +1,4 @@
+import {onRequestGet as renderSitemap} from './sitemap.xml.js';
 const securityHeaders={
   'x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin',
   'permissions-policy':'camera=(), microphone=(), geolocation=()',
@@ -21,7 +22,7 @@ export async function onRequest(ctx){
       if(originUrl!==url.origin)return new Response(JSON.stringify({error:'คำขอจากเว็บไซต์อื่นถูกปฏิเสธ'}),{status:403,headers:{'content-type':'application/json'}});
     }
   }
-  let response=await ctx.next();
+  let response=method==='GET'&&url.pathname==='/sitemap.xml'?await renderSitemap(ctx):await ctx.next();
   const responseType=String(response.headers.get('content-type')||'').toLowerCase();
   if(method==='GET'&&isAdminHtmlPath(url.pathname)&&responseType.includes('text/html')){
     response=new HTMLRewriter().on('.admin-tabs',{element(element){element.append(VISION7_ADMIN_ENTRY+ADS_CENTER_ADMIN_ENTRY,{html:true})}}).transform(response);
