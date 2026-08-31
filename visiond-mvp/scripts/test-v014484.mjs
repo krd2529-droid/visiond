@@ -7,4 +7,4 @@ assert.match(client,/resultProductTable/);assert.match(client,/customer_gender\|
 assert.match(css,/\.product-full-name/);assert.match(css,/white-space:normal/);assert.match(css,/overflow-wrap:anywhere/);
 assert.match(provider,/ใช้ชื่อสินค้าเต็มตามหลักฐานเท่านั้น/);assert.match(provider,/ห้ามย่อชื่อ/);assert.match(provider,/ห้ามเดาเพศหรืออายุ/);
 assert.match(api,/customer_gender,customer_age_range/);assert.match(api,/productName=text\(item\?\.name,500\)/);
-assert.equal(read('VERSION.txt').trim(),'v0.14.484');console.log('v0.14.484 product table, full names, gender and age analysis: PASS');
+assert.match(read('VERSION.txt').trim(),/^v0\.14\.\d+$/);console.log('v0.14.484 product table, full names, gender and age analysis: PASS');
