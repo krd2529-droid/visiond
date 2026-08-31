@@ -65,17 +65,18 @@ const oneDayPostingPlanPrompt=`กฎแผนคลิป: posting_plan ต้�
 export async function analyzeTikTok(provider,{channel,notes,candidates,strategy,dateRange,lookbackDays,clipsPerDay=30,images},fetchImpl=fetch){
   if(!provider)throw new Error('AI_NOT_CONFIGURED');
   const prompt=`ช่อง: ${channel.name}\nลิงก์: ${channel.channel_url||'-'}\nช่วงข้อมูลในภาพ: ${dateRange||'-'}\nให้ไล่ดูย้อนหลัง: ${lookbackDays||30} วัน\nจำนวนคลิปที่ต้องวางแผนภายใน 1 วัน: ${clipsPerDay} คลิป\nแนวทางที่เจ้าของสนใจ: ${strategy||'-'}\nข้อมูลประกอบ: ${notes||'-'}\nสินค้าที่อยากประเมินต่อ: ${candidates||'-'}\nวิเคราะห์คลิปย้อนหลังทีละคลิป หาคลิปวิวต่ำ/ไม่มีทราฟฟิก สินค้านางฟ้า สูตรคลิป สินค้าใกล้เคียง และสร้าง posting_plan ภายใน 1 วันให้ครบ ${clipsPerDay} คลิป`;
-  const signal=AbortSignal.timeout(50000);
+  const signal=AbortSignal.timeout(110000);
   let response;
   if(provider.name==='openai'){
     const content=[{type:'input_text',text:prompt},...images.map(x=>({type:'input_image',image_url:`data:${x.type};base64,${x.base64}`}))];
-    response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},body:JSON.stringify({model:provider.model,instructions:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+oneDayPostingPlanPrompt,input:[{role:'user',content}],max_output_tokens:7000,store:false}),signal});
+    response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},body:JSON.stringify({model:provider.model,instructions:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+oneDayPostingPlanPrompt,input:[{role:'user',content}],max_output_tokens:10000,store:false}),signal});
   }else{
     const parts=[{text:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+oneDayPostingPlanPrompt+'\n\n'+prompt},...images.map(x=>({inlineData:{mimeType:x.type,data:x.base64}}))];
-    response=await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:generateContent`,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':provider.key},body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:7000,temperature:.2}}),signal});
+    response=await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:generateContent`,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':provider.key},body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:10000,temperature:.2}}),signal});
   }
   if(!response.ok)throw new Error(`${provider.name.toUpperCase()}_HTTP_${response.status}`);
   const payload=await response.json();
   const raw=provider.name==='openai'?(payload.output_text||payload.output?.flatMap(x=>x.content||[]).find(x=>x.type==='output_text')?.text||''):(payload.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('');
-  try{return JSON.parse(String(raw).replace(/^```json\s*|```$/g,'').trim())}catch{throw new Error('AI_INVALID_JSON')}
+  const cleaned=String(raw).replace(/^```json\s*|```$/g,'').trim(),start=cleaned.indexOf('{'),end=cleaned.lastIndexOf('}');
+  try{return JSON.parse(start>=0&&end>start?cleaned.slice(start,end+1):cleaned)}catch{throw new Error('AI_INVALID_JSON')}
 }
