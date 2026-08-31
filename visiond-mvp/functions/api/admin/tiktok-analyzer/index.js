@@ -1,0 +1,47 @@
+import {json,requireAdmin} from '../../../_lib.js';
+import {ensureDatabase} from '../../../_schema.js';
+import {analyzeTikTok,ensureTikTokAnalyzerSchema,selectTikTokProvider} from '../../../_tiktok_analyzer.js';
+
+const headers={'cache-control':'private, no-store'};
+const text=(value,max=2000)=>String(value||'').trim().slice(0,max);
+const parse=value=>{try{return JSON.parse(value||'{}')}catch{return{}}};
+const ext=type=>type==='image/png'?'png':type==='image/webp'?'webp':'jpg';
+const channelView=row=>({...row,analysis_count:Number(row.analysis_count||0),latest_result:parse(row.latest_result)});
+const base64=buffer=>{const bytes=new Uint8Array(buffer);let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(binary)};
+
+export async function onRequestGet(ctx){
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const url=new URL(ctx.request.url),channelId=text(url.searchParams.get('channel_id'),80),runId=text(url.searchParams.get('run_id'),80);
+  if(runId){const run=await ctx.env.DB.prepare(`SELECT r.*,c.name channel_name,c.channel_url,c.handle FROM tiktok_analysis_runs r JOIN tiktok_channels c ON c.id=r.channel_id WHERE r.id=?`).bind(runId).first();if(!run)return json({error:'ไม่พบรอบวิเคราะห์'},404,headers);const images=(await ctx.env.DB.prepare('SELECT id,file_name,mime_type,file_size,sort_order,object_key FROM tiktok_analysis_images WHERE run_id=? ORDER BY sort_order').bind(runId).all()).results||[];return json({run:{...run,result:parse(run.result_json),images:images.map(x=>({...x,url:'/api/media/'+x.object_key}))}},200,headers)}
+  if(channelId){const channel=await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE id=?').bind(channelId).first();if(!channel)return json({error:'ไม่พบช่อง'},404,headers);const runs=(await ctx.env.DB.prepare("SELECT id,title,date_range,strategy,status,result_json,provider,model,created_at FROM tiktok_analysis_runs WHERE channel_id=? ORDER BY created_at DESC").bind(channelId).all()).results||[];return json({channel,runs:runs.map(x=>({...x,result:parse(x.result_json)}))},200,headers)}
+  const channels=(await ctx.env.DB.prepare(`SELECT c.*,(SELECT COUNT(*) FROM tiktok_analysis_runs r WHERE r.channel_id=c.id) analysis_count,(SELECT result_json FROM tiktok_analysis_runs r WHERE r.channel_id=c.id ORDER BY r.created_at DESC LIMIT 1) latest_result,(SELECT created_at FROM tiktok_analysis_runs r WHERE r.channel_id=c.id ORDER BY r.created_at DESC LIMIT 1) latest_analysis_at FROM tiktok_channels c ORDER BY COALESCE(latest_analysis_at,c.updated_at) DESC`).all()).results||[];
+  return json({channels:channels.map(channelView),provider_configured:Boolean(selectTikTokProvider(ctx.env))},200,headers);
+}
+
+export async function onRequestPost(ctx){
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const form=await ctx.request.formData(),name=text(form.get('channel_name'),120),channelUrl=text(form.get('channel_url'),500),existingId=text(form.get('channel_id'),80);
+  if(!name&&!channelUrl)return json({error:'กรุณาใส่ชื่อช่องหรือลิงก์ช่อง TikTok'},400,headers);
+  const action=text(form.get('action'),40);
+  if(action==='save_channel'){
+    let saved=existingId?await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE id=?').bind(existingId).first():null;if(!saved&&channelUrl)saved=await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE channel_url=?').bind(channelUrl).first();
+    const id=saved?.id||crypto.randomUUID(),savedName=name||saved?.name||channelUrl.replace(/\/$/,'').split('/').pop()||'ช่อง TikTok';
+    if(saved)await ctx.env.DB.prepare('UPDATE tiktok_channels SET name=?,channel_url=?,direction=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(savedName,channelUrl||saved.channel_url||'',text(form.get('strategy'),100),id).run();else await ctx.env.DB.prepare('INSERT INTO tiktok_channels(id,name,channel_url,direction,created_by) VALUES(?,?,?,?,?)').bind(id,savedName,channelUrl,text(form.get('strategy'),100),auth.user.id).run();
+    return json({ok:true,channel_id:id,saved_only:true},201,headers);
+  }
+  const files=form.getAll('screenshots').filter(x=>x instanceof File&&x.size);if(files.length>8)return json({error:'อัปโหลดภาพได้ไม่เกิน 8 รูปต่อรอบ'},400,headers);
+  let total=0;for(const file of files){total+=file.size;if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)return json({error:'แต่ละรูปต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB'},400,headers)}if(total>25*1024*1024)return json({error:'รูปทั้งหมดรวมกันต้องไม่เกิน 25 MB'},400,headers);
+  const notes=text(form.get('notes'),8000);if(!files.length&&!notes)return json({error:'กรุณาใส่ภาพหน้าจอหรือข้อมูลประกอบอย่างน้อยหนึ่งอย่าง'},400,headers);
+  let channel=existingId?await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE id=?').bind(existingId).first():null;
+  if(!channel&&channelUrl)channel=await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE channel_url=?').bind(channelUrl).first();
+  const channelId=channel?.id||crypto.randomUUID(),channelName=name||channel?.name||channelUrl.replace(/\/$/,'').split('/').pop()||'ช่อง TikTok';
+  const images=[];for(const file of files)images.push({file,type:file.type,base64:base64(await file.arrayBuffer())});
+  const provider=selectTikTokProvider(ctx.env);if(!provider)return json({error:'ยังไม่ได้ตั้งค่า AI สำหรับวิเคราะห์ภาพ TikTok',code:'AI_NOT_CONFIGURED'},503,headers);
+  let result;try{result=await analyzeTikTok(provider,{channel:{name:channelName,channel_url:channelUrl||channel?.channel_url||''},notes,candidates:text(form.get('candidate_products'),3000),strategy:text(form.get('strategy'),100),dateRange:text(form.get('date_range'),100),images})}catch(error){return json({error:'วิเคราะห์ภาพไม่สำเร็จ กรุณาลองใหม่',code:String(error?.message||error)},502,headers)}
+  const runId=crypto.randomUUID(),statements=[];
+  if(channel)statements.push(ctx.env.DB.prepare('UPDATE tiktok_channels SET name=?,channel_url=?,direction=?,homework=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(channelName,channelUrl||channel.channel_url||'',text(form.get('strategy'),100),JSON.stringify(result.homework||[]),channelId));else statements.push(ctx.env.DB.prepare('INSERT INTO tiktok_channels(id,name,channel_url,direction,homework,created_by) VALUES(?,?,?,?,?,?)').bind(channelId,channelName,channelUrl,text(form.get('strategy'),100),JSON.stringify(result.homework||[]),auth.user.id));
+  statements.push(ctx.env.DB.prepare('INSERT INTO tiktok_analysis_runs(id,channel_id,title,date_range,strategy,notes,candidate_products,result_json,provider,model,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(runId,channelId,text(form.get('title'),160)||`วิเคราะห์ ${channelName}`,text(form.get('date_range'),100),text(form.get('strategy'),100),notes,text(form.get('candidate_products'),3000),JSON.stringify(result),provider.name,provider.model,auth.user.id));
+  const stored=[];for(let i=0;i<images.length;i++){const item=images[i],key=`tiktok-analyzer/${channelId}/${runId}-${i+1}.${ext(item.type)}`;await ctx.env.FILES.put(key,await item.file.arrayBuffer(),{httpMetadata:{contentType:item.type}});stored.push(key);statements.push(ctx.env.DB.prepare('INSERT INTO tiktok_analysis_images(id,run_id,object_key,file_name,mime_type,file_size,sort_order) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(),runId,key,text(item.file.name,200),item.type,item.file.size,i))}
+  try{await ctx.env.DB.batch(statements)}catch(error){await Promise.all(stored.map(key=>ctx.env.FILES.delete(key)));return json({error:'บันทึกผลวิเคราะห์ไม่สำเร็จ'},500,headers)}
+  return json({ok:true,channel_id:channelId,run_id:runId,result},201,headers);
+}

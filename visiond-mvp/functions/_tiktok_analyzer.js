@@ -1,0 +1,52 @@
+const MODEL_PATTERN=/^[a-zA-Z0-9._:-]{1,100}$/;
+const clean=value=>String(value||'').trim();
+
+export async function ensureTikTokAnalyzerSchema(env){
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_channels(
+      id TEXT PRIMARY KEY,name TEXT NOT NULL,channel_url TEXT NOT NULL DEFAULT '',handle TEXT NOT NULL DEFAULT '',
+      direction TEXT NOT NULL DEFAULT '',homework TEXT NOT NULL DEFAULT '',created_by INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_tiktok_channels_url ON tiktok_channels(channel_url) WHERE channel_url<>\'\''),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_analysis_runs(
+      id TEXT PRIMARY KEY,channel_id TEXT NOT NULL,title TEXT NOT NULL DEFAULT '',date_range TEXT NOT NULL DEFAULT '',
+      strategy TEXT NOT NULL DEFAULT '',notes TEXT NOT NULL DEFAULT '',candidate_products TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'completed',result_json TEXT NOT NULL DEFAULT '{}',provider TEXT NOT NULL DEFAULT '',
+      model TEXT NOT NULL DEFAULT '',created_by INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(channel_id) REFERENCES tiktok_channels(id))`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_analysis_images(
+      id TEXT PRIMARY KEY,run_id TEXT NOT NULL,object_key TEXT NOT NULL,file_name TEXT NOT NULL,mime_type TEXT NOT NULL,
+      file_size INTEGER NOT NULL,sort_order INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(run_id) REFERENCES tiktok_analysis_runs(id))`),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_runs_channel ON tiktok_analysis_runs(channel_id,created_at DESC)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_images_run ON tiktok_analysis_images(run_id,sort_order)')
+  ]);
+}
+
+export function selectTikTokProvider(env={}){
+  const openai=clean(env.TIKTOK_ANALYZER_OPENAI_API_KEY)||clean(env.OPENAI_API_KEY);
+  if(openai)return {name:'openai',key:openai,model:MODEL_PATTERN.test(clean(env.TIKTOK_ANALYZER_OPENAI_MODEL))?clean(env.TIKTOK_ANALYZER_OPENAI_MODEL):'gpt-4.1-mini'};
+  const gemini=clean(env.TIKTOK_ANALYZER_GEMINI_API_KEY)||clean(env.GEMINI_API_KEY)||clean(env.GEMINI_API_KEY_2);
+  if(gemini)return {name:'gemini',key:gemini,model:MODEL_PATTERN.test(clean(env.TIKTOK_ANALYZER_GEMINI_MODEL))?clean(env.TIKTOK_ANALYZER_GEMINI_MODEL):'gemini-2.5-flash'};
+  return null;
+}
+
+const systemPrompt=`คุณเป็นนักวิเคราะห์ช่อง TikTok Commerce ภาษาไทย วิเคราะห์จากภาพหน้าจอและข้อมูลที่ผู้ใช้ให้เท่านั้น ห้ามแต่งตัวเลขที่มองไม่เห็น แยกหลักฐานกับข้อสันนิษฐานให้ชัด คืนค่า JSON เท่านั้น โดยมีคีย์ summary, confidence (0-100), data_gaps (array), winner_products (array of {name,score,evidence,decision}), content_formula ({hooks,formats,ideal_duration,cta,posting_frequency,steps}), channel_direction ({recommended,reasons}), next_product_candidates (array of {name,fit_score,reasons,risks,test_clips}), posting_plan (array of {day,product,angle,hook,format,cta,pass_condition}), homework (array), extracted_metrics (array of {product,views,clicks,orders,gmv,commission,conversion_rate}). ถ้าไม่มีข้อมูลให้ใช้ null หรือ array ว่าง`;
+
+export async function analyzeTikTok(provider,{channel,notes,candidates,strategy,dateRange,images},fetchImpl=fetch){
+  if(!provider)throw new Error('AI_NOT_CONFIGURED');
+  const prompt=`ช่อง: ${channel.name}\nลิงก์: ${channel.channel_url||'-'}\nช่วงข้อมูล: ${dateRange||'-'}\nแนวทางที่เจ้าของสนใจ: ${strategy||'-'}\nข้อมูลประกอบ: ${notes||'-'}\nสินค้าที่อยากประเมินต่อ: ${candidates||'-'}\nวิเคราะห์สินค้านางฟ้า สูตรคลิป สินค้าใกล้เคียง และทำแผนทดสอบ 7 วัน`;
+  const signal=AbortSignal.timeout(50000);
+  let response;
+  if(provider.name==='openai'){
+    const content=[{type:'input_text',text:prompt},...images.map(x=>({type:'input_image',image_url:`data:${x.type};base64,${x.base64}`}))];
+    response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},body:JSON.stringify({model:provider.model,instructions:systemPrompt,input:[{role:'user',content}],max_output_tokens:4000,store:false}),signal});
+  }else{
+    const parts=[{text:systemPrompt+'\n\n'+prompt},...images.map(x=>({inlineData:{mimeType:x.type,data:x.base64}}))];
+    response=await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:generateContent`,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':provider.key},body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:4000,temperature:.2}}),signal});
+  }
+  if(!response.ok)throw new Error(`${provider.name.toUpperCase()}_HTTP_${response.status}`);
+  const payload=await response.json();
+  const raw=provider.name==='openai'?(payload.output_text||payload.output?.flatMap(x=>x.content||[]).find(x=>x.type==='output_text')?.text||''):(payload.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('');
+  try{return JSON.parse(String(raw).replace(/^```json\s*|```$/g,'').trim())}catch{throw new Error('AI_INVALID_JSON')}
+}

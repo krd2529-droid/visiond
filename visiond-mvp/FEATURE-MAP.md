@@ -1118,3 +1118,11 @@
 2. รายงานไฟล์และข้อมูลที่จะเปลี่ยนก่อนแก้เมื่อขอบเขตกว้างหรือเสี่ยง
 3. เมื่อเส้นทาง runtime เปลี่ยน ให้แก้ Feature Map และ focused test พร้อมกัน
 4. หากหลักฐานจริงไม่ตรงเอกสาร ให้หยุดอ้างเอกสารส่วนนั้น ตรวจโค้ด/schema แล้วแก้เอกสารในแพตช์เดียวกัน
+## TIKTOK-ANALYZER-001 — วิเคราะห์ช่อง TikTok และสินค้าถัดไป
+
+- หน้าใช้งาน: `public/tiktok-analyzer.html`, `public/tiktok-analyzer.js`, `public/tiktok-analyzer.css`
+- API: `functions/api/admin/tiktok-analyzer/index.js`; ผู้ใช้ต้องผ่าน `requireAdmin`
+- AI vision: `functions/_tiktok_analyzer.js`; ใช้คีย์เฉพาะระบบก่อนและรองรับ OpenAI/Gemini
+- ข้อมูล: `tiktok_channels` เก็บชื่อและลิงก์แยกแต่ละช่อง; `tiktok_analysis_runs` และ `tiktok_analysis_images` เก็บการบ้าน ผลวิเคราะห์ และภาพแยกตามช่อง
+- กฎ: ห้ามแต่งตัวเลขที่ไม่มีในภาพ, รับสูงสุด 8 รูป/รอบ รูปละ 5 MB รวมไม่เกิน 25 MB และไม่บันทึกผลปลอมเมื่อ AI ไม่พร้อม
+- รหัส UI: เมนูหลังบ้านใช้ `data-feature="TIKTOK-ANALYZER-001"`
