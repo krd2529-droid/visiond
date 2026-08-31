@@ -1120,9 +1120,9 @@
 4. หากหลักฐานจริงไม่ตรงเอกสาร ให้หยุดอ้างเอกสารส่วนนั้น ตรวจโค้ด/schema แล้วแก้เอกสารในแพตช์เดียวกัน
 ## TIKTOK-ANALYZER-001 — วิเคราะห์ช่อง TikTok และสินค้าถัดไป
 
-- หน้าใช้งาน: `public/tiktok-analyzer.html`, `public/tiktok-analyzer.js`, `public/tiktok-analyzer.css`
-- API: `functions/api/admin/tiktok-analyzer/index.js`; ผู้ใช้ต้องผ่าน `requireAdmin`
+- หน้าใช้งาน: `public/tiktok-analyzer.html`, `public/tiktok-analyzer.js`, `public/tiktok-analyzer.css`; มีปุ่มเชื่อม ซิงก์ และยกเลิกบัญชี TikTok ต่อช่อง
+- API: `functions/api/admin/tiktok-analyzer/index.js`, `functions/api/tiktok/connect.js`, `functions/api/tiktok/callback.js`, `functions/api/admin/tiktok-connections/index.js`; ผู้ใช้ต้องผ่าน `requireAdmin`
 - AI vision: `functions/_tiktok_analyzer.js`; ใช้คีย์เฉพาะระบบก่อนและรองรับ OpenAI/Gemini
-- ข้อมูล: `tiktok_channels` เก็บชื่อและลิงก์แยกแต่ละช่อง; `tiktok_analysis_runs` และ `tiktok_analysis_images` เก็บการบ้าน ผลวิเคราะห์ และภาพแยกตามช่อง; `tiktok_channel_products` รวมชื่อสินค้าเต็ม ลิงก์ ประเภท A–F เพศกลุ่มลูกค้า และช่วงอายุลูกค้าโดยไม่สร้างชื่อซ้ำ (F คือไม่ควรยุ่งและต้องมีเหตุผลรองรับ)
-- กฎ: แสดงรายการสินค้าเป็นตารางและห้ามย่อชื่อตามหลักฐาน; เพศ/อายุต้องมาจากหลักฐานเท่านั้น หากไม่พอแสดง `ยังระบุไม่ได้`; สร้างแผนภายใน 1 วัน 10/20/30 คลิปพร้อมลำดับ เวลา Hook CTA และเกณฑ์ผ่านโดยไม่ใส่สินค้า F; ห้ามแต่งตัวเลขที่ไม่มีในภาพ, รับสูงสุด 30 รูป/รอบ รูปละ 5 MB รวมไม่เกิน 25 MB และไม่บันทึกผลปลอมเมื่อ AI ไม่พร้อม
+- ข้อมูล: `tiktok_channels` เก็บชื่อและลิงก์แยกแต่ละช่อง; `tiktok_analysis_runs` และ `tiktok_analysis_images` เก็บการบ้าน ผลวิเคราะห์ และภาพแยกตามช่อง; `tiktok_channel_products` รวมชื่อสินค้าเต็ม ลิงก์ ประเภท A–F เพศกลุ่มลูกค้า และช่วงอายุลูกค้าโดยไม่สร้างชื่อซ้ำ; `tiktok_oauth_states` เก็บ state ใช้ครั้งเดียว 10 นาที; `tiktok_connections` เก็บโปรไฟล์และ token ที่เข้ารหัส; `tiktok_connection_videos` เก็บสถิติคลิปทางการเพื่อส่งเป็นหลักฐานให้ AI (F คือไม่ควรยุ่งและต้องมีเหตุผลรองรับ)
+- กฎ: OAuth ขอเฉพาะ `user.info.basic,user.info.profile,user.info.stats,video.list`; Client secret อยู่ใน Cloudflare เท่านั้น; token เข้ารหัส AES-GCM ฝั่งเซิร์ฟเวอร์และไม่คืนสู่ browser; state ผูก admin และใช้ได้ครั้งเดียว; แสดงรายการสินค้าเป็นตารางและห้ามย่อชื่อตามหลักฐาน; เพศ/อายุต้องมาจากหลักฐานเท่านั้น หากไม่พอแสดง `ยังระบุไม่ได้`; สร้างแผนภายใน 1 วัน 10/20/30 คลิปพร้อมลำดับ เวลา Hook CTA และเกณฑ์ผ่านโดยไม่ใส่สินค้า F; ห้ามแต่งตัวเลขที่ไม่มีในภาพ, รับสูงสุด 30 รูป/รอบ รูปละ 5 MB รวมไม่เกิน 25 MB และไม่บันทึกผลปลอมเมื่อ AI ไม่พร้อม
 - รหัส UI: เมนูหลังบ้านใช้ `data-feature="TIKTOK-ANALYZER-001"`

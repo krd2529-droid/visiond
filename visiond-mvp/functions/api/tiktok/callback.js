@@ -1,0 +1,13 @@
+import {requireAdmin} from '../../_lib.js';
+import {ensureDatabase} from '../../_schema.js';
+import {ensureTikTokAnalyzerSchema} from '../../_tiktok_analyzer.js';
+import {consumeTikTokState,exchangeTikTokCode,fetchTikTokProfile,saveTikTokConnection,syncTikTokConnection,tikTokOAuthConfig} from '../../_tiktok_oauth.js';
+
+const back=(status,detail='')=>Response.redirect(`https://visiondonline.com/tiktok-analyzer.html?tiktok=${encodeURIComponent(status)}${detail?`&detail=${encodeURIComponent(detail)}`:''}`,302);
+export async function onRequestGet(ctx){
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return back('login_required');
+  const url=new URL(ctx.request.url),error=String(url.searchParams.get('error')||'').slice(0,100);if(error)return back('denied',error);
+  const code=String(url.searchParams.get('code')||'').trim(),state=String(url.searchParams.get('state')||'').trim();if(!code||!state)return back('invalid_callback');
+  const stateRow=await consumeTikTokState(ctx.env,state,auth.user.id);if(!stateRow)return back('invalid_state');
+  try{const config=tikTokOAuthConfig(ctx.env);if(!config.configured)return back('not_configured');const token=await exchangeTikTokCode(config,code),profile=await fetchTikTokProfile(token.access_token);if(!profile.open_id)return back('profile_failed');const connectionId=await saveTikTokConnection(ctx.env,auth.user.id,stateRow.channel_id,token,profile),connection=await ctx.env.DB.prepare('SELECT * FROM tiktok_connections WHERE id=?').bind(connectionId).first();await syncTikTokConnection(ctx.env,connection);return back('connected')}catch(error){console.error('TIKTOK_OAUTH_CALLBACK_FAILED',{message:String(error?.message||error).slice(0,180)});return back('failed')}
+}
