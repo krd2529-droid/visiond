@@ -29,7 +29,7 @@ export async function onRequestPost(ctx){
     if(saved)await ctx.env.DB.prepare('UPDATE tiktok_channels SET name=?,channel_url=?,direction=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(savedName,channelUrl||saved.channel_url||'',text(form.get('strategy'),100),id).run();else await ctx.env.DB.prepare('INSERT INTO tiktok_channels(id,name,channel_url,direction,created_by) VALUES(?,?,?,?,?)').bind(id,savedName,channelUrl,text(form.get('strategy'),100),auth.user.id).run();
     return json({ok:true,channel_id:id,saved_only:true},201,headers);
   }
-  const files=form.getAll('screenshots').filter(x=>x instanceof File&&x.size);if(files.length>8)return json({error:'อัปโหลดภาพได้ไม่เกิน 8 รูปต่อรอบ'},400,headers);
+  const files=form.getAll('screenshots').filter(x=>x instanceof File&&x.size);if(files.length>30)return json({error:'อัปโหลดภาพได้ไม่เกิน 30 รูปต่อรอบ'},400,headers);
   let total=0;for(const file of files){total+=file.size;if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)return json({error:'แต่ละรูปต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB'},400,headers)}if(total>25*1024*1024)return json({error:'รูปทั้งหมดรวมกันต้องไม่เกิน 25 MB'},400,headers);
   const notes=text(form.get('notes'),8000);if(!files.length&&!notes)return json({error:'กรุณาใส่ภาพหน้าจอหรือข้อมูลประกอบอย่างน้อยหนึ่งอย่าง'},400,headers);
   let channel=existingId?await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE id=?').bind(existingId).first():null;

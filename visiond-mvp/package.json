@@ -17,6 +17,7 @@
     "test:v01431": "node scripts/test-v01431.mjs",
     "test:v014477": "node scripts/test-v014477.mjs",
     "test:v014478": "node scripts/test-v014478.mjs",
+    "test:v014479": "node scripts/test-v014479.mjs",
     "test:maintenance-worker": "node scripts/test-maintenance-worker.mjs",
     "test:mobile-frontend": "node scripts/test-mobile-frontend.mjs",
     "test:first-order-promo": "node scripts/test-first-order-promo.mjs",
