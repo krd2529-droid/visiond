@@ -1,6 +1,6 @@
 const $=selector=>document.querySelector(selector),escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const form=$('#analysisForm'),message=$('#message');let state={channels:[],selected:null};
-const typeLabels={A:'ขายดีอยู่แล้ว',B:'สินค้าใหม่/ใกล้เคียง',C:'ราคาประหยัด ซื้อง่าย',D:'ราคาสูง/ค่าคอมสูง',E:'สร้างภาพจำช่อง',F:'ไม่ควรยุ่ง'};
+const typeLabels={A:'ขายดีอยู่แล้ว',B:'สินค้าใหม่/ใกล้เคียง',C:'ราคาประหยัด ซื้อง่าย',D:'ราคาสูง/ค่าคอมสูง',E:'สร้างภาพจำช่อง',F:'วิวไม่ดี/คะแนนต่ำ ไม่ควรยุ่ง'};
 async function api(url,options){const response=await fetch(url,options),body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||`HTTP ${response.status}`);return body}
 async function loadChannels(){try{const data=await api('/api/admin/tiktok-analyzer');state.channels=data.channels||[];$('#aiState').textContent=data.provider_configured?'AI พร้อมวิเคราะห์':'ยังไม่ได้ตั้งค่า AI';renderChannels();if(state.selected)await selectChannel(state.selected)}catch(error){message.textContent=error.message}}
 function renderChannels(){$('#channels').innerHTML=state.channels.length?state.channels.map(x=>`<button class="channel ${x.id===state.selected?'active':''}" data-id="${escapeHtml(x.id)}"><b>${escapeHtml(x.name)}</b><small>${escapeHtml(x.channel_url||'ยังไม่มีลิงก์')} · วิเคราะห์ ${x.analysis_count} รอบ</small></button>`).join(''):'<p class="hint">ยังไม่มีช่อง กด “ช่องใหม่” แล้วเริ่มช่องแรกได้เลย</p>'}
