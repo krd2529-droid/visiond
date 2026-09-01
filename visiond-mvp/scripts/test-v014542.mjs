@@ -23,6 +23,13 @@ assert.match(provider, /C=ขายได้ 1-3 ชิ้นต่อ 7 วั�
 assert.match(provider, /F=ขายได้ 0 ชิ้นต่อ 7 วัน/);
 assert.match(provider, /ห้ามคาดคะเนเป็นยอดต่อสัปดาห์/);
 assert.match(provider, /ให้ใช้แทนกฎ C แบบ 72 ชั่วโมงก่อนหน้า/);
+assert.match(provider, /30 สินค้าหลัก \+ 10 สินค้าแนะนำเกรด E/);
+assert.match(provider, /ใส่ A ได้สูงสุด 20 รายการ/);
+assert.match(provider, /กัน C ไว้ 5 รายการ/);
+assert.match(provider, /ใช้ B เติมจำนวนที่เหลือให้ครบ 30/);
+assert.match(provider, /หากยังไม่มีทั้งสินค้า A และ B ให้ใช้ C ทั้ง 30 รายการ/);
+assert.match(provider, /ห้ามนำ D หรือ F เข้า 30 สินค้าหลัก/);
+assert.match(provider, /ห้ามสร้างชื่อสินค้าซ้ำหรือชื่อปลอม/);
 assert.match(client, /A:'≥ 7 ชิ้น\/สัปดาห์'/);
 assert.match(client, /B:'4–6 ชิ้น\/สัปดาห์'/);
 assert.match(client, /C:'1–3 ชิ้น\/สัปดาห์'/);
@@ -38,6 +45,8 @@ assert.match(client, /data-inventory="discarded"/);
 assert.match(client, /ประวัติสินค้าที่คัดออก/);
 assert.match(page, /ลิสต์คัดสินค้า/);
 assert.doesNotMatch(page, /ลิสต์สินค้าถาวร/);
-assert.equal(version.trim(), 'v0.14.541');
+assert.match(page, /A สูงสุด 20 · C จำนวน 5 · B เติมให้ครบ 30/);
+assert.match(page, /ถ้ายังไม่มี A และ B ให้เป็น C ทั้ง 30/);
+assert.equal(version.trim(), 'v0.14.542');
 
-console.log('v0.14.541 product selection list naming checks passed');
+console.log('v0.14.542 selection ratio checks passed');
