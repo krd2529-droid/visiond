@@ -42,6 +42,9 @@ assert.match(provider, /ห้ามใช้ข้อมูลก่อนถ�
 assert.match(provider, /เมื่อมีข้อมูล TikTok หรือ TikTok Shop API ให้ใช้ข้อมูล API เป็นหลัก/);
 assert.match(provider, /ไม่บังคับผู้ใช้แนบรูปใหม่/);
 assert.match(provider, /รูปแนบเป็นทางสำรองก่อน API ได้รับอนุญาต/);
+assert.match(provider, /ห้ามลบข้อมูลสินค้า F แม้ไม่ผ่าน/);
+assert.match(provider, /สินค้านี้เคยทดสอบแล้ว เคยเป็น F และกำลังเริ่มรอบ C ใหม่/);
+assert.match(provider, /ห้ามซ่อนผลรอบเก่า/);
 assert.match(provider, /review_started_at TEXT,next_review_at TEXT,review_cycle_days INTEGER/);
 assert.match(provider, /CREATE TABLE IF NOT EXISTS tiktok_product_events/);
 assert.match(provider, /idx_tiktok_product_events_channel/);
@@ -70,6 +73,12 @@ assert.match(endpoint, /ปุ่มไม่ผ่านใช้ได้เ�
 assert.match(endpoint, /SET product_type='F',inventory_status='discarded'/);
 assert.match(endpoint, /next_review_at=NULL,review_cycle_days=0,review_status='failed'/);
 assert.match(endpoint, /'manual_fail','F','discarded'/);
+assert.match(endpoint, /action==='retest_f_product'/);
+assert.match(endpoint, /ทดสอบใหม่ได้เฉพาะสินค้า F/);
+assert.match(endpoint, /SET product_type='C',inventory_status='kept'/);
+assert.match(endpoint, /next_review_at=datetime\('now','\+3 days'\)/);
+assert.match(endpoint, /'manual_retest','C','kept'/);
+assert.match(endpoint, /ประวัติสินค้า F ของช่องที่ต้องเก็บไว้และแจ้งเตือน/);
 assert.match(client, /ลิสต์คัดสินค้า/);
 assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
@@ -83,6 +92,10 @@ assert.match(client, /data-fail-c=/);
 assert.match(client, /ไม่ผ่าน → F/);
 assert.match(client, /async function failCProduct/);
 assert.match(client, /manual_fail:'กดไม่ผ่าน'/);
+assert.match(client, /data-retest-f/);
+assert.match(client, /ทดสอบใหม่เป็น C/);
+assert.match(client, /เคยทดสอบแล้ว · กำลังทดสอบใหม่/);
+assert.match(client, /async function retestFProduct/);
 assert.match(client, /เวลาและเหตุการณ์/);
 assert.match(client, /timeline-event/);
 assert.match(client, /product_events/);
@@ -94,7 +107,8 @@ assert.match(page, /C สามารถคัดจาก D หรือ E ม�
 assert.match(page, /id="productReviewSchedule"/);
 assert.match(page, /คอลัมน์ “เวลาและเหตุการณ์”/);
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
-assert.match(page, /สามารถกด “ไม่ผ่าน → F” ได้ทันทีโดยไม่ต้องรอครบ 3 วัน/);
-assert.equal(version.trim(), 'v0.14.547');
+assert.match(page, /สินค้า F จะเก็บประวัติไว้เสมอ/);
+assert.match(page, /สามารถกด “ทดสอบใหม่เป็น C”/);
+assert.equal(version.trim(), 'v0.14.548');
 
-console.log('v0.14.547 manual C failure checks passed');
+console.log('v0.14.548 retained F and retest checks passed');
