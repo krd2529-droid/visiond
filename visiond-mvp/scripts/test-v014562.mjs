@@ -155,6 +155,9 @@ assert.match(css, /\.timeline-event:nth-child\(n\+4\)\{display:none\}/);
 assert.match(client, /function correctLegacyEvidencePeriod/);
 assert.match(client, /ยอดขาย \$\{period\} วัน \$1 ชิ้น/);
 assert.match(client, /button\.dataset\.productEvidence=corrected/);
-assert.equal(version.trim(), 'v0.14.561');
+assert.match(endpoint, /const productKey=/);
+assert.match(endpoint, /findMatchingProduct/);
+assert.match(endpoint, /seenProducts\.has\(key\)/);
+assert.equal(version.trim(), 'v0.14.562');
 
-console.log('v0.14.561 legacy product period correction checks passed');
+console.log('v0.14.562 normalized duplicate product checks passed');
