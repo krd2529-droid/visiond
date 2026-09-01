@@ -20,6 +20,7 @@ Base URL: `https://visiondonline.com/api/partner/v1`
 
 - `GET /products` — Scope `products:read`
 - `GET /products/{id}` — Scope `products:read`; คืน Metadata ของสินค้าที่เผยแพร่และไม่คืนไฟล์/Token
+- `GET /products/changes?cursor=0&limit=250` — Scope `products:read`; ใช้สร้างและอัปเดต Catalog ในฐานข้อมูลของเว็บ 2
 - `POST /customers/sync` — Scope `customers:write`
 - `POST /orders/sync` — Scope `orders:write`; ใช้ส่งออเดอร์ ชำระเงิน ยกเลิก และคืนเงิน
 - `POST /commerce/orders` — Scope `commerce:write`; สร้าง Checkout จาก product ID โดย VisionD คำนวณราคาเอง
@@ -43,6 +44,20 @@ Product Detail ของชุดอาจมี `delivery.items` สูงส�
 Starter Kit สำหรับ Backend เว็บ 2 อยู่ที่ `integrations/web2/` พร้อม Client, `.env.example` และวิธีใช้งาน ห้ามนำ Client หรือ Credential ไปใส่ Frontend bundle
 
 สินค้าใช้ cursor pagination ค่าเริ่มต้น 50 และสูงสุด 100 รายการต่อ request หาก `pagination.has_more=true` ให้ส่ง `pagination.next_cursor` ใน request ถัดไปจนเป็น `false`; Starter Kit รองรับ `for await (const page of visiond.productPages())` เพื่อไล่สินค้าเกิน 100 รายการโดยไม่โหลดก้อนใหญ่ครั้งเดียว
+
+### Local Product Mirror สำหรับเว็บ 2
+
+เว็บ 2 ไม่ควรเรียก VisionD ทุกครั้งที่ลูกค้าเปิดหน้าเว็บ ให้ Backend เว็บ 2 ทำดังนี้:
+
+1. ครั้งแรกเรียก `/products/changes?cursor=0` ต่อเนื่องจน `has_more=false`
+2. เมื่อ `action=upsert` ให้ insert/update สินค้าในฐานข้อมูลเว็บ 2 และคัดลอกเฉพาะ `assets` (รูปปก/รูปตัวอย่างสาธารณะ) ไป R2 ของเว็บ 2 ได้
+3. เมื่อ `action=delete` ให้เอาสินค้าออกจาก Catalog และลบรูปสาธารณะที่ mirror ไว้ แต่ห้ามลบประวัติคำสั่งซื้อหรือสิทธิ์ที่ลูกค้าจ่ายแล้ว
+4. บันทึก `pagination.next_cursor` ใน transaction เดียวกับข้อมูลสินค้า หลัง transaction สำเร็จเท่านั้น
+5. เรียกซ้ำจาก cursor ล่าสุดทุก 5 นาที หรือเมื่อผู้ดูแลสั่ง Sync; รอบที่ไม่มีการเปลี่ยนแปลงจะคืนรายการว่าง
+
+Starter Kit รองรับ `for await (const page of visiond.productChangePages({cursor:lastCursor}))` โดย cursor เป็นเลขเพิ่มต่อเนื่องและครอบคลุมการสร้าง แก้ไข เผยแพร่ ซ่อน soft-delete และ physical-delete
+
+ฟิลด์ `assets[].source_url` มีไว้ mirror เฉพาะภาพสาธารณะ ไม่ใช่ไฟล์สินค้าต้นฉบับ ระบบจะไม่คืน R2 object key, download token หรือ permanent download URL ผ่าน endpoint นี้
 
 ## 4. Signed Webhook
 
