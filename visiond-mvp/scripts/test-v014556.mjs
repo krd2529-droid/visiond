@@ -4,10 +4,11 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-const [provider, client, page, version] = await Promise.all([
+const [provider, client, page, css, version] = await Promise.all([
   read('functions/_tiktok_analyzer.js'),
   read('public/tiktok-analyzer.js'),
   read('public/tiktok-analyzer.html'),
+  read('public/tiktok-analyzer.css'),
   read('VERSION.txt'),
 ]);
 const endpoint = await read('functions/api/admin/tiktok-analyzer/index.js');
@@ -136,6 +137,9 @@ assert.match(page, /id="productReviewSchedule"/);
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
 assert.match(page, /กำหนดเป็น C ได้ทันที/);
 assert.match(page, /เฉพาะสินค้า F ที่เคยคัดออกเท่านั้นจึงมีปุ่ม “ทดสอบใหม่เป็น C”/);
-assert.equal(version.trim(), 'v0.14.555');
+assert.match(client, /function showToast/);
+assert.match(client, /เก็บ “\$\{productName\}” สำเร็จ/);
+assert.match(css, /\.action-toast\.visible/);
+assert.equal(version.trim(), 'v0.14.556');
 
-console.log('v0.14.555 duplicate inventory checks passed');
+console.log('v0.14.556 visible inventory notifications checks passed');
