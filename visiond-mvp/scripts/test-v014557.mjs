@@ -140,6 +140,9 @@ assert.match(page, /เฉพาะสินค้า F ที่เคยคั
 assert.match(client, /function showToast/);
 assert.match(client, /เก็บ “\$\{productName\}” สำเร็จ/);
 assert.match(css, /\.action-toast\.visible/);
-assert.equal(version.trim(), 'v0.14.556');
+assert.match(client, /เก็บแล้ว \$\{kept\.length\}\/30/);
+assert.match(client, /class="inventory-order"/);
+assert.match(client, /ลำดับ \$\{position\}\/30/);
+assert.equal(version.trim(), 'v0.14.557');
 
-console.log('v0.14.556 visible inventory notifications checks passed');
+console.log('v0.14.557 inventory order and target checks passed');
