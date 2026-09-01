@@ -74,6 +74,8 @@ assert.match(endpoint, /SET product_type='F',inventory_status='discarded'/);
 assert.match(endpoint, /next_review_at=NULL,review_cycle_days=0,review_status='failed'/);
 assert.match(endpoint, /'manual_fail','F','discarded'/);
 assert.match(endpoint, /action==='retest_f_product'/);
+assert.match(endpoint, /action==='set_product_c'/);
+assert.match(endpoint, /'manual_c','C','kept'/);
 assert.match(endpoint, /ทดสอบใหม่ได้เฉพาะสินค้า F/);
 assert.match(endpoint, /SET product_type='C',inventory_status='kept'/);
 assert.match(endpoint, /next_review_at=datetime\('now','\+3 days'\)/);
@@ -82,6 +84,8 @@ assert.match(endpoint, /ประวัติสินค้า F ของช�
 assert.match(client, /ลิสต์คัดสินค้า/);
 assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
+assert.match(client, /data-set-c=/);
+assert.match(client, /async function setProductC/);
 assert.match(client, /ประวัติสินค้าที่คัดออก/);
 assert.match(client, /รอบตรวจสินค้า A\/B\/C/);
 assert.match(client, /C ตรวจรอบ 3 วัน หรือกดไม่ผ่านได้ทันที · A และ B ตรวจทุก 7 วัน/);
@@ -107,8 +111,8 @@ assert.match(page, /C สามารถคัดจาก D หรือ E ม�
 assert.match(page, /id="productReviewSchedule"/);
 assert.match(page, /คอลัมน์ “เวลาและเหตุการณ์”/);
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
-assert.match(page, /สินค้า F จะเก็บประวัติไว้เสมอ/);
-assert.match(page, /สามารถกด “ทดสอบใหม่เป็น C”/);
-assert.equal(version.trim(), 'v0.14.548');
+assert.match(page, /เลือกสินค้าเป็น C เองได้/);
+assert.match(page, /ทดสอบใหม่เป็น C ได้/);
+assert.equal(version.trim(), 'v0.14.549');
 
-console.log('v0.14.548 retained F and retest checks passed');
+console.log('v0.14.549 manual C selection checks passed');
