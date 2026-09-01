@@ -25,6 +25,10 @@ export async function ensureTikTokAnalyzerSchema(env){
       review_started_at TEXT,next_review_at TEXT,review_cycle_days INTEGER NOT NULL DEFAULT 0,review_status TEXT NOT NULL DEFAULT 'not_scheduled',
       first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(channel_id) REFERENCES tiktok_channels(id),UNIQUE(channel_id,name))`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_product_events(
+      id TEXT PRIMARY KEY,channel_id TEXT NOT NULL,product_name TEXT NOT NULL COLLATE NOCASE,event_type TEXT NOT NULL,
+      product_type TEXT NOT NULL DEFAULT '',inventory_status TEXT NOT NULL DEFAULT '',detail TEXT NOT NULL DEFAULT '',source_run_id TEXT NOT NULL DEFAULT '',
+      event_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(channel_id) REFERENCES tiktok_channels(id))`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_oauth_states(
       state_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',
       expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
@@ -58,6 +62,7 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_runs_channel ON tiktok_analysis_runs(channel_id,created_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_images_run ON tiktok_analysis_images(run_id,sort_order)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_products_channel ON tiktok_channel_products(channel_id,score DESC,last_seen_at DESC)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_product_events_channel ON tiktok_product_events(channel_id,event_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_connections_channel ON tiktok_connections(channel_id,status)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_creator_channel ON tiktok_shop_creator_connections(channel_id,status)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_orders_time ON tiktok_shop_affiliate_orders(connection_id,create_time DESC)'),

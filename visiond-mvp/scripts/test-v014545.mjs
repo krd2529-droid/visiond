@@ -40,6 +40,8 @@ assert.match(provider, /สินค้า C เป็นสินค้าเ�
 assert.match(provider, /สินค้า A และ B ให้ประเมินผลตามยอดขายย้อนหลัง 7 วัน/);
 assert.match(provider, /ห้ามใช้ข้อมูลก่อนถึงวันตรวจมาตัดสินว่าเป็นผลครบช่วง/);
 assert.match(provider, /review_started_at TEXT,next_review_at TEXT,review_cycle_days INTEGER/);
+assert.match(provider, /CREATE TABLE IF NOT EXISTS tiktok_product_events/);
+assert.match(provider, /idx_tiktok_product_events_channel/);
 assert.match(client, /A:'≥ 7 ชิ้น\/สัปดาห์'/);
 assert.match(client, /B:'4–6 ชิ้น\/สัปดาห์'/);
 assert.match(client, /C:'1–3 ชิ้น\/สัปดาห์'/);
@@ -54,6 +56,9 @@ assert.match(endpoint, /cycle=type==='C'\?3:\['A','B'\]\.includes\(type\)\?7:0/)
 assert.match(endpoint, /datetime\('now',\?\)/);
 assert.match(endpoint, /result\.daily_product_list/);
 assert.match(endpoint, /kind:'daily_ranking'/);
+assert.match(endpoint, /SELECT id,product_name,event_type,product_type,inventory_status,detail,source_run_id,event_at FROM tiktok_product_events/);
+assert.match(endpoint, /event_type,product_type,inventory_status,detail/);
+assert.match(endpoint, /eventProducts=new Set/);
 assert.match(client, /ลิสต์คัดสินค้า/);
 assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
@@ -61,12 +66,16 @@ assert.match(client, /ประวัติสินค้าที่คัด�
 assert.match(client, /รอบตรวจสินค้า A\/B\/C/);
 assert.match(client, /C ตรวจหลังแนบรูป 3 วัน · A และ B ตรวจทุก 7 วัน/);
 assert.match(client, /review-reminder\$\{due\?' overdue':''\}/);
+assert.match(client, /เวลาและเหตุการณ์/);
+assert.match(client, /timeline-event/);
+assert.match(client, /product_events/);
 assert.match(page, /ลิสต์คัดสินค้า/);
 assert.doesNotMatch(page, /ลิสต์สินค้าถาวร/);
 assert.match(page, /A สูงสุด 20 · C จำนวน 5 · B เติมให้ครบ 30/);
 assert.match(page, /ถ้ายังไม่มี A และ B ให้เป็น C ทั้ง 30/);
 assert.match(page, /C สามารถคัดจาก D หรือ E มาทดลองได้และต้องเปลี่ยนเกรดเป็น C/);
 assert.match(page, /id="productReviewSchedule"/);
-assert.equal(version.trim(), 'v0.14.544');
+assert.match(page, /คอลัมน์ “เวลาและเหตุการณ์”/);
+assert.equal(version.trim(), 'v0.14.545');
 
-console.log('v0.14.544 A/B/C review schedule checks passed');
+console.log('v0.14.545 product event timeline checks passed');
