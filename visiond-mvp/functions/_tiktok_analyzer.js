@@ -35,6 +35,10 @@ export async function ensureTikTokAnalyzerSchema(env){
       access_expires_at TEXT NOT NULL,refresh_expires_at TEXT NOT NULL,user_type INTEGER NOT NULL DEFAULT 1,
       status TEXT NOT NULL DEFAULT 'active',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(user_id,open_id),FOREIGN KEY(channel_id) REFERENCES tiktok_channels(id))`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_shop_showcase_products(
+      connection_id TEXT NOT NULL,product_id TEXT NOT NULL,name TEXT NOT NULL DEFAULT '',image_url TEXT NOT NULL DEFAULT '',product_url TEXT NOT NULL DEFAULT '',origin TEXT NOT NULL DEFAULT '',price_json TEXT NOT NULL DEFAULT 'null',commission_json TEXT NOT NULL DEFAULT 'null',sort_order INTEGER NOT NULL DEFAULT 0,raw_json TEXT NOT NULL DEFAULT '{}',synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(connection_id,product_id),FOREIGN KEY(connection_id) REFERENCES tiktok_shop_creator_connections(id))`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_shop_affiliate_orders(
+      connection_id TEXT NOT NULL,order_id TEXT NOT NULL,create_time INTEGER NOT NULL DEFAULT 0,product_ids TEXT NOT NULL DEFAULT '[]',status TEXT NOT NULL DEFAULT '',gmv_json TEXT NOT NULL DEFAULT 'null',commission_json TEXT NOT NULL DEFAULT 'null',raw_json TEXT NOT NULL DEFAULT '{}',synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(connection_id,order_id),FOREIGN KEY(connection_id) REFERENCES tiktok_shop_creator_connections(id))`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_connections(
       id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',open_id TEXT NOT NULL,
       union_id TEXT NOT NULL DEFAULT '',display_name TEXT NOT NULL DEFAULT '',avatar_url TEXT NOT NULL DEFAULT '',
@@ -54,9 +58,10 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_products_channel ON tiktok_channel_products(channel_id,score DESC,last_seen_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_connections_channel ON tiktok_connections(channel_id,status)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_creator_channel ON tiktok_shop_creator_connections(channel_id,status)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_orders_time ON tiktok_shop_affiliate_orders(connection_id,create_time DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_videos_connection ON tiktok_connection_videos(connection_id,create_time DESC)')
   ]);
-  for(const sql of["ALTER TABLE tiktok_channel_products ADD COLUMN product_type TEXT NOT NULL DEFAULT 'B'","ALTER TABLE tiktok_channel_products ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'winner'","ALTER TABLE tiktok_channel_products ADD COLUMN customer_gender TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_channel_products ADD COLUMN customer_age_range TEXT NOT NULL DEFAULT ''"]){try{await env.DB.prepare(sql).run()}catch(error){if(!String(error).toLowerCase().includes('duplicate column'))throw error}}
+  for(const sql of["ALTER TABLE tiktok_channel_products ADD COLUMN product_type TEXT NOT NULL DEFAULT 'B'","ALTER TABLE tiktok_channel_products ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'winner'","ALTER TABLE tiktok_channel_products ADD COLUMN customer_gender TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_channel_products ADD COLUMN customer_age_range TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN creator_username TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN creator_avatar_url TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN selection_region TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN profile_json TEXT NOT NULL DEFAULT '{}'","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN last_synced_at TEXT","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN last_sync_error TEXT NOT NULL DEFAULT ''"]){try{await env.DB.prepare(sql).run()}catch(error){if(!String(error).toLowerCase().includes('duplicate column'))throw error}}
 }
 
 export function selectTikTokProvider(env={}){
