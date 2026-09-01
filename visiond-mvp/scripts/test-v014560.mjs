@@ -151,6 +151,7 @@ assert.match(endpoint, /attachmentPeriodDays=\[3,7,30\]/);
 assert.match(provider, /attachmentPeriodDays=30/);
 assert.match(provider, /result\.attachment_period_days/);
 assert.match(provider, /period===3\?'C'/);
-assert.equal(version.trim(), 'v0.14.559');
+assert.match(css, /\.timeline-event:nth-child\(n\+4\)\{display:none\}/);
+assert.equal(version.trim(), 'v0.14.560');
 
-console.log('v0.14.559 attachment period selector checks passed');
+console.log('v0.14.560 latest three product events checks passed');
