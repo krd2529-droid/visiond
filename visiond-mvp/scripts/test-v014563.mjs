@@ -158,6 +158,11 @@ assert.match(client, /button\.dataset\.productEvidence=corrected/);
 assert.match(endpoint, /const productKey=/);
 assert.match(endpoint, /findMatchingProduct/);
 assert.match(endpoint, /seenProducts\.has\(key\)/);
-assert.equal(version.trim(), 'v0.14.562');
+assert.match(page, /class="portfolio-nav"/);
+assert.doesNotMatch(page, /id="outputScopeSwitch"/);
+assert.doesNotMatch(page, /id="showChannelOutput"/);
+assert.match(client, /async function loadPortfolioDashboard/);
+assert.match(client, /api\('\/api\/admin\/tiktok-connections'\)/);
+assert.equal(version.trim(), 'v0.14.563');
 
-console.log('v0.14.562 normalized duplicate product checks passed');
+console.log('v0.14.563 separate portfolio navigation checks passed');
