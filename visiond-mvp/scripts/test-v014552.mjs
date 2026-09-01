@@ -11,6 +11,7 @@ const [provider, client, page, version] = await Promise.all([
   read('VERSION.txt'),
 ]);
 const endpoint = await read('functions/api/admin/tiktok-analyzer/index.js');
+const [shopEndpoint, shopApi] = await Promise.all([read('functions/api/admin/tiktok-connections/index.js'), read('functions/_tiktok_shop_api.js')]);
 
 assert.match(provider, /สินค้าเกรด A และ B เป็นสินค้าที่ต้องทำคอนเทนต์ลงต่อเนื่อง/);
 assert.match(provider, /เลื่อน B เป็น A เมื่อมีหลักฐานว่ายอดขาย วิว และทราฟฟิกดีขึ้นอย่างต่อเนื่อง/);
@@ -57,8 +58,15 @@ assert.match(client, /A:'≥ 7 ชิ้น\/สัปดาห์'/);
 assert.match(client, /B:'4–6 ชิ้น\/สัปดาห์'/);
 assert.match(client, /C:'1–3 ชิ้น\/สัปดาห์'/);
 assert.match(client, /F:'0 ชิ้น\/สัปดาห์ · คัดออก'/);
-assert.match(page, /A ≥ 7 ชิ้น · B 4–6 ชิ้น · C 1–3 ชิ้น · F 0 ชิ้น/);
 assert.match(page, /เกณฑ์รูป 30 วัน: A ≥ 30 ชิ้น · B 16–29 ชิ้น · C 0–15 ชิ้น/);
+assert.match(page, /เพิ่มหรือลบสินค้าใน Showcase ของช่องนี้ ส่วนการจัดเกรดทำในลิสต์คัดสินค้า/);
+assert.match(page, /เพิ่มใน Showcase/);
+assert.match(page, /ลบสินค้าที่เลือกออกจาก Showcase/);
+assert.doesNotMatch(client, /class="shop-grade"/);
+assert.doesNotMatch(client, /class="grade-guide"/);
+assert.match(shopEndpoint, /action==='shop_add'/);
+assert.match(shopEndpoint, /action==='shop_remove'/);
+assert.match(shopApi, /export async function addTikTokShopShowcaseProducts/);
 assert.match(provider, /inventory_status TEXT NOT NULL DEFAULT 'analyzed'/);
 assert.match(endpoint, /action==='set_product_inventory'/);
 assert.match(endpoint, /\['kept','discarded'\]\.includes\(status\)/);
@@ -122,6 +130,6 @@ assert.match(page, /คอลัมน์ “เวลาและเหตุ�
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
 assert.match(page, /กำหนดเป็น C ได้ทันที/);
 assert.match(page, /สินค้า F ยังคงเก็บประวัติไว้/);
-assert.equal(version.trim(), 'v0.14.551');
+assert.equal(version.trim(), 'v0.14.552');
 
-console.log('v0.14.551 monthly attachment grading checks passed');
+console.log('v0.14.552 showcase add/remove-only checks passed');
