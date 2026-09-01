@@ -32,11 +32,12 @@ assert.match(provider, /inventory_status TEXT NOT NULL DEFAULT 'analyzed'/);
 assert.match(endpoint, /action==='set_product_inventory'/);
 assert.match(endpoint, /\['kept','discarded'\]\.includes\(status\)/);
 assert.match(endpoint, /inventory_status=excluded\.inventory_status/);
-assert.match(client, /ลิสต์สินค้าถาวรของช่อง/);
+assert.match(client, /ลิสต์คัดสินค้า/);
 assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
 assert.match(client, /ประวัติสินค้าที่คัดออก/);
-assert.match(page, /ลิสต์สินค้าถาวรของช่อง/);
-assert.equal(version.trim(), 'v0.14.540');
+assert.match(page, /ลิสต์คัดสินค้า/);
+assert.doesNotMatch(page, /ลิสต์สินค้าถาวร/);
+assert.equal(version.trim(), 'v0.14.541');
 
-console.log('v0.14.540 permanent channel inventory checks passed');
+console.log('v0.14.541 product selection list naming checks passed');
