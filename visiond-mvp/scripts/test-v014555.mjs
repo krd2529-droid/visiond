@@ -71,6 +71,7 @@ assert.match(shopEndpoint, /action==='shop_remove'/);
 assert.match(shopApi, /export async function addTikTokShopShowcaseProducts/);
 assert.match(provider, /inventory_status TEXT NOT NULL DEFAULT 'analyzed'/);
 assert.match(endpoint, /action==='set_product_inventory'/);
+assert.match(endpoint, /already_exists:true/);
 assert.match(endpoint, /\['kept','discarded'\]\.includes\(status\)/);
 assert.match(endpoint, /inventory_status=excluded\.inventory_status/);
 assert.match(endpoint, /r\.created_at attachment_date/);
@@ -100,6 +101,8 @@ assert.match(endpoint, /ประวัติสินค้า F ของช�
 assert.match(client, /ลิสต์คัดสินค้า/);
 assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
+assert.match(client, /อยู่ในลิสต์คัดสินค้าแล้ว ไม่ได้เพิ่มซ้ำ/);
+assert.match(client, /อยู่ในประวัติคัดออกแล้ว ไม่ได้เพิ่มซ้ำ/);
 assert.match(client, /button\.dataset\.setC=productName/);
 assert.doesNotMatch(client, />เลือกเป็น C<\/button>/);
 assert.match(client, /button\.dataset\.retestF=name;button\.textContent='ทดสอบใหม่เป็น C'/);
@@ -130,10 +133,9 @@ assert.match(page, /A สูงสุด 20 · C จำนวน 5 · B เต�
 assert.match(page, /ถ้ายังไม่มี A และ B ให้เป็น C ทั้ง 30/);
 assert.match(page, /C สามารถคัดจาก D หรือ E มาทดลองได้และต้องเปลี่ยนเกรดเป็น C/);
 assert.match(page, /id="productReviewSchedule"/);
-assert.match(page, /คอลัมน์ “เวลาและเหตุการณ์”/);
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
 assert.match(page, /กำหนดเป็น C ได้ทันที/);
 assert.match(page, /เฉพาะสินค้า F ที่เคยคัดออกเท่านั้นจึงมีปุ่ม “ทดสอบใหม่เป็น C”/);
-assert.equal(version.trim(), 'v0.14.554');
+assert.equal(version.trim(), 'v0.14.555');
 
-console.log('v0.14.554 monthly sales text correction checks passed');
+console.log('v0.14.555 duplicate inventory checks passed');
