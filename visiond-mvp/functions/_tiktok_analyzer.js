@@ -5,7 +5,7 @@ export async function ensureTikTokAnalyzerSchema(env){
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_channels(
       id TEXT PRIMARY KEY,name TEXT NOT NULL,channel_url TEXT NOT NULL DEFAULT '',handle TEXT NOT NULL DEFAULT '',
-      direction TEXT NOT NULL DEFAULT '',homework TEXT NOT NULL DEFAULT '',created_by INTEGER NOT NULL,
+      direction TEXT NOT NULL DEFAULT '',homework TEXT NOT NULL DEFAULT '',created_by INTEGER NOT NULL,archived_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_tiktok_channels_url ON tiktok_channels(channel_url) WHERE channel_url<>\'\''),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_analysis_runs(
@@ -61,6 +61,7 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_orders_time ON tiktok_shop_affiliate_orders(connection_id,create_time DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_videos_connection ON tiktok_connection_videos(connection_id,create_time DESC)')
   ]);
+  try{await env.DB.prepare('ALTER TABLE tiktok_channels ADD COLUMN archived_at TEXT').run()}catch(error){if(!String(error).toLowerCase().includes('duplicate column'))throw error}
   for(const sql of["ALTER TABLE tiktok_channel_products ADD COLUMN product_type TEXT NOT NULL DEFAULT 'B'","ALTER TABLE tiktok_channel_products ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'winner'","ALTER TABLE tiktok_channel_products ADD COLUMN customer_gender TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_channel_products ADD COLUMN customer_age_range TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN creator_username TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN creator_avatar_url TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN selection_region TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN profile_json TEXT NOT NULL DEFAULT '{}'","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN last_synced_at TEXT","ALTER TABLE tiktok_shop_creator_connections ADD COLUMN last_sync_error TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_shop_showcase_products ADD COLUMN product_grade TEXT NOT NULL DEFAULT 'B'"]){try{await env.DB.prepare(sql).run()}catch(error){if(!String(error).toLowerCase().includes('duplicate column'))throw error}}
 }
 
