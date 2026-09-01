@@ -86,6 +86,9 @@ assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
 assert.match(client, /data-set-c=/);
 assert.match(client, /async function setProductC/);
+assert.match(client, /manualCForm/);
+assert.match(page, /ใส่ชื่อสินค้าเต็ม/);
+assert.match(page, /เพิ่มเป็น C/);
 assert.match(client, /ประวัติสินค้าที่คัดออก/);
 assert.match(client, /รอบตรวจสินค้า A\/B\/C/);
 assert.match(client, /C ตรวจรอบ 3 วัน หรือกดไม่ผ่านได้ทันที · A และ B ตรวจทุก 7 วัน/);
@@ -111,8 +114,8 @@ assert.match(page, /C สามารถคัดจาก D หรือ E ม�
 assert.match(page, /id="productReviewSchedule"/);
 assert.match(page, /คอลัมน์ “เวลาและเหตุการณ์”/);
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
-assert.match(page, /เลือกสินค้าเป็น C เองได้/);
-assert.match(page, /ทดสอบใหม่เป็น C ได้/);
-assert.equal(version.trim(), 'v0.14.549');
+assert.match(page, /กำหนดเป็น C ได้ทันที/);
+assert.match(page, /สินค้า F ยังคงเก็บประวัติไว้/);
+assert.equal(version.trim(), 'v0.14.550');
 
-console.log('v0.14.549 manual C selection checks passed');
+console.log('v0.14.550 named manual C entry checks passed');
