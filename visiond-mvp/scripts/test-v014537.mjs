@@ -15,8 +15,12 @@ assert.match(provider, /C=สินค้าอยู่ในช่วงทด
 assert.match(provider, /มีหลักฐานว่าขายได้ให้เลื่อนเป็น B/);
 assert.match(provider, /ให้เปลี่ยนเป็น F ทันทีโดยไม่ต้องรอ 7 วัน/);
 assert.match(provider, /ครบ 72 ชั่วโมงแล้ววิวหรือทราฟฟิกต่ำและไม่มีการขาย/);
+assert.match(provider, /สินค้าเกรด A และ B เป็นสินค้าที่ต้องทำคอนเทนต์ลงต่อเนื่อง/);
+assert.match(provider, /เลื่อน B เป็น A เมื่อมีหลักฐานว่ายอดขาย วิว และทราฟฟิกดีขึ้นอย่างต่อเนื่อง/);
 assert.match(client, /C:'ทดสอบ 3 วัน · ขายได้ไป B · ไม่เวิร์กไป F'/);
+assert.match(client, /B:'สินค้ารอง · ทำต่อเนื่อง · ดีขึ้นไป A'/);
 assert.match(page, /C ทดสอบ 3 วัน ขายได้ไป B ไม่เวิร์กไป F/);
-assert.equal(version.trim(), 'v0.14.536');
+assert.match(page, /B สินค้ารอง ทำต่อเนื่องและเลื่อนเป็น A เมื่อผลงานดีขึ้น/);
+assert.equal(version.trim(), 'v0.14.537');
 
-console.log('v0.14.536 grade C checks passed');
+console.log('v0.14.537 active A/B and grade C checks passed');
