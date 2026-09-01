@@ -143,6 +143,9 @@ assert.match(css, /\.action-toast\.visible/);
 assert.match(client, /เก็บแล้ว \$\{kept\.length\}\/30/);
 assert.match(client, /class="inventory-order"/);
 assert.match(client, /ลำดับ \$\{position\}\/30/);
-assert.equal(version.trim(), 'v0.14.557');
+assert.match(provider, /loose=evidence\.match/);
+assert.match(client, /loose=reason\.match/);
+assert.match(client, /button\.dataset\.productGrade=grade/);
+assert.equal(version.trim(), 'v0.14.558');
 
-console.log('v0.14.557 inventory order and target checks passed');
+console.log('v0.14.558 monthly loose sales grade checks passed');
