@@ -10,6 +10,7 @@ const [provider, client, page, version] = await Promise.all([
   read('public/tiktok-analyzer.html'),
   read('VERSION.txt'),
 ]);
+const endpoint = await read('functions/api/admin/tiktok-analyzer/index.js');
 
 assert.match(provider, /สินค้าเกรด A และ B เป็นสินค้าที่ต้องทำคอนเทนต์ลงต่อเนื่อง/);
 assert.match(provider, /เลื่อน B เป็น A เมื่อมีหลักฐานว่ายอดขาย วิว และทราฟฟิกดีขึ้นอย่างต่อเนื่อง/);
@@ -27,6 +28,15 @@ assert.match(client, /B:'4–6 ชิ้น\/สัปดาห์'/);
 assert.match(client, /C:'1–3 ชิ้น\/สัปดาห์'/);
 assert.match(client, /F:'0 ชิ้น\/สัปดาห์ · คัดออก'/);
 assert.match(page, /A ≥ 7 ชิ้น · B 4–6 ชิ้น · C 1–3 ชิ้น · F 0 ชิ้น/);
-assert.equal(version.trim(), 'v0.14.539');
+assert.match(provider, /inventory_status TEXT NOT NULL DEFAULT 'analyzed'/);
+assert.match(endpoint, /action==='set_product_inventory'/);
+assert.match(endpoint, /\['kept','discarded'\]\.includes\(status\)/);
+assert.match(endpoint, /inventory_status=excluded\.inventory_status/);
+assert.match(client, /ลิสต์สินค้าถาวรของช่อง/);
+assert.match(client, /data-inventory="kept"/);
+assert.match(client, /data-inventory="discarded"/);
+assert.match(client, /ประวัติสินค้าที่คัดออก/);
+assert.match(page, /ลิสต์สินค้าถาวรของช่อง/);
+assert.equal(version.trim(), 'v0.14.540');
 
-console.log('v0.14.539 weekly sales thresholds passed');
+console.log('v0.14.540 permanent channel inventory checks passed');
