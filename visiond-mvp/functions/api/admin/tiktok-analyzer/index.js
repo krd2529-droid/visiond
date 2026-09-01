@@ -23,6 +23,13 @@ export async function onRequestGet(ctx){
 export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   const form=await ctx.request.formData(),action=text(form.get('action'),40),name=text(form.get('channel_name'),120),channelUrl=text(form.get('channel_url'),500),existingId=text(form.get('channel_id'),80);
+  if(action==='fail_c_product'){
+    const productName=text(form.get('product_name'),500);if(!existingId||!productName)return json({error:'ข้อมูลสินค้าไม่ครบ'},400,headers);
+    const channel=await ctx.env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL').bind(existingId,auth.user.id).first();if(!channel)return json({error:'ไม่พบช่องหรือไม่มีสิทธิ์แก้ไข'},404,headers);
+    const product=await ctx.env.DB.prepare('SELECT product_type FROM tiktok_channel_products WHERE channel_id=? AND name=?').bind(existingId,productName).first();if(!product)return json({error:'ไม่พบสินค้าในช่องนี้'},404,headers);if(product.product_type!=='C')return json({error:'ปุ่มไม่ผ่านใช้ได้เฉพาะสินค้า C'},409,headers);
+    await ctx.env.DB.batch([ctx.env.DB.prepare("UPDATE tiktok_channel_products SET product_type='F',inventory_status='discarded',decided_at=CURRENT_TIMESTAMP,next_review_at=NULL,review_cycle_days=0,review_status='failed',last_seen_at=CURRENT_TIMESTAMP WHERE channel_id=? AND name=? AND product_type='C'").bind(existingId,productName),ctx.env.DB.prepare("INSERT INTO tiktok_product_events(id,channel_id,product_name,event_type,product_type,inventory_status,detail) VALUES(?,?,?,'manual_fail','F','discarded','ผู้ใช้กดไม่ผ่านสินค้า C จึงเปลี่ยนเป็น F ทันที')").bind(crypto.randomUUID(),existingId,productName)]);
+    return json({ok:true,product_name:productName,product_type:'F',inventory_status:'discarded'},200,headers);
+  }
   if(action==='set_product_inventory'){
     const productName=text(form.get('product_name'),500),status=text(form.get('inventory_status'),20),type=productType(form.get('product_type'),'C'),scoreValue=form.get('score'),score=Number.isFinite(Number(scoreValue))?Math.max(0,Math.min(100,Number(scoreValue))):0;
     if(!existingId||!productName||!['kept','discarded'].includes(status))return json({error:'ข้อมูลสินค้าหรือสถานะไม่ครบ'},400,headers);
