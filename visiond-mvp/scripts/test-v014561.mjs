@@ -152,6 +152,9 @@ assert.match(provider, /attachmentPeriodDays=30/);
 assert.match(provider, /result\.attachment_period_days/);
 assert.match(provider, /period===3\?'C'/);
 assert.match(css, /\.timeline-event:nth-child\(n\+4\)\{display:none\}/);
-assert.equal(version.trim(), 'v0.14.560');
+assert.match(client, /function correctLegacyEvidencePeriod/);
+assert.match(client, /ยอดขาย \$\{period\} วัน \$1 ชิ้น/);
+assert.match(client, /button\.dataset\.productEvidence=corrected/);
+assert.equal(version.trim(), 'v0.14.561');
 
-console.log('v0.14.560 latest three product events checks passed');
+console.log('v0.14.561 legacy product period correction checks passed');
