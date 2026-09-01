@@ -21,6 +21,11 @@ assert.match(provider, /A=ขายได้อย่างน้อย 7 ชิ
 assert.match(provider, /B=ขายได้ 4-6 ชิ้นต่อ 7 วัน/);
 assert.match(provider, /C=ขายได้ 1-3 ชิ้นต่อ 7 วัน/);
 assert.match(provider, /F=ขายได้ 0 ชิ้นต่อ 7 วัน/);
+assert.match(provider, /A เมื่อขายได้อย่างน้อย 30 ชิ้นใน 30 วัน/);
+assert.match(provider, /B เมื่อขายได้ 16-29 ชิ้นใน 30 วัน/);
+assert.match(provider, /C เมื่อขายได้ 0-15 ชิ้นใน 30 วัน/);
+assert.match(provider, /สินค้าที่ไม่ปรากฏในรูปห้ามสรุปว่าเป็นยอด 0 หรือ F/);
+assert.match(provider, /orders>=30\?'A':orders>=16\?'B':'C'/);
 assert.match(provider, /ห้ามคาดคะเนเป็นยอดต่อสัปดาห์/);
 assert.match(provider, /ให้ใช้แทนกฎ C แบบ 72 ชั่วโมงก่อนหน้า/);
 assert.match(provider, /30 สินค้าหลัก \+ 10 สินค้าแนะนำเกรด E/);
@@ -53,6 +58,7 @@ assert.match(client, /B:'4–6 ชิ้น\/สัปดาห์'/);
 assert.match(client, /C:'1–3 ชิ้น\/สัปดาห์'/);
 assert.match(client, /F:'0 ชิ้น\/สัปดาห์ · คัดออก'/);
 assert.match(page, /A ≥ 7 ชิ้น · B 4–6 ชิ้น · C 1–3 ชิ้น · F 0 ชิ้น/);
+assert.match(page, /เกณฑ์รูป 30 วัน: A ≥ 30 ชิ้น · B 16–29 ชิ้น · C 0–15 ชิ้น/);
 assert.match(provider, /inventory_status TEXT NOT NULL DEFAULT 'analyzed'/);
 assert.match(endpoint, /action==='set_product_inventory'/);
 assert.match(endpoint, /\['kept','discarded'\]\.includes\(status\)/);
@@ -116,6 +122,6 @@ assert.match(page, /คอลัมน์ “เวลาและเหตุ�
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
 assert.match(page, /กำหนดเป็น C ได้ทันที/);
 assert.match(page, /สินค้า F ยังคงเก็บประวัติไว้/);
-assert.equal(version.trim(), 'v0.14.550');
+assert.equal(version.trim(), 'v0.14.551');
 
-console.log('v0.14.550 named manual C entry checks passed');
+console.log('v0.14.551 monthly attachment grading checks passed');
