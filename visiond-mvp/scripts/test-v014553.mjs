@@ -98,7 +98,9 @@ assert.match(endpoint, /ประวัติสินค้า F ของช�
 assert.match(client, /ลิสต์คัดสินค้า/);
 assert.match(client, /data-inventory="kept"/);
 assert.match(client, /data-inventory="discarded"/);
-assert.match(client, /data-set-c=/);
+assert.match(client, /button\.dataset\.setC=productName/);
+assert.doesNotMatch(client, />เลือกเป็น C<\/button>/);
+assert.match(client, /button\.dataset\.retestF=name;button\.textContent='ทดสอบใหม่เป็น C'/);
 assert.match(client, /async function setProductC/);
 assert.match(client, /manualCForm/);
 assert.match(page, /ใส่ชื่อสินค้าเต็ม/);
@@ -129,7 +131,7 @@ assert.match(page, /id="productReviewSchedule"/);
 assert.match(page, /คอลัมน์ “เวลาและเหตุการณ์”/);
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
 assert.match(page, /กำหนดเป็น C ได้ทันที/);
-assert.match(page, /สินค้า F ยังคงเก็บประวัติไว้/);
-assert.equal(version.trim(), 'v0.14.552');
+assert.match(page, /เฉพาะสินค้า F ที่เคยคัดออกเท่านั้นจึงมีปุ่ม “ทดสอบใหม่เป็น C”/);
+assert.equal(version.trim(), 'v0.14.553');
 
-console.log('v0.14.552 showcase add/remove-only checks passed');
+console.log('v0.14.553 F-only retest C checks passed');
