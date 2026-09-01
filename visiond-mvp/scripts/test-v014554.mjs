@@ -27,6 +27,8 @@ assert.match(provider, /B เมื่อขายได้ 16-29 ชิ้น�
 assert.match(provider, /C เมื่อขายได้ 0-15 ชิ้นใน 30 วัน/);
 assert.match(provider, /สินค้าที่ไม่ปรากฏในรูปห้ามสรุปว่าเป็นยอด 0 หรือ F/);
 assert.match(provider, /orders>=30\?'A':orders>=16\?'B':'C'/);
+assert.match(provider, /correctTextGrade/);
+assert.match(client, /renderResultTextGradeBase/);
 assert.match(provider, /ห้ามคาดคะเนเป็นยอดต่อสัปดาห์/);
 assert.match(provider, /ให้ใช้แทนกฎ C แบบ 72 ชั่วโมงก่อนหน้า/);
 assert.match(provider, /30 สินค้าหลัก \+ 10 สินค้าแนะนำเกรด E/);
@@ -132,6 +134,6 @@ assert.match(page, /คอลัมน์ “เวลาและเหตุ�
 assert.match(page, /หาก API พร้อมสามารถวิเคราะห์โดยไม่แนบรูป/);
 assert.match(page, /กำหนดเป็น C ได้ทันที/);
 assert.match(page, /เฉพาะสินค้า F ที่เคยคัดออกเท่านั้นจึงมีปุ่ม “ทดสอบใหม่เป็น C”/);
-assert.equal(version.trim(), 'v0.14.553');
+assert.equal(version.trim(), 'v0.14.554');
 
-console.log('v0.14.553 F-only retest C checks passed');
+console.log('v0.14.554 monthly sales text correction checks passed');
