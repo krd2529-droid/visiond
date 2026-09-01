@@ -103,6 +103,7 @@ Current package: **v0.14.181** — minimal visible-version patch on the active C
 
 - ELON ใช้ `OPENAI_API_KEY` ก่อน และ fallback ไป `GEMINI_API_KEY` หรือ `GEMINI_API_KEY_2` ที่ตั้งไว้เดิมได้ทันที
 - TikTok OAuth ใช้ Cloudflare secrets `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` และ `VISIOND_CHANNEL_ENCRYPTION_KEY` (อย่างน้อย 32 ตัวอักษร) พร้อมตัวแปรทางเลือก `TIKTOK_REDIRECT_URI`; ห้ามใส่ค่าจริงใน repository หรือส่ง secret ไป browser
+- TikTok Shop Creator OAuth ใช้ Cloudflare secrets `TIKTOK_SHOP_APP_KEY`, `TIKTOK_SHOP_APP_SECRET` และ encryption key เดิม พร้อมตัวแปรทางเลือก `TIKTOK_SHOP_REDIRECT_URI`; ต้องใช้ Affiliate public app และ creator scopes ที่ได้รับอนุมัติ
 - คีย์ Gemini ส่งผ่าน header เท่านั้น พร้อมคงข้อจำกัด VisionD-only, กรอง Secret/ลิงก์ และประวัติ 60 วัน
 - สมัครสมาชิกต้องยอมรับ Terms/Privacy จริงทั้งหน้าเว็บและ API พร้อมบันทึกเวอร์ชัน เวลา และ IP hash
 - Remember me เปิดแล้ว session/cookie อยู่ 30 วัน; หากไม่เลือกจะเป็น session cookie และฝั่งเซิร์ฟเวอร์หมดอายุใน 24 ชั่วโมง

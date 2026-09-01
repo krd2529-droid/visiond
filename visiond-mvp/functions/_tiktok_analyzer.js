@@ -26,6 +26,15 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_oauth_states(
       state_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',
       expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_shop_oauth_states(
+      state_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',
+      expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_shop_creator_connections(
+      id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',open_id TEXT NOT NULL,
+      access_token_ciphertext TEXT NOT NULL,refresh_token_ciphertext TEXT NOT NULL,scopes TEXT NOT NULL DEFAULT '',
+      access_expires_at TEXT NOT NULL,refresh_expires_at TEXT NOT NULL,user_type INTEGER NOT NULL DEFAULT 1,
+      status TEXT NOT NULL DEFAULT 'active',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(user_id,open_id),FOREIGN KEY(channel_id) REFERENCES tiktok_channels(id))`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_connections(
       id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',open_id TEXT NOT NULL,
       union_id TEXT NOT NULL DEFAULT '',display_name TEXT NOT NULL DEFAULT '',avatar_url TEXT NOT NULL DEFAULT '',
@@ -44,6 +53,7 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_images_run ON tiktok_analysis_images(run_id,sort_order)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_products_channel ON tiktok_channel_products(channel_id,score DESC,last_seen_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_connections_channel ON tiktok_connections(channel_id,status)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_creator_channel ON tiktok_shop_creator_connections(channel_id,status)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_videos_connection ON tiktok_connection_videos(connection_id,create_time DESC)')
   ]);
   for(const sql of["ALTER TABLE tiktok_channel_products ADD COLUMN product_type TEXT NOT NULL DEFAULT 'B'","ALTER TABLE tiktok_channel_products ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'winner'","ALTER TABLE tiktok_channel_products ADD COLUMN customer_gender TEXT NOT NULL DEFAULT ''","ALTER TABLE tiktok_channel_products ADD COLUMN customer_age_range TEXT NOT NULL DEFAULT ''"]){try{await env.DB.prepare(sql).run()}catch(error){if(!String(error).toLowerCase().includes('duplicate column'))throw error}}
