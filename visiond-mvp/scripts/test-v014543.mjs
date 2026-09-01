@@ -30,6 +30,12 @@ assert.match(provider, /ใช้ B เติมจำนวนที่เห�
 assert.match(provider, /หากยังไม่มีทั้งสินค้า A และ B ให้ใช้ C ทั้ง 30 รายการ/);
 assert.match(provider, /ห้ามนำ D หรือ F เข้า 30 สินค้าหลัก/);
 assert.match(provider, /ห้ามสร้างชื่อสินค้าซ้ำหรือชื่อปลอม/);
+assert.match(provider, /สินค้า C สำหรับทดลองอาจคัดมาจากสินค้า C เดิม/);
+assert.match(provider, /สินค้า D ที่ถึงจังหวะกระแส ฤดูกาล หรือโปรโมชั่น/);
+assert.match(provider, /สินค้า E ที่ผู้ใช้เลือกนำมาทดลอง/);
+assert.match(provider, /ต้องเปลี่ยน product_type ของรายการนั้นเป็น C/);
+assert.match(provider, /ห้ามให้สินค้าเดียวกันซ้ำอยู่ใน D หรือ E/);
+assert.match(provider, /ต้องหาสินค้า E แนะนำอื่นที่ไม่ซ้ำเติมให้กลุ่ม E ยังคงครบ 10 รายการ/);
 assert.match(client, /A:'≥ 7 ชิ้น\/สัปดาห์'/);
 assert.match(client, /B:'4–6 ชิ้น\/สัปดาห์'/);
 assert.match(client, /C:'1–3 ชิ้น\/สัปดาห์'/);
@@ -47,6 +53,7 @@ assert.match(page, /ลิสต์คัดสินค้า/);
 assert.doesNotMatch(page, /ลิสต์สินค้าถาวร/);
 assert.match(page, /A สูงสุด 20 · C จำนวน 5 · B เติมให้ครบ 30/);
 assert.match(page, /ถ้ายังไม่มี A และ B ให้เป็น C ทั้ง 30/);
-assert.equal(version.trim(), 'v0.14.542');
+assert.match(page, /C สามารถคัดจาก D หรือ E มาทดลองได้และต้องเปลี่ยนเกรดเป็น C/);
+assert.equal(version.trim(), 'v0.14.543');
 
-console.log('v0.14.542 selection ratio checks passed');
+console.log('v0.14.543 C sourcing from D/E checks passed');
