@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const provider=read('functions/_tiktok_analyzer.js');
+const analyzerApi=read('functions/api/admin/tiktok-analyzer/index.js');
+const connectionApi=read('functions/api/admin/tiktok-connections/index.js');
+const html=read('public/tiktok-analyzer.html');
+const client=read('public/tiktok-analyzer.js');
+const css=read('public/tiktok-analyzer.css');
+
+for(const label of ['A=ขายดี','B=สินค้าหลัก','C=สินค้ารอง','D=สินค้าเทส','E=สินค้าที่ควรเอาออก']) assert.match(provider,new RegExp(label));
+assert.doesNotMatch(provider,/ranking_group/);
+assert.match(provider,/product_type='E' WHERE product_type='F'/);
+assert.match(provider,/product_grade='E' WHERE product_grade='F'/);
+assert.match(analyzerApi,/instr\('ABCDE',product_type\)/);
+assert.match(connectionApi,/shop_remove_e/);
+assert.match(connectionApi,/product_grade='E'/);
+assert.doesNotMatch(connectionApi,/shop_remove_f/);
+assert.match(html,/A ขายดี · B สินค้าหลัก · C สินค้ารอง · D สินค้าเทส · E สินค้าที่ควรเอาออก/);
+assert.match(html,/id="removeShowcaseE"/);
+assert.doesNotMatch(html,/A–F|แบ่งเป็น 5 กลุ่ม|removeShowcaseF/);
+assert.match(client,/const typeLabels=\{A:'ขายดี',B:'สินค้าหลัก',C:'สินค้ารอง',D:'สินค้าเทส',E:'สินค้าที่ควรเอาออก'\}/);
+assert.match(client,/remove-e-check/);
+assert.match(client,/shop_remove_e/);
+assert.doesNotMatch(client,/ranking_group|rankingGroups|removeShowcaseF|ABCDEF/);
+assert.match(css,/\.product-group\.type-E/);
+assert.doesNotMatch(css,/ranking-group|type-F|grade-F/);
+assert.equal(read('VERSION.txt').trim(),'v0.14.519');
+console.log('TikTok product grades A-E regression: PASS');
