@@ -1092,6 +1092,18 @@
 - รหัส UI: `data-feature="TOYS-CENTER-001"`; ปุ่มใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v014567.mjs`
 
+## BASKET-VISIBILITY-001 — เปิด–ปิดตะกร้าสินค้า VisionD
+
+- ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “เปิด–ปิดตะกร้า VisionD” → `/basket-visibility.html`
+- ขอบเขต: กรองเฉพาะตะกร้าหลักในตาราง `products`; ไม่เปลี่ยน `published/draft`, ไม่ลบข้อมูล และไม่กระทบ Toys Center/ตะกร้าแคตเฟส
+- แบบทั้งหมด: เลือกเปิดทั้งหมดหรือปิดทั้งหมด
+- แบบเฉพาะ: กรอกชื่อขึ้นต้นหลายรายการคั่นด้วยจุลภาค; `เปิดเฉพาะ` แสดงเฉพาะชื่อที่ตรงและซ่อนชื่ออื่น ส่วน `ปิดเฉพาะ` ซ่อนชื่อที่ตรงและแสดงชื่ออื่น; ตรวจโดยไม่สนตัวพิมพ์ใหญ่–เล็ก
+- Enforcement: `/api/products` กรองรายการรวม และ `/api/products/[slug]` ตอบ 404 สำหรับตะกร้าที่ถูกซ่อน ป้องกันเข้าผ่าน URL โดยตรง
+- Data/API: เก็บ JSON ใน `settings.key='visiond_basket_visibility'`; API `/api/admin/basket-visibility` ใช้ `requireAdmin`; จำกัดชื่อขึ้นต้นสูงสุด 100 รายการ รายการละ 100 ตัวอักษร
+- หน้า/ไฟล์: `public/basket-visibility.{html,css,js}`, `functions/_basket_visibility.js`, `functions/api/admin/basket-visibility.js`
+- รหัส UI: `data-feature="BASKET-VISIBILITY-001"`; ปุ่มใช้ canonical `.vds-btn`
+- การทดสอบ: `scripts/test-v014571.mjs`
+
 ## PARTNER-API-001 — ศูนย์ควบคุม Partner API และ Web 2 Integration
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียน end-to-end contract จาก runtime จริงใน v0.14.388

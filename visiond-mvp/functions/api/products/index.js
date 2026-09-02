@@ -1,6 +1,7 @@
 import {json} from '../../_lib.js';
 import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {ensureDatabase} from '../../_schema.js';
+import {basketVisible,loadBasketVisibility} from '../../_basket_visibility.js';
 
 const CACHE_SECONDS=60;
 const cacheKey=request=>new Request(`${new URL(request.url).origin}/api/products`,{method:'GET'});
@@ -22,7 +23,7 @@ export async function onRequestGet(ctx){
     WHERE p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product'
       AND (p.category<>'resale-rights' OR p.slug='course-selling-rights')
     ORDER BY p.id DESC`).all();
-  const promotion=await loadPromotion(ctx.env),response=json({items:applyPromotion(results,promotion),promotion},200,{'cache-control':`public, max-age=30, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=30`});
+  const [promotion,visibility]=await Promise.all([loadPromotion(ctx.env),loadBasketVisibility(ctx.env)]),visible=results.filter(item=>basketVisible(item.title,visibility)),response=json({items:applyPromotion(visible,promotion),promotion},200,{'cache-control':`public, max-age=30, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=30`});
   if(cache){const write=cache.put(key,response.clone());if(ctx.waitUntil)ctx.waitUntil(write);else await write}
   return response;
 }
