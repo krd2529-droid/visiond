@@ -169,6 +169,10 @@ assert.match(endpoint, /const reviewDays=status==='kept'/);
 assert.match(client, /const samples=\[/);
 assert.match(client, /ข้อมูลตัวอย่าง · รอ TikTok อนุญาต API/);
 assert.match(client, /ลบสินค้าที่เลือก \(ตัวอย่าง\)/);
-assert.equal(version.trim(), 'v0.14.565');
+assert.match(client, /const demoRankProducts=/);
+assert.match(client, /function renderDemoChannelAnalysis/);
+assert.match(client, /productReviewSchedule'\)\.hidden=true/);
+assert.match(client, /queueMicrotask\(renderDemoChannelAnalysis\)/);
+assert.equal(version.trim(), 'v0.14.566');
 
-console.log('v0.14.565 showcase demo content checks passed');
+console.log('v0.14.566 ranking and selection demo checks passed');
