@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const root=new URL('../',import.meta.url),read=path=>readFile(new URL(path,root),'utf8');
+const [migration,schema,adminApi,itemApi,publicApi,feed,imageApi,adminPage,adminJs,storePage,storeJs,css,adminHome,map,version]=await Promise.all(['migrations/0071_toys_center.sql','functions/_toys_center.js','functions/api/admin/toys-center/index.js','functions/api/admin/toys-center/[id].js','functions/api/toys-center/products.js','functions/api/toys-center/feed.csv.js','functions/api/toys-center/images/[id]/[slot].js','public/toys-center-admin.html','public/toys-center-admin.js','public/toyscenter.html','public/toyscenter.js','public/toys-center.css','public/admin.html','FEATURE-MAP.md','VERSION.txt'].map(read));
+assert.match(migration,/image_1_key TEXT NOT NULL/);assert.match(migration,/image_2_key TEXT NOT NULL/);assert.match(migration,/meta_id TEXT NOT NULL UNIQUE/);assert.match(migration,/slug TEXT NOT NULL UNIQUE/);
+assert.match(schema,/image_1_url:mediaUrl\(origin,row.id,1\)/);assert.match(schema,/image_2_url:mediaUrl\(origin,row.id,2\)/);
+assert.match(adminApi,/requireAdmin/);assert.match(adminApi,/LIMIT \? OFFSET \?/);assert.match(adminApi,/form\.get\('image_1'\)/);assert.match(adminApi,/form\.get\('image_2'\)/);assert.match(adminApi,/image_1_key,image_2_key/);assert.match(adminApi,/storefront_mode/);
+assert.match(itemApi,/FILES\?\.delete\(row.image_1_key\)/);assert.match(itemApi,/FILES\?\.delete\(row.image_2_key\)/);assert.match(publicApi,/status='published'/);
+assert.match(feed,/mediaUrl\(origin,r.id,2\)/);assert.doesNotMatch(feed,/mediaUrl\(origin,r.id,1\)/);assert.match(feed,/quantity_to_sell_on_facebook/);assert.match(feed,/\.toFixed\(2\).*currency/);
+assert.match(imageApi,/slot==='1'/);assert.match(imageApi,/slot==='2'/);assert.match(imageApi,/contentType.*image\//);
+assert.match(adminPage,/รูป 1 — มีป้ายชื่อ \(VisionD\)/);assert.match(adminPage,/รูป 2 — ไม่มีป้ายชื่อ \(Meta\)/);assert.match(adminPage,/ช่องเพิ่มเติมตามเทมเพลต Meta/);assert.match(adminPage,/data-feed-url="\/api\/toys-center\/feed\.csv"/);
+assert.match(adminJs,/new FormData/);assert.match(adminJs,/page\*25<total/);assert.match(adminJs,/หน้าเว็บ: รูป 1 · Meta: รูป 2/);assert.match(storePage,/id="robotsMeta"/);assert.match(storeJs,/item\.image_1_url/);assert.doesNotMatch(storeJs,/item\.image_2_url/);assert.match(storeJs,/noindex,follow/);assert.match(css,/@media\(max-width:800px\)/);
+assert.match(adminHome,/data-feature="TOYS-CENTER-001"/);assert.match(map,/TOYS-CENTER-001/);assert.equal(version.trim(),'v0.14.567');
+console.log('v0.14.567 Toys Center two-image catalog checks passed');

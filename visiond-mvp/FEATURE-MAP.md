@@ -1080,6 +1080,18 @@
 - รหัส UI: `main.daily-shell` และเมนูหลังบ้านใช้ `data-feature="DAILY-TASKS-001"`; ปุ่มใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v014421.mjs`
 
+## TOYS-CENTER-001 — คลังของสะสมและฟีด Meta Catalog
+
+- ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “Toys Center” ในหลังบ้าน → `/toys-center-admin.html`; หน้าร้านสาธารณะอยู่ที่ `/toyscenter`
+- ข้อมูลสินค้า: รองรับค้นหาและแบ่งหน้าสำหรับคลังขนาดใหญ่; ID/SKU และ slug ห้ามซ้ำ; สถานะ `draft` ไม่ออกหน้าร้านหรือฟีด ส่วน `published` ออกทั้งสองปลายทาง
+- รูปสินค้า: เก็บ 2 รูปต่อสินค้าโดยแยกหน้าที่ถาวร — รูป 1 มีป้ายชื่อ ใช้หน้าเว็บ VisionD; รูป 2 ไม่มีป้ายชื่อ ใช้ `image_link` ใน Meta CSV feed; ลบสินค้าจะลบวัตถุทั้งสองจาก R2
+- Meta contract: ฟอร์มใช้ชื่อช่องหลักตามเทมเพลต Meta ได้แก่ id, title, description, availability, condition, price, brand, quantity และช่องเสริม; feed สาธารณะ `/api/toys-center/feed.csv` ใช้ราคา THB และรูป 2 เท่านั้น
+- การมองเห็น: โหมด `public` อนุญาตการทำดัชนีหน้าเว็บ; โหมด `unlisted` ใส่ `noindex,follow` เพื่อซ่อนจากการค้นหาโดยคง URL สินค้า รูป และ feed ให้ Meta ดึงได้
+- Data/API: `toys_center_settings`, `toys_center_products`; Admin CRUD ใช้ `requireAdmin`; public API คืนเฉพาะ `published`; list query จำกัด 25 รายการในหลังบ้านและ 24 รายการหน้าร้าน
+- หน้า/ไฟล์/API: `public/toys-center-admin.{html,js}`, `public/toyscenter.{html,js}`, `public/toys-center.css`, `functions/_toys_center.js`, `functions/api/admin/toys-center/**`, `functions/api/toys-center/**`, `migrations/0071_toys_center.sql`
+- รหัส UI: `data-feature="TOYS-CENTER-001"`; ปุ่มใช้ canonical `.vds-btn`
+- การทดสอบ: `scripts/test-v014567.mjs`
+
 ## PARTNER-API-001 — ศูนย์ควบคุม Partner API และ Web 2 Integration
 
 - สถานะ: `IMPLEMENTED`; ลงทะเบียน end-to-end contract จาก runtime จริงใน v0.14.388
