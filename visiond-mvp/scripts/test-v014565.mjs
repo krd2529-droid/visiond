@@ -166,6 +166,9 @@ assert.match(client, /api\('\/api\/admin\/tiktok-connections'\)/);
 assert.match(client, /x\.inventory_status==='kept'&&\['A','B','C'\]/);
 assert.match(client, /รอบตรวจสินค้าในลิสต์คัดสินค้า/);
 assert.match(endpoint, /const reviewDays=status==='kept'/);
-assert.equal(version.trim(), 'v0.14.564');
+assert.match(client, /const samples=\[/);
+assert.match(client, /ข้อมูลตัวอย่าง · รอ TikTok อนุญาต API/);
+assert.match(client, /ลบสินค้าที่เลือก \(ตัวอย่าง\)/);
+assert.equal(version.trim(), 'v0.14.565');
 
-console.log('v0.14.564 kept-product review schedule checks passed');
+console.log('v0.14.565 showcase demo content checks passed');
