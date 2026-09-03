@@ -1,0 +1,18 @@
+import assert from'node:assert/strict';
+import fs from'node:fs';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const feed=read('functions/api/toys-center/feed.csv.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.586');
+assert.match(feed,/Array\.from\(\{length:20\}/);
+assert.match(feed,/`product_tags\[\$\{index\}\]`/);
+assert.match(feed,/\.\.\.tagColumns/);
+assert.match(feed,/parsed\.slice\(0,tagColumns\.length\)/);
+assert.match(feed,/catch\{return\[\]\}/);
+const {onRequestGet}=await import('../functions/api/toys-center/feed.csv.js');
+const row={id:1,meta_id:'TOY-1',slug:'toy-1',title:'สินค้า',description:'รายละเอียด',availability:'in stock',condition:'new',price_cents:10000,currency:'THB',brand:'VisionD',quantity:1,google_product_category:'',fb_product_category:'',gtin:'',item_group_id:'',gender:'',color:'',size:'',age_group:'',material:'',pattern:'',product_tags:JSON.stringify(['กันดั้ม','โมเดล','ของสะสม'])};
+const ctx={request:new Request('https://visiondonline.com/api/toys-center/feed.csv'),env:{DB:{prepare(){return{all:async()=>({results:[row]})}}}}};
+const csv=await (await onRequestGet(ctx)).text(),lines=csv.replace(/^\uFEFF/,'').split('\r\n');
+assert.equal(lines[0].split(',').length,40);
+assert.match(lines[0],/"product_tags\[0\]","product_tags\[1\]"/);
+assert.match(lines[1],/"กันดั้ม","โมเดล","ของสะสม"/);
+console.log('v0.14.586 Meta product tags feed checks passed');
