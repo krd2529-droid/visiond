@@ -1,0 +1,1 @@
+{"version":"v0.14.578","summary":"Apply the canonical rounded navigation header across every public customer page that has a topbar.","files":["public/**/*.html","VERSION.txt","scripts/test-v014578.mjs","patch-ledgers/v0.14.578.json"],"focused_test":"node scripts/test-v014578.mjs"}

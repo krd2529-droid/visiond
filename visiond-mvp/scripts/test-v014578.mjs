@@ -1,0 +1,6 @@
+import fs from'node:fs';import path from'node:path';import assert from'node:assert/strict';import{fileURLToPath}from'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
+assert.equal(read('VERSION.txt').trim(),'v0.14.578');assert.match(read('public/index.html'),/WEB v0\.14\.578/);assert.match(read('public/admin.html'),/ADMIN v0\.14\.578/);
+const excluded=new Set(['admin.html','admin-courses.html','admin-course-reviews.html','vision4-edit.html']),walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]),publicRoot=path.join(root,'public');let checked=0;
+for(const file of walk(publicRoot).filter(file=>file.endsWith('.html'))){const relative=path.relative(publicRoot,file).replaceAll('\\','/'),html=fs.readFileSync(file,'utf8');if(!html.includes('<header class="topbar"')||excluded.has(relative))continue;assert.match(html,/header-shell\.css\?v=014578/,relative+' CSS');assert.match(html,/header-shell\.js\?v=014578/,relative+' JS');checked++}
+assert.equal(checked,28);console.log(`v0.14.578 canonical header checks passed on ${checked} public pages`);
