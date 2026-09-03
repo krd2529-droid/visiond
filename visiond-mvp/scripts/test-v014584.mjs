@@ -1,0 +1,3 @@
+import assert from'node:assert/strict';import fs from'node:fs';const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const admin=read('public/admin.html'),page=read('public/work-links.html'),client=read('public/work-links.js'),api=read('functions/api/admin/work-links/index.js');
+assert.match(admin,/href="\/work-links\.html"[^>]+WORK-LINKS-001/);assert.match(page,/ชื่องาน \*/);assert.match(page,/ลิงก์ \*/);assert.match(page,/หมายเหตุ/);assert.match(client,/target='_blank'/);assert.match(client,/wasEditing\?'PATCH':'POST'/);assert.match(client,/method:'DELETE'/);assert.match(api,/requireAdmin/);assert.match(api,/CREATE TABLE IF NOT EXISTS admin_work_links/);assert.match(api,/\['http:','https:'\]/);console.log('v0.14.584 admin work links: PASS');
