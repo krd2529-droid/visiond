@@ -1,0 +1,1 @@
+{"version":"v0.14.577","summary":"Replace the blog header's chopped white rectangles with the canonical rounded navigation shell.","files":["public/blog.html","public/header-shell.css","VERSION.txt","public/index.html","public/admin.html","scripts/test-v014577.mjs","patch-ledgers/v0.14.577.json"],"focused_test":"node scripts/test-v014577.mjs"}
