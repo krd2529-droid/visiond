@@ -1092,6 +1092,24 @@
 - รหัส UI: `data-feature="TOYS-CENTER-001"`; ปุ่มใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v014567.mjs`
 
+## WORK-LINKS-001 — รวมลิงก์งาน
+
+- ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “รวมลิงก์งาน” ในหลังบ้าน → `/work-links.html`
+- ฟังก์ชัน: บันทึกชื่อ ลิงก์ แพลตฟอร์ม และหมายเหตุ; แสดงโลโก้แพลตฟอร์ม; ค้นหา แก้ไข เปิด และลบรายการได้
+- Data/API: `admin_work_links`; CRUD ที่ `functions/api/admin/work-links/index.js` ใช้ `requireAdmin`
+- หน้า/ไฟล์: `public/work-links.html`, `public/work-links.css`, `public/work-links.js`; migration ล่าสุด `migrations/0073_work_links_platform.sql`
+- การทดสอบ: `scripts/test-v014584.mjs`, `scripts/test-v014587.mjs`
+
+## WORK-NOTES-001 — คลังโน้ตทำ PowerPoint
+
+- ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “คลังโน้ตทำ PowerPoint” ในหลังบ้าน → `/work-notes.html`
+- ฟังก์ชัน: บันทึกหัวข้อและเนื้อหาโน้ต ค้นหา แก้ไข และลบ; ปุ่ม “สร้าง PowerPoint” ส่งโน้ตให้ Gemini จัดโครง 3–15 สไลด์ แล้วสร้างไฟล์ `.pptx` ในเบราว์เซอร์ด้วย PptxGenJS ที่เก็บในระบบเอง
+- AI safety: ใช้เฉพาะ `GEMINI_API_KEY`/`GEMINI_API_KEY_2` ฝั่ง Functions; จำกัดความยาวอินพุตและผลลัพธ์; สั่งห้ามแต่งข้อเท็จจริงนอกโน้ต; ไม่คืนคีย์สู่ browser
+- Data/API: `admin_work_notes`; CRUD ที่ `functions/api/admin/work-notes/index.js`; AI outline ที่ `functions/api/admin/work-notes/presentation.js`; ทุก endpoint ใช้ `requireAdmin`
+- หน้า/ไฟล์: `public/work-notes.html`, `public/work-notes.css`, `public/work-notes.js`, `public/vendor/pptxgen.min.js`, `migrations/0074_work_notes.sql`
+- รหัส UI: เมนูหลังบ้านใช้ `data-feature="WORK-NOTES-001"`; ปุ่มใช้ canonical `.vds-btn`
+- การทดสอบ: `scripts/test-v014588.mjs`; สร้างและ render ไฟล์ PPTX ภาษาไทย 2 สไลด์ พร้อมตรวจ overflow ผ่าน
+
 ## BASKET-VISIBILITY-001 — เปิด–ปิดตะกร้าสินค้า VisionD
 
 - ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “เปิด–ปิดตะกร้า VisionD” → `/basket-visibility.html`
