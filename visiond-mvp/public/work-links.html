@@ -1,14 +1,15 @@
 <!doctype html><html lang="th"><head>
 <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>รวมลิงก์งาน | VisionD Control</title><link rel="stylesheet" href="/visiond-design-system.css?v=014407"><link rel="stylesheet" href="/work-links.css?v=014585"><link rel="stylesheet" href="/visiond-button-system.css?v=014407">
+<title>รวมลิงก์งาน | VisionD Control</title><link rel="stylesheet" href="/visiond-design-system.css?v=014407"><link rel="stylesheet" href="/work-links.css?v=014587"><link rel="stylesheet" href="/visiond-button-system.css?v=014407">
 </head><body>
 <header class="links-toolbar"><a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a><div><small>VISIOND CONTROL · WORK-LINKS-001</small><h1>รวมลิงก์งาน</h1></div></header>
 <main class="links-shell" data-feature="WORK-LINKS-001">
   <section class="links-card"><h2 id="formTitle">เพิ่มลิงก์งาน</h2><form id="linkForm">
     <label>ชื่องาน *<input id="linkLabel" maxlength="120" required placeholder="เช่น เพิ่มสินค้าใน TikTok Showcase"></label>
     <label>ลิงก์ *<input id="linkUrl" type="url" maxlength="2000" required placeholder="https://..."></label>
+    <label>แพลตฟอร์ม *<input id="linkPlatform" list="platformOptions" maxlength="60" required placeholder="เลือกหรือพิมพ์แพลตฟอร์ม"><datalist id="platformOptions"><option value="Facebook"><option value="Instagram"><option value="TikTok"><option value="YouTube"><option value="Google Drive"><option value="Canva"><option value="เว็บไซต์"><option value="อื่นๆ"></datalist></label>
     <label>หมายเหตุ <span>ไม่จำเป็น</span><textarea id="linkNote" maxlength="500" rows="3" placeholder="ขั้นตอนหรือข้อมูลที่ต้องจำ"></textarea></label>
     <div class="form-actions"><button id="saveLink" class="vds-btn vds-btn--primary" type="submit">เพิ่มลิงก์</button><button id="cancelEdit" class="vds-btn vds-btn--secondary" type="button" hidden>ยกเลิกแก้ไข</button></div>
   </form><p id="linkStatus" role="status" aria-live="polite"></p></section>
-  <section class="links-card"><div class="list-head"><div><h2>ลิงก์ทั้งหมด</h2><b id="linkCount">0 รายการ</b></div><input id="linkSearch" type="search" placeholder="ค้นหาชื่องานหรือหมายเหตุ"></div><div id="linkList" class="link-list"></div></section>
-</main><script src="/work-links.js?v=014585" type="module"></script><script src="/visiond-button-system.js?v=014407" defer></script></body></html>
+  <section class="links-card"><div class="list-head"><div><h2>ลิงก์ทั้งหมด</h2><b id="linkCount">0 รายการ</b></div><input id="linkSearch" type="search" placeholder="ค้นหาชื่องาน แพลตฟอร์ม หรือหมายเหตุ"></div><div id="linkList" class="link-list"></div></section>
+</main><script src="/work-links.js?v=014587" type="module"></script><script src="/visiond-button-system.js?v=014407" defer></script></body></html>
