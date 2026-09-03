@@ -1,0 +1,1 @@
+{"version":"v0.14.579","summary":"Keep Toys Center Meta Catalog fields permanently visible instead of hiding them in a collapsible section.","files":["public/toys-center-admin.html","public/toys-center-admin.js","VERSION.txt","public/index.html","public/admin.html","scripts/test-v014579.mjs","patch-ledgers/v0.14.579.json"],"focused_test":"node scripts/test-v014579.mjs"}
