@@ -1105,8 +1105,8 @@
 - ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “คลังโน้ตทำ PowerPoint” ในหลังบ้าน → `/work-notes.html`
 - ฟังก์ชัน: บันทึกหัวข้อและเนื้อหาโน้ต ค้นหา แก้ไข และลบ; ปุ่ม “สร้าง PowerPoint” ส่งโน้ตให้ Gemini จัดโครง 3–15 สไลด์ แล้วสร้างไฟล์ `.pptx` ในเบราว์เซอร์ด้วย PptxGenJS ที่เก็บในระบบเอง
 - AI safety: ใช้เฉพาะ `GEMINI_API_KEY`/`GEMINI_API_KEY_2` ฝั่ง Functions; จำกัดความยาวอินพุตและผลลัพธ์; สั่งห้ามแต่งข้อเท็จจริงนอกโน้ต; ไม่คืนคีย์สู่ browser
-- Data/API: `admin_work_notes`; CRUD ที่ `functions/api/admin/work-notes/index.js`; AI outline ที่ `functions/api/admin/work-notes/presentation.js`; ทุก endpoint ใช้ `requireAdmin`
-- หน้า/ไฟล์: `public/work-notes.html`, `public/work-notes.css`, `public/work-notes.js`, `public/vendor/pptxgen.min.js`, `migrations/0074_work_notes.sql`
+- Data/API: `admin_work_notes`, `admin_work_note_attachments`; CRUD ที่ `functions/api/admin/work-notes/index.js`; อัปโหลดรูปที่ `functions/api/admin/work-notes/attachments.js`; อ่าน/ลบรูปที่ `functions/api/admin/work-notes/[attachmentId].js`; AI outline ที่ `functions/api/admin/work-notes/presentation.js`; ทุก endpoint ใช้ `requireAdmin`
+- หน้า/ไฟล์: `public/work-notes.html`, `public/work-notes.css`, `public/work-notes.js`, `public/vendor/pptxgen.min.js`, `migrations/0074_work_notes.sql`, `migrations/0075_work_note_attachments.sql`
 - รหัส UI: เมนูหลังบ้านใช้ `data-feature="WORK-NOTES-001"`; ปุ่มใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v014588.mjs`; สร้างและ render ไฟล์ PPTX ภาษาไทย 2 สไลด์ พร้อมตรวจ overflow ผ่าน
 
