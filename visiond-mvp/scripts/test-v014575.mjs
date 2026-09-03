@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const api=read('functions/api/admin/toys-center/ai-fill.js'),html=read('public/toys-center-admin.html'),ui=read('public/toys-center-admin.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.575');assert.match(read('public/index.html'),/WEB v0\.14\.575/);assert.match(read('public/admin.html'),/ADMIN v0\.14\.575/);
+for(const token of['requireAdmin','GEMINI_API_KEY','gemini-2.5-flash','responseMimeType','image_1','image_2','product_tags'])assert.ok(api.includes(token),token);
+assert.match(api,/ห้ามใส่ราคา จำนวน SKU slug หรือสถานะสินค้า/);assert.match(api,/5\*1024\*1024/);assert.match(api,/temperature:\.1/);
+for(const token of['aiFillProduct','AI ช่วยกรอกข้อมูล','จะไม่แก้ ID, slug, ราคา, จำนวน หรือสถานะสินค้า'])assert.ok(html.includes(token),token);
+assert.match(ui,/function aiFill/);assert.match(ui,/\/api\/admin\/toys-center\/ai-fill/);assert.match(ui,/if\(editingId\)payload\.set\('product_id'/);assert.doesNotMatch(ui,/aiFill[^]*form\.submit\(/);
+assert.match(html,/toys-center-admin\.js\?v=014575/);
+console.log('v0.14.575 Toys Center AI fill checks passed');
