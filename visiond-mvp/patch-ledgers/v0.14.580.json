@@ -1,0 +1,1 @@
+{"version":"v0.14.580","summary":"Move the Toys Center AI fill action directly below image selection and before Meta fields.","files":["public/toys-center-admin.html","VERSION.txt","public/index.html","public/admin.html","scripts/test-v014580.mjs","patch-ledgers/v0.14.580.json"],"focused_test":"node scripts/test-v014580.mjs"}
