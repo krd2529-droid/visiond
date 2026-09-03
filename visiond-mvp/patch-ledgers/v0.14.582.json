@@ -1,0 +1,1 @@
+{"version":"v0.14.582","summary":"Collapse only optional Meta fields, label them as non-required, and auto-open them after AI fill.","files":["public/toys-center-admin.html","public/toys-center-admin.js","VERSION.txt","public/index.html","public/admin.html","scripts/test-v014582.mjs","patch-ledgers/v0.14.582.json"],"focused_test":"node scripts/test-v014582.mjs"}
