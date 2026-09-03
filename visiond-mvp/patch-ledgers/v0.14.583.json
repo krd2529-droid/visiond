@@ -1,0 +1,1 @@
+{"version":"v0.14.583","summary":"Mark optional Meta fields with a prominent red non-required warning in the disclosure header and body.","files":["public/toys-center-admin.html","VERSION.txt","public/index.html","public/admin.html","scripts/test-v014583.mjs","patch-ledgers/v0.14.583.json"],"focused_test":"node scripts/test-v014583.mjs"}
