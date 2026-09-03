@@ -1,5 +1,5 @@
 import('/facebook-chat.js?v=014407');
-const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,profile:dashProfile,settings:dashSettings,createdCourses:dashCreatedCourses,learning:dashLearning,baskets:dashBaskets,sales:dashSales,rights:dashRights,notifications:dashNotifications,help:dashHelp};
+const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,profile:dashProfile,settings:dashSettings,createdCourses:dashCreatedCourses,learning:dashLearning,baskets:dashBaskets,sales:dashSales,notifications:dashNotifications,help:dashHelp};
 const roleLabel={boss:'Boss · เจ้าของระบบ',admin:'Admin · ผู้ดูแลระบบ',user:'User · สมาชิกทั่วไป',customer:'User · สมาชิกทั่วไป'};
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -15,7 +15,7 @@ async function load(reset=true){
   const r=authResult.value;if(r.status===401){location.href='/login.html';return}if(!r.ok)return showOrderLoadError('โหลดข้อมูลบัญชีไม่สำเร็จ');
   const {user}=await r.json();currentUser=user;const isStaff=['boss','admin'].includes(user.role);
   document.body.classList.toggle('staff-dashboard',isStaff);
-  if(isStaff){hubMenuToggle.hidden=true;hubMenuBackdrop.hidden=true;hubSidebar.hidden=true;dashNotifications.hidden=true;document.querySelector('[data-dash="notifications"]')?.remove();if(location.hash==='#notifications')history.replaceState(null,'','#overview')}
+  if(isStaff){hubMenuToggle.hidden=true;hubMenuBackdrop.hidden=true;hubSidebar.hidden=true;hubSellerStats.hidden=true;dashNotifications.hidden=true;document.querySelector('[data-dash="notifications"]')?.remove();if(location.hash==='#notifications')history.replaceState(null,'','#overview')}
   dashName.textContent=user.name||user.username;dashIdentity.textContent=roleLabel[user.role]||user.role;profileName.value=user.name||'';profileUsername.value=user.username||'';profileEmail.value=user.email||'';profilePhone.value=user.phone||'ไม่ได้ระบุ';profileRole.value=roleLabel[user.role]||user.role;controlCenterLink.hidden=!isStaff;
   if(isStaff)dashboardGuide.innerHTML='<h2>เครื่องมือสำหรับผู้ดูแลระบบ</h2><p>ตรวจคำสั่งซื้อ ดูสลิป และอนุมัติสินค้าได้จาก Control Center</p><a class="primary-button" href="/admin.html">เปิด Control Center</a>';
   if(orderResult.status==='rejected')return showOrderLoadError('เชื่อมต่อรายการคำสั่งซื้อไม่สำเร็จ',!reset);

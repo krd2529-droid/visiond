@@ -224,7 +224,7 @@
 - หน้า: `/dashboard.html`, `/my-courses.html`, `/my-programs.html`, `/my-hub.html`
 - ไฟล์: `public/member-dashboard.js`, `public/my-hub.js`, `public/my-programs.js`, `functions/api/notifications.js`, `functions/api/member/plans.js`
 - ฟังก์ชัน/ตัวควบคุม: `load()`, `loadMyHub()`, `dismissNotice()`, `hubRequest()`, `onRequestGet()`, `onRequestPost()`
-- ปุ่ม/interaction: ดูออเดอร์/สิทธิ์/คอร์ส/โปรแกรม อัปโหลดสลิป ปิดแจ้งเตือน ดาวน์โหลดโปรแกรม และปิดสิทธิ์อุปกรณ์
+- ปุ่ม/interaction: ดูออเดอร์/คอร์ส/โปรแกรม อัปโหลดสลิป ปิดแจ้งเตือน ดาวน์โหลดโปรแกรม และปิดสิทธิ์อุปกรณ์; Dashboard แสดงระบบคอร์สพาร์ตเนอร์ 50/50 โดยไม่มีตัวนับ 0/3 หรือเครดิตตะกร้าแบบเก่า และซ่อนสถิติผู้ขายสำหรับ Boss/Admin
 - API: `GET /api/auth/me`, `GET /api/orders`, `GET/POST /api/notifications`, `GET /api/member/plans`, `GET /api/vision7/my-programs`, `DELETE /api/vision7/activate`
 - ฐานข้อมูล / ตาราง / ฟิลด์: D1; `users`, `orders`, `order_items`, `entitlements`, `courses`, `notification_reads`, `vision7_licenses`, `vision7_devices`
 - Input: สมาชิกจากเซสชัน cursor/limit, notification key และ device ID

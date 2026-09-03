@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const html=read('public/dashboard.html'),hub=read('public/my-hub.js'),member=read('public/member-dashboard.js');
+assert.equal(read('VERSION.txt').trim(),'v0.14.572');
+assert.match(read('public/index.html'),/WEB v0\.14\.572/);assert.match(read('public/admin.html'),/ADMIN v0\.14\.572/);
+for(const token of['คอร์สที่สร้าง','สลิปรอตรวจ','คอร์สที่เปิดขาย','สร้างคอร์สพาร์ตเนอร์ 50/50','id="hubSellerStats"'])assert.ok(html.includes(token),token);
+for(const token of['0/3','เครดิตตะกร้า','data-dash="rights"','id="dashRights"','id="hubCredits"'])assert.ok(!html.includes(token),token);
+for(const token of['course_draft_limit','hubCredits','hubRights','ซื้อสิทธิ์ก่อนเพื่อรับเครดิต','course-selling-rights'])assert.ok(!hub.includes(token),token);
+assert.match(hub,/created\.length/);assert.match(hub,/c\.status==='published'/);assert.match(member,/hubSellerStats\.hidden=true/);assert.ok(!member.includes('rights:dashRights'));
+console.log('v0.14.572 member dashboard partner-course cleanup checks passed');
