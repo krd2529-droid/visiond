@@ -11,6 +11,7 @@
     publishButton = document.querySelector("#basketPublish"),
     publishHelp = document.querySelector("#basketPublishHelp"),
     publishMessage = document.querySelector("#basketPublishMessage"),
+    powerpointLibrary = document.querySelector("#basketPowerpointLibrary"),
     names = [
       "Shopee",
       "TikTok",
@@ -36,8 +37,19 @@
     })[char]);
   let item,
     episodes = [],
+    powerpoints = [],
     episodesEditable = true,
     coverObjectUrl = "";
+
+  async function loadPowerpointLibrary() {
+    const response = await fetch("/api/powerpoints", { cache: "no-store" });
+    const data = await response.json().catch(() => ({}));
+    powerpoints = response.ok && Array.isArray(data.items) ? data.items : [];
+    powerpointLibrary.innerHTML = '<option value="">ไม่เลือก</option>' + powerpoints
+      .map((entry) => `<option value="${entry.id}">${esc(entry.title)} · ${esc(entry.file_name)}</option>`)
+      .join("");
+    if (!response.ok) powerpointLibrary.insertAdjacentHTML("beforeend", '<option value="" disabled>โหลดคลัง PowerPoint ไม่สำเร็จ</option>');
+  }
 
   function resetEpisodeForm(show = false) {
     episodeForm.reset();
@@ -167,7 +179,8 @@
   episodeForm.onsubmit = async (event) => {
     event.preventDefault();
     const button = event.submitter, lessonId = episodeForm.elements.lesson_id.value,
-      video = episodeForm.elements.video.files?.[0];
+      video = episodeForm.elements.video.files?.[0],
+      powerpointId = Number(episodeForm.elements.powerpoint_library_id.value) || 0;
     if (video && (video.size > 2 * 1024 * 1024 * 1024 || !["video/mp4", "video/webm"].includes(video.type))) {
       episodeMessage.textContent = "คลิปต้องเป็น MP4/WEBM และมีขนาดไม่เกิน 2 GB";
       return;
@@ -176,6 +189,7 @@
     try {
       const lessonData = new FormData(episodeForm);
       lessonData.delete("video");
+      lessonData.delete("powerpoint_library_id");
       if (video) lessonData.set("video_upload_pending", "1");
       episodeMessage.textContent = "กำลังบันทึกข้อมูล EP…";
       const response = await fetch(
@@ -184,12 +198,22 @@
       );
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "บันทึกข้อมูล EP ไม่สำเร็จ");
+      episodeForm.elements.lesson_id.value = data.id || lessonId;
       if (video) await uploadEpisodeVideo(data.id || lessonId, video, episodeForm.elements.video_quality.value);
+      if (powerpointId) {
+        const attachResponse = await fetch(`/api/course-seller/${id}/lessons/${data.id || lessonId}/powerpoints`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ powerpoint_id: powerpointId }),
+        });
+        const attachData = await attachResponse.json().catch(() => ({}));
+        if (!attachResponse.ok) throw new Error(attachData.error || "แนบ PowerPoint จากคลังไม่สำเร็จ");
+      }
       resetEpisodeForm(false);
       await loadEpisodes();
-      episodeMessage.textContent = video ? "บันทึก EP และอัปโหลดวิดีโอสำเร็จ" : (data.message || "บันทึก EP แล้ว");
+      episodeMessage.textContent = powerpointId ? "บันทึก EP และแนบ PowerPoint จากคลังแล้ว" : video ? "บันทึก EP และอัปโหลดวิดีโอสำเร็จ" : (data.message || "บันทึก EP แล้ว");
     } catch (error) {
-      episodeMessage.textContent = `${error.message}${video ? " · ข้อมูล EP ถูกเก็บเป็นร่างแล้ว กดบันทึกใหม่เพื่ออัปโหลดซ้ำ" : ""}`;
+      episodeMessage.textContent = `${error.message}${video || powerpointId ? " · ข้อมูล EP ถูกเก็บเป็นร่างแล้ว กดบันทึกใหม่เพื่อแนบไฟล์ซ้ำ" : ""}`;
     } finally {
       button.disabled = false;
     }
@@ -299,7 +323,7 @@
       message.textContent = "หมดระยะเวลาแก้ไขแล้ว";
       form.querySelector("button").disabled = true;
     }
-    await loadEpisodes();
+    await Promise.all([loadEpisodes(), loadPowerpointLibrary()]);
   }
   form.onsubmit = async (event) => {
     event.preventDefault();
