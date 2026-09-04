@@ -1,5 +1,6 @@
 import { json, requireUser } from '../../_lib.js';
 import { ensurePowerpointLibrary, powerpointHeaders } from '../../_powerpoint-library.js';
+import { previewImageKey, previewManifestKey } from '../../_powerpoint-preview.js';
 
 const owned = (ctx, user) => ctx.env.DB.prepare('SELECT * FROM powerpoint_library WHERE id=? AND created_by=?').bind(ctx.params.id, user.id).first();
 export async function onRequestGet(ctx) {
@@ -15,6 +16,9 @@ export async function onRequestDelete(ctx) {
   await ensurePowerpointLibrary(ctx.env); const row = await owned(ctx, auth.user);
   if (!row) return json({ error: 'ไม่พบ PowerPoint นี้' }, 404);
   await ctx.env.DB.prepare('DELETE FROM powerpoint_library WHERE id=? AND created_by=?').bind(row.id, auth.user.id).run();
+  const manifest = await ctx.env.FILES?.get(previewManifestKey(row.object_key)).catch(() => null);
+  if (manifest) { const preview = await manifest.json().catch(() => ({})); for (const number of Object.keys(preview.images || {})) await ctx.env.FILES?.delete(previewImageKey(row.object_key, number)).catch(() => {}); }
+  await ctx.env.FILES?.delete(previewManifestKey(row.object_key)).catch(() => {});
   await ctx.env.FILES?.delete(row.object_key).catch(error => console.error('POWERPOINT_LIBRARY_R2_DELETE_FAILED', row.object_key, error));
   return json({ ok: true });
 }
