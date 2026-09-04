@@ -15,7 +15,7 @@ const files = await Promise.all(['../public/work-notes.js','../public/powerpoint
 const [notes, html, viewer, indexApi, previewApi, imageApi] = files;
 assert.match(notes, /upload\.set\('preview',JSON\.stringify\(preview\)\)/);
 assert.match(notes, /เปิดดูออนไลน์/);
-assert.match(html, /powerpoint-viewer\.js\?v=02026/);
+assert.match(html, /powerpoint-viewer\.js\?v=02027/);
 assert.match(viewer, /textContent=value/);
 assert.match(viewer, /กดเพื่อดูใหญ่/);
 for (const api of [previewApi, imageApi]) assert.match(api, /created_by=\?/);
