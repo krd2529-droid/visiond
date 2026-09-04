@@ -6,9 +6,9 @@ const geminiText = payload => (payload?.candidates?.[0]?.content?.parts || [])
   .join('')
   .trim();
 
-export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTokens = 3500, temperature = .2 } = {}) {
+export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTokens = 2200, temperature = .2, deadlineMs = 9000 } = {}) {
   const providers = [];
-  const geminiModel = model(env.GEMINI_TEXT_MODEL, 'gemini-2.5-flash');
+  const geminiModel = model(env.WORK_NOTES_GEMINI_MODEL, 'gemini-2.5-flash');
   for (const key of [clean(env.GEMINI_API_KEY), clean(env.GEMINI_API_KEY_2)]) {
     if (key && !providers.some(provider => provider.key === key)) providers.push({ name: 'gemini', key, model: geminiModel });
   }
@@ -17,12 +17,11 @@ export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTok
   const controllers = providers.map(() => new AbortController());
   const attempts = providers.map(async (provider, index) => {
     const controller = controllers[index];
-    const timeout = setTimeout(() => controller.abort('timeout'), 20000);
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:generateContent`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': provider.key },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { ...(jsonMode ? { responseMimeType: 'application/json' } : {}), temperature, maxOutputTokens: maxTokens } }),
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { ...(jsonMode ? { responseMimeType: 'application/json' } : {}), thinkingConfig: { thinkingBudget: 0 }, temperature, maxOutputTokens: maxTokens } }),
         signal: controller.signal,
       });
       const payload = await response.json().catch(() => ({}));
@@ -31,20 +30,26 @@ export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTok
       if (text) return text;
       throw new Error(`${provider.name.toUpperCase()}_EMPTY`);
     } catch (error) {
-      if (controller.signal.aborted) throw new Error(`${provider.name.toUpperCase()}_TIMEOUT`);
+      if (controller.signal.aborted) throw new Error(`${provider.name.toUpperCase()}_CANCELLED`);
       if (/^GEMINI_/.test(String(error?.message))) throw error;
       throw new Error(`${provider.name.toUpperCase()}_NETWORK`);
-    } finally {
-      clearTimeout(timeout);
     }
   });
+  let deadlineId;
+  const deadline = new Promise((_, reject) => {
+    deadlineId = setTimeout(() => {
+      controllers.forEach(controller => controller.abort('deadline'));
+      reject(new Error('AI_DEADLINE'));
+    }, deadlineMs);
+  });
   try {
-    const text = await Promise.any(attempts);
-    controllers.forEach(controller => controller.abort('winner-selected'));
-    return text;
+    return await Promise.race([Promise.any(attempts), deadline]);
   } catch (error) {
-    controllers.forEach(controller => controller.abort('all-failed'));
+    if (String(error?.message) === 'AI_DEADLINE') throw error;
     const failures = (error?.errors || []).map(failure => String(failure?.message || failure)).filter(Boolean);
     throw new Error(failures.join(',') || 'AI_PROVIDER_FAILED');
+  } finally {
+    clearTimeout(deadlineId);
+    controllers.forEach(controller => controller.abort('finished'));
   }
 }

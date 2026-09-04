@@ -30,10 +30,11 @@ ${content}`;
 
   let text;
   try {
-    text = await requestWorkNotesAI(ctx.env, prompt, { jsonMode: true, maxTokens: 3500, temperature: .2 });
+    text = await requestWorkNotesAI(ctx.env, prompt, { jsonMode: true, maxTokens: 2200, temperature: .2 });
   } catch (error) {
     const code = String(error?.message || 'AI_PROVIDER_FAILED');
     if (code === 'AI_NOT_CONFIGURED') return json({ error: 'ยังไม่ได้เชื่อมคีย์ AI สำหรับสร้างสไลด์' }, 503);
+    if (code === 'AI_DEADLINE') return json({ error: 'AI ตอบช้าเกินกำหนด ระบบหยุดก่อนเกิด 502 กรุณากดลองใหม่', code, retryable: true }, 504);
     if (code.includes('HTTP_429')) return json({ error: 'โควตา AI เต็มทุกช่อง กรุณาลองใหม่ภายหลัง' }, 502);
     return json({ error: `AI สร้างโครงสไลด์ไม่สำเร็จ (${code})` }, 502);
   }
