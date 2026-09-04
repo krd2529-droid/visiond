@@ -30,7 +30,7 @@ ${content}`;
 
   let text;
   try {
-    text = await requestWorkNotesAI(ctx.env, prompt, { jsonMode: true, maxTokens: 6000, temperature: .2 });
+    text = await requestWorkNotesAI(ctx.env, prompt, { jsonMode: true, maxTokens: 3500, temperature: .2 });
   } catch (error) {
     const code = String(error?.message || 'AI_PROVIDER_FAILED');
     if (code === 'AI_NOT_CONFIGURED') return json({ error: 'ยังไม่ได้เชื่อมคีย์ AI สำหรับสร้างสไลด์' }, 503);

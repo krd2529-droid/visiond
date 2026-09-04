@@ -19,7 +19,7 @@ export async function onRequestPost(ctx) {
 ${content}`;
 
   try {
-    const expanded = clean(await requestWorkNotesAI(ctx.env, prompt, { maxTokens: 7000, temperature: .25 }), 30000);
+    const expanded = clean(await requestWorkNotesAI(ctx.env, prompt, { maxTokens: 3500, temperature: .25 }), 30000);
     if (!expanded) return json({ error: 'AI ไม่ได้ส่งเนื้อหากลับมา' }, 502);
     return json({ ok: true, expanded_content: expanded }, 200, { 'cache-control': 'private, no-store' });
   } catch (error) {
