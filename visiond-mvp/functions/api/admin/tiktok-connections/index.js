@@ -113,7 +113,7 @@ async function onRequestPost(ctx) {
       }
     }
     if (action === "shop_disconnect") {
-      await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_affiliate_orders WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_creator_connections WHERE id=? AND user_id=?").bind(id, auth.user.id)]);
+      await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM tiktok_shop_marketplace_snapshots WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_affiliate_orders WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_creator_connections WHERE id=? AND user_id=?").bind(id, auth.user.id)]);
       return json({ ok: true }, 200, headers);
     }
     return json({ error: "\u0E04\u0E33\u0E2A\u0E31\u0E48\u0E07 TikTok Shop \u0E44\u0E21\u0E48\u0E16\u0E39\u0E01\u0E15\u0E49\u0E2D\u0E07" }, 400, headers);

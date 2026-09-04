@@ -1,10 +1,10 @@
-# Active patch: legacy PowerPoint online preview
+# Active patch: TikTok Affiliate marketplace growth search
 
-- Event: PATCH_DELIVERED
-- Outcome: เปิด PowerPoint เก่าและใหม่จากคลังในตัวดูออนไลน์ โดยไม่เรียก AI ซ้ำ
-- Acceptance: ไฟล์ใหม่ใช้ manifest, ไฟล์เก่า fallback อ่าน PPTX, รูปกดขยายได้, ดาวน์โหลดเดิมอยู่, จำกัดสิทธิ์เจ้าของ
-- Phase: complete
-- Likely files: public/powerpoint-viewer.*, public/pptx-preview-parser.js, tests, visible version
-- Verification: parser unit PASS; supplied 68-slide PPTX parsed 68/68; regression and predeploy PASS
-- Delivery: v0.20.27, commit 2b9ed3c7, production assets verified on visiondonline.com
-- Next: none
+- Event: PATCH_READY
+- Outcome: ค้นสินค้าจาก TikTok Shop Affiliate Open Collaboration marketplace ด้วยตัวกรองที่ผู้ใช้กำหนด โดยไม่จำกัดเฉพาะ Showcase
+- Acceptance: ใช้ API ทางการและ scope ที่ถูกต้อง, ฟอร์มค้นแยกชัดเจน, เก็บ snapshot ยอดขายสะสมเพื่อคำนวณการเติบโตจริง, ครั้งแรกไม่สร้างค่าการเติบโตปลอม, เพิ่มสินค้าที่เลือกเข้า Showcase ได้, ระบบเดิมไม่ถอยหลัง
+- Phase: verified
+- Likely files: functions/_tiktok_shop_api.js, functions/_tiktok_analyzer.js, functions/api/admin/tiktok-marketplace-search.js, migrations, public/tiktok-analyzer.*, tests, visible version
+- Verification: syntax PASS; marketplace helper/UI/adversarial PASS; legacy TikTok regressions PASS; visible version PASS; predeploy PASS (warnings are existing environment placeholders)
+- Delivery: pending
+- Next: commit scoped files and push origin main

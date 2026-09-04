@@ -33,6 +33,11 @@ async function activeTikTokShopToken(env, connection, fetchImpl = fetch) {
   return { config, access };
 }
 const productId = (p) => clean(p.product_id || p.id, 100), productName = (p) => clean(p.product_name || p.title || p.name, 500), imageUrl = (p) => clean(p.main_image_url || p.image_url || p.main_images?.[0]?.url || p.main_images?.[0]?.url_list?.[0] || p.images?.[0]?.url || p.images?.[0]?.urls?.[0] || p.product_images?.[0]?.url || p.product_images?.[0]?.url_list?.[0] || p.main_image?.url || p.main_image?.url_list?.[0] || p.product_image?.url || p.product_image?.url_list?.[0] || p.image?.url || p.image?.url_list?.[0] || p.cover?.url || p.product?.main_image_url || p.product?.image?.url || p.product?.image?.url_list?.[0], 1500), money = (v) => v && typeof v === "object" ? { amount: clean(v.amount, 80), currency: clean(v.currency, 20), rate: Number(v.rate) || void 0 } : null;
+const finiteNumber = value => { const number = Number(value); return Number.isFinite(number) ? number : 0; };
+const commissionRate = product => finiteNumber(product.commission_rate ?? product.commission?.rate ?? product.standard_commission_rate);
+const marketplacePrice = product => { const value = product.sales_price || product.sale_price || product.price; if (!value || typeof value !== "object") return value || null; if (value.minimum_amount !== undefined || value.maximum_amount !== undefined) return { minimum_amount: clean(value.minimum_amount, 80), maximum_amount: clean(value.maximum_amount, 80), currency: clean(value.currency, 20) }; return money(value) || value; };
+const normalizeTikTokMarketplaceProduct = product => ({ product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), price: marketplacePrice(product), raw_json: JSON.stringify(product) });
+const tikTokMarketplaceGrowth = (current, previous) => { const latest = Math.max(0, finiteNumber(current)), prior = previous === null || previous === undefined ? null : Math.max(0, finiteNumber(previous)); return { latest, previous: prior, change: prior === null ? null : latest - prior, growth_percent: prior === null ? null : prior > 0 ? (latest - prior) / prior * 100 : latest > 0 ? null : 0 }; };
 const skuRows = (order) => Array.isArray(order.skus) ? order.skus : Array.isArray(order.products) ? order.products : Array.isArray(order.product_list) ? order.product_list : [], firstMoney = (row, names) => names.map((name) => money(row?.[name])).find((value) => value?.amount), sumMoney = (rows, names) => {
   const values = rows.map((row) => firstMoney(row, names)).filter(Boolean), currencies = [...new Set(values.map((x) => x.currency).filter(Boolean))];
   if (!values.length || currencies.length > 1) return null;
@@ -91,11 +96,37 @@ async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchI
   const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202409/showcases/products", method: "POST", body: { product_ids: ids } }, fetchImpl);
   return { added: ids.length, data };
 }
+async function searchTikTokShopOpenCollaborationProducts(env, connection, { keywords = [], resultLimit = 20, pageToken = "", sortField = "units_sold", sortOrder = "DESC", priceMin = null, priceMax = null, categoryId = "", commissionPercentMin = null, commissionPercentMax = null } = {}, fetchImpl = fetch) {
+  if (!String(connection.scopes || "").split(",").map(scope => scope.trim()).includes("creator.affiliate_collaboration.read")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ_REQUIRED");
+  const titleKeywords = (Array.isArray(keywords) ? keywords : [keywords]).map(value => clean(value, 255)).filter(Boolean).slice(0, 20), allowedSortFields = new Set(["commission_rate", "product_sales_price", "commission", "units_sold"]), normalizedSort = allowedSortFields.has(sortField) ? sortField : "units_sold", limit = Math.min(100, Math.max(1, Number(resultLimit) || 20));
+  const body = {}, validAmount = value => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0, validPercent = value => validAmount(value) && Number(value) <= 100;
+  if (titleKeywords.length) body.title_keywords = titleKeywords;
+  if (validAmount(priceMin) || validAmount(priceMax)) body.sales_price_range = { ...(validAmount(priceMin) ? { amount_ge: String(Number(priceMin)) } : {}), ...(validAmount(priceMax) ? { amount_lt: String(Number(priceMax)) } : {}) };
+  if (clean(categoryId, 100)) body.category = { id: clean(categoryId, 100) };
+  if (validPercent(commissionPercentMin) || validPercent(commissionPercentMax)) body.commission_rate_range = { ...(validPercent(commissionPercentMin) ? { rate_ge: Math.round(Number(commissionPercentMin) * 100) } : {}), ...(validPercent(commissionPercentMax) ? { rate_lt: Math.round(Number(commissionPercentMax) * 100) } : {}) };
+  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), productsById = new Map();
+  let nextPageToken = clean(pageToken, 1000), totalCount = 0;
+  const seenTokens = new Set(); let pages = 0;
+  do {
+    if (seenTokens.has(nextPageToken || "__first__")) break;
+    seenTokens.add(nextPageToken || "__first__");
+    pages += 1;
+    const data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/open_collaborations/products/search", method: "POST", query: { page_size: String(Math.min(20, limit - productsById.size)), sort_field: normalizedSort, sort_order: sortOrder === "ASC" ? "ASC" : "DESC", ...(nextPageToken ? { page_token: nextPageToken } : {}) }, body }, fetchImpl);
+    for (const product of (data.products || []).map(normalizeTikTokMarketplaceProduct)) {
+      if (product.product_id && !productsById.has(product.product_id)) productsById.set(product.product_id, product);
+    }
+    nextPageToken = clean(data.next_page_token, 1000); totalCount = Math.max(totalCount, finiteNumber(data.total_count));
+  } while (productsById.size < limit && nextPageToken && pages < 10);
+  return { products: [...productsById.values()].slice(0, limit), next_page_token: nextPageToken, total_count: Math.max(0, totalCount) };
+}
 export {
   activeTikTokShopToken,
   addTikTokShopShowcaseProducts,
   removeTikTokShopShowcaseProducts,
+  searchTikTokShopOpenCollaborationProducts,
   syncTikTokShopCreator,
+  normalizeTikTokMarketplaceProduct,
+  tikTokMarketplaceGrowth,
   tikTokShopRequest,
   tikTokShopSign
 };

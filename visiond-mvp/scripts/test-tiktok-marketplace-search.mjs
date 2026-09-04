@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { normalizeTikTokMarketplaceProduct, searchTikTokShopOpenCollaborationProducts, tikTokMarketplaceGrowth } from "../functions/_tiktok_shop_api.js";
+import { encryptChannelValue } from "../functions/_channel_crypto.js";
+
+const product = normalizeTikTokMarketplaceProduct({ id: "p1", title: "สินค้าเปิดคอลแลบ", units_sold: 150, commission_rate: 1200, main_image_url: "https://example.test/p1.jpg", detail_link: "https://example.test/p1", sales_price: { amount: "299", currency: "THB" } });
+assert.equal(product.product_id, "p1"); assert.equal(product.name, "สินค้าเปิดคอลแลบ"); assert.equal(product.units_sold, 150); assert.equal(product.commission_rate, 1200);
+assert.deepEqual(normalizeTikTokMarketplaceProduct({ id: "range", title: "ช่วงราคา", sales_price: { minimum_amount: "99", maximum_amount: "199", currency: "THB" } }).price, { minimum_amount: "99", maximum_amount: "199", currency: "THB" });
+assert.deepEqual(tikTokMarketplaceGrowth(150, 100), { latest: 150, previous: 100, change: 50, growth_percent: 50 });
+assert.deepEqual(tikTokMarketplaceGrowth(5, null), { latest: 5, previous: null, change: null, growth_percent: null });
+assert.equal(tikTokMarketplaceGrowth(5, 0).growth_percent, null);
+const env = { TIKTOK_SHOP_APP_KEY: "app", TIKTOK_SHOP_APP_SECRET: "secret", VISIOND_CHANNEL_ENCRYPTION_KEY: "test-encryption-key-with-at-least-32-characters" }, access = await encryptChannelValue(env, "access"), requests = [];
+const connection = { id: "c1", scopes: "creator.affiliate_collaboration.read", access_token_ciphertext: access, access_expires_at: new Date(Date.now() + 2 * 864e5).toISOString() };
+const fakeFetch = async (url, options) => { requests.push({ url: String(url), body: JSON.parse(options.body) }); const page = requests.length; return new Response(JSON.stringify({ code: 0, data: { products: Array.from({ length: 20 }, (_, index) => ({ id: `p${page}-${index}`, title: `สินค้า ${page}-${index}`, units_sold: index })), next_page_token: page === 1 ? "page-2" : "", total_count: 40 } }), { status: 200, headers: { "content-type": "application/json" } }); };
+const searched = await searchTikTokShopOpenCollaborationProducts(env, connection, { keywords: ["เสื้อ", "กีฬา"], resultLimit: 35, priceMin: 100, priceMax: 500, categoryId: "cat-1", commissionPercentMin: 10, commissionPercentMax: 25 }, fakeFetch);
+assert.equal(searched.products.length, 35); assert.equal(requests.length, 2); assert.match(requests[0].url, /open_collaborations%2Fproducts%2Fsearch|open_collaborations\/products\/search/); assert.match(requests[1].url, /page_token=page-2/);
+assert.deepEqual(requests[0].body.title_keywords, ["เสื้อ", "กีฬา"]); assert.deepEqual(requests[0].body.sales_price_range, { amount_ge: "100", amount_lt: "500" }); assert.deepEqual(requests[0].body.category, { id: "cat-1" }); assert.deepEqual(requests[0].body.commission_rate_range, { rate_ge: 1000, rate_lt: 2500 });
+const duplicateRequests = [];
+const duplicateFetch = async (url, options) => { duplicateRequests.push({ url: String(url), body: JSON.parse(options.body) }); const page = duplicateRequests.length; return new Response(JSON.stringify({ code: 0, data: { products: page === 1 ? [{ id: "same", title: "first" }, { id: "unique-1", title: "unique" }] : [{ id: "same", title: "duplicate" }, { id: "unique-2", title: "second unique" }], next_page_token: page === 1 ? "overlap-page" : "", total_count: 3 } }), { status: 200, headers: { "content-type": "application/json" } }); };
+const deduped = await searchTikTokShopOpenCollaborationProducts(env, connection, { resultLimit: 3 }, duplicateFetch);
+assert.deepEqual(deduped.products.map(item => item.product_id), ["same", "unique-1", "unique-2"]); assert.equal(duplicateRequests.length, 2);
+const helper = fs.readFileSync("functions/_tiktok_shop_api.js", "utf8"), endpoint = fs.readFileSync("functions/api/admin/tiktok-connections/marketplace.js", "utf8"), schema = fs.readFileSync("functions/_tiktok_analyzer.js", "utf8"), migration = fs.readFileSync("migrations/0078_tiktok_shop_marketplace_snapshots.sql", "utf8");
+assert.match(helper, /\/affiliate_creator\/202405\/open_collaborations\/products\/search/); assert.match(helper, /title_keywords/);
+for (const contract of [/sales_price_range/, /category = \{ id:/, /commission_rate_range/, /commissionPercentMin\) \* 100/, /Math\.min\(100/, /seenTokens/, /productsById = new Map/]) assert.match(helper, contract);
+assert.doesNotMatch(helper.match(/async function searchTikTokShopOpenCollaborationProducts[\s\S]*?\n\}/)?.[0] || "", /showcases\/products/);
+assert.match(endpoint, /user_id=\?/); assert.match(endpoint, /source: "open_collaboration_marketplace"/); assert.match(endpoint, /\[3, 7, 14, 30\]/); assert.match(endpoint, /prior\.snapshot_date<=date\('now',\?\)/); assert.match(endpoint, /ORDER BY prior\.snapshot_date DESC/); assert.match(endpoint, /ON CONFLICT\(connection_id,product_id,snapshot_date\) DO UPDATE/);
+assert.match(schema, /snapshot_date TEXT NOT NULL/); assert.match(migration, /UNIQUE\(connection_id,product_id,snapshot_date\)/); assert.match(migration, /idx_tiktok_shop_marketplace_snapshot_latest/);
+console.log("TikTok Open Collaboration marketplace search and snapshot growth: PASS");

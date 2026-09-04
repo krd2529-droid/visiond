@@ -1,0 +1,20 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+
+const html = fs.readFileSync("public/tiktok-analyzer.html", "utf8"), js = fs.readFileSync("public/tiktok-analyzer.js", "utf8"), css = fs.readFileSync("public/tiktok-analyzer.css", "utf8");
+assert.match(html, /id="marketplaceSearchForm"/);
+assert.match(html, /id="marketplaceResults"/);
+assert.match(html, /id="addMarketplaceSelected"/);
+assert.match(html, /การค้นหาครั้งแรกจะสร้าง snapshot/);
+assert.match(js, /\/api\/admin\/tiktok-connections\/marketplace/);
+assert.match(js, /action: "shop_add"[\s\S]*product_ids: ids/);
+assert.match(js, /previous_snapshot_at/);
+assert.match(js, /Snapshot แรก/);
+assert.match(js, /marketplace-product-check/);
+for (const field of ["result_limit", "price_min", "price_max", "category_id", "commission_percent_min", "commission_percent_max", "comparison_days"]) assert.match(js, new RegExp(field));
+assert.match(html, /id="marketplaceFilters"|class="marketplace-filters"/);
+assert.match(html, /id="marketplaceComparisonDays"/);
+assert.match(js, /เติบโต \$\{state\.marketplaceComparisonDays\} วัน/);
+assert.match(css, /\.marketplace-panel/);
+assert.match(css, /\.marketplace-search-form/);
+console.log("TikTok Marketplace search UI and Showcase selection: PASS");
