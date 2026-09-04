@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+const client = read("public/tiktok-analyzer.js"), api = read("functions/api/admin/tiktok-connections/index.js"), css = read("public/tiktok-analyzer.css");
+const html = read("public/tiktok-analyzer.html");
+assert.match(api, /range\.toExclusive - 14 \* 86400/);
+assert.match(api, /shop_growth_orders: shopGrowthOrders/);
+assert.match(client, /function productGmvGrowth/);
+assert.match(client, /GMV 7 วันก่อน/);
+assert.match(client, /data\.shop_growth_orders \|\| orders/);
+assert.match(css, /\.gmv-growth\.up/);
+assert.match(css, /\.gmv-growth\.down/);
+assert.match(html, /tiktok-analyzer\.js\?v=014606/);
+assert.match(html, /tiktok-analyzer\.css\?v=014606/);
+assert.equal(read("VERSION.txt").trim(), "v0.14.606");
+console.log("Showcase GMV growth comparison regression: PASS");

@@ -129,6 +129,25 @@ function productMetrics(product, orders) {
   const commission = safeJson(product.commission_json) || {}, sold = orders.reduce((sum, order) => sum + (safeJson(order.product_ids) || []).filter((id) => String(id) === String(product.product_id)).length, 0);
   return { sales: Number(product.sales ?? sold), clicks: Number(product.clicks || 0), conversion: Number(product.conversion || 0), commission: Number(product.commission ?? commission.amount ?? 0) };
 }
+function productGmv(order, productId) {
+  const ids = [...new Set((safeJson(order.product_ids) || []).map(String))], value = safeJson(order.gmv_json) || {}, amount = Number(value.amount);
+  if (!ids.includes(String(productId)) || !Number.isFinite(amount)) return 0;
+  return amount / Math.max(1, ids.length);
+}
+function productGmvGrowth(product, orders) {
+  const end = Math.floor(Date.parse(`${state.shopDateTo}T00:00:00+07:00`) / 1e3) + 86400, currentStart = end - 7 * 86400, previousStart = end - 14 * 86400;
+  let latest = 0, previous = 0, currency = "THB";
+  for (const order of orders) {
+    const created = Number(order.create_time) || 0, value = safeJson(order.gmv_json) || {}, amount = productGmv(order, product.product_id);
+    if (value.currency) currency = value.currency;
+    if (created >= currentStart && created < end) latest += amount;
+    else if (created >= previousStart && created < currentStart) previous += amount;
+  }
+  return { latest, previous, currency, growth: previous > 0 ? (latest - previous) / previous * 100 : latest > 0 ? null : 0 };
+}
+function compactMoney(amount, currency = "THB") {
+  return `${Number(amount || 0).toLocaleString("th-TH", { maximumFractionDigits: 2 })} ${escapeHtml(currency)}`;
+}
 function soldProductSummaryTable(products, orders) {
   const byId = new Map(products.map((product) => [String(product.product_id), product])), sold = /* @__PURE__ */ new Map();
   orders.forEach((order) => (safeJson(order.product_ids) || []).forEach((id) => {
@@ -180,7 +199,7 @@ function productNameSimilarity(left, right) {
   if (!aTokens.size || !bTokens.size) return 0;
   return [...aTokens].filter((token) => bTokens.has(token)).length / Math.min(aTokens.size, bTokens.size);
 }
-function renderShowcaseProducts(products, orders, demo = false) {
+function renderShowcaseProducts(products, orders, demo = false, growthOrders = orders) {
   const list = $("#shopGradeList");
   const inventory = [];
   for (const candidate of state.inventoryProducts || []) {
@@ -229,25 +248,25 @@ function renderShowcaseProducts(products, orders, demo = false) {
   state.showcasePage = Math.min(Math.max(1, state.showcasePage), pageCount);
   const start = (state.showcasePage - 1) * pageSize, pageProducts = filtered.slice(start, start + pageSize);
   const rows = pageProducts.map((product, index) => {
-    const metrics = productMetrics(product, orders), image = safeProductImage(product.image_url || product.raw_image_url) || productImageFromRaw(product.raw_json), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), selection = product.selection || {}, grade = effectiveGrade(product), gradeLabel = "ABCDEF".includes(grade) ? grade : "–", evidence = String(selection.evidence || ""), evidenceSales = Number(evidence.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)\s*(\d[\d,]*)\s*ชิ้น/i)?.[1]?.replace(/,/g, "")) || 0, evidenceCommission = evidence.match(/(?:คอม(?:มิชชัน)?|commission)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/i)?.[1], gradeReason = selection.evidence || (metrics.sales ? `จัดเกรดอัตโนมัติจากยอดขายจริง ${metrics.sales.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก` : "ยังไม่จัดเกรด — ยังไม่มียอดขายหรือผลวิเคราะห์");
+    const metrics = productMetrics(product, orders), gmv = productGmvGrowth(product, growthOrders), image = safeProductImage(product.image_url || product.raw_image_url) || productImageFromRaw(product.raw_json), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), selection = product.selection || {}, grade = effectiveGrade(product), gradeLabel = "ABCDEF".includes(grade) ? grade : "–", evidence = String(selection.evidence || ""), evidenceSales = Number(evidence.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)\s*(\d[\d,]*)\s*ชิ้น/i)?.[1]?.replace(/,/g, "")) || 0, evidenceCommission = evidence.match(/(?:คอม(?:มิชชัน)?|commission)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/i)?.[1], gradeReason = selection.evidence || (metrics.sales ? `จัดเกรดอัตโนมัติจากยอดขายจริง ${metrics.sales.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก` : "ยังไม่จัดเกรด — ยังไม่มียอดขายหรือผลวิเคราะห์"), growthLabel = gmv.growth === null ? "สินค้าใหม่" : `${gmv.growth > 0 ? "+" : ""}${gmv.growth.toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = gmv.growth === null ? "new" : gmv.growth > 0 ? "up" : gmv.growth < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder" aria-label="ไม่มีรูปสินค้า">ไม่มีรูป</span>';
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : product.analysisOnly ? '<input class="remove-showcase-check" type="checkbox" disabled title="ยังจับคู่กับสินค้าใน Showcase ไม่ได้" aria-label="ยังลบไม่ได้เพราะไม่มีรหัส Showcase">' : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td><td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(gradeReason)}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
+    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : product.analysisOnly ? '<input class="remove-showcase-check" type="checkbox" disabled title="ยังจับคู่กับสินค้าใน Showcase ไม่ได้" aria-label="ยังลบไม่ได้เพราะไม่มีรหัส Showcase">' : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td><td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td><td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(gradeReason)}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
   }).join("");
-  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ · เรียง A–F แล้วตามด้วยสินค้าที่ยังไม่จัดเกรด</span></div><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
+  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ · เรียง A–F แล้วตามด้วยสินค้าที่ยังไม่จัดเกรด</span></div><p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>GMV 7 วัน</th><th>GMV 7 วันก่อน</th><th>เติบโต</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="11" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
   $("#showcaseSearch").addEventListener("input", (event) => {
     state.showcaseSearch = event.target.value;
     state.showcasePage = 1;
-    renderShowcaseProducts(products, orders, demo);
+    renderShowcaseProducts(products, orders, demo, growthOrders);
     $("#showcaseSearch").focus();
   });
   $("#showcasePrev").addEventListener("click", () => {
     state.showcasePage--;
-    renderShowcaseProducts(products, orders, demo);
+    renderShowcaseProducts(products, orders, demo, growthOrders);
   });
   $("#showcaseNext").addEventListener("click", () => {
     state.showcasePage++;
-    renderShowcaseProducts(products, orders, demo);
+    renderShowcaseProducts(products, orders, demo, growthOrders);
   });
   $("#removeShowcaseF").hidden = demo || !pageProducts.length;
 }
@@ -258,7 +277,7 @@ function renderShopDashboard(data, shopConnection) {
   notice.hidden = !demo;
   const commission = commissions[0], daily = commission?.daily || [], maxDaily = Math.max(1, ...daily.map((day) => Number(day.amount) || 0)), total = Number(commission?.total_30) || 0, today = Number(commission?.total_today ?? daily.at(-1)?.amount) || 0, channels = commission?.channels || [];
   $("#shopCommissionDashboard").innerHTML = commission ? `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E27\u0E31\u0E19\u0E19\u0E35\u0E49</small><b>${money(today)}</b><span>\u0E23\u0E27\u0E21 ${channels.length || 1} \u0E0A\u0E48\u0E2D\u0E07</span></article><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>${money(total)}</b><span class="positive">\u25B2 ${Number(commission.growth || 0).toLocaleString()}% \u0E08\u0E32\u0E01\u0E23\u0E2D\u0E1A\u0E01\u0E48\u0E2D\u0E19</span></article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>${products.length.toLocaleString()}</b><span>\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2B\u0E23\u0E37\u0E2D\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E44\u0E14\u0E49</span></article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="commission-bars">${daily.slice(-30).map((day) => `<div title="${escapeHtml(day.date)} ${money(day.amount)}"><i style="height:${Math.max(8, Math.round(Number(day.amount) / maxDaily * 100))}%"></i><small>${escapeHtml(day.date)}</small></div>`).join("")}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3>${channels.map((channel) => `<div class="channel-share"><span>${escapeHtml(channel.channel)}</span><i><b style="width:${Math.max(5, Number(channel.amount) / Math.max(1, ...channels.map((x) => Number(x.amount))) * 100)}%"></b></i><strong>${money(channel.amount)}</strong></div>`).join("")}</aside></div></div>` : '<p class="hint">TikTok \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E2A\u0E48\u0E07\u0E22\u0E2D\u0E14\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E32 \u0E23\u0E30\u0E1A\u0E1A\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E17\u0E31\u0E19\u0E17\u0E35\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E1E\u0E1A\u0E1F\u0E34\u0E25\u0E14\u0E4C\u0E40\u0E07\u0E34\u0E19\u0E08\u0E23\u0E34\u0E07\u0E43\u0E19\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</p>';
-  renderShowcaseProducts(products, orders, demo);
+  renderShowcaseProducts(products, orders, demo, data.shop_growth_orders || orders);
   $("#addShowcaseForm").hidden = demo;
 }
 const renderLiveShopDashboard = renderShopDashboard;
