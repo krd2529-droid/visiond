@@ -153,20 +153,44 @@ function safeProductImage(value) {
     return "";
   }
 }
+function productNameSimilarity(left, right) {
+  const a = normalizeProductName(left), b = normalizeProductName(right);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (Math.min(a.length, b.length) >= 14 && (a.includes(b) || b.includes(a))) return Math.min(a.length, b.length) / Math.max(a.length, b.length) * .25 + .7;
+  const aTokens = new Set(a.split(" ").filter((token) => token.length > 1)), bTokens = new Set(b.split(" ").filter((token) => token.length > 1));
+  if (!aTokens.size || !bTokens.size) return 0;
+  return [...aTokens].filter((token) => bTokens.has(token)).length / Math.min(aTokens.size, bTokens.size);
+}
 function renderShowcaseProducts(products, orders, demo = false) {
   const list = $("#shopGradeList");
-  if (!products.length) {
+  const inventory = state.inventoryProducts || [];
+  if (!products.length && !inventory.length) {
     list.innerHTML = '<p class="hint">ยังไม่มีสินค้าใน Showcase ของช่องนี้</p>';
     $("#removeShowcaseF").hidden = true;
     return;
   }
-  const inventoryByName = new Map((state.inventoryProducts || []).map((product) => [normalizeProductName(product.name), product]));
+  const usedInventory = new Set();
+  const findSelection = (product) => {
+    let bestIndex = -1, bestScore = 0;
+    inventory.forEach((candidate, index) => {
+      if (usedInventory.has(index)) return;
+      const idMatch = product.product_id && String(candidate.product_url || "").includes(String(product.product_id));
+      const score = idMatch ? 1 : productNameSimilarity(product.name, candidate.name);
+      if (score > bestScore) bestScore = score, bestIndex = index;
+    });
+    if (bestIndex < 0 || bestScore < .65) return null;
+    usedInventory.add(bestIndex);
+    return inventory[bestIndex];
+  };
   const gradeRank = (product) => {
     const grade = String(product.selection?.product_type || "").toUpperCase();
     const index = "ABCDEF".indexOf(grade);
     return index < 0 ? 6 : index;
   };
-  const mergedProducts = products.map((product) => ({ ...product, selection: inventoryByName.get(normalizeProductName(product.name)) || null })).sort((a, b) => {
+  const showcaseProducts = products.map((product) => ({ ...product, selection: findSelection(product), analysisOnly: false }));
+  const analyzedOnly = inventory.filter((_, index) => !usedInventory.has(index)).map((selection) => ({ product_id: "", name: selection.name, image_url: "", product_url: selection.product_url, selection, analysisOnly: true }));
+  const mergedProducts = [...showcaseProducts, ...analyzedOnly].sort((a, b) => {
     return gradeRank(a) - gradeRank(b) || String(a.name || "").localeCompare(String(b.name || ""), "th");
   });
   const query = normalizeProductName(state.showcaseSearch);
@@ -175,12 +199,12 @@ function renderShowcaseProducts(products, orders, demo = false) {
   state.showcasePage = Math.min(Math.max(1, state.showcasePage), pageCount);
   const start = (state.showcasePage - 1) * pageSize, pageProducts = filtered.slice(start, start + pageSize);
   const rows = pageProducts.map((product, index) => {
-    const metrics = productMetrics(product, orders), image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), selection = product.selection || {}, grade = String(selection.product_type || "").toUpperCase(), gradeLabel = "ABCDEF".includes(grade) ? grade : "–";
+    const metrics = productMetrics(product, orders), image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), selection = product.selection || {}, grade = String(selection.product_type || "").toUpperCase(), gradeLabel = "ABCDEF".includes(grade) ? grade : "–", evidence = String(selection.evidence || ""), evidenceSales = Number(evidence.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)\s*(\d[\d,]*)\s*ชิ้น/i)?.[1]?.replace(/,/g, "")) || 0, evidenceCommission = evidence.match(/(?:คอม(?:มิชชัน)?|commission)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/i)?.[1];
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder" aria-label="ไม่มีรูปสินค้า">ไม่มีรูป</span>';
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id)}</code></div></div></td><td>${metrics.sales ? metrics.sales.toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : "–"}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(selection.evidence || "ยังไม่จัดเกรด — ต้องวิเคราะห์สินค้านี้ก่อน")}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
+    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo || product.analysisOnly ? "–" : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td><td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(selection.evidence || "ยังไม่จัดเกรด — ต้องวิเคราะห์สินค้านี้ก่อน")}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
   }).join("");
-  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${products.length.toLocaleString()} รายการ · เรียง A–F แล้วตามด้วยสินค้าที่ยังไม่จัดเกรด</span></div><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
+  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ · เรียง A–F แล้วตามด้วยสินค้าที่ยังไม่จัดเกรด</span></div><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
   $("#showcaseSearch").addEventListener("input", (event) => {
     state.showcaseSearch = event.target.value;
     state.showcasePage = 1;
