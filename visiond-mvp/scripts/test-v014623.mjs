@@ -35,7 +35,9 @@ await context.__loadPowerpointLibrary();
 assert.equal(libraryTarget.children.length, 1);
 const row = libraryTarget.children[0];
 assert.equal(row.children[0].children[0].textContent, dangerousTitle);
-assert.equal(row.children[1].children[0].href, '/api/powerpoints/7');
+assert.equal(row.children[1].children[0].href, '/api/powerpoints/7?mode=view');
+assert.equal(row.children[1].children[0].target, '_blank');
+assert.equal(row.children[1].children[1].href, '/api/powerpoints/7');
 assert.equal(context.pwned, undefined);
 
 responseMode = 'error';

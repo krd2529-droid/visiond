@@ -36,11 +36,12 @@ export async function validatedPptx(file) {
 
 export const safePptxName = value => `${String(value || 'VisionD-PowerPoint').replace(/[\\/:*?"<>|\r\n]+/g, '-').trim().replace(/\.pptx$/i, '').slice(0, 180) || 'VisionD-PowerPoint'}.pptx`;
 
-export function powerpointHeaders(fileName, size) {
+export function powerpointHeaders(fileName, size, disposition = 'attachment') {
+  const mode = disposition === 'inline' ? 'inline' : 'attachment';
   return {
     'content-type': PPTX_MIME,
     'content-length': String(size),
-    'content-disposition': `attachment; filename="presentation.pptx"; filename*=UTF-8''${encodeURIComponent(safePptxName(fileName))}`,
+    'content-disposition': `${mode}; filename="presentation.pptx"; filename*=UTF-8''${encodeURIComponent(safePptxName(fileName))}`,
     'cache-control': 'private, no-store',
     'x-content-type-options': 'nosniff',
     'content-security-policy': "sandbox; default-src 'none'",

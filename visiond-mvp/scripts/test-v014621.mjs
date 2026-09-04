@@ -15,6 +15,8 @@ const headers = powerpointHeaders('งานสอน.pptx', 123);
 assert.equal(headers['content-type'], PPTX_MIME);
 assert.equal(headers['cache-control'], 'private, no-store');
 assert.match(headers['content-disposition'], /filename\*=UTF-8''/);
+const viewHeaders = powerpointHeaders('งานสอน.pptx', 123, 'inline');
+assert.match(viewHeaders['content-disposition'], /^inline;/);
 
 const files = {
   libraryIndex: await readFile(new URL('../functions/api/powerpoints/index.js', import.meta.url), 'utf8'),
@@ -33,6 +35,9 @@ assert.match(files.attach, /FILES\.delete\(key\)/);
 assert.match(files.notesHtml, /สร้างและบันทึกเข้าคลัง/);
 assert.match(files.notesHtml, /สร้างและดาวน์โหลด/);
 assert.match(files.notesJs, /\/api\/powerpoints/);
+assert.match(files.notesJs, /view\.textContent='เปิดดู'/);
+assert.match(files.notesJs, /\?mode=view/);
+assert.match(files.libraryItem, /view \? 'inline' : 'attachment'/);
 assert.match(files.basketHtml, /powerpoint_library_id/);
 assert.match(files.basketJs, /\/powerpoints`/);
 assert.match(files.basketJs, /lessonData\.delete\("powerpoint_library_id"\)/);

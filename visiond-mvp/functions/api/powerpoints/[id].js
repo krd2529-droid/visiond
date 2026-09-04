@@ -7,7 +7,8 @@ export async function onRequestGet(ctx) {
   await ensurePowerpointLibrary(ctx.env); const row = await owned(ctx, auth.user);
   if (!row) return json({ error: 'ไม่พบ PowerPoint นี้' }, 404);
   const object = await ctx.env.FILES?.get(row.object_key); if (!object) return json({ error: 'ไม่พบไฟล์ PowerPoint ในพื้นที่จัดเก็บ' }, 404);
-  return new Response(object.body, { headers: powerpointHeaders(row.file_name, row.file_size) });
+  const view = new URL(ctx.request.url).searchParams.get('mode') === 'view';
+  return new Response(object.body, { headers: powerpointHeaders(row.file_name, row.file_size, view ? 'inline' : 'attachment') });
 }
 export async function onRequestDelete(ctx) {
   const auth = await requireUser(ctx); if (auth.error) return auth.error;
