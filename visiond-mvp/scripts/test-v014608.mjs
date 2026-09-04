@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+const client = read("public/tiktok-analyzer.js"), css = read("public/tiktok-analyzer.css"), html = read("public/tiktok-analyzer.html");
+assert.match(client, /ดูสินค้า GMV โตสูง/);
+assert.match(client, /showcaseSort === "growth"/);
+assert.match(client, /growthValue\(right\) - growthValue\(left\)/);
+assert.match(css, /\.showcase-sort button\.active/);
+assert.match(html, /tiktok-analyzer\.js\?v=014608/);
+assert.equal(read("VERSION.txt").trim(), "v0.14.608");
+console.log("Showcase high-GMV-growth button regression: PASS");
