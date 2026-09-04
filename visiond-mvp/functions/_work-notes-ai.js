@@ -6,7 +6,7 @@ const geminiText = payload => (payload?.candidates?.[0]?.content?.parts || [])
   .join('')
   .trim();
 
-export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTokens = 2200, temperature = .2, deadlineMs = 9000 } = {}) {
+export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTokens = 2200, temperature = .2, deadlineMs = 9000, validate = null } = {}) {
   const providers = [];
   const configuredModel = model(env.WORK_NOTES_GEMINI_MODEL, 'gemini-2.5-flash');
   const geminiModels = [...new Set([configuredModel, 'gemini-2.5-flash-lite', 'gemini-flash-latest'])];
@@ -35,7 +35,13 @@ export async function requestWorkNotesAI(env, prompt, { jsonMode = false, maxTok
           continue;
         }
         const text = geminiText(payload);
-        if (text) return text;
+        if (text) {
+          let valid = true;
+          try { valid = typeof validate !== 'function' || Boolean(await validate(text)); } catch { valid = false; }
+          if (valid) return text;
+          failures.push(`${provider.name.toUpperCase()}_${geminiModel}_INVALID_OUTPUT`);
+          continue;
+        }
         failures.push(`${provider.name.toUpperCase()}_${geminiModel}_EMPTY`);
       } catch (error) {
         if (controller.signal.aborted) throw new Error(`${provider.name.toUpperCase()}_CANCELLED`);

@@ -3,7 +3,12 @@ import { requestWorkNotesAI } from '../../../_work-notes-ai.js';
 
 const clean = (value, max) => String(value ?? '').trim().slice(0, max);
 const headers = { 'cache-control': 'private, no-store' };
-const parse = text => { try { return JSON.parse(String(text || '').replace(/^```json\s*|\s*```$/g, '')); } catch { return null; } };
+export const parseDeckCandidate = text => {
+  const source = String(text || '').replace(/^\uFEFF/, '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const start = source.indexOf('{'), end = source.lastIndexOf('}');
+  if (start < 0 || end <= start) return null;
+  try { return JSON.parse(source.slice(start, end + 1)); } catch { return null; }
+};
 const ensureJobs = env => env.DB.prepare(`CREATE TABLE IF NOT EXISTS work_note_ppt_jobs (
   id TEXT PRIMARY KEY,
   user_id INTEGER NOT NULL,
@@ -14,7 +19,7 @@ const ensureJobs = env => env.DB.prepare(`CREATE TABLE IF NOT EXISTS work_note_p
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`).run();
 
-const normalizeDeck = (result, title, theme, attachmentCount, content) => {
+export const normalizeDeck = (result, title, theme, attachmentCount, content) => {
   if (!result || !Array.isArray(result.slides) || !result.slides.length) throw new Error('AI_INVALID_DECK');
   const slides = result.slides.slice(0, 15).map(slide => ({
     title: clean(slide.title, 120),
@@ -44,10 +49,35 @@ const normalizeDeck = (result, title, theme, attachmentCount, content) => {
   return { ok: true, status: 'completed', deck_title: clean(result.deck_title, 160) || title, subtitle: clean(result.subtitle, 240), theme, slides };
 };
 
+export const fallbackDeck = (title, theme, attachmentCount, content) => {
+  const lines = String(content || '').split(/\r?\n/).map(line => clean(line.replace(/^[-*•\d.)\s]+/, ''), 180)).filter(Boolean);
+  const source = lines.length ? lines : [title];
+  const slides = [];
+  for (let index = 0; index < source.length; index += 6) {
+    const group = source.slice(index, index + 6);
+    slides.push({ title: index ? `รายละเอียด ${Math.floor(index / 6) + 1}` : title, bullets: group, speaker_notes: '' });
+  }
+  return normalizeDeck({ deck_title: title, subtitle: 'จัดทำจากเนื้อหาที่เตรียมไว้', slides }, title, theme, attachmentCount, content);
+};
+
 const runJob = async (env, id, payload) => {
   try {
-    const text = await requestWorkNotesAI(env, payload.prompt, { jsonMode: true, maxTokens: 2200, temperature: .2, deadlineMs: 25000 });
-    const deck = normalizeDeck(parse(text), payload.title, payload.theme, payload.attachmentCount, payload.content);
+    let deck;
+    try {
+      const text = await requestWorkNotesAI(env, payload.prompt, {
+        jsonMode: true,
+        maxTokens: 4096,
+        temperature: .2,
+        deadlineMs: 25000,
+        validate: candidate => {
+          try { normalizeDeck(parseDeckCandidate(candidate), payload.title, payload.theme, payload.attachmentCount, payload.content); return true; } catch { return false; }
+        },
+      });
+      deck = normalizeDeck(parseDeckCandidate(text), payload.title, payload.theme, payload.attachmentCount, payload.content);
+    } catch (error) {
+      console.warn('WORK_NOTE_PPT_AI_FALLBACK', clean(error?.message || 'AI_PROVIDER_FAILED', 300));
+      deck = fallbackDeck(payload.title, payload.theme, payload.attachmentCount, payload.content);
+    }
     await env.DB.prepare("UPDATE work_note_ppt_jobs SET status='completed',result_text=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(JSON.stringify(deck), id).run();
   } catch (error) {
