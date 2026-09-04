@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "" };
+let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", inventoryProducts: [] };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -160,18 +160,23 @@ function renderShowcaseProducts(products, orders, demo = false) {
     $("#removeShowcaseF").hidden = true;
     return;
   }
+  const inventoryByName = new Map((state.inventoryProducts || []).map((product) => [normalizeProductName(product.name), product]));
+  const mergedProducts = products.map((product) => ({ ...product, selection: inventoryByName.get(normalizeProductName(product.name)) || null })).sort((a, b) => {
+    const gradeA = String(a.selection?.product_type || a.product_grade || "F"), gradeB = String(b.selection?.product_type || b.product_grade || "F");
+    return "ABCDEF".indexOf(gradeA) - "ABCDEF".indexOf(gradeB) || String(a.name || "").localeCompare(String(b.name || ""), "th");
+  });
   const query = normalizeProductName(state.showcaseSearch);
-  const filtered = query ? products.filter((product) => normalizeProductName(`${product.name || ""} ${product.product_id || ""}`).includes(query)) : products;
+  const filtered = query ? mergedProducts.filter((product) => normalizeProductName(`${product.name || ""} ${product.product_id || ""}`).includes(query)) : mergedProducts;
   const pageSize = 20, pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   state.showcasePage = Math.min(Math.max(1, state.showcasePage), pageCount);
   const start = (state.showcasePage - 1) * pageSize, pageProducts = filtered.slice(start, start + pageSize);
   const rows = pageProducts.map((product, index) => {
-    const metrics = productMetrics(product, orders), image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url);
+    const metrics = productMetrics(product, orders), image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), selection = product.selection || {}, grade = String(selection.product_type || product.product_grade || "F").toUpperCase();
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder" aria-label="ไม่มีรูปสินค้า">ไม่มีรูป</span>';
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id)}</code></div></div></td><td>${metrics.sales ? metrics.sales.toLocaleString() : "–"}</td><td>${metrics.clicks ? metrics.clicks.toLocaleString() : "–"}</td><td>${metrics.conversion ? `${metrics.conversion.toLocaleString()}%` : "–"}</td><td>${metrics.commission ? money(metrics.commission) : "–"}</td></tr>`;
+    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade)}">${escapeHtml(grade)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id)}</code></div></div></td><td>${metrics.sales ? metrics.sales.toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : "–"}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(selection.evidence || "ยังไม่มีผลวิเคราะห์")}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
   }).join("");
-  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${products.length.toLocaleString()} รายการ</span></div><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>รูปและสินค้า</th><th>ยอดขาย</th><th>ยอดคลิก</th><th>อัตราแปลง</th><th>ค่าคอมมิชชัน</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
+  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${products.length.toLocaleString()} รายการ · เรียง A ถึง F</span></div><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
   $("#showcaseSearch").addEventListener("input", (event) => {
     state.showcaseSearch = event.target.value;
     state.showcasePage = 1;
@@ -619,8 +624,10 @@ const selectChannelBase = selectChannel;
 selectChannel = async function(id) {
   await selectChannelBase(id);
   const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`);
+  state.inventoryProducts = inventory.products || [];
   renderPermanentInventory(inventory.products || [], inventory.product_events || []);
   await loadTikTokConnection();
+  document.body.classList.toggle("shop-connected", Boolean(state.shopConnection));
   renderReviewSchedule(inventory.products || [], Boolean(state.shopConnection), inventory.product_events || []);
 };
 $("#channels").addEventListener("click", async (event) => {
