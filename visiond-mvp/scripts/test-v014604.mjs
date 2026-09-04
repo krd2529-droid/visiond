@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+const html = read("public/tiktok-analyzer.html"), client = read("public/tiktok-analyzer.js"), provider = read("functions/_tiktok_analyzer.js");
+assert.doesNotMatch(html, /คลิปย้อนหลัง: ทราฟฟิก|id="trafficSummary"|id="clipPerformance"/);
+assert.doesNotMatch(client, /trafficLabels|#trafficSummary|#clipPerformance/);
+assert.match(provider, /const noClipTrafficPrompt=/);
+assert.match(provider, /traffic_summary เป็น object ว่างและ clip_performance เป็น array ว่าง/);
+assert.equal(read("VERSION.txt").trim(), "v0.14.604");
+console.log("Removed incomplete clip traffic feature regression: PASS");
