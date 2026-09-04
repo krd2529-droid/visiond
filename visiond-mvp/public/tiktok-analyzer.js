@@ -207,10 +207,11 @@ function renderShowcaseProducts(products, orders, demo = false) {
     return inventory[bestIndex];
   };
   const effectiveGrade = (product) => {
+    const sales = productMetrics(product, orders).sales;
+    if (!product.analysisOnly) return sales >= 30 ? "A" : sales >= 16 ? "B" : sales > 0 ? "C" : "";
     const analyzed = String(product.selection?.product_type || "").toUpperCase();
     if ("ABCDEF".includes(analyzed)) return analyzed;
-    const sales = productMetrics(product, orders).sales;
-    return sales >= 30 ? "A" : sales >= 16 ? "B" : sales > 0 ? "C" : "";
+    return "";
   };
   const gradeRank = (product) => {
     const grade = effectiveGrade(product);
