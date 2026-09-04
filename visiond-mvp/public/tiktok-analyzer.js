@@ -814,14 +814,45 @@ $("#saveChannel").addEventListener("click", async () => {
     message.textContent = error.message;
   }
 });
+function mergeAnalysisResults(results) {
+  if (results.length === 1) return results[0];
+  const merged = { ...results[0] };
+  const arrayKeys = ["data_gaps", "clip_performance", "winner_products", "next_product_candidates", "avoid_products", "daily_product_list", "homework", "extracted_metrics"];
+  for (const key of arrayKeys) {
+    const seen = new Set();
+    merged[key] = results.flatMap((result) => Array.isArray(result?.[key]) ? result[key] : []).filter((item) => {
+      const identity = normalizeProductName(typeof item === "string" ? item : item?.product_identity || item?.product || item?.name || JSON.stringify(item));
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  }
+  merged.audience_demographics = results.find((result) => {
+    const audience = result?.audience_demographics || {};
+    return audience.primary_gender || audience.primary_age_group || audience.gender_breakdown?.length || audience.age_breakdown?.length;
+  })?.audience_demographics || merged.audience_demographics;
+  merged.confidence = Math.round(results.reduce((sum, result) => sum + (Number(result.confidence) || 0), 0) / results.length);
+  return merged;
+}
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   message.textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E2D\u0E48\u0E32\u0E19\u0E20\u0E32\u0E1E\u0E41\u0E25\u0E30\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C \u0E2D\u0E32\u0E08\u0E43\u0E0A\u0E49\u0E40\u0E27\u0E25\u0E32\u0E1B\u0E23\u0E30\u0E21\u0E32\u0E13 1 \u0E19\u0E32\u0E17\u0E35\u2026";
   $("#analyze").disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-analyzer", { method: "POST", body: new FormData(form) });
-    state.selected = data.channel_id;
-    renderResult(data.result);
+    const selectedFiles = [...$("#screenshots").files], batches = selectedFiles.length > 5 ? Array.from({ length: Math.ceil(selectedFiles.length / 5) }, (_, index) => selectedFiles.slice(index * 5, index * 5 + 5)) : [selectedFiles];
+    const results = [];
+    for (let index = 0; index < batches.length; index++) {
+      if (batches.length > 1) message.textContent = `กำลังวิเคราะห์ชุด ${index + 1}/${batches.length}…`;
+      const payload = new FormData(form);
+      payload.delete("screenshots");
+      for (const file of batches[index]) payload.append("screenshots", file);
+      if (state.selected) payload.set("channel_id", state.selected);
+      if (batches.length > 1) payload.set("clips_per_day", "20");
+      const data = await api("/api/admin/tiktok-analyzer", { method: "POST", body: payload });
+      state.selected = data.channel_id;
+      results.push(data.result);
+    }
+    renderResult(mergeAnalysisResults(results));
     message.textContent = "\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E0A\u0E48\u0E2D\u0E07\u0E41\u0E25\u0E30\u0E1C\u0E25\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E41\u0E25\u0E49\u0E27";
     await loadChannels();
   } catch (error) {
