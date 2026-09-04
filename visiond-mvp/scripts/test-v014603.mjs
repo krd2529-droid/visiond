@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+const client = read("public/tiktok-analyzer.js"), shop = read("functions/_tiktok_shop_api.js");
+assert.match(client, /productNameSimilarity\(existing\.name, candidate\.name\) >= \.82/);
+assert.match(client, /remove-showcase-check" type="checkbox" disabled/);
+assert.match(shop, /\/affiliate_creator\/202509\/open_collaborations\/products/);
+assert.match(shop, /TIKTOK_SHOWCASE_IMAGE_ENRICHMENT_FAILED/);
+assert.equal(read("VERSION.txt").trim(), "v0.14.603");
+console.log("Showcase duplicate consolidation and image enrichment regression: PASS");

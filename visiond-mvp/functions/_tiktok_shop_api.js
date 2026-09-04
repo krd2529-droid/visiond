@@ -47,6 +47,20 @@ async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase =
     pageToken = clean(data.next_page_token);
     if (!pageToken) break;
   }
+  const missingImageIds = showcase.filter((product) => productId(product) && !imageUrl(product)).map(productId);
+  if (missingImageIds.length && String(connection.scopes || "").split(",").includes("creator.affiliate_collaboration.read")) {
+    const detailsById = new Map();
+    for (let index = 0; index < missingImageIds.length; index += 50) {
+      try {
+        const data = await call({ path: "/affiliate_creator/202509/open_collaborations/products", method: "POST", query: { product_ids: missingImageIds.slice(index, index + 50).join(",") }, body: {} });
+        for (const detail of data.products || []) detailsById.set(productId(detail), detail);
+      } catch (error) {
+        console.warn("TIKTOK_SHOWCASE_IMAGE_ENRICHMENT_FAILED", { code: clean(error?.message, 160) });
+        break;
+      }
+    }
+    showcase = showcase.map((product) => ({ ...detailsById.get(productId(product)), ...product, main_image_url: imageUrl(product) || imageUrl(detailsById.get(productId(product)) || {}) }));
+  }
   const now = Math.floor(Date.now() / 1e3), since = now - Math.min(90, Math.max(1, Number(days) || 30)) * 86400;
   let orders = [], orderToken = "";
   while (orders.length < maxOrders) {
