@@ -10,7 +10,7 @@ class Element {
 }
 
 const source = await readFile(new URL('../public/work-notes.js', import.meta.url), 'utf8');
-const executable = `${source.slice(0, source.indexOf('function insertAtCursor'))}\nglobalThis.__loadPowerpointLibrary=loadPowerpointLibrary;`;
+const executable = `${source.slice(0, source.indexOf('function insertAtCursor')).replace(/^import[^\n]+\n/, '')}\nglobalThis.__loadPowerpointLibrary=loadPowerpointLibrary;`;
 const libraryTarget = new Element('div');
 const generic = new Element('div');
 const document = {

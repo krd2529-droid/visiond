@@ -36,16 +36,23 @@ export const normalizeDeck = (result, title, theme, attachmentCount, content) =>
     speaker_notes: clean(slide.speaker_notes, 1200),
   })).filter(slide => slide.title);
   if (!slides.length) throw new Error('AI_INVALID_DECK');
-  const mapped = new Set(slides.flatMap(slide => slide.bullets.flatMap(bullet => bullet.attachment_numbers)));
-  const missing = [];
+  const canonical = value => clean(value, 180).replace(/^[-*•\d.)\s]+/, '').replace(/\s+/g, ' ').toLocaleLowerCase('th-TH');
+  const authoritative = [];
   for (const line of String(content || '').split(/\r?\n/)) {
     const numbers = [...line.matchAll(/\[รูป\s*(\d+)\]/g)].map(match => Number(match[1]))
-      .filter(number => number >= 1 && number <= attachmentCount && !mapped.has(number));
+      .filter(number => number >= 1 && number <= attachmentCount);
     if (!numbers.length) continue;
-    numbers.forEach(number => mapped.add(number));
-    missing.push({ text: clean(line.replace(/\s*\[รูป\s*\d+\]\s*/g, ' '), 180) || 'รูปประกอบจากโน้ตต้นฉบับ', attachment_numbers: [...new Set(numbers)] });
+    authoritative.push({ text: clean(line.replace(/\s*\[รูป\s*\d+\]\s*/g, ' '), 180) || 'รูปประกอบจากโน้ตต้นฉบับ', attachment_numbers: [...new Set(numbers)] });
   }
-  for (let index = 0; index < missing.length; index += 8) slides.push({ title: 'รูปประกอบตามโน้ต', bullets: missing.slice(index, index + 8), speaker_notes: '' });
+  const authoritativeNumbers = new Set(authoritative.flatMap(entry => entry.attachment_numbers));
+  slides.forEach(slide => slide.bullets.forEach(bullet => { bullet.attachment_numbers = bullet.attachment_numbers.filter(number => !authoritativeNumbers.has(number)); }));
+  const unmatched = [];
+  for (const entry of authoritative) {
+    const match = slides.flatMap(slide => slide.bullets).find(bullet => canonical(bullet.text) === canonical(entry.text));
+    if (match) match.attachment_numbers = [...new Set([...match.attachment_numbers, ...entry.attachment_numbers])];
+    else unmatched.push(entry);
+  }
+  for (let index = 0; index < unmatched.length; index += 8) slides.push({ title: 'รูปประกอบตามโน้ต', bullets: unmatched.slice(index, index + 8), speaker_notes: '' });
   return { ok: true, status: 'completed', deck_title: clean(result.deck_title, 160) || title, subtitle: clean(result.subtitle, 240), theme, slides };
 };
 
