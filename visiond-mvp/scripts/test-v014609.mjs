@@ -1,0 +1,12 @@
+import assert from'node:assert/strict';
+import fs from'node:fs';
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
+const client=read('public/work-notes.js'),upload=read('functions/api/admin/work-notes/attachments.js'),html=read('public/work-notes.html');
+assert.doesNotMatch(client,/savedAttachments\.length\+pendingImages\.length>=20/);
+assert.doesNotMatch(client,/สูงสุด 20 รูปต่อโน้ต/);
+assert.doesNotMatch(upload,/Number\(count\?\.n\)>=20/);
+assert.doesNotMatch(upload,/สูงสุด 20 รูปต่อโน้ต/);
+assert.match(upload,/\(Number\(count\?\.n\)\+1\)\*10/);
+assert.match(html,/work-notes\.js\?v=014609/);
+assert.equal(read('VERSION.txt').trim(),'v0.14.609');
+console.log('v0.14.609 unlimited work-note attachments regression: PASS');
