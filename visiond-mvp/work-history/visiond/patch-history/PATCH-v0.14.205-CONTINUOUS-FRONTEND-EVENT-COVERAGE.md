@@ -8,4 +8,4 @@
 
 ## Rollback
 
-ใช้ `git revert SELF` หลังแทน SELF ด้วย Commit ID ของแพตนี้ ห้าม Push/Deploy อัตโนมัติ
+ใช้ `git revert SELF` หลังแทน SELF ด้วย Commit ID ของแพตนี้

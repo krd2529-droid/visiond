@@ -4,4 +4,3 @@
 - เพิ่มสถานะกำลังโหลด ข้อผิดพลาด และปุ่มลองใหม่ในพื้นที่บทสนทนา
 - เปลี่ยนเป็นอ้าง DOM โดยตรงและปรับ cache stamp ของ V12 เป็น 014237
 - ทดสอบ focused, regression 15/15, predeploy FAIL 0 และ secret scan ผ่าน
-- Commit ในเครื่องเท่านั้น ห้าม Push/Deploy โดย Codex

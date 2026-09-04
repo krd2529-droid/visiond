@@ -4,4 +4,4 @@
 
 Parent commit: `353622fd1f21ff47dc20f9b6e47936e5eb616bb5`
 
-Rollback: ใช้ `git revert <commit-v0.14.303>` แล้วทดสอบใหม่ ห้าม reset หรือ Push/Deploy อัตโนมัติ
+Rollback: ใช้ `git revert <commit-v0.14.303>` แล้วทดสอบใหม่ ห้าม reset

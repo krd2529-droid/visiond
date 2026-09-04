@@ -4,4 +4,3 @@
 - เพิ่มตัวตรวจกลางที่เทียบป้ายทั้งสองกับ `VERSION.txt`
 - เพิ่มกฎใน Roadmap และ Patch Protocol ว่าความไม่ตรงกันเป็น release blocker
 - Rollback ปลอดภัย: `0f7507c`
-- ห้าม Push และ Deploy ในแพตช์นี้

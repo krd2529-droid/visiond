@@ -4,4 +4,4 @@
 - HMAC-SHA256, Timestamp 5 นาที, constant-time compare, Signature Replay และ Idempotency Protection
 - Payload Queue เข้ารหัส AES-GCM พร้อม Retry แบบ exponential backoff และ Dead Letter หลัง 5 ครั้ง
 - Queue/Log ปิดบังข้อมูลและควบคุมในศูนย์ควบคุมเว็บพาร์ทเนอร์
-- Rollback ด้วย `git revert` Commit ของแพตนี้; ห้าม Push/Deploy ใน Event Case นี้
+- Rollback ด้วย `git revert` Commit ของแพตนี้

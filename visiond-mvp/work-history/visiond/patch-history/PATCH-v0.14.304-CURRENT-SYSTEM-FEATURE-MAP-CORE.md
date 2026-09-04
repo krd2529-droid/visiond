@@ -6,4 +6,4 @@ Parent commit: `99ca5ea0d6d0b71f6d22ed5da352e756b8699f91`
 
 Event Case: ยังไม่เสร็จ ต้องทำต่อในระบบคอร์ส หลังบ้าน V12 Partner API และเครื่องมือ Vision อื่น
 
-Rollback: ใช้ `git revert <commit-v0.14.304>` แล้วทดสอบใหม่ ห้าม reset หรือ Push/Deploy อัตโนมัติ
+Rollback: ใช้ `git revert <commit-v0.14.304>` แล้วทดสอบใหม่ ห้าม reset

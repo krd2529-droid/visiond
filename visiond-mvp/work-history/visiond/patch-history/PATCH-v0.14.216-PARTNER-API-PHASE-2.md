@@ -5,4 +5,4 @@
 - External ID แยกต่อเว็บไซต์ และ Idempotency Key ป้องกันการเขียนซ้ำ
 - ข้อมูลลูกค้าเข้ารหัส AES-GCM; ปฏิเสธ Password, Token เต็ม, ข้อมูลบัตร และข้อมูลธนาคาร
 - หน้าเดียวในศูนย์ควบคุมเว็บพาร์ทเนอร์แสดงลูกค้า ออเดอร์ ยอดสุทธิ และยอดคืนเงิน
-- Rollback ปลอดภัยด้วย `git revert` Commit ของแพตนี้; ห้าม Push/Deploy ใน Event Case นี้
+- Rollback ปลอดภัยด้วย `git revert` Commit ของแพตนี้
