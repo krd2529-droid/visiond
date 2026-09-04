@@ -14,23 +14,40 @@ const ensureJobs = env => env.DB.prepare(`CREATE TABLE IF NOT EXISTS work_note_p
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`).run();
 
-const normalizeDeck = (result, title, theme, attachmentCount) => {
+const normalizeDeck = (result, title, theme, attachmentCount, content) => {
   if (!result || !Array.isArray(result.slides) || !result.slides.length) throw new Error('AI_INVALID_DECK');
   const slides = result.slides.slice(0, 15).map(slide => ({
     title: clean(slide.title, 120),
-    bullets: (Array.isArray(slide.bullets) ? slide.bullets : []).map(value => clean(value, 180)).filter(Boolean).slice(0, 6),
+    bullets: (Array.isArray(slide.bullets) ? slide.bullets : []).map(value => {
+      const text = clean(typeof value === 'object' ? value.text : value, 180);
+      const explicit = typeof value === 'object' && Array.isArray(value.attachment_numbers) ? value.attachment_numbers : [];
+      const markers = [...text.matchAll(/\[รูป\s*(\d+)\]/g)].map(match => Number(match[1]));
+      return {
+        text: clean(text.replace(/\s*\[รูป\s*\d+\]\s*/g, ' '), 180),
+        attachment_numbers: [...new Set([...explicit.map(Number), ...markers])]
+          .filter(number => Number.isInteger(number) && number >= 1 && number <= attachmentCount),
+      };
+    }).filter(value => value.text).slice(0, 8),
     speaker_notes: clean(slide.speaker_notes, 1200),
-    attachment_numbers: (Array.isArray(slide.attachment_numbers) ? slide.attachment_numbers : []).map(Number)
-      .filter(number => Number.isInteger(number) && number >= 1 && number <= attachmentCount).slice(0, 2),
   })).filter(slide => slide.title);
   if (!slides.length) throw new Error('AI_INVALID_DECK');
+  const mapped = new Set(slides.flatMap(slide => slide.bullets.flatMap(bullet => bullet.attachment_numbers)));
+  const missing = [];
+  for (const line of String(content || '').split(/\r?\n/)) {
+    const numbers = [...line.matchAll(/\[รูป\s*(\d+)\]/g)].map(match => Number(match[1]))
+      .filter(number => number >= 1 && number <= attachmentCount && !mapped.has(number));
+    if (!numbers.length) continue;
+    numbers.forEach(number => mapped.add(number));
+    missing.push({ text: clean(line.replace(/\s*\[รูป\s*\d+\]\s*/g, ' '), 180) || 'รูปประกอบจากโน้ตต้นฉบับ', attachment_numbers: [...new Set(numbers)] });
+  }
+  for (let index = 0; index < missing.length; index += 8) slides.push({ title: 'รูปประกอบตามโน้ต', bullets: missing.slice(index, index + 8), speaker_notes: '' });
   return { ok: true, status: 'completed', deck_title: clean(result.deck_title, 160) || title, subtitle: clean(result.subtitle, 240), theme, slides };
 };
 
 const runJob = async (env, id, payload) => {
   try {
     const text = await requestWorkNotesAI(env, payload.prompt, { jsonMode: true, maxTokens: 2200, temperature: .2, deadlineMs: 25000 });
-    const deck = normalizeDeck(parse(text), payload.title, payload.theme, payload.attachmentCount);
+    const deck = normalizeDeck(parse(text), payload.title, payload.theme, payload.attachmentCount, payload.content);
     await env.DB.prepare("UPDATE work_note_ppt_jobs SET status='completed',result_text=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(JSON.stringify(deck), id).run();
   } catch (error) {
@@ -65,7 +82,7 @@ export async function onRequestPost(ctx) {
     .filter(file => Number.isInteger(file.id));
   if (!title || !content) return json({ error: 'ไม่พบเนื้อหาโน้ต' }, 400, headers);
 
-  const prompt = `จัดโครง PowerPoint ภาษาไทยจากโน้ตของผู้ใช้ ห้ามแต่งข้อเท็จจริงที่ไม่มีในโน้ต ตอบ JSON เท่านั้น รูปแบบ {"deck_title":"...","subtitle":"...","slides":[{"title":"...","bullets":["..."],"speaker_notes":"...","attachment_numbers":[1]}]} สร้าง 3-15 สไลด์รวมบทสรุป แต่ละสไลด์ไม่เกิน 6 bullet และแต่ละ bullet ไม่เกิน 140 ตัวอักษร หากโน้ตมีป้าย [รูป N] ให้จัดรูปหมายเลข N ลงสไลด์ที่สัมพันธ์กันและห้ามใช้หมายเลขที่ไม่มีจริง
+  const prompt = `จัดโครง PowerPoint ภาษาไทยจากโน้ตของผู้ใช้ ห้ามแต่งข้อเท็จจริงที่ไม่มีในโน้ต ตอบ JSON เท่านั้น รูปแบบ {"deck_title":"...","subtitle":"...","slides":[{"title":"...","bullets":[{"text":"...","attachment_numbers":[1]}],"speaker_notes":"..."}]} สร้าง 3-15 สไลด์รวมบทสรุป แต่ละสไลด์ไม่เกิน 8 bullet และแต่ละ bullet ไม่เกิน 140 ตัวอักษร ทุกป้าย [รูป N] ต้องอยู่ใน attachment_numbers ของ bullet ที่มาจากบรรทัดเดียวกัน ห้ามย้ายรูปไปผูกกับ bullet อื่น ห้ามรวมเลขรูปไว้ระดับสไลด์ และห้ามใช้หมายเลขที่ไม่มีจริง
 ชื่อเรื่อง: ${title}
 ธีมสี: ${theme || 'ค่าเริ่มต้น'}
 ความต้องการเพิ่มเติม: ${instructions || 'ไม่มี'}
@@ -76,6 +93,6 @@ ${content}`;
   await ensureJobs(ctx.env);
   const id = crypto.randomUUID();
   await ctx.env.DB.prepare('INSERT INTO work_note_ppt_jobs(id,user_id,status) VALUES(?,?,?)').bind(id, auth.user.id, 'queued').run();
-  ctx.waitUntil(runJob(ctx.env, id, { prompt, title, theme, attachmentCount: attachments.length }));
+  ctx.waitUntil(runJob(ctx.env, id, { prompt, title, theme, attachmentCount: attachments.length, content }));
   return json({ ok: true, status: 'queued', job_id: id }, 202, headers);
 }
