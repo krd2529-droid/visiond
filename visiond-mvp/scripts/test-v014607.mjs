@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+const html = read("public/tiktok-analyzer.html"), client = read("public/tiktok-analyzer.js");
+assert.doesNotMatch(html, /ฐานผู้ติดตาม: กลุ่มอายุและเพศ/);
+assert.doesNotMatch(html, /id="audienceDemographics"/);
+assert.doesNotMatch(client, /uploadAudienceEvidence/);
+assert.match(html, /tiktok-analyzer\.js\?v=014607/);
+assert.equal(read("VERSION.txt").trim(), "v0.14.607");
+console.log("Follower demographics card removal regression: PASS");
