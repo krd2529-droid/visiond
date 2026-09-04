@@ -399,7 +399,6 @@ function renderResult(result = {}) {
     const grade = gradeOf(x), backup = index >= 30, rank = index + 1, hasScore = x && typeof x === "object" && x.ranking_score !== null && x.ranking_score !== void 0 && x.ranking_score !== "" && Number.isFinite(Number(x.ranking_score)), score = hasScore ? Math.max(0, Math.min(100, Number(x.ranking_score))) : null, reason = x && typeof x === "object" ? x.ranking_reason || "" : "";
     return `<div class="product-prep-item ranked${backup ? " backup" : ""}"><span>${rank}</span><div class="product-ranking-copy"><b>${escapeHtml(typeof x === "string" ? x : x.product || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>${reason ? escapeHtml(reason) : "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E40\u0E14\u0E34\u0E21 \xB7 \u0E01\u0E14\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E2A\u0E23\u0E49\u0E32\u0E07 Ranking"}${backup ? " \xB7 \u0E15\u0E31\u0E27\u0E2A\u0E33\u0E23\u0E2D\u0E07" : ""}</small></div><strong class="ranking-score ${score === null ? "pending" : ""}">${score === null ? "\u2014" : `${score}/100`}</strong><i class="product-prep-grade ${grade ? `grade-${grade}` : "unknown"}">${grade || "?"}</i></div>`;
   });
-  $('[data-list="gaps"]').innerHTML = list(arrayValue(result.data_gaps), (x) => `<p>\u2022 ${escapeHtml(x)}</p>`);
   $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 const renderResultBase = renderResult;
