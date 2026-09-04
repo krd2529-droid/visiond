@@ -11,6 +11,17 @@ const parsed = (value) => {
   } catch {
     return null;
   }
+}, rawImage = (raw) => {
+  const visit = (value, imageContext = false) => {
+    if (typeof value === "string") return imageContext && /^https?:\/\//i.test(value) ? value.slice(0, 1500) : "";
+    if (!value || typeof value !== "object") return "";
+    for (const [key, child] of Object.entries(value)) {
+      const found = visit(child, imageContext || /image|cover|thumbnail/i.test(key));
+      if (found) return found;
+    }
+    return "";
+  };
+  return visit(parsed(raw));
 }, commissionDashboard = (rows) => {
   const currencies = {};
   for (const row of rows) {
@@ -54,7 +65,8 @@ async function onRequestGet(ctx) {
   const shopConnections = (await ctx.env.DB.prepare(`SELECT id,channel_id,open_id,scopes,status,creator_username,creator_avatar_url,selection_region,last_synced_at,last_sync_error,created_at,updated_at FROM tiktok_shop_creator_connections WHERE user_id=? AND status='active' AND (?='' OR channel_id=?) ORDER BY updated_at DESC`).bind(auth.user.id, channelId, channelId).all()).results || [];
   let shopProducts = [], shopOrders = [];
   if (channelId && shopConnections[0]) {
-    shopProducts = (await ctx.env.DB.prepare(`SELECT product_id,name,image_url,product_url,origin,price_json,commission_json,product_grade,synced_at FROM tiktok_shop_showcase_products WHERE connection_id=? ORDER BY product_grade,sort_order LIMIT 2000`).bind(shopConnections[0].id).all()).results || [];
+    const shopProductRows = (await ctx.env.DB.prepare(`SELECT product_id,name,image_url,product_url,origin,price_json,commission_json,product_grade,raw_json,synced_at FROM tiktok_shop_showcase_products WHERE connection_id=? ORDER BY product_grade,sort_order LIMIT 2000`).bind(shopConnections[0].id).all()).results || [];
+    shopProducts = shopProductRows.map(({ raw_json: rawJson, ...product }) => ({ ...product, raw_image_url: rawImage(rawJson) }));
     shopOrders = (await ctx.env.DB.prepare(`SELECT order_id,create_time,product_ids,status,gmv_json,commission_json,synced_at FROM tiktok_shop_affiliate_orders WHERE connection_id=? AND create_time>=? AND create_time<? ORDER BY create_time DESC LIMIT 5000`).bind(shopConnections[0].id, range.fromEpoch, range.toExclusive).all()).results || [];
   }
   const portfolioProducts = (await ctx.env.DB.prepare(`SELECT p.connection_id,p.product_id,p.name,p.image_url,p.product_url,p.commission_json,p.product_grade,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_showcase_products p JOIN tiktok_shop_creator_connections c ON c.id=p.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) ORDER BY p.product_grade,p.name LIMIT 2000`).bind(auth.user.id, channelId, channelId).all()).results || [], portfolioOrders = (await ctx.env.DB.prepare(`SELECT o.connection_id,o.order_id,o.create_time,o.product_ids,o.commission_json,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_affiliate_orders o JOIN tiktok_shop_creator_connections c ON c.id=o.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) AND o.create_time>=? AND o.create_time<? ORDER BY o.create_time DESC LIMIT 5000`).bind(auth.user.id, channelId, channelId, range.fromEpoch, range.toExclusive).all()).results || [];

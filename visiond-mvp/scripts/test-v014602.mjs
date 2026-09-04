@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+const client = read("public/tiktok-analyzer.js"), api = read("functions/api/admin/tiktok-connections/index.js");
+assert.match(api, /product_grade,raw_json,synced_at/);
+assert.match(api, /raw_image_url: rawImage\(rawJson\)/);
+assert.match(client, /function productImageFromRaw\(raw\)/);
+assert.match(client, /sales >= 30 \? "A" : sales >= 16 \? "B" : sales > 0 \? "C" : ""/);
+assert.match(client, /จัดเกรดอัตโนมัติจากยอดขายจริง/);
+assert.equal(read("VERSION.txt").trim(), "v0.14.602");
+console.log("Showcase actual sales grade and raw image regression: PASS");
