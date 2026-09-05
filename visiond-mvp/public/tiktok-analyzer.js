@@ -603,7 +603,7 @@ async function loadTikTokConnection() {
   $("#showcaseSyncLimitField").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
-  $("#connectTikTok").textContent = connection ? "เชื่อมใหม่ TikTok OAuth" : "เชื่อม TikTok OAuth";
+  $("#connectTikTok").textContent = connection ? "เลือกบัญชี TikTok ใหม่" : "เลือกบัญชี TikTok เพื่อเชื่อม";
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").textContent = "เชื่อมระบบ TikTok";
   if (shopConnection) loadMarketplaceCategories();
@@ -1087,7 +1087,7 @@ form.addEventListener("submit", async (event) => {
 const shopOauthStatus = new URLSearchParams(location.search).get("tiktok_shop");
 if (shopOauthStatus) {
   const detail = new URLSearchParams(location.search).get("detail") || "";
-  message.textContent = shopOauthStatus === "connected" ? "เชื่อมบัญชี TikTok Shop Creator พร้อมใช้ Marketplace และ Showcase แล้ว" : shopOauthStatus === "account_already_linked" ? `บัญชี TikTok Shop นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี กรุณาออกจาก TikTok Shop แล้วล็อกอินบัญชีของช่องที่เลือกก่อนเชื่อมใหม่` : shopOauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok Shop อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : shopOauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : shopOauthStatus === "permissions_required" ? `เชื่อมบัญชี Creator แล้ว แต่สิทธิ์ยังไม่ครบ: ${detail} กรุณาเปิดสิทธิ์ใน TikTok Partner Center แล้วเชื่อมใหม่` : shopOauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok Shop แล้ว" : `เชื่อม TikTok Shop ไม่สำเร็จ${detail ? `: ${detail}` : " กรุณาลองใหม่"}`;
+  message.textContent = shopOauthStatus === "connected" ? "เชื่อมบัญชี TikTok Shop Creator พร้อมใช้ Marketplace และ Showcase แล้ว" : shopOauthStatus === "account_already_linked" ? `บัญชี TikTok Shop นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี กลับไปกดเชื่อมระบบ TikTok แล้วเลือกบัญชีของช่องนี้` : shopOauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok Shop อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : shopOauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : shopOauthStatus === "permissions_required" ? `เชื่อมบัญชี Creator แล้ว แต่สิทธิ์ยังไม่ครบ: ${detail} กรุณาเปิดสิทธิ์ใน TikTok Partner Center แล้วเชื่อมใหม่` : shopOauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok Shop แล้ว" : `เชื่อม TikTok Shop ไม่สำเร็จ${detail ? `: ${detail}` : " กรุณาลองใหม่"}`;
   history.replaceState({}, "", location.pathname);
 }
 const oauthStatus = new URLSearchParams(location.search).get("tiktok");

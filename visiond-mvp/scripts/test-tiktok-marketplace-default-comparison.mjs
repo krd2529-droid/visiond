@@ -9,6 +9,6 @@ assert.match(select, /<option value=["']3["'] selected>3 วัน<\/option>/);
 assert.doesNotMatch(select, /<option value=["']7["'] selected>/);
 assert.match(client, /marketplaceComparisonDays: 3/);
 assert.match(client, /comparison_days: Number\(\$\("#marketplaceComparisonDays"\)\.value\) \|\| 3/);
-assert.match(html, /tiktok-analyzer\.js\?v=02085/);
+assert.match(html, /tiktok-analyzer\.js\?v=02086/);
 
 console.log("TikTok Marketplace 3-day default comparison: PASS");

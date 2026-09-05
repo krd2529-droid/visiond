@@ -29,7 +29,7 @@ export async function consumeTikTokState(env,state,userId){
 
 export function tikTokAuthorizeUrl(config,state){
   const url=new URL('https://www.tiktok.com/v2/auth/authorize/');
-  url.search=new URLSearchParams({client_key:config.clientKey,scope:config.scopes.join(','),response_type:'code',redirect_uri:config.redirectUri,state}).toString();
+  url.search=new URLSearchParams({client_key:config.clientKey,scope:config.scopes.join(','),response_type:'code',redirect_uri:config.redirectUri,state,disable_auto_auth:'1'}).toString();
   return url.href;
 }
 

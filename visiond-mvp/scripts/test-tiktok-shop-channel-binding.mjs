@@ -47,5 +47,5 @@ const callback = fs.readFileSync(new URL("../functions/api/tiktok-shop/callback.
 const client = fs.readFileSync(new URL("../public/tiktok-analyzer.js", import.meta.url), "utf8");
 assert.match(callback, /account_already_linked/);
 assert.match(client, /ระบบจึงไม่ย้ายบัญชี/);
-assert.match(client, /ออกจาก TikTok Shop แล้วล็อกอินบัญชีของช่องที่เลือก/);
+assert.match(client, /กลับไปกดเชื่อมระบบ TikTok แล้วเลือกบัญชีของช่องนี้/);
 console.log("TikTok Shop account stays bound to its original channel: PASS");
