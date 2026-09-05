@@ -14,7 +14,7 @@ export const categoriesFromStoredProducts = rows => [...new Map(rows.flatMap(row
 
 export const classifyMarketplaceError = error => {
   const detail = clean(error?.providerMessage || error?.message, 240), normalized = detail.toLowerCase(), providerStatus = Number(error?.providerStatus) || 0;
-  const missingScope = detail.includes("SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ") || /scope|permission|not authorized|access denied/.test(normalized);
+  const missingScope = Number(error?.code) === 105005 || detail.includes("SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ") || /scope|permission|not authorized|access denied/.test(normalized);
   const invalidToken = /access.?token|token.*(?:invalid|expired)|unauthorized/.test(normalized) || providerStatus === 401;
   const timedOut = /timeout|aborted/.test(normalized), rateLimited = providerStatus === 429 || /rate.?limit|too many request/.test(normalized);
   if (missingScope) return { status: 403, error: "สิทธิ์ค้นหา Marketplace ยังไม่พร้อม กรุณาเชื่อม TikTok Shop ใหม่", reconnect_required: true };

@@ -506,6 +506,13 @@ function marketplaceErrorMessage(error) {
   const detail = String(error?.detail || "").trim(), requestId = String(error?.requestId || "").trim();
   return `${error?.message || "ค้นหาไม่สำเร็จ"}${detail && !String(error?.message || "").includes(detail) ? ` · TikTok: ${detail}` : ""}${requestId ? ` · Request ID: ${requestId}` : ""}`;
 }
+function revealMarketplaceReconnect(error) {
+  if (!error?.reconnectRequired || !state.selected) return;
+  const link = $("#connectTikTokShop");
+  link.hidden = false;
+  link.href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
+  link.textContent = "ต่อสิทธิ์ Marketplace ใหม่";
+}
 $("#shopCommissionDashboard").addEventListener("click", async (event) => {
   const button = event.target.closest("[data-share-commission]");
   if (!button) return;
@@ -1026,6 +1033,7 @@ $("#marketplaceSearchForm").addEventListener("submit", async (event) => {
     await searchMarketplace("product");
   } catch (error) {
     const message = marketplaceErrorMessage(error);
+    revealMarketplaceReconnect(error);
     $("#marketplaceSnapshot").textContent = message;
     showToast(message, "error");
   }
@@ -1037,6 +1045,7 @@ $("#marketplaceShopSearchForm").addEventListener("submit", async (event) => {
     await searchMarketplace("shop");
   } catch (error) {
     const message = marketplaceErrorMessage(error);
+    revealMarketplaceReconnect(error);
     $("#marketplaceShopSnapshot").textContent = message;
     showToast(message, "error");
   }

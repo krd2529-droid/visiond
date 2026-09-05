@@ -4,6 +4,7 @@ import { classifyMarketplaceError } from "../functions/api/admin/tiktok-connecti
 import { tikTokShopRequest } from "../functions/_tiktok_shop_api.js";
 
 assert.deepEqual(classifyMarketplaceError({ message: "TIKTOK_SHOP_SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ_REQUIRED" }), { status: 403, error: "สิทธิ์ค้นหา Marketplace ยังไม่พร้อม กรุณาเชื่อม TikTok Shop ใหม่", reconnect_required: true });
+assert.equal(classifyMarketplaceError({ code: 105005, providerMessage: "Denied" }).reconnect_required, true);
 assert.equal(classifyMarketplaceError({ providerStatus: 401, providerMessage: "Access token expired" }).status, 401);
 assert.equal(classifyMarketplaceError({ providerStatus: 429, providerMessage: "Too many requests" }).status, 429);
 assert.equal(classifyMarketplaceError({ providerStatus: 400, providerMessage: "Invalid sort field" }).status, 422);
@@ -21,6 +22,9 @@ assert.match(helper, /error\.providerMessage/);
 assert.match(endpoint, /request_id:/);
 assert.match(endpoint, /reconnect_required:/);
 assert.match(client, /function marketplaceErrorMessage/);
+assert.match(client, /function revealMarketplaceReconnect/);
+assert.match(client, /ต่อสิทธิ์ Marketplace ใหม่/);
+assert.equal((client.match(/revealMarketplaceReconnect\(error\)/g) || []).length, 3);
 assert.match(client, /TikTok: \$\{detail\}/);
 assert.match(client, /Request ID: \$\{requestId\}/);
 console.log("TikTok Marketplace upstream error diagnostics: PASS");
