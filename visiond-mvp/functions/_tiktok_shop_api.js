@@ -54,6 +54,7 @@ const skuRows = (order) => Array.isArray(order.skus) ? order.skus : Array.isArra
   return { amount: values.reduce((sum, x) => sum + (Number(x.amount) || 0), 0).toFixed(2), currency: currencies[0] || "" };
 };
 async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase = 2e3, maxOrders = 500 } = {}, fetchImpl = fetch) {
+  maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(maxShowcase) || 2000)));
   const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), call = (options) => tikTokShopRequest(config, access, options, fetchImpl), profile = await call({ path: "/affiliate_creator/202508/profiles" });
   let showcase = [], pageToken = "";
   while (showcase.length < maxShowcase) {

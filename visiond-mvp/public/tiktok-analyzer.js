@@ -543,6 +543,7 @@ async function loadTikTokConnection() {
   $("#connectTikTok").hidden = Boolean(connection);
   $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
   $("#syncTikTokShop").hidden = !shopConnection;
+  $("#showcaseSyncLimitField").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
@@ -817,10 +818,12 @@ $("#newChannel").addEventListener("click", () => {
 });
 $("#syncTikTokShop").addEventListener("click", async () => {
   if (!state.shopConnection) return;
-  message.textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E14\u0E36\u0E07\u0E42\u0E1B\u0E23\u0E44\u0E1F\u0E25\u0E4C Showcase \u0E41\u0E25\u0E30\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C Affiliate \u0E22\u0E49\u0E2D\u0E19\u0E2B\u0E25\u0E31\u0E07\u0E2A\u0E39\u0E07\u0E2A\u0E38\u0E14 90 \u0E27\u0E31\u0E19\u2026";
+  const limitInput = $("#showcaseSyncLimit"), maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(limitInput.value) || 2000)));
+  limitInput.value = String(maxShowcase);
+  message.textContent = "กำลังดึงสินค้า Showcase สูงสุด " + maxShowcase.toLocaleString("th-TH") + " รายการ และออเดอร์ Affiliate ย้อนหลังสูงสุด 90 วัน…";
   $("#syncTikTokShop").disabled = true;
   try {
-    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: state.shopConnection.id, days: 90 }) });
+    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: state.shopConnection.id, days: 90, max_showcase: maxShowcase }) });
     message.textContent = `\u0E14\u0E36\u0E07\u0E41\u0E25\u0E49\u0E27 ${result.showcaseCount} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E41\u0E25\u0E30 ${result.orderCount} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C`;
     await loadTikTokConnection();
   } catch (error) {
