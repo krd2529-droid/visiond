@@ -525,7 +525,6 @@ function resultProductTable(rows = [], scoreKey = "score") {
 }
 function renderResult(result = {}) {
   $("#result").hidden = false;
-  $("#confidence").textContent = `\u0E04\u0E27\u0E32\u0E21\u0E21\u0E31\u0E48\u0E19\u0E43\u0E08 ${Number(result.confidence) || 0}%`;
   $('[data-field="summary"]').textContent = result.summary || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E23\u0E38\u0E1B";
   if (!$("#gradeMeaningNote")) $('[data-field="summary"]').insertAdjacentHTML("afterend", '<p id="gradeMeaningNote" class="marketplace-shop-search-note"><b>แยกให้ชัด:</b> F = สินค้าที่กดคัดออกหรือกดไม่ผ่านแล้ว · ไม่มีเกรด = ยอดขาย 0 หรือข้อมูลยังไม่พอ</p>');
   $('[data-list="winners"]').innerHTML = resultProductTable(result.winner_products, "score");

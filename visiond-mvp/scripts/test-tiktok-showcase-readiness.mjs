@@ -51,7 +51,7 @@ assert.match(client, /เชื่อมระบบ TikTok/);
 assert.match(client, /Showcase ของ/);
 assert.match(html, /class="oauth-connection-card"[\s\S]*TikTok OAuth[\s\S]*id="connectTikTok"/);
 assert.match(html, /id="shopConnectionManagement"[\s\S]*การเชื่อมระบบ TikTok Shop[\s\S]*id="connectTikTokShop"[\s\S]*id="disconnectTikTokShop"/);
-assert.match(html, /tiktok-analyzer\.js\?v=02082/);
+assert.match(html, /tiktok-analyzer\.js\?v=02083/);
 assert.match(client, /\$\("#connectTikTokShop"\)\.textContent = "เชื่อมระบบ TikTok"/);
 assert.doesNotMatch(client, /เชื่อมใหม่เพื่ออัปเดตสิทธิ์/);
 assert.match(html, /tiktok-analyzer\.css\?v=02076/);
