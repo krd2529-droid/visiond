@@ -1,10 +1,10 @@
-# Active patch: TikTok Marketplace category dictionary
+# Active patch: Showcase grade guide
 
-- Status: CLOSED
-- Requested outcome: show selectable TikTok category names mapped from real category IDs already returned by Creator Marketplace data.
-- Remove: background Marketplace scan of up to 100 products used only to discover categories.
-- Preserve: category filtering by TikTok category ID, normal Marketplace search, shop search isolation, authorization boundaries.
-- Acceptance: category chains normalize to ID/name; cached Marketplace and Showcase payloads populate the selector without an external product scan; options visibly include the category ID; new search results extend the selector.
-- Likely files: TikTok Shop API normalizer, Marketplace endpoint, analyzer client, regression tests.
-- Phase: implementation complete; category-chain, stored dictionary, Marketplace search, separated search, mobile frontend, and predeploy checks passed.
-- Delivery: committed as 7e569cdd, pushed to origin/main, and verified production serves analyzer JS 02081 with category ID labels and no 100-product category scan.
+- Status: PAUSED
+- Requested outcome: explain grade meanings directly below the Showcase product table.
+- Add: clear A–F and ungraded meanings, while separating order-derived A–C from analysis-derived D–F.
+- Preserve: current grading thresholds, table contents, pagination, and sorting.
+- Acceptance: guide appears after pagination; A=30+, B=16–29, C=1–15, ungraded=0 orders; D/E/F definitions match the analysis contract.
+- Likely files: analyzer client, CSS, cache tokens, regression test.
+- Phase: paused by user before implementation; no product code changed.
+- Delivery: not applicable while paused.
