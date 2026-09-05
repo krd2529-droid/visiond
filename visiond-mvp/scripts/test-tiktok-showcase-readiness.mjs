@@ -47,12 +47,12 @@ assert.doesNotMatch(client.match(/id="shopConnectionRequired"[\s\S]*?<\/section>
 assert.match(css, /\.workspace-output #tiktokConnection/);
 assert.doesNotMatch(css, /\.showcase-permission a\{/);
 assert.match(css, /\.channel-shop-analysis\.shop-connection-missing>\.sold-products-panel[\s\S]*>\.marketplace-panel[\s\S]*>\.showcase-panel\{display:none!important\}/);
-assert.match(client, /เชื่อมบัญชี Creator/);
+assert.match(client, /เชื่อมระบบ TikTok/);
 assert.match(client, /Showcase ของ/);
 assert.match(html, /class="oauth-connection-card"[\s\S]*TikTok OAuth[\s\S]*id="connectTikTok"/);
 assert.match(html, /id="shopConnectionManagement"[\s\S]*TikTok Shop Creator OAuth[\s\S]*id="connectTikTokShop"[\s\S]*id="disconnectTikTokShop"/);
-assert.match(html, /tiktok-analyzer\.js\?v=02077/);
-assert.match(client, /shopConnection \? "เชื่อมบัญชีใหม่" : "เชื่อมบัญชี Creator"/);
+assert.match(html, /tiktok-analyzer\.js\?v=02078/);
+assert.match(client, /\$\("#connectTikTokShop"\)\.textContent = "เชื่อมระบบ TikTok"/);
 assert.doesNotMatch(client, /เชื่อมใหม่เพื่ออัปเดตสิทธิ์/);
 assert.match(html, /tiktok-analyzer\.css\?v=02076/);
 assert.match(html, /ยกเลิกการเชื่อมต่อ/);
