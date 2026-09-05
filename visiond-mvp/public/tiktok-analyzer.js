@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7, marketplaceSearchMode: "product" };
+let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -75,14 +75,11 @@ if ($("#showcaseSyncLimitField")) {
   $("#showcaseTableControls").append($("#showcaseSyncLimitField"));
   $("#showcaseTableControls").insertAdjacentHTML("beforeend", '<button id="syncTikTokShowcase" type="button" hidden>โหลดสินค้า Showcase</button>');
 }
-const marketplaceSearchMain = $("#marketplaceSearchForm .marketplace-search-main"), marketplaceProductLabel = $("#marketplaceKeyword")?.closest("label"), marketplaceSortLabel = $("#marketplaceSort")?.closest("label"), marketplaceOrderLabel = $("#marketplaceOrder")?.closest("label"), legacyMarketplaceButton = marketplaceSearchMain?.querySelector("button");
-if (marketplaceSearchMain && marketplaceProductLabel && marketplaceSortLabel && marketplaceOrderLabel) {
-  marketplaceSearchMain.insertAdjacentHTML("beforebegin", '<div class="marketplace-search-choices"><section class="marketplace-search-block"><h4>ค้นหาจากชื่อสินค้า</h4><div id="marketplaceProductSearchBlock"></div></section><section class="marketplace-search-block"><h4>ค้นหาจากชื่อร้านค้า</h4><div id="marketplaceShopSearchBlock"><label>ชื่อร้านค้า<input id="marketplaceShopKeyword" maxlength="300" placeholder="เช่น ชื่อร้านใน TikTok Shop"></label></div><p class="marketplace-shop-search-note">ค้นหาชื่อร้านค้าจากผลสินค้าที่ TikTok ส่งมา · สูงสุด 200 รายการต่อครั้ง</p></section></div>');
-  $("#marketplaceProductSearchBlock").append(marketplaceProductLabel);
-  $("#marketplaceProductSearchBlock").insertAdjacentHTML("beforeend", '<button class="marketplace-search-button" type="submit" data-search-mode="product">ค้นหาสินค้า</button>');
-  $("#marketplaceShopSearchBlock").insertAdjacentHTML("beforeend", '<button class="marketplace-search-button" type="submit" data-search-mode="shop">ค้นหาชื่อร้านค้า</button>');
-  legacyMarketplaceButton?.remove();
-  marketplaceSearchMain.classList.add("marketplace-search-options");
+marketplacePanel?.insertAdjacentHTML("beforebegin", '<section id="marketplaceShopPanel" class="marketplace-panel shop-search-panel"><div class="showcase-heading"><div><h3>ค้นหาสินค้าจากร้านค้า</h3><p class="hint">ค้นหาและดูสินค้าของร้านที่ต้องการ โดยไม่กระทบผลค้นหาสินค้านางฟ้า</p></div></div><form id="marketplaceShopSearchForm" class="marketplace-search-form"><div class="marketplace-search-main"><label>ชื่อร้านค้า<input id="marketplaceShopKeyword" maxlength="300" placeholder="เช่น ชื่อร้านใน TikTok Shop"></label><button class="marketplace-search-button" type="submit">ค้นหาชื่อร้านค้า</button></div></form><div id="marketplaceShopSnapshot" class="marketplace-snapshot" role="status">ยังไม่ได้ค้นหาชื่อร้านค้า</div><div id="marketplaceShopResults"></div><button id="addMarketplaceShopSelected" type="button" hidden>เพิ่มรายการที่เลือกเข้า Showcase</button></section>');
+const marketplaceProductButton = $("#marketplaceSearchForm .marketplace-search-main button");
+if (marketplaceProductButton) {
+  marketplaceProductButton.classList.add("marketplace-search-button");
+  marketplaceProductButton.textContent = "ค้นหาสินค้า";
 }
 function shopDateQuery(channelId = "") {
   const params = new URLSearchParams({ date_from: state.shopDateFrom, date_to: state.shopDateTo });
@@ -336,8 +333,12 @@ function resetMarketplaceView() {
   state.marketplaceCategoriesLoadingForConnection = "";
   state.marketplaceNextToken = "";
   state.marketplaceSearchedAt = "";
+  state.shopMarketplaceProducts = [];
+  state.shopMarketplaceNextToken = "";
+  state.shopMarketplaceSearchedAt = "";
   renderMarketplaceCategories();
   renderMarketplaceProducts();
+  renderMarketplaceProducts(null, "shop");
 }
 function renderShowcasePermission() {
   let box = $("#showcasePermission");
@@ -348,30 +349,35 @@ function renderShowcasePermission() {
   const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
   box.hidden = !connection || ready;
   box.innerHTML = !connection || ready ? "" : `<b>เชื่อมบัญชี ${escapeHtml(account)} แล้ว แต่สิทธิ์เพิ่มสินค้าเข้า Showcase ยังไม่ครบ</b><span>ข้อมูลที่ได้รับอนุญาตยังใช้งานได้ตามปกติ · สิทธิ์ที่ขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")}</span>`;
-  const searchButtons = $("#marketplaceSearchForm").querySelectorAll(".marketplace-search-button"), addButton = $("#addMarketplaceSelected");
+  const searchButtons = document.querySelectorAll("#marketplaceSearchForm .marketplace-search-button, #marketplaceShopSearchForm .marketplace-search-button"), addButtons = [$("#addMarketplaceSelected"), $("#addMarketplaceShopSelected")];
   searchButtons.forEach(button => button.disabled = Boolean(connection) && !capabilities.can_search_marketplace);
-  if (addButton) {
+  addButtons.filter(Boolean).forEach((addButton) => {
     addButton.setAttribute("aria-disabled", capabilities.can_write_showcase ? "false" : "true");
     addButton.title = capabilities.can_write_showcase ? "" : "กดเพื่อดูวิธีเปิดสิทธิ์เพิ่มสินค้าเข้า Showcase";
-  }
+  });
 }
-function renderMarketplaceProducts(data = null) {
-  const box = $("#marketplaceResults"), addButton = $("#addMarketplaceSelected"), snapshot = $("#marketplaceSnapshot"), products = state.marketplaceProducts;
+function marketplaceView(mode = "product") {
+  const shop = mode === "shop";
+  return { mode, form: $(shop ? "#marketplaceShopSearchForm" : "#marketplaceSearchForm"), box: $(shop ? "#marketplaceShopResults" : "#marketplaceResults"), addButton: $(shop ? "#addMarketplaceShopSelected" : "#addMarketplaceSelected"), snapshot: $(shop ? "#marketplaceShopSnapshot" : "#marketplaceSnapshot"), products: state[shop ? "shopMarketplaceProducts" : "marketplaceProducts"], nextToken: state[shop ? "shopMarketplaceNextToken" : "marketplaceNextToken"], searchedAt: state[shop ? "shopMarketplaceSearchedAt" : "marketplaceSearchedAt"], comparisonDays: state[shop ? "shopMarketplaceComparisonDays" : "marketplaceComparisonDays"] };
+}
+function renderMarketplaceProducts(data = null, mode = "product") {
+  const view = marketplaceView(mode), { box, addButton, snapshot, products } = view;
   if (!data) {
     box.innerHTML = "";
     addButton.hidden = true;
     snapshot.textContent = "ยังไม่ได้ค้นหา — การค้นหาครั้งแรกจะสร้าง snapshot เพื่อใช้เทียบการเติบโตในครั้งถัดไป";
     return;
   }
-  const time = state.marketplaceSearchedAt ? new Date(state.marketplaceSearchedAt).toLocaleString("th-TH") : "ขณะนี้", firstCount = products.filter((product) => product.previous_snapshot_at === null || product.previous_snapshot_at === void 0).length;
-  snapshot.textContent = `Snapshot จาก TikTok เวลา ${time} · พบ ${products.length.toLocaleString()} รายการ · เทียบยอดกับ snapshot ย้อนหลัง ${state.marketplaceComparisonDays} วัน${firstCount ? ` · ${firstCount.toLocaleString()} รายการเป็น snapshot แรก จึงยังไม่มีอัตราเติบโต` : ""}`;
+  const time = view.searchedAt ? new Date(view.searchedAt).toLocaleString("th-TH") : "ขณะนี้", firstCount = products.filter((product) => product.previous_snapshot_at === null || product.previous_snapshot_at === void 0).length;
+  snapshot.textContent = `Snapshot จาก TikTok เวลา ${time} · พบ ${products.length.toLocaleString()} รายการ · เทียบยอดกับ snapshot ย้อนหลัง ${view.comparisonDays} วัน${firstCount ? ` · ${firstCount.toLocaleString()} รายการเป็น snapshot แรก จึงยังไม่มีอัตราเติบโต` : ""}`;
   const rows = products.map((product) => {
     const image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), growth = product.growth || {}, growthText = growth.growth_percent === null || growth.growth_percent === void 0 ? "Snapshot แรก" : `${Number(growth.growth_percent) > 0 ? "+" : ""}${Number(growth.growth_percent).toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = growth.growth_percent === null || growth.growth_percent === void 0 ? "new" : Number(growth.growth_percent) > 0 ? "up" : Number(growth.growth_percent) < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder">ไม่มีรูป</span>', title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
     const contentCreators = product.content_creator_count, showcaseCreators = product.showcase_creator_count, creatorDensity = contentCreators === null || contentCreators === void 0 ? showcaseCreators === null || showcaseCreators === void 0 ? '<span class="creator-density unavailable">ไม่มีข้อมูลจาก API</span>' : `<span class="creator-density"><b>${Number(showcaseCreators).toLocaleString()}</b><small>เก็บใน Showcase</small></span>` : `<span class="creator-density"><b>${Number(contentCreators).toLocaleString()}</b><small>ทำคอนเทนต์${showcaseCreators === null || showcaseCreators === void 0 ? "" : ` · ${Number(showcaseCreators).toLocaleString()} เก็บ Showcase`}</small></span>`;
     return `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${creatorDensity}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td></tr>`;
   }).join("");
-  box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>ความหนาแน่นครีเอเตอร์</th><th>เติบโต ${state.marketplaceComparisonDays} วัน</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${state.marketplaceNextToken ? '<div class="showcase-pagination"><button id="marketplaceNext" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>' : ""}`;
+  const nextId = mode === "shop" ? "marketplaceShopNext" : "marketplaceNext";
+  box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>ความหนาแน่นครีเอเตอร์</th><th>เติบโต ${view.comparisonDays} วัน</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${view.nextToken ? `<div class="showcase-pagination"><button id="${nextId}" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>` : ""}`;
   const account = state.shopConnection?.creator_username || state.shopConnection?.open_id || "บัญชี Creator";
   addButton.textContent = `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   addButton.hidden = !products.length;
@@ -381,22 +387,27 @@ function renderMarketplaceProducts(data = null) {
     addButton.disabled = !selected;
     addButton.textContent = state.shopConnection?.capabilities?.can_write_showcase ? `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}` : selected ? "ตรวจสิทธิ์ก่อนเพิ่มสินค้าเข้า Showcase" : `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   }));
-  $("#marketplaceNext")?.addEventListener("click", () => searchMarketplace(state.marketplaceNextToken));
+  $(`#${nextId}`)?.addEventListener("click", () => searchMarketplace(mode, view.nextToken));
 }
-async function searchMarketplace(pageToken = "") {
+async function searchMarketplace(mode = "product", pageToken = "") {
+  if (mode !== "product" && mode !== "shop") {
+    pageToken = mode;
+    mode = "product";
+  }
   if (!state.shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
   if (!state.shopConnection.capabilities?.can_search_marketplace) throw new Error("บัญชี Creator ยังไม่มีสิทธิ์ค้นหา Open Collaboration กรุณาเชื่อมและอนุญาตสิทธิ์ใหม่");
-  const buttons = $("#marketplaceSearchForm").querySelectorAll(".marketplace-search-button"), nextButton = $("#marketplaceNext"), shopMode = state.marketplaceSearchMode === "shop";
+  const view = marketplaceView(mode), buttons = view.form.querySelectorAll(".marketplace-search-button"), nextButton = $(mode === "shop" ? "#marketplaceShopNext" : "#marketplaceNext"), shopMode = mode === "shop";
   buttons.forEach(button => button.disabled = true);
   if (nextButton) nextButton.disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: state.shopConnection.id, keyword: shopMode ? "" : $("#marketplaceKeyword").value.trim(), shop_keyword: shopMode ? $("#marketplaceShopKeyword")?.value.trim() || "" : "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
-    state.marketplaceProducts = data.products || [];
-    state.marketplaceNextToken = data.next_page_token || "";
-    state.marketplaceSearchedAt = new Date().toISOString();
-    state.marketplaceComparisonDays = Number(data.comparison_days) || 7;
-    renderMarketplaceCategories(data.categories || []);
-    renderMarketplaceProducts(data);
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: state.shopConnection.id, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken, comparison_days: 7 } : { connection_id: state.shopConnection.id, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
+    const prefix = shopMode ? "shopMarketplace" : "marketplace";
+    state[`${prefix}Products`] = data.products || [];
+    state[`${prefix}NextToken`] = data.next_page_token || "";
+    state[`${prefix}SearchedAt`] = new Date().toISOString();
+    state[`${prefix}ComparisonDays`] = Number(data.comparison_days) || 7;
+    if (!shopMode) renderMarketplaceCategories(data.categories || []);
+    renderMarketplaceProducts(data, mode);
   } finally {
     buttons.forEach(button => button.disabled = false);
     if (nextButton) nextButton.disabled = false;
@@ -910,36 +921,47 @@ $("#disconnectTikTokShop").addEventListener("click", async () => {
 $("#marketplaceSearchForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
-    state.marketplaceSearchMode = event.submitter?.dataset.searchMode === "shop" ? "shop" : "product";
-    $("#marketplaceSnapshot").textContent = state.marketplaceSearchMode === "shop" ? "กำลังค้นหาชื่อร้านค้าจาก TikTok Marketplace…" : "กำลังค้นหาสินค้า Open Collaboration จาก TikTok…";
-    await searchMarketplace();
+    $("#marketplaceSnapshot").textContent = "กำลังค้นหาสินค้า Open Collaboration จาก TikTok…";
+    await searchMarketplace("product");
   } catch (error) {
     $("#marketplaceSnapshot").textContent = error.message;
     showToast(error.message, "error");
   }
 });
-$("#addMarketplaceSelected").addEventListener("click", async () => {
+$("#marketplaceShopSearchForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    $("#marketplaceShopSnapshot").textContent = "กำลังค้นหาชื่อร้านค้าจาก TikTok Marketplace…";
+    await searchMarketplace("shop");
+  } catch (error) {
+    $("#marketplaceShopSnapshot").textContent = error.message;
+    showToast(error.message, "error");
+  }
+});
+async function addMarketplaceSelection(mode = "product") {
   if (!state.shopConnection) return;
   if (!state.shopConnection.capabilities?.can_write_showcase) {
     renderShowcasePermission();
     $("#showcasePermission")?.scrollIntoView({ behavior: "smooth", block: "center" });
     return showToast("ยังส่งสินค้าไม่ได้ กรุณาไปหน้า 1 ตั้งค่าช่องและเชื่อมข้อมูล เพื่อเปิดสิทธิ์ Showcase", "error");
   }
-  const ids = [...document.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
+  const view = marketplaceView(mode), ids = [...view.box.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
-  const button = $("#addMarketplaceSelected");
+  const button = view.addButton;
   button.disabled = true;
   try {
     const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, product_ids: ids }) });
     showToast(result.warning || `เพิ่มสินค้าเข้า Showcase ของ ${state.shopConnection.creator_username || "บัญชี Creator"} แล้ว ${Number(result.added || ids.length).toLocaleString()} รายการ`, result.warning ? "warning" : "success");
     await loadTikTokConnection();
-    renderMarketplaceProducts({ products: state.marketplaceProducts });
+    renderMarketplaceProducts({ products: view.products }, mode);
   } catch (error) {
     showToast(error.message, "error");
   } finally {
     button.disabled = false;
   }
-});
+}
+$("#addMarketplaceSelected").addEventListener("click", () => addMarketplaceSelection("product"));
+$("#addMarketplaceShopSelected").addEventListener("click", () => addMarketplaceSelection("shop"));
 async function removeShowcaseProducts(ids, scopeLabel) {
   if (!state.shopConnection) return;
   const connectionId = state.shopConnection.id, account = state.shopConnection.creator_username || "บัญชี Creator";

@@ -1,9 +1,9 @@
-# Active patch: Separate F from ungraded products
+# Active patch: Separate shop search from angel-product search
 
-- Status: CLOSED
-- Report: F and no-grade currently overlap because multiple grading layers automatically turn zero sales or low scores into F while another UI rule says zero sales has no grade.
-- Outcome: reserve F for products explicitly discarded or failed by the user; zero sales and insufficient evidence remain ungraded.
-- Preserve: Marketplace API, product/shop search modes, filters, results, Showcase actions, and styling.
-- Acceptance: automated analysis never creates F from zero sales, low traffic, or score alone; zero orders displays no grade; F remains for explicit discard/manual fail and survives reanalysis; summary prompt uses the same meanings.
-- Phase: implementation complete; regression, syntax, mobile frontend, and predeploy checks passed.
-- Delivery: committed as 8fc391f1, pushed to origin/main, and verified on production.
+- Status: PATCH_READY
+- Report: shop-name search is nested in the angel-product search form and both workflows share submit mode and result state.
+- Outcome: give shop-name search its own block, form, request path, status, results, pagination, and Showcase selection action.
+- Preserve: Marketplace API, filters, product search, shop search, creator-density data, and Showcase permission checks.
+- Acceptance: submitting one search never reads, resets, disables, or overwrites the other search; each result list paginates and selects independently; blocks remain responsive.
+- Phase: implementation complete; separated-flow, adversarial, permission, responsive, and predeploy checks passed.
+- Delivery: ready to commit and push to origin/main.
