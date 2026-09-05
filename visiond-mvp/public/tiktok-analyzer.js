@@ -462,6 +462,7 @@ async function selectChannel(id) {
   $("#channelMode").textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E17\u0E33\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49";
   $("#formHeading").textContent = channel.name;
   $("#history").hidden = false;
+  $("#history").open = false;
   $("#angelInventory").hidden = false;
   $("#angelCount").textContent = `${products.length} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32`;
   $("#angelProducts").innerHTML = products.length ? "ABCDEF".split("").map((type) => {
