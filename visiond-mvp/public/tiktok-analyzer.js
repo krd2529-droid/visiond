@@ -547,13 +547,14 @@ async function loadTikTokConnection() {
   state.shopConnection = shopConnection;
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
-  $("#connectTikTok").hidden = Boolean(connection);
+  $("#connectTikTok").hidden = false;
   $("#connectTikTokShop").hidden = Boolean(shopConnection);
   $("#syncTikTokShop").hidden = !shopConnection;
   $("#syncTikTokShowcase").hidden = !shopConnection;
   $("#showcaseSyncLimitField").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
+  $("#connectTikTok").textContent = connection ? "เชื่อมใหม่ TikTok OAuth" : "เชื่อม TikTok OAuth";
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").textContent = shopConnection ? "เชื่อมใหม่เพื่ออัปเดตสิทธิ์" : "เชื่อมบัญชี Creator";
   if (shopConnection) loadMarketplaceCategories();

@@ -13,7 +13,8 @@ assert.match(client, /renderMarketplaceCategories\(data\.categories \|\| \[\]\)/
 assert.match(helper, /category_id: category\.id, category_name: category\.name/);
 assert.match(helper, /return \{ products, categories,/);
 assert.match(html, /รีเฟรชสินค้าและออเดอร์ TikTok Shop/);
-assert.match(html, /จัดการการเชื่อมต่อ TikTok Shop/);
+assert.match(html, /TikTok OAuth/);
+assert.match(html, /TikTok Shop Creator OAuth/);
 assert.match(html, /id="disconnectTikTokShop"[^>]*>ยกเลิกการเชื่อมต่อ</);
 assert.match(html, /id="showcaseSyncLimit"[^>]+min="1"[^>]+max="2000"[^>]+value="2000"/);
 assert.match(client, /max_showcase: maxShowcase/);
