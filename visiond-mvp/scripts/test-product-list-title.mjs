@@ -4,7 +4,8 @@ import fs from "node:fs";
 const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 const html = read("public/tiktok-analyzer.html");
 
-assert.match(html, /<h3>ลิสคัดสินค้าของฉัน<\/h3>/);
+assert.match(html, /<h3>ลิสต์คัดสินค้าของฉัน<\/h3>/);
+assert.doesNotMatch(html, /ลิสคัดสินค้า/);
 assert.doesNotMatch(html, /Ranking สินค้า 40 รายการ/);
 assert.equal(read("VERSION.txt").trim(), "v0.20.49");
 
