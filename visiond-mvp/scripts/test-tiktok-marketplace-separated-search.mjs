@@ -6,6 +6,8 @@ const client = read("public/tiktok-analyzer.js"), css = read("public/tiktok-anal
 
 assert.match(html, /<h3 id="marketplaceTitle">ค้นหาสินค้านางฟ้า<\/h3>/);
 assert.doesNotMatch(html, /ค้นหา Open Collaboration Marketplace/);
+assert.doesNotMatch(html, /ผลค้นหาเป็นข้อมูลจาก TikTok ณ เวลาที่กดค้นหา/);
+assert.doesNotMatch(html, /ผลค้นหาเป็นข้อมูลจาก TikTok ณ เวลาที่กดค้นหา/);
 assert.match(client, /class="marketplace-search-choices"/);
 assert.match(client, /<h4>ค้นหาจากชื่อสินค้า<\/h4>/);
 assert.match(client, /<h4>ค้นหาจากชื่อร้านค้า<\/h4>/);
