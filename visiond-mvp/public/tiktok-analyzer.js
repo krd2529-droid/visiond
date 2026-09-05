@@ -439,6 +439,7 @@ if (reviewDemo) {
 }
 async function selectChannel(id) {
   state.selected = id;
+  form.classList.add("existing-channel");
   renderChannels();
   const data = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`), channel = data.channel, products = data.products || [];
   form.channel_id.value = channel.id;
@@ -459,6 +460,7 @@ async function selectChannel(id) {
 }
 function newChannel() {
   state.selected = null;
+  form.classList.remove("existing-channel");
   form.reset();
   form.channel_id.value = "";
   $("#channelMode").textContent = "\u0E0A\u0E48\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
