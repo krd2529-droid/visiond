@@ -9,6 +9,7 @@ const callback = fs.readFileSync(new URL("../functions/api/tiktok/callback.js", 
 
 assert.doesNotMatch(client, /id="tiktokLoginOnly"/);
 assert.match(client, /\$\("\.workspace-switch"\)\?\.remove\(\)/);
+assert.match(client, /\$\("#channelShopAnalysis > \.result-head"\)\?\.remove\(\)/, "redundant product-management heading must be removed");
 assert.match(client, /setWorkspaceView\("output", false\)/);
 assert.match(client, /\$\("#channels"\)\.addEventListener\("click", \(\) => \{\s*setOutputScope\("channel"\);\s*setWorkspaceView\("output"\)/);
 assert.match(client, /\$\("#newChannel"\)\.textContent = "\+ ช่องใหม่"/);
@@ -25,7 +26,7 @@ assert.doesNotMatch(css, /\.tiktok-login-only/);
 assert.match(connect, /createNew=url\.searchParams\.get\('create'\)==='1'/);
 assert.match(callback, /async function channelForProfile/);
 assert.match(callback, /channelId=await channelForProfile/);
-assert.match(html, /tiktok-analyzer\.js\?v=02104/);
+assert.match(html, /tiktok-analyzer\.js\?v=02105/);
 assert.match(html, /tiktok-analyzer\.css\?v=02084/);
 
 console.log("TikTok direct product-management entry with + channel OAuth: PASS");

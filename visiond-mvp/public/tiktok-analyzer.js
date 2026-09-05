@@ -1284,4 +1284,5 @@ if (oauthStatus) {
 }
 form.remove();
 $(".workspace-switch")?.remove();
+$("#channelShopAnalysis > .result-head")?.remove();
 loadChannels();

@@ -10,6 +10,6 @@ assert.match(reconcile, /discarded\.has\(normalizeProductName\(name\)\)\) item\.
 assert.match(reconcile, /const visibleCount = list\.querySelectorAll\("\.product-prep-item"\)\.length/);
 assert.match(reconcile, /const total = \$\("#productPrepSummary \.total b"\)/);
 assert.match(reconcile, /total\.textContent = `\$\{visibleCount\}\/40`/);
-assert.match(html, /tiktok-analyzer\.js\?v=02104/);
+assert.match(html, /tiktok-analyzer\.js\?v=02105/);
 
 console.log("TikTok shortlist total matches visible cards after reconciliation: PASS");
