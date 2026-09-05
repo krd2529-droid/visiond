@@ -1287,4 +1287,7 @@ $(".workspace-switch")?.remove();
 $("#channelShopAnalysis > .result-head")?.remove();
 const marketplaceCategoryField = $("#marketplaceCategory")?.closest("label");
 if (marketplaceCategoryField) marketplaceCategoryField.hidden = true;
+for (const hint of document.querySelectorAll("#result .hint")) {
+  if (hint.textContent.trim().startsWith("เป้าหมาย 30 สินค้าหลัก")) hint.remove();
+}
 loadChannels();

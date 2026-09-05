@@ -11,6 +11,6 @@ assert.match(client, /state\.channels\.find\(\(channel\) => channel\.follower_co
 assert.match(client, /if \(state\.selected\) await selectChannel\(state\.selected\)/, "initial load must hydrate the selected channel");
 assert.match(client, /saveUiValue\("visiond_tiktok_channel_id", String\(id\)\)/, "channel changes must be remembered");
 assert.match(client, /await loadTikTokConnection\(\)/, "selected-channel hydration must load TikTok Shop data");
-assert.match(html, /tiktok-analyzer\.js\?v=02107/);
+assert.match(html, /tiktok-analyzer\.js\?v=02108/);
 
 console.log("TikTok refresh selected-channel hydration: PASS");

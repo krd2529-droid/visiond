@@ -1,8 +1,8 @@
-# Active patch: Remove Marketplace category filter
+# Active patch: Remove shortlist target note
 
-- Event: PATCH_DELIVERED
-- Outcome: ซ่อนตัวกรองหมวดหมู่สินค้าออกจากการค้นหาสินค้านางฟ้า
+- Event: PATCH_READY
+- Outcome: ลบข้อความเป้าหมาย 30 สินค้าหลักออกจากลิสต์คัดสินค้า
 - Preserve: เข้าแผงจัดการสินค้าตรง; ไม่มีแถบ 1/2; + ช่องใหม่เปิด TikTok OAuth
-- Acceptance: ไม่เห็น dropdown หมวดหมู่; ตัวกรองอื่นและการค้นหายังทำงาน; category_id ส่งเป็นค่าว่าง
-- Phase: deployed as f1359f16; production asset 02107 verified with category filter hidden
+- Acceptance: ไม่แสดงบรรทัดเป้าหมาย A/B/C/E; ปุ่มเพิ่ม C และรายการลิสต์ยังอยู่
+- Phase: tests passed; ready to deploy
 - Files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, public/tiktok-analyzer.html, tests
