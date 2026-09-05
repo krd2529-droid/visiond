@@ -6,7 +6,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Da
   return new Date(Date.UTC(y, m - 1, d) + days * 864e5).toISOString().slice(0, 10);
 }, commissionAvailability = () => {
   const now = thaiNow(), today = now.slice(0, 10), ready = Number(now.slice(11, 13)) >= 12;
-  return { ready, latestDate: shiftThaiDate(today, ready ? -1 : -2) };
+  return { ready, latestDate: shiftThaiDate(today, -1) };
 }, dateDaysAgo = (days, base = commissionAvailability().latestDate) => {
   const [y, m, d] = base.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
@@ -191,7 +191,7 @@ function soldProductSummaryTable(products, orders) {
 function shopRangeSummary(data, products, orders) {
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo };
   const rangeLabel = `${displayDate(range.from)}–${displayDate(range.to)}`;
-  const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = availability.ready ? `ยอดล่าสุดดูได้ถึง ${availability.latestDate}` : `ยอดเมื่อวานกำลังประมวลผล กรุณารอ 12:00 น. · ขณะนี้ดูได้ถึง ${availability.latestDate}`;
+  const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = availability.ready ? `ยอดล่าสุดดูได้ถึง ${availability.latestDate}` : `ยอดวันที่ ${availability.latestDate} กำลังประมวลผล กรุณารอ 12:00 น. เป็นต้นไป`;
   return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${availability.latestDate}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${availability.latestDate}" required></label><button type="submit">\u0E40\u0E23\u0E35\u0E22\u0E01\u0E14\u0E39</button></form><p class="hint commission-availability-note">${escapeHtml(availabilityText)}</p><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${orders.length.toLocaleString()}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${soldProductSummaryTable(products, orders)}`;
 }
 function safeProductImage(value) {

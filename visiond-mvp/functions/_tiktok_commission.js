@@ -3,7 +3,7 @@ const clean=(value,max=120)=>String(value??'').trim().slice(0,max);
 const shift=(day,offset)=>new Date(Date.parse(`${day}T00:00:00Z`)+offset*864e5).toISOString().slice(0,10);
 export function commissionAvailability(now=Date.now()){
   const thaiNow=new Date(now+7*3600e3).toISOString(),today=thaiNow.slice(0,10),ready=Number(thaiNow.slice(11,13))>=12;
-  return{ready,today,latestDate:shift(today,ready?-1:-2),nextReadyAt:ready?`${shift(today,1)}T12:00:00+07:00`:`${today}T12:00:00+07:00`};
+  return{ready,today,latestDate:shift(today,-1),nextReadyAt:ready?`${shift(today,1)}T12:00:00+07:00`:`${today}T12:00:00+07:00`};
 }
 export function commissionRange(url,now=Date.now()){
   const preset=Number(url.searchParams.get('days'));
