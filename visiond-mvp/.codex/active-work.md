@@ -1,8 +1,8 @@
-# Active patch: Shop-search selection list
+# Active patch: Refresh hydration for selected TikTok channel
 
-- Event: PATCH_DELIVERED
-- Outcome: เอาคอลัมน์ราคาออกจากผลค้นหาร้านค้า และเพิ่มลิสต์คัดสินค้าพร้อมปุ่มเพิ่มแบบเดียวกับ Showcase
-- Preserve: การเลือกหลายรายการ ปุ่มเพิ่ม Showcase ยอดขาย ค่าคอม หมวดหมู่ pagination และการเชื่อมบัญชี
-- Acceptance: ตารางค้นหาร้านค้าไม่มีราคา; มีหัวคอลัมน์ลิสต์คัดสินค้า; ทุกรายการเพิ่มเป็น C พร้อมลิงก์และหลักฐานได้; empty state span ถูกต้อง
-- Phase: committed, pushed to origin/main, and verified JavaScript v02096 on production
-- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.html, scripts/test-tiktok-marketplace-selection-list.mjs, scripts/test-tiktok-marketplace-supported-columns.mjs
+- Event: PATCH_READY
+- Outcome: รีเฟรชหน้าแล้วโหลดข้อมูลจัดการสินค้าของช่องที่เลือกล่าสุดอัตโนมัติ
+- Preserve: การสลับช่อง การสลับหน้า 1/2 OAuth callback และ race guard เดิม
+- Acceptance: จำช่องและแท็บล่าสุด; หากไม่มีค่าที่จำให้เลือกช่องที่เชื่อมแล้ว; hydrate Shop/Showcase/orders/selection list โดยไม่ต้องคลิกซ้ำ; ค่าเก่าที่ชี้ช่องถูกลบต้องไม่ทำให้หน้าค้าง
+- Phase: implementation complete; refresh, race, Marketplace, and pre-deploy checks passed
+- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.html, scripts/test-tiktok-refresh-hydration.mjs, scripts/test-tiktok-marketplace-selection-list.mjs

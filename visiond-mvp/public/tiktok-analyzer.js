@@ -11,7 +11,9 @@ const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Da
   const [y, m, d] = base.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+const savedUiValue = (key) => { try { return localStorage.getItem(key) || ""; } catch { return ""; } }, saveUiValue = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+const requestedChannelId = new URLSearchParams(location.search).get("channel_id") || savedUiValue("visiond_tiktok_channel_id") || null;
+let state = { channels: [], selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const shopConnectionRequests = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02087";
@@ -102,7 +104,7 @@ function setOutputScope(scope) {
   document.body.classList.toggle("output-channel", channel);
   document.body.classList.toggle("output-overview", !channel);
 }
-function setWorkspaceView(view) {
+function setWorkspaceView(view, persist = true) {
   const output = view === "output";
   document.body.classList.toggle("workspace-output", output);
   document.body.classList.toggle("workspace-input", !output);
@@ -110,6 +112,7 @@ function setWorkspaceView(view) {
   $("#showOutputView").classList.toggle("active", output);
   $("#showInputView").setAttribute("aria-current", output ? "false" : "page");
   $("#showOutputView").setAttribute("aria-current", output ? "page" : "false");
+  if (persist) saveUiValue("visiond_tiktok_workspace", output ? "output" : "input");
 }
 async function loadPortfolioDashboard() {
   const [data, commission, referral] = await Promise.all([api(`/api/admin/tiktok-connections?${shopDateQuery()}`), api(`/api/admin/tiktok-commissions?from=${state.shopDateFrom}&to=${state.shopDateTo}`), api('/api/vx/referrals').catch(() => null)]);
@@ -141,7 +144,7 @@ $("#showOutputView").addEventListener("click", () => {
   setWorkspaceView("output");
 });
 setOutputScope("channel");
-setWorkspaceView("input");
+setWorkspaceView(savedUiValue("visiond_tiktok_workspace") === "output" ? "output" : "input", false);
 function productMetrics(product, orders) {
   const commission = safeJson(product.commission_json) || {}, sold = orders.reduce((sum, order) => sum + (safeJson(order.product_ids) || []).filter((id) => String(id) === String(product.product_id)).length, 0);
   return { sales: Number(product.sales ?? sold), clicks: Number(product.clicks || 0), conversion: Number(product.conversion || 0), commission: Number(product.commission ?? commission.amount ?? 0) };
@@ -533,6 +536,8 @@ async function loadChannels() {
     const data = await api("/api/admin/tiktok-analyzer");
     state.channels = data.channels || [];
     $("#aiState").textContent = data.provider_configured ? "AI \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C" : "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 AI";
+    const selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected));
+    if (!selectedExists) state.selected = state.channels.find((channel) => channel.follower_count !== null && channel.follower_count !== void 0)?.id || state.channels[0]?.id || null;
     renderChannels();
     if (state.selected) await selectChannel(state.selected);
   } catch (error) {
@@ -947,6 +952,7 @@ $("#productReviewSchedule").addEventListener("click", (event) => {
 });
 const selectChannelBase = selectChannel;
 selectChannel = async function(id) {
+  saveUiValue("visiond_tiktok_channel_id", String(id));
   state.shopConnection = null;
   await selectChannelBase(id);
   const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`);
