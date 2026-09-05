@@ -38,7 +38,7 @@ export async function onRequestPost(ctx) {
     }
     return json({ ok: true, source: "open_collaboration_marketplace", comparison_days: comparisonDays, ...result, products: result.products.map(product => { const prior = previous.get(product.product_id); return { ...product, growth: tikTokMarketplaceGrowth(product.units_sold, prior?.units_sold), previous_snapshot_at: prior?.captured_at || null }; }) }, 200, headers);
   } catch (error) {
-    const detail = clean(error?.message, 240), missingScope = detail.includes("SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ");
-    return json({ error: missingScope ? "ต้องเปิดสิทธิ์ creator.affiliate_collaboration.read แล้วเชื่อม TikTok Shop ใหม่" : "ค้นสินค้า Open Collaboration Marketplace ไม่สำเร็จ", detail }, missingScope ? 403 : 502, headers);
+    const detail = clean(error?.message, 240), missingScope = detail.includes("SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ"), timedOut = /timeout|aborted/i.test(detail);
+    return json({ error: missingScope ? "ต้องเปิดสิทธิ์ creator.affiliate_collaboration.read แล้วเชื่อม TikTok Shop ใหม่" : timedOut ? "TikTok ตอบกลับช้าเกินไป กรุณาลองค้นหาใหม่" : "ค้นสินค้า Open Collaboration Marketplace ไม่สำเร็จ", detail }, missingScope ? 403 : timedOut ? 504 : 502, headers);
   }
 }

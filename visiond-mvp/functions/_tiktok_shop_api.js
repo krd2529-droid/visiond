@@ -10,10 +10,10 @@ async function tikTokShopSign(path, params, body, secret) {
   const paramString = Object.keys(params).filter((k) => !["sign", "access_token"].includes(k)).sort().map((k) => `${k}${params[k]}`).join(""), input = `${secret}${path}${paramString}${body || ""}${secret}`, key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   return hex(await crypto.subtle.sign("HMAC", key, enc.encode(input)));
 }
-async function tikTokShopRequest(config, accessToken, { path, method = "GET", query = {}, body = null }, fetchImpl = fetch) {
+async function tikTokShopRequest(config, accessToken, { path, method = "GET", query = {}, body = null, timeoutMs = 3e4 }, fetchImpl = fetch) {
   const timestamp = String(Math.floor(Date.now() / 1e3)), params = { app_key: config.appKey, timestamp, ...query }, bodyText = body === null ? "" : JSON.stringify(body), sign = await tikTokShopSign(path, params, bodyText, config.appSecret), url = new URL(path, host);
   url.search = new URLSearchParams({ ...params, sign }).toString();
-  const response = await fetchImpl(url, { method, headers: { "content-type": "application/json", "x-tts-access-token": accessToken }, body: bodyText || void 0, signal: AbortSignal.timeout(3e4) }), payload = await response.json().catch(() => ({}));
+  const response = await fetchImpl(url, { method, headers: { "content-type": "application/json", "x-tts-access-token": accessToken }, body: bodyText || void 0, signal: AbortSignal.timeout(Math.min(3e4, Math.max(3e3, Number(timeoutMs) || 3e4))) }), payload = await response.json().catch(() => ({}));
   if (!response.ok || Number(payload.code) !== 0) {
     const error = new Error(`TIKTOK_SHOP_API_${response.status}_${clean(payload.message || "FAILED", 160)}`);
     error.code = payload.code;
@@ -151,26 +151,27 @@ async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchI
 }
 async function searchTikTokShopOpenCollaborationProducts(env, connection, { keywords = [], shopKeyword = "", resultLimit = 20, pageToken = "", sortField = "units_sold", sortOrder = "DESC", priceMin = null, priceMax = null, categoryId = "", commissionPercentMin = null, commissionPercentMax = null } = {}, fetchImpl = fetch) {
   if (!String(connection.scopes || "").split(",").map(scope => scope.trim()).includes("creator.affiliate_collaboration.read")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ_REQUIRED");
-  const titleKeywords = (Array.isArray(keywords) ? keywords : [keywords]).map(value => clean(value, 255)).filter(Boolean).slice(0, 20), normalizedShopKeyword=clean(shopKeyword,300).toLocaleLowerCase(), allowedSortFields = new Set(["commission_rate", "product_sales_price", "commission", "units_sold"]), normalizedSort = allowedSortFields.has(sortField) ? sortField : "units_sold", limit = Math.min(100, Math.max(1, Number(resultLimit) || 20));
+  const normalizedShopKeyword=clean(shopKeyword,300).toLocaleLowerCase(), titleKeywords = (Array.isArray(keywords) ? keywords : [keywords]).map(value => clean(value, 255)).filter(Boolean).slice(0, 20), searchKeywords=titleKeywords.length?titleKeywords:normalizedShopKeyword?[clean(shopKeyword,255)]:[], allowedSortFields = new Set(["commission_rate", "product_sales_price", "commission", "units_sold"]), normalizedSort = allowedSortFields.has(sortField) ? sortField : "units_sold", limit = Math.min(100, Math.max(1, Number(resultLimit) || 20));
   const body = {}, validAmount = value => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0, validPercent = value => validAmount(value) && Number(value) <= 100;
-  if (titleKeywords.length) body.title_keywords = titleKeywords;
+  if (searchKeywords.length) body.title_keywords = searchKeywords;
   if (validAmount(priceMin) || validAmount(priceMax)) body.sales_price_range = { ...(validAmount(priceMin) ? { amount_ge: String(Number(priceMin)) } : {}), ...(validAmount(priceMax) ? { amount_lt: String(Number(priceMax)) } : {}) };
   if (clean(categoryId, 100)) body.category = { id: clean(categoryId, 100) };
   if (validPercent(commissionPercentMin) || validPercent(commissionPercentMax)) body.commission_rate_range = { ...(validPercent(commissionPercentMin) ? { rate_ge: Math.round(Number(commissionPercentMin) * 100) } : {}), ...(validPercent(commissionPercentMax) ? { rate_lt: Math.round(Number(commissionPercentMax) * 100) } : {}) };
   const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), productsById = new Map();
   let nextPageToken = clean(pageToken, 1000), totalCount = 0;
-  const seenTokens = new Set(); let pages = 0;
+  const seenTokens = new Set(), maxPages = normalizedShopKeyword ? 1 : 10, deadline = Date.now() + (normalizedShopKeyword ? 1e4 : 8e4); let pages = 0;
   do {
+    if (Date.now() >= deadline) break;
     if (seenTokens.has(nextPageToken || "__first__")) break;
     seenTokens.add(nextPageToken || "__first__");
     pages += 1;
-    const data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/open_collaborations/products/search", method: "POST", query: { page_size: String(Math.min(20, limit - productsById.size)), sort_field: normalizedSort, sort_order: sortOrder === "ASC" ? "ASC" : "DESC", ...(nextPageToken ? { page_token: nextPageToken } : {}) }, body }, fetchImpl);
+    const data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/open_collaborations/products/search", method: "POST", query: { page_size: String(Math.min(20, limit - productsById.size)), sort_field: normalizedSort, sort_order: sortOrder === "ASC" ? "ASC" : "DESC", ...(nextPageToken ? { page_token: nextPageToken } : {}) }, body, timeoutMs: normalizedShopKeyword ? 8e3 : 3e4 }, fetchImpl);
     for (const product of (data.products || []).map(normalizeTikTokMarketplaceProduct)) {
       if (normalizedShopKeyword && !product.shop_name.toLocaleLowerCase().includes(normalizedShopKeyword)) continue;
       if (product.product_id && !productsById.has(product.product_id)) productsById.set(product.product_id, product);
     }
     nextPageToken = clean(data.next_page_token, 1000); totalCount = Math.max(totalCount, finiteNumber(data.total_count));
-  } while (productsById.size < limit && nextPageToken && pages < 10);
+  } while (productsById.size < limit && nextPageToken && pages < maxPages);
   const products = [...productsById.values()].slice(0, limit), categories = [...new Map(products.filter(product => product.category_id && product.category_name).map(product => [product.category_id, { id: product.category_id, name: product.category_name }])).values()].sort((left, right) => left.name.localeCompare(right.name, "th"));
   return { products, categories, next_page_token: nextPageToken, total_count: Math.max(0, totalCount) };
 }
