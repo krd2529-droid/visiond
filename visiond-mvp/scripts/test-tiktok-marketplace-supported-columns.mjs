@@ -8,7 +8,7 @@ assert.ok(render, "Marketplace renderer must exist");
 assert.doesNotMatch(render, /<th>สินค้าใหม่<\/th>/);
 assert.doesNotMatch(render, /<th>ราคา<\/th>/);
 assert.doesNotMatch(render, /product\.published_at|marketplacePrice\(product\.price\)/);
-assert.match(render, /colspan="6"/);
-for (const heading of ["สินค้า Open Collaboration", "ร้านค้า", "ขายแล้ว", "ค่าคอม", "เติบโต"]) assert.match(render, new RegExp(`<th>${heading}`));
+assert.match(render, /colspan="7"/);
+for (const heading of ["สินค้า Open Collaboration", "ร้านค้า", "ขายแล้ว", "ค่าคอม", "ความหนาแน่นครีเอเตอร์", "เติบโต"]) assert.match(render, new RegExp(`<th>${heading}`));
 
 console.log("TikTok Marketplace supported columns only: PASS");

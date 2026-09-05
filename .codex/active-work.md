@@ -1,10 +1,11 @@
-# Active patch: Move channel selector above workspace
+# Active patch: Marketplace creator density
 
-- Status: PATCH_DELIVERED
-- Report: the vertical My Channels sidebar consumes width needed by settings and analysis content.
-- Outcome: My Channels becomes a compact full-width selector above the workspace; channel cards flow horizontally; the workspace uses the full content width.
-- Preserve: channel selection/add/delete behavior, active state, settings/analysis tabs, all workspace content, and mobile usability.
-- Acceptance: desktop main is one column; selector precedes workspace; channel cards are horizontal; <=850px stacks selector content without moving it below workspace; layout/mobile/predeploy checks pass.
-- Phase: implemented, tested, pushed, and verified on production.
-- Verification: selector layout PASS; supported columns PASS; related-button style PASS; mobile frontend PASS; predeploy PASS (8 checks, 9 existing environment warnings); diff check clean.
-- Delivery: `adfae984` on `origin/main`; production serves cache key `02058` and the horizontal selector rules.
+- Status: PATCH_READY
+- Report: Marketplace results do not expose TikTok creator participation counts.
+- Outcome: show the API-provided content creator and Showcase creator counts as creator density in each Marketplace row.
+- Preserve: search, filters, snapshots, growth, selection, and Showcase add behavior.
+- Data rule: use only TikTok response fields; never infer missing creator counts.
+- Acceptance: API normalization preserves both counts, the Marketplace table labels and renders them, missing values remain explicit, regression/mobile/predeploy checks pass.
+- Phase: implementation and regression verification complete.
+- Verification: creator-density normalization PASS; Marketplace adversarial PASS; supported columns PASS; horizontal selector PASS; mobile frontend PASS; predeploy PASS (8 checks, 9 existing environment warnings); diff check clean.
+- Delivery: pending.
