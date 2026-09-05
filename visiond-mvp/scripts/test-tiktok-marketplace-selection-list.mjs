@@ -14,6 +14,6 @@ assert.match(api, /sourceKind.*marketplace_selection/);
 assert.match(api, /product_url=CASE WHEN excluded\.product_url<>''/);
 assert.match(api, /datetime\('now','\+3 days'\)/);
 assert.match(html, /tiktok-analyzer\.js\?v=02095/);
-assert.match(html, /tiktok-analyzer\.css\?v=02079/);
+assert.match(html, /tiktok-analyzer\.css\?v=02080/);
 assert.match(css, /\.marketplace-selection-add/);
 console.log("TikTok Marketplace selection-list column and action: PASS");
