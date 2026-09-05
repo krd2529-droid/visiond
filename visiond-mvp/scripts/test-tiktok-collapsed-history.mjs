@@ -6,11 +6,10 @@ const html = read("public/tiktok-analyzer.html");
 const client = read("public/tiktok-analyzer.js");
 const css = read("public/tiktok-analyzer.css");
 
-assert.match(html, /<details id="history" class="history-disclosure" hidden><summary>ดูประวัติการวิเคราะห์<\/summary><div id="runs"><\/div><\/details>/);
-assert.doesNotMatch(html, /<section id="history"/);
-assert.match(client, /\$\("#history"\)\.open = false/);
-assert.match(client, /\$\("#runs"\)\.addEventListener\("click"/);
-assert.match(css, /\.history-disclosure summary/);
+assert.doesNotMatch(html, /id="history"|id="runs"|ดูประวัติการวิเคราะห์/);
+assert.doesNotMatch(client, /\$\("#history"\)|\$\("#runs"\)|data-run/);
+assert.doesNotMatch(css, /history-disclosure|#history/);
+assert.match(client, /if \(data\.runs\[0\]\) renderResult\(data\.runs\[0\]\.result\)/);
 assert.equal(read("VERSION.txt").trim(), "v0.20.49");
 
-console.log("TikTok collapsed analysis history regression: PASS");
+console.log("TikTok hidden analysis history regression: PASS");

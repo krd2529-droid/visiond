@@ -461,15 +461,12 @@ async function selectChannel(id) {
   form.strategy.value = channel.direction || "";
   $("#channelMode").textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E17\u0E33\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49";
   $("#formHeading").textContent = channel.name;
-  $("#history").hidden = false;
-  $("#history").open = false;
   $("#angelInventory").hidden = false;
   $("#angelCount").textContent = `${products.length} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32`;
   $("#angelProducts").innerHTML = products.length ? "ABCDEF".split("").map((type) => {
     const rows = products.filter((product) => (product.product_type || "B") === type);
     return `<section class="product-group type-${type}"><h3><span>${type}</span>${typeLabels[type]} <small>${rows.length} \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23</small></h3>${rows.length ? `<div class="product-table-wrap"><table class="product-table"><thead><tr><th>\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E40\u0E15\u0E47\u0E21</th><th>\u0E40\u0E1E\u0E28\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32</th><th>\u0E0A\u0E48\u0E27\u0E07\u0E2D\u0E32\u0E22\u0E38\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32</th><th>\u0E04\u0E30\u0E41\u0E19\u0E19</th><th>\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19 / \u0E40\u0E2B\u0E15\u0E38\u0E1C\u0E25</th><th>\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th></tr></thead><tbody>${rows.map((product) => `<tr><td class="product-full-name">${escapeHtml(product.name)}</td><td>${escapeHtml(product.customer_gender || "\u0E22\u0E31\u0E07\u0E23\u0E30\u0E1A\u0E38\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49")}</td><td>${escapeHtml(product.customer_age_range || "\u0E22\u0E31\u0E07\u0E23\u0E30\u0E1A\u0E38\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49")}</td><td class="score-cell">${Number(product.score) || 0}/100</td><td>${escapeHtml(product.evidence || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E15\u0E34\u0E21")}</td><td>${product.product_url ? `<a href="${escapeHtml(product.product_url)}" target="_blank" rel="noopener noreferrer">\u0E40\u0E1B\u0E34\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u2197</a>` : "<em>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E25\u0E34\u0E07\u0E01\u0E4C</em>"}</td></tr>`).join("")}</tbody></table></div>` : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19\u0E41\u0E19\u0E27\u0E19\u0E35\u0E49</p>'}</section>`;
   }).join("") : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 A\u2013F \u0E43\u0E19\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49</p>';
-  $("#runs").innerHTML = data.runs.length ? data.runs.map((run) => `<div class="run"><span><b>${escapeHtml(run.title)}</b><small> ${escapeHtml(run.created_at)} \xB7 ${escapeHtml(run.provider)}</small></span><button data-run="${escapeHtml(run.id)}">\u0E40\u0E1B\u0E34\u0E14\u0E1C\u0E25</button></div>`).join("") : "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E23\u0E2D\u0E1A\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C</p>";
   if (data.runs[0]) renderResult(data.runs[0].result);
 }
 function newChannel() {
@@ -479,7 +476,6 @@ function newChannel() {
   form.channel_id.value = "";
   $("#channelMode").textContent = "\u0E0A\u0E48\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
   $("#formHeading").textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0A\u0E48\u0E2D\u0E07\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35";
-  $("#history").hidden = true;
   $("#angelInventory").hidden = true;
   $("#result").hidden = true;
   $("#previews").innerHTML = "";
@@ -845,16 +841,6 @@ $("#channels").addEventListener("click", async (event) => {
     return;
   }
   if (button) { resetMarketplaceView(); selectChannel(button.dataset.id).catch((error) => message.textContent = error.message); }
-});
-$("#runs").addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-run]");
-  if (!button) return;
-  try {
-    const data = await api(`/api/admin/tiktok-analyzer?run_id=${encodeURIComponent(button.dataset.run)}`);
-    renderResult(data.run.result);
-  } catch (error) {
-    message.textContent = error.message;
-  }
 });
 $("#newChannel").addEventListener("click", () => {
   newChannel();
