@@ -64,11 +64,9 @@ function shopDateQuery(channelId = "") {
   return params.toString();
 }
 function setOutputScope(scope) {
-  const channel = scope === "channel", overview = $("#showOverviewOutput");
+  const channel = scope === "channel";
   document.body.classList.toggle("output-channel", channel);
   document.body.classList.toggle("output-overview", !channel);
-  overview.classList.toggle("active", !channel);
-  overview.setAttribute("aria-current", channel ? "false" : "page");
 }
 function setWorkspaceView(view) {
   const output = view === "output";
@@ -94,14 +92,6 @@ $("#showInputView").addEventListener("click", () => {
 $("#showOutputView").addEventListener("click", () => {
   setOutputScope("channel");
   setWorkspaceView("output");
-});
-$("#showOverviewOutput").addEventListener("click", async () => {
-  setOutputScope("overview");
-  setWorkspaceView("output");
-  await loadPortfolioDashboard().catch((error) => {
-    message.textContent = error.message;
-    showToast(error.message, "error");
-  });
 });
 setOutputScope("channel");
 setWorkspaceView("input");
