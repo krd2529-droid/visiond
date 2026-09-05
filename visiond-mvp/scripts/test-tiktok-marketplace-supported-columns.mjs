@@ -3,6 +3,7 @@ import fs from "node:fs";
 
 const client = fs.readFileSync(new URL("../public/tiktok-analyzer.js", import.meta.url), "utf8");
 const render = client.match(/function renderMarketplaceProducts[\s\S]*?\n\}/)?.[0] || "";
+assert.match(client, /const marketplaceCategoryField = \$\("#marketplaceCategory"\)\?\.closest\("label"\);\s*if \(marketplaceCategoryField\) marketplaceCategoryField\.hidden = true;/, "Marketplace category filter must be hidden");
 
 assert.ok(render, "Marketplace renderer must exist");
 assert.doesNotMatch(render, /<th>สินค้าใหม่<\/th>/);

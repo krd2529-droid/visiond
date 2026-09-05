@@ -1285,4 +1285,6 @@ if (oauthStatus) {
 form.remove();
 $(".workspace-switch")?.remove();
 $("#channelShopAnalysis > .result-head")?.remove();
+const marketplaceCategoryField = $("#marketplaceCategory")?.closest("label");
+if (marketplaceCategoryField) marketplaceCategoryField.hidden = true;
 loadChannels();
