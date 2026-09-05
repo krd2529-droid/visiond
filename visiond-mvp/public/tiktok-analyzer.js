@@ -593,7 +593,7 @@ async function loadChannels() {
     const selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected));
     if (!selectedExists) state.selected = state.channels.find((channel) => channel.follower_count !== null && channel.follower_count !== void 0)?.id || state.channels[0]?.id || null;
     renderChannels();
-    if (state.selected) await selectChannel(state.selected);
+    if (state.selected) await selectChannel(state.selected).catch((error) => showToast(error.message || "โหลดข้อมูลช่องไม่สำเร็จ", "error"));
   } catch (error) {
     $("#channels").innerHTML = `<p class="shop-error">${escapeHtml(error.message || "โหลดช่องไม่สำเร็จ")}</p>`;
   }
@@ -617,8 +617,8 @@ async function selectChannel(id) {
   form.channel_name.value = channel.name;
   form.channel_url.value = channel.channel_url || "";
   form.strategy.value = channel.direction || "";
-  $("#channelMode").textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E17\u0E33\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49";
-  $("#formHeading").textContent = channel.name;
+  if ($("#channelMode")) $("#channelMode").textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E17\u0E33\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49";
+  if ($("#formHeading")) $("#formHeading").textContent = channel.name;
   $("#angelInventory").hidden = false;
   $("#angelCount").textContent = `${products.length} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32`;
   $("#angelProducts").innerHTML = products.length ? ["A", "B", "C", "D", "E", "F", ""].map((type) => {
@@ -633,11 +633,11 @@ function newChannel() {
   form.classList.remove("existing-channel");
   form.reset();
   form.channel_id.value = "";
-  $("#channelMode").textContent = "\u0E0A\u0E48\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
-  $("#formHeading").textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0A\u0E48\u0E2D\u0E07\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35";
+  if ($("#channelMode")) $("#channelMode").textContent = "\u0E0A\u0E48\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
+  if ($("#formHeading")) $("#formHeading").textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0A\u0E48\u0E2D\u0E07\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35";
   $("#angelInventory").hidden = true;
   $("#result").hidden = true;
-  $("#previews").innerHTML = "";
+  if ($("#previews")) $("#previews").innerHTML = "";
   renderChannels();
 }
 function list(values, render) {

@@ -1,8 +1,8 @@
-# Active patch: Restore channel list after direct entry
+# Active patch: Remove stale form references after direct entry
 
-- Event: PATCH_DELIVERED
-- Outcome: รายการช่องเดิมต้องแสดงหลังโหลดหน้าโดยไม่ค้างที่ “กำลังโหลด…”
+- Event: PATCH_READY
+- Outcome: ช่องเดิมต้องคงแสดงโดยไม่มีข้อความแดงจาก form ที่ถูกลบ
 - Preserve: เข้าแผงจัดการสินค้าตรง; ไม่มีแถบ 1/2; + ช่องใหม่เปิด TikTok OAuth
-- Acceptance: loadChannels วาดรายการได้หลัง analysisForm ถูกลบ; error แสดงในพื้นที่ที่ยังอยู่บนหน้า; production แสดงช่องเดิม
-- Phase: deployed as 9bb69482; production asset 02103 verified and loading state resolves
+- Acceptance: selectChannel/newChannel ไม่แตะ element ที่ถูกลบ; ความผิดพลาดโหลดรายละเอียดไม่ลบการ์ดช่อง; production ไม่มี null textContent error
+- Phase: stale references removed and regression suite passed; ready to deploy
 - Files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, public/tiktok-analyzer.html, tests

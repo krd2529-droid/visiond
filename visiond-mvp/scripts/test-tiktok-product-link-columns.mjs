@@ -16,7 +16,7 @@ assert.ok((client.match(/productLinkControl\(/g) || []).length >= 6, "all produc
 assert.match(client, /upgradeLegacyProductLinkCells\(\$\("#angelProducts"\)\)/);
 assert.match(client, /upgradeLegacyProductLinkCells\(\$\("#result"\)\)/);
 assert.match(css, /\.copy-product-link\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02103/);
+assert.match(html, /tiktok-analyzer\.js\?v=02104/);
 assert.match(html, /tiktok-analyzer\.css\?v=02084/);
 
 console.log("TikTok product-link copy column across product tables: PASS");

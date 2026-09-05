@@ -16,12 +16,16 @@ assert.match(client, /location\.assign\("\/api\/tiktok\/connect\?create=1"\)/);
 assert.match(client, /form\.remove\(\)/);
 assert.match(client, /const aiState = \$\("#aiState"\);\s*if \(aiState\) aiState\.textContent/, "removed setup form must not block channel rendering");
 assert.match(client, /\$\("#channels"\)\.innerHTML = `<p class="shop-error">/, "channel-load errors must remain visible after the setup form is removed");
+assert.match(client, /selectChannel\(state\.selected\)\.catch\(\(error\) => showToast/, "detail-load failures must not replace the channel list");
+assert.match(client, /if \(\$\("#channelMode"\)\)/, "removed channel-mode label must be optional");
+assert.match(client, /if \(\$\("#formHeading"\)\)/, "removed form heading must be optional");
+assert.match(client, /if \(\$\("#previews"\)\)/, "removed preview area must be optional");
 assert.match(css, /#analysisForm\{display:none!important\}/);
 assert.doesNotMatch(css, /\.tiktok-login-only/);
 assert.match(connect, /createNew=url\.searchParams\.get\('create'\)==='1'/);
 assert.match(callback, /async function channelForProfile/);
 assert.match(callback, /channelId=await channelForProfile/);
-assert.match(html, /tiktok-analyzer\.js\?v=02103/);
+assert.match(html, /tiktok-analyzer\.js\?v=02104/);
 assert.match(html, /tiktok-analyzer\.css\?v=02084/);
 
 console.log("TikTok direct product-management entry with + channel OAuth: PASS");
