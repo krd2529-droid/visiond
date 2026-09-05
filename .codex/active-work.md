@@ -1,9 +1,10 @@
-# Active patch: Remove unsupported Marketplace columns
+# Active patch: Move channel selector above workspace
 
-- Status: PATCH_DELIVERED
-- Report: Marketplace displays Price and New Product columns even when TikTok does not provide reliable values, leaving misleading empty cells.
-- Outcome: remove the two unsupported display columns and correctly size empty-result rows.
-- Preserve: price range filters sent to TikTok, product selection, shop, sales, commission, growth, pagination, and Showcase add flow.
-- Acceptance: Marketplace renderer contains neither column/cell; empty-state colspan is six; focused Marketplace, mobile, and predeploy checks pass.
-- Phase: implementation, supported-column, Marketplace UI/adversarial, responsive, syntax, mobile, predeploy, deployment, and production asset checks pass.
-- Delivery: commit `ce3745ef` pushed to `origin/main`; production serves the six-column Marketplace table through `tiktok-analyzer.js?v=02057` (verified 2026-09-05).
+- Status: PATCH_READY
+- Report: the vertical My Channels sidebar consumes width needed by settings and analysis content.
+- Outcome: My Channels becomes a compact full-width selector above the workspace; channel cards flow horizontally; the workspace uses the full content width.
+- Preserve: channel selection/add/delete behavior, active state, settings/analysis tabs, all workspace content, and mobile usability.
+- Acceptance: desktop main is one column; selector precedes workspace; channel cards are horizontal; <=850px stacks selector content without moving it below workspace; layout/mobile/predeploy checks pass.
+- Phase: implementation and regression checks complete.
+- Verification: selector layout PASS; supported columns PASS; related-button style PASS; mobile frontend PASS; predeploy PASS (8 checks, 9 existing environment warnings); diff check clean.
+- Delivery: pending.

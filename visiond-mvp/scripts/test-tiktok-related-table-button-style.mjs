@@ -9,6 +9,6 @@ assert.match(css, /\.related-table-controls button\{[^}]*min-height:42px[^}]*pad
 assert.match(css, /\.related-table-controls button:hover\{background:#e7faf8\}/);
 assert.match(css, /\.related-table-controls button:disabled\{opacity:\.55;cursor:wait\}/);
 assert.equal((css.match(/\.marketplace-filters>div\{grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/g) || []).length, 1);
-assert.match(html, /tiktok-analyzer\.css\?v=02054/);
+assert.match(html, /tiktok-analyzer\.css\?v=\d+/);
 
 console.log("TikTok related-table button theme regression: PASS");
