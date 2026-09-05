@@ -1,9 +1,10 @@
-# Active patch: Per-product Showcase actions
+# Active patch: TikTok Marketplace category dictionary
 
-- Status: CLOSED
-- Report: angel-product results only have checkboxes and a bulk action whose label changes to a permission check, so the intended action is unclear.
-- Outcome: add an explicit "เพิ่มเข้า Showcase" action to every product row and keep the bulk action wording stable.
-- Preserve: selection checkboxes, bulk add, shop-search isolation, real TikTok permission enforcement, pagination, and result data.
-- Acceptance: every product row has an add button; a permitted click adds only that product; missing permission explains the Partner Center requirement without renaming the action; bulk selection remains functional.
-- Phase: implementation complete; per-row, bulk, permission, adversarial, mobile, and predeploy checks passed.
-- Delivery: committed as 47eb39b8, pushed to origin/main, and verified on production.
+- Status: ACTIVE
+- Requested outcome: show selectable TikTok category names mapped from real category IDs already returned by Creator Marketplace data.
+- Remove: background Marketplace scan of up to 100 products used only to discover categories.
+- Preserve: category filtering by TikTok category ID, normal Marketplace search, shop search isolation, authorization boundaries.
+- Acceptance: category chains normalize to ID/name; cached Marketplace and Showcase payloads populate the selector without an external product scan; options visibly include the category ID; new search results extend the selector.
+- Likely files: TikTok Shop API normalizer, Marketplace endpoint, analyzer client, regression tests.
+- Phase: implementation complete; category-chain, stored dictionary, Marketplace search, separated search, mobile frontend, and predeploy checks passed.
+- Delivery: test, commit relevant files, push origin/main, verify production.

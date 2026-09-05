@@ -41,7 +41,7 @@ const canWriteShowcase = connection => { const scopes = connectionScopes(connect
 const commissionRate = product => finiteNumber(product.commission_rate ?? product.commission?.rate ?? product.standard_commission_rate);
 const marketplacePrice = product => { const value = product.sales_price || product.sale_price || product.price; if (!value || typeof value !== "object") return value || null; if (value.minimum_amount !== undefined || value.maximum_amount !== undefined) return { minimum_amount: clean(value.minimum_amount, 80), maximum_amount: clean(value.maximum_amount, 80), currency: clean(value.currency, 20) }; return money(value) || value; };
 const marketplaceCategory = product => {
-  const source = product.category || product.product_category || product.category_info || {}, category = Array.isArray(source) ? source.at(-1) || {} : source;
+  const source = product.category_chains || product.category || product.product_category || product.category_info || {}, category = Array.isArray(source) ? source.at(-1) || {} : source;
   return { id: clean(category.id || category.category_id, 100), name: clean(category.local_name || category.name || category.category_name, 300) };
 };
 const normalizeTikTokMarketplaceProduct = product => {

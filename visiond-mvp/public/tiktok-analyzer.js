@@ -301,7 +301,7 @@ function renderMarketplaceCategories(categories = []) {
     if (id && name) merged.set(id, { id, name });
   }
   state.marketplaceCategories = [...merged.values()].sort((left, right) => left.name.localeCompare(right.name, "th"));
-  select.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + state.marketplaceCategories.map(category => '<option value="' + escapeHtml(category.id) + '"' + (category.id === selected ? " selected" : "") + '>' + escapeHtml(category.name) + '</option>').join("");
+  select.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + state.marketplaceCategories.map(category => '<option value="' + escapeHtml(category.id) + '"' + (category.id === selected ? " selected" : "") + '>' + escapeHtml(category.name) + ' · รหัส ' + escapeHtml(category.id) + '</option>').join("");
 }
 async function loadMarketplaceCategories() {
   const connection = state.shopConnection, select = $("#marketplaceCategory");
@@ -311,11 +311,11 @@ async function loadMarketplaceCategories() {
   select.disabled = true;
   select.innerHTML = '<option value="">กำลังโหลดหมวดหมู่จาก TikTok…</option>';
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: connection.id, categories_only: true, result_limit: 100, sort_field: "units_sold", sort_order: "DESC" }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: connection.id, categories_only: true }) });
     if (state.shopConnection?.id !== connection.id) return;
     state.marketplaceCategoriesForConnection = connection.id;
     renderMarketplaceCategories(data.categories || []);
-    select.title = data.categories?.length ? `พบ ${data.categories.length} หมวดจากสินค้า Marketplace ${data.scanned_product_count || 0} รายการ` : "TikTok ยังไม่ส่งชื่อหมวดหมู่มา";
+    select.title = data.categories?.length ? `พบ ${data.categories.length} หมวดหมู่จากรหัสที่ TikTok ส่งมา` : "ยังไม่มีรหัสหมวดหมู่จากข้อมูล TikTok ที่เคยค้นหา";
   } catch (error) {
     if (state.shopConnection?.id === connection.id) {
       renderMarketplaceCategories();

@@ -2,10 +2,19 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { normalizeTikTokMarketplaceProduct, searchTikTokShopOpenCollaborationProducts, tikTokMarketplaceGrowth } from "../functions/_tiktok_shop_api.js";
 import { encryptChannelValue } from "../functions/_channel_crypto.js";
+import { categoriesFromStoredProducts } from "../functions/api/admin/tiktok-connections/marketplace.js";
 
 const product = normalizeTikTokMarketplaceProduct({ id: "p1", title: "สินค้าเปิดคอลแลบ", units_sold: 150, commission_rate: 1200, main_image_url: "https://example.test/p1.jpg", detail_link: "https://example.test/p1", sales_price: { amount: "299", currency: "THB" }, category: { id: "601755", local_name: "ของเล่นและงานอดิเรก" } });
 assert.equal(product.product_id, "p1"); assert.equal(product.name, "สินค้าเปิดคอลแลบ"); assert.equal(product.units_sold, 150); assert.equal(product.commission_rate, 1200);
 assert.equal(product.category_id, "601755"); assert.equal(product.category_name, "ของเล่นและงานอดิเรก");
+const chainedCategory = normalizeTikTokMarketplaceProduct({ id: "p2", title: "สินค้ามีสายหมวดหมู่", category_chains: [{ id: "root", local_name: "หมวดหลัก" }, { id: "leaf-42", local_name: "หมวดปลายทาง" }] });
+assert.equal(chainedCategory.category_id, "leaf-42"); assert.equal(chainedCategory.category_name, "หมวดปลายทาง");
+assert.deepEqual(categoriesFromStoredProducts([
+  { raw_json: JSON.stringify({ id: "one", category_chains: [{ id: "leaf-42", local_name: "หมวดปลายทาง" }] }) },
+  { raw_json: "not-json" },
+  { raw_json: JSON.stringify({ id: "two", category: { id: "601755", local_name: "ของเล่นและงานอดิเรก" } }) },
+  { raw_json: JSON.stringify({ id: "duplicate", category_chains: [{ id: "leaf-42", local_name: "หมวดปลายทาง" }] }) }
+]), [{ id: "601755", name: "ของเล่นและงานอดิเรก" }, { id: "leaf-42", name: "หมวดปลายทาง" }]);
 assert.deepEqual(normalizeTikTokMarketplaceProduct({ id: "range", title: "ช่วงราคา", sales_price: { minimum_amount: "99", maximum_amount: "199", currency: "THB" } }).price, { minimum_amount: "99", maximum_amount: "199", currency: "THB" });
 assert.deepEqual(tikTokMarketplaceGrowth(150, 100), { latest: 150, previous: 100, change: 50, growth_percent: 50 });
 assert.deepEqual(tikTokMarketplaceGrowth(5, null), { latest: 5, previous: null, change: null, growth_percent: null });
@@ -25,5 +34,6 @@ assert.match(helper, /\/affiliate_creator\/202405\/open_collaborations\/products
 for (const contract of [/sales_price_range/, /category = \{ id:/, /commission_rate_range/, /commissionPercentMin\) \* 100/, /Math\.min\(100/, /seenTokens/, /productsById = new Map/]) assert.match(helper, contract);
 assert.doesNotMatch(helper.match(/async function searchTikTokShopOpenCollaborationProducts[\s\S]*?\n\}/)?.[0] || "", /showcases\/products/);
 assert.match(endpoint, /user_id=\?/); assert.match(endpoint, /source: "open_collaboration_marketplace"/); assert.match(endpoint, /\[3, 7, 14, 30\]/); assert.match(endpoint, /prior\.snapshot_date<=date\('now',\?\)/); assert.match(endpoint, /ORDER BY prior\.snapshot_date DESC/); assert.match(endpoint, /ON CONFLICT\(connection_id,product_id,snapshot_date\) DO UPDATE/);
+assert.match(endpoint, /source: "stored_tiktok_category_ids"/); assert.match(endpoint, /tiktok_shop_marketplace_snapshots/); assert.match(endpoint, /tiktok_shop_showcase_products/); assert.match(endpoint, /categoriesFromStoredProducts/);
 assert.match(schema, /snapshot_date TEXT NOT NULL/); assert.match(migration, /UNIQUE\(connection_id,product_id,snapshot_date\)/); assert.match(migration, /idx_tiktok_shop_marketplace_snapshot_latest/);
 console.log("TikTok Open Collaboration marketplace search and snapshot growth: PASS");
