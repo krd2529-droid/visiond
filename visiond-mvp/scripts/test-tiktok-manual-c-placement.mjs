@@ -12,6 +12,6 @@ assert.doesNotMatch(html, /<section id="angelInventory"[\s\S]*?<form id="manualC
 assert.match(client, /\$\("#manualCForm"\)\.addEventListener\("submit"/);
 assert.match(client, /button\.dataset\.setC = productName/);
 assert.match(client, /button\.dataset\.productScore = "0"/);
-assert.match(html, /tiktok-analyzer\.js\?v=02083/);
+assert.match(html, /tiktok-analyzer\.js\?v=02084/);
 
 console.log("TikTok manual C placement regression: PASS");

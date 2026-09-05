@@ -6,6 +6,6 @@ const client = fs.readFileSync(new URL("../public/tiktok-analyzer.js", import.me
 
 assert.doesNotMatch(html, /id=["']confidence["']/);
 assert.doesNotMatch(client, /#confidence|ความมั่นใจ/);
-assert.match(html, /tiktok-analyzer\.js\?v=02083/);
+assert.match(html, /tiktok-analyzer\.js\?v=02084/);
 
 console.log("TikTok analysis confidence display removal: PASS");
