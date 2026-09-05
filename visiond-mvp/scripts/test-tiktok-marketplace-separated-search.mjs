@@ -41,7 +41,7 @@ assert.match(client, /<th>รูปและสินค้า<\/th><th>ร้�
 assert.match(client, /mode === "shop" \? `ข้อมูลสินค้าจาก TikTok/);
 assert.doesNotMatch(shopPayload,/creator_count|growth|snapshot/);
 assert.match(api,/if\(shopSearch\)return json\(\{ok:true,source:"open_collaboration_shop_products",\.\.\.result\}/);
-assert.match(html, /tiktok-analyzer\.js\?v=02084/);
+assert.match(html, /tiktok-analyzer\.js\?v=02085/);
 assert.match(html, /tiktok-analyzer\.css\?v=02076/);
 
 console.log("TikTok Marketplace separated product/shop search: PASS");

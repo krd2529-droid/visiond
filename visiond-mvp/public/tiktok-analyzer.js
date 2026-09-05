@@ -411,13 +411,15 @@ async function searchMarketplace(mode = "product", pageToken = "") {
     pageToken = mode;
     mode = "product";
   }
-  if (!state.shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
-  if (!state.shopConnection.capabilities?.can_search_marketplace) throw new Error("บัญชี Creator ยังไม่มีสิทธิ์ค้นหา Open Collaboration กรุณาเชื่อมและอนุญาตสิทธิ์ใหม่");
+  let shopConnection = state.shopConnection && String(state.shopConnection.channel_id) === String(state.selected) ? state.shopConnection : null;
+  if (!shopConnection && state.selected) shopConnection = await loadTikTokConnection();
+  if (!shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
+  if (!shopConnection.capabilities?.can_search_marketplace) throw new Error("บัญชี Creator ยังไม่มีสิทธิ์ค้นหา Open Collaboration กรุณาเชื่อมและอนุญาตสิทธิ์ใหม่");
   const view = marketplaceView(mode), buttons = view.form.querySelectorAll(".marketplace-search-button"), nextButton = $(mode === "shop" ? "#marketplaceShopNext" : "#marketplaceNext"), shopMode = mode === "shop";
   buttons.forEach(button => button.disabled = true);
   if (nextButton) nextButton.disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: state.shopConnection.id, channel_id: state.selected, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken } : { connection_id: state.shopConnection.id, channel_id: state.selected, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 3 }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: shopConnection.id, channel_id: state.selected, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken } : { connection_id: shopConnection.id, channel_id: state.selected, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 3 }) });
     const prefix = shopMode ? "shopMarketplace" : "marketplace";
     state[`${prefix}Products`] = data.products || [];
     state[`${prefix}NextToken`] = data.next_page_token || "";
@@ -581,12 +583,12 @@ async function loadTikTokConnection() {
   const box = $("#tiktokConnection");
   if (!state.selected) {
     box.hidden = true;
-    return;
+    return null;
   }
   box.hidden = false;
   const requestedChannelId=state.selected,loadSeq=++state.connectionLoadSeq;
   const data = await api(`/api/admin/tiktok-connections?${shopDateQuery(requestedChannelId)}`);
-  if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return;
+  if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return null;
   const connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
   state.connection = connection;
   state.shopConnection = shopConnection;
@@ -609,15 +611,16 @@ async function loadTikTokConnection() {
   $("#soldProductsData").innerHTML = shopConnection ? shopRangeSummary(data, products, orders) : '<p class="hint">เชื่อม TikTok Shop เพื่อโหลดสินค้าที่ขายได้และออเดอร์</p>';
   if (!data.configured && !connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
-    return;
+    return shopConnection;
   }
   if (!connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E17\u0E32\u0E07\u0E01\u0E32\u0E23\u0E08\u0E32\u0E01 TikTok</b><p>\u0E14\u0E36\u0E07\u0E42\u0E1B\u0E23\u0E44\u0E1F\u0E25\u0E4C \u0E2A\u0E16\u0E34\u0E15\u0E34 \u0E41\u0E25\u0E30\u0E27\u0E34\u0E14\u0E35\u0E42\u0E2D\u0E2A\u0E32\u0E18\u0E32\u0E23\u0E13\u0E30\u0E02\u0E2D\u0E07\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E17\u0E35\u0E48\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E43\u0E0A\u0E49\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49</p>";
     $("#tiktokVideoSummary").innerHTML = "";
-    return;
+    return shopConnection;
   }
   $("#tiktokConnectionState").innerHTML = `<b>เชื่อมบัญชี TikTok ของช่องนี้แล้ว</b><p>ข้อมูลโปรไฟล์และสถิติแสดงอยู่ในการ์ดช่องด้านซ้าย · ซิงก์ล่าสุด ${escapeHtml(connection.last_synced_at || "ยังไม่เคย")}</p>`;
   $("#tiktokVideoSummary").innerHTML = `<p>\u0E19\u0E33\u0E40\u0E02\u0E49\u0E32\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E04\u0E25\u0E34\u0E1B\u0E41\u0E25\u0E49\u0E27 ${videos.length} \u0E04\u0E25\u0E34\u0E1B \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E43\u0E0A\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19\u0E43\u0E19\u0E01\u0E32\u0E23\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C</p>`;
+  return shopConnection;
 }
 const renderResultMonthlyCorrectionBase = renderResult;
 renderResult = function(result = {}) {
@@ -847,6 +850,7 @@ $("#productReviewSchedule").addEventListener("click", (event) => {
 });
 const selectChannelBase = selectChannel;
 selectChannel = async function(id) {
+  state.shopConnection = null;
   await selectChannelBase(id);
   const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`);
   state.inventoryProducts = inventory.products || [];

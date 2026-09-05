@@ -1,10 +1,9 @@
-# Active patch: Visible multi-channel selector
+# Active patch: Connected Marketplace search guard
 
-- Event: PATCH_DELIVERED
-- Outcome: แสดงการ์ดหลายช่องในบล็อกช่องของฉัน และมีแถบเลือกช่องที่ชัดเจนในหน้าวิเคราะห์
-- Acceptance: แถบสร้างจากช่องที่เชื่อมแล้ว; ระบุช่องที่กำลังดู; เลือกแล้วเปลี่ยนข้อมูลทั้งหน้า; รองรับหลายช่องและจอเล็ก; การ์ดเดิมยังกดได้
-- Phase: deployed
-- Likely files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, tests
-- Verification: JS syntax PASS; visible picker PASS; horizontal multi-card layout PASS; nine-queue contract PASS; one-card-one-channel isolation PASS
-- Delivery: commit 142e7463 pushed to origin/main; production serves the channel picker JS and CSS
-- Next: owner connects channel 2 and verifies switching between both channel tabs
+- Event: PATCH_READY
+- Outcome: ช่องที่เชื่อม TikTok Shop แล้วต้องค้นหาชื่อร้านและสินค้านางฟ้าได้ โดยไม่แจ้งผิดว่ายังไม่เชื่อม
+- Preserve: หนึ่งการ์ดต่อหนึ่งช่อง; ทุกคำขอใช้ connection ของช่องที่เลือกเท่านั้น; ช่องที่ไม่ได้เชื่อมยังต้องถูกบล็อก
+- Acceptance: ปุ่มค้นหารอสถานะ connection ของช่องที่เลือก; โหลดซ้ำก่อนตัดสินว่าไม่เชื่อม; ไม่ใช้ connection เก่าจากช่องอื่น; ทั้งการค้นหาร้านและค้นหาสินค้าใช้กติกาเดียวกัน
+- Phase: implementation complete, verification passed
+- Likely files: public/tiktok-analyzer.js, public/tiktok-analyzer.html, scripts/test-tiktok-marketplace-connection-guard.mjs
+- Verification: JS syntax PASS; selected-channel connection guard PASS; separated shop/product search PASS; one-card-one-channel binding and isolation PASS; Showcase readiness PASS
