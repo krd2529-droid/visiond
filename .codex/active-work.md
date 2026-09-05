@@ -1,8 +1,8 @@
-# Active patch: Rename product ranking list
+# Active patch: Show data dates in sold-products heading
 
-- Status: PATCH_DELIVERED
-- Outcome: rename the visible heading `Ranking สินค้า 40 รายการ` to `ลิสคัดสินค้าของฉัน`.
-- Preserve: ranking rules, grades, product data, and table behavior.
-- Acceptance: old heading is absent, new heading is visible, visible version parity passes, production serves the new heading.
-- Phase: rename, regression, visible-version, predeploy, push, and production verification complete.
-- Delivery: commit `60106414`, production verified on 2026-09-05; visible build remains `v0.20.49` because this is a text-only correction.
+- Status: PATCH_READY
+- Outcome: show the selected `from` and `to` dates directly in the sold-products table heading.
+- Preserve: date filter, order aggregation, grades, and product rows.
+- Acceptance: heading reflects API `date_range`, uses readable DD/MM/YYYY, and updates after the date filter reloads.
+- Phase: implementation and focused regression gates pass; commit/push and production verification in progress.
+- Delivery: pending.
