@@ -33,7 +33,7 @@ async function activeTikTokShopToken(env, connection, fetchImpl = fetch) {
   await env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET access_token_ciphertext=?,refresh_token_ciphertext=?,scopes=?,access_expires_at=?,refresh_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(await encryptChannelValue(env, access), await encryptChannelValue(env, token.refresh_token || refresh), refreshedScopes, expiryIso(token.access_token_expire_in), expiryIso(token.refresh_token_expire_in), connection.id).run();
   return { config, access };
 }
-const productId = (p) => clean(p.product_id || p.id, 100), productName = (p) => clean(p.product_name || p.title || p.name, 500), imageUrl = (p) => clean(p.main_image_url || p.image_url || p.main_images?.[0]?.url || p.main_images?.[0]?.url_list?.[0] || p.images?.[0]?.url || p.images?.[0]?.urls?.[0] || p.product_images?.[0]?.url || p.product_images?.[0]?.url_list?.[0] || p.main_image?.url || p.main_image?.url_list?.[0] || p.product_image?.url || p.product_image?.url_list?.[0] || p.image?.url || p.image?.url_list?.[0] || p.cover?.url || p.product?.main_image_url || p.product?.image?.url || p.product?.image?.url_list?.[0], 1500), money = (v) => v && typeof v === "object" ? { amount: clean(v.amount, 80), currency: clean(v.currency, 20), rate: Number(v.rate) || void 0 } : null;
+const productId = (p) => clean(p?.product_id || p?.id || p?.product?.product_id || p?.product?.id, 100), productName = (p) => clean(p?.product_name || p?.title || p?.name || p?.product?.product_name || p?.product?.title || p?.product?.name, 500), imageUrl = (p) => clean(p?.main_image_url || p?.image_url || p?.main_images?.[0]?.url || p?.main_images?.[0]?.url_list?.[0] || p?.images?.[0]?.url || p?.images?.[0]?.urls?.[0] || p?.product_images?.[0]?.url || p?.product_images?.[0]?.url_list?.[0] || p?.main_image?.url || p?.main_image?.url_list?.[0] || p?.product_image?.url || p?.product_image?.url_list?.[0] || p?.image?.url || p?.image?.url_list?.[0] || p?.cover?.url || p?.product?.main_image_url || p?.product?.image_url || p?.product?.image?.url || p?.product?.image?.url_list?.[0], 1500), money = (v) => v && typeof v === "object" ? { amount: clean(v.amount, 80), currency: clean(v.currency, 20), rate: Number(v.rate) || void 0 } : null;
 const finiteNumber = value => { const number = Number(value); return Number.isFinite(number) ? number : 0; };
 const optionalNonNegativeNumber = value => value === null || value === undefined || value === "" ? null : Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : null;
 const connectionScopes = connection => new Set(String(connection?.scopes || "").split(",").map(scope => scope.trim()).filter(Boolean));
@@ -49,7 +49,22 @@ const normalizeTikTokMarketplaceProduct = product => {
   return { product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), shop_name: clean(shop.name || shop.shop_name || product.shop_name || product.seller_name, 300), published_at: published, units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), content_creator_count: optionalNonNegativeNumber(product.content_creator_count ?? collaboration.content_creator_count), showcase_creator_count: optionalNonNegativeNumber(product.showcase_creator_count ?? collaboration.showcase_creator_count), price: marketplacePrice(product), category_id: category.id, category_name: category.name, raw_json: JSON.stringify(product) };
 };
 const tikTokMarketplaceGrowth = (current, previous) => { const latest = Math.max(0, finiteNumber(current)), prior = previous === null || previous === undefined ? null : Math.max(0, finiteNumber(previous)); return { latest, previous: prior, change: prior === null ? null : latest - prior, growth_percent: prior === null ? null : prior > 0 ? (latest - prior) / prior * 100 : latest > 0 ? null : 0 }; };
-const skuRows = (order) => Array.isArray(order.skus) ? order.skus : Array.isArray(order.products) ? order.products : Array.isArray(order.product_list) ? order.product_list : [], firstMoney = (row, names) => names.map((name) => money(row?.[name])).find((value) => value?.amount), sumMoney = (rows, names) => {
+const skuRows = (order) => Array.isArray(order?.skus) ? order.skus : Array.isArray(order?.products) ? order.products : Array.isArray(order?.product_list) ? order.product_list : [];
+const normalizeTikTokOrderProducts = (order) => {
+  if (typeof order === "string") {
+    try { order = JSON.parse(order); } catch { return []; }
+  }
+  if (!order || typeof order !== "object") return [];
+  const rows = [...skuRows(order), ...(Array.isArray(order._visiond_products) ? order._visiond_products : []), ...(order.product_id ? [order] : [])], byId = new Map();
+  for (const row of rows) {
+    const id = productId(row);
+    if (!id) continue;
+    const detail = { product_id: id, name: productName(row), image_url: imageUrl(row) }, current = byId.get(id);
+    if (!current || (!current.name && detail.name) || (!current.image_url && detail.image_url)) byId.set(id, { ...current, ...detail, name: detail.name || current?.name || "", image_url: detail.image_url || current?.image_url || "" });
+  }
+  return [...byId.values()];
+};
+const firstMoney = (row, names) => names.map((name) => money(row?.[name])).find((value) => value?.amount), sumMoney = (rows, names) => {
   const values = rows.map((row) => firstMoney(row, names)).filter(Boolean), currencies = [...new Set(values.map((x) => x.currency).filter(Boolean))];
   if (!values.length || currencies.length > 1) return null;
   return { amount: values.reduce((sum, x) => sum + (Number(x.amount) || 0), 0).toFixed(2), currency: currencies[0] || "" };
@@ -86,9 +101,30 @@ async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase =
     orderToken = clean(data.next_page_token);
     if (!orderToken) break;
   }
+  const orderProductsById = new Map(showcase.filter(productId).map((product) => [productId(product), { product_id: productId(product), name: productName(product), image_url: imageUrl(product) }]));
+  for (const order of orders) for (const product of normalizeTikTokOrderProducts(order)) {
+    const current = orderProductsById.get(product.product_id);
+    if (!current || (!current.name && product.name) || (!current.image_url && product.image_url)) orderProductsById.set(product.product_id, { ...current, ...product, name: product.name || current?.name || "", image_url: product.image_url || current?.image_url || "" });
+  }
+  const unresolvedOrderProductIds = [...orderProductsById.values()].filter((product) => !product.name).map((product) => product.product_id);
+  if (unresolvedOrderProductIds.length && connectionScopes(connection).has("creator.affiliate_collaboration.read")) {
+    for (let index = 0; index < unresolvedOrderProductIds.length; index += 50) {
+      try {
+        const data = await call({ path: "/affiliate_creator/202509/open_collaborations/products", method: "POST", query: { product_ids: unresolvedOrderProductIds.slice(index, index + 50).join(",") }, body: {} });
+        for (const detail of data.products || []) {
+          const id = productId(detail);
+          if (id) orderProductsById.set(id, { product_id: id, name: productName(detail), image_url: imageUrl(detail) });
+        }
+      } catch (error) {
+        console.warn("TIKTOK_ORDER_PRODUCT_ENRICHMENT_FAILED", { code: clean(error?.message, 160) });
+        break;
+      }
+    }
+  }
   const oldGrades = new Map(((await env.DB.prepare("SELECT product_id,product_grade FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(connection.id).all()).results || []).map((x) => [String(x.product_id), x.product_grade])), statements = [env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET creator_username=?,creator_avatar_url=?,selection_region=?,profile_json=?,last_synced_at=CURRENT_TIMESTAMP,last_sync_error='',updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(clean(profile.username, 300), clean(profile.avatar?.url, 1500), clean(profile.selection_region, 30), JSON.stringify(profile), connection.id), ...(syncShowcase?[env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(connection.id), ...showcase.filter(productId).map((p, i) => env.DB.prepare(`INSERT INTO tiktok_shop_showcase_products(connection_id,product_id,name,image_url,product_url,origin,price_json,commission_json,sort_order,raw_json,product_grade) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(connection.id, productId(p), productName(p), imageUrl(p), clean(p.detail_link || p.product_url || p.share_url, 1500), clean(p.origin, 30), JSON.stringify(money(p.sales_price) || money(p.price) || p.sales_price || p.price || null), JSON.stringify(money(p.commission) || p.commission || null), i, JSON.stringify(p), oldGrades.get(productId(p)) || "B"))]:[]), ...orders.filter((o) => clean(o.order_id || o.id, 100)).map((o) => {
     const rows = skuRows(o), ids = rows.map(productId).filter(Boolean).concat(o.product_id ? [clean(o.product_id, 100)] : []), gmv = money(o.gmv) || sumMoney(rows, ["actual_commission_base", "estimated_commission_base", "price"]), commission = money(o.commission) || sumMoney(rows, ["actual_paid_commission", "actual_commission", "estimated_paid_commission", "estimated_commission"]);
-    return env.DB.prepare(`INSERT INTO tiktok_shop_affiliate_orders(connection_id,order_id,create_time,product_ids,status,gmv_json,commission_json,raw_json,synced_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(connection_id,order_id) DO UPDATE SET create_time=excluded.create_time,product_ids=excluded.product_ids,status=excluded.status,gmv_json=excluded.gmv_json,commission_json=excluded.commission_json,raw_json=excluded.raw_json,synced_at=CURRENT_TIMESTAMP`).bind(connection.id, clean(o.order_id || o.id, 100), Number(o.create_time) || 0, JSON.stringify([...new Set(ids)]), clean(o.status, 80), JSON.stringify(gmv), JSON.stringify(commission), JSON.stringify(o));
+    const uniqueIds = [...new Set(ids)], resolvedProducts = uniqueIds.map((id) => orderProductsById.get(id)).filter(Boolean);
+    return env.DB.prepare(`INSERT INTO tiktok_shop_affiliate_orders(connection_id,order_id,create_time,product_ids,status,gmv_json,commission_json,raw_json,synced_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(connection_id,order_id) DO UPDATE SET create_time=excluded.create_time,product_ids=excluded.product_ids,status=excluded.status,gmv_json=excluded.gmv_json,commission_json=excluded.commission_json,raw_json=excluded.raw_json,synced_at=CURRENT_TIMESTAMP`).bind(connection.id, clean(o.order_id || o.id, 100), Number(o.create_time) || 0, JSON.stringify(uniqueIds), clean(o.status, 80), JSON.stringify(gmv), JSON.stringify(commission), JSON.stringify({ ...o, _visiond_products: resolvedProducts }));
   })];
   for (let i = 0; i < statements.length; i += 50) await env.DB.batch(statements.slice(i, i + 50));
   return { profile, showcaseCount: showcase.length, orderCount: orders.length, days: Math.min(90, Math.max(1, Number(days) || 30)) };
@@ -145,6 +181,7 @@ export {
   searchTikTokShopOpenCollaborationProducts,
   syncTikTokShopCreator,
   normalizeTikTokMarketplaceProduct,
+  normalizeTikTokOrderProducts,
   tikTokMarketplaceGrowth,
   tikTokShopRequest,
   tikTokShopSign

@@ -148,13 +148,17 @@ function shopSalesGrade(sales) {
 }
 function soldProductSummaryTable(products, orders) {
   const byId = new Map(products.map((product) => [String(product.product_id), product])), sold = /* @__PURE__ */ new Map();
+  for (const order of orders) for (const detail of arrayValue(order.product_details)) {
+    const id = String(detail?.product_id || ""), current = byId.get(id);
+    if (id && (!current || (!current.name && detail.name))) byId.set(id, { ...current, ...detail, product_id: id, name: detail.name || current?.name || "" });
+  }
   orders.forEach((order) => (safeJson(order.product_ids) || []).forEach((id) => {
     const key = String(id), row = sold.get(key) || { count: 0, last: 0 };
     row.count++;
     row.last = Math.max(row.last, Number(order.create_time) || 0);
     sold.set(key, row);
   }));
-  const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: `\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ${id}` }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
+  const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
   if (!rows.length) return '<p class="shop-empty-range">\u0E0A\u0E48\u0E27\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E19\u0E35\u0E49\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</p>';
   return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td></tr>`; }).join("")}</tbody></table></div><div class="shop-grade-note"><b>เกรดจากยอดออเดอร์จริงในช่วงวันที่เลือก</b><span>A = 30 ออเดอร์ขึ้นไป · สินค้าหลัก</span><span>B = 16–29 ออเดอร์ · สินค้ารองที่ควรทำต่อ</span><span>C = 1–15 ออเดอร์ · สินค้าทดลองที่ต้องติดตาม</span><span>ไม่มีเกรด = 0 ออเดอร์ในช่วงนี้</span><small>เกรดเปลี่ยนตามช่วงวันที่เลือก ไม่ใช่คะแนนคุณภาพถาวรของสินค้า</small></div>`;
 }
