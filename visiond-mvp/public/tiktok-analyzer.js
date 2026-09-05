@@ -225,11 +225,15 @@ function productNameSimilarity(left, right) {
   const a = normalizeProductName(left), b = normalizeProductName(right);
   if (!a || !b) return 0;
   if (a === b) return 1;
-  if (Math.min(a.length, b.length) >= 14 && (a.includes(b) || b.includes(a))) return Math.min(a.length, b.length) / Math.max(a.length, b.length) * .25 + .7;
+  const compactA = a.replace(/\s+/g, ""), compactB = b.replace(/\s+/g, "");
+  if (Math.min(compactA.length, compactB.length) >= 8 && (compactA.includes(compactB) || compactB.includes(compactA))) return Math.min(compactA.length, compactB.length) / Math.max(compactA.length, compactB.length) * .2 + .78;
   const aTokens = new Set(a.split(" ").filter((token) => token.length > 1)), bTokens = new Set(b.split(" ").filter((token) => token.length > 1));
   if (!aTokens.size || !bTokens.size) return 0;
-  return [...aTokens].filter((token) => bTokens.has(token)).length / Math.min(aTokens.size, bTokens.size);
+  const shared = [...aTokens].filter((token) => bTokens.has(token)), coverage = shared.length / Math.min(aTokens.size, bTokens.size), numericA = [...aTokens].filter((token) => /^\d/.test(token)), numericB = [...bTokens].filter((token) => /^\d/.test(token));
+  if (numericA.length && numericB.length && !numericA.some((token) => numericB.includes(token))) return coverage * .5;
+  return coverage;
 }
+const productIdentityIds = (value) => [...new Set(String(value || "").match(/\b1\d{15,21}\b/g) || [])];
 function renderShowcaseProducts(products, orders, demo = false, growthOrders = orders) {
   const orderDetailsById = new Map();
   for (const order of orders) for (const detail of arrayValue(order.product_details)) {
@@ -257,7 +261,7 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     let bestIndex = -1, bestScore = 0;
     inventory.forEach((candidate, index) => {
       if (usedInventory.has(index)) return;
-      const idMatch = product.product_id && String(candidate.product_url || "").includes(String(product.product_id));
+      const candidateIds = productIdentityIds(`${candidate.product_url || ""} ${candidate.name || ""} ${candidate.evidence || ""}`), idMatch = product.product_id && candidateIds.includes(String(product.product_id));
       const score = idMatch ? 1 : productNameSimilarity(product.name, candidate.name);
       if (score > bestScore) bestScore = score, bestIndex = index;
     });
@@ -278,8 +282,7 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     return index < 0 ? 6 : index;
   };
   const showcaseProducts = products.map((product) => ({ ...product, selection: findSelection(product), analysisOnly: false }));
-  const analyzedOnly = inventory.filter((_, index) => !usedInventory.has(index)).map((selection) => ({ product_id: "", name: selection.name, image_url: "", product_url: selection.product_url, selection, analysisOnly: true }));
-  const mergedProducts = [...showcaseProducts, ...analyzedOnly].sort((a, b) => {
+  const mergedProducts = showcaseProducts.sort((a, b) => {
     return gradeRank(a) - gradeRank(b) || String(a.name || "").localeCompare(String(b.name || ""), "th");
   });
   const query = normalizeProductName(state.showcaseSearch);
@@ -306,7 +309,7 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder" aria-label="ไม่มีรูปสินค้า">ไม่มีรูป</span>';
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
     const removeAction = !demo && !product.analysisOnly && product.product_id ? `<button class="remove-showcase-item" type="button" data-product-id="${escapeHtml(product.product_id)}" data-product-name="${name}" aria-label="ลบ ${name} ออกจาก Showcase">ลบรายการนี้</button>` : "–";
-    return `<tr data-product-id="${escapeHtml(product.product_id)}">${columns.grade ? `<td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td>` : ""}<td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td>${columns.sales ? `<td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td>` : ""}${columns.commission ? `<td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td>` : ""}${columns.gmvLatest ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td>` : ""}${columns.gmvPrevious ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td>` : ""}${columns.growth ? `<td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td>` : ""}${columns.score ? `<td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td>` : ""}${columns.reason ? `<td class="showcase-reason">${escapeHtml(gradeReason || "–")}</td>` : ""}<td class="showcase-row-action">${removeAction}</td></tr>`;
+    return `<tr data-product-id="${escapeHtml(product.product_id)}">${columns.grade ? `<td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td>` : ""}<td><div class="showcase-product-cell">${picture}<div>${title}<small>${demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td>${columns.sales ? `<td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td>` : ""}${columns.commission ? `<td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td>` : ""}${columns.gmvLatest ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td>` : ""}${columns.gmvPrevious ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td>` : ""}${columns.growth ? `<td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td>` : ""}${columns.score ? `<td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td>` : ""}${columns.reason ? `<td class="showcase-reason">${escapeHtml(gradeReason || "–")}</td>` : ""}<td class="showcase-row-action">${removeAction}</td></tr>`;
   }).join("");
   const columnCount = 2 + Object.values(columns).filter(Boolean).length, headers = `${columns.grade ? "<th>เกรด</th>" : ""}<th>รูปและสินค้า</th>${columns.sales ? "<th>ขายได้</th>" : ""}${columns.commission ? "<th>ค่าคอม</th>" : ""}${columns.gmvLatest ? "<th>GMV 7 วัน</th>" : ""}${columns.gmvPrevious ? "<th>GMV 7 วันก่อน</th>" : ""}${columns.growth ? "<th>เติบโต</th>" : ""}${columns.score ? "<th>คะแนน</th>" : ""}${columns.reason ? "<th>เหตุผลล่าสุด</th>" : ""}<th>จัดการ</th>`, gmvNote = columns.gmvLatest || columns.gmvPrevious || columns.growth ? `<p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p>` : "";
   list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ</span></div>${gmvNote}<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr>${headers}</tr></thead><tbody>${rows || `<tr><td colspan="${columnCount}" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>`}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
