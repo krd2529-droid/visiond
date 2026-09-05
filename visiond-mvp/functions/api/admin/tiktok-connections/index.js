@@ -99,7 +99,7 @@ async function onRequestPost(ctx) {
         return json({ ok: true, ...result }, 200, headers);
       } catch (error) {
         const missingScope = String(error.message).includes("SCOPE_CREATOR_SHOWCASE_WRITE");
-        return json({ error: missingScope ? "\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1B\u0E34\u0E14\u0E2A\u0E34\u0E17\u0E18\u0E34\u0E4C creator.showcase.write \u0E41\u0E25\u0E49\u0E27\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop \u0E43\u0E2B\u0E21\u0E48" : "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase \u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08", detail: clean(error.message, 240) }, missingScope ? 403 : 502, headers);
+        return json({ error: missingScope ? "แอป TikTok Shop ยังไม่มีสิทธิ์เขียน Showcase กรุณาเปิด creator.showcase.write (หรือ creator.video.write) ใน Partner Center แล้วกดยกเลิกการเชื่อมต่อและเชื่อมใหม่" : "เพิ่มสินค้าใน Showcase ไม่สำเร็จ", detail: clean(error.message, 240), reconnect_required: missingScope }, missingScope ? 403 : 502, headers);
       }
     }
     if (action === "shop_remove") {

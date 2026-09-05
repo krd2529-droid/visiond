@@ -34,6 +34,8 @@ async function activeTikTokShopToken(env, connection, fetchImpl = fetch) {
 }
 const productId = (p) => clean(p.product_id || p.id, 100), productName = (p) => clean(p.product_name || p.title || p.name, 500), imageUrl = (p) => clean(p.main_image_url || p.image_url || p.main_images?.[0]?.url || p.main_images?.[0]?.url_list?.[0] || p.images?.[0]?.url || p.images?.[0]?.urls?.[0] || p.product_images?.[0]?.url || p.product_images?.[0]?.url_list?.[0] || p.main_image?.url || p.main_image?.url_list?.[0] || p.product_image?.url || p.product_image?.url_list?.[0] || p.image?.url || p.image?.url_list?.[0] || p.cover?.url || p.product?.main_image_url || p.product?.image?.url || p.product?.image?.url_list?.[0], 1500), money = (v) => v && typeof v === "object" ? { amount: clean(v.amount, 80), currency: clean(v.currency, 20), rate: Number(v.rate) || void 0 } : null;
 const finiteNumber = value => { const number = Number(value); return Number.isFinite(number) ? number : 0; };
+const connectionScopes = connection => new Set(String(connection?.scopes || "").split(",").map(scope => scope.trim()).filter(Boolean));
+const canWriteShowcase = connection => { const scopes = connectionScopes(connection); return scopes.has("creator.showcase.write") || scopes.has("creator.video.write"); };
 const commissionRate = product => finiteNumber(product.commission_rate ?? product.commission?.rate ?? product.standard_commission_rate);
 const marketplacePrice = product => { const value = product.sales_price || product.sale_price || product.price; if (!value || typeof value !== "object") return value || null; if (value.minimum_amount !== undefined || value.maximum_amount !== undefined) return { minimum_amount: clean(value.minimum_amount, 80), maximum_amount: clean(value.maximum_amount, 80), currency: clean(value.currency, 20) }; return money(value) || value; };
 const normalizeTikTokMarketplaceProduct = product => ({ product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), price: marketplacePrice(product), raw_json: JSON.stringify(product) });
@@ -84,7 +86,7 @@ async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase =
 async function removeTikTokShopShowcaseProducts(env, connection, productIds, fetchImpl = fetch) {
   const ids = [...new Set(productIds.map((x) => clean(x, 100)).filter(Boolean))].slice(0, 200);
   if (!ids.length) throw new Error("TIKTOK_SHOP_PRODUCTS_REQUIRED");
-  if (!String(connection.scopes || "").split(",").includes("creator.showcase.write")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
+  if (!canWriteShowcase(connection)) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
   const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202409/showcases/products", method: "DELETE", body: { product_ids: ids } }, fetchImpl);
   await env.DB.prepare(`DELETE FROM tiktok_shop_showcase_products WHERE connection_id=? AND product_id IN (${ids.map(() => "?").join(",")})`).bind(connection.id, ...ids).run();
   return { removed: ids.length, data };
@@ -92,9 +94,13 @@ async function removeTikTokShopShowcaseProducts(env, connection, productIds, fet
 async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchImpl = fetch) {
   const ids = [...new Set(productIds.map((x) => clean(x, 100)).filter(Boolean))].slice(0, 200);
   if (!ids.length) throw new Error("TIKTOK_SHOP_PRODUCTS_REQUIRED");
-  if (!String(connection.scopes || "").split(",").includes("creator.showcase.write")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
-  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202409/showcases/products", method: "POST", body: { product_ids: ids } }, fetchImpl);
-  return { added: ids.length, data };
+  if (!canWriteShowcase(connection)) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
+  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), batches = [];
+  for (let index = 0; index < ids.length; index += 20) {
+    const productIdsBatch = ids.slice(index, index + 20), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/showcases/products/add", method: "POST", body: { add_type: "PRODUCT_ID", product_ids: productIdsBatch } }, fetchImpl);
+    batches.push(data);
+  }
+  return { added: ids.length, batches };
 }
 async function searchTikTokShopOpenCollaborationProducts(env, connection, { keywords = [], resultLimit = 20, pageToken = "", sortField = "units_sold", sortOrder = "DESC", priceMin = null, priceMax = null, categoryId = "", commissionPercentMin = null, commissionPercentMax = null } = {}, fetchImpl = fetch) {
   if (!String(connection.scopes || "").split(",").map(scope => scope.trim()).includes("creator.affiliate_collaboration.read")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ_REQUIRED");

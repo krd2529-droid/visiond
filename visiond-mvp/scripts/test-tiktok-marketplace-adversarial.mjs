@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { webcrypto } from "node:crypto";
 import { encryptChannelValue } from "../functions/_channel_crypto.js";
 import {
+  addTikTokShopShowcaseProducts,
   searchTikTokShopOpenCollaborationProducts,
   tikTokMarketplaceGrowth,
 } from "../functions/_tiktok_shop_api.js";
@@ -53,6 +54,14 @@ assert.deepEqual(calls[0].body.title_keywords, ["ของเล่นเด็�
 assert.deepEqual(calls[0].body.sales_price_range, { amount_ge: "100", amount_lt: "900" });
 assert.deepEqual(calls[0].body.category, { id: "kids-1" });
 assert.deepEqual(calls[0].body.commission_rate_range, { rate_ge: 500, rate_lt: 2500 });
+const addStart = calls.length, addIds = Array.from({ length: 25 }, (_, index) => `product-${index + 1}`);
+await addTikTokShopShowcaseProducts(baseEnv, connection, addIds, provider);
+const addCalls = calls.slice(addStart);
+assert.equal(addCalls.length, 2, "Showcase add must split the official maximum of 20 IDs per request");
+assert.deepEqual(addCalls.map(call => call.url.pathname), ["/affiliate_creator/202405/showcases/products/add", "/affiliate_creator/202405/showcases/products/add"]);
+assert.deepEqual(addCalls.map(call => call.body.add_type), ["PRODUCT_ID", "PRODUCT_ID"]);
+assert.deepEqual(addCalls.map(call => call.body.product_ids.length), [20, 5]);
+await addTikTokShopShowcaseProducts(baseEnv, { ...connection, scopes: "creator.video.write" }, ["video-scope-product"], provider);
 await searchTikTokShopOpenCollaborationProducts(baseEnv, { ...connection, scopes: " creator.affiliate_collaboration.read , creator.showcase.write " }, { resultLimit: 1 }, provider);
 await assert.rejects(
   () => searchTikTokShopOpenCollaborationProducts(baseEnv, { ...connection, scopes: "creator.showcase.read,creator.showcase.write" }, {}, provider),
