@@ -1,8 +1,8 @@
-# Active patch: Shortlist visible-count reconciliation
+# Active patch: Product-link copy column across tables
 
-- Event: PATCH_DELIVERED
-- Outcome: ให้ยอดรวมลิสต์คัดสินค้าตรงกับจำนวนการ์ดที่แสดงหลังตัดรายการ discarded
-- Preserve: การซ่อนสินค้าที่คัดออก ลำดับการ์ด และยอดแยกเกรด A–F
-- Acceptance: หลัง reconcile ยอดรวมใช้จำนวน `.product-prep-item` ที่เหลือ; กรณี 7 รายการถูกคัดออก 4 ต้องแสดง 3/40 และมีการ์ด 3
-- Phase: committed, pushed to origin/main, and verified JavaScript v02098 on production
-- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.html, scripts/test-tiktok-shortlist-visible-count.mjs, scripts/test-tiktok-discarded-product-visibility.mjs, scripts/test-tiktok-marketplace-selection-list.mjs, scripts/test-tiktok-refresh-hydration.mjs
+- Event: PATCH_READY
+- Outcome: เพิ่มคอลัมน์ลิงก์สินค้าแบบปุ่มคัดลอกสั้นในทุกตารางสินค้า
+- Preserve: ลิงก์จาก TikTok เท่านั้น ไม่มีการสร้าง URL ปลอม; คอลัมน์และ action เดิมทั้งหมด
+- Acceptance: sold products, Showcase, Marketplace ทั้งสองโหมด, ผลวิเคราะห์, กลุ่มสินค้า และลิสต์ถาวรมีคอลัมน์ลิงก์; คัดลอกได้; ไม่มี URL แสดงไม่มีลิงก์; empty colspan ถูกต้อง
+- Phase: implementation and regression tests passed; ready to commit and deploy
+- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, public/tiktok-analyzer.html, scripts/test-tiktok-product-link-columns.mjs และ regression tests ที่ตรึง asset version
