@@ -203,6 +203,15 @@ function productNameSimilarity(left, right) {
   return [...aTokens].filter((token) => bTokens.has(token)).length / Math.min(aTokens.size, bTokens.size);
 }
 function renderShowcaseProducts(products, orders, demo = false, growthOrders = orders) {
+  const orderDetailsById = new Map();
+  for (const order of orders) for (const detail of arrayValue(order.product_details)) {
+    const id = String(detail?.product_id || ""), current = orderDetailsById.get(id);
+    if (id && (!current || (!current.name && detail.name) || (!current.image_url && detail.image_url))) orderDetailsById.set(id, { ...current, ...detail, product_id: id, name: detail.name || current?.name || "", image_url: detail.image_url || current?.image_url || "" });
+  }
+  products = products.map((product) => {
+    const detail = orderDetailsById.get(String(product.product_id));
+    return detail ? { ...product, name: product.name || detail.name, image_url: product.image_url || product.raw_image_url || detail.image_url } : product;
+  });
   if (!demo) state.showcaseProducts = products.filter((product) => product.product_id);
   const list = $("#shopGradeList");
   const inventory = [];
