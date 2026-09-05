@@ -1,10 +1,9 @@
-# Active patch: Add page/all Showcase deletion
+# Active patch: Expand channel direction result card
 
-- Status: PATCH_DELIVERED
-- Outcome: Replace selected-item deletion with “ลบสินค้าในหน้านี้” and “ลบสินค้าทั้งหมด”.
-- Preserve: product search, grade ordering, GMV data, pagination, account isolation, and TikTok API limits.
-- Safety: confirm the exact count; delete in batches of at most 200; report partial completion if a later batch fails.
-- Acceptance: page deletion targets only the currently rendered real Showcase products; all deletion targets every loaded product for the selected Creator account; obsolete checkboxes are removed.
-- Likely files: TikTok analyzer client/HTML/CSS, regression tests, visible version files.
-- Phase: page/all deletion, safety checks, regression tests, and production verification passed.
-- Delivery: v0.20.43 pushed to origin/main and verified on visiondonline.com.
+- Status: PATCH_READY
+- Outcome: Make the “ทิศทางช่อง” result card span the full available row instead of half width.
+- Preserve: analysis content rendering, hidden legacy data targets, Ranking, desktop and mobile layouts.
+- Acceptance: direction card has an explicit full-span class and CSS rule; no JavaScript result target is removed.
+- Likely files: TikTok analyzer HTML/CSS, regression test, visible version files.
+- Phase: explicit full-span class added; layout, release, and pre-deployment checks passed.
+- Delivery: test, review diff, commit only related files, push origin main, verify production.
