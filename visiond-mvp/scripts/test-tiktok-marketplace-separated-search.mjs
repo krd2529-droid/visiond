@@ -4,6 +4,8 @@ import fs from "node:fs";
 const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 const client = read("public/tiktok-analyzer.js"), css = read("public/tiktok-analyzer.css"), html = read("public/tiktok-analyzer.html");
 
+assert.match(html, /<h3 id="marketplaceTitle">ค้นหาสินค้านางฟ้า<\/h3>/);
+assert.doesNotMatch(html, /ค้นหา Open Collaboration Marketplace/);
 assert.match(client, /class="marketplace-search-choices"/);
 assert.match(client, /<h4>ค้นหาจากชื่อสินค้า<\/h4>/);
 assert.match(client, /<h4>ค้นหาจากชื่อร้านค้า<\/h4>/);
