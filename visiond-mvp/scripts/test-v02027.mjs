@@ -16,5 +16,15 @@ const slide = value => `<p:sld xmlns:p="p" xmlns:a="a" xmlns:r="r"><a:p><a:r><a:
 const pptx = storedZip({ 'ppt/slides/slide1.xml': slide('หน้าปก'), 'ppt/slides/slide2.xml': slide('ขั้นตอน'), 'ppt/slides/_rels/slide2.xml.rels': '<Relationships><Relationship Id="rId1" Target="../media/image1.png"/></Relationships>', 'ppt/media/image1.png': new Uint8Array([137, 80, 78, 71]) });
 const slides = await parsePptxPreview(pptx.buffer);
 assert.equal(slides.length, 2); assert.equal(slides[0].title, 'หน้าปก'); assert.equal(slides[1].title, 'ขั้นตอน'); assert.equal(slides[1].bullets[0].text, 'รายละเอียด'); assert.deepEqual(slides[1].bullets[0].attachment_numbers, [1]); assert.match(slides[1].images[1], /^blob:/);
+const numbered = storedZip({
+  'ppt/slides/slide1.xml': slide('หน้าปก'),
+  'ppt/slides/slide2.xml': '<p:sld xmlns:p="p" xmlns:a="a" xmlns:r="r"><a:p><a:r><a:t>ขั้นตอนที่ 2</a:t></a:r></a:p><a:p><a:r><a:t>2.15 กดเมนู [รูป 15] 2.16 กดเพิ่มโปรไฟล์ [รูป 16]</a:t></a:r></a:p><a:blip r:embed="rId1"/><a:p><a:r><a:t>รูป 15 · กดที่รูปหรือข้อความนี้เพื่อดูรูปใหญ่</a:t></a:r></a:p><a:blip r:embed="rId2"/><a:p><a:r><a:t>รูป 16 · กดที่รูปหรือข้อความนี้เพื่อดูรูปใหญ่</a:t></a:r></a:p><a:p><a:r><a:t>15 / 68</a:t></a:r></a:p></p:sld>',
+  'ppt/slides/_rels/slide2.xml.rels': '<Relationships><Relationship Id="rId1" Target="../media/image15.png"/><Relationship Id="rId2" Target="../media/image16.png"/></Relationships>',
+  'ppt/media/image15.png': new Uint8Array([137, 80, 78, 71]), 'ppt/media/image16.png': new Uint8Array([137, 80, 78, 71]),
+});
+const numberedSlides = await parsePptxPreview(numbered.buffer);
+assert.equal(numberedSlides[1].bullets[0].text, '2.15 กดเมนู [รูป 15] 2.16 กดเพิ่มโปรไฟล์ [รูป 16]');
+assert.deepEqual(numberedSlides[1].bullets[0].attachment_numbers, [15, 16]);
+assert.deepEqual(Object.keys(numberedSlides[1].images), ['15', '16']);
 const viewer = await readFile(new URL('../public/powerpoint-viewer.js', import.meta.url), 'utf8'); assert.match(viewer, /PREVIEW_NOT_AVAILABLE/); assert.match(viewer, /parsePptxPreview\(await file\.arrayBuffer\(\)\)/);
-console.log('v0.20.27 legacy PowerPoint online fallback checks passed');
+console.log('v0.20.29 legacy PowerPoint image-number parity checks passed');

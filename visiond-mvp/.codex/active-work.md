@@ -1,10 +1,10 @@
-# Active patch: TikTok Affiliate marketplace growth search
+# Active patch: PowerPoint legacy image-number parity
 
-- Event: PATCH_DELIVERED
-- Outcome: ค้นสินค้าจาก TikTok Shop Affiliate Open Collaboration marketplace ด้วยตัวกรองที่ผู้ใช้กำหนด โดยไม่จำกัดเฉพาะ Showcase
-- Acceptance: ใช้ API ทางการและ scope ที่ถูกต้อง, ฟอร์มค้นแยกชัดเจน, เก็บ snapshot ยอดขายสะสมเพื่อคำนวณการเติบโตจริง, ครั้งแรกไม่สร้างค่าการเติบโตปลอม, เพิ่มสินค้าที่เลือกเข้า Showcase ได้, ระบบเดิมไม่ถอยหลัง
-- Phase: complete
-- Likely files: functions/_tiktok_shop_api.js, functions/_tiktok_analyzer.js, functions/api/admin/tiktok-marketplace-search.js, migrations, public/tiktok-analyzer.*, tests, visible version
-- Verification: syntax PASS; marketplace helper/UI/adversarial PASS; legacy TikTok regressions PASS; visible version PASS; predeploy PASS (warnings are existing environment placeholders)
-- Delivery: v0.20.28, commit 21d18375, pushed to origin main
-- Next: production auto-deploy; TikTok Partner app must have creator.affiliate_collaboration.read before live marketplace search works
+- Event: PATCH_READY
+- Outcome: เลขใต้ภาพในตัวดู PowerPoint ต้องตรงกับเลข [รูป N] ในบรรทัดต้นฉบับ แม้เป็นไฟล์เก่าที่ไม่มี preview manifest
+- Acceptance: สไลด์ที่อ้างรูป 15/16 แสดงป้ายรูป 15/16 ไม่ใช่ 1/2, ตัดข้อความ caption ซ้ำออกจากเนื้อหา, รูปยังคลิกขยายได้, manifest ใหม่ไม่ถอยหลัง
+- Phase: verified
+- Likely files: public/pptx-preview-parser.js, public/powerpoint-viewer.js/html, tests, visible version
+- Verification: supplied 68-slide PPTX parsed slide 15 as image numbers 15/16 and detail slides 49/50 as 15/16; focused parser, viewer, authoritative mapping, visible version, predeploy PASS
+- Delivery: pending
+- Next: commit scoped files and push origin main

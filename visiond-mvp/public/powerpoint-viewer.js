@@ -1,4 +1,4 @@
-import { parsePptxPreview } from './pptx-preview-parser.js?v=02027';
+import { parsePptxPreview } from './pptx-preview-parser.js?v=02029';
 const $=selector=>document.querySelector(selector),params=new URLSearchParams(location.search),id=Number(params.get('id'));let slides=[],index=0,colors={accent:'0ABAB5',pale:'FFFFFF',title:'063D3B'};
 const text=(tag,value,className='')=>{const element=document.createElement(tag);element.textContent=value;if(className)element.className=className;return element};
 function zoom(src,alt){const overlay=document.createElement('div'),image=new Image(),close=text('button','ปิด');overlay.className='zoom';image.src=src;image.alt=alt;close.onclick=()=>overlay.remove();overlay.onclick=event=>{if(event.target===overlay)overlay.remove()};overlay.append(image,close);document.body.append(overlay)}
