@@ -1,9 +1,9 @@
-# Active patch: Restore related-table button styling
+# Active patch: Centralize channel connections in settings
 
-- Status: PATCH_DELIVERED
-- Report: the sold-products refresh button lost the app theme after being moved out of its original DOM container.
-- Outcome: related-table action buttons use the same teal outline, typography, spacing, hover, and disabled treatment as adjacent controls.
-- Preserve: refresh behavior, placement above its related table, Showcase controls, and responsive layout.
-- Acceptance: no browser-default button styling; focused UI, mobile, and predeploy checks pass; duplicate Marketplace filter rule is removed.
-- Phase: implementation, focused theme, TikTok sync, nine-queue, Marketplace, mobile, predeploy, deployment, and production asset checks pass.
-- Delivery: commit `5853e590` pushed to `origin/main`; production serves the themed refresh button through `tiktok-analyzer.css?v=02054` (verified 2026-09-05).
+- Status: PATCH_READY
+- Report: the analysis view still offers a direct reconnect/OAuth action when Showcase permissions are missing.
+- Outcome: all TikTok/TikTok Shop connection actions remain only in view 1; view 2 shows status and a navigation button back to settings.
+- Preserve: permission detection, Marketplace search/add behavior, connection controls in settings, and selected channel state.
+- Acceptance: analysis permission UI contains no OAuth link; its button switches to settings and focuses the connection panel; focused permission, view, mobile, and predeploy checks pass.
+- Phase: implementation and current permission, Marketplace, mobile, syntax, and predeploy checks pass; commit/push and production verification in progress. Legacy `test-v014501.mjs` remains stale against the current v0.20.49 implementation and is outside this patch.
+- Delivery: pending.

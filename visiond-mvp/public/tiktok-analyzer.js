@@ -336,7 +336,11 @@ function renderShowcasePermission() {
   }
   const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
   box.hidden = !connection || ready;
-  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase อัตโนมัติไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")} · ต้องเปิดสิทธิ์ Write ใน TikTok Shop Partner Center แล้วเชื่อมใหม่ ระบบจึงจะส่งสินค้าที่เลือกได้</span><a href="/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected || "")}">เชื่อมใหม่เพื่ออัปเดตสิทธิ์</a>`;
+  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase อัตโนมัติไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")} · จัดการการเชื่อมต่อและขอสิทธิ์ได้ที่หน้า 1 ตั้งค่าช่องและเชื่อมข้อมูล</span><button type="button" data-open-channel-settings>ไปตั้งค่าช่อง</button>`;
+  box.querySelector("[data-open-channel-settings]")?.addEventListener("click", () => {
+    setWorkspaceView("input");
+    $("#tiktokConnection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   const searchButton = $("#marketplaceSearchForm button"), addButton = $("#addMarketplaceSelected");
   if (searchButton) searchButton.disabled = Boolean(connection) && !capabilities.can_search_marketplace;
   if (addButton) {
@@ -900,7 +904,7 @@ $("#addMarketplaceSelected").addEventListener("click", async () => {
   if (!state.shopConnection.capabilities?.can_write_showcase) {
     renderShowcasePermission();
     $("#showcasePermission")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    return showToast("ยังส่งสินค้าไม่ได้: ต้องเปิด creator.showcase.write หรือ creator.video.write แล้วเชื่อมบัญชีใหม่", "error");
+    return showToast("ยังส่งสินค้าไม่ได้ กรุณาไปหน้า 1 ตั้งค่าช่องและเชื่อมข้อมูล เพื่อเปิดสิทธิ์ Showcase", "error");
   }
   const ids = [...document.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
