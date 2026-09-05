@@ -11,6 +11,6 @@ assert.match(css, /@media\(max-width:960px\)[\s\S]*\.showcase-panel #showcaseTab
 assert.match(css, /@media\(max-width:640px\)[\s\S]*\.showcase-panel #showcaseTableControls\{grid-template-columns:1fr\}/);
 assert.match(client, /id="showcaseTableControls" class="related-table-controls"/);
 assert.match(client, /<div class="showcase-tools"><label>ค้นหาสินค้า/);
-assert.match(html, /tiktok-analyzer\.css\?v=02076/);
+assert.match(html, /tiktok-analyzer\.css\?v=02077/);
 
 console.log("TikTok Showcase toolbar layout regression: PASS");
