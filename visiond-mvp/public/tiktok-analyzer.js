@@ -59,6 +59,11 @@ const safeJson = (value) => {
 };
 const money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
 const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseHeading = $("#channelShopAnalysis .showcase-panel .showcase-heading");
+$("#channelShopAnalysis .result-head")?.insertAdjacentHTML("afterend", '<section id="shopConnectionRequired" class="shop-connection-required" hidden><b>ช่องนี้ยังไม่ได้เชื่อม TikTok Shop Creator OAuth</b><p>TikTok OAuth ใช้ข้อมูลโปรไฟล์และวิดีโอ ส่วนออเดอร์ Marketplace และ Showcase ต้องเชื่อม TikTok Shop แยกอีกครั้ง</p><button type="button" data-open-shop-settings>ไปหน้า 1 เพื่อเชื่อม TikTok Shop</button></section>');
+$("#shopConnectionRequired [data-open-shop-settings]")?.addEventListener("click", () => {
+  setWorkspaceView("input");
+  $("#shopConnectionManagement")?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
 marketplacePanel?.insertAdjacentHTML("beforebegin", '<section id="soldProductsPanel" class="sold-products-panel"><div class="showcase-heading"><div><h3>สินค้าที่ขายได้และออเดอร์</h3><p class="hint">ข้อมูลจริงของช่องที่เลือก เรียงตามจำนวนออเดอร์ในช่วงวันที่กำหนด</p></div><div id="soldProductsControls" class="related-table-controls"></div></div><div id="soldProductsData"><p class="hint">เชื่อม TikTok Shop เพื่อโหลดข้อมูล</p></div></section>');
 showcaseHeading?.insertAdjacentHTML("beforeend", '<div id="showcaseTableControls" class="related-table-controls"></div>');
 if ($("#syncTikTokShop")) {
@@ -545,6 +550,8 @@ async function loadTikTokConnection() {
   const data = await api(`/api/admin/tiktok-connections?${shopDateQuery(state.selected)}`), connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
   state.connection = connection;
   state.shopConnection = shopConnection;
+  $("#channelShopAnalysis").classList.toggle("shop-connection-missing", !shopConnection);
+  $("#shopConnectionRequired").hidden = Boolean(shopConnection);
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
   $("#connectTikTok").hidden = false;
