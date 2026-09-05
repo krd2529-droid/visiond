@@ -62,6 +62,10 @@ assert.deepEqual(addCalls.map(call => call.url.pathname), ["/affiliate_creator/2
 assert.deepEqual(addCalls.map(call => call.body.add_type), ["PRODUCT_ID", "PRODUCT_ID"]);
 assert.deepEqual(addCalls.map(call => call.body.product_ids.length), [20, 5]);
 await addTikTokShopShowcaseProducts(baseEnv, { ...connection, scopes: "creator.video.write" }, ["video-scope-product"], provider);
+const partial = await addTikTokShopShowcaseProducts(baseEnv, connection, ["accepted", "rejected"], async () => Response.json({ code: 0, data: { errors: [{ product_id: "rejected", code: 40001, message: "not eligible" }] } }));
+assert.equal(partial.requested, 2);
+assert.equal(partial.added, 1);
+assert.equal(partial.errors[0].product_id, "rejected");
 await searchTikTokShopOpenCollaborationProducts(baseEnv, { ...connection, scopes: " creator.affiliate_collaboration.read , creator.showcase.write " }, { resultLimit: 1 }, provider);
 await assert.rejects(
   () => searchTikTokShopOpenCollaborationProducts(baseEnv, { ...connection, scopes: "creator.showcase.read,creator.showcase.write" }, {}, provider),
@@ -155,7 +159,7 @@ element("marketplaceCommissionMin").value = "5";
 element("marketplaceCommissionMax").value = "25";
 let uiRequest;
 const context = {
-  state: { shopConnection: { id: connection.id }, marketplaceProducts: [], marketplaceNextToken: "", marketplaceSearchedAt: "" },
+  state: { shopConnection: { id: connection.id, capabilities: { can_search_marketplace: true, can_write_showcase: true, showcase_ready: true } }, marketplaceProducts: [], marketplaceNextToken: "", marketplaceSearchedAt: "" },
   $: selector => element(selector.replace(/^#/, "")),
   api: async (path, options) => { uiRequest = { path, body: JSON.parse(options.body) }; return { products: [{ product_id: "u1", name: "สินค้า <นอก Showcase>", units_sold: 1, growth: { growth_percent: null } }], next_page_token: "ui-next" }; },
   escapeHtml: value => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),

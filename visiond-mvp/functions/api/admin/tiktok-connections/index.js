@@ -4,6 +4,7 @@ import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
 import { revokeTikTokToken, syncTikTokConnection } from "../../../_tiktok_oauth.js";
 import { decryptChannelValue } from "../../../_channel_crypto.js";
 import { addTikTokShopShowcaseProducts, removeTikTokShopShowcaseProducts, syncTikTokShopCreator } from "../../../_tiktok_shop_api.js";
+import { tikTokShopCreatorCapabilities } from "../../../_tiktok_shop_oauth.js";
 const headers = { "cache-control": "private, no-store" }, clean = (v, n = 80) => String(v || "").trim().slice(0, n);
 const parsed = (value) => {
   try {
@@ -71,7 +72,7 @@ async function onRequestGet(ctx) {
     shopGrowthOrders = (await ctx.env.DB.prepare(`SELECT order_id,create_time,product_ids,status,gmv_json,commission_json,synced_at FROM tiktok_shop_affiliate_orders WHERE connection_id=? AND create_time>=? AND create_time<? ORDER BY create_time DESC LIMIT 5000`).bind(shopConnections[0].id, range.toExclusive - 14 * 86400, range.toExclusive).all()).results || [];
   }
   const portfolioProducts = (await ctx.env.DB.prepare(`SELECT p.connection_id,p.product_id,p.name,p.image_url,p.product_url,p.commission_json,p.product_grade,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_showcase_products p JOIN tiktok_shop_creator_connections c ON c.id=p.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) ORDER BY p.product_grade,p.name LIMIT 2000`).bind(auth.user.id, channelId, channelId).all()).results || [], portfolioOrders = (await ctx.env.DB.prepare(`SELECT o.connection_id,o.order_id,o.create_time,o.product_ids,o.commission_json,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_affiliate_orders o JOIN tiktok_shop_creator_connections c ON c.id=o.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) AND o.create_time>=? AND o.create_time<? ORDER BY o.create_time DESC LIMIT 5000`).bind(auth.user.id, channelId, channelId, range.fromEpoch, range.toExclusive).all()).results || [];
-  return json({ configured: Boolean(ctx.env.TIKTOK_CLIENT_KEY && ctx.env.TIKTOK_CLIENT_SECRET), shop_configured: Boolean(ctx.env.TIKTOK_SHOP_APP_KEY && ctx.env.TIKTOK_SHOP_APP_SECRET), connections: connections.map(publicConnection), shop_connections: shopConnections, shop_products: shopProducts, shop_orders: shopOrders, shop_growth_orders: shopGrowthOrders, date_range: { from: range.from, to: range.to }, shop_portfolio: { products: portfolioProducts, orders: portfolioOrders, commission: commissionDashboard(portfolioOrders) }, videos }, 200, headers);
+  return json({ configured: Boolean(ctx.env.TIKTOK_CLIENT_KEY && ctx.env.TIKTOK_CLIENT_SECRET), shop_configured: Boolean(ctx.env.TIKTOK_SHOP_APP_KEY && ctx.env.TIKTOK_SHOP_APP_SECRET), connections: connections.map(publicConnection), shop_connections: shopConnections.map(row => ({ ...row, capabilities: tikTokShopCreatorCapabilities(row.scopes) })), shop_products: shopProducts, shop_orders: shopOrders, shop_growth_orders: shopGrowthOrders, date_range: { from: range.from, to: range.to }, shop_portfolio: { products: portfolioProducts, orders: portfolioOrders, commission: commissionDashboard(portfolioOrders) }, videos }, 200, headers);
 }
 async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
@@ -95,8 +96,14 @@ async function onRequestPost(ctx) {
       if (!productIds.length) return json({ error: "\u0E01\u0E23\u0E38\u0E13\u0E32\u0E43\u0E2A\u0E48\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" }, 400, headers);
       try {
         const result = await addTikTokShopShowcaseProducts(ctx.env, shop, productIds);
-        await syncTikTokShopCreator(ctx.env, shop, { days: 30 });
-        return json({ ok: true, ...result }, 200, headers);
+        if (result.errors?.length && !result.added) return json({ error: "TikTok ปฏิเสธสินค้าทุกรายการ", detail: result.errors, ...result }, 422, headers);
+        try {
+          await syncTikTokShopCreator(ctx.env, shop, { days: 30 });
+          return json({ ok: true, ...result, synced: true, warning: result.errors?.length ? `เพิ่มสำเร็จ ${result.added} จาก ${result.requested} รายการ กรุณาตรวจรายการที่ TikTok ปฏิเสธ` : "" }, 200, headers);
+        } catch (syncError) {
+          await ctx.env.DB.prepare("UPDATE tiktok_shop_creator_connections SET last_sync_error=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(clean(syncError.message, 300), id).run();
+          return json({ ok: true, ...result, synced: false, warning: "เพิ่มสินค้าเข้า Showcase แล้ว แต่ดึงรายการล่าสุดกลับมาแสดงยังไม่สำเร็จ กรุณากดซิงก์ใหม่" }, 200, headers);
+        }
       } catch (error) {
         const missingScope = String(error.message).includes("SCOPE_CREATOR_SHOWCASE_WRITE");
         return json({ error: missingScope ? "แอป TikTok Shop ยังไม่มีสิทธิ์เขียน Showcase กรุณาเปิด creator.showcase.write (หรือ creator.video.write) ใน Partner Center แล้วกดยกเลิกการเชื่อมต่อและเชื่อมใหม่" : "เพิ่มสินค้าใน Showcase ไม่สำเร็จ", detail: clean(error.message, 240), reconnect_required: missingScope }, missingScope ? 403 : 502, headers);

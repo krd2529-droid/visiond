@@ -29,7 +29,8 @@ async function activeTikTokShopToken(env, connection, fetchImpl = fetch) {
   if (expires > now + 6 * 60 * 60 * 1e3 && expires < now + 8 * 86400 * 1e3) return { config, access };
   const refresh = await decryptChannelValue(env, connection.refresh_token_ciphertext), token = await refreshTikTokShopToken(config, refresh, fetchImpl);
   access = token.access_token;
-  await env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET access_token_ciphertext=?,refresh_token_ciphertext=?,scopes=?,access_expires_at=?,refresh_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(await encryptChannelValue(env, access), await encryptChannelValue(env, token.refresh_token || refresh), Array.isArray(token.granted_scopes) ? token.granted_scopes.join(",") : connection.scopes, expiryIso(token.access_token_expire_in), expiryIso(token.refresh_token_expire_in), connection.id).run();
+  const refreshedScopes = token.granted_scopes === undefined ? connection.scopes : Array.isArray(token.granted_scopes) ? token.granted_scopes.join(",") : clean(token.granted_scopes, 2000);
+  await env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET access_token_ciphertext=?,refresh_token_ciphertext=?,scopes=?,access_expires_at=?,refresh_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(await encryptChannelValue(env, access), await encryptChannelValue(env, token.refresh_token || refresh), refreshedScopes, expiryIso(token.access_token_expire_in), expiryIso(token.refresh_token_expire_in), connection.id).run();
   return { config, access };
 }
 const productId = (p) => clean(p.product_id || p.id, 100), productName = (p) => clean(p.product_name || p.title || p.name, 500), imageUrl = (p) => clean(p.main_image_url || p.image_url || p.main_images?.[0]?.url || p.main_images?.[0]?.url_list?.[0] || p.images?.[0]?.url || p.images?.[0]?.urls?.[0] || p.product_images?.[0]?.url || p.product_images?.[0]?.url_list?.[0] || p.main_image?.url || p.main_image?.url_list?.[0] || p.product_image?.url || p.product_image?.url_list?.[0] || p.image?.url || p.image?.url_list?.[0] || p.cover?.url || p.product?.main_image_url || p.product?.image?.url || p.product?.image?.url_list?.[0], 1500), money = (v) => v && typeof v === "object" ? { amount: clean(v.amount, 80), currency: clean(v.currency, 20), rate: Number(v.rate) || void 0 } : null;
@@ -95,12 +96,13 @@ async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchI
   const ids = [...new Set(productIds.map((x) => clean(x, 100)).filter(Boolean))].slice(0, 200);
   if (!ids.length) throw new Error("TIKTOK_SHOP_PRODUCTS_REQUIRED");
   if (!canWriteShowcase(connection)) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
-  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), batches = [];
+  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), batches = [], errors = [];
   for (let index = 0; index < ids.length; index += 20) {
     const productIdsBatch = ids.slice(index, index + 20), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/showcases/products/add", method: "POST", body: { add_type: "PRODUCT_ID", product_ids: productIdsBatch } }, fetchImpl);
     batches.push(data);
+    if (Array.isArray(data?.errors)) errors.push(...data.errors.map(error => ({ ...error, batch: Math.floor(index / 20) + 1 })));
   }
-  return { added: ids.length, batches };
+  return { requested: ids.length, added: Math.max(0, ids.length - errors.length), errors, batches };
 }
 async function searchTikTokShopOpenCollaborationProducts(env, connection, { keywords = [], resultLimit = 20, pageToken = "", sortField = "units_sold", sortOrder = "DESC", priceMin = null, priceMax = null, categoryId = "", commissionPercentMin = null, commissionPercentMax = null } = {}, fetchImpl = fetch) {
   if (!String(connection.scopes || "").split(",").map(scope => scope.trim()).includes("creator.affiliate_collaboration.read")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ_REQUIRED");

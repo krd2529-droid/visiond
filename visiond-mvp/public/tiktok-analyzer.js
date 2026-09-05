@@ -291,6 +291,19 @@ function marketplacePrice(value) {
   if (minimum === void 0 || minimum === "") return "–";
   return `${escapeHtml(currency)} ${Number(minimum).toLocaleString("th-TH")}${maximum && String(maximum) !== String(minimum) ? `–${Number(maximum).toLocaleString("th-TH")}` : ""}`.trim();
 }
+function renderShowcasePermission() {
+  let box = $("#showcasePermission");
+  if (!box) {
+    $("#channelShopAnalysis .result-head").insertAdjacentHTML("afterend", '<div id="showcasePermission" class="showcase-permission" hidden></div>');
+    box = $("#showcasePermission");
+  }
+  const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
+  box.hidden = !connection || ready;
+  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase ไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "สิทธิ์ Creator สำหรับ Marketplace/Showcase")}</span><a href="/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected || "")}">เชื่อมบัญชี Creator และอนุญาตสิทธิ์ใหม่</a>`;
+  const searchButton = $("#marketplaceSearchForm button"), addButton = $("#addMarketplaceSelected");
+  if (searchButton) searchButton.disabled = Boolean(connection) && !capabilities.can_search_marketplace;
+  if (addButton && !capabilities.can_write_showcase) addButton.disabled = true;
+}
 function renderMarketplaceProducts(data = null) {
   const box = $("#marketplaceResults"), addButton = $("#addMarketplaceSelected"), snapshot = $("#marketplaceSnapshot"), products = state.marketplaceProducts;
   if (!data) {
@@ -307,13 +320,16 @@ function renderMarketplaceProducts(data = null) {
     return `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${marketplacePrice(product.price)}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td></tr>`;
   }).join("");
   box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>ราคา</th><th>เติบโต ${state.marketplaceComparisonDays} วัน</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${state.marketplaceNextToken ? '<div class="showcase-pagination"><button id="marketplaceNext" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>' : ""}`;
+  const account = state.shopConnection?.creator_username || state.shopConnection?.open_id || "บัญชี Creator";
+  addButton.textContent = `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   addButton.hidden = !products.length;
   addButton.disabled = true;
-  box.querySelectorAll(".marketplace-product-check").forEach((input) => input.addEventListener("change", () => addButton.disabled = !box.querySelector(".marketplace-product-check:checked")));
+  box.querySelectorAll(".marketplace-product-check").forEach((input) => input.addEventListener("change", () => addButton.disabled = !state.shopConnection?.capabilities?.can_write_showcase || !box.querySelector(".marketplace-product-check:checked")));
   $("#marketplaceNext")?.addEventListener("click", () => searchMarketplace(state.marketplaceNextToken));
 }
 async function searchMarketplace(pageToken = "") {
   if (!state.shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
+  if (!state.shopConnection.capabilities?.can_search_marketplace) throw new Error("บัญชี Creator ยังไม่มีสิทธิ์ค้นหา Open Collaboration กรุณาเชื่อมและอนุญาตสิทธิ์ใหม่");
   const button = $("#marketplaceSearchForm button"), nextButton = $("#marketplaceNext");
   if (button) button.disabled = true;
   if (nextButton) nextButton.disabled = true;
@@ -522,15 +538,17 @@ async function loadTikTokConnection() {
   const data = await api(`/api/admin/tiktok-connections?${shopDateQuery(state.selected)}`), connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
   state.connection = connection;
   state.shopConnection = shopConnection;
+  renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
   $("#connectTikTok").hidden = Boolean(connection);
-  $("#connectTikTokShop").hidden = Boolean(shopConnection);
+  $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
   $("#syncTikTok").hidden = !connection;
   $("#disconnectTikTok").hidden = !connection;
   $("#syncTikTokShop").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
+  $("#connectTikTokShop").textContent = shopConnection ? "เชื่อมบัญชี Creator และอนุญาตสิทธิ์ใหม่" : "เชื่อมบัญชี Creator สำหรับ Marketplace และ Showcase";
   $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> \xB7 \u0E15\u0E25\u0E32\u0E14 ${escapeHtml(shopConnection.selection_region || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38")} \xB7 \u0E0B\u0E34\u0E07\u0E01\u0E4C ${escapeHtml(shopConnection.last_synced_at || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E40\u0E04\u0E22")}</p><div class="tiktok-api-stats"><span>${products.length.toLocaleString()} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 Showcase \u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14</span><span>${orders.length.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E43\u0E19\u0E0A\u0E48\u0E27\u0E07\u0E17\u0E35\u0E48\u0E40\u0E25\u0E37\u0E2D\u0E01</span></div>${shopRangeSummary(data, products, orders)}${shopConnection.last_sync_error ? `<p class="shop-error">\u0E04\u0E23\u0E31\u0E49\u0E07\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25 Showcase \u0E41\u0E25\u0E30\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C Affiliate</p>" : "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok Shop App key \u0E41\u0E25\u0E30 App secret</p>";
   if (!data.configured && !connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
@@ -887,6 +905,10 @@ $("#addShowcaseForm").addEventListener("submit", async (event) => {
     message.textContent = "\u0E01\u0E23\u0E38\u0E13\u0E32\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop \u0E01\u0E48\u0E2D\u0E19";
     return;
   }
+  if (!state.shopConnection.capabilities?.can_write_showcase) {
+    message.textContent = "บัญชี Creator ยังไม่มีสิทธิ์เพิ่ม Showcase กรุณากดเชื่อมและอนุญาตสิทธิ์ใหม่";
+    return;
+  }
   const input = $("#showcaseProductId"), productId = input.value.trim();
   if (!productId) {
     message.textContent = "\u0E01\u0E23\u0E38\u0E13\u0E32\u0E43\u0E2A\u0E48\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32";
@@ -918,13 +940,14 @@ $("#marketplaceSearchForm").addEventListener("submit", async (event) => {
 });
 $("#addMarketplaceSelected").addEventListener("click", async () => {
   if (!state.shopConnection) return;
+  if (!state.shopConnection.capabilities?.can_write_showcase) return showToast("บัญชี Creator ยังไม่มีสิทธิ์เพิ่ม Showcase กรุณากดเชื่อมและอนุญาตสิทธิ์ใหม่", "error");
   const ids = [...document.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
   const button = $("#addMarketplaceSelected");
   button.disabled = true;
   try {
-    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, product_ids: ids }) });
-    showToast(`เพิ่มสินค้าเข้า Showcase แล้ว ${ids.length.toLocaleString()} รายการ`);
+    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, product_ids: ids }) });
+    showToast(result.warning || `เพิ่มสินค้าเข้า Showcase ของ ${state.shopConnection.creator_username || "บัญชี Creator"} แล้ว ${Number(result.added || ids.length).toLocaleString()} รายการ`, result.warning ? "warning" : "success");
     await loadTikTokConnection();
     renderMarketplaceProducts({ products: state.marketplaceProducts });
   } catch (error) {
@@ -1019,7 +1042,8 @@ form.addEventListener("submit", async (event) => {
 });
 const shopOauthStatus = new URLSearchParams(location.search).get("tiktok_shop");
 if (shopOauthStatus) {
-  message.textContent = shopOauthStatus === "connected" ? "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop \u0E19\u0E32\u0E22\u0E2B\u0E19\u0E49\u0E32\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08" : shopOauthStatus === "denied" ? "\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01\u0E01\u0E32\u0E23\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 TikTok Shop \u0E41\u0E25\u0E49\u0E27" : "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop \u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E25\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
+  const detail = new URLSearchParams(location.search).get("detail") || "";
+  message.textContent = shopOauthStatus === "connected" ? "เชื่อมบัญชี TikTok Shop Creator พร้อมใช้ Marketplace และ Showcase แล้ว" : shopOauthStatus === "permissions_required" ? `เชื่อมบัญชี Creator แล้ว แต่สิทธิ์ยังไม่ครบ: ${detail} กรุณาเปิดสิทธิ์ใน TikTok Partner Center แล้วเชื่อมใหม่` : shopOauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok Shop แล้ว" : `เชื่อม TikTok Shop ไม่สำเร็จ${detail ? `: ${detail}` : " กรุณาลองใหม่"}`;
   history.replaceState({}, "", location.pathname);
 }
 const oauthStatus = new URLSearchParams(location.search).get("tiktok");
