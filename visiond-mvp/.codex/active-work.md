@@ -1,8 +1,8 @@
-# Active patch: Sold-products selection-list action
+# Active patch: Login-only TikTok channel connection
 
-- Event: PATCH_DELIVERED
-- Outcome: เพิ่มคอลัมน์ลิสต์คัดสินค้าและปุ่มเพิ่มเข้าลิสต์ในตารางสินค้าที่ขายได้
-- Preserve: ยอดออเดอร์ เกรด วันที่ และปุ่มคัดลอกลิงก์เดิม; ไม่เพิ่มสินค้าซ้ำ
-- Acceptance: ตารางมีหัวคอลัมน์และปุ่ม; ปุ่มบันทึกสินค้าเป็น C พร้อม URL/evidence; รายการที่มีอยู่แล้วถูกปิดปุ่ม; สถานะตารางไม่เหลื่อม
-- Phase: deployed to production and verified (JS 02100)
-- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.html, functions/api/admin/tiktok-analyzer/index.js, tests
+- Event: PATCH_READY
+- Outcome: หน้าเชื่อมช่องมีเพียงการล็อกอิน TikTok และสร้างช่องจากโปรไฟล์อัตโนมัติ
+- Preserve: ช่องเดิม หน้า 2 จัดการสินค้า การเชื่อม TikTok Shop และข้อมูลที่ซิงก์ไว้
+- Acceptance: + ช่องใหม่เปิด TikTok OAuth โดยไม่สร้างช่องเปล่า; callback สร้าง/เลือกช่องจากบัญชี; ไม่มีแบบฟอร์มชื่อ ลิงก์ ช่วงวัน แนบรูป หรือวิเคราะห์ในหน้าเชื่อมช่อง
+- Phase: combined implementation and regression tests passed; ready to commit and deploy
+- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, public/tiktok-analyzer.html, functions/api/tiktok/connect.js, functions/api/tiktok/callback.js, tests
