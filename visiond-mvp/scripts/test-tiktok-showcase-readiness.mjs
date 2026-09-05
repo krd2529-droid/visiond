@@ -51,7 +51,7 @@ assert.match(client, /เชื่อมบัญชี Creator/);
 assert.match(client, /Showcase ของ/);
 assert.match(html, /class="oauth-connection-card"[\s\S]*TikTok OAuth[\s\S]*id="connectTikTok"/);
 assert.match(html, /id="shopConnectionManagement"[\s\S]*TikTok Shop Creator OAuth[\s\S]*id="connectTikTokShop"[\s\S]*id="disconnectTikTokShop"/);
-assert.match(html, /tiktok-analyzer\.js\?v=02070/);
+assert.match(html, /tiktok-analyzer\.js\?v=02071/);
 assert.match(html, /tiktok-analyzer\.css\?v=02070/);
 assert.match(html, /ยกเลิกการเชื่อมต่อ/);
 assert.match(css, /\.shop-connection-management>div\{display:flex[^}]*flex-wrap:nowrap/);
