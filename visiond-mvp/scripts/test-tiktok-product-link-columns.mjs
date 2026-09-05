@@ -11,12 +11,14 @@ assert.match(client, /navigator\.clipboard\.writeText\(url\)/);
 assert.match(client, /document\.execCommand\("copy"\)/);
 assert.match(client, /คัดลอกลิงก์สินค้าแล้ว/);
 assert.match(client, /ไม่มีลิงก์/);
-assert.ok((client.match(/<th>ลิงก์สินค้า<\/th>/g) || []).length >= 5, "all dynamically named product-table renderers need a link column");
-assert.ok((client.match(/productLinkControl\(/g) || []).length >= 6, "all product-table row renderers need a copy control");
+assert.ok((client.match(/<th>ลิงก์สินค้า<\/th>/g) || []).length >= 4, "non-Showcase product-table renderers need a link column");
+assert.ok((client.match(/productLinkControl\(/g) || []).length >= 5, "non-Showcase product-table row renderers need a copy control");
+const showcaseRenderer = client.slice(client.indexOf("function renderShowcaseProducts"), client.indexOf("function marketplacePrice"));
+assert.doesNotMatch(showcaseRenderer, /<th>ลิงก์สินค้า<\/th>|productLinkControl\(|target="_blank"/, "Showcase alone must not render product links");
 assert.match(client, /upgradeLegacyProductLinkCells\(\$\("#angelProducts"\)\)/);
 assert.match(client, /upgradeLegacyProductLinkCells\(\$\("#result"\)\)/);
 assert.match(css, /\.copy-product-link\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02105/);
+assert.match(html, /tiktok-analyzer\.js\?v=02106/);
 assert.match(html, /tiktok-analyzer\.css\?v=02084/);
 
 console.log("TikTok product-link copy column across product tables: PASS");
