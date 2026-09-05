@@ -1,4 +1,5 @@
 import('/facebook-chat.js?v=014407');
+document.querySelector('.hub-nav .hub-nav-group:last-of-type')?.insertAdjacentHTML('beforeend','<a class="hub-affiliate-link" href="/vx-affiliate.html">แนะนำเพื่อน · รับค่าคอม 20%</a>');
 const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,profile:dashProfile,settings:dashSettings,createdCourses:dashCreatedCourses,learning:dashLearning,baskets:dashBaskets,sales:dashSales,notifications:dashNotifications,help:dashHelp};
 const roleLabel={boss:'Boss · เจ้าของระบบ',admin:'Admin · ผู้ดูแลระบบ',user:'User · สมาชิกทั่วไป',customer:'User · สมาชิกทั่วไป'};
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';

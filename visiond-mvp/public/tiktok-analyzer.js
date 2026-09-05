@@ -6,6 +6,9 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
 let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+const commissionCardScript = document.createElement("script");
+commissionCardScript.src = "/tiktok-commission-card.js?v=02087";
+document.head.append(commissionCardScript);
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -102,9 +105,26 @@ function setWorkspaceView(view) {
   $("#showOutputView").setAttribute("aria-current", output ? "page" : "false");
 }
 async function loadPortfolioDashboard() {
-  const data = await api(`/api/admin/tiktok-connections?${shopDateQuery()}`);
+  const [data, commission, referral] = await Promise.all([api(`/api/admin/tiktok-connections?${shopDateQuery()}`), api(`/api/admin/tiktok-commissions?from=${state.shopDateFrom}&to=${state.shopDateTo}`), api('/api/vx/referrals').catch(() => null)]);
   renderShopDashboard({ ...data, shop_products: data.shop_portfolio?.products || [], shop_orders: data.shop_portfolio?.orders || [] }, data.shop_connections?.[0] || null);
+  renderAccurateCommission(commission, referral);
 }
+
+function renderAccurateCommission(data, referral) {
+  const totals = data?.totals || [], channels = data?.channels || [], series = data?.series || [], range = `${data?.from || state.shopDateFrom} ถึง ${data?.to || state.shopDateTo}`;
+  state.commissionCards = totals.map(total => ({ owner: state.selected ? (state.channels.find(channel => channel.id === state.selected)?.name || 'ช่องที่เลือก') : 'รวมทุกช่อง', range, total: total.amount, currency: total.currency, channels: channels.filter(channel => channel.currency === total.currency && channel.basis === total.basis), referralUrl: referral?.link || '' }));
+  const basisLabel = { actual: 'ยืนยันแล้ว', estimated: 'ประมาณการ', unknown: 'TikTok ไม่ระบุประเภท' };
+  $('#shopCommissionDashboard').innerHTML = totals.length ? `<div class="commission-accurate"><div class="commission-total-grid">${totals.map((total, index) => `<article><small>${escapeHtml(basisLabel[total.basis] || total.basis)} · ${escapeHtml(total.currency)}</small><b>${Number(total.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(total.currency)}</b><button type="button" data-share-commission="${index}">สร้างรูปและแชร์</button></article>`).join('')}</div><h3>ค่าคอมแยกตามช่อง</h3><div class="commission-channel-table">${channels.map(channel => `<div><span>${escapeHtml(channel.channel)}<small>${escapeHtml(basisLabel[channel.basis] || channel.basis)}</small></span><b>${Number(channel.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(channel.currency)}</b></div>`).join('')}</div><h3>ค่าคอมรายวัน</h3><div class="commission-daily-table">${series.map(day => `<div><time>${escapeHtml(day.day)}</time><span>${escapeHtml(day.channel)}</span><small>${escapeHtml(basisLabel[day.basis] || day.basis)}</small><b>${Number(day.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(day.currency)}</b></div>`).join('')}</div><p class="hint">${escapeHtml(data.coverage?.note || '')} · ${Number(data.coverage?.orders || 0).toLocaleString()} ออเดอร์ · ซิงก์ล่าสุด ${escapeHtml(data.coverage?.last_synced_at || 'ยังไม่ระบุ')}</p></div>` : '<p class="hint">ยังไม่มีค่าคอมจากออเดอร์ที่ไม่ถูกยกเลิกหรือคืนสินค้าในช่วงนี้</p>';
+  if (totals.length) $('#shopCommissionDashboard .commission-accurate')?.insertAdjacentHTML('afterbegin', `<div class="commission-range-actions"><button type="button" data-commission-days="7">7 วัน</button><button type="button" data-commission-days="30">30 วัน</button><span>${escapeHtml(range)}</span></div>`);
+}
+$("#shopCommissionDashboard").addEventListener("click", async event => {
+  const button = event.target.closest('[data-commission-days]');
+  if (!button) return;
+  const days = Number(button.dataset.commissionDays) || 30;
+  state.shopDateTo = thaiToday(); state.shopDateFrom = dateDaysAgo(days - 1);
+  button.disabled = true;
+  try { if (state.selected) await loadTikTokConnection(); else await loadPortfolioDashboard(); } catch (error) { showToast(error.message, 'error'); }
+});
 $("#showInputView").addEventListener("click", () => {
   setOutputScope("channel");
   setWorkspaceView("input");
@@ -436,8 +456,10 @@ function renderShopDashboard(data, shopConnection) {
   const box = $("#shopDashboard"), portfolio = data.shop_portfolio || {}, commissions = portfolio.commission || [], products = data.shop_products || [], orders = data.shop_orders || [];
   box.hidden = !shopConnection && !commissions.length;
   if (box.hidden) return;
-  const commission = commissions[0], daily = commission?.daily || [], maxDaily = Math.max(1, ...daily.map((day) => Number(day.amount) || 0)), total = Number(commission?.total_30) || 0, channels = commission?.channels || [];
+  const commission = commissions[0], daily = commission?.daily || [], maxDaily = Math.max(1, ...daily.map((day) => Number(day.amount) || 0)), total = Number(commission?.total ?? commission?.total_30) || 0, channels = commission?.channels || [];
+  state.lastCommissionCard = commission ? { owner: state.selected ? (state.channels.find((channel) => channel.id === state.selected)?.name || "ช่องที่เลือก") : "รวมทุกช่อง", range: `${data.date_range?.from || state.shopDateFrom} ถึง ${data.date_range?.to || state.shopDateTo}`, total, currency: commission.currency || "THB", channels, referralUrl: data.vx_referral?.url || "" } : null;
   $("#shopCommissionDashboard").innerHTML = commission ? `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>${money(total)}</b><span class="positive">\u25B2 ${Number(commission.growth || 0).toLocaleString()}% \u0E08\u0E32\u0E01\u0E23\u0E2D\u0E1A\u0E01\u0E48\u0E2D\u0E19</span></article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>${products.length.toLocaleString()}</b><span>\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2B\u0E23\u0E37\u0E2D\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E44\u0E14\u0E49</span></article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="commission-bars">${daily.slice(-30).map((day) => `<div title="${escapeHtml(day.date)} ${money(day.amount)}"><i style="height:${Math.max(8, Math.round(Number(day.amount) / maxDaily * 100))}%"></i><small>${escapeHtml(day.date)}</small></div>`).join("")}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3>${channels.map((channel) => `<div class="channel-share"><span>${escapeHtml(channel.channel)}</span><i><b style="width:${Math.max(5, Number(channel.amount) / Math.max(1, ...channels.map((x) => Number(x.amount))) * 100)}%"></b></i><strong>${money(channel.amount)}</strong></div>`).join("")}</aside></div></div>` : '<p class="hint">TikTok \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E2A\u0E48\u0E07\u0E22\u0E2D\u0E14\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E32 \u0E23\u0E30\u0E1A\u0E1A\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E17\u0E31\u0E19\u0E17\u0E35\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E1E\u0E1A\u0E1F\u0E34\u0E25\u0E14\u0E4C\u0E40\u0E07\u0E34\u0E19\u0E08\u0E23\u0E34\u0E07\u0E43\u0E19\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</p>';
+  if (commission) $("#shopCommissionDashboard .commission-summary")?.insertAdjacentHTML("afterbegin", '<div class="commission-share-actions"><button type="button" data-share-commission>สร้างรูปและแชร์สรุปค่าคอม</button></div>');
   renderShowcaseProducts(products, orders, false, data.shop_growth_orders || orders);
 }
 const renderLiveShopDashboard = renderShopDashboard;
@@ -464,6 +486,19 @@ async function api(url, options) {
   }
   return body;
 }
+$("#shopCommissionDashboard").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-share-commission]");
+  if (!button) return;
+  const card = state.commissionCards?.[Number(button.dataset.shareCommission)] || state.lastCommissionCard;
+  if (!card) return showToast("ยังไม่มีข้อมูลค่าคอมสำหรับสร้างรูป", "warning");
+  try {
+    if (!window.VisionDCommissionCard) throw new Error("เครื่องมือสร้างรูปยังโหลดไม่เสร็จ กรุณาลองอีกครั้ง");
+    const result = await window.VisionDCommissionCard.shareCommissionCard(card);
+    showToast(result === "shared" ? "เปิดหน้าต่างแชร์แล้ว" : "ดาวน์โหลดรูปสรุปค่าคอมแล้ว");
+  } catch (error) {
+    if (error?.name !== "AbortError") showToast(error.message || "แชร์รูปไม่สำเร็จ", "error");
+  }
+});
 async function loadChannels() {
   try {
     const data = await api("/api/admin/tiktok-analyzer");
@@ -596,6 +631,11 @@ async function loadTikTokConnection() {
   $("#shopConnectionRequired").hidden = Boolean(shopConnection);
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
+  if (shopConnection) {
+    const [commission, referral] = await Promise.all([api(`/api/admin/tiktok-commissions?channel_id=${encodeURIComponent(requestedChannelId)}&from=${state.shopDateFrom}&to=${state.shopDateTo}`), api('/api/vx/referrals').catch(() => null)]);
+    if (loadSeq !== state.connectionLoadSeq || requestedChannelId !== state.selected) return null;
+    renderAccurateCommission(commission, referral);
+  }
   $("#connectTikTok").hidden = false;
   $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
   $("#syncTikTokShop").hidden = !shopConnection;

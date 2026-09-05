@@ -9,6 +9,7 @@ import {loadSellerToken} from '../../_seller_token.js';
 import {firstOrderPromoStatus,calculateFirstOrderDiscount} from '../../_first_order_promo.js';
 import {courseRevenue} from '../../_course_plans.js';
 import {ensureLifetimeMemberPlan} from '../../_member_plan.js';
+import {activeReferralAttribution,ensureVxReferralSchema} from '../../_vx_referrals.js';
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -21,6 +22,7 @@ export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   await ensureLifetimeMemberPlan(ctx.env);
   await ensureVision7Schema(ctx.env);
+  await ensureVxReferralSchema(ctx.env);
   const a = await requireUser(ctx);
   if (a.error) return a.error;
   if (a.user.role !== "boss") {
@@ -154,13 +156,14 @@ export async function onRequestPost(ctx) {
       Math.floor(Math.random() * 90 + 10);
   const seller=sellerItems[0],companyCourse=companyCourseItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=companyCourse?{active_account:'bank',bank_name:companyCourse.payment_bank_name,account_name:companyCourse.payment_account_name,account_number:companyCourse.payment_account_number,qr_url:''}:seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
   const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
-  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount,course_plan,teacher_revenue,visiond_revenue,course_api_fee)
-    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+  const referralAttribution=await activeReferralAttribution(ctx.env,a.user.id);
+  const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount,course_plan,teacher_revenue,visiond_revenue,course_api_fee,vx_referral_attribution_id)
+    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
     WHERE ?='[]' OR NOT EXISTS(
       SELECT 1 FROM orders existing_order JOIN order_items existing_item ON existing_item.order_id=existing_order.id
       WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
       AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
-    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,seller?.course_plan||'rights',seller?revenue.teacher:0,seller?revenue.visiond:0,seller?revenue.apiFee:0,guardJson,a.user.id,guardJson)];
+    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,seller?.course_plan||'rights',seller?revenue.teacher:0,seller?revenue.visiond:0,seller?revenue.apiFee:0,referralAttribution?.id||null,guardJson,a.user.id,guardJson)];
   for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price,vision7_renew_license_id) SELECT id,?,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,renewLicenseId||null,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
   const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);

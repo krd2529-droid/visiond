@@ -3,12 +3,14 @@ import { ensureDatabase } from '../../_schema.js';
 import {rateLimit,verifyTurnstile,hashPassword,securityLog} from '../../_security.js';
 import {requestIp} from '../../_security.js';
 import {claimVisitorHistory} from '../../_analytics.js';
+import {ensureVxReferralSchema,referralCookieCode} from '../../_vx_referrals.js';
 
 const TERMS_VERSION='2026-08-10-v1';
 
 export async function onRequestPost(ctx) {
   try {
     await ensureDatabase(ctx.env);
+    await ensureVxReferralSchema(ctx.env);
     const body = await ctx.request.json();
     const username = String(body.username || '').trim().toLowerCase();
     const email = String(body.email || '').trim().toLowerCase();
@@ -45,11 +47,12 @@ export async function onRequestPost(ctx) {
     if(duplicateName)return json({error:'ชื่อ–นามสกุลนี้มีบัญชีอยู่แล้ว หากเป็นยูสเทสให้ Boss กำหนดสถานะจากหลังบ้าน'},409);
 
     const hash = await hashPassword(body.password);
-    const acceptedIpHash=await sha256(`${requestIp(ctx.request)}|visiond-terms-ip-v1`),sessionId=crypto.randomUUID();
+    const acceptedIpHash=await sha256(`${requestIp(ctx.request)}|visiond-terms-ip-v1`),sessionId=crypto.randomUUID(),referralCode=referralCookieCode(ctx.request);
     const [result] = await ctx.env.DB.batch([
       ctx.env.DB.prepare("INSERT INTO users(email,username,name,phone,password_hash,role) VALUES(?,?,?,?,?,'user')").bind(email, username, name, phone, hash),
       ctx.env.DB.prepare('INSERT INTO user_terms_acceptances(user_id,terms_version,accepted_at,ip_hash) SELECT id,?,CURRENT_TIMESTAMP,? FROM users WHERE lower(email)=?').bind(TERMS_VERSION,acceptedIpHash,email),
-      ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) SELECT ?,id,datetime('now','+24 hours') FROM users WHERE lower(email)=?").bind(sessionId,email)
+      ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) SELECT ?,id,datetime('now','+24 hours') FROM users WHERE lower(email)=?").bind(sessionId,email),
+      ...referralCode?[ctx.env.DB.prepare("INSERT OR IGNORE INTO vx_referral_attributions(id,code_id,referred_user_id,expires_at) SELECT ?,c.id,u.id,datetime('now','+30 days') FROM vx_referral_codes c JOIN users u ON lower(u.email)=? WHERE c.code=? AND c.status='active' AND c.owner_user_id<>u.id").bind(crypto.randomUUID(),email,referralCode)]:[]
     ]);
     const userId=Number(result.meta.last_row_id);
     const claimed=await claimVisitorHistory(ctx.env,ctx.request,userId);

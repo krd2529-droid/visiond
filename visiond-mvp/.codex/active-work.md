@@ -1,12 +1,13 @@
-# Active patch: Explicit TikTok account selection
+# Active patch: VX commissions, sharing, and user affiliate
 
 - Event: PATCH_DELIVERED
-- Outcome: เชื่อมการ์ดช่อง 2 ได้สะดวกโดย TikTok ต้องแสดงหน้าขออนุญาต ไม่เลือกบัญชี Daddy ที่ค้างอยู่ให้อัตโนมัติ
-- Preserve: หนึ่งการ์ดต่อหนึ่งช่อง; state/callback ผูก channel_id เดิม; ห้ามย้ายบัญชีที่เชื่อมกับการ์ดอื่น
-- Acceptance: Login Kit ส่ง disable_auto_auth=1; ปุ่มของช่องใหม่สื่อว่าต้องเลือกบัญชี; callback กลับมายังการ์ดที่เริ่มเชื่อม; ทดสอบการแยกช่องเดิมผ่าน
-- Constraint: TikTok Shop Creator authorization รองรับอย่างเป็นทางการเฉพาะ app_key และ state จึงไม่ส่งพารามิเตอร์สลับบัญชีที่ไม่มีในเอกสาร
-- Phase: deployed
-- Likely files: functions/_tiktok_oauth.js, public/tiktok-analyzer.js, public/tiktok-analyzer.html, tests
-- Verification: explicit account selection PASS; callback channel binding PASS; one-card-one-channel isolation PASS; Shop account binding PASS; OAuth regression PASS; JS syntax PASS
-- Delivery: commit 211a8e76 pushed to origin/main; browser script version advanced to 02086
-- Next: select card 2, click “เลือกบัญชี TikTok เพื่อเชื่อม”, and choose account 2 on TikTok's authorization page
+- Outcome: ทำระบบค่าคอม TikTok แยกช่อง/รวมทุกช่องตามวันหรือช่วงเวลา, สร้างรูปและแชร์, พร้อมระบบ Affiliate VX ของผู้ใช้ที่คิดค่าคอม 20%
+- Preserve: หนึ่งการ์ดต่อหนึ่งช่อง; ตัวเลขเงินต้องมาจากข้อมูลจริง; ไม่เรียก TikTok ใหม่ทุกครั้งที่เปิดดู; พักการทดสอบ OAuth ไอดี 2 โดยไม่ลดขอบเขตหลายช่อง
+- Acceptance: เลือกวัน/ช่วงและปุ่มลัด 7/30 วัน; ยอดรายวันและรวมสกุลเงินอย่างถูกต้อง; รูปแชร์ระบุเจ้าของ/ช่วง/ยอดและแนบ referral URL; referral attribution ป้องกัน self/duplicate; purchase creates pending 20%; refund/cancel reverses; user/admin ledgers and payout states; tests cover multi-channel fixtures
+- Constraint: production verification with a second real Creator remains deferred until Sandbox target access is added; implementation must be fully testable with isolated fixtures meanwhile
+- Event: PATCH_UPDATED
+- Phase: implementation and independent final audit complete
+- Evidence: targeted VX/TikTok tests, channel-binding regression, syntax checks, predeploy check, and localhost browser verification of user affiliate page passed
+- Gate note: focused/visible/predeploy passed; global regression has one pre-existing unrelated blog.html stylesheet assertion failure
+- Deferred only: real TikTok Sandbox/OAuth login for channel 2; no other feature or multi-channel acceptance criterion is deferred
+- Likely files: migrations, functions/_schema.js, TikTok connection API/UI, referral endpoints, admin/user UI, tests, roadmap
