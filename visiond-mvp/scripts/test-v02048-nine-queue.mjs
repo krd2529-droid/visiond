@@ -14,5 +14,5 @@ assert.match(shopConnect,/created_by=\?/);assert.match(shopConnect,/archived_at 
 assert.match(channels,/c\.created_by=\?/);assert.match(channels,/AND created_by=\?/);
 assert.match(login,/u\.role!=='boss'/);assert.match(login,/DELETE FROM sessions WHERE user_id=\?/);assert.match(v7,/user\?\.role!=='boss'/);
 for(const slug of ['analyze-tiktok-shop-products','tiktok-open-collaboration-showcase','create-powerpoint-online']){const article=read(`public/blog/${slug}.html`);assert.match(article,/rel="canonical"/);assert.match(article,/application\/ld\+json/);assert.match(read('public/sitemap.xml'),new RegExp(slug));}
-assert.equal(read('VERSION.txt').trim(),'v0.20.48');
+assert.equal(read('VERSION.txt').trim(),'v0.20.49');
 console.log('VisionD nine-queue delivery contract: PASS');

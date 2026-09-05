@@ -328,10 +328,13 @@ function renderShowcasePermission() {
   }
   const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
   box.hidden = !connection || ready;
-  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase ไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "สิทธิ์ Creator สำหรับ Marketplace/Showcase")}</span><a href="/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected || "")}">เชื่อมใหม่เพื่ออัปเดตสิทธิ์</a>`;
+  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase อัตโนมัติไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")} · ต้องเปิดสิทธิ์ Write ใน TikTok Shop Partner Center แล้วเชื่อมใหม่ ระบบจึงจะส่งสินค้าที่เลือกได้</span><a href="/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected || "")}">เชื่อมใหม่เพื่ออัปเดตสิทธิ์</a>`;
   const searchButton = $("#marketplaceSearchForm button"), addButton = $("#addMarketplaceSelected");
   if (searchButton) searchButton.disabled = Boolean(connection) && !capabilities.can_search_marketplace;
-  if (addButton && !capabilities.can_write_showcase) addButton.disabled = true;
+  if (addButton) {
+    addButton.setAttribute("aria-disabled", capabilities.can_write_showcase ? "false" : "true");
+    addButton.title = capabilities.can_write_showcase ? "" : "กดเพื่อดูวิธีเปิดสิทธิ์เพิ่มสินค้าเข้า Showcase";
+  }
 }
 function renderMarketplaceProducts(data = null) {
   const box = $("#marketplaceResults"), addButton = $("#addMarketplaceSelected"), snapshot = $("#marketplaceSnapshot"), products = state.marketplaceProducts;
@@ -354,7 +357,11 @@ function renderMarketplaceProducts(data = null) {
   addButton.textContent = `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   addButton.hidden = !products.length;
   addButton.disabled = true;
-  box.querySelectorAll(".marketplace-product-check").forEach((input) => input.addEventListener("change", () => addButton.disabled = !state.shopConnection?.capabilities?.can_write_showcase || !box.querySelector(".marketplace-product-check:checked")));
+  box.querySelectorAll(".marketplace-product-check").forEach((input) => input.addEventListener("change", () => {
+    const selected = Boolean(box.querySelector(".marketplace-product-check:checked"));
+    addButton.disabled = !selected;
+    addButton.textContent = state.shopConnection?.capabilities?.can_write_showcase ? `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}` : selected ? "ตรวจสิทธิ์ก่อนเพิ่มสินค้าเข้า Showcase" : `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
+  }));
   $("#marketplaceNext")?.addEventListener("click", () => searchMarketplace(state.marketplaceNextToken));
 }
 async function searchMarketplace(pageToken = "") {
@@ -882,7 +889,11 @@ $("#marketplaceSearchForm").addEventListener("submit", async (event) => {
 });
 $("#addMarketplaceSelected").addEventListener("click", async () => {
   if (!state.shopConnection) return;
-  if (!state.shopConnection.capabilities?.can_write_showcase) return showToast("บัญชี Creator ยังไม่มีสิทธิ์เพิ่ม Showcase กรุณากดเชื่อมและอนุญาตสิทธิ์ใหม่", "error");
+  if (!state.shopConnection.capabilities?.can_write_showcase) {
+    renderShowcasePermission();
+    $("#showcasePermission")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return showToast("ยังส่งสินค้าไม่ได้: ต้องเปิด creator.showcase.write หรือ creator.video.write แล้วเชื่อมบัญชีใหม่", "error");
+  }
   const ids = [...document.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
   const button = $("#addMarketplaceSelected");
