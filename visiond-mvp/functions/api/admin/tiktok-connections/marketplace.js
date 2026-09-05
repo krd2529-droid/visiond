@@ -12,6 +12,19 @@ export const categoriesFromStoredProducts = rows => [...new Map(rows.flatMap(row
   } catch { return []; }
 }).map(([id, category]) => [String(id), category])).values()].sort((left, right) => left.name.localeCompare(right.name, "th"));
 
+export const classifyMarketplaceError = error => {
+  const detail = clean(error?.providerMessage || error?.message, 240), normalized = detail.toLowerCase(), providerStatus = Number(error?.providerStatus) || 0;
+  const missingScope = detail.includes("SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ") || /scope|permission|not authorized|access denied/.test(normalized);
+  const invalidToken = /access.?token|token.*(?:invalid|expired)|unauthorized/.test(normalized) || providerStatus === 401;
+  const timedOut = /timeout|aborted/.test(normalized), rateLimited = providerStatus === 429 || /rate.?limit|too many request/.test(normalized);
+  if (missingScope) return { status: 403, error: "สิทธิ์ค้นหา Marketplace ยังไม่พร้อม กรุณาเชื่อม TikTok Shop ใหม่", reconnect_required: true };
+  if (invalidToken) return { status: 401, error: "โทเคน TikTok Shop ใช้งานไม่ได้ กรุณาเชื่อม TikTok Shop ใหม่", reconnect_required: true };
+  if (timedOut) return { status: 504, error: "TikTok ตอบกลับช้าเกินไป กรุณาลองค้นหาใหม่" };
+  if (rateLimited) return { status: 429, error: "TikTok จำกัดจำนวนคำขอชั่วคราว กรุณารอสักครู่แล้วลองใหม่" };
+  if (providerStatus >= 400 && providerStatus < 500) return { status: 422, error: "TikTok ปฏิเสธคำขอค้นหา กรุณาตรวจคำค้นแล้วลองใหม่" };
+  return { status: 502, error: "TikTok Shop ตอบกลับผิดพลาด กรุณาลองใหม่" };
+};
+
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env); await ensureTikTokAnalyzerSchema(ctx.env);
   const auth = await requireAdmin(ctx); if (auth.error) return auth.error;
@@ -38,7 +51,7 @@ export async function onRequestPost(ctx) {
     }
     return json({ ok: true, source: "open_collaboration_marketplace", comparison_days: comparisonDays, ...result, products: result.products.map(product => { const prior = previous.get(product.product_id); return { ...product, growth: tikTokMarketplaceGrowth(product.units_sold, prior?.units_sold), previous_snapshot_at: prior?.captured_at || null }; }) }, 200, headers);
   } catch (error) {
-    const detail = clean(error?.message, 240), missingScope = detail.includes("SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ"), timedOut = /timeout|aborted/i.test(detail);
-    return json({ error: missingScope ? "ต้องเปิดสิทธิ์ creator.affiliate_collaboration.read แล้วเชื่อม TikTok Shop ใหม่" : timedOut ? "TikTok ตอบกลับช้าเกินไป กรุณาลองค้นหาใหม่" : "ค้นสินค้า Open Collaboration Marketplace ไม่สำเร็จ", detail }, missingScope ? 403 : timedOut ? 504 : 502, headers);
+    const classified = classifyMarketplaceError(error), detail = clean(error?.providerMessage || error?.message, 240);
+    return json({ error: classified.error, detail, code: error?.code ?? null, request_id: clean(error?.requestId, 120), reconnect_required: Boolean(classified.reconnect_required) }, classified.status, headers);
   }
 }

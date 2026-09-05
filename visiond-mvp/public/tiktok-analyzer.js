@@ -494,9 +494,17 @@ async function api(url, options) {
   const response = await fetch(url, options), body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const reason = body.code ? ` (${body.code})` : "";
-    throw new Error(`${body.error || `HTTP ${response.status}`}${reason}`);
+    const error = new Error(`${body.error || `HTTP ${response.status}`}${reason}`);
+    error.detail = body.detail || "";
+    error.requestId = body.request_id || "";
+    error.reconnectRequired = Boolean(body.reconnect_required);
+    throw error;
   }
   return body;
+}
+function marketplaceErrorMessage(error) {
+  const detail = String(error?.detail || "").trim(), requestId = String(error?.requestId || "").trim();
+  return `${error?.message || "ค้นหาไม่สำเร็จ"}${detail && !String(error?.message || "").includes(detail) ? ` · TikTok: ${detail}` : ""}${requestId ? ` · Request ID: ${requestId}` : ""}`;
 }
 $("#shopCommissionDashboard").addEventListener("click", async (event) => {
   const button = event.target.closest("[data-share-commission]");
@@ -1017,8 +1025,9 @@ $("#marketplaceSearchForm").addEventListener("submit", async (event) => {
     $("#marketplaceSnapshot").textContent = "กำลังค้นหาสินค้า Open Collaboration จาก TikTok…";
     await searchMarketplace("product");
   } catch (error) {
-    $("#marketplaceSnapshot").textContent = error.message;
-    showToast(error.message, "error");
+    const message = marketplaceErrorMessage(error);
+    $("#marketplaceSnapshot").textContent = message;
+    showToast(message, "error");
   }
 });
 $("#marketplaceShopSearchForm").addEventListener("submit", async (event) => {
@@ -1027,8 +1036,9 @@ $("#marketplaceShopSearchForm").addEventListener("submit", async (event) => {
     $("#marketplaceShopSnapshot").textContent = "กำลังค้นหาชื่อร้านค้าจาก TikTok Marketplace…";
     await searchMarketplace("shop");
   } catch (error) {
-    $("#marketplaceShopSnapshot").textContent = error.message;
-    showToast(error.message, "error");
+    const message = marketplaceErrorMessage(error);
+    $("#marketplaceShopSnapshot").textContent = message;
+    showToast(message, "error");
   }
 });
 async function addProductsToShowcase(ids, button, mode = "product") {

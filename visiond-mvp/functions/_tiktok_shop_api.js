@@ -18,6 +18,8 @@ async function tikTokShopRequest(config, accessToken, { path, method = "GET", qu
     const error = new Error(`TIKTOK_SHOP_API_${response.status}_${clean(payload.message || "FAILED", 160)}`);
     error.code = payload.code;
     error.requestId = payload.request_id;
+    error.providerStatus = response.status;
+    error.providerMessage = clean(payload.message || "FAILED", 160);
     throw error;
   }
   return payload.data || {};
