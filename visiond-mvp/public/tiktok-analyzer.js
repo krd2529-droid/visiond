@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
+let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -111,9 +111,7 @@ renderPendingShopDashboard = function() {
   renderPendingShopDashboardBase();
   const samples = [["\u0E40\u0E0B\u0E23\u0E31\u0E48\u0E21\u0E1A\u0E33\u0E23\u0E38\u0E07\u0E1C\u0E34\u0E27\u0E2A\u0E39\u0E15\u0E23\u0E2D\u0E48\u0E2D\u0E19\u0E42\u0E22\u0E19", 128, 3260, "3.9%", 3840], ["\u0E01\u0E23\u0E30\u0E40\u0E1B\u0E4B\u0E32\u0E1C\u0E49\u0E32\u0E41\u0E1F\u0E0A\u0E31\u0E48\u0E19\u0E1E\u0E31\u0E1A\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E14\u0E49", 86, 2180, "3.9%", 2150], ["\u0E0A\u0E38\u0E14\u0E40\u0E14\u0E47\u0E01\u0E44\u0E1B\u0E42\u0E23\u0E07\u0E40\u0E23\u0E35\u0E22\u0E19", 64, 1740, "3.7%", 1920], ["\u0E04\u0E25\u0E35\u0E19\u0E0B\u0E34\u0E48\u0E07\u0E25\u0E49\u0E32\u0E07\u0E40\u0E04\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E2A\u0E33\u0E2D\u0E32\u0E07 300ml", 41, 1260, "3.3%", 1230], ["\u0E23\u0E2D\u0E07\u0E40\u0E17\u0E49\u0E32\u0E2B\u0E31\u0E14\u0E40\u0E14\u0E34\u0E19\u0E40\u0E14\u0E47\u0E01", 27, 980, "2.8%", 810]];
   $("#shopGradeList").innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>\u0E40\u0E25\u0E37\u0E2D\u0E01</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22</th><th>\u0E22\u0E2D\u0E14\u0E04\u0E25\u0E34\u0E01</th><th>\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E41\u0E1B\u0E25\u0E07</th><th>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19</th></tr></thead><tbody>${samples.map((item, index) => `<tr><td><input type="checkbox" aria-label="\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ${index + 1}"></td><td><b>${item[0]}</b><small>\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07 \xB7 \u0E23\u0E2D TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API</small></td><td>${item[1].toLocaleString()}</td><td>${item[2].toLocaleString()}</td><td>${item[3]}</td><td>${money(item[4])}</td></tr>`).join("")}</tbody></table></div><p class="demo-showcase-note">\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E01\u0E32\u0E23\u0E17\u0E33\u0E07\u0E32\u0E19: \u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E41\u0E25\u0E49\u0E27\u0E43\u0E0A\u0E49\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E1A\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01 Showcase \xB7 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop</p>`;
-  $("#removeShowcaseF").hidden = false;
-  $("#removeShowcaseF").disabled = true;
-  $("#removeShowcaseF").textContent = "\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E40\u0E25\u0E37\u0E2D\u0E01 (\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07)";
+  [$("#removeShowcasePage"), $("#removeShowcaseAll")].forEach((button) => { button.hidden = false; button.disabled = true; });
 };
 function productMetrics(product, orders) {
   const commission = safeJson(product.commission_json) || {}, sold = orders.reduce((sum, order) => sum + (safeJson(order.product_ids) || []).filter((id) => String(id) === String(product.product_id)).length, 0);
@@ -194,6 +192,7 @@ function productNameSimilarity(left, right) {
   return [...aTokens].filter((token) => bTokens.has(token)).length / Math.min(aTokens.size, bTokens.size);
 }
 function renderShowcaseProducts(products, orders, demo = false, growthOrders = orders) {
+  if (!demo) state.showcaseProducts = products.filter((product) => product.product_id);
   const list = $("#shopGradeList");
   const inventory = [];
   for (const candidate of state.inventoryProducts || []) {
@@ -203,7 +202,8 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
   }
   if (!products.length && !inventory.length) {
     list.innerHTML = '<p class="hint">ยังไม่มีสินค้าใน Showcase ของช่องนี้</p>';
-    $("#removeShowcaseF").hidden = true;
+    $("#removeShowcasePage").hidden = true;
+    $("#removeShowcaseAll").hidden = true;
     return;
   }
   const usedInventory = new Set();
@@ -245,9 +245,9 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     const metrics = productMetrics(product, orders), gmv = productGmvGrowth(product, growthOrders), image = safeProductImage(product.image_url || product.raw_image_url) || productImageFromRaw(product.raw_json), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), selection = product.selection || {}, grade = effectiveGrade(product), gradeLabel = "ABCDEF".includes(grade) ? grade : "–", evidence = String(selection.evidence || ""), evidenceSales = Number(evidence.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)\s*(\d[\d,]*)\s*ชิ้น/i)?.[1]?.replace(/,/g, "")) || 0, evidenceCommission = evidence.match(/(?:คอม(?:มิชชัน)?|commission)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/i)?.[1], gradeReason = selection.evidence || (metrics.sales ? `จัดเกรดอัตโนมัติจากยอดขายจริง ${metrics.sales.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก` : "ยังไม่จัดเกรด — ยังไม่มียอดขายหรือผลวิเคราะห์"), growthLabel = gmv.growth === null ? "สินค้าใหม่" : `${gmv.growth > 0 ? "+" : ""}${gmv.growth.toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = gmv.growth === null ? "new" : gmv.growth > 0 ? "up" : gmv.growth < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder" aria-label="ไม่มีรูปสินค้า">ไม่มีรูป</span>';
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : product.analysisOnly ? '<input class="remove-showcase-check" type="checkbox" disabled title="ยังจับคู่กับสินค้าใน Showcase ไม่ได้" aria-label="ยังลบไม่ได้เพราะไม่มีรหัส Showcase">' : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td><td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td><td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(gradeReason)}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
+    return `<tr data-product-id="${escapeHtml(product.product_id)}"><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td><td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td><td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(gradeReason)}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
   }).join("");
-  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ</span></div><p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>GMV 7 วัน</th><th>GMV 7 วันก่อน</th><th>เติบโต</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="11" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
+  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ</span></div><p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>GMV 7 วัน</th><th>GMV 7 วันก่อน</th><th>เติบโต</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="10" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
   $("#showcaseSearch").addEventListener("input", (event) => {
     state.showcaseSearch = event.target.value;
     state.showcasePage = 1;
@@ -262,7 +262,9 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     state.showcasePage++;
     renderShowcaseProducts(products, orders, demo, growthOrders);
   });
-  $("#removeShowcaseF").hidden = demo || !pageProducts.length;
+  const pageHasProducts = pageProducts.some((product) => !product.analysisOnly && product.product_id);
+  $("#removeShowcasePage").hidden = demo || !pageHasProducts;
+  $("#removeShowcaseAll").hidden = demo || !state.showcaseProducts.length;
 }
 function marketplacePrice(value) {
   if (!value || typeof value !== "object") return "–";
@@ -384,7 +386,8 @@ function renderPendingShopDashboard() {
   notice.innerHTML = "<b>\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E2B\u0E19\u0E49\u0E32\u0E15\u0E32\u0E1C\u0E25\u0E25\u0E31\u0E1E\u0E18\u0E4C</b><span>\u0E20\u0E32\u0E1E\u0E14\u0E49\u0E32\u0E19\u0E25\u0E48\u0E32\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E42\u0E04\u0E23\u0E07\u0E04\u0E32\u0E14\u0E01\u0E32\u0E23\u0E13\u0E4C \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 TikTok API</span>";
   $("#shopCommissionDashboard").innerHTML = `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>\u2014</b>${pending}</article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>\u2014</b>${pending}</article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="pending-chart">${chartPreview}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3><div class="pending-channels">${channelPreview}</div></aside></div></div>`;
   $("#shopGradeList").innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>\u0E40\u0E25\u0E37\u0E2D\u0E01</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22</th><th>\u0E22\u0E2D\u0E14\u0E04\u0E25\u0E34\u0E01</th><th>\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E41\u0E1B\u0E25\u0E07</th><th>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19</th></tr></thead><tbody><tr class="pending-row"><td colspan="6">${pending}</td></tr></tbody></table></div>`;
-  $("#removeShowcaseF").hidden = true;
+  $("#removeShowcasePage").hidden = true;
+  $("#removeShowcaseAll").hidden = true;
 }
 renderShopDashboard = function(data, shopConnection) {
   if (data?.review_demo) {
@@ -911,25 +914,36 @@ $("#addMarketplaceSelected").addEventListener("click", async () => {
     button.disabled = false;
   }
 });
-$("#removeShowcaseF").addEventListener("click", async () => {
+async function removeShowcaseProducts(ids, scopeLabel) {
   if (!state.shopConnection) return;
-  const ids = [...document.querySelectorAll(".remove-showcase-check:checked")].map((input) => input.closest("[data-product-id]").dataset.productId);
-  if (!ids.length) {
-    message.textContent = "\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E25\u0E1A\u0E01\u0E48\u0E2D\u0E19";
-    return;
-  }
-  if (!confirm(`\u0E22\u0E37\u0E19\u0E22\u0E31\u0E19\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ${ids.length} \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01 Showcase TikTok? \u0E01\u0E32\u0E23\u0E01\u0E23\u0E30\u0E17\u0E33\u0E19\u0E35\u0E49\u0E21\u0E35\u0E1C\u0E25\u0E01\u0E31\u0E1A\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E08\u0E23\u0E34\u0E07`)) return;
-  $("#removeShowcaseF").disabled = true;
+  const connectionId = state.shopConnection.id, account = state.shopConnection.creator_username || "บัญชี Creator";
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
+  if (!uniqueIds.length) return showToast("ไม่มีสินค้า Showcase ให้ลบ", "warning");
+  if (!confirm(`ยืนยัน${scopeLabel} ${uniqueIds.length.toLocaleString()} รายการออกจาก Showcase ของ ${account}? การกระทำนี้มีผลกับบัญชีจริงและย้อนกลับไม่ได้`)) return;
+  const buttons = [$("#removeShowcasePage"), $("#removeShowcaseAll")];
+  buttons.forEach((button) => { button.disabled = true; });
+  let removed = 0;
   try {
-    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_remove", id: state.shopConnection.id, product_ids: ids }) });
-    message.textContent = `\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01 Showcase \u0E41\u0E25\u0E49\u0E27 ${ids.length} \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23`;
+    for (let index = 0; index < uniqueIds.length; index += 200) {
+      const batch = uniqueIds.slice(index, index + 200);
+      const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_remove", id: connectionId, product_ids: batch }) });
+      removed += Number(result.removed || batch.length);
+    }
+    showToast(`ลบสินค้าออกจาก Showcase แล้ว ${removed.toLocaleString()} รายการ`);
+    state.showcasePage = 1;
     await loadTikTokConnection();
   } catch (error) {
-    message.textContent = error.message;
+    showToast(removed ? `ลบสำเร็จ ${removed.toLocaleString()} รายการ ก่อนเกิดข้อผิดพลาด: ${error.message}` : error.message, "error");
+    await loadTikTokConnection();
   } finally {
-    $("#removeShowcaseF").disabled = false;
+    buttons.forEach((button) => { button.disabled = false; });
   }
+}
+$("#removeShowcasePage").addEventListener("click", () => {
+  const ids = [...document.querySelectorAll("#shopGradeList [data-product-id]")].map((row) => row.dataset.productId).filter(Boolean);
+  return removeShowcaseProducts(ids, "ลบสินค้าในหน้านี้");
 });
+$("#removeShowcaseAll").addEventListener("click", () => removeShowcaseProducts(state.showcaseProducts.map((product) => product.product_id), "ลบสินค้าทั้งหมด"));
 $("#screenshots").addEventListener("change", (event) => {
   const files = [...event.target.files];
   message.textContent = files.length > 30 ? "\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E44\u0E14\u0E49\u0E44\u0E21\u0E48\u0E40\u0E01\u0E34\u0E19 30 \u0E23\u0E39\u0E1B\u0E15\u0E48\u0E2D\u0E23\u0E2D\u0E1A" : "";
