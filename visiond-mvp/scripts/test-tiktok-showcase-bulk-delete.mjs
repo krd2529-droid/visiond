@@ -5,11 +5,14 @@ const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "
 const client = read("public/tiktok-analyzer.js");
 const html = read("public/tiktok-analyzer.html");
 
-assert.match(html, /id="removeShowcasePage"[^>]*>ลบสินค้าในหน้านี้</);
+assert.doesNotMatch(html, /removeShowcasePage|ลบสินค้าในหน้านี้/);
 assert.match(html, /id="removeShowcaseAll"[^>]*>ลบสินค้าทั้งหมด</);
 assert.doesNotMatch(html, /removeShowcaseF|ลบสินค้าที่เลือกออกจาก Showcase/);
 assert.doesNotMatch(client, /remove-showcase-check/);
-assert.match(client, /#shopGradeList \[data-product-id\]/);
+assert.match(client, /class="remove-showcase-item"/);
+assert.match(client, /removeShowcaseProducts\(\[button\.dataset\.productId\]/);
+assert.match(client, /data-product-name=/);
+assert.match(client, /!demo && !product\.analysisOnly && product\.product_id/);
 assert.match(client, /state\.showcaseProducts\.map\(\(product\) => product\.product_id\)/);
 assert.match(client, /index \+= 200/);
 assert.match(client, /uniqueIds\.slice\(index, index \+ 200\)/);

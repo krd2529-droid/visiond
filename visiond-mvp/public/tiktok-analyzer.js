@@ -198,7 +198,6 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
   }
   if (!products.length && !inventory.length) {
     list.innerHTML = '<p class="hint">ยังไม่มีสินค้าใน Showcase ของช่องนี้</p>';
-    $("#removeShowcasePage").hidden = true;
     $("#removeShowcaseAll").hidden = true;
     return;
   }
@@ -255,9 +254,10 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     const { metrics, gmv, selection, evidenceSales, evidenceCommission } = facts.get(product), image = safeProductImage(product.image_url || product.raw_image_url) || productImageFromRaw(product.raw_json), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), grade = effectiveGrade(product), gradeLabel = "ABCDEF".includes(grade) ? grade : "–", gradeReason = selection.evidence || (metrics.sales ? `จัดเกรดอัตโนมัติจากยอดขายจริง ${metrics.sales.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก` : ""), growthLabel = gmv.growth === null ? "สินค้าใหม่" : `${gmv.growth > 0 ? "+" : ""}${gmv.growth.toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = gmv.growth === null ? "new" : gmv.growth > 0 ? "up" : gmv.growth < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder" aria-label="ไม่มีรูปสินค้า">ไม่มีรูป</span>';
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    return `<tr data-product-id="${escapeHtml(product.product_id)}">${columns.grade ? `<td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td>` : ""}<td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td>${columns.sales ? `<td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td>` : ""}${columns.commission ? `<td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td>` : ""}${columns.gmvLatest ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td>` : ""}${columns.gmvPrevious ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td>` : ""}${columns.growth ? `<td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td>` : ""}${columns.score ? `<td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td>` : ""}${columns.reason ? `<td class="showcase-reason">${escapeHtml(gradeReason || "–")}</td>` : ""}</tr>`;
+    const removeAction = !demo && !product.analysisOnly && product.product_id ? `<button class="remove-showcase-item" type="button" data-product-id="${escapeHtml(product.product_id)}" data-product-name="${name}" aria-label="ลบ ${name} ออกจาก Showcase">ลบรายการนี้</button>` : "–";
+    return `<tr data-product-id="${escapeHtml(product.product_id)}">${columns.grade ? `<td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td>` : ""}<td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td>${columns.sales ? `<td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td>` : ""}${columns.commission ? `<td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td>` : ""}${columns.gmvLatest ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td>` : ""}${columns.gmvPrevious ? `<td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td>` : ""}${columns.growth ? `<td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td>` : ""}${columns.score ? `<td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td>` : ""}${columns.reason ? `<td class="showcase-reason">${escapeHtml(gradeReason || "–")}</td>` : ""}<td class="showcase-row-action">${removeAction}</td></tr>`;
   }).join("");
-  const columnCount = 1 + Object.values(columns).filter(Boolean).length, headers = `${columns.grade ? "<th>เกรด</th>" : ""}<th>รูปและสินค้า</th>${columns.sales ? "<th>ขายได้</th>" : ""}${columns.commission ? "<th>ค่าคอม</th>" : ""}${columns.gmvLatest ? "<th>GMV 7 วัน</th>" : ""}${columns.gmvPrevious ? "<th>GMV 7 วันก่อน</th>" : ""}${columns.growth ? "<th>เติบโต</th>" : ""}${columns.score ? "<th>คะแนน</th>" : ""}${columns.reason ? "<th>เหตุผลล่าสุด</th>" : ""}`, gmvNote = columns.gmvLatest || columns.gmvPrevious || columns.growth ? `<p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p>` : "";
+  const columnCount = 2 + Object.values(columns).filter(Boolean).length, headers = `${columns.grade ? "<th>เกรด</th>" : ""}<th>รูปและสินค้า</th>${columns.sales ? "<th>ขายได้</th>" : ""}${columns.commission ? "<th>ค่าคอม</th>" : ""}${columns.gmvLatest ? "<th>GMV 7 วัน</th>" : ""}${columns.gmvPrevious ? "<th>GMV 7 วันก่อน</th>" : ""}${columns.growth ? "<th>เติบโต</th>" : ""}${columns.score ? "<th>คะแนน</th>" : ""}${columns.reason ? "<th>เหตุผลล่าสุด</th>" : ""}<th>จัดการ</th>`, gmvNote = columns.gmvLatest || columns.gmvPrevious || columns.growth ? `<p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p>` : "";
   list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ</span></div>${gmvNote}<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr>${headers}</tr></thead><tbody>${rows || `<tr><td colspan="${columnCount}" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>`}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
   $("#showcaseSearch").addEventListener("input", (event) => {
     state.showcaseSearch = event.target.value;
@@ -273,8 +273,11 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     state.showcasePage++;
     renderShowcaseProducts(products, orders, demo, growthOrders);
   });
-  const pageHasProducts = pageProducts.some((product) => !product.analysisOnly && product.product_id);
-  $("#removeShowcasePage").hidden = demo || !pageHasProducts;
+  list.onclick = (event) => {
+    const button = event.target.closest(".remove-showcase-item");
+    if (!button) return;
+    return removeShowcaseProducts([button.dataset.productId], `ลบสินค้า “${button.dataset.productName || button.dataset.productId}”`);
+  };
   $("#removeShowcaseAll").hidden = demo || !state.showcaseProducts.length;
 }
 function marketplacePrice(value) {
@@ -920,7 +923,7 @@ async function removeShowcaseProducts(ids, scopeLabel) {
   const uniqueIds = [...new Set(ids.filter(Boolean))];
   if (!uniqueIds.length) return showToast("ไม่มีสินค้า Showcase ให้ลบ", "warning");
   if (!confirm(`ยืนยัน${scopeLabel} ${uniqueIds.length.toLocaleString()} รายการออกจาก Showcase ของ ${account}? การกระทำนี้มีผลกับบัญชีจริงและย้อนกลับไม่ได้`)) return;
-  const buttons = [$("#removeShowcasePage"), $("#removeShowcaseAll")];
+  const buttons = [...document.querySelectorAll(".remove-showcase-item, #removeShowcaseAll")];
   buttons.forEach((button) => { button.disabled = true; });
   let removed = 0;
   try {
@@ -939,10 +942,6 @@ async function removeShowcaseProducts(ids, scopeLabel) {
     buttons.forEach((button) => { button.disabled = false; });
   }
 }
-$("#removeShowcasePage").addEventListener("click", () => {
-  const ids = [...document.querySelectorAll("#shopGradeList [data-product-id]")].map((row) => row.dataset.productId).filter(Boolean);
-  return removeShowcaseProducts(ids, "ลบสินค้าในหน้านี้");
-});
 $("#removeShowcaseAll").addEventListener("click", () => removeShowcaseProducts(state.showcaseProducts.map((product) => product.product_id), "ลบสินค้าทั้งหมด"));
 $("#screenshots").addEventListener("change", (event) => {
   const files = [...event.target.files];
