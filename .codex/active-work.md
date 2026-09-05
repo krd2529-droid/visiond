@@ -1,10 +1,10 @@
-# Active patch: Clarify shop-search result limit
+# Active patch: Refine Showcase panel UI
 
-- Status: PATCH_DELIVERED
-- Report: the 200-result Marketplace note appears detached and does not explain which feature it belongs to.
-- Outcome: place a plain-language note inside the shop-name search block, visually separated below its input and action.
+- Status: PATCH_READY
+- Report: the Showcase heading, load controls, search field, and item count appear visually scattered and unbalanced.
+- Outcome: compose them into a clear header/control card and a unified search toolbar with responsive stacking.
 - Preserve: Marketplace API, product/shop search modes, filters, results, Showcase actions, and styling.
-- Acceptance: note clearly says it belongs to shop-name search and the 200-item limit; it is not nested inside the input label; product/shop search and responsive layouts remain intact.
-- Phase: delivered.
-- Verification: shop-note association, separated search, responsive layout, Marketplace adversarial flow, Showcase readiness, manual-C placement, mobile frontend, predeploy, and diff checks passed.
-- Delivery: commit `49ac294b` is on `origin/main`; production assets `02073`/`02072` show the restyled shop-search note and no longer contain the detached wording.
+- Acceptance: heading and load controls read as one section; search and count read as one toolbar; desktop spacing is balanced; controls stack cleanly on tablet/mobile; existing behavior remains.
+- Phase: implementation and verification complete.
+- Verification: Showcase toolbar layout, related-button theme, Showcase readiness, Marketplace separation, mobile frontend, predeploy, and diff checks passed.
+- Delivery: pending commit, push, and production verification.
