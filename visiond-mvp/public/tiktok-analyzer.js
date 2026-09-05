@@ -374,10 +374,10 @@ function renderMarketplaceProducts(data = null, mode = "product") {
     const image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), growth = product.growth || {}, growthText = growth.growth_percent === null || growth.growth_percent === void 0 ? "Snapshot แรก" : `${Number(growth.growth_percent) > 0 ? "+" : ""}${Number(growth.growth_percent).toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = growth.growth_percent === null || growth.growth_percent === void 0 ? "new" : Number(growth.growth_percent) > 0 ? "up" : Number(growth.growth_percent) < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder">ไม่มีรูป</span>', title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
     const contentCreators = product.content_creator_count, showcaseCreators = product.showcase_creator_count, creatorDensity = contentCreators === null || contentCreators === void 0 ? showcaseCreators === null || showcaseCreators === void 0 ? '<span class="creator-density unavailable">ไม่มีข้อมูลจาก API</span>' : `<span class="creator-density"><b>${Number(showcaseCreators).toLocaleString()}</b><small>เก็บใน Showcase</small></span>` : `<span class="creator-density"><b>${Number(contentCreators).toLocaleString()}</b><small>ทำคอนเทนต์${showcaseCreators === null || showcaseCreators === void 0 ? "" : ` · ${Number(showcaseCreators).toLocaleString()} เก็บ Showcase`}</small></span>`;
-    return `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${creatorDensity}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td></tr>`;
+    return `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${creatorDensity}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td><td><button class="marketplace-row-add" type="button" data-add-marketplace-product="${escapeHtml(product.product_id)}">เพิ่มเข้า Showcase</button></td></tr>`;
   }).join("");
   const nextId = mode === "shop" ? "marketplaceShopNext" : "marketplaceNext";
-  box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>ความหนาแน่นครีเอเตอร์</th><th>เติบโต ${view.comparisonDays} วัน</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${view.nextToken ? `<div class="showcase-pagination"><button id="${nextId}" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>` : ""}`;
+  box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>ความหนาแน่นครีเอเตอร์</th><th>เติบโต ${view.comparisonDays} วัน</th><th>Showcase</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${view.nextToken ? `<div class="showcase-pagination"><button id="${nextId}" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>` : ""}`;
   const account = state.shopConnection?.creator_username || state.shopConnection?.open_id || "บัญชี Creator";
   addButton.textContent = `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   addButton.hidden = !products.length;
@@ -385,8 +385,9 @@ function renderMarketplaceProducts(data = null, mode = "product") {
   box.querySelectorAll(".marketplace-product-check").forEach((input) => input.addEventListener("change", () => {
     const selected = Boolean(box.querySelector(".marketplace-product-check:checked"));
     addButton.disabled = !selected;
-    addButton.textContent = state.shopConnection?.capabilities?.can_write_showcase ? `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}` : selected ? "ตรวจสิทธิ์ก่อนเพิ่มสินค้าเข้า Showcase" : `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
+    addButton.textContent = `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   }));
+  box.querySelectorAll("[data-add-marketplace-product]").forEach((button) => button.addEventListener("click", () => addProductsToShowcase([button.dataset.addMarketplaceProduct], button, mode)));
   $(`#${nextId}`)?.addEventListener("click", () => searchMarketplace(mode, view.nextToken));
 }
 async function searchMarketplace(mode = "product", pageToken = "") {
@@ -938,27 +939,29 @@ $("#marketplaceShopSearchForm").addEventListener("submit", async (event) => {
     showToast(error.message, "error");
   }
 });
-async function addMarketplaceSelection(mode = "product") {
+async function addProductsToShowcase(ids, button, mode = "product") {
   if (!state.shopConnection) return;
   if (!state.shopConnection.capabilities?.can_write_showcase) {
     renderShowcasePermission();
     $("#showcasePermission")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    return showToast("ยังส่งสินค้าไม่ได้ กรุณาไปหน้า 1 ตั้งค่าช่องและเชื่อมข้อมูล เพื่อเปิดสิทธิ์ Showcase", "error");
+    return showToast("ยังเพิ่มไม่ได้: ต้องเปิด creator.showcase.write หรือ creator.video.write ใน TikTok Shop Partner Center แล้วเชื่อมบัญชีใหม่", "error");
   }
-  const view = marketplaceView(mode), ids = [...view.box.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
-  const button = view.addButton;
   button.disabled = true;
   try {
     const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, product_ids: ids }) });
     showToast(result.warning || `เพิ่มสินค้าเข้า Showcase ของ ${state.shopConnection.creator_username || "บัญชี Creator"} แล้ว ${Number(result.added || ids.length).toLocaleString()} รายการ`, result.warning ? "warning" : "success");
     await loadTikTokConnection();
-    renderMarketplaceProducts({ products: view.products }, mode);
+    renderMarketplaceProducts({ products: marketplaceView(mode).products }, mode);
   } catch (error) {
     showToast(error.message, "error");
   } finally {
     button.disabled = false;
   }
+}
+async function addMarketplaceSelection(mode = "product") {
+  const view = marketplaceView(mode), ids = [...view.box.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
+  return addProductsToShowcase(ids, view.addButton, mode);
 }
 $("#addMarketplaceSelected").addEventListener("click", () => addMarketplaceSelection("product"));
 $("#addMarketplaceShopSelected").addEventListener("click", () => addMarketplaceSelection("shop"));

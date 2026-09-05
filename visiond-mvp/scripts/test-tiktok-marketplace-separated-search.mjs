@@ -27,8 +27,14 @@ assert.match(client, /result_limit: 200/);
 assert.match(client, /shopMarketplaceProducts/);
 assert.match(client, /marketplaceView\(mode = "product"\)/);
 assert.match(client, /view\.box\.querySelectorAll\("\.marketplace-product-check:checked"\)/);
+assert.match(client, /data-add-marketplace-product=/);
+assert.match(client, />เพิ่มเข้า Showcase<\/button>/);
+assert.match(client, /addProductsToShowcase\(\[button\.dataset\.addMarketplaceProduct\], button, mode\)/);
+assert.doesNotMatch(client, /ตรวจสิทธิ์ก่อนเพิ่มสินค้าเข้า Showcase/);
+assert.match(client, /ต้องเปิด creator\.showcase\.write หรือ creator\.video\.write ใน TikTok Shop Partner Center/);
 assert.match(css, /\.shop-search-panel\{margin-bottom:18px/);
-assert.match(html, /tiktok-analyzer\.js\?v=02075/);
-assert.match(html, /tiktok-analyzer\.css\?v=02075/);
+assert.match(css, /\.marketplace-row-add\{/);
+assert.match(html, /tiktok-analyzer\.js\?v=02076/);
+assert.match(html, /tiktok-analyzer\.css\?v=02076/);
 
 console.log("TikTok Marketplace separated product/shop search: PASS");
