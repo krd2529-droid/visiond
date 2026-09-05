@@ -1,12 +1,17 @@
 const DAY=/^\d{4}-\d{2}-\d{2}$/;
 const clean=(value,max=120)=>String(value??'').trim().slice(0,max);
-const bangkokToday=()=>new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
 const shift=(day,offset)=>new Date(Date.parse(`${day}T00:00:00Z`)+offset*864e5).toISOString().slice(0,10);
-export function commissionRange(url){
+export function commissionAvailability(now=Date.now()){
+  const thaiNow=new Date(now+7*3600e3).toISOString(),today=thaiNow.slice(0,10),ready=Number(thaiNow.slice(11,13))>=12;
+  return{ready,today,latestDate:shift(today,ready?-1:-2),nextReadyAt:ready?`${shift(today,1)}T12:00:00+07:00`:`${today}T12:00:00+07:00`};
+}
+export function commissionRange(url,now=Date.now()){
   const preset=Number(url.searchParams.get('days'));
-  let to=clean(url.searchParams.get('to'),10)||bangkokToday();
+  const availability=commissionAvailability(now);
+  let to=clean(url.searchParams.get('to'),10)||availability.latestDate;
+  if(DAY.test(to)&&to>availability.latestDate)to=availability.latestDate;
   let from=clean(url.searchParams.get('from'),10)||(preset===7||preset===30?shift(to,1-preset):to);
-  if(!DAY.test(from)||!DAY.test(to)||from>to||to>bangkokToday())throw new Error('COMMISSION_DATE_RANGE_INVALID');
+  if(!DAY.test(from)||!DAY.test(to)||from>to||to>availability.latestDate)throw new Error('COMMISSION_DATE_RANGE_INVALID');
   const span=Math.floor((Date.parse(`${to}T00:00:00Z`)-Date.parse(`${from}T00:00:00Z`))/864e5)+1;
   if(span>366)throw new Error('COMMISSION_DATE_RANGE_TOO_LARGE');
   return {from,to,days:span};

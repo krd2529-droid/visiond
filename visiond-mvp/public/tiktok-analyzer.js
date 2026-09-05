@@ -1,11 +1,17 @@
 const $ = (selector) => document.querySelector(selector), escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[c]);
 const normalizeProductName = (value) => String(value ?? "").normalize("NFKC").toLocaleLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const arrayValue = (value) => Array.isArray(value) ? value : value === null || value === void 0 || value === "" ? [] : [value], textValue = (value) => Array.isArray(value) ? value.join(" \xB7 ") : String(value ?? "");
-const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new Date(Date.now() + 252e5).toISOString().slice(0, 10), dateDaysAgo = (days) => {
-  const [y, m, d] = thaiToday().split("-").map(Number);
+const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Date(Date.now() + 252e5).toISOString(), thaiToday = () => thaiNow().slice(0, 10), shiftThaiDate = (date, days) => {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d) + days * 864e5).toISOString().slice(0, 10);
+}, commissionAvailability = () => {
+  const now = thaiNow(), today = now.slice(0, 10), ready = Number(now.slice(11, 13)) >= 12;
+  return { ready, latestDate: shiftThaiDate(today, ready ? -1 : -2) };
+}, dateDaysAgo = (days, base = commissionAvailability().latestDate) => {
+  const [y, m, d] = base.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02087";
 document.head.append(commissionCardScript);
@@ -121,7 +127,7 @@ $("#shopCommissionDashboard").addEventListener("click", async event => {
   const button = event.target.closest('[data-commission-days]');
   if (!button) return;
   const days = Number(button.dataset.commissionDays) || 30;
-  state.shopDateTo = thaiToday(); state.shopDateFrom = dateDaysAgo(days - 1);
+  state.shopDateTo = commissionAvailability().latestDate; state.shopDateFrom = dateDaysAgo(days - 1);
   button.disabled = true;
   try { if (state.selected) await loadTikTokConnection(); else await loadPortfolioDashboard(); } catch (error) { showToast(error.message, 'error'); }
 });
@@ -185,7 +191,8 @@ function soldProductSummaryTable(products, orders) {
 function shopRangeSummary(data, products, orders) {
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo };
   const rangeLabel = `${displayDate(range.from)}–${displayDate(range.to)}`;
-  return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${thaiToday()}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${thaiToday()}" required></label><button type="submit">\u0E40\u0E23\u0E35\u0E22\u0E01\u0E14\u0E39</button></form><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${orders.length.toLocaleString()}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${soldProductSummaryTable(products, orders)}`;
+  const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = availability.ready ? `ยอดล่าสุดดูได้ถึง ${availability.latestDate}` : `ยอดเมื่อวานกำลังประมวลผล กรุณารอ 12:00 น. · ขณะนี้ดูได้ถึง ${availability.latestDate}`;
+  return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${availability.latestDate}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${availability.latestDate}" required></label><button type="submit">\u0E40\u0E23\u0E35\u0E22\u0E01\u0E14\u0E39</button></form><p class="hint commission-availability-note">${escapeHtml(availabilityText)}</p><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${orders.length.toLocaleString()}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${soldProductSummaryTable(products, orders)}`;
 }
 function safeProductImage(value) {
   try {
@@ -929,6 +936,7 @@ $("#newChannel").addEventListener("click", () => {
 });
 async function syncTikTokShopData(mode) {
   if (!state.shopConnection) return;
+  if(mode!=="showcase"&&!commissionAvailability().ready){message.textContent="ยอดเมื่อวานยังอยู่ระหว่างการประมวลผล กรุณารอ 12:00 น. เป็นต้นไป";showToast(message.textContent,"warning");return;}
   const limitInput = $("#showcaseSyncLimit"), maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(limitInput.value) || 100)));
   limitInput.value = String(maxShowcase);
   const button=mode==="showcase"?$("#syncTikTokShowcase"):$("#syncTikTokShop");

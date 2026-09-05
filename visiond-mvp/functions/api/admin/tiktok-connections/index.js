@@ -5,6 +5,7 @@ import { revokeTikTokToken, syncTikTokConnection } from "../../../_tiktok_oauth.
 import { decryptChannelValue } from "../../../_channel_crypto.js";
 import { addTikTokShopShowcaseProducts, normalizeTikTokOrderProducts, removeTikTokShopShowcaseProducts, syncTikTokShopCreator } from "../../../_tiktok_shop_api.js";
 import { tikTokShopCreatorCapabilities } from "../../../_tiktok_shop_oauth.js";
+import { commissionAvailability } from "../../../_tiktok_commission.js";
 const headers = { "cache-control": "private, no-store" }, clean = (v, n = 80) => String(v || "").trim().slice(0, n);
 const parsed = (value) => {
   try {
@@ -42,19 +43,19 @@ const publicConnection = (row) => ({ id: row.id, channel_id: row.channel_id, dis
 const shiftDate = (date, days) => {
   const [y, m, d] = date.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) + days * 864e5).toISOString().slice(0, 10);
-}, dateRange = (url) => {
-  const pattern = /^\d{4}-\d{2}-\d{2}$/, today = new Date(Date.now() + 252e5).toISOString().slice(0, 10), fallbackFrom = shiftDate(today, -29);
+}, dateRange = (url, now = Date.now()) => {
+  const pattern = /^\d{4}-\d{2}-\d{2}$/, availability = commissionAvailability(now), fallbackTo = availability.latestDate, fallbackFrom = shiftDate(fallbackTo, -29);
   let from = clean(url.searchParams.get("date_from"), 10), to = clean(url.searchParams.get("date_to"), 10);
   if (!pattern.test(from)) from = fallbackFrom;
-  if (!pattern.test(to)) to = today;
+  if (!pattern.test(to) || to > availability.latestDate) to = availability.latestDate;
   let fromEpoch = Math.floor(Date.parse(`${from}T00:00:00+07:00`) / 1e3), toExclusive = Math.floor(Date.parse(`${to}T00:00:00+07:00`) / 1e3) + 86400;
   if (!Number.isFinite(fromEpoch) || !Number.isFinite(toExclusive) || fromEpoch >= toExclusive) {
     from = fallbackFrom;
-    to = today;
+    to = fallbackTo;
     fromEpoch = Math.floor(Date.parse(`${from}T00:00:00+07:00`) / 1e3);
     toExclusive = Math.floor(Date.parse(`${to}T00:00:00+07:00`) / 1e3) + 86400;
   }
-  return { from, to, fromEpoch, toExclusive };
+  return { from, to, fromEpoch, toExclusive, availability };
 };
 async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
@@ -76,7 +77,7 @@ async function onRequestGet(ctx) {
     shopGrowthOrders = growthRows.map(({ raw_json: rawJson, ...order }) => ({ ...order, product_details: normalizeTikTokOrderProducts(rawJson) }));
   }
   const portfolioProducts = (await ctx.env.DB.prepare(`SELECT p.connection_id,p.product_id,p.name,p.image_url,p.product_url,p.commission_json,p.product_grade,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_showcase_products p JOIN tiktok_shop_creator_connections c ON c.id=p.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) ORDER BY p.product_grade,p.name LIMIT 2000`).bind(auth.user.id, channelId, channelId).all()).results || [], portfolioOrders = (await ctx.env.DB.prepare(`SELECT o.connection_id,o.order_id,o.create_time,o.product_ids,o.commission_json,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_affiliate_orders o JOIN tiktok_shop_creator_connections c ON c.id=o.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) AND o.create_time>=? AND o.create_time<? ORDER BY o.create_time DESC LIMIT 5000`).bind(auth.user.id, channelId, channelId, range.fromEpoch, range.toExclusive).all()).results || [];
-  return json({ configured: Boolean(ctx.env.TIKTOK_CLIENT_KEY && ctx.env.TIKTOK_CLIENT_SECRET), shop_configured: Boolean(ctx.env.TIKTOK_SHOP_APP_KEY && ctx.env.TIKTOK_SHOP_APP_SECRET), connections: connections.map(publicConnection), shop_connections: shopConnections.map(row => ({ ...row, capabilities: tikTokShopCreatorCapabilities(row.scopes) })), shop_products: shopProducts, shop_orders: shopOrders, shop_growth_orders: shopGrowthOrders, date_range: { from: range.from, to: range.to }, shop_portfolio: { products: portfolioProducts, orders: portfolioOrders, commission: commissionDashboard(portfolioOrders) }, videos }, 200, headers);
+  return json({ configured: Boolean(ctx.env.TIKTOK_CLIENT_KEY && ctx.env.TIKTOK_CLIENT_SECRET), shop_configured: Boolean(ctx.env.TIKTOK_SHOP_APP_KEY && ctx.env.TIKTOK_SHOP_APP_SECRET), connections: connections.map(publicConnection), shop_connections: shopConnections.map(row => ({ ...row, capabilities: tikTokShopCreatorCapabilities(row.scopes) })), shop_products: shopProducts, shop_orders: shopOrders, shop_growth_orders: shopGrowthOrders, date_range: { from: range.from, to: range.to }, commission_availability: { ready: range.availability.ready, latest_date: range.availability.latestDate, next_ready_at: range.availability.nextReadyAt }, shop_portfolio: { products: portfolioProducts, orders: portfolioOrders, commission: commissionDashboard(portfolioOrders) }, videos }, 200, headers);
 }
 async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
@@ -91,6 +92,8 @@ async function onRequestPost(ctx) {
       try {
         const maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(body.max_showcase) || 100)));
         const mode=['showcase','orders'].includes(body.mode)?body.mode:'all';
+        const availability=commissionAvailability();
+        if(mode!=='showcase'&&!availability.ready)return json({error:"ยอดเมื่อวานยังอยู่ระหว่างการประมวลผล กรุณารอ 12:00 น. เป็นต้นไป",code:'TIKTOK_DAILY_TOTALS_NOT_READY',latest_available_date:availability.latestDate,next_ready_at:availability.nextReadyAt},409,headers);
         return json({ ok: true, ...await syncTikTokShopCreator(ctx.env, shop, { days: Number(body.days) || 30, maxShowcase, syncShowcase:mode!=='orders', syncOrders:mode!=='showcase' }) }, 200, headers);
       } catch (error) {
         await ctx.env.DB.prepare("UPDATE tiktok_shop_creator_connections SET last_sync_error=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(clean(error.message, 300), id).run();
@@ -153,5 +156,7 @@ async function onRequestPost(ctx) {
 }
 export {
   onRequestGet,
-  onRequestPost
+  onRequestPost,
+  commissionAvailability,
+  dateRange
 };
