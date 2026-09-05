@@ -15,8 +15,8 @@ export const categoriesFromStoredProducts = rows => [...new Map(rows.flatMap(row
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env); await ensureTikTokAnalyzerSchema(ctx.env);
   const auth = await requireAdmin(ctx); if (auth.error) return auth.error;
-  const body = await ctx.request.json().catch(() => ({})), connectionId = clean(body.connection_id, 100);
-  const connection = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND status='active'").bind(connectionId, auth.user.id).first();
+  const body = await ctx.request.json().catch(() => ({})), connectionId = clean(body.connection_id, 100), channelId=clean(body.channel_id,80);
+  const connection = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(connectionId, auth.user.id, channelId).first();
   if (!connection) return json({ error: "ไม่พบบัญชี TikTok Shop Creator ที่เชื่อมอยู่" }, 404, headers);
   if (body.categories_only === true) {
     const rows = (await ctx.env.DB.prepare("SELECT raw_json FROM tiktok_shop_marketplace_snapshots WHERE connection_id=? UNION ALL SELECT raw_json FROM tiktok_shop_showcase_products WHERE connection_id=? LIMIT 4000").bind(connection.id, connection.id).all()).results || [];

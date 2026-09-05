@@ -28,14 +28,16 @@ const parsed = (value) => {
   for (const row of rows) {
     const value = parsed(row.commission_json), amount = Number(value?.amount);
     if (!Number.isFinite(amount) || !value?.currency) continue;
-    const currency = clean(value.currency, 20), day = new Date((Number(row.create_time) + 25200) * 1e3).toISOString().slice(0, 10), channel = clean(row.channel_name || row.creator_username || row.channel_id, 120) || "\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38\u0E0A\u0E48\u0E2D\u0E07";
+    const currency = clean(value.currency, 20), day = new Date((Number(row.create_time) + 25200) * 1e3).toISOString().slice(0, 10), channelId = clean(row.channel_id || row.connection_id, 120) || "unknown", channelLabel = clean(row.channel_name || row.creator_username || row.channel_id, 120) || "\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38\u0E0A\u0E48\u0E2D\u0E07";
     currencies[currency] ??= { total30: 0, byDay: {}, channels: {} };
     currencies[currency].total30 += amount;
     currencies[currency].byDay[day] = (currencies[currency].byDay[day] || 0) + amount;
-    currencies[currency].channels[channel] = (currencies[currency].channels[channel] || 0) + amount;
+    currencies[currency].channels[channelId] ??= { channel: channelLabel, amount: 0 };
+    currencies[currency].channels[channelId].amount += amount;
   }
-  return Object.entries(currencies).map(([currency, value]) => ({ currency, total_30: Number(value.total30.toFixed(2)), daily: Object.entries(value.byDay).sort(([a], [b]) => b.localeCompare(a)).map(([date, amount]) => ({ date, amount: Number(amount.toFixed(2)) })), channels: Object.entries(value.channels).sort((a, b) => b[1] - a[1]).map(([channel, amount]) => ({ channel, amount: Number(amount.toFixed(2)) })) }));
+  return Object.entries(currencies).map(([currency, value]) => ({ currency, total_30: Number(value.total30.toFixed(2)), daily: Object.entries(value.byDay).sort(([a], [b]) => b.localeCompare(a)).map(([date, amount]) => ({ date, amount: Number(amount.toFixed(2)) })), channels: Object.entries(value.channels).sort(([,a], [,b]) => b.amount-a.amount).map(([channel_id, item]) => ({ channel_id, channel: item.channel, amount: Number(item.amount.toFixed(2)) })) }));
 };
+export { commissionDashboard };
 const publicConnection = (row) => ({ id: row.id, channel_id: row.channel_id, display_name: row.display_name, avatar_url: row.avatar_url, profile_url: row.profile_url, bio: row.bio, is_verified: Boolean(row.is_verified), follower_count: Number(row.follower_count) || 0, following_count: Number(row.following_count) || 0, likes_count: Number(row.likes_count) || 0, video_count: Number(row.video_count) || 0, scopes: row.scopes, status: row.status, last_synced_at: row.last_synced_at });
 const shiftDate = (date, days) => {
   const [y, m, d] = date.split("-").map(Number);
@@ -81,7 +83,7 @@ async function onRequestPost(ctx) {
   if (auth.error) return auth.error;
   const body = await ctx.request.json().catch(() => ({})), id = clean(body.id), action = clean(body.action, 30);
   if (action.startsWith("shop_")) {
-    const shop = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND status='active'").bind(id, auth.user.id).first();
+    const requestedChannelId=clean(body.channel_id),shop = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(id, auth.user.id, requestedChannelId).first();
     if (!shop) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E1A\u0E31\u0E0D\u0E0A\u0E35 TikTok Shop Creator \u0E17\u0E35\u0E48\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E2D\u0E22\u0E39\u0E48" }, 404, headers);
     if (action === "shop_sync") {
       try {
@@ -141,7 +143,7 @@ async function onRequestPost(ctx) {
   }
   if (action === "bind") {
     const channelId = clean(body.channel_id);
-    if (channelId && !await ctx.env.DB.prepare("SELECT id FROM tiktok_channels WHERE id=?").bind(channelId).first()) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E48\u0E2D\u0E07" }, 404, headers);
+    if (channelId && !await ctx.env.DB.prepare("SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL").bind(channelId,auth.user.id).first()) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E48\u0E2D\u0E07" }, 404, headers);
     await ctx.env.DB.prepare("UPDATE tiktok_connections SET channel_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?").bind(channelId, id, auth.user.id).run();
     return json({ ok: true }, 200, headers);
   }

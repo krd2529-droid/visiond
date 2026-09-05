@@ -19,6 +19,8 @@ export async function saveTikTokShopCreatorConnection(env,userId,channelId,token
     error.channelName=clean(existing.channel_name,120)||'ช่องอื่น';
     throw error;
   }
+  const occupied=requestedChannelId?await env.DB.prepare(`SELECT c.id,COALESCE(c.creator_username,'') account_name FROM tiktok_shop_creator_connections c WHERE c.user_id=? AND c.channel_id=? AND c.status='active' AND c.open_id<>? LIMIT 1`).bind(userId,requestedChannelId,openId).first():null;
+  if(occupied){const error=new Error('TIKTOK_SHOP_CHANNEL_ALREADY_LINKED');error.code='TIKTOK_SHOP_CHANNEL_ALREADY_LINKED';error.accountName=clean(occupied.account_name,120)||'บัญชี TikTok Shop อื่น';throw error}
   const id=existing?.id||crypto.randomUUID(),access=await encryptChannelValue(env,token.access_token),refresh=await encryptChannelValue(env,token.refresh_token);
   await env.DB.prepare(`INSERT INTO tiktok_shop_creator_connections(id,user_id,channel_id,open_id,access_token_ciphertext,refresh_token_ciphertext,scopes,access_expires_at,refresh_expires_at,user_type,status) VALUES(?,?,?,?,?,?,?,?,?,1,'active') ON CONFLICT(user_id,open_id) DO UPDATE SET channel_id=excluded.channel_id,access_token_ciphertext=excluded.access_token_ciphertext,refresh_token_ciphertext=excluded.refresh_token_ciphertext,scopes=excluded.scopes,access_expires_at=excluded.access_expires_at,refresh_expires_at=excluded.refresh_expires_at,user_type=1,status='active',updated_at=CURRENT_TIMESTAMP`).bind(id,userId,requestedChannelId,openId,access,refresh,scopeText(token.granted_scopes),isoExpiry(token.access_token_expire_in||token.expires_in),isoExpiry(token.refresh_token_expire_in||token.refresh_expires_in)).run();
   return id;

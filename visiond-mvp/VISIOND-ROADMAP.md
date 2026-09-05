@@ -30,7 +30,7 @@
 
 1. Production Rollout: Push v0.14.407–411, apply migrations 0067–0068, ตั้ง Partner encryption secret/scopes, รัน Sandbox/Production E2E และติดตาม D1 Query Insights 24 ชั่วโมง
 2. Production Validation: ตรวจ D1 Query Insights/Rows read-written ของ V12 v0.14.405–406 เป็นเวลา 24 ชั่วโมง
-3. `DISCOVERED` ก่อนเปิดใช้งานจริง: ผู้ช่วยบริหาร TikTok หลายช่องต้องแยก Creator token, การ์ดช่อง, Showcase, ออเดอร์, เกรด และคำแนะนำตาม `channel_id`; ป้องกันการทำรายการผิดบัญชี; และทำหน้าสรุปเปรียบเทียบผลงานแต่ละช่องให้เรียกใช้งานได้จริง โดยทดสอบหลายบัญชีก่อนเผยแพร่
+3. `IMPLEMENTED · WAITING REAL-ACCOUNT VERIFY` ก่อนเปิดใช้งานจริง: ใช้กติกา 1 การ์ดต่อ 1 ช่องต่อ 1 Creator; Creator token, Showcase, ออเดอร์, เกรด และคำแนะนำแยกตาม `channel_id`; OAuth callback ตรวจช่องซ้ำ, คำสั่งเขียนตรวจทั้ง connection และ channel, ป้องกันผลโหลดช่องเก่าทับช่องใหม่ และหน้าสรุปเปรียบเทียบรวมตามรหัสช่องแม้ชื่อซ้ำ เหลือทดสอบเชื่อม Creator จริงอย่างน้อย 2 บัญชีก่อนเผยแพร่
 
 รายการนี้เป็นข้อเสนอคิว ไม่ใช่ Patch Scope จนกว่า Boss จะอนุมัติเลขแพตและขอบเขต
 

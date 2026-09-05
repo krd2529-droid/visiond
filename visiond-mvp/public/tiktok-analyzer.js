@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 7 };
+let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -311,7 +311,7 @@ async function loadMarketplaceCategories() {
   select.disabled = true;
   select.innerHTML = '<option value="">กำลังโหลดหมวดหมู่จาก TikTok…</option>';
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: connection.id, categories_only: true }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: connection.id, channel_id: state.selected, categories_only: true }) });
     if (state.shopConnection?.id !== connection.id) return;
     state.marketplaceCategoriesForConnection = connection.id;
     renderMarketplaceCategories(data.categories || []);
@@ -401,7 +401,7 @@ async function searchMarketplace(mode = "product", pageToken = "") {
   buttons.forEach(button => button.disabled = true);
   if (nextButton) nextButton.disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: state.shopConnection.id, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken, comparison_days: 7 } : { connection_id: state.shopConnection.id, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: state.shopConnection.id, channel_id: state.selected, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken, comparison_days: 7 } : { connection_id: state.shopConnection.id, channel_id: state.selected, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
     const prefix = shopMode ? "shopMarketplace" : "marketplace";
     state[`${prefix}Products`] = data.products || [];
     state[`${prefix}NextToken`] = data.next_page_token || "";
@@ -562,7 +562,10 @@ async function loadTikTokConnection() {
     return;
   }
   box.hidden = false;
-  const data = await api(`/api/admin/tiktok-connections?${shopDateQuery(state.selected)}`), connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
+  const requestedChannelId=state.selected,loadSeq=++state.connectionLoadSeq;
+  const data = await api(`/api/admin/tiktok-connections?${shopDateQuery(requestedChannelId)}`);
+  if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return;
+  const connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
   state.connection = connection;
   state.shopConnection = shopConnection;
   $("#channelShopAnalysis").classList.toggle("shop-connection-missing", !shopConnection);
@@ -866,7 +869,7 @@ async function syncTikTokShopData(mode) {
   message.textContent = mode==="showcase" ? "กำลังโหลดสินค้า Showcase สูงสุด " + maxShowcase.toLocaleString("th-TH") + " รายการ…" : "กำลังรีเฟรชสินค้าที่ขายได้และออเดอร์ย้อนหลังสูงสุด 90 วัน…";
   button.disabled = true;
   try {
-    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: state.shopConnection.id, mode, days: 90, max_showcase: maxShowcase }) });
+    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: state.shopConnection.id, channel_id: state.selected, mode, days: 90, max_showcase: maxShowcase }) });
     message.textContent = mode==="showcase" ? `โหลดแล้ว ${result.showcaseCount} สินค้า Showcase` : `รีเฟรชแล้ว ${result.orderCount} ออเดอร์`;
     await loadTikTokConnection();
   } catch (error) {
@@ -911,7 +914,7 @@ $("#soldProductsData").addEventListener("submit", async (event) => {
 $("#disconnectTikTokShop").addEventListener("click", async () => {
   if (!state.shopConnection || !confirm("\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01 TikTok Shop \u0E41\u0E25\u0E30\u0E25\u0E1A\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32/\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E17\u0E35\u0E48\u0E0B\u0E34\u0E07\u0E01\u0E4C\u0E44\u0E27\u0E49?")) return;
   try {
-    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_disconnect", id: state.shopConnection.id }) });
+    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_disconnect", id: state.shopConnection.id, channel_id: state.selected }) });
     state.shopConnection = null;
     message.textContent = "\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01 TikTok Shop \u0E41\u0E25\u0E49\u0E27";
     await loadTikTokConnection();
@@ -949,7 +952,7 @@ async function addProductsToShowcase(ids, button, mode = "product") {
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
   button.disabled = true;
   try {
-    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, product_ids: ids }) });
+    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, channel_id: state.selected, product_ids: ids }) });
     showToast(result.warning || `เพิ่มสินค้าเข้า Showcase ของ ${state.shopConnection.creator_username || "บัญชี Creator"} แล้ว ${Number(result.added || ids.length).toLocaleString()} รายการ`, result.warning ? "warning" : "success");
     await loadTikTokConnection();
     renderMarketplaceProducts({ products: marketplaceView(mode).products }, mode);
@@ -977,7 +980,7 @@ async function removeShowcaseProducts(ids, scopeLabel) {
   try {
     for (let index = 0; index < uniqueIds.length; index += 200) {
       const batch = uniqueIds.slice(index, index + 200);
-      const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_remove", id: connectionId, product_ids: batch }) });
+      const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_remove", id: connectionId, channel_id: state.selected, product_ids: batch }) });
       removed += Number(result.removed || batch.length);
     }
     showToast(`ลบสินค้าออกจาก Showcase แล้ว ${removed.toLocaleString()} รายการ`);
@@ -1058,12 +1061,13 @@ form.addEventListener("submit", async (event) => {
 const shopOauthStatus = new URLSearchParams(location.search).get("tiktok_shop");
 if (shopOauthStatus) {
   const detail = new URLSearchParams(location.search).get("detail") || "";
-  message.textContent = shopOauthStatus === "connected" ? "เชื่อมบัญชี TikTok Shop Creator พร้อมใช้ Marketplace และ Showcase แล้ว" : shopOauthStatus === "account_already_linked" ? `บัญชี TikTok Shop นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี กรุณาออกจาก TikTok Shop แล้วล็อกอินบัญชีของช่องที่เลือกก่อนเชื่อมใหม่` : shopOauthStatus === "permissions_required" ? `เชื่อมบัญชี Creator แล้ว แต่สิทธิ์ยังไม่ครบ: ${detail} กรุณาเปิดสิทธิ์ใน TikTok Partner Center แล้วเชื่อมใหม่` : shopOauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok Shop แล้ว" : `เชื่อม TikTok Shop ไม่สำเร็จ${detail ? `: ${detail}` : " กรุณาลองใหม่"}`;
+  message.textContent = shopOauthStatus === "connected" ? "เชื่อมบัญชี TikTok Shop Creator พร้อมใช้ Marketplace และ Showcase แล้ว" : shopOauthStatus === "account_already_linked" ? `บัญชี TikTok Shop นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี กรุณาออกจาก TikTok Shop แล้วล็อกอินบัญชีของช่องที่เลือกก่อนเชื่อมใหม่` : shopOauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok Shop อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : shopOauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : shopOauthStatus === "permissions_required" ? `เชื่อมบัญชี Creator แล้ว แต่สิทธิ์ยังไม่ครบ: ${detail} กรุณาเปิดสิทธิ์ใน TikTok Partner Center แล้วเชื่อมใหม่` : shopOauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok Shop แล้ว" : `เชื่อม TikTok Shop ไม่สำเร็จ${detail ? `: ${detail}` : " กรุณาลองใหม่"}`;
   history.replaceState({}, "", location.pathname);
 }
 const oauthStatus = new URLSearchParams(location.search).get("tiktok");
 if (oauthStatus) {
-  message.textContent = oauthStatus === "connected" ? "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D TikTok \u0E41\u0E25\u0E30\u0E19\u0E33\u0E40\u0E02\u0E49\u0E32\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08" : oauthStatus === "denied" ? "\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01\u0E01\u0E32\u0E23\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 TikTok \u0E41\u0E25\u0E49\u0E27" : "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D TikTok \u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E25\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
+  const detail = new URLSearchParams(location.search).get("detail") || "";
+  message.textContent = oauthStatus === "connected" ? "เชื่อมต่อ TikTok และนำเข้าข้อมูลสำเร็จ" : oauthStatus === "account_already_linked" ? `บัญชี TikTok นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี` : oauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : oauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : oauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok แล้ว" : "เชื่อมต่อ TikTok ไม่สำเร็จ กรุณาลองใหม่";
   history.replaceState({}, "", location.pathname);
 }
 loadChannels();
