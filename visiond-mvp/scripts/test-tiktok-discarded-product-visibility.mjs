@@ -9,6 +9,8 @@ assert.match(reconcile, /inventory_status === "discarded"/);
 assert.match(reconcile, /normalizeProductName\(product\.name\)/);
 assert.match(reconcile, /item\.remove\(\)/);
 assert.match(reconcile, /order\.textContent = String\(index \+ 1\)/);
+assert.match(reconcile, /const visibleCount = list\.querySelectorAll\("\.product-prep-item"\)\.length/);
+assert.match(reconcile, /total\.textContent = `\$\{visibleCount\}\/40`/);
 assert.match(reconcile, /#productPrepSummary/);
 assert.equal((client.match(/reconcileProductPrepInventory\([^)]*products \|\| \[\]\)/g) || []).length, 2);
 

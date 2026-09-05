@@ -765,6 +765,9 @@ function reconcileProductPrepInventory(products = []) {
     if (order) order.textContent = String(index + 1);
     if (counts[grade] !== void 0) counts[grade]++;
   });
+  const visibleCount = list.querySelectorAll(".product-prep-item").length;
+  const total = $("#productPrepSummary .total b");
+  if (total) total.textContent = `${visibleCount}/40`;
   $("#productPrepSummary")?.querySelectorAll(".grade-dot").forEach((dot) => {
     const value = dot.nextElementSibling, grade = dot.textContent.trim();
     if (value && counts[grade] !== void 0) value.textContent = counts[grade];
