@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
+let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7, marketplaceSearchMode: "product" };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -75,7 +75,15 @@ if ($("#showcaseSyncLimitField")) {
   $("#showcaseTableControls").append($("#showcaseSyncLimitField"));
   $("#showcaseTableControls").insertAdjacentHTML("beforeend", '<button id="syncTikTokShowcase" type="button" hidden>โหลดสินค้า Showcase</button>');
 }
-$("#marketplaceKeyword")?.closest("label")?.insertAdjacentHTML("afterend", '<label>ชื่อร้านค้า<input id="marketplaceShopKeyword" maxlength="300" placeholder="เช่น ชื่อร้านใน TikTok Shop"><small>กรองจากผล Marketplace ที่ TikTok ส่งมา สูงสุด 200 รายการต่อการค้นหา</small></label>');
+const marketplaceSearchMain = $("#marketplaceSearchForm .marketplace-search-main"), marketplaceProductLabel = $("#marketplaceKeyword")?.closest("label"), marketplaceSortLabel = $("#marketplaceSort")?.closest("label"), marketplaceOrderLabel = $("#marketplaceOrder")?.closest("label"), legacyMarketplaceButton = marketplaceSearchMain?.querySelector("button");
+if (marketplaceSearchMain && marketplaceProductLabel && marketplaceSortLabel && marketplaceOrderLabel) {
+  marketplaceSearchMain.insertAdjacentHTML("beforebegin", '<div class="marketplace-search-choices"><section class="marketplace-search-block"><h4>ค้นหาจากชื่อสินค้า</h4><div id="marketplaceProductSearchBlock"></div></section><section class="marketplace-search-block"><h4>ค้นหาจากชื่อร้านค้า</h4><div id="marketplaceShopSearchBlock"><label>ชื่อร้านค้า<input id="marketplaceShopKeyword" maxlength="300" placeholder="เช่น ชื่อร้านใน TikTok Shop"><small>กรองจากผล Marketplace ที่ TikTok ส่งมา สูงสุด 200 รายการต่อการค้นหา</small></label></div></section></div>');
+  $("#marketplaceProductSearchBlock").append(marketplaceProductLabel);
+  $("#marketplaceProductSearchBlock").insertAdjacentHTML("beforeend", '<button class="marketplace-search-button" type="submit" data-search-mode="product">ค้นหาสินค้า</button>');
+  $("#marketplaceShopSearchBlock").insertAdjacentHTML("beforeend", '<button class="marketplace-search-button" type="submit" data-search-mode="shop">ค้นหาชื่อร้านค้า</button>');
+  legacyMarketplaceButton?.remove();
+  marketplaceSearchMain.classList.add("marketplace-search-options");
+}
 function shopDateQuery(channelId = "") {
   const params = new URLSearchParams({ date_from: state.shopDateFrom, date_to: state.shopDateTo });
   if (channelId) params.set("channel_id", channelId);
@@ -342,8 +350,8 @@ function renderShowcasePermission() {
   const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
   box.hidden = !connection || ready;
   box.innerHTML = !connection || ready ? "" : `<b>เชื่อมบัญชี ${escapeHtml(account)} แล้ว แต่สิทธิ์เพิ่มสินค้าเข้า Showcase ยังไม่ครบ</b><span>ข้อมูลที่ได้รับอนุญาตยังใช้งานได้ตามปกติ · สิทธิ์ที่ขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")}</span>`;
-  const searchButton = $("#marketplaceSearchForm button"), addButton = $("#addMarketplaceSelected");
-  if (searchButton) searchButton.disabled = Boolean(connection) && !capabilities.can_search_marketplace;
+  const searchButtons = $("#marketplaceSearchForm").querySelectorAll(".marketplace-search-button"), addButton = $("#addMarketplaceSelected");
+  searchButtons.forEach(button => button.disabled = Boolean(connection) && !capabilities.can_search_marketplace);
   if (addButton) {
     addButton.setAttribute("aria-disabled", capabilities.can_write_showcase ? "false" : "true");
     addButton.title = capabilities.can_write_showcase ? "" : "กดเพื่อดูวิธีเปิดสิทธิ์เพิ่มสินค้าเข้า Showcase";
@@ -380,11 +388,11 @@ function renderMarketplaceProducts(data = null) {
 async function searchMarketplace(pageToken = "") {
   if (!state.shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
   if (!state.shopConnection.capabilities?.can_search_marketplace) throw new Error("บัญชี Creator ยังไม่มีสิทธิ์ค้นหา Open Collaboration กรุณาเชื่อมและอนุญาตสิทธิ์ใหม่");
-  const button = $("#marketplaceSearchForm button"), nextButton = $("#marketplaceNext");
-  if (button) button.disabled = true;
+  const buttons = $("#marketplaceSearchForm").querySelectorAll(".marketplace-search-button"), nextButton = $("#marketplaceNext"), shopMode = state.marketplaceSearchMode === "shop";
+  buttons.forEach(button => button.disabled = true);
   if (nextButton) nextButton.disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: state.shopConnection.id, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: $("#marketplaceShopKeyword")?.value.trim() || "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: state.shopConnection.id, keyword: shopMode ? "" : $("#marketplaceKeyword").value.trim(), shop_keyword: shopMode ? $("#marketplaceShopKeyword")?.value.trim() || "" : "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
     state.marketplaceProducts = data.products || [];
     state.marketplaceNextToken = data.next_page_token || "";
     state.marketplaceSearchedAt = new Date().toISOString();
@@ -392,7 +400,7 @@ async function searchMarketplace(pageToken = "") {
     renderMarketplaceCategories(data.categories || []);
     renderMarketplaceProducts(data);
   } finally {
-    if (button) button.disabled = false;
+    buttons.forEach(button => button.disabled = false);
     if (nextButton) nextButton.disabled = false;
   }
 }
@@ -917,7 +925,8 @@ $("#disconnectTikTokShop").addEventListener("click", async () => {
 $("#marketplaceSearchForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
-    $("#marketplaceSnapshot").textContent = "กำลังค้นหาสินค้า Open Collaboration จาก TikTok…";
+    state.marketplaceSearchMode = event.submitter?.dataset.searchMode === "shop" ? "shop" : "product";
+    $("#marketplaceSnapshot").textContent = state.marketplaceSearchMode === "shop" ? "กำลังค้นหาชื่อร้านค้าจาก TikTok Marketplace…" : "กำลังค้นหาสินค้า Open Collaboration จาก TikTok…";
     await searchMarketplace();
   } catch (error) {
     $("#marketplaceSnapshot").textContent = error.message;
