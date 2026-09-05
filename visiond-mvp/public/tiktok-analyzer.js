@@ -336,12 +336,12 @@ function resetMarketplaceView() {
 function renderShowcasePermission() {
   let box = $("#showcasePermission");
   if (!box) {
-    $("#tiktokConnectionState").insertAdjacentHTML("afterend", '<div id="showcasePermission" class="showcase-permission" hidden></div>');
+    $("#shopConnectionManagement>strong").insertAdjacentHTML("afterend", '<div id="showcasePermission" class="showcase-permission" hidden></div>');
     box = $("#showcasePermission");
   }
   const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
   box.hidden = !connection || ready;
-  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase อัตโนมัติไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")}</span><a class="primary" data-update-shop-permissions href="/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}">เชื่อมใหม่เพื่ออัปเดตสิทธิ์</a>`;
+  box.innerHTML = !connection || ready ? "" : `<b>เชื่อมบัญชี ${escapeHtml(account)} แล้ว แต่สิทธิ์เพิ่มสินค้าเข้า Showcase ยังไม่ครบ</b><span>ข้อมูลที่ได้รับอนุญาตยังใช้งานได้ตามปกติ · สิทธิ์ที่ขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")}</span>`;
   const searchButton = $("#marketplaceSearchForm button"), addButton = $("#addMarketplaceSelected");
   if (searchButton) searchButton.disabled = Boolean(connection) && !capabilities.can_search_marketplace;
   if (addButton) {
@@ -555,7 +555,7 @@ async function loadTikTokConnection() {
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
   $("#connectTikTok").hidden = false;
-  $("#connectTikTokShop").hidden = Boolean(shopConnection);
+  $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
   $("#syncTikTokShop").hidden = !shopConnection;
   $("#syncTikTokShowcase").hidden = !shopConnection;
   $("#showcaseSyncLimitField").hidden = !shopConnection;
