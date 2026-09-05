@@ -39,7 +39,14 @@ const connectionScopes = connection => new Set(String(connection?.scopes || "").
 const canWriteShowcase = connection => { const scopes = connectionScopes(connection); return scopes.has("creator.showcase.write") || scopes.has("creator.video.write"); };
 const commissionRate = product => finiteNumber(product.commission_rate ?? product.commission?.rate ?? product.standard_commission_rate);
 const marketplacePrice = product => { const value = product.sales_price || product.sale_price || product.price; if (!value || typeof value !== "object") return value || null; if (value.minimum_amount !== undefined || value.maximum_amount !== undefined) return { minimum_amount: clean(value.minimum_amount, 80), maximum_amount: clean(value.maximum_amount, 80), currency: clean(value.currency, 20) }; return money(value) || value; };
-const normalizeTikTokMarketplaceProduct = product => ({ product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), price: marketplacePrice(product), raw_json: JSON.stringify(product) });
+const marketplaceCategory = product => {
+  const source = product.category || product.product_category || product.category_info || {}, category = Array.isArray(source) ? source.at(-1) || {} : source;
+  return { id: clean(category.id || category.category_id, 100), name: clean(category.local_name || category.name || category.category_name, 300) };
+};
+const normalizeTikTokMarketplaceProduct = product => {
+  const category = marketplaceCategory(product);
+  return { product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), price: marketplacePrice(product), category_id: category.id, category_name: category.name, raw_json: JSON.stringify(product) };
+};
 const tikTokMarketplaceGrowth = (current, previous) => { const latest = Math.max(0, finiteNumber(current)), prior = previous === null || previous === undefined ? null : Math.max(0, finiteNumber(previous)); return { latest, previous: prior, change: prior === null ? null : latest - prior, growth_percent: prior === null ? null : prior > 0 ? (latest - prior) / prior * 100 : latest > 0 ? null : 0 }; };
 const skuRows = (order) => Array.isArray(order.skus) ? order.skus : Array.isArray(order.products) ? order.products : Array.isArray(order.product_list) ? order.product_list : [], firstMoney = (row, names) => names.map((name) => money(row?.[name])).find((value) => value?.amount), sumMoney = (rows, names) => {
   const values = rows.map((row) => firstMoney(row, names)).filter(Boolean), currencies = [...new Set(values.map((x) => x.currency).filter(Boolean))];
@@ -125,7 +132,8 @@ async function searchTikTokShopOpenCollaborationProducts(env, connection, { keyw
     }
     nextPageToken = clean(data.next_page_token, 1000); totalCount = Math.max(totalCount, finiteNumber(data.total_count));
   } while (productsById.size < limit && nextPageToken && pages < 10);
-  return { products: [...productsById.values()].slice(0, limit), next_page_token: nextPageToken, total_count: Math.max(0, totalCount) };
+  const products = [...productsById.values()].slice(0, limit), categories = [...new Map(products.filter(product => product.category_id && product.category_name).map(product => [product.category_id, { id: product.category_id, name: product.category_name }])).values()].sort((left, right) => left.name.localeCompare(right.name, "th"));
+  return { products, categories, next_page_token: nextPageToken, total_count: Math.max(0, totalCount) };
 }
 export {
   activeTikTokShopToken,

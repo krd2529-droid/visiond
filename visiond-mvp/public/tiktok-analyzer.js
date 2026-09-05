@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseSort: "grade", inventoryProducts: [], marketplaceProducts: [], marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
+let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseSort: "grade", inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -281,6 +281,23 @@ function marketplacePrice(value) {
   if (minimum === void 0 || minimum === "") return "–";
   return `${escapeHtml(currency)} ${Number(minimum).toLocaleString("th-TH")}${maximum && String(maximum) !== String(minimum) ? `–${Number(maximum).toLocaleString("th-TH")}` : ""}`.trim();
 }
+function renderMarketplaceCategories(categories = []) {
+  const select = $("#marketplaceCategory"), selected = select.value, merged = new Map(state.marketplaceCategories.map(category => [String(category.id), category]));
+  for (const category of categories) {
+    const id = String(category?.id || "").trim(), name = String(category?.name || "").trim();
+    if (id && name) merged.set(id, { id, name });
+  }
+  state.marketplaceCategories = [...merged.values()].sort((left, right) => left.name.localeCompare(right.name, "th"));
+  select.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + state.marketplaceCategories.map(category => '<option value="' + escapeHtml(category.id) + '"' + (category.id === selected ? " selected" : "") + '>' + escapeHtml(category.name) + '</option>').join("");
+}
+function resetMarketplaceView() {
+  state.marketplaceProducts = [];
+  state.marketplaceCategories = [];
+  state.marketplaceNextToken = "";
+  state.marketplaceSearchedAt = "";
+  renderMarketplaceCategories();
+  renderMarketplaceProducts();
+}
 function renderShowcasePermission() {
   let box = $("#showcasePermission");
   if (!box) {
@@ -329,6 +346,7 @@ async function searchMarketplace(pageToken = "") {
     state.marketplaceNextToken = data.next_page_token || "";
     state.marketplaceSearchedAt = new Date().toISOString();
     state.marketplaceComparisonDays = Number(data.comparison_days) || 7;
+    renderMarketplaceCategories(data.categories || []);
     renderMarketplaceProducts(data);
   } finally {
     if (button) button.disabled = false;
@@ -343,7 +361,6 @@ function renderShopDashboard(data, shopConnection) {
   const commission = commissions[0], daily = commission?.daily || [], maxDaily = Math.max(1, ...daily.map((day) => Number(day.amount) || 0)), total = Number(commission?.total_30) || 0, channels = commission?.channels || [];
   $("#shopCommissionDashboard").innerHTML = commission ? `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>${money(total)}</b><span class="positive">\u25B2 ${Number(commission.growth || 0).toLocaleString()}% \u0E08\u0E32\u0E01\u0E23\u0E2D\u0E1A\u0E01\u0E48\u0E2D\u0E19</span></article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>${products.length.toLocaleString()}</b><span>\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2B\u0E23\u0E37\u0E2D\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E44\u0E14\u0E49</span></article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="commission-bars">${daily.slice(-30).map((day) => `<div title="${escapeHtml(day.date)} ${money(day.amount)}"><i style="height:${Math.max(8, Math.round(Number(day.amount) / maxDaily * 100))}%"></i><small>${escapeHtml(day.date)}</small></div>`).join("")}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3>${channels.map((channel) => `<div class="channel-share"><span>${escapeHtml(channel.channel)}</span><i><b style="width:${Math.max(5, Number(channel.amount) / Math.max(1, ...channels.map((x) => Number(x.amount))) * 100)}%"></b></i><strong>${money(channel.amount)}</strong></div>`).join("")}</aside></div></div>` : '<p class="hint">TikTok \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E2A\u0E48\u0E07\u0E22\u0E2D\u0E14\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E32 \u0E23\u0E30\u0E1A\u0E1A\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E17\u0E31\u0E19\u0E17\u0E35\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E1E\u0E1A\u0E1F\u0E34\u0E25\u0E14\u0E4C\u0E40\u0E07\u0E34\u0E19\u0E08\u0E23\u0E34\u0E07\u0E43\u0E19\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</p>';
   renderShowcaseProducts(products, orders, demo, data.shop_growth_orders || orders);
-  $("#addShowcaseForm").hidden = demo;
 }
 const renderLiveShopDashboard = renderShopDashboard;
 function renderPendingShopDashboard() {
@@ -353,7 +370,6 @@ function renderPendingShopDashboard() {
   notice.innerHTML = "<b>\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E2B\u0E19\u0E49\u0E32\u0E15\u0E32\u0E1C\u0E25\u0E25\u0E31\u0E1E\u0E18\u0E4C</b><span>\u0E20\u0E32\u0E1E\u0E14\u0E49\u0E32\u0E19\u0E25\u0E48\u0E32\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E42\u0E04\u0E23\u0E07\u0E04\u0E32\u0E14\u0E01\u0E32\u0E23\u0E13\u0E4C \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 TikTok API</span>";
   $("#shopCommissionDashboard").innerHTML = `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>\u2014</b>${pending}</article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>\u2014</b>${pending}</article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="pending-chart">${chartPreview}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3><div class="pending-channels">${channelPreview}</div></aside></div></div>`;
   $("#shopGradeList").innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>\u0E40\u0E25\u0E37\u0E2D\u0E01</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22</th><th>\u0E22\u0E2D\u0E14\u0E04\u0E25\u0E34\u0E01</th><th>\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E41\u0E1B\u0E25\u0E07</th><th>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19</th></tr></thead><tbody><tr class="pending-row"><td colspan="6">${pending}</td></tr></tbody></table></div>`;
-  $("#addShowcaseForm").hidden = false;
   $("#removeShowcaseF").hidden = true;
 }
 renderShopDashboard = function(data, shopConnection) {
@@ -397,11 +413,6 @@ function renderChannels() {
   $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}"><button class="channel" data-id="${escapeHtml(x.id)}"><b>${escapeHtml(x.name)}</b><small>${escapeHtml(x.channel_url || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E25\u0E34\u0E07\u0E01\u0E4C")} \xB7 \u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C ${x.analysis_count} \u0E23\u0E2D\u0E1A</small></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="\u0E25\u0E1A\u0E0A\u0E48\u0E2D\u0E07 ${escapeHtml(x.name)}">\u0E25\u0E1A</button></div>`).join("") : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E0A\u0E48\u0E2D\u0E07 \u0E01\u0E14 \u201C\u0E0A\u0E48\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48\u201D \u0E41\u0E25\u0E49\u0E27\u0E40\u0E23\u0E34\u0E48\u0E21\u0E0A\u0E48\u0E2D\u0E07\u0E41\u0E23\u0E01\u0E44\u0E14\u0E49\u0E40\u0E25\u0E22</p>';
 }
 const demoChannels = Array.from({ length: 5 }, (_, index) => ({ id: `demo-${index + 1}`, name: `\u0E0A\u0E48\u0E2D\u0E07 ${index + 1}` }));
-function renderChannelOutputOptions() {
-  const select = $("#channelOutputSelect"), channels = reviewDemo ? demoChannels : state.channels;
-  select.innerHTML = channels.length ? channels.map((channel) => `<option value="${escapeHtml(channel.id)}"${channel.id === state.selected ? " selected" : ""}>${escapeHtml(channel.name)}</option>`).join("") : '<option value="">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E0A\u0E48\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E44\u0E27\u0E49</option>';
-  select.disabled = !channels.length;
-}
 function selectDemoChannel(id) {
   const channel = demoChannels.find((item) => item.id === id);
   if (!channel) return;
@@ -416,7 +427,6 @@ const renderLiveChannels = renderChannels;
 renderChannels = function() {
   if (!reviewDemo) renderLiveChannels();
   else $("#channels").innerHTML = demoChannels.map((channel) => `<button class="channel demo-channel${channel.id === state.selected ? " active" : ""}" type="button" data-demo-id="${channel.id}"><b>${channel.name}</b><small>\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E44\u0E27\u0E49 \xB7 \u0E23\u0E2D TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API</small></button>`).join("");
-  renderChannelOutputOptions();
 };
 if (reviewDemo) {
   state.selected = demoChannels[0].id;
@@ -532,8 +542,6 @@ async function loadTikTokConnection() {
   renderShopDashboard(data, shopConnection);
   $("#connectTikTok").hidden = Boolean(connection);
   $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
-  $("#syncTikTok").hidden = !connection;
-  $("#disconnectTikTok").hidden = !connection;
   $("#syncTikTokShop").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
@@ -788,6 +796,7 @@ $("#channels").addEventListener("click", async (event) => {
     }
     return;
   }
+  if (demoButton || button) resetMarketplaceView();
   if (demoButton) selectDemoChannel(demoButton.dataset.demoId);
   else if (button) selectChannel(button.dataset.id).catch((error) => message.textContent = error.message);
 });
@@ -805,41 +814,6 @@ $("#newChannel").addEventListener("click", () => {
   newChannel();
   setWorkspaceView("input");
   $("#tiktokConnection").hidden = true;
-});
-$("#channelOutputSelect").addEventListener("change", (event) => {
-  const id = event.target.value;
-  if (!id) return;
-  state.marketplaceProducts = [];
-  state.marketplaceNextToken = "";
-  state.marketplaceSearchedAt = "";
-  renderMarketplaceProducts();
-  if (reviewDemo) selectDemoChannel(id);
-  else selectChannel(id).catch((error) => message.textContent = error.message);
-});
-$("#syncTikTok").addEventListener("click", async () => {
-  if (!state.connection) return;
-  message.textContent = "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E0B\u0E34\u0E07\u0E01\u0E4C\u0E42\u0E1B\u0E23\u0E44\u0E1F\u0E25\u0E4C\u0E41\u0E25\u0E30\u0E04\u0E25\u0E34\u0E1B\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14\u0E08\u0E32\u0E01 TikTok\u2026";
-  $("#syncTikTok").disabled = true;
-  try {
-    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "sync", id: state.connection.id }) });
-    message.textContent = "\u0E0B\u0E34\u0E07\u0E01\u0E4C\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25 TikTok \u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14\u0E41\u0E25\u0E49\u0E27";
-    await loadTikTokConnection();
-  } catch (error) {
-    message.textContent = error.message;
-  } finally {
-    $("#syncTikTok").disabled = false;
-  }
-});
-$("#disconnectTikTok").addEventListener("click", async () => {
-  if (!state.connection || !confirm("\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01\u0E01\u0E32\u0E23\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D\u0E1A\u0E31\u0E0D\u0E0A\u0E35 TikTok \u0E08\u0E32\u0E01\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49?")) return;
-  try {
-    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "disconnect", id: state.connection.id }) });
-    state.connection = null;
-    message.textContent = "\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01\u0E01\u0E32\u0E23\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D TikTok \u0E41\u0E25\u0E49\u0E27";
-    await loadTikTokConnection();
-  } catch (error) {
-    message.textContent = error.message;
-  }
 });
 $("#syncTikTokShop").addEventListener("click", async () => {
   if (!state.shopConnection) return;
@@ -887,35 +861,6 @@ $("#disconnectTikTokShop").addEventListener("click", async () => {
     await loadTikTokConnection();
   } catch (error) {
     message.textContent = error.message;
-  }
-});
-$("#addShowcaseForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!state.shopConnection) {
-    message.textContent = "\u0E01\u0E23\u0E38\u0E13\u0E32\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop \u0E01\u0E48\u0E2D\u0E19";
-    return;
-  }
-  if (!state.shopConnection.capabilities?.can_write_showcase) {
-    message.textContent = "บัญชี Creator ยังไม่มีสิทธิ์เพิ่ม Showcase กรุณากดเชื่อมและอนุญาตสิทธิ์ใหม่";
-    return;
-  }
-  const input = $("#showcaseProductId"), productId = input.value.trim();
-  if (!productId) {
-    message.textContent = "\u0E01\u0E23\u0E38\u0E13\u0E32\u0E43\u0E2A\u0E48\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32";
-    input.focus();
-    return;
-  }
-  const button = event.currentTarget.querySelector("button");
-  button.disabled = true;
-  try {
-    await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: state.shopConnection.id, product_ids: [productId] }) });
-    message.textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase \u0E41\u0E25\u0E49\u0E27";
-    input.value = "";
-    await loadTikTokConnection();
-  } catch (error) {
-    message.textContent = error.message;
-  } finally {
-    button.disabled = false;
   }
 });
 $("#marketplaceSearchForm").addEventListener("submit", async (event) => {

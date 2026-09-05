@@ -159,9 +159,9 @@ element("marketplaceCommissionMin").value = "5";
 element("marketplaceCommissionMax").value = "25";
 let uiRequest;
 const context = {
-  state: { shopConnection: { id: connection.id, capabilities: { can_search_marketplace: true, can_write_showcase: true, showcase_ready: true } }, marketplaceProducts: [], marketplaceNextToken: "", marketplaceSearchedAt: "" },
+  state: { shopConnection: { id: connection.id, capabilities: { can_search_marketplace: true, can_write_showcase: true, showcase_ready: true } }, marketplaceProducts: [], marketplaceCategories: [], marketplaceNextToken: "", marketplaceSearchedAt: "" },
   $: selector => element(selector.replace(/^#/, "")),
-  api: async (path, options) => { uiRequest = { path, body: JSON.parse(options.body) }; return { products: [{ product_id: "u1", name: "สินค้า <นอก Showcase>", units_sold: 1, growth: { growth_percent: null } }], next_page_token: "ui-next" }; },
+  api: async (path, options) => { uiRequest = { path, body: JSON.parse(options.body) }; return { products: [{ product_id: "u1", name: "สินค้า <นอก Showcase>", units_sold: 1, growth: { growth_percent: null } }], categories: [{ id: "kids-1", name: "แม่และเด็ก" }], next_page_token: "ui-next" }; },
   escapeHtml: value => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
   safeProductImage: value => String(value || ""),
   console, Date, Number, JSON, globalThis: null,
@@ -181,6 +181,7 @@ assert.equal(uiRequest.body.category_id, "kids-1");
 assert.equal(uiRequest.body.commission_percent_min, "5");
 assert.equal(uiRequest.body.commission_percent_max, "25");
 assert.equal(uiRequest.body.comparison_days, 7);
+assert.match(element("marketplaceCategory").innerHTML, /แม่และเด็ก/);
 assert.match(element("marketplaceResults").innerHTML, /Open Collaboration/);
 assert.match(element("marketplaceResults").innerHTML, /สินค้า &lt;นอก Showcase&gt;/);
 assert.doesNotMatch(element("marketplaceResults").innerHTML, /data-product-id=/, "marketplace rows must not masquerade as Showcase rows");

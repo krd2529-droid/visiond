@@ -3,8 +3,9 @@ import fs from "node:fs";
 import { normalizeTikTokMarketplaceProduct, searchTikTokShopOpenCollaborationProducts, tikTokMarketplaceGrowth } from "../functions/_tiktok_shop_api.js";
 import { encryptChannelValue } from "../functions/_channel_crypto.js";
 
-const product = normalizeTikTokMarketplaceProduct({ id: "p1", title: "สินค้าเปิดคอลแลบ", units_sold: 150, commission_rate: 1200, main_image_url: "https://example.test/p1.jpg", detail_link: "https://example.test/p1", sales_price: { amount: "299", currency: "THB" } });
+const product = normalizeTikTokMarketplaceProduct({ id: "p1", title: "สินค้าเปิดคอลแลบ", units_sold: 150, commission_rate: 1200, main_image_url: "https://example.test/p1.jpg", detail_link: "https://example.test/p1", sales_price: { amount: "299", currency: "THB" }, category: { id: "601755", local_name: "ของเล่นและงานอดิเรก" } });
 assert.equal(product.product_id, "p1"); assert.equal(product.name, "สินค้าเปิดคอลแลบ"); assert.equal(product.units_sold, 150); assert.equal(product.commission_rate, 1200);
+assert.equal(product.category_id, "601755"); assert.equal(product.category_name, "ของเล่นและงานอดิเรก");
 assert.deepEqual(normalizeTikTokMarketplaceProduct({ id: "range", title: "ช่วงราคา", sales_price: { minimum_amount: "99", maximum_amount: "199", currency: "THB" } }).price, { minimum_amount: "99", maximum_amount: "199", currency: "THB" });
 assert.deepEqual(tikTokMarketplaceGrowth(150, 100), { latest: 150, previous: 100, change: 50, growth_percent: 50 });
 assert.deepEqual(tikTokMarketplaceGrowth(5, null), { latest: 5, previous: null, change: null, growth_percent: null });
