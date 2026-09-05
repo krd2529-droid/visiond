@@ -6,6 +6,6 @@ assert.match(client, /ดูสินค้า GMV โตสูง/);
 assert.match(client, /showcaseSort === "growth"/);
 assert.match(client, /growthValue\(right\) - growthValue\(left\)/);
 assert.match(css, /\.showcase-sort button\.active/);
-assert.match(html, /tiktok-analyzer\.js\?v=02038/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.38");
+assert.match(html, /tiktok-analyzer\.js\?v=02039/);
+assert.equal(read("VERSION.txt").trim(), "v0.20.39");
 console.log("Showcase high-GMV-growth button regression: PASS");

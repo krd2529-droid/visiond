@@ -1,10 +1,9 @@
-# Active patch: Grade synced TikTok Shop products
+# Active patch: Remove selected-range commission card
 
-- Status: PATCH_DELIVERED
-- Outcome: Show a clear sales-based grade for every product in the selected-date sold-products table.
-- Grade source: authoritative TikTok Shop order count in the selected date range; A >= 30, B >= 16, C >= 1.
-- Preserve: sync, date filtering, Showcase grading, Marketplace, OAuth, and account binding behavior.
-- Acceptance: sold-products table includes a colored grade column and explanation; grading logic is shared with Showcase; no invented grade when no orders exist.
-- Likely files: TikTok analyzer client/CSS, regression test, visible version files.
-- Phase: implementation, regression checks, and production verification passed.
-- Delivery: v0.20.38 pushed to origin/main and verified on visiondonline.com.
+- Status: PATCH_READY
+- Outcome: Remove the "ค่าคอมช่วงนี้" card from the TikTok Shop selected-date summary.
+- Preserve: order count, sold-product grades/table, date filter, commission data elsewhere, sync, Showcase, and Marketplace.
+- Acceptance: selected-date summary has no commission card or placeholder; order card and product table remain.
+- Likely files: TikTok analyzer client, regression test, visible version files.
+- Phase: implementation and regression checks passed.
+- Delivery: test, review diff, commit only related files, push origin main, verify production.
