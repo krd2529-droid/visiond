@@ -1,10 +1,9 @@
-# Active patch: TikTok Creator authorization to Showcase completion
+# Active patch: TikTok shop-name product table
 
-- Event: PATCH_DELIVERED
-- Outcome: เชื่อมบัญชี Creator แล้วค้นสินค้า Open Collaboration และเพิ่มเข้า Showcase ของบัญชีที่ระบุได้โดยไม่เกิดผลสำเร็จคลุมเครือ
-- Acceptance: แสดงความพร้อมของ scope ก่อนกด, มีปุ่มเชื่อมสิทธิ์ใหม่โดยไม่ต้องลบ cache, ระบุบัญชีปลายทาง, แยกผลเพิ่มสำเร็จออกจากผลซิงก์, รายงานรายการที่ TikTok ปฏิเสธ
-- Phase: deployed_pending_external_verification
-- Likely files: functions/_tiktok_shop_api.js, functions/api/admin/tiktok-connections/index.js, public/tiktok-analyzer.js, tests, visible version
-- Verification: Creator capability contract PASS; callback permission status PASS; official Showcase batching and per-product error handling PASS; Marketplace UI/adversarial regressions PASS; syntax, version parity and predeploy PASS; production serves v0.20.31 desktop/mobile with no console errors; authenticated Creator OAuth and real Showcase mutation await account login and TikTok scope approval
-- Delivery: v0.20.31, commit 6055c4d7, pushed to origin/main and served on production
-- Next: owner enables/approves creator scopes, signs in, reconnects Creator, then performs one real Marketplace-to-Showcase acceptance test
+- Event: PATCH_READY
+- Outcome: ผลค้นหาชื่อร้านแสดงตารางสินค้าจริงของร้านโดยไม่ปน snapshot หรือการเปรียบเทียบ 7 วัน
+- Acceptance: แยกจากค้นหาสินค้านางฟ้า; แสดงรูป ชื่อสินค้า ร้าน ยอดขาย ราคา ค่าคอม หมวดหมู่ และเพิ่ม Showcase; ไม่แสดงความหนาแน่นครีเอเตอร์หรือเติบโต 7 วัน
+- Phase: delivery
+- Likely files: functions/api/admin/tiktok-connections/marketplace.js, public/tiktok-analyzer.js, tests
+- Verification: syntax PASS; separated shop search PASS; supported columns PASS; adversarial Marketplace PASS; snapshot growth for angel search preserved PASS
+- Next: commit, push origin/main, and verify production asset

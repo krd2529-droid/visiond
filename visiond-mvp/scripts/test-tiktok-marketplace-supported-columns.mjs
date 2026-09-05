@@ -6,9 +6,12 @@ const render = client.match(/function renderMarketplaceProducts[\s\S]*?\n\}/)?.[
 
 assert.ok(render, "Marketplace renderer must exist");
 assert.doesNotMatch(render, /<th>สินค้าใหม่<\/th>/);
-assert.doesNotMatch(render, /<th>ราคา<\/th>/);
-assert.doesNotMatch(render, /product\.published_at|marketplacePrice\(product\.price\)/);
-assert.match(render, /colspan="7"/);
+assert.match(render, /mode==="shop"[\s\S]*<th>ราคา<\/th>/);
+assert.doesNotMatch(render, /product\.published_at/);
+assert.match(render, /colspan="8"/);
 for (const heading of ["สินค้า Open Collaboration", "ร้านค้า", "ขายแล้ว", "ค่าคอม", "ความหนาแน่นครีเอเตอร์", "เติบโต"]) assert.match(render, new RegExp(`<th>${heading}`));
+for (const heading of ["รูปและสินค้า", "ราคา", "หมวดหมู่"]) assert.match(render, new RegExp(`<th>${heading}`));
+assert.match(render,/mode === "shop" \?/);
+assert.match(render,/ข้อมูลสินค้าจาก TikTok เวลา/);
 
 console.log("TikTok Marketplace supported columns only: PASS");

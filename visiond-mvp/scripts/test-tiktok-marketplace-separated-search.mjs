@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
-const client = read("public/tiktok-analyzer.js"), css = read("public/tiktok-analyzer.css"), html = read("public/tiktok-analyzer.html");
+const client = read("public/tiktok-analyzer.js"), css = read("public/tiktok-analyzer.css"), html = read("public/tiktok-analyzer.html"), api=read("functions/api/admin/tiktok-connections/marketplace.js");
 
 assert.match(html, /<h3 id="marketplaceTitle">ค้นหาสินค้านางฟ้า<\/h3>/);
 assert.doesNotMatch(html, /ค้นหา Open Collaboration Marketplace/);
@@ -24,6 +24,9 @@ assert.doesNotMatch(client, /event\.submitter\?\.dataset\.searchMode/);
 assert.match(client, /shopMode \? \{ connection_id:[\s\S]*keyword: "", shop_keyword:/);
 assert.match(client, /shop_keyword: \$\("#marketplaceShopKeyword"\)\.value\.trim\(\)/);
 assert.match(client, /result_limit: 200/);
+const shopPayload=client.match(/shopMode \? \{ connection_id:[\s\S]*?\} : \{ connection_id:/)?.[0]||"";
+assert.ok(shopPayload,"shop search payload must exist");
+assert.doesNotMatch(shopPayload,/comparison_days/);
 assert.match(client, /shopMarketplaceProducts/);
 assert.match(client, /marketplaceView\(mode = "product"\)/);
 assert.match(client, /view\.box\.querySelectorAll\("\.marketplace-product-check:checked"\)/);
@@ -34,6 +37,10 @@ assert.doesNotMatch(client, /ตรวจสิทธิ์ก่อนเพิ
 assert.match(client, /ต้องเปิด creator\.showcase\.write หรือ creator\.video\.write ใน TikTok Shop Partner Center/);
 assert.match(css, /\.shop-search-panel\{margin-bottom:18px/);
 assert.match(css, /\.marketplace-row-add\{/);
+assert.match(client, /<th>รูปและสินค้า<\/th><th>ร้านค้า<\/th><th>ขายแล้ว<\/th><th>ราคา<\/th><th>ค่าคอม<\/th><th>หมวดหมู่<\/th><th>Showcase<\/th>/);
+assert.match(client, /mode === "shop" \? `ข้อมูลสินค้าจาก TikTok/);
+assert.doesNotMatch(shopPayload,/creator_count|growth|snapshot/);
+assert.match(api,/if\(shopSearch\)return json\(\{ok:true,source:"open_collaboration_shop_products",\.\.\.result\}/);
 assert.match(html, /tiktok-analyzer\.js\?v=02081/);
 assert.match(html, /tiktok-analyzer\.css\?v=02076/);
 
