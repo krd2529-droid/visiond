@@ -24,6 +24,6 @@ assert.match(client, /hyperlink:link/);
 assert.match(client, /กดที่รูปหรือข้อความนี้เพื่อดูรูปใหญ่/);
 assert.match(client, /failedNumbers\.length/);
 assert.match(html, /work-notes\.js\?v=02026/);
-assert.equal(version.trim(), 'v0.20.46');
+assert.equal(version.trim(), 'v0.20.47');
 
 console.log('v0.20.24 authoritative image mapping and large-link layout checks passed');

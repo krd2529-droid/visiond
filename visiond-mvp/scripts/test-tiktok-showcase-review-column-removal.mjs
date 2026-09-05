@@ -7,9 +7,10 @@ const render = client.match(/function renderShowcaseProducts[\s\S]*?\n\}/)?.[0] 
 
 assert.ok(render, "Showcase renderer must exist");
 assert.doesNotMatch(render, /ตรวจครั้งถัดไป|selection\.next_review_at/);
-assert.match(render, /colspan="9"/);
+assert.doesNotMatch(render, /<th>ตรวจครั้งถัดไป<\/th>/);
+assert.match(render, /colspan="\$\{columnCount\}"/);
 assert.match(client, /function renderReviewSchedule/);
 assert.match(client, /next_review_at/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.46");
+assert.equal(read("VERSION.txt").trim(), "v0.20.47");
 
 console.log("TikTok Showcase next-review column removal regression: PASS");

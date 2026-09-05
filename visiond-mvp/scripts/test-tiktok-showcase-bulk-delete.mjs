@@ -15,6 +15,6 @@ assert.match(client, /index \+= 200/);
 assert.match(client, /uniqueIds\.slice\(index, index \+ 200\)/);
 assert.match(client, /ย้อนกลับไม่ได้/);
 assert.match(client, /ลบสำเร็จ \$\{removed\.toLocaleString\(\)\} รายการ ก่อนเกิดข้อผิดพลาด/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.46");
+assert.equal(read("VERSION.txt").trim(), "v0.20.47");
 
 console.log("TikTok Showcase page/all deletion regression: PASS");

@@ -11,6 +11,6 @@ assert.doesNotMatch(html, /<section id="history"/);
 assert.match(client, /\$\("#history"\)\.open = false/);
 assert.match(client, /\$\("#runs"\)\.addEventListener\("click"/);
 assert.match(css, /\.history-disclosure summary/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.46");
+assert.equal(read("VERSION.txt").trim(), "v0.20.47");
 
 console.log("TikTok collapsed analysis history regression: PASS");
