@@ -1,10 +1,9 @@
-# Active patch: Refine Showcase panel UI
+# Active patch: Separate F from ungraded products
 
-- Status: PATCH_DELIVERED
-- Report: the Showcase heading, load controls, search field, and item count appear visually scattered and unbalanced.
-- Outcome: compose them into a clear header/control card and a unified search toolbar with responsive stacking.
+- Status: PATCH_READY
+- Report: F and no-grade currently overlap because multiple grading layers automatically turn zero sales or low scores into F while another UI rule says zero sales has no grade.
+- Outcome: reserve F for products explicitly discarded or failed by the user; zero sales and insufficient evidence remain ungraded.
 - Preserve: Marketplace API, product/shop search modes, filters, results, Showcase actions, and styling.
-- Acceptance: heading and load controls read as one section; search and count read as one toolbar; desktop spacing is balanced; controls stack cleanly on tablet/mobile; existing behavior remains.
-- Phase: delivered.
-- Verification: Showcase toolbar layout, related-button theme, Showcase readiness, Marketplace separation, mobile frontend, predeploy, and diff checks passed.
-- Delivery: commit `51bc9852` is on `origin/main`; production CSS cache `02073` contains the unified Showcase header, toolbar, and tablet/mobile layouts.
+- Acceptance: automated analysis never creates F from zero sales, low traffic, or score alone; zero orders displays no grade; F remains for explicit discard/manual fail and survives reanalysis; summary prompt uses the same meanings.
+- Phase: implementation complete; regression, syntax, mobile frontend, and predeploy checks passed.
+- Delivery: ready to commit and push to origin/main.

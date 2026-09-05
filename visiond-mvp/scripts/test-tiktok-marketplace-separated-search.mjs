@@ -23,7 +23,7 @@ assert.match(client, /shop_keyword: shopMode \? \$\("#marketplaceShopKeyword"\)\
 assert.match(client, /\$\("#marketplaceSearchForm"\)\.querySelectorAll\("\.marketplace-search-button"\)/);
 assert.match(css, /\.marketplace-search-choices\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 assert.match(css, /@media\(max-width:800px\)\{\.marketplace-search-choices\{grid-template-columns:1fr\}/);
-assert.match(html, /tiktok-analyzer\.js\?v=02073/);
+assert.match(html, /tiktok-analyzer\.js\?v=02074/);
 assert.match(html, /tiktok-analyzer\.css\?v=02073/);
 
 console.log("TikTok Marketplace separated product/shop search: PASS");
