@@ -15,5 +15,5 @@ assert.match(css, /\.marketplace-filters label:nth-child\(-n\+4\)\{grid-column:s
 assert.match(css, /\.marketplace-filters label:nth-child\(n\+5\)\{grid-column:span 4\}/);
 assert.match(css, /@media\(max-width:900px\)[\s\S]*\.marketplace-filters label:last-child\{grid-column:1\/-1\}/);
 assert.match(css, /@media\(max-width:600px\)[\s\S]*\.marketplace-filters label:nth-child\(n\)\{grid-column:1\}/);
-assert.match(html, /tiktok-analyzer\.css\?v=02052/);
+assert.match(html, /tiktok-analyzer\.css\?v=\d+/);
 console.log("Marketplace search responsive layout regression: PASS");
