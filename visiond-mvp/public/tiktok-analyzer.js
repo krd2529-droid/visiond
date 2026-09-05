@@ -331,16 +331,12 @@ function resetMarketplaceView() {
 function renderShowcasePermission() {
   let box = $("#showcasePermission");
   if (!box) {
-    $("#channelShopAnalysis .result-head").insertAdjacentHTML("afterend", '<div id="showcasePermission" class="showcase-permission" hidden></div>');
+    $("#tiktokConnectionState").insertAdjacentHTML("afterend", '<div id="showcasePermission" class="showcase-permission" hidden></div>');
     box = $("#showcasePermission");
   }
   const connection = state.shopConnection, capabilities = connection?.capabilities || {}, ready = Boolean(capabilities.showcase_ready), account = connection?.creator_username || connection?.open_id || "บัญชี Creator";
   box.hidden = !connection || ready;
-  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase อัตโนมัติไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")} · จัดการการเชื่อมต่อและขอสิทธิ์ได้ที่หน้า 1 ตั้งค่าช่องและเชื่อมข้อมูล</span><button type="button" data-open-channel-settings>ไปตั้งค่าช่อง</button>`;
-  box.querySelector("[data-open-channel-settings]")?.addEventListener("click", () => {
-    setWorkspaceView("input");
-    $("#tiktokConnection")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  box.innerHTML = !connection || ready ? "" : `<b>บัญชี ${escapeHtml(account)} ยังเพิ่มสินค้าเข้า Showcase อัตโนมัติไม่ได้</b><span>สิทธิ์ที่ยังขาด: ${escapeHtml((capabilities.missing_scopes || []).join(", ") || "creator.showcase.write หรือ creator.video.write")}</span><a class="primary" data-update-shop-permissions href="/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}">เชื่อมใหม่เพื่ออัปเดตสิทธิ์</a>`;
   const searchButton = $("#marketplaceSearchForm button"), addButton = $("#addMarketplaceSelected");
   if (searchButton) searchButton.disabled = Boolean(connection) && !capabilities.can_search_marketplace;
   if (addButton) {
@@ -552,7 +548,7 @@ async function loadTikTokConnection() {
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
   $("#connectTikTok").hidden = Boolean(connection);
-  $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
+  $("#connectTikTokShop").hidden = Boolean(shopConnection);
   $("#syncTikTokShop").hidden = !shopConnection;
   $("#syncTikTokShowcase").hidden = !shopConnection;
   $("#showcaseSyncLimitField").hidden = !shopConnection;
