@@ -38,7 +38,7 @@ assert.match(client, /\$\("#connectTikTokShop"\)\.hidden = Boolean\(shopConnecti
 assert.match(client, /\$\("#connectTikTok"\)\.hidden = false/);
 assert.match(client, /connection \? "เชื่อมใหม่ TikTok OAuth" : "เชื่อม TikTok OAuth"/);
 assert.match(client, /id="shopConnectionRequired"/);
-assert.match(client, /TikTok OAuth ใช้ข้อมูลโปรไฟล์และวิดีโอ/);
+assert.match(client, /TikTok ใช้ข้อมูลโปรไฟล์และวิดีโอ/);
 assert.match(client, /data-open-shop-settings/);
 assert.match(client, /#shopConnectionManagement/);
 assert.match(client, /classList\.toggle\("shop-connection-missing", !shopConnection\)/);
@@ -50,8 +50,8 @@ assert.match(css, /\.channel-shop-analysis\.shop-connection-missing>\.sold-produ
 assert.match(client, /เชื่อมระบบ TikTok/);
 assert.match(client, /Showcase ของ/);
 assert.match(html, /class="oauth-connection-card"[\s\S]*TikTok OAuth[\s\S]*id="connectTikTok"/);
-assert.match(html, /id="shopConnectionManagement"[\s\S]*TikTok Shop Creator OAuth[\s\S]*id="connectTikTokShop"[\s\S]*id="disconnectTikTokShop"/);
-assert.match(html, /tiktok-analyzer\.js\?v=02078/);
+assert.match(html, /id="shopConnectionManagement"[\s\S]*การเชื่อมระบบ TikTok Shop[\s\S]*id="connectTikTokShop"[\s\S]*id="disconnectTikTokShop"/);
+assert.match(html, /tiktok-analyzer\.js\?v=02079/);
 assert.match(client, /\$\("#connectTikTokShop"\)\.textContent = "เชื่อมระบบ TikTok"/);
 assert.doesNotMatch(client, /เชื่อมใหม่เพื่ออัปเดตสิทธิ์/);
 assert.match(html, /tiktok-analyzer\.css\?v=02076/);
