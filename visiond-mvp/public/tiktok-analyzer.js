@@ -588,13 +588,14 @@ async function loadChannels() {
   try {
     const data = await api("/api/admin/tiktok-analyzer");
     state.channels = data.channels || [];
-    $("#aiState").textContent = data.provider_configured ? "AI \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C" : "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 AI";
+    const aiState = $("#aiState");
+    if (aiState) aiState.textContent = data.provider_configured ? "AI \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C" : "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 AI";
     const selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected));
     if (!selectedExists) state.selected = state.channels.find((channel) => channel.follower_count !== null && channel.follower_count !== void 0)?.id || state.channels[0]?.id || null;
     renderChannels();
     if (state.selected) await selectChannel(state.selected);
   } catch (error) {
-    message.textContent = error.message;
+    $("#channels").innerHTML = `<p class="shop-error">${escapeHtml(error.message || "โหลดช่องไม่สำเร็จ")}</p>`;
   }
 }
 function renderChannels() {

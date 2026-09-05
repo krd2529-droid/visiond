@@ -1,8 +1,8 @@
-# Active patch: Direct product-management entry
+# Active patch: Restore channel list after direct entry
 
-- Event: PATCH_DELIVERED
-- Outcome: ลบแถบสลับหน้าและเข้าแผงจัดการสินค้าของช่องโดยตรง
-- Preserve: + ช่องใหม่เปิด TikTok OAuth; ช่องเดิม ข้อมูลสินค้า และทางเชื่อม TikTok Shop เมื่อสิทธิ์ขาด
-- Acceptance: ไม่มีแถบ 1/2 และไม่มีการ์ดล็อกอินกลางหน้า; โหลดหน้าแล้วเป็น output channel; เลือกการ์ดช่องแล้วยังอยู่หน้าจัดการสินค้า; + ช่องใหม่เป็นจุดเพิ่มช่องเพียงจุดเดียว
-- Phase: deployed and verified on production (commit 333e5b81)
+- Event: PATCH_READY
+- Outcome: รายการช่องเดิมต้องแสดงหลังโหลดหน้าโดยไม่ค้างที่ “กำลังโหลด…”
+- Preserve: เข้าแผงจัดการสินค้าตรง; ไม่มีแถบ 1/2; + ช่องใหม่เปิด TikTok OAuth
+- Acceptance: loadChannels วาดรายการได้หลัง analysisForm ถูกลบ; error แสดงในพื้นที่ที่ยังอยู่บนหน้า; production แสดงช่องเดิม
+- Phase: regression suite passed; ready to deploy
 - Files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, public/tiktok-analyzer.html, tests
