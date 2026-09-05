@@ -1,9 +1,10 @@
-# Active patch: Centralize channel connections in settings
+# Active patch: Remove discarded products from selection list
 
-- Status: PATCH_DELIVERED
-- Report: the analysis view still offers a direct reconnect/OAuth action when Showcase permissions are missing.
-- Outcome: all TikTok/TikTok Shop connection actions remain only in view 1; view 2 shows status and a navigation button back to settings.
-- Preserve: permission detection, Marketplace search/add behavior, connection controls in settings, and selected channel state.
-- Acceptance: analysis permission UI contains no OAuth link; its button switches to settings and focuses the connection panel; focused permission, view, mobile, and predeploy checks pass.
-- Phase: implementation, current permission, Marketplace, mobile, syntax, predeploy, deployment, and production asset checks pass. Legacy `test-v014501.mjs` remains stale against the current v0.20.49 implementation and is outside this patch.
-- Delivery: commit `d79cde3d` pushed to `origin/main`; production serves the settings-only connection flow through assets `02055` (verified 2026-09-05).
+- Status: PATCH_READY
+- Report: clicking discard updates the database/history but the product remains visible in the analysis snapshot list.
+- Root cause: the product-prep cards render from an older analysis snapshot and are not reconciled with current `inventory_status` records.
+- Outcome: discarded products disappear from the selection list immediately and remain absent after reopening the channel; visible ranks and grade totals are recalculated.
+- Preserve: discarded history, restore/retest workflows, kept products, analysis snapshots, and API status updates.
+- Acceptance: both newly discarded and already-discarded products are filtered; selection ranks/totals update; focused inventory, mobile, and predeploy checks pass.
+- Phase: root cause confirmed; client reconciliation implemented; focused discarded-state, title, permission, syntax, mobile, and predeploy checks pass; commit/push and production verification in progress.
+- Delivery: pending.

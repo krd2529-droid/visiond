@@ -620,6 +620,25 @@ function renderPermanentInventory(products = [], events = []) {
   $("#angelCount").textContent = `\u0E40\u0E01\u0E47\u0E1A\u0E41\u0E25\u0E49\u0E27 ${kept.length}/30 \xB7 ${remaining ? `\u0E40\u0E2B\u0E25\u0E37\u0E2D ${remaining}` : "\u0E04\u0E23\u0E1A 30 \u0E41\u0E25\u0E49\u0E27"} \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01 ${discarded.length}`;
   $("#angelProducts").innerHTML = `<section class="permanent-list kept"><h3>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49 <small>${kept.length}/30 \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23</small></h3>${rows(kept, "kept")}</section><section class="permanent-list discarded"><h3>\u0E1B\u0E23\u0E30\u0E27\u0E31\u0E15\u0E34\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01 <small>${discarded.length} \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23</small></h3>${rows(discarded, "discarded")}</section>`;
 }
+function reconcileProductPrepInventory(products = []) {
+  const discarded = new Set(products.filter((product) => product.inventory_status === "discarded").map((product) => normalizeProductName(product.name)));
+  const list = $('[data-list="plan"]');
+  if (!list) return;
+  list.querySelectorAll(".product-prep-item").forEach((item) => {
+    const name = item.querySelector(".product-ranking-copy b")?.textContent?.trim() || "";
+    if (discarded.has(normalizeProductName(name))) item.remove();
+  });
+  const counts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+  list.querySelectorAll(".product-prep-item").forEach((item, index) => {
+    const order = item.querySelector(":scope > span:first-child"), grade = item.querySelector(".product-prep-grade")?.textContent?.trim();
+    if (order) order.textContent = String(index + 1);
+    if (counts[grade] !== void 0) counts[grade]++;
+  });
+  $("#productPrepSummary")?.querySelectorAll(".grade-dot").forEach((dot) => {
+    const value = dot.nextElementSibling, grade = dot.textContent.trim();
+    if (value && counts[grade] !== void 0) value.textContent = counts[grade];
+  });
+}
 function renderReviewSchedule(products = [], apiReady = false) {
   const scheduled = products.filter((x) => x.inventory_status === "kept" && ["A", "B", "C"].includes(x.product_type)), now = Date.now(), format = (value) => value ? new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(/* @__PURE__ */ new Date(`${value.replace(" ", "T")}Z`)) : "-", sourceText = apiReady ? "\u0E15\u0E23\u0E27\u0E08\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34\u0E08\u0E32\u0E01 TikTok Shop API \xB7 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48" : "API \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E1E\u0E23\u0E49\u0E2D\u0E21 \xB7 \u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E16\u0E36\u0E07\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08", rows = scheduled.sort((a, b) => String(a.next_review_at || "9999").localeCompare(String(b.next_review_at || "9999"))).map((x) => {
     const due = x.next_review_at ? (/* @__PURE__ */ new Date(`${x.next_review_at.replace(" ", "T")}Z`)).getTime() <= now : false, cycle = Number(x.review_cycle_days) || (x.product_type === "C" ? 3 : 7);
@@ -672,6 +691,7 @@ async function setProductInventory(button) {
     message.textContent = notice;
     showToast(notice, saved.already_exists ? "warning" : "success");
     renderPermanentInventory(latest.products || [], latest.product_events || []);
+    reconcileProductPrepInventory(latest.products || []);
   } catch (error) {
     message.textContent = error.message;
     showToast(error.message, "error");
@@ -787,6 +807,7 @@ selectChannel = async function(id) {
   const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`);
   state.inventoryProducts = inventory.products || [];
   renderPermanentInventory(inventory.products || [], inventory.product_events || []);
+  reconcileProductPrepInventory(inventory.products || []);
   await loadTikTokConnection();
   document.body.classList.toggle("shop-connected", Boolean(state.shopConnection));
   renderReviewSchedule(inventory.products || [], Boolean(state.shopConnection), inventory.product_events || []);
