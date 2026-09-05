@@ -211,7 +211,6 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
   }
   if (!products.length && !inventory.length) {
     list.innerHTML = '<p class="hint">ยังไม่มีสินค้าใน Showcase ของช่องนี้</p>';
-    $("#removeShowcaseAll").hidden = true;
     return;
   }
   const usedInventory = new Set();
@@ -291,7 +290,6 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     if (!button) return;
     return removeShowcaseProducts([button.dataset.productId], `ลบสินค้า “${button.dataset.productName || button.dataset.productId}”`);
   };
-  $("#removeShowcaseAll").hidden = demo || !state.showcaseProducts.length;
 }
 function marketplacePrice(value) {
   if (!value || typeof value !== "object") return "–";
@@ -947,7 +945,7 @@ async function removeShowcaseProducts(ids, scopeLabel) {
   const uniqueIds = [...new Set(ids.filter(Boolean))];
   if (!uniqueIds.length) return showToast("ไม่มีสินค้า Showcase ให้ลบ", "warning");
   if (!confirm(`ยืนยัน${scopeLabel} ${uniqueIds.length.toLocaleString()} รายการออกจาก Showcase ของ ${account}? การกระทำนี้มีผลกับบัญชีจริงและย้อนกลับไม่ได้`)) return;
-  const buttons = [...document.querySelectorAll(".remove-showcase-item, #removeShowcaseAll")];
+  const buttons = [...document.querySelectorAll(".remove-showcase-item")];
   buttons.forEach((button) => { button.disabled = true; });
   let removed = 0;
   try {
@@ -966,7 +964,6 @@ async function removeShowcaseProducts(ids, scopeLabel) {
     buttons.forEach((button) => { button.disabled = false; });
   }
 }
-$("#removeShowcaseAll").addEventListener("click", () => removeShowcaseProducts(state.showcaseProducts.map((product) => product.product_id), "ลบสินค้าทั้งหมด"));
 $("#screenshots").addEventListener("change", (event) => {
   const files = [...event.target.files];
   message.textContent = files.length > 30 ? "\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E44\u0E14\u0E49\u0E44\u0E21\u0E48\u0E40\u0E01\u0E34\u0E19 30 \u0E23\u0E39\u0E1B\u0E15\u0E48\u0E2D\u0E23\u0E2D\u0E1A" : "";

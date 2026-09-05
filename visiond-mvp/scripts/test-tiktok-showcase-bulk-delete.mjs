@@ -6,18 +6,18 @@ const client = read("public/tiktok-analyzer.js");
 const html = read("public/tiktok-analyzer.html");
 
 assert.doesNotMatch(html, /removeShowcasePage|ลบสินค้าในหน้านี้/);
-assert.match(html, /id="removeShowcaseAll"[^>]*>ลบสินค้าทั้งหมด</);
+assert.doesNotMatch(html, /removeShowcaseAll|ลบสินค้าทั้งหมด|showcase-delete-actions/);
 assert.doesNotMatch(html, /removeShowcaseF|ลบสินค้าที่เลือกออกจาก Showcase/);
 assert.doesNotMatch(client, /remove-showcase-check/);
 assert.match(client, /class="remove-showcase-item"/);
 assert.match(client, /removeShowcaseProducts\(\[button\.dataset\.productId\]/);
 assert.match(client, /data-product-name=/);
 assert.match(client, /!demo && !product\.analysisOnly && product\.product_id/);
-assert.match(client, /state\.showcaseProducts\.map\(\(product\) => product\.product_id\)/);
+assert.doesNotMatch(client, /removeShowcaseAll|ลบสินค้าทั้งหมด|state\.showcaseProducts\.map\(\(product\) => product\.product_id\)/);
 assert.match(client, /index \+= 200/);
 assert.match(client, /uniqueIds\.slice\(index, index \+ 200\)/);
 assert.match(client, /ย้อนกลับไม่ได้/);
 assert.match(client, /ลบสำเร็จ \$\{removed\.toLocaleString\(\)\} รายการ ก่อนเกิดข้อผิดพลาด/);
 assert.equal(read("VERSION.txt").trim(), "v0.20.49");
 
-console.log("TikTok Showcase page/all deletion regression: PASS");
+console.log("TikTok Showcase row-only deletion regression: PASS");
