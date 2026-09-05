@@ -1,9 +1,9 @@
-# Active patch: Repair Marketplace search layout
+# Active patch: Repair Marketplace filter layout
 
-- Status: PATCH_DELIVERED
-- Report: Marketplace search fields are compressed and misaligned after adding shop-name search.
-- Outcome: product/shop searches occupy a balanced first row; sort/order/search button occupy a clear second row; mobile uses one column.
-- Preserve: field IDs, search behavior, filters, snapshot, and results.
-- Acceptance: no overlapping text at desktop/tablet/mobile widths; controls remain in logical reading order; focused CSS regression and production asset verification pass.
-- Phase: responsive CSS, Marketplace regression, mobile audit, predeploy gates, deployment, and production asset verification pass.
-- Delivery: commit `c9bba08a` pushed to `origin/main`; production serves `tiktok-analyzer.css?v=02051` (verified 2026-09-05).
+- Status: PATCH_READY
+- Report: expanded Marketplace filters leave a large empty column and uneven field sizing.
+- Outcome: four primary filters fill the first row; the remaining three fill the second row; tablet uses two columns and mobile one.
+- Preserve: field IDs, values, filtering behavior, search, snapshot, and results.
+- Acceptance: balanced controls without blank desktop space or compressed mobile fields; focused layout, Marketplace, mobile, and predeploy checks pass.
+- Phase: layout implementation and focused Marketplace, mobile, and predeploy checks pass; commit/push and production verification in progress.
+- Delivery: pending.
