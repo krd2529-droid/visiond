@@ -9,6 +9,6 @@ assert.match(html, /<article class="direction-analysis"><h3>ทิศทาง�
 assert.match(css, /\.result-grid>\.direction-analysis\{grid-column:1\/-1;width:100%\}/);
 assert.match(html, /data-list="winners"/);
 assert.match(html, /data-list="candidates"/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.45");
+assert.equal(read("VERSION.txt").trim(), "v0.20.46");
 
 console.log("TikTok channel direction full-width card regression: PASS");

@@ -6,6 +6,6 @@ assert.doesNotMatch(client, /ดูสินค้า GMV โตสูง|เร
 assert.doesNotMatch(css, /\.showcase-sort/);
 assert.match(client, /gradeRank\(a\) - gradeRank\(b\)/);
 assert.match(client, /GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า/);
-assert.match(html, /tiktok-analyzer\.js\?v=02045/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.45");
+assert.match(html, /tiktok-analyzer\.js\?v=02046/);
+assert.equal(read("VERSION.txt").trim(), "v0.20.46");
 console.log("Showcase obsolete sort controls removal regression: PASS");
