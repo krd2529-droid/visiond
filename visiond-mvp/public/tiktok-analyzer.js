@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseSort: "grade", inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
+let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseSort: "grade", inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -294,9 +294,34 @@ function renderMarketplaceCategories(categories = []) {
   state.marketplaceCategories = [...merged.values()].sort((left, right) => left.name.localeCompare(right.name, "th"));
   select.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + state.marketplaceCategories.map(category => '<option value="' + escapeHtml(category.id) + '"' + (category.id === selected ? " selected" : "") + '>' + escapeHtml(category.name) + '</option>').join("");
 }
+async function loadMarketplaceCategories() {
+  const connection = state.shopConnection, select = $("#marketplaceCategory");
+  if (!connection?.capabilities?.can_search_marketplace || state.marketplaceCategoriesLoadingForConnection === connection.id) return;
+  if (state.marketplaceCategoriesForConnection === connection.id && state.marketplaceCategories.length) return;
+  state.marketplaceCategoriesLoadingForConnection = connection.id;
+  select.disabled = true;
+  select.innerHTML = '<option value="">กำลังโหลดหมวดหมู่จาก TikTok…</option>';
+  try {
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: connection.id, categories_only: true, result_limit: 100, sort_field: "units_sold", sort_order: "DESC" }) });
+    if (state.shopConnection?.id !== connection.id) return;
+    state.marketplaceCategoriesForConnection = connection.id;
+    renderMarketplaceCategories(data.categories || []);
+    select.title = data.categories?.length ? `พบ ${data.categories.length} หมวดจากสินค้า Marketplace ${data.scanned_product_count || 0} รายการ` : "TikTok ยังไม่ส่งชื่อหมวดหมู่มา";
+  } catch (error) {
+    if (state.shopConnection?.id === connection.id) {
+      renderMarketplaceCategories();
+      select.title = `โหลดหมวดหมู่ไม่สำเร็จ: ${error.message}`;
+    }
+  } finally {
+    if (state.marketplaceCategoriesLoadingForConnection === connection.id) state.marketplaceCategoriesLoadingForConnection = "";
+    if (state.shopConnection?.id === connection.id) select.disabled = false;
+  }
+}
 function resetMarketplaceView() {
   state.marketplaceProducts = [];
   state.marketplaceCategories = [];
+  state.marketplaceCategoriesForConnection = "";
+  state.marketplaceCategoriesLoadingForConnection = "";
   state.marketplaceNextToken = "";
   state.marketplaceSearchedAt = "";
   renderMarketplaceCategories();
@@ -554,6 +579,7 @@ async function loadTikTokConnection() {
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").textContent = shopConnection ? "เชื่อมใหม่เพื่ออัปเดตสิทธิ์" : "เชื่อมบัญชี Creator";
+  if (shopConnection) loadMarketplaceCategories();
   $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> \xB7 \u0E15\u0E25\u0E32\u0E14 ${escapeHtml(shopConnection.selection_region || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38")} \xB7 \u0E0B\u0E34\u0E07\u0E01\u0E4C ${escapeHtml(shopConnection.last_synced_at || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E40\u0E04\u0E22")}</p><div class="tiktok-api-stats"><span>${products.length.toLocaleString()} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 Showcase \u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14</span><span>${orders.length.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E43\u0E19\u0E0A\u0E48\u0E27\u0E07\u0E17\u0E35\u0E48\u0E40\u0E25\u0E37\u0E2D\u0E01</span></div>${shopRangeSummary(data, products, orders)}${shopConnection.last_sync_error ? `<p class="shop-error">\u0E04\u0E23\u0E31\u0E49\u0E07\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25 Showcase \u0E41\u0E25\u0E30\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C Affiliate</p>" : "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok Shop App key \u0E41\u0E25\u0E30 App secret</p>";
   if (!data.configured && !connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
