@@ -1,9 +1,10 @@
-# Active patch: Group TikTok Shop connection actions
+# Active patch: Grade synced TikTok Shop products
 
-- Status: PATCH_DELIVERED
-- Outcome: Present reconnect and disconnect as one clearly labelled TikTok Shop management group.
-- Preserve: OAuth, account-binding protection, refresh limit, Marketplace, Showcase, and disconnect behavior.
-- Acceptance: shared heading; reconnect label is concise; both actions share one row on desktop and stack on mobile; danger styling remains on disconnect.
-- Likely files: TikTok analyzer HTML/client/CSS, UI regression test, visible version files.
-- Phase: implementation, regression checks, and production verification passed.
-- Delivery: v0.20.37 pushed to origin/main and verified on visiondonline.com.
+- Status: PATCH_READY
+- Outcome: Show a clear sales-based grade for every product in the selected-date sold-products table.
+- Grade source: authoritative TikTok Shop order count in the selected date range; A >= 30, B >= 16, C >= 1.
+- Preserve: sync, date filtering, Showcase grading, Marketplace, OAuth, and account binding behavior.
+- Acceptance: sold-products table includes a colored grade column and explanation; grading logic is shared with Showcase; no invented grade when no orders exist.
+- Likely files: TikTok analyzer client/CSS, regression test, visible version files.
+- Phase: implementation and regression checks passed.
+- Delivery: test, review diff, commit only related files, push origin main, verify production.

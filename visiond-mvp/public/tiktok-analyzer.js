@@ -138,6 +138,10 @@ function productGmvGrowth(product, orders) {
 function compactMoney(amount, currency = "THB") {
   return `${Number(amount || 0).toLocaleString("th-TH", { maximumFractionDigits: 2 })} ${escapeHtml(currency)}`;
 }
+function shopSalesGrade(sales) {
+  const sold = Number(sales) || 0;
+  return sold >= 30 ? "A" : sold >= 16 ? "B" : sold > 0 ? "C" : "";
+}
 function soldProductSummaryTable(products, orders) {
   const byId = new Map(products.map((product) => [String(product.product_id), product])), sold = /* @__PURE__ */ new Map();
   orders.forEach((order) => (safeJson(order.product_ids) || []).forEach((id) => {
@@ -148,7 +152,7 @@ function soldProductSummaryTable(products, orders) {
   }));
   const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: `\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ${id}` }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
   if (!rows.length) return '<p class="shop-empty-range">\u0E0A\u0E48\u0E27\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E19\u0E35\u0E49\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</p>';
-  return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<p class="shop-grade-note">เกรดจากยอดออเดอร์จริงในช่วงวันที่เลือก: A ตั้งแต่ 30 · B ตั้งแต่ 16 · C ตั้งแต่ 1</p><div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td></tr>`; }).join("")}</tbody></table></div>`;
 }
 function shopRangeSummary(data, products, orders) {
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo }, commissions = data.shop_portfolio?.commission || [], totals = commissions.length ? commissions.map((item) => `<span><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${Number(item.total_30 || 0).toLocaleString("th-TH", { maximumFractionDigits: 2 })} ${escapeHtml(item.currency)}</b></span>`).join("") : "<span><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25</b></span>";
@@ -217,7 +221,7 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
   };
   const effectiveGrade = (product) => {
     const sales = productMetrics(product, orders).sales;
-    if (!product.analysisOnly) return sales >= 30 ? "A" : sales >= 16 ? "B" : sales > 0 ? "C" : "";
+    if (!product.analysisOnly) return shopSalesGrade(sales);
     const analyzed = String(product.selection?.product_type || "").toUpperCase();
     if ("ABCDEF".includes(analyzed)) return analyzed;
     return "";

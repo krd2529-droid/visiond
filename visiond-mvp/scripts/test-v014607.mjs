@@ -5,6 +5,6 @@ const html = read("public/tiktok-analyzer.html"), client = read("public/tiktok-a
 assert.doesNotMatch(html, /ฐานผู้ติดตาม: กลุ่มอายุและเพศ/);
 assert.doesNotMatch(html, /id="audienceDemographics"/);
 assert.doesNotMatch(client, /uploadAudienceEvidence/);
-assert.match(html, /tiktok-analyzer\.js\?v=02037/);
-assert.equal(read("VERSION.txt").trim(), "v0.20.37");
+assert.match(html, /tiktok-analyzer\.js\?v=02038/);
+assert.equal(read("VERSION.txt").trim(), "v0.20.38");
 console.log("Follower demographics card removal regression: PASS");
