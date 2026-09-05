@@ -1,9 +1,9 @@
-# Active patch: Prevent TikTok Shop account reassignment
+# Active patch: Group TikTok Shop connection actions
 
-- Status: PATCH_DELIVERED
-- Outcome: Keep a TikTok Shop Creator account on its original VisionD channel when the same TikTok session is used while connecting another channel.
-- Preserve: reconnecting the same channel, reconnecting an explicitly disconnected account, OAuth state checks, scopes, Showcase and Marketplace data.
-- Acceptance: an active account cannot move across channels; callback reports the original channel; UI tells the user to switch TikTok accounts; original binding remains unchanged; different accounts can still connect.
-- Likely files: TikTok Shop OAuth persistence/callback, analyzer OAuth message, focused regression test, visible version files.
-- Phase: committed, pushed to origin/main, and verified on production at v0.20.36.
+- Status: PATCH_READY
+- Outcome: Present reconnect and disconnect as one clearly labelled TikTok Shop management group.
+- Preserve: OAuth, account-binding protection, refresh limit, Marketplace, Showcase, and disconnect behavior.
+- Acceptance: shared heading; reconnect label is concise; both actions share one row on desktop and stack on mobile; danger styling remains on disconnect.
+- Likely files: TikTok analyzer HTML/client/CSS, UI regression test, visible version files.
+- Phase: implementation and regression checks passed.
 - Delivery: test, review diff, commit only related files, push origin main, verify production.
