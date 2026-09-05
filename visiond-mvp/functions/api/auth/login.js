@@ -2,6 +2,7 @@ import {json} from '../../_lib.js';
 import {rateLimit,rateLimitIdentity,verifyTurnstile,verifyPassword,securityLog} from '../../_security.js';
 import {recordSuccessfulLogin} from '../../_first_order_promo.js';
 import {claimVisitorHistory} from '../../_analytics.js';
+import {ensureVision7AuthSchema} from '../../_vision7_auth.js';
 
 export async function onRequestPost(ctx){
  try{
@@ -18,8 +19,15 @@ export async function onRequestPost(ctx){
   const u=await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=? ORDER BY CASE WHEN lower(username)=? THEN 0 ELSE 1 END,id LIMIT 1').bind(login,login,login).first();
   if(u){const accountLimited=await rateLimitIdentity(ctx.env,ctx.request,'login_account',`user:${u.id}`,10,15,30);if(accountLimited.error)return accountLimited.error;}
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
+  await ensureVision7AuthSchema(ctx.env);
   const remember=b.remember===true,sessionDuration=remember?'+30 days':'+24 hours';
-  const id=crypto.randomUUID();await ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now',?))").bind(id,u.id,sessionDuration).run();
+  const id=crypto.randomUUID(),statements=[];
+  if(u.role!=='boss'){
+    statements.push(ctx.env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(u.id));
+    statements.push(ctx.env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL").bind(u.id));
+  }
+  statements.push(ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now',?))").bind(id,u.id,sessionDuration));
+  await ctx.env.DB.batch(statements);
   await recordSuccessfulLogin(ctx.env,u.id);
   const claimed=await claimVisitorHistory(ctx.env,ctx.request,u.id);
   await ctx.env.DB.prepare(`INSERT INTO customer_events(visitor_key,user_id,event_type,path,metadata) VALUES(?,?,'login_success','/login',?)`).bind(claimed.visitor_key,u.id,JSON.stringify({claimed_guest_events:claimed.claimed})).run().catch(()=>{});

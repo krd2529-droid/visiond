@@ -14,7 +14,7 @@ export function tikTokOAuthConfig(env={}){
 export async function createTikTokState(env,userId,channelId=''){
   const state=crypto.randomUUID().replaceAll('-','')+crypto.randomUUID().replaceAll('-',''),stateHash=await sha256(state);
   await env.DB.batch([
-    env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE expires_at<=CURRENT_TIMESTAMP OR user_id=?").bind(userId),
+    env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE expires_at<=CURRENT_TIMESTAMP"),
     env.DB.prepare("INSERT INTO tiktok_oauth_states(state_hash,user_id,channel_id,expires_at) VALUES(?,?,?,datetime('now','+10 minutes'))").bind(stateHash,userId,clean(channelId,80))
   ]);
   return state;

@@ -18,7 +18,7 @@ export async function onRequestPost(ctx) {
   if ([commissionMin, commissionMax].some(value => value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) || (commissionMin !== null && commissionMax !== null && commissionMin > commissionMax)) return json({ error: "ช่วงค่าคอมต้องอยู่ระหว่าง 0–100% และค่าต่ำสุดต้องไม่เกินค่าสูงสุด" }, 400, headers);
   try {
     const comparisonDays = [3, 7, 14, 30].includes(Number(body.comparison_days)) ? Number(body.comparison_days) : 7;
-    const result = await searchTikTokShopOpenCollaborationProducts(ctx.env, connection, { keywords, resultLimit: body.result_limit, pageToken: body.page_token, sortField: clean(body.sort_field, 40), sortOrder: clean(body.sort_order, 10), priceMin, priceMax, categoryId: body.category_id, commissionPercentMin: commissionMin, commissionPercentMax: commissionMax });
+    const result = await searchTikTokShopOpenCollaborationProducts(ctx.env, connection, { keywords, shopKeyword: clean(body.shop_keyword,300), resultLimit: body.result_limit, pageToken: body.page_token, sortField: clean(body.sort_field, 40), sortOrder: clean(body.sort_order, 10), priceMin, priceMax, categoryId: body.category_id, commissionPercentMin: commissionMin, commissionPercentMax: commissionMax });
     if (body.categories_only === true) return json({ ok: true, source: "open_collaboration_marketplace", categories: result.categories, scanned_product_count: result.products.length }, 200, headers);
     const ids = result.products.map(product => product.product_id), previous = new Map();
     if (ids.length) {

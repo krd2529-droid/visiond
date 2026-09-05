@@ -1,9 +1,11 @@
 import {json,sha256} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
 import {hashPassword,rateLimit,securityLog} from '../../_security.js';
+import {ensureVision7AuthSchema} from '../../_vision7_auth.js';
 
 export async function onRequestPost(ctx){
   await ensureDatabase(ctx.env);
+  await ensureVision7AuthSchema(ctx.env);
   const limited=await rateLimit(ctx.env,ctx.request,'reset_password_ip',10,30,30);if(limited.error)return limited.error;
   const body=await ctx.request.json().catch(()=>({})),token=String(body.token||''),password=String(body.password||''),confirm=String(body.confirm_password||'');
   if(!/^[A-Za-z0-9_-]{40,100}$/.test(token))return json({error:'ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว'},400);
@@ -15,7 +17,8 @@ export async function onRequestPost(ctx){
   const results=await ctx.env.DB.batch([
     ctx.env.DB.prepare("UPDATE password_reset_tokens SET used_at=CURRENT_TIMESTAMP,consume_id=? WHERE token_hash=? AND used_at IS NULL AND expires_at>datetime('now')").bind(consumeId,tokenHash),
     ctx.env.DB.prepare('UPDATE users SET password_hash=? WHERE id=? AND EXISTS(SELECT 1 FROM password_reset_tokens WHERE token_hash=? AND consume_id=?)').bind(passwordHash,row.user_id,tokenHash,consumeId),
-    ctx.env.DB.prepare('DELETE FROM sessions WHERE user_id=? AND EXISTS(SELECT 1 FROM password_reset_tokens WHERE token_hash=? AND consume_id=?)').bind(row.user_id,tokenHash,consumeId)
+    ctx.env.DB.prepare('DELETE FROM sessions WHERE user_id=? AND EXISTS(SELECT 1 FROM password_reset_tokens WHERE token_hash=? AND consume_id=?)').bind(row.user_id,tokenHash,consumeId),
+    ctx.env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL AND EXISTS(SELECT 1 FROM password_reset_tokens WHERE token_hash=? AND consume_id=?)").bind(row.user_id,tokenHash,consumeId)
   ]);
   if(!Number(results[0]?.meta?.changes)){return json({error:'ลิงก์ตั้งรหัสผ่านถูกใช้ไปแล้ว กรุณาขอลิงก์ใหม่'},409);}
   await securityLog(ctx.env,ctx.request,'password_reset_completed','info','all sessions revoked',row.user_id);

@@ -15,8 +15,13 @@ export async function ensureVision7AuthSchema(env){
 export async function issueVision7AppSession(env,userId,{deviceId,deviceName='',appVersion=''}={}){
   const token=`VD7S_${crypto.randomUUID().replaceAll('-','')}_${crypto.randomUUID().replaceAll('-','')}`;
   const tokenHash=await sha256(token),deviceHash=await sha256(String(deviceId||'')),id=crypto.randomUUID();
-  await env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND device_hash=? AND revoked_at IS NULL").bind(userId,deviceHash).run();
-  await env.DB.prepare("INSERT INTO vision7_app_sessions(id,token_hash,user_id,device_hash,device_name,app_version,expires_at) VALUES(?,?,?,?,?,?,datetime('now','+30 days'))").bind(id,tokenHash,userId,deviceHash,safeDeviceName(deviceName),safeVersion(appVersion)).run();
+  const user=await env.DB.prepare('SELECT role FROM users WHERE id=?').bind(userId).first(),statements=[];
+  if(user?.role!=='boss'){
+    statements.push(env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(userId));
+    statements.push(env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL").bind(userId));
+  }else statements.push(env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND device_hash=? AND revoked_at IS NULL").bind(userId,deviceHash));
+  statements.push(env.DB.prepare("INSERT INTO vision7_app_sessions(id,token_hash,user_id,device_hash,device_name,app_version,expires_at) VALUES(?,?,?,?,?,?,datetime('now','+30 days'))").bind(id,tokenHash,userId,deviceHash,safeDeviceName(deviceName),safeVersion(appVersion)));
+  await env.DB.batch(statements);
   return {token,expires_in:2592000};
 }
 

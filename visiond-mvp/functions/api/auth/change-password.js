@@ -1,5 +1,6 @@
 import {cookie,json,requireUser} from '../../_lib.js';
 import {hashPassword,rateLimit,securityLog,verifyPassword} from '../../_security.js';
+import {ensureVision7AuthSchema} from '../../_vision7_auth.js';
 
 export async function onRequestPost(ctx){
   const auth=await requireUser(ctx);
@@ -18,8 +19,10 @@ export async function onRequestPost(ctx){
     return json({error:'รหัสผ่านปัจจุบันไม่ถูกต้อง'},401);
   }
   const passwordHash=await hashPassword(next),sessionId=cookie(ctx.request,'vd_session');
+  await ensureVision7AuthSchema(ctx.env);
   await ctx.env.DB.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(passwordHash,auth.user.id).run();
   await ctx.env.DB.prepare('DELETE FROM sessions WHERE user_id=? AND id<>?').bind(auth.user.id,sessionId).run();
+  await ctx.env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL").bind(auth.user.id).run();
   await securityLog(ctx.env,ctx.request,'password_changed','info','other sessions revoked',auth.user.id);
   return json({ok:true,message:'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว'});
 }

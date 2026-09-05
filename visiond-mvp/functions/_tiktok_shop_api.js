@@ -44,8 +44,8 @@ const marketplaceCategory = product => {
   return { id: clean(category.id || category.category_id, 100), name: clean(category.local_name || category.name || category.category_name, 300) };
 };
 const normalizeTikTokMarketplaceProduct = product => {
-  const category = marketplaceCategory(product);
-  return { product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), price: marketplacePrice(product), category_id: category.id, category_name: category.name, raw_json: JSON.stringify(product) };
+  const category = marketplaceCategory(product), shop = product.shop || product.seller || product.shop_info || {}, published = product.publish_time || product.published_at || product.create_time || product.created_at || null;
+  return { product_id: productId(product), name: productName(product), image_url: imageUrl(product), product_url: clean(product.detail_link || product.product_url || product.share_url, 1500), shop_name: clean(shop.name || shop.shop_name || product.shop_name || product.seller_name, 300), published_at: published, units_sold: Math.max(0, finiteNumber(product.units_sold)), commission_rate: Math.max(0, commissionRate(product)), price: marketplacePrice(product), category_id: category.id, category_name: category.name, raw_json: JSON.stringify(product) };
 };
 const tikTokMarketplaceGrowth = (current, previous) => { const latest = Math.max(0, finiteNumber(current)), prior = previous === null || previous === undefined ? null : Math.max(0, finiteNumber(previous)); return { latest, previous: prior, change: prior === null ? null : latest - prior, growth_percent: prior === null ? null : prior > 0 ? (latest - prior) / prior * 100 : latest > 0 ? null : 0 }; };
 const skuRows = (order) => Array.isArray(order.skus) ? order.skus : Array.isArray(order.products) ? order.products : Array.isArray(order.product_list) ? order.product_list : [], firstMoney = (row, names) => names.map((name) => money(row?.[name])).find((value) => value?.amount), sumMoney = (rows, names) => {
@@ -53,11 +53,11 @@ const skuRows = (order) => Array.isArray(order.skus) ? order.skus : Array.isArra
   if (!values.length || currencies.length > 1) return null;
   return { amount: values.reduce((sum, x) => sum + (Number(x.amount) || 0), 0).toFixed(2), currency: currencies[0] || "" };
 };
-async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase = 2e3, maxOrders = 500 } = {}, fetchImpl = fetch) {
+async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase = 2e3, maxOrders = 500, syncShowcase = true, syncOrders = true } = {}, fetchImpl = fetch) {
   maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(maxShowcase) || 2000)));
   const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), call = (options) => tikTokShopRequest(config, access, options, fetchImpl), profile = await call({ path: "/affiliate_creator/202508/profiles" });
   let showcase = [], pageToken = "";
-  while (showcase.length < maxShowcase) {
+  while (syncShowcase && showcase.length < maxShowcase) {
     const data = await call({ path: "/affiliate_creator/202405/showcases/products", query: { page_size: String(Math.min(20, maxShowcase - showcase.length)), origin: "SHOWCASE", ...pageToken ? { page_token: pageToken } : {} } });
     showcase.push(...data.products || []);
     pageToken = clean(data.next_page_token);
@@ -79,13 +79,13 @@ async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase =
   }
   const now = Math.floor(Date.now() / 1e3), since = now - Math.min(90, Math.max(1, Number(days) || 30)) * 86400;
   let orders = [], orderToken = "";
-  while (orders.length < maxOrders) {
+  while (syncOrders && orders.length < maxOrders) {
     const data = await call({ path: "/affiliate_creator/202410/orders/search", method: "POST", query: { page_size: String(Math.min(100, maxOrders - orders.length)), ...orderToken ? { page_token: orderToken } : {} }, body: { create_time_ge: since, create_time_lt: now } });
     orders.push(...data.orders || []);
     orderToken = clean(data.next_page_token);
     if (!orderToken) break;
   }
-  const oldGrades = new Map(((await env.DB.prepare("SELECT product_id,product_grade FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(connection.id).all()).results || []).map((x) => [String(x.product_id), x.product_grade])), statements = [env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET creator_username=?,creator_avatar_url=?,selection_region=?,profile_json=?,last_synced_at=CURRENT_TIMESTAMP,last_sync_error='',updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(clean(profile.username, 300), clean(profile.avatar?.url, 1500), clean(profile.selection_region, 30), JSON.stringify(profile), connection.id), env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(connection.id), ...showcase.filter(productId).map((p, i) => env.DB.prepare(`INSERT INTO tiktok_shop_showcase_products(connection_id,product_id,name,image_url,product_url,origin,price_json,commission_json,sort_order,raw_json,product_grade) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(connection.id, productId(p), productName(p), imageUrl(p), clean(p.detail_link || p.product_url || p.share_url, 1500), clean(p.origin, 30), JSON.stringify(money(p.sales_price) || money(p.price) || p.sales_price || p.price || null), JSON.stringify(money(p.commission) || p.commission || null), i, JSON.stringify(p), oldGrades.get(productId(p)) || "B")), ...orders.filter((o) => clean(o.order_id || o.id, 100)).map((o) => {
+  const oldGrades = new Map(((await env.DB.prepare("SELECT product_id,product_grade FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(connection.id).all()).results || []).map((x) => [String(x.product_id), x.product_grade])), statements = [env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET creator_username=?,creator_avatar_url=?,selection_region=?,profile_json=?,last_synced_at=CURRENT_TIMESTAMP,last_sync_error='',updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(clean(profile.username, 300), clean(profile.avatar?.url, 1500), clean(profile.selection_region, 30), JSON.stringify(profile), connection.id), ...(syncShowcase?[env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(connection.id), ...showcase.filter(productId).map((p, i) => env.DB.prepare(`INSERT INTO tiktok_shop_showcase_products(connection_id,product_id,name,image_url,product_url,origin,price_json,commission_json,sort_order,raw_json,product_grade) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(connection.id, productId(p), productName(p), imageUrl(p), clean(p.detail_link || p.product_url || p.share_url, 1500), clean(p.origin, 30), JSON.stringify(money(p.sales_price) || money(p.price) || p.sales_price || p.price || null), JSON.stringify(money(p.commission) || p.commission || null), i, JSON.stringify(p), oldGrades.get(productId(p)) || "B"))]:[]), ...orders.filter((o) => clean(o.order_id || o.id, 100)).map((o) => {
     const rows = skuRows(o), ids = rows.map(productId).filter(Boolean).concat(o.product_id ? [clean(o.product_id, 100)] : []), gmv = money(o.gmv) || sumMoney(rows, ["actual_commission_base", "estimated_commission_base", "price"]), commission = money(o.commission) || sumMoney(rows, ["actual_paid_commission", "actual_commission", "estimated_paid_commission", "estimated_commission"]);
     return env.DB.prepare(`INSERT INTO tiktok_shop_affiliate_orders(connection_id,order_id,create_time,product_ids,status,gmv_json,commission_json,raw_json,synced_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(connection_id,order_id) DO UPDATE SET create_time=excluded.create_time,product_ids=excluded.product_ids,status=excluded.status,gmv_json=excluded.gmv_json,commission_json=excluded.commission_json,raw_json=excluded.raw_json,synced_at=CURRENT_TIMESTAMP`).bind(connection.id, clean(o.order_id || o.id, 100), Number(o.create_time) || 0, JSON.stringify([...new Set(ids)]), clean(o.status, 80), JSON.stringify(gmv), JSON.stringify(commission), JSON.stringify(o));
   })];
@@ -112,9 +112,9 @@ async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchI
   }
   return { requested: ids.length, added: Math.max(0, ids.length - errors.length), errors, batches };
 }
-async function searchTikTokShopOpenCollaborationProducts(env, connection, { keywords = [], resultLimit = 20, pageToken = "", sortField = "units_sold", sortOrder = "DESC", priceMin = null, priceMax = null, categoryId = "", commissionPercentMin = null, commissionPercentMax = null } = {}, fetchImpl = fetch) {
+async function searchTikTokShopOpenCollaborationProducts(env, connection, { keywords = [], shopKeyword = "", resultLimit = 20, pageToken = "", sortField = "units_sold", sortOrder = "DESC", priceMin = null, priceMax = null, categoryId = "", commissionPercentMin = null, commissionPercentMax = null } = {}, fetchImpl = fetch) {
   if (!String(connection.scopes || "").split(",").map(scope => scope.trim()).includes("creator.affiliate_collaboration.read")) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_AFFILIATE_COLLABORATION_READ_REQUIRED");
-  const titleKeywords = (Array.isArray(keywords) ? keywords : [keywords]).map(value => clean(value, 255)).filter(Boolean).slice(0, 20), allowedSortFields = new Set(["commission_rate", "product_sales_price", "commission", "units_sold"]), normalizedSort = allowedSortFields.has(sortField) ? sortField : "units_sold", limit = Math.min(100, Math.max(1, Number(resultLimit) || 20));
+  const titleKeywords = (Array.isArray(keywords) ? keywords : [keywords]).map(value => clean(value, 255)).filter(Boolean).slice(0, 20), normalizedShopKeyword=clean(shopKeyword,300).toLocaleLowerCase(), allowedSortFields = new Set(["commission_rate", "product_sales_price", "commission", "units_sold"]), normalizedSort = allowedSortFields.has(sortField) ? sortField : "units_sold", limit = Math.min(100, Math.max(1, Number(resultLimit) || 20));
   const body = {}, validAmount = value => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0, validPercent = value => validAmount(value) && Number(value) <= 100;
   if (titleKeywords.length) body.title_keywords = titleKeywords;
   if (validAmount(priceMin) || validAmount(priceMax)) body.sales_price_range = { ...(validAmount(priceMin) ? { amount_ge: String(Number(priceMin)) } : {}), ...(validAmount(priceMax) ? { amount_lt: String(Number(priceMax)) } : {}) };
@@ -129,6 +129,7 @@ async function searchTikTokShopOpenCollaborationProducts(env, connection, { keyw
     pages += 1;
     const data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/open_collaborations/products/search", method: "POST", query: { page_size: String(Math.min(20, limit - productsById.size)), sort_field: normalizedSort, sort_order: sortOrder === "ASC" ? "ASC" : "DESC", ...(nextPageToken ? { page_token: nextPageToken } : {}) }, body }, fetchImpl);
     for (const product of (data.products || []).map(normalizeTikTokMarketplaceProduct)) {
+      if (normalizedShopKeyword && !product.shop_name.toLocaleLowerCase().includes(normalizedShopKeyword)) continue;
       if (product.product_id && !productsById.has(product.product_id)) productsById.set(product.product_id, product);
     }
     nextPageToken = clean(data.next_page_token, 1000); totalCount = Math.max(totalCount, finiteNumber(data.total_count));

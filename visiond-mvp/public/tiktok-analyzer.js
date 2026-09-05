@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
+let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -57,7 +57,20 @@ const safeJson = (value) => {
   const sold = orders.reduce((sum, order) => sum + (safeJson(order.product_ids) || []).filter((id) => String(id) === String(product.product_id)).length, 0), commission = safeJson(product.commission_json), amount = commission?.amount ? `${commission.amount} ${commission.currency || ""}`.trim() : "", rate = Number(commission?.rate) || 0, commissionText = amount || rate ? ` \xB7 \u0E04\u0E2D\u0E21 ${amount ? escapeHtml(amount) : `${(rate / 100).toLocaleString()}%`}` : "";
   return `${escapeHtml(product.name || product.product_id)} \xB7 \u0E02\u0E32\u0E22 ${sold.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C${commissionText}`;
 };
-const reviewDemo = new URLSearchParams(location.search).get("review_demo") === "1", money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
+const money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
+const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseHeading = $("#channelShopAnalysis .showcase-panel .showcase-heading");
+marketplacePanel?.insertAdjacentHTML("beforebegin", '<section id="soldProductsPanel" class="sold-products-panel"><div class="showcase-heading"><div><h3>สินค้าที่ขายได้และออเดอร์</h3><p class="hint">ข้อมูลจริงของช่องที่เลือก เรียงตามจำนวนออเดอร์ในช่วงวันที่กำหนด</p></div><div id="soldProductsControls" class="related-table-controls"></div></div><div id="soldProductsData"><p class="hint">เชื่อม TikTok Shop เพื่อโหลดข้อมูล</p></div></section>');
+showcaseHeading?.insertAdjacentHTML("beforeend", '<div id="showcaseTableControls" class="related-table-controls"></div>');
+if ($("#syncTikTokShop")) {
+  $("#syncTikTokShop").textContent = "รีเฟรชสินค้าที่ขายได้และออเดอร์";
+  $("#soldProductsControls").append($("#syncTikTokShop"));
+}
+if ($("#showcaseSyncLimitField")) {
+  $("#showcaseSyncLimitField").firstChild.textContent = "จำนวนสินค้า Showcase ที่ต้องการโหลด";
+  $("#showcaseTableControls").append($("#showcaseSyncLimitField"));
+  $("#showcaseTableControls").insertAdjacentHTML("beforeend", '<button id="syncTikTokShowcase" type="button" hidden>โหลดสินค้า Showcase</button>');
+}
+$("#marketplaceKeyword")?.closest("label")?.insertAdjacentHTML("afterend", '<label>ชื่อร้านค้า<input id="marketplaceShopKeyword" maxlength="300" placeholder="เช่น ชื่อร้านใน TikTok Shop"><small>กรองจากผล Marketplace ที่ TikTok ส่งมา สูงสุด 200 รายการต่อการค้นหา</small></label>');
 function shopDateQuery(channelId = "") {
   const params = new URLSearchParams({ date_from: state.shopDateFrom, date_to: state.shopDateTo });
   if (channelId) params.set("channel_id", channelId);
@@ -78,10 +91,6 @@ function setWorkspaceView(view) {
   $("#showOutputView").setAttribute("aria-current", output ? "page" : "false");
 }
 async function loadPortfolioDashboard() {
-  if (reviewDemo) {
-    renderShopDashboard({ ...demoShopData, review_demo: true }, null);
-    return;
-  }
   const data = await api(`/api/admin/tiktok-connections?${shopDateQuery()}`);
   renderShopDashboard({ ...data, shop_products: data.shop_portfolio?.products || [], shop_orders: data.shop_portfolio?.orders || [] }, data.shop_connections?.[0] || null);
 }
@@ -95,24 +104,6 @@ $("#showOutputView").addEventListener("click", () => {
 });
 setOutputScope("channel");
 setWorkspaceView("input");
-const demoShopData = { shop_portfolio: { commission: [] }, shop_products: [], shop_orders: [] };
-const demoRankProducts = [{ product: "KING SYRUP \u0E01\u0E25\u0E34\u0E48\u0E19\u0E23\u0E32\u0E2A\u0E40\u0E1A\u0E2D\u0E23\u0E4C\u0E23\u0E35\u0E48", product_type: "A", ranking_score: 95, ranking_reason: "\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 42 \u0E0A\u0E34\u0E49\u0E19 \xB7 \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E2B\u0E25\u0E31\u0E01\u0E02\u0E32\u0E22\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07" }, { product: "\u0E40\u0E01\u0E49\u0E32\u0E2D\u0E35\u0E49\u0E41\u0E04\u0E21\u0E1B\u0E4C\u0E1B\u0E34\u0E49\u0E07\u0E1E\u0E31\u0E1A\u0E44\u0E14\u0E49", product_type: "A", ranking_score: 92, ranking_reason: "\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 35 \u0E0A\u0E34\u0E49\u0E19 \xB7 \u0E17\u0E23\u0E32\u0E1F\u0E1F\u0E34\u0E01\u0E14\u0E35" }, { product: "\u0E0A\u0E38\u0E14\u0E40\u0E14\u0E47\u0E01\u0E44\u0E1B\u0E42\u0E23\u0E07\u0E40\u0E23\u0E35\u0E22\u0E19", product_type: "B", ranking_score: 82, ranking_reason: "\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 23 \u0E0A\u0E34\u0E49\u0E19 \xB7 \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07" }, { product: "\u0E04\u0E25\u0E35\u0E19\u0E0B\u0E34\u0E48\u0E07\u0E2A\u0E39\u0E15\u0E23\u0E2D\u0E48\u0E2D\u0E19\u0E42\u0E22\u0E19 300ml", product_type: "B", ranking_score: 78, ranking_reason: "\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 18 \u0E0A\u0E34\u0E49\u0E19 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07" }, { product: "\u0E23\u0E2D\u0E07\u0E40\u0E17\u0E49\u0E32\u0E2B\u0E31\u0E14\u0E40\u0E14\u0E34\u0E19\u0E40\u0E14\u0E47\u0E01", product_type: "C", ranking_score: 68, ranking_reason: "\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 8 \u0E0A\u0E34\u0E49\u0E19 \xB7 \u0E17\u0E14\u0E25\u0E2D\u0E07\u0E41\u0E25\u0E30\u0E15\u0E23\u0E27\u0E08\u0E43\u0E19 3 \u0E27\u0E31\u0E19" }, { product: "\u0E01\u0E23\u0E30\u0E40\u0E1B\u0E4B\u0E32\u0E1C\u0E49\u0E32\u0E41\u0E1F\u0E0A\u0E31\u0E48\u0E19", product_type: "C", ranking_score: 64, ranking_reason: "\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 4 \u0E0A\u0E34\u0E49\u0E19 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E1C\u0E25" }, { product: "\u0E40\u0E2A\u0E37\u0E49\u0E2D\u0E01\u0E31\u0E19\u0E1D\u0E19\u0E40\u0E14\u0E47\u0E01", product_type: "D", ranking_score: 60, ranking_reason: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E24\u0E14\u0E39\u0E01\u0E32\u0E25 \xB7 \u0E43\u0E0A\u0E49\u0E0A\u0E48\u0E27\u0E07\u0E2B\u0E19\u0E49\u0E32\u0E1D\u0E19" }, { product: "\u0E40\u0E0B\u0E23\u0E31\u0E48\u0E21\u0E1A\u0E33\u0E23\u0E38\u0E07\u0E1C\u0E34\u0E27\u0E01\u0E25\u0E38\u0E48\u0E21\u0E40\u0E14\u0E35\u0E22\u0E27\u0E01\u0E31\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 A", product_type: "E", ranking_score: null, ranking_reason: "AI \u0E41\u0E19\u0E30\u0E19\u0E33\u0E08\u0E32\u0E01\u0E41\u0E19\u0E27\u0E17\u0E32\u0E07\u0E0A\u0E48\u0E2D\u0E07 \xB7 \u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E02\u0E49\u0E2D\u0E40\u0E2A\u0E19\u0E2D" }, { product: "\u0E0A\u0E31\u0E49\u0E19\u0E27\u0E32\u0E07\u0E02\u0E2D\u0E07\u0E2D\u0E40\u0E19\u0E01\u0E1B\u0E23\u0E30\u0E2A\u0E07\u0E04\u0E4C", product_type: "E", ranking_score: null, ranking_reason: "AI \u0E41\u0E19\u0E30\u0E19\u0E33\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E17\u0E14\u0E25\u0E2D\u0E07" }, { product: "\u0E1E\u0E31\u0E14\u0E25\u0E21\u0E15\u0E31\u0E49\u0E07\u0E42\u0E15\u0E4A\u0E30\u0E23\u0E38\u0E48\u0E19\u0E40\u0E14\u0E34\u0E21", product_type: "F", ranking_score: 30, ranking_reason: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E41\u0E25\u0E30\u0E17\u0E23\u0E32\u0E1F\u0E1F\u0E34\u0E01\u0E15\u0E48\u0E33 \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" }];
-const demoAnalysisResult = { summary: "\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E1C\u0E25\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E0A\u0E48\u0E2D\u0E07\u0E08\u0E32\u0E01\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E22\u0E49\u0E2D\u0E19\u0E2B\u0E25\u0E31\u0E07 30 \u0E27\u0E31\u0E19", confidence: 88, data_gaps: ["\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E2B\u0E23\u0E37\u0E2D\u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B"], channel_direction: { recommended: "\u0E17\u0E33\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E2B\u0E25\u0E31\u0E01 A/B \u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07 \u0E41\u0E25\u0E30\u0E17\u0E14\u0E25\u0E2D\u0E07 C \u0E17\u0E35\u0E25\u0E30\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23", reasons: ["\u0E23\u0E31\u0E01\u0E29\u0E32\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 A", "\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21 C \u0E20\u0E32\u0E22\u0E43\u0E19 3 \u0E27\u0E31\u0E19"] }, winner_products: [], next_product_candidates: [], daily_product_list: demoRankProducts, audience_demographics: { primary_gender: "\u0E2B\u0E0D\u0E34\u0E07", primary_age_group: "25\u201334 \u0E1B\u0E35", gender_breakdown: [{ label: "\u0E2B\u0E0D\u0E34\u0E07", percentage: 68 }, { label: "\u0E0A\u0E32\u0E22", percentage: 32 }], age_breakdown: [{ label: "18\u201324 \u0E1B\u0E35", percentage: 22 }, { label: "25\u201334 \u0E1B\u0E35", percentage: 51 }, { label: "35\u201344 \u0E1B\u0E35", percentage: 27 }], evidence: "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07" }, attachment_period_days: 30 };
-const demoInventoryProducts = demoRankProducts.slice(0, 7).map((item, index) => ({ name: item.product, product_type: item.product_type, score: item.ranking_score || 0, evidence: item.ranking_reason, inventory_status: index < 6 ? "kept" : "discarded", decided_at: "2026-09-02 04:00:00", review_started_at: "2026-09-02 04:00:00", next_review_at: index < 2 ? "2026-09-09 04:00:00" : index < 6 ? "2026-09-05 04:00:00" : null, review_cycle_days: index < 2 ? 7 : index < 6 ? 3 : 0, attachment_date: "2026-09-02 03:30:00" })), demoInventoryEvents = demoInventoryProducts.map((item, index) => ({ product_name: item.name, event_type: item.inventory_status === "kept" ? "kept" : "discarded", product_type: item.product_type, detail: item.inventory_status === "kept" ? "\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E02\u0E49\u0E32\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" : "\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01", event_at: `2026-09-02 04:0${index}:00` }));
-function renderDemoChannelAnalysis() {
-  renderResult(demoAnalysisResult);
-  renderPermanentInventory(demoInventoryProducts, demoInventoryEvents);
-  $("#angelInventory").hidden = false;
-  $("#productReviewSchedule").hidden = true;
-  $("#history").hidden = true;
-}
-const renderPendingShopDashboardBase = renderPendingShopDashboard;
-renderPendingShopDashboard = function() {
-  renderPendingShopDashboardBase();
-  const samples = [["\u0E40\u0E0B\u0E23\u0E31\u0E48\u0E21\u0E1A\u0E33\u0E23\u0E38\u0E07\u0E1C\u0E34\u0E27\u0E2A\u0E39\u0E15\u0E23\u0E2D\u0E48\u0E2D\u0E19\u0E42\u0E22\u0E19", 128, 3260, "3.9%", 3840], ["\u0E01\u0E23\u0E30\u0E40\u0E1B\u0E4B\u0E32\u0E1C\u0E49\u0E32\u0E41\u0E1F\u0E0A\u0E31\u0E48\u0E19\u0E1E\u0E31\u0E1A\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E14\u0E49", 86, 2180, "3.9%", 2150], ["\u0E0A\u0E38\u0E14\u0E40\u0E14\u0E47\u0E01\u0E44\u0E1B\u0E42\u0E23\u0E07\u0E40\u0E23\u0E35\u0E22\u0E19", 64, 1740, "3.7%", 1920], ["\u0E04\u0E25\u0E35\u0E19\u0E0B\u0E34\u0E48\u0E07\u0E25\u0E49\u0E32\u0E07\u0E40\u0E04\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E2A\u0E33\u0E2D\u0E32\u0E07 300ml", 41, 1260, "3.3%", 1230], ["\u0E23\u0E2D\u0E07\u0E40\u0E17\u0E49\u0E32\u0E2B\u0E31\u0E14\u0E40\u0E14\u0E34\u0E19\u0E40\u0E14\u0E47\u0E01", 27, 980, "2.8%", 810]];
-  $("#shopGradeList").innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>\u0E40\u0E25\u0E37\u0E2D\u0E01</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22</th><th>\u0E22\u0E2D\u0E14\u0E04\u0E25\u0E34\u0E01</th><th>\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E41\u0E1B\u0E25\u0E07</th><th>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19</th></tr></thead><tbody>${samples.map((item, index) => `<tr><td><input type="checkbox" aria-label="\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ${index + 1}"></td><td><b>${item[0]}</b><small>\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07 \xB7 \u0E23\u0E2D TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API</small></td><td>${item[1].toLocaleString()}</td><td>${item[2].toLocaleString()}</td><td>${item[3]}</td><td>${money(item[4])}</td></tr>`).join("")}</tbody></table></div><p class="demo-showcase-note">\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E01\u0E32\u0E23\u0E17\u0E33\u0E07\u0E32\u0E19: \u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E41\u0E25\u0E49\u0E27\u0E43\u0E0A\u0E49\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E1A\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01 Showcase \xB7 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21 TikTok Shop</p>`;
-  [$("#removeShowcasePage"), $("#removeShowcaseAll")].forEach((button) => { button.hidden = false; button.disabled = true; });
-};
 function productMetrics(product, orders) {
   const commission = safeJson(product.commission_json) || {}, sold = orders.reduce((sum, order) => sum + (safeJson(order.product_ids) || []).filter((id) => String(id) === String(product.product_id)).length, 0);
   return { sales: Number(product.sales ?? sold), clicks: Number(product.clicks || 0), conversion: Number(product.conversion || 0), commission: Number(product.commission ?? commission.amount ?? 0) };
@@ -150,7 +141,7 @@ function soldProductSummaryTable(products, orders) {
   }));
   const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: `\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 ${id}` }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
   if (!rows.length) return '<p class="shop-empty-range">\u0E0A\u0E48\u0E27\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E19\u0E35\u0E49\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</p>';
-  return `<p class="shop-grade-note">เกรดจากยอดออเดอร์จริงในช่วงวันที่เลือก: A ตั้งแต่ 30 · B ตั้งแต่ 16 · C ตั้งแต่ 1</p><div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td></tr>`; }).join("")}</tbody></table></div>`;
+  return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td></tr>`; }).join("")}</tbody></table></div><div class="shop-grade-note"><b>เกรดจากยอดออเดอร์จริงในช่วงวันที่เลือก</b><span>A = 30 ออเดอร์ขึ้นไป · สินค้าหลัก</span><span>B = 16–29 ออเดอร์ · สินค้ารองที่ควรทำต่อ</span><span>C = 1–15 ออเดอร์ · สินค้าทดลองที่ต้องติดตาม</span><span>ไม่มีเกรด = 0 ออเดอร์ในช่วงนี้</span><small>เกรดเปลี่ยนตามช่วงวันที่เลือก ไม่ใช่คะแนนคุณภาพถาวรของสินค้า</small></div>`;
 }
 function shopRangeSummary(data, products, orders) {
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo };
@@ -355,9 +346,10 @@ function renderMarketplaceProducts(data = null) {
   const rows = products.map((product) => {
     const image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), growth = product.growth || {}, growthText = growth.growth_percent === null || growth.growth_percent === void 0 ? "Snapshot แรก" : `${Number(growth.growth_percent) > 0 ? "+" : ""}${Number(growth.growth_percent).toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = growth.growth_percent === null || growth.growth_percent === void 0 ? "new" : Number(growth.growth_percent) > 0 ? "up" : Number(growth.growth_percent) < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder">ไม่มีรูป</span>', title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    return `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${marketplacePrice(product.price)}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td></tr>`;
+    const published = product.published_at ? new Date(Number(product.published_at) > 1e12 ? Number(product.published_at) : Number(product.published_at) > 1e9 ? Number(product.published_at) * 1e3 : product.published_at).toLocaleDateString("th-TH") : "–";
+    return `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${published}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${marketplacePrice(product.price)}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td></tr>`;
   }).join("");
-  box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>ราคา</th><th>เติบโต ${state.marketplaceComparisonDays} วัน</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${state.marketplaceNextToken ? '<div class="showcase-pagination"><button id="marketplaceNext" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>' : ""}`;
+  box.innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table marketplace-table"><thead><tr><th>เลือก</th><th>สินค้า Open Collaboration</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>สินค้าใหม่</th><th>ค่าคอม</th><th>ราคา</th><th>เติบโต ${state.marketplaceComparisonDays} วัน</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="showcase-empty-search">ไม่พบสินค้าตามคำค้นนี้</td></tr>'}</tbody></table></div>${state.marketplaceNextToken ? '<div class="showcase-pagination"><button id="marketplaceNext" type="button">ดูหน้าถัดไป</button><small>TikTok ส่งข้อมูลหน้าละไม่เกิน 20 รายการ ระบบรวมให้ตามจำนวนที่เลือก</small></div>' : ""}`;
   const account = state.shopConnection?.creator_username || state.shopConnection?.open_id || "บัญชี Creator";
   addButton.textContent = `เพิ่มรายการที่เลือกเข้า Showcase ของ ${account}`;
   addButton.hidden = !products.length;
@@ -372,7 +364,7 @@ async function searchMarketplace(pageToken = "") {
   if (button) button.disabled = true;
   if (nextButton) nextButton.disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: state.shopConnection.id, keyword: $("#marketplaceKeyword").value.trim(), sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connection_id: state.shopConnection.id, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: $("#marketplaceShopKeyword")?.value.trim() || "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 7 }) });
     state.marketplaceProducts = data.products || [];
     state.marketplaceNextToken = data.next_page_token || "";
     state.marketplaceSearchedAt = new Date().toISOString();
@@ -385,34 +377,20 @@ async function searchMarketplace(pageToken = "") {
   }
 }
 function renderShopDashboard(data, shopConnection) {
-  const demo = Boolean(data.review_demo), box = $("#shopDashboard"), portfolio = data.shop_portfolio || {}, commissions = portfolio.commission || [], products = data.shop_products || [], orders = data.shop_orders || [], notice = $("#reviewDemoNotice");
-  box.hidden = !demo && !shopConnection && !commissions.length;
+  const box = $("#shopDashboard"), portfolio = data.shop_portfolio || {}, commissions = portfolio.commission || [], products = data.shop_products || [], orders = data.shop_orders || [];
+  box.hidden = !shopConnection && !commissions.length;
   if (box.hidden) return;
-  notice.hidden = !demo;
   const commission = commissions[0], daily = commission?.daily || [], maxDaily = Math.max(1, ...daily.map((day) => Number(day.amount) || 0)), total = Number(commission?.total_30) || 0, channels = commission?.channels || [];
   $("#shopCommissionDashboard").innerHTML = commission ? `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>${money(total)}</b><span class="positive">\u25B2 ${Number(commission.growth || 0).toLocaleString()}% \u0E08\u0E32\u0E01\u0E23\u0E2D\u0E1A\u0E01\u0E48\u0E2D\u0E19</span></article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>${products.length.toLocaleString()}</b><span>\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2B\u0E23\u0E37\u0E2D\u0E25\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E44\u0E14\u0E49</span></article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="commission-bars">${daily.slice(-30).map((day) => `<div title="${escapeHtml(day.date)} ${money(day.amount)}"><i style="height:${Math.max(8, Math.round(Number(day.amount) / maxDaily * 100))}%"></i><small>${escapeHtml(day.date)}</small></div>`).join("")}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3>${channels.map((channel) => `<div class="channel-share"><span>${escapeHtml(channel.channel)}</span><i><b style="width:${Math.max(5, Number(channel.amount) / Math.max(1, ...channels.map((x) => Number(x.amount))) * 100)}%"></b></i><strong>${money(channel.amount)}</strong></div>`).join("")}</aside></div></div>` : '<p class="hint">TikTok \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E2A\u0E48\u0E07\u0E22\u0E2D\u0E14\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E32 \u0E23\u0E30\u0E1A\u0E1A\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E17\u0E31\u0E19\u0E17\u0E35\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E1E\u0E1A\u0E1F\u0E34\u0E25\u0E14\u0E4C\u0E40\u0E07\u0E34\u0E19\u0E08\u0E23\u0E34\u0E07\u0E43\u0E19\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</p>';
-  renderShowcaseProducts(products, orders, demo, data.shop_growth_orders || orders);
+  renderShowcaseProducts(products, orders, false, data.shop_growth_orders || orders);
 }
 const renderLiveShopDashboard = renderShopDashboard;
-function renderPendingShopDashboard() {
-  const box = $("#shopDashboard"), notice = $("#reviewDemoNotice"), pending = '<span class="api-pending">\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E04\u0E32\u0E14\u0E01\u0E32\u0E23\u0E13\u0E4C \xB7 \u0E23\u0E2D TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API</span>', chartPreview = `<div class="pending-chart-preview">${[34, 52, 43, 68, 57, 81, 64, 88, 73, 96].map((height) => `<i style="height:${height}%"></i>`).join("")}</div>${pending}`, channelPreview = `<div class="pending-channel-preview">${[82, 66, 48, 35, 24].map((width, index) => `<div><small>\u0E0A\u0E48\u0E2D\u0E07 ${index + 1}</small><i><b style="width:${width}%"></b></i></div>`).join("")}</div>${pending}`;
-  box.hidden = false;
-  notice.hidden = false;
-  notice.innerHTML = "<b>\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E2B\u0E19\u0E49\u0E32\u0E15\u0E32\u0E1C\u0E25\u0E25\u0E31\u0E1E\u0E18\u0E4C</b><span>\u0E20\u0E32\u0E1E\u0E14\u0E49\u0E32\u0E19\u0E25\u0E48\u0E32\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E42\u0E04\u0E23\u0E07\u0E04\u0E32\u0E14\u0E01\u0E32\u0E23\u0E13\u0E4C \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 TikTok API</span>";
-  $("#shopCommissionDashboard").innerHTML = `<div class="commission-summary"><div class="commission-kpis"><article><small>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19</small><b>\u2014</b>${pending}</article><article><small>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19 Showcase</small><b>\u2014</b>${pending}</article></div><div class="commission-visual"><section><h3>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19</h3><div class="pending-chart">${chartPreview}</div></section><aside><h3>\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</h3><div class="pending-channels">${channelPreview}</div></aside></div></div>`;
-  $("#shopGradeList").innerHTML = `<div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>\u0E40\u0E25\u0E37\u0E2D\u0E01</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22</th><th>\u0E22\u0E2D\u0E14\u0E04\u0E25\u0E34\u0E01</th><th>\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E41\u0E1B\u0E25\u0E07</th><th>\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19</th></tr></thead><tbody><tr class="pending-row"><td colspan="6">${pending}</td></tr></tbody></table></div>`;
-  $("#removeShowcasePage").hidden = true;
-  $("#removeShowcaseAll").hidden = true;
-}
 renderShopDashboard = function(data, shopConnection) {
-  if (data?.review_demo) {
-    renderPendingShopDashboard();
-    return;
-  }
   const commission = data?.shop_portfolio?.commission || [];
   if (!shopConnection && !commission.length) {
-    renderPendingShopDashboard();
-    $("#reviewDemoNotice").hidden = true;
+    $("#shopDashboard").hidden = true;
+    $("#shopCommissionDashboard").innerHTML = "";
+    $("#shopGradeList").innerHTML = "";
     return;
   }
   renderLiveShopDashboard(data, shopConnection);
@@ -436,34 +414,13 @@ async function loadChannels() {
     state.channels = data.channels || [];
     $("#aiState").textContent = data.provider_configured ? "AI \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C" : "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 AI";
     renderChannels();
-    if (state.selected && !reviewDemo) await selectChannel(state.selected);
+    if (state.selected) await selectChannel(state.selected);
   } catch (error) {
     message.textContent = error.message;
   }
 }
 function renderChannels() {
-  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}"><button class="channel" data-id="${escapeHtml(x.id)}"><b>${escapeHtml(x.name)}</b><small>${escapeHtml(x.channel_url || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E25\u0E34\u0E07\u0E01\u0E4C")} \xB7 \u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C ${x.analysis_count} \u0E23\u0E2D\u0E1A</small></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="\u0E25\u0E1A\u0E0A\u0E48\u0E2D\u0E07 ${escapeHtml(x.name)}">\u0E25\u0E1A</button></div>`).join("") : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E0A\u0E48\u0E2D\u0E07 \u0E01\u0E14 \u201C\u0E0A\u0E48\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48\u201D \u0E41\u0E25\u0E49\u0E27\u0E40\u0E23\u0E34\u0E48\u0E21\u0E0A\u0E48\u0E2D\u0E07\u0E41\u0E23\u0E01\u0E44\u0E14\u0E49\u0E40\u0E25\u0E22</p>';
-}
-const demoChannels = Array.from({ length: 5 }, (_, index) => ({ id: `demo-${index + 1}`, name: `\u0E0A\u0E48\u0E2D\u0E07 ${index + 1}` }));
-function selectDemoChannel(id) {
-  const channel = demoChannels.find((item) => item.id === id);
-  if (!channel) return;
-  state.selected = id;
-  renderChannels();
-  $("#channelShopAnalysis h2").textContent = `\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C${channel.name}`;
-  $("#channelShopAnalysis .source-caption").textContent = `\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E40\u0E09\u0E1E\u0E32\u0E30${channel.name} \xB7 \u0E23\u0E2D TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API`;
-  renderDemoChannelAnalysis();
-  setOutputScope("channel");
-}
-const renderLiveChannels = renderChannels;
-renderChannels = function() {
-  if (!reviewDemo) renderLiveChannels();
-  else $("#channels").innerHTML = demoChannels.map((channel) => `<button class="channel demo-channel${channel.id === state.selected ? " active" : ""}" type="button" data-demo-id="${channel.id}"><b>${channel.name}</b><small>\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E44\u0E27\u0E49 \xB7 \u0E23\u0E2D TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API</small></button>`).join("");
-};
-if (reviewDemo) {
-  state.selected = demoChannels[0].id;
-  renderChannels();
-  queueMicrotask(renderDemoChannelAnalysis);
+  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? "ยังไม่เชื่อม TikTok" : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("") : '<p class="hint">ยังไม่มีช่อง กด “ช่องใหม่” แล้วเริ่มช่องแรกได้เลย</p>';
 }
 async function selectChannel(id) {
   state.selected = id;
@@ -578,13 +535,15 @@ async function loadTikTokConnection() {
   $("#connectTikTok").hidden = Boolean(connection);
   $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
   $("#syncTikTokShop").hidden = !shopConnection;
+  $("#syncTikTokShowcase").hidden = !shopConnection;
   $("#showcaseSyncLimitField").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTokShop").textContent = shopConnection ? "เชื่อมใหม่เพื่ออัปเดตสิทธิ์" : "เชื่อมบัญชี Creator";
   if (shopConnection) loadMarketplaceCategories();
-  $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> \xB7 \u0E15\u0E25\u0E32\u0E14 ${escapeHtml(shopConnection.selection_region || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38")} \xB7 \u0E0B\u0E34\u0E07\u0E01\u0E4C ${escapeHtml(shopConnection.last_synced_at || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E40\u0E04\u0E22")}</p><div class="tiktok-api-stats"><span>${products.length.toLocaleString()} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 Showcase \u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14</span><span>${orders.length.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E43\u0E19\u0E0A\u0E48\u0E27\u0E07\u0E17\u0E35\u0E48\u0E40\u0E25\u0E37\u0E2D\u0E01</span></div>${shopRangeSummary(data, products, orders)}${shopConnection.last_sync_error ? `<p class="shop-error">\u0E04\u0E23\u0E31\u0E49\u0E07\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25 Showcase \u0E41\u0E25\u0E30\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C Affiliate</p>" : "<p>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok Shop App key \u0E41\u0E25\u0E30 App secret</p>";
+  $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> · ตลาด ${escapeHtml(shopConnection.selection_region || "ยังไม่ระบุ")} · ซิงก์ ${escapeHtml(shopConnection.last_synced_at || "ยังไม่เคย")}</p>${shopConnection.last_sync_error ? `<p class="shop-error">ครั้งล่าสุด: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>ยังไม่ได้เชื่อมข้อมูล Showcase และออเดอร์ Affiliate</p>" : "<p>ยังไม่ได้ตั้งค่า TikTok Shop App key และ App secret</p>";
+  $("#soldProductsData").innerHTML = shopConnection ? shopRangeSummary(data, products, orders) : '<p class="hint">เชื่อม TikTok Shop เพื่อโหลดสินค้าที่ขายได้และออเดอร์</p>';
   if (!data.configured && !connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
     return;
@@ -594,7 +553,7 @@ async function loadTikTokConnection() {
     $("#tiktokVideoSummary").innerHTML = "";
     return;
   }
-  $("#tiktokConnectionState").innerHTML = `<div class="tiktok-account">${connection.avatar_url ? `<img src="${escapeHtml(connection.avatar_url)}" alt="">` : ""}<div><b>${escapeHtml(connection.display_name || "\u0E1A\u0E31\u0E0D\u0E0A\u0E35 TikTok")}</b><small>${escapeHtml(connection.bio || "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22\u0E42\u0E1B\u0E23\u0E44\u0E1F\u0E25\u0E4C")} \xB7 \u0E0B\u0E34\u0E07\u0E01\u0E4C ${escapeHtml(connection.last_synced_at || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E40\u0E04\u0E22")}</small></div></div><div class="tiktok-api-stats"><span>${Number(connection.follower_count).toLocaleString()} \u0E1C\u0E39\u0E49\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21</span><span>${Number(connection.likes_count).toLocaleString()} \u0E44\u0E25\u0E01\u0E4C</span><span>${Number(connection.video_count).toLocaleString()} \u0E27\u0E34\u0E14\u0E35\u0E42\u0E2D</span></div>`;
+  $("#tiktokConnectionState").innerHTML = `<b>เชื่อมบัญชี TikTok ของช่องนี้แล้ว</b><p>ข้อมูลโปรไฟล์และสถิติแสดงอยู่ในการ์ดช่องด้านซ้าย · ซิงก์ล่าสุด ${escapeHtml(connection.last_synced_at || "ยังไม่เคย")}</p>`;
   $("#tiktokVideoSummary").innerHTML = `<p>\u0E19\u0E33\u0E40\u0E02\u0E49\u0E32\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E04\u0E25\u0E34\u0E1B\u0E41\u0E25\u0E49\u0E27 ${videos.length} \u0E04\u0E25\u0E34\u0E1B \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E43\u0E0A\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19\u0E43\u0E19\u0E01\u0E32\u0E23\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C</p>`;
 }
 const renderResultMonthlyCorrectionBase = renderResult;
@@ -677,7 +636,7 @@ renderPermanentInventory = function(products = [], events = []) {
   });
 };
 async function setProductInventory(button) {
-  if (!state.selected || reviewDemo) return;
+  if (!state.selected) return;
   const data = new FormData(), productName = button.dataset.productName || "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E19\u0E35\u0E49";
   data.set("action", "set_product_inventory");
   data.set("channel_id", state.selected);
@@ -702,7 +661,7 @@ async function setProductInventory(button) {
   }
 }
 async function failCProduct(button) {
-  if (!state.selected || reviewDemo) return;
+  if (!state.selected) return;
   const productName = button.dataset.failC || "";
   if (!productName) return;
   if (!confirm(`\u0E43\u0E2B\u0E49\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u201C${productName}\u201D \u0E44\u0E21\u0E48\u0E1C\u0E48\u0E32\u0E19\u0E41\u0E25\u0E30\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E40\u0E1B\u0E47\u0E19 F \u0E17\u0E31\u0E19\u0E17\u0E35\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21?`)) return;
@@ -724,7 +683,7 @@ async function failCProduct(button) {
   }
 }
 async function retestFProduct(button) {
-  if (!state.selected || reviewDemo) return;
+  if (!state.selected) return;
   const productName = button.dataset.retestF || "";
   if (!productName) return;
   if (!confirm(`\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u201C${productName}\u201D \u0E40\u0E04\u0E22\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E41\u0E25\u0E49\u0E27\u0E41\u0E25\u0E30\u0E40\u0E1B\u0E47\u0E19 F \u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 C \u0E2D\u0E35\u0E01\u0E04\u0E23\u0E31\u0E49\u0E07\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21?`)) return;
@@ -746,7 +705,7 @@ async function retestFProduct(button) {
   }
 }
 async function setProductC(button) {
-  if (!state.selected || reviewDemo) return;
+  if (!state.selected) return;
   const productName = button.dataset.setC || "";
   if (!productName) return;
   const data = new FormData();
@@ -814,7 +773,7 @@ selectChannel = async function(id) {
   renderReviewSchedule(inventory.products || [], Boolean(state.shopConnection), inventory.product_events || []);
 };
 $("#channels").addEventListener("click", async (event) => {
-  const deleteButton = event.target.closest("[data-delete-id]"), demoButton = event.target.closest("[data-demo-id]"), button = event.target.closest("[data-id]");
+  const deleteButton = event.target.closest("[data-delete-id]"), button = event.target.closest("[data-id]");
   if (deleteButton) {
     const name = deleteButton.dataset.deleteName;
     if (!confirm(`\u0E19\u0E33\u0E0A\u0E48\u0E2D\u0E07 \u201C${name}\u201D \u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21? \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E40\u0E14\u0E34\u0E21\u0E08\u0E30\u0E22\u0E31\u0E07\u0E16\u0E39\u0E01\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49\u0E41\u0E25\u0E30\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E44\u0E14\u0E49`)) return;
@@ -833,9 +792,7 @@ $("#channels").addEventListener("click", async (event) => {
     }
     return;
   }
-  if (demoButton || button) resetMarketplaceView();
-  if (demoButton) selectDemoChannel(demoButton.dataset.demoId);
-  else if (button) selectChannel(button.dataset.id).catch((error) => message.textContent = error.message);
+  if (button) { resetMarketplaceView(); selectChannel(button.dataset.id).catch((error) => message.textContent = error.message); }
 });
 $("#runs").addEventListener("click", async (event) => {
   const button = event.target.closest("[data-run]");
@@ -852,22 +809,25 @@ $("#newChannel").addEventListener("click", () => {
   setWorkspaceView("input");
   $("#tiktokConnection").hidden = true;
 });
-$("#syncTikTokShop").addEventListener("click", async () => {
+async function syncTikTokShopData(mode) {
   if (!state.shopConnection) return;
   const limitInput = $("#showcaseSyncLimit"), maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(limitInput.value) || 2000)));
   limitInput.value = String(maxShowcase);
-  message.textContent = "กำลังดึงสินค้า Showcase สูงสุด " + maxShowcase.toLocaleString("th-TH") + " รายการ และออเดอร์ Affiliate ย้อนหลังสูงสุด 90 วัน…";
-  $("#syncTikTokShop").disabled = true;
+  const button=mode==="showcase"?$("#syncTikTokShowcase"):$("#syncTikTokShop");
+  message.textContent = mode==="showcase" ? "กำลังโหลดสินค้า Showcase สูงสุด " + maxShowcase.toLocaleString("th-TH") + " รายการ…" : "กำลังรีเฟรชสินค้าที่ขายได้และออเดอร์ย้อนหลังสูงสุด 90 วัน…";
+  button.disabled = true;
   try {
-    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: state.shopConnection.id, days: 90, max_showcase: maxShowcase }) });
-    message.textContent = `\u0E14\u0E36\u0E07\u0E41\u0E25\u0E49\u0E27 ${result.showcaseCount} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E41\u0E25\u0E30 ${result.orderCount} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C`;
+    const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: state.shopConnection.id, mode, days: 90, max_showcase: maxShowcase }) });
+    message.textContent = mode==="showcase" ? `โหลดแล้ว ${result.showcaseCount} สินค้า Showcase` : `รีเฟรชแล้ว ${result.orderCount} ออเดอร์`;
     await loadTikTokConnection();
   } catch (error) {
     message.textContent = error.message;
   } finally {
-    $("#syncTikTokShop").disabled = false;
+    button.disabled = false;
   }
-});
+}
+$("#syncTikTokShop").addEventListener("click", () => syncTikTokShopData("orders"));
+$("#syncTikTokShowcase").addEventListener("click", () => syncTikTokShopData("showcase"));
 $("#tiktokShopState").addEventListener("submit", async (event) => {
   if (event.target.id !== "shopDateFilter") return;
   event.preventDefault();
@@ -890,6 +850,14 @@ $("#tiktokShopState").addEventListener("submit", async (event) => {
     button.disabled = false;
     button.textContent = "\u0E40\u0E23\u0E35\u0E22\u0E01\u0E14\u0E39";
   }
+});
+$("#soldProductsData").addEventListener("submit", async (event) => {
+  if (event.target.id !== "shopDateFilter") return;
+  event.preventDefault();
+  const data = new FormData(event.target), from = String(data.get("date_from") || ""), to = String(data.get("date_to") || "");
+  if (!from || !to || from > to) return showToast("วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด", "warning");
+  state.shopDateFrom = from; state.shopDateTo = to;
+  await loadTikTokConnection().catch(error => message.textContent = error.message);
 });
 $("#disconnectTikTokShop").addEventListener("click", async () => {
   if (!state.shopConnection || !confirm("\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01 TikTok Shop \u0E41\u0E25\u0E30\u0E25\u0E1A\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32/\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E17\u0E35\u0E48\u0E0B\u0E34\u0E07\u0E01\u0E4C\u0E44\u0E27\u0E49?")) return;
@@ -1035,11 +1003,5 @@ const oauthStatus = new URLSearchParams(location.search).get("tiktok");
 if (oauthStatus) {
   message.textContent = oauthStatus === "connected" ? "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D TikTok \u0E41\u0E25\u0E30\u0E19\u0E33\u0E40\u0E02\u0E49\u0E32\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08" : oauthStatus === "denied" ? "\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01\u0E01\u0E32\u0E23\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 TikTok \u0E41\u0E25\u0E49\u0E27" : "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D TikTok \u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E25\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48";
   history.replaceState({}, "", location.pathname);
-}
-if (reviewDemo) {
-  document.body.classList.add("review-demo-mode");
-  $("#reviewDemoLink").textContent = "\u0E01\u0E25\u0E31\u0E1A\u0E2A\u0E39\u0E48\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E23\u0E34\u0E07";
-  $("#reviewDemoLink").href = "/tiktok-analyzer.html";
-  renderShopDashboard({ ...demoShopData, review_demo: true }, null);
 }
 loadChannels();
