@@ -1,0 +1,19 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+
+const client = fs.readFileSync("public/tiktok-analyzer.js", "utf8"), api = fs.readFileSync("functions/api/admin/tiktok-analyzer/index.js", "utf8"), html = fs.readFileSync("public/tiktok-analyzer.html", "utf8"), css = fs.readFileSync("public/tiktok-analyzer.css", "utf8");
+assert.equal((client.match(/<th>ลิสต์คัดสินค้า<\/th>/g) || []).length, 2);
+assert.match(client, /data-select-marketplace-product/);
+assert.match(client, /เพิ่มเข้าลิสต์คัดสินค้า/);
+assert.match(client, /async function addMarketplaceProductToSelection/);
+assert.match(client, /button\.dataset\.sourceKind = "marketplace_selection"/);
+assert.match(client, /data\.set\("product_url", button\.dataset\.productUrl/);
+assert.match(client, /data\.set\("source_kind", button\.dataset\.sourceKind/);
+assert.match(client, /button\.textContent = "อยู่ในลิสต์คัดสินค้าแล้ว"/);
+assert.match(api, /sourceKind.*marketplace_selection/);
+assert.match(api, /product_url=CASE WHEN excluded\.product_url<>''/);
+assert.match(api, /datetime\('now','\+3 days'\)/);
+assert.match(html, /tiktok-analyzer\.js\?v=02095/);
+assert.match(html, /tiktok-analyzer\.css\?v=02078/);
+assert.match(css, /\.marketplace-selection-add/);
+console.log("TikTok Marketplace selection-list column and action: PASS");
