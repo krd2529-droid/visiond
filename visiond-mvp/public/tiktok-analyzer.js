@@ -198,6 +198,26 @@ function shopRangeSummary(data, products, orders) {
   const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = availability.ready ? `ยอดล่าสุดดูได้ถึง ${availability.latestDate}` : `ยอดวันที่ ${availability.latestDate} กำลังประมวลผล กรุณารอ 12:00 น. เป็นต้นไป`;
   return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${availability.latestDate}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${availability.latestDate}" required></label><button type="submit">\u0E40\u0E23\u0E35\u0E22\u0E01\u0E14\u0E39</button></form><p class="hint commission-availability-note">${escapeHtml(availabilityText)}</p><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${orders.length.toLocaleString()}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${soldProductSummaryTable(products, orders)}`;
 }
+function decorateSoldProductSelection(products = []) {
+  const table = $("#soldProductsData .shop-product-table");
+  if (!table) return;
+  const header = table.querySelector("thead tr");
+  if (header && !header.querySelector(".sold-selection-heading")) header.insertAdjacentHTML("beforeend", '<th class="sold-selection-heading">ลิสต์คัดสินค้า</th>');
+  const productsByName = new Map(products.map((product) => [normalizeProductName(product.name), product]));
+  const selectedNames = new Set((state.inventoryProducts || []).filter((product) => product.inventory_status === "kept").map((product) => normalizeProductName(product.name)));
+  table.querySelectorAll("tbody tr").forEach((row) => {
+    if (row.querySelector("[data-select-sold-product]")) return;
+    const name = row.cells[2]?.querySelector("b")?.textContent?.trim() || "";
+    const product = productsByName.get(normalizeProductName(name));
+    if (!product) {
+      row.insertAdjacentHTML("beforeend", '<td><button class="marketplace-row-add marketplace-selection-add" type="button" disabled>ข้อมูลไม่พร้อม</button></td>');
+      return;
+    }
+    const selected = selectedNames.has(normalizeProductName(name));
+    const count = row.cells[4]?.textContent?.trim() || "";
+    row.insertAdjacentHTML("beforeend", `<td><button class="marketplace-row-add marketplace-selection-add" type="button" data-select-sold-product data-product-name="${escapeHtml(product.name)}" data-product-url="${escapeHtml(product.product_url || "")}" data-product-evidence="ขายจากออเดอร์ TikTok Shop${count ? ` · ${escapeHtml(count)}` : ""}" ${selected ? "disabled" : ""}>${selected ? "อยู่ในลิสต์คัดสินค้าแล้ว" : "เพิ่มเข้าลิสต์คัดสินค้า"}</button></td>`);
+  });
+}
 function safeProductImage(value) {
   try {
     const url = new URL(String(value || ""));
@@ -727,6 +747,7 @@ async function loadTikTokConnection(channelId = state.selected) {
   if (shopConnection) loadMarketplaceCategories();
   $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> · ตลาด ${escapeHtml(shopConnection.selection_region || "ยังไม่ระบุ")} · ซิงก์ ${escapeHtml(shopConnection.last_synced_at || "ยังไม่เคย")}</p>${shopConnection.last_sync_error ? `<p class="shop-error">ครั้งล่าสุด: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>ยังไม่ได้เชื่อมข้อมูล Showcase และออเดอร์ Affiliate</p>" : "<p>ยังไม่ได้ตั้งค่า TikTok Shop App key และ App secret</p>";
   $("#soldProductsData").innerHTML = shopConnection ? shopRangeSummary(data, products, orders) : '<p class="hint">เชื่อม TikTok Shop เพื่อโหลดสินค้าที่ขายได้และออเดอร์</p>';
+  if (shopConnection) decorateSoldProductSelection(products);
   if (!data.configured && !connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
     return shopConnection;
@@ -959,6 +980,18 @@ async function addMarketplaceProductToSelection(productId, button, mode = "produ
     button.disabled = true;
   }
 }
+async function addSoldProductToSelection(button) {
+  const productName = button.dataset.productName || "";
+  if (!productName) return showToast("ไม่พบข้อมูลสินค้าที่ต้องการเพิ่ม", "error");
+  button.dataset.setC = productName;
+  button.dataset.productScore = "0";
+  button.dataset.sourceKind = "sold_product_selection";
+  const saved = await setProductC(button);
+  if (saved) {
+    button.textContent = "อยู่ในลิสต์คัดสินค้าแล้ว";
+    button.disabled = true;
+  }
+}
 $("#manualCForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const input = $("#manualCName"), productName = input.value.trim();
@@ -1081,6 +1114,10 @@ $("#soldProductsData").addEventListener("submit", async (event) => {
   if (!from || !to || from > to) return showToast("วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด", "warning");
   state.shopDateFrom = from; state.shopDateTo = to;
   await loadTikTokConnection().catch(error => message.textContent = error.message);
+});
+$("#soldProductsData").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-select-sold-product]");
+  if (button) addSoldProductToSelection(button);
 });
 $("#disconnectTikTokShop").addEventListener("click", async () => {
   if (!state.shopConnection || !confirm("\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01 TikTok Shop \u0E41\u0E25\u0E30\u0E25\u0E1A\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32/\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E17\u0E35\u0E48\u0E0B\u0E34\u0E07\u0E01\u0E4C\u0E44\u0E27\u0E49?")) return;
