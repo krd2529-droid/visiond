@@ -5,7 +5,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiToday = () => new 
   const [y, m, d] = thaiToday().split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
-let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", showcaseSort: "grade", inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
+let state = { channels: [], selected: null, connection: null, shopConnection: null, shopDateFrom: dateDaysAgo(29), shopDateTo: thaiToday(), showcasePage: 1, showcaseSearch: "", inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 7 };
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -238,11 +238,6 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
   });
   const query = normalizeProductName(state.showcaseSearch);
   const filtered = query ? mergedProducts.filter((product) => normalizeProductName(`${product.name || ""} ${product.product_id || ""}`).includes(query)) : [...mergedProducts];
-  if (state.showcaseSort === "growth") filtered.sort((a, b) => {
-    if (a.analysisOnly !== b.analysisOnly) return a.analysisOnly ? 1 : -1;
-    const left = productGmvGrowth(a, growthOrders), right = productGmvGrowth(b, growthOrders), growthValue = (value) => value.growth === null ? Number.POSITIVE_INFINITY : value.growth;
-    return growthValue(right) - growthValue(left) || right.latest - left.latest || gradeRank(a) - gradeRank(b);
-  });
   const pageSize = 20, pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   state.showcasePage = Math.min(Math.max(1, state.showcasePage), pageCount);
   const start = (state.showcasePage - 1) * pageSize, pageProducts = filtered.slice(start, start + pageSize);
@@ -252,17 +247,7 @@ function renderShowcaseProducts(products, orders, demo = false, growthOrders = o
     const title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
     return `<tr data-product-id="${escapeHtml(product.product_id)}"><td>${demo ? "–" : product.analysisOnly ? '<input class="remove-showcase-check" type="checkbox" disabled title="ยังจับคู่กับสินค้าใน Showcase ไม่ได้" aria-label="ยังลบไม่ได้เพราะไม่มีรหัส Showcase">' : '<input class="remove-showcase-check" type="checkbox" aria-label="เลือกสินค้านี้เพื่อลบ">'}</td><td><span class="type-pill type-${escapeHtml(grade || "unknown")}" title="${grade ? `เกรด ${escapeHtml(grade)}` : "ยังไม่มีข้อมูลเพียงพอสำหรับจัดเกรด"}">${escapeHtml(gradeLabel)}</span></td><td><div class="showcase-product-cell">${picture}<div>${title}<small>${product.analysisOnly ? "อ่านจากรายงาน · ยังจับคู่ Showcase ไม่ได้" : demo ? "ข้อมูลสาธิต" : shopProductLabel(product, orders)}</small><code>${escapeHtml(product.product_id || "ไม่มีรหัสสินค้าในรายงาน")}</code></div></div></td><td>${(metrics.sales || evidenceSales) ? (metrics.sales || evidenceSales).toLocaleString() : "–"}</td><td>${metrics.commission ? money(metrics.commission) : evidenceCommission ? `${escapeHtml(evidenceCommission)}%` : "–"}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.latest, gmv.currency)}</td><td class="gmv-cell">${product.analysisOnly ? "–" : compactMoney(gmv.previous, gmv.currency)}</td><td>${product.analysisOnly ? "–" : `<span class="gmv-growth ${growthClass}">${growthLabel}</span>`}</td><td>${selection.score !== void 0 ? `${Number(selection.score) || 0}/100` : "–"}</td><td class="showcase-reason">${escapeHtml(gradeReason)}</td><td>${escapeHtml(selection.next_review_at || "–")}</td></tr>`;
   }).join("");
-  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><div class="showcase-sort"><button id="showcaseGrowthSort" class="${state.showcaseSort === "growth" ? "active" : ""}" type="button">ดูสินค้า GMV โตสูง</button><button id="showcaseGradeSort" class="${state.showcaseSort === "grade" ? "active" : ""}" type="button">เรียงตามเกรด</button></div><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ</span></div><p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>GMV 7 วัน</th><th>GMV 7 วันก่อน</th><th>เติบโต</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="11" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
-  $("#showcaseGrowthSort").addEventListener("click", () => {
-    state.showcaseSort = "growth";
-    state.showcasePage = 1;
-    renderShowcaseProducts(products, orders, demo, growthOrders);
-  });
-  $("#showcaseGradeSort").addEventListener("click", () => {
-    state.showcaseSort = "grade";
-    state.showcasePage = 1;
-    renderShowcaseProducts(products, orders, demo, growthOrders);
-  });
+  list.innerHTML = `<div class="showcase-tools"><label>ค้นหาสินค้า<input id="showcaseSearch" type="search" value="${escapeHtml(state.showcaseSearch)}" placeholder="พิมพ์ชื่อหรือรหัสสินค้า"></label><span>พบ ${filtered.length.toLocaleString()} จาก ${mergedProducts.length.toLocaleString()} รายการ</span></div><p class="gmv-note">GMV เทียบ 7 วันล่าสุดกับ 7 วันก่อนหน้า สิ้นสุดวันที่ ${escapeHtml(state.shopDateTo)} · คำนวณจากรายงานออเดอร์</p><div class="showcase-table-wrap"><table class="showcase-table"><thead><tr><th>เลือก</th><th>เกรด</th><th>รูปและสินค้า</th><th>ขายได้</th><th>ค่าคอม</th><th>GMV 7 วัน</th><th>GMV 7 วันก่อน</th><th>เติบโต</th><th>คะแนน</th><th>เหตุผลล่าสุด</th><th>ตรวจครั้งถัดไป</th></tr></thead><tbody>${rows || '<tr><td colspan="11" class="showcase-empty-search">ไม่พบสินค้าที่ค้นหา</td></tr>'}</tbody></table></div><nav class="showcase-pagination" aria-label="แบ่งหน้ารายการสินค้า"><button id="showcasePrev" type="button" ${state.showcasePage === 1 ? "disabled" : ""}>ก่อนหน้า</button><b>หน้า ${state.showcasePage.toLocaleString()} / ${pageCount.toLocaleString()}</b><button id="showcaseNext" type="button" ${state.showcasePage === pageCount ? "disabled" : ""}>ถัดไป</button><small>หน้าละ 20 รายการ</small></nav>`;
   $("#showcaseSearch").addEventListener("input", (event) => {
     state.showcaseSearch = event.target.value;
     state.showcasePage = 1;

@@ -1,10 +1,9 @@
-# Active patch: Populate TikTok Marketplace categories
+# Active patch: Remove obsolete Showcase sort controls
 
-- Status: PATCH_DELIVERED
-- Outcome: Populate the category dropdown with multiple authoritative categories discovered from TikTok Open Collaboration products.
-- Source: Creator Search Open Collaboration Product API; scan up to 100 unfiltered products and deduplicate returned category IDs/names.
-- Preserve: user search results, filters, snapshots/growth history, Showcase, OAuth, and channel isolation.
-- Acceptance: categories load automatically once per connected Creator account; discovery results do not replace visible search results or write growth snapshots; loading/error states stay usable.
-- Likely files: TikTok Shop marketplace endpoint/client, regression tests, visible version files.
-- Phase: implementation, regression checks, and production verification passed.
-- Delivery: v0.20.41 pushed to origin/main and verified on visiondonline.com.
+- Status: PATCH_READY
+- Outcome: Remove the “ดูสินค้า GMV โตสูง” and “เรียงตามเกรด” buttons from the Showcase UI.
+- Preserve: product search, default grade ordering, GMV data, pagination, and all TikTok workflows.
+- Acceptance: neither button is rendered; no JavaScript looks up or binds the removed controls; Showcase remains ordered by grade and searchable.
+- Likely files: TikTok analyzer client/CSS, regression tests, visible version files.
+- Phase: controls, handlers, and obsolete styles removed; focused and pre-deployment checks passed.
+- Delivery: test, review diff, commit only related files, push origin main, verify production.
