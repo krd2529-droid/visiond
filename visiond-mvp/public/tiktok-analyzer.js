@@ -578,7 +578,7 @@ async function loadTikTokConnection() {
   $("#connectTikTok").href = `/api/tiktok/connect?channel_id=${encodeURIComponent(state.selected)}`;
   $("#connectTikTok").textContent = connection ? "เชื่อมใหม่ TikTok OAuth" : "เชื่อม TikTok OAuth";
   $("#connectTikTokShop").href = `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(state.selected)}`;
-  $("#connectTikTokShop").textContent = shopConnection ? "เชื่อมใหม่เพื่ออัปเดตสิทธิ์" : "เชื่อมบัญชี Creator";
+  $("#connectTikTokShop").textContent = shopConnection ? "เชื่อมบัญชีใหม่" : "เชื่อมบัญชี Creator";
   if (shopConnection) loadMarketplaceCategories();
   $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> · ตลาด ${escapeHtml(shopConnection.selection_region || "ยังไม่ระบุ")} · ซิงก์ ${escapeHtml(shopConnection.last_synced_at || "ยังไม่เคย")}</p>${shopConnection.last_sync_error ? `<p class="shop-error">ครั้งล่าสุด: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>ยังไม่ได้เชื่อมข้อมูล Showcase และออเดอร์ Affiliate</p>" : "<p>ยังไม่ได้ตั้งค่า TikTok Shop App key และ App secret</p>";
   $("#soldProductsData").innerHTML = shopConnection ? shopRangeSummary(data, products, orders) : '<p class="hint">เชื่อม TikTok Shop เพื่อโหลดสินค้าที่ขายได้และออเดอร์</p>';
