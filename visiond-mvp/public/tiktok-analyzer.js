@@ -47,16 +47,14 @@ legacyEvidenceObserver.observe($("#angelProducts"), { childList: true, subtree: 
 $("#attachmentPeriodDays").addEventListener("change", correctLegacyEvidencePeriod);
 $("#channels").addEventListener("click", () => {
   setOutputScope("channel");
-  setWorkspaceView("input");
+  setWorkspaceView("output");
 }, { capture: true });
 const shopHeader = $("#shopDashboard .result-head>div"), resultHeader = $("#result .result-head>div"), manualHeader = $("#angelInventory .result-head>div");
 shopHeader.querySelector("small").textContent = "AUTOMATIC \xB7 TIKTOK SHOP API";
 shopHeader.querySelector("h2").textContent = "\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21\u0E41\u0E25\u0E30\u0E41\u0E22\u0E01\u0E17\u0E38\u0E01\u0E0A\u0E48\u0E2D\u0E07";
 shopHeader.insertAdjacentHTML("beforeend", '<p class="source-caption">\u0E22\u0E2D\u0E14\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19 \u0E01\u0E23\u0E32\u0E1F\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19 \u0E41\u0E25\u0E30\u0E01\u0E32\u0E23\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E02\u0E2D\u0E07\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</p>');
 form.insertAdjacentHTML("afterbegin", '<div class="manual-source-note"><b>MANUAL ANALYSIS \xB7 \u0E20\u0E32\u0E1E\u0E41\u0E25\u0E30\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E17\u0E35\u0E48\u0E01\u0E23\u0E2D\u0E01\u0E40\u0E2D\u0E07</b><span>\u0E43\u0E0A\u0E49\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E44\u0E14\u0E49\u0E01\u0E48\u0E2D\u0E19 TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API \u0E41\u0E25\u0E30\u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E22\u0E2D\u0E14\u0E08\u0E32\u0E01 Showcase \u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34</span></div>');
-form.insertAdjacentHTML("beforebegin", '<section id="tiktokLoginOnly" class="tiktok-login-only"><small>เชื่อมช่องใหม่</small><h2>ล็อกอินด้วย TikTok</h2><p>ระบบจะสร้างช่องจากบัญชี TikTok ที่คุณอนุญาตโดยอัตโนมัติ ไม่ต้องกรอกชื่อ ลิงก์ หรือแนบรูป</p><a class="primary" href="/api/tiktok/connect?create=1">ล็อกอิน TikTok เพื่อเพิ่มช่อง</a></section>');
-$("#showInputView").textContent = "1 เชื่อมช่องด้วย TikTok";
-$("#newChannel").textContent = "+ ล็อกอินเพิ่มช่อง";
+$("#newChannel").textContent = "+ ช่องใหม่";
 resultHeader.querySelector("small").textContent = "CHANNEL ANALYSIS RESULT";
 resultHeader.querySelector("h2").textContent = "\u0E1C\u0E25\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E0A\u0E48\u0E2D\u0E07";
 manualHeader.querySelector("small").textContent = "CHANNEL PRODUCT SELECTION LIST";
@@ -111,10 +109,10 @@ function setWorkspaceView(view, persist = true) {
   const output = view === "output";
   document.body.classList.toggle("workspace-output", output);
   document.body.classList.toggle("workspace-input", !output);
-  $("#showInputView").classList.toggle("active", !output);
-  $("#showOutputView").classList.toggle("active", output);
-  $("#showInputView").setAttribute("aria-current", output ? "false" : "page");
-  $("#showOutputView").setAttribute("aria-current", output ? "page" : "false");
+  $("#showInputView")?.classList.toggle("active", !output);
+  $("#showOutputView")?.classList.toggle("active", output);
+  $("#showInputView")?.setAttribute("aria-current", output ? "false" : "page");
+  $("#showOutputView")?.setAttribute("aria-current", output ? "page" : "false");
   if (persist) saveUiValue("visiond_tiktok_workspace", output ? "output" : "input");
 }
 async function loadPortfolioDashboard() {
@@ -147,7 +145,7 @@ $("#showOutputView").addEventListener("click", () => {
   setWorkspaceView("output");
 });
 setOutputScope("channel");
-setWorkspaceView(savedUiValue("visiond_tiktok_workspace") === "output" ? "output" : "input", false);
+setWorkspaceView("output", false);
 function productMetrics(product, orders) {
   const commission = safeJson(product.commission_json) || {}, sold = orders.reduce((sum, order) => sum + (safeJson(order.product_ids) || []).filter((id) => String(id) === String(product.product_id)).length, 0);
   return { sales: Number(product.sales ?? sold), clicks: Number(product.clicks || 0), conversion: Number(product.conversion || 0), commission: Number(product.commission ?? commission.amount ?? 0) };
@@ -1284,4 +1282,5 @@ if (oauthStatus) {
   history.replaceState({}, "", location.pathname);
 }
 form.remove();
+$(".workspace-switch")?.remove();
 loadChannels();
