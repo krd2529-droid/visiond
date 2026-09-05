@@ -12,6 +12,7 @@ const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Da
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
 let state = { channels: [], selected: new URLSearchParams(location.search).get("channel_id") || null, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+const shopConnectionRequests = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02087";
 document.head.append(commissionCardScript);
@@ -438,15 +439,16 @@ async function searchMarketplace(mode = "product", pageToken = "") {
     pageToken = mode;
     mode = "product";
   }
+  const requestedChannelId = state.selected;
   let shopConnection = state.shopConnection && String(state.shopConnection.channel_id) === String(state.selected) ? state.shopConnection : null;
-  if (!shopConnection && state.selected) shopConnection = await loadTikTokConnection();
+  if (!shopConnection && requestedChannelId) shopConnection = await loadTikTokConnection(requestedChannelId);
+  if (requestedChannelId !== state.selected) throw new Error("เปลี่ยนช่องแล้ว กรุณากดค้นหาอีกครั้ง");
   if (!shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
-  if (!shopConnection.capabilities?.can_search_marketplace) throw new Error("บัญชี Creator ยังไม่มีสิทธิ์ค้นหา Open Collaboration กรุณาเชื่อมและอนุญาตสิทธิ์ใหม่");
   const view = marketplaceView(mode), buttons = view.form.querySelectorAll(".marketplace-search-button"), nextButton = $(mode === "shop" ? "#marketplaceShopNext" : "#marketplaceNext"), shopMode = mode === "shop";
   buttons.forEach(button => button.disabled = true);
   if (nextButton) nextButton.disabled = true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: shopConnection.id, channel_id: state.selected, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken } : { connection_id: shopConnection.id, channel_id: state.selected, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 3 }) });
+    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: shopConnection.id, channel_id: requestedChannelId, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 200, page_token: pageToken } : { connection_id: shopConnection.id, channel_id: requestedChannelId, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 3 }) });
     const prefix = shopMode ? "shopMarketplace" : "marketplace";
     state[`${prefix}Products`] = data.products || [];
     state[`${prefix}NextToken`] = data.next_page_token || "";
@@ -621,17 +623,27 @@ renderResult = function(result = {}) {
     item.insertAdjacentHTML("beforeend", `<div class="inventory-actions product-prep-actions"><button type="button" data-inventory="kept" data-product-name="${escapeHtml(name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${escapeHtml(score)}" data-product-evidence="${escapeHtml(evidence)}">\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49</button><button type="button" class="danger" data-inventory="discarded" data-product-name="${escapeHtml(name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${escapeHtml(score)}" data-product-evidence="${escapeHtml(evidence)}">\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01</button></div>`);
   });
 };
-async function loadTikTokConnection() {
+function fetchTikTokConnectionData(channelId) {
+  const key = String(channelId || "");
+  if (!key) return Promise.resolve(null);
+  if (shopConnectionRequests.has(key)) return shopConnectionRequests.get(key);
+  const request = api(`/api/admin/tiktok-connections?${shopDateQuery(key)}`, { cache: "no-store" }).finally(() => {
+    if (shopConnectionRequests.get(key) === request) shopConnectionRequests.delete(key);
+  });
+  shopConnectionRequests.set(key, request);
+  return request;
+}
+async function loadTikTokConnection(channelId = state.selected) {
   const box = $("#tiktokConnection");
-  if (!state.selected) {
+  if (!channelId) {
     box.hidden = true;
     return null;
   }
   box.hidden = false;
-  const requestedChannelId=state.selected,loadSeq=++state.connectionLoadSeq;
-  const data = await api(`/api/admin/tiktok-connections?${shopDateQuery(requestedChannelId)}`);
-  if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return null;
+  const requestedChannelId=channelId,loadSeq=++state.connectionLoadSeq;
+  const data = await fetchTikTokConnectionData(requestedChannelId);
   const connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
+  if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return shopConnection;
   state.connection = connection;
   state.shopConnection = shopConnection;
   $("#channelShopAnalysis").classList.toggle("shop-connection-missing", !shopConnection);
