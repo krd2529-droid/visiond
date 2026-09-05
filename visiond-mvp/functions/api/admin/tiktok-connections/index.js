@@ -85,7 +85,7 @@ async function onRequestPost(ctx) {
     if (!shop) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E1A\u0E31\u0E0D\u0E0A\u0E35 TikTok Shop Creator \u0E17\u0E35\u0E48\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E2D\u0E22\u0E39\u0E48" }, 404, headers);
     if (action === "shop_sync") {
       try {
-        const maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(body.max_showcase) || 2000)));
+        const maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(body.max_showcase) || 100)));
         const mode=['showcase','orders'].includes(body.mode)?body.mode:'all';
         return json({ ok: true, ...await syncTikTokShopCreator(ctx.env, shop, { days: Number(body.days) || 30, maxShowcase, syncShowcase:mode!=='orders', syncOrders:mode!=='showcase' }) }, 200, headers);
       } catch (error) {

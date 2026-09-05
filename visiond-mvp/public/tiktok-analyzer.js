@@ -860,7 +860,7 @@ $("#newChannel").addEventListener("click", () => {
 });
 async function syncTikTokShopData(mode) {
   if (!state.shopConnection) return;
-  const limitInput = $("#showcaseSyncLimit"), maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(limitInput.value) || 2000)));
+  const limitInput = $("#showcaseSyncLimit"), maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(limitInput.value) || 100)));
   limitInput.value = String(maxShowcase);
   const button=mode==="showcase"?$("#syncTikTokShowcase"):$("#syncTikTokShop");
   message.textContent = mode==="showcase" ? "กำลังโหลดสินค้า Showcase สูงสุด " + maxShowcase.toLocaleString("th-TH") + " รายการ…" : "กำลังรีเฟรชสินค้าที่ขายได้และออเดอร์ย้อนหลังสูงสุด 90 วัน…";

@@ -16,10 +16,13 @@ assert.match(html, /รีเฟรชสินค้าและออเดอ
 assert.match(html, /TikTok OAuth/);
 assert.match(html, /การเชื่อมระบบ TikTok Shop/);
 assert.match(html, /id="disconnectTikTokShop"[^>]*>ยกเลิกการเชื่อมต่อ</);
-assert.match(html, /id="showcaseSyncLimit"[^>]+min="1"[^>]+max="2000"[^>]+value="2000"/);
+assert.match(html, /id="showcaseSyncLimit"[^>]+min="1"[^>]+max="2000"[^>]+value="100"/);
 assert.match(client, /max_showcase: maxShowcase/);
 assert.match(client, /Math\.min\(2000, Math\.max\(1,/);
+assert.match(client, /Number\(limitInput\.value\) \|\| 100/);
 assert.match(connections, /body\.max_showcase/);
 assert.match(connections, /Math\.min\(2000, Math\.max\(1,/);
+assert.match(connections, /Number\(body\.max_showcase\) \|\| 100/);
 assert.match(helper, /maxShowcase = Math\.min\(2000, Math\.max\(1,/);
+assert.match(helper, /maxShowcase = 100/);
 console.log("TikTok simplified Marketplace UI regression: PASS");

@@ -34,7 +34,7 @@ assert.doesNotMatch(client, /ตรวจสิทธิ์ก่อนเพิ
 assert.match(client, /ต้องเปิด creator\.showcase\.write หรือ creator\.video\.write ใน TikTok Shop Partner Center/);
 assert.match(css, /\.shop-search-panel\{margin-bottom:18px/);
 assert.match(css, /\.marketplace-row-add\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02079/);
+assert.match(html, /tiktok-analyzer\.js\?v=02080/);
 assert.match(html, /tiktok-analyzer\.css\?v=02076/);
 
 console.log("TikTok Marketplace separated product/shop search: PASS");
