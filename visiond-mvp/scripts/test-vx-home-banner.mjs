@@ -34,6 +34,7 @@ try{
   const mobileBanner=mobile.locator('.vx-home-banner');await mobileBanner.waitFor();
   await mobileBanner.screenshot({path:path.join(os.tmpdir(),'vx-home-mobile.png')});
   assert.ok(await mobileBanner.evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'mobile banner fits');
-  assert.ok(await mobileBanner.evaluate(el=>el.getBoundingClientRect().height<520),'mobile VX banner must stay visually balanced');
+  const mobileHeights=await mobile.evaluate(()=>({vx:document.querySelector('.vx-home-banner').getBoundingClientRect().height,promo:document.querySelector('[data-visiond-promo="bundle-discount"] img').getBoundingClientRect().height}));
+  assert.ok(Math.abs(mobileHeights.vx-mobileHeights.promo)<=2,`mobile GIF heights differ: ${JSON.stringify(mobileHeights)}`);
   console.log('PASS VX home: old-GIF visual language, directly above original GIF, all prices/links/features, automatic motion without button, mobile fit');
 }finally{await browser.close();server.close()}
