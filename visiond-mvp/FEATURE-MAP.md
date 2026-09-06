@@ -1178,6 +1178,7 @@
 - TikTok Shop Creator sync: `_tiktok_shop_api.js` ลงลายเซ็น HMAC-SHA256, รีเฟรช token ก่อนหมดอายุ, ดึง Creator Profile / Showcase / Affiliate Orders แบบจำกัดหน้า และเก็บ raw response สำหรับรองรับฟิลด์ GMV/commission เฉพาะเมื่อ TikTok ส่งกลับจริง
 - ค่าคอมจาก Affiliate Center: รองรับ signed ingest จาก collector ภายนอกแบบ timestamp/HMAC, เก็บยอดจริงรายวันแยก connection และให้ยอดจาก Center มีสิทธิ์เหนือค่าจาก Affiliate Orders API เฉพาะช่อง/วัน/สกุลเงินเดียวกันเพื่อไม่บวกซ้ำ
 - Cloud Run collector shell: `services/tiktok-commission-collector` แยก configuration/session reference ออกจาก source adapter; ค่าเริ่มต้นปิดอย่างปลอดภัยและไม่ส่งยอดสมมติ จึงเปลี่ยนเฉพาะ adapter เมื่อมี Creator test account ใหม่ได้
+- Collector lifecycle: เก็บเฉพาะชื่ออ้างอิง Secret ของ session (ไม่เก็บ cookie ใน D1), แสดงสถานะรายช่อง `ยังไม่เชื่อม/กำลังตรวจ/พร้อมอ่าน/ต้องเชื่อมใหม่/อ่านไม่สำเร็จ`, retry ตามค่ากำหนด และรับรายงานสถานะผ่าน endpoint ที่ตรวจ HMAC
 - ยอดออเดอร์และค่าคอมรายวันเปิดซิงก์ตั้งแต่ 12:00 น. เวลาไทย โดยข้อมูลใหม่สุดคือเมื่อวาน; ก่อนเวลา API ปฏิเสธการซิงก์ออเดอร์และหน้าเว็บจำกัดวันที่ตามข้อมูลที่พร้อมแล้ว แต่ยังโหลด Showcase และเปิดดูข้อมูลเดิมได้
 - Creator portfolio: เลือกวันเริ่ม–สิ้นสุดเพื่อดูค่าคอมและสินค้าที่ขายได้จากออเดอร์ในช่วงนั้น, ดึง Showcase แบบไล่หน้าสูงสุด 2,000 รายการพร้อมรูปสินค้า ค้นหาชื่อ/รหัสและแบ่งหน้าละ 20 รายการ, รวมข้อมูลการขายกับเกรดจากลิสต์คัดสินค้าในตารางเดียวและเรียง A–F, เพิ่ม–ลบผ่าน TikTok API หลังตรวจ ownership, scope และการยืนยันใน UI
 - AI vision: `functions/_tiktok_analyzer.js`; ใช้คีย์เฉพาะระบบก่อนและรองรับ OpenAI/Gemini
