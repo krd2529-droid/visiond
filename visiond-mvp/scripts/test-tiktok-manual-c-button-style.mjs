@@ -9,6 +9,6 @@ assert.match(css, /\.manual-c-form button:hover\{border-color:#087f78;background
 assert.match(css, /\.manual-c-form button:focus-visible\{outline:3px solid rgba\(8,169,159,\.25\)/);
 assert.match(css, /\.manual-c-form button:disabled\{opacity:\.55;cursor:wait\}/);
 assert.match(css, /@media\(max-width:640px\)[\s\S]*\.manual-c-form button\{width:100%\}/);
-assert.match(html, /tiktok-analyzer\.css\?v=02088/);
+assert.match(html, /tiktok-analyzer\.css\?v=02089/);
 
 console.log("TikTok manual C button visual consistency: PASS");

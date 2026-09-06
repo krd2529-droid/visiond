@@ -740,6 +740,35 @@ renderResult = function(result = {}) {
     item.insertAdjacentHTML("beforeend", `<div class="inventory-actions product-prep-actions"><button type="button" data-inventory="kept" data-product-name="${escapeHtml(name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${escapeHtml(score)}" data-product-evidence="${escapeHtml(evidence)}">\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49</button><button type="button" class="danger" data-inventory="discarded" data-product-name="${escapeHtml(name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${escapeHtml(score)}" data-product-evidence="${escapeHtml(evidence)}">\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01</button></div>`);
   });
 };
+$("#analyzeAiRecommendations")?.addEventListener("click", async (event) => {
+  if (!state.selected) return showToast("กรุณาเลือกช่องก่อนวิเคราะห์", "warning");
+  if (!state.shopConnection) return showToast("กรุณาเชื่อม TikTok Shop ก่อนให้ AI วิเคราะห์", "warning");
+  const button = event.currentTarget, channel = state.channels.find((item) => item.id === state.selected), data = new FormData();
+  data.set("channel_id", state.selected);
+  data.set("channel_name", channel?.name || "ช่อง TikTok");
+  data.set("channel_url", channel?.channel_url || "");
+  data.set("lookback_days", "30");
+  data.set("attachment_period_days", "30");
+  data.set("clips_per_day", "40");
+  data.set("date_range", `${state.shopDateFrom} ถึง ${state.shopDateTo}`);
+  data.set("notes", "วิเคราะห์สินค้าแนะนำเกรด E จากข้อมูล TikTok Shop API ของช่องนี้ โดยอิงสินค้าที่ขายได้และแนวทางช่อง");
+  button.disabled = true;
+  button.textContent = "AI กำลังวิเคราะห์…";
+  try {
+    const response = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
+    renderResult(response.result || {});
+    const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
+    state.inventoryProducts = inventory.products || [];
+    renderPermanentInventory(inventory.products || [], inventory.product_events || []);
+    showToast("AI วิเคราะห์สินค้าแนะนำเกรด E เรียบร้อยแล้ว", "success");
+    $(".ai-recommendations")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "ให้ AI วิเคราะห์สินค้าแนะนำ";
+  }
+});
 function fetchTikTokConnectionData(channelId) {
   const key = String(channelId || "");
   if (!key) return Promise.resolve(null);

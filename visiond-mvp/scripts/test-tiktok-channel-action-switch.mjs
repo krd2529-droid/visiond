@@ -13,6 +13,6 @@ assert.match(client, /ค่าคอมของช่องที่เลื�
 assert.match(css, /\.channel-action-switch\{/);
 assert.match(css, /\.channel-view-products #shopDashboard\{display:none!important\}/);
 assert.match(css, /\.channel-view-commission #channelShopAnalysis,\.channel-view-commission #result,\.channel-view-commission #angelInventory\{display:none!important\}/);
-assert.match(html, /tiktok-analyzer\.js\?v=02118/);
-assert.match(html, /tiktok-analyzer\.css\?v=02088/);
+assert.match(html, /tiktok-analyzer\.js\?v=02119/);
+assert.match(html, /tiktok-analyzer\.css\?v=02089/);
 console.log("TikTok selected-channel product/commission action switch: PASS");

@@ -1,9 +1,8 @@
-# Active patch: selected-channel action switch
+# Active patch: AI grade-E analysis action
 
-- Event: PATCH_DELIVERED
-- Outcome: เพิ่มแอ็กชันสลับ “จัดการสินค้า” และ “ดูค่าคอม” ใต้ช่องที่เลือก
-- Preserve: ช่องปัจจุบัน, ข้อมูลสินค้า, การเชื่อมบัญชี และข้อมูลค่าคอมเดิม
-- Acceptance: จัดการสินค้าเป็นค่าเริ่มต้น; สลับโดยไม่ reload; ดูค่าคอมเฉพาะช่อง; responsive
-- Phase: 14 focused/regression checks PASS; production verified
+- Event: PATCH_READY
+- Outcome: เพิ่มปุ่มสั่ง AI วิเคราะห์สินค้าแนะนำเกรด E จากข้อมูล Shop ของช่องปัจจุบัน
+- Preserve: ตาราง E เดิม, ตรรกะ A–F, การจัดการสินค้า และหน้าค่าคอม
+- Acceptance: ต้องเชื่อม Shop; เรียก AI จริง; แสดงผล E ทันที; มี loading/error; ไม่สร้างข้อมูลตัวอย่าง
+- Phase: implementation complete; 13 focused/regression checks PASS; awaiting commit/push
 - Files: TikTok analyzer JS/CSS/HTML and focused regression
-- Delivered: f9ba75c4 on origin/main; production uses JS v02118 and CSS v02088
