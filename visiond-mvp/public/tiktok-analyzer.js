@@ -1022,9 +1022,16 @@ $("#manualCForm").addEventListener("submit", async (event) => {
   const button = event.currentTarget.querySelector("button");
   button.dataset.setC = productName;
   button.dataset.productScore = "0";
-  button.dataset.productEvidence = "\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 C \u0E14\u0E49\u0E27\u0E22\u0E15\u0E19\u0E40\u0E2D\u0E07";
-  await setProductC(button);
-  if (!button.disabled) input.value = "";
+  button.dataset.productEvidence = "ผู้ใช้เพิ่มสินค้าทดสอบ D ด้วยตนเอง";
+  let status = $("#manualProductStatus");
+  if (!status) {
+    event.currentTarget.insertAdjacentHTML("afterend", '<p id="manualProductStatus" role="status" aria-live="polite"></p>');
+    status = $("#manualProductStatus");
+  }
+  status.textContent = "กำลังบันทึกสินค้า…";
+  const saved = await setProductC(button);
+  status.textContent = saved ? (saved.already_exists ? "สินค้านี้อยู่ในลิสต์แล้ว" : "เพิ่มสินค้าเข้าลิสต์แล้ว") : `เพิ่มสินค้าไม่สำเร็จ: ${message.textContent || "กรุณาลองอีกครั้ง"}`;
+  if (saved) input.value = "";
 });
 $("#result").addEventListener("click", (event) => {
   const button = event.target.closest("[data-inventory]");
