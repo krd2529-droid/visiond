@@ -58,8 +58,9 @@ try{
   await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();await page.locator('[data-plan]').nth(1).click();
   assert.match(await page.locator('#vxNotice').innerText(),/รายการเดิม/);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].account_limit),10,'existing cart preserved');
-  await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(os.tmpdir(),'vtools-mobile.png'),fullPage:true});
-  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile overflow');
+  const mobile=await browser.newPage({viewport:{width:390,height:844}});await mobile.goto(base+'/vtools');await mobile.locator('[data-plan]').first().waitFor();await mobile.locator('.vbot-card').first().waitFor();await mobile.screenshot({path:path.join(os.tmpdir(),'vtools-mobile.png'),fullPage:true});
+  assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile overflow');
+  assert.equal(await mobile.locator('.vtools-hero').count(),1);assert.equal(await mobile.locator('body.mobile-nav-open').count(),0,'mobile menu starts closed');await mobile.close();
   console.log('PASS Vtools browser: 3 plans, add-to-cart, authoritative refreshed price, existing cart protected, mobile layout');
   console.log(path.join(os.tmpdir(),'vtools-desktop.png'));console.log(path.join(os.tmpdir(),'vtools-mobile.png'));
 }finally{await browser.close();server.close()}

@@ -1,8 +1,9 @@
-# Active patch: Show saved shortlist products
+# Active patch: Vtools visual redesign
 
 - Event: PATCH_READY
-- Outcome: อธิบายและคำนวณเกรด A–F ตามเกณฑ์รายเดือนและบทบาทสินค้าที่ผู้ใช้กำหนด
-- Preserve: เข้าแผงจัดการสินค้าตรง; ไม่มีแถบ 1/2; + ช่องใหม่เปิด TikTok OAuth
-- Acceptance: A ≥30/เดือน; B 16–29/เดือน; C 1–15/เดือน; D สินค้าทดสอบ; E กระแส/AI แนะนำ; F คัดออก; สูตรคำนวณและการเปลี่ยนสถานะตรงกันทั้ง client/API/AI
-- Phase: add/reload/duplicate/grade/discard regression PASS; production interaction verification requires logged-in browser (currently กรุณาเข้าสู่ระบบ)
-- Files: functions/_tiktok_analyzer.js, functions/api/admin/tiktok-analyzer/index.js, migrations/0080_tiktok_monthly_grade_semantics.sql, public/tiktok-analyzer.js, public/tiktok-analyzer.css, public/tiktok-analyzer.html, tests
+- Outcome: หน้า /vtools ใช้ธีม VisionD ชัดเจน มี VX hero และแพ็กเกจที่ดูเป็นหน้าสินค้าจริงทั้ง desktop/mobile
+- Preserve: ราคาและสิทธิ์ 30 วัน, 10/20/30 บัญชี, การเพิ่มตะกร้า, EasySlip, deep link ของ Affiliate และแคตตาล็อก Vtools
+- Acceptance: canonical VisionD header; richer visual hierarchy; responsive without overflow; existing Vtools purchase tests pass
+- Phase: desktop/mobile visual and regression tests PASS
+- Files: public/vtools.html, public/vtools.css, scripts/test-vtools-browser.mjs
+- Next: commit, push, production check
