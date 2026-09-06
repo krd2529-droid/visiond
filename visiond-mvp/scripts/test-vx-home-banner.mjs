@@ -23,14 +23,15 @@ try{
   assert.deepEqual(await page.locator('.vx-home-price strong').allTextContents(),['490 บาท','980 บาท','1,290 บาท']);
   assert.equal(await page.locator('.vx-home-price[href="/vtools#plans"]').count(),3);
   assert.match(await banner.innerText(),/ค่าคอมรวมทุกช่อง และแยกรายช่อง/);
+  assert.match(await banner.innerText(),/ค้นหาสินค้านางฟ้า/);
+  assert.equal(await banner.getByRole('button').count(),0);
   assert.notEqual(await page.locator('.vx-home-price').first().evaluate(el=>getComputedStyle(el).animationName),'none');
-  await page.locator('#vxMotionToggle').click();assert.equal(await page.locator('.vx-home-price').first().evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
+  const before=await page.locator('.vx-home-price').evaluateAll(cards=>cards.map(x=>getComputedStyle(x).backgroundColor));await page.waitForTimeout(2200);const after=await page.locator('.vx-home-price').evaluateAll(cards=>cards.map(x=>getComputedStyle(x).backgroundColor));assert.notDeepEqual(after,before,'highlight must move automatically');
   await banner.screenshot({path:path.join(os.tmpdir(),'vx-home-desktop.png')});
   const mobile=await browser.newPage({viewport:{width:390,height:844},locale:'th-TH'});
   await mobile.goto(`http://127.0.0.1:${server.address().port}/`);
   const mobileBanner=mobile.locator('.vx-home-banner');await mobileBanner.waitFor();
   await mobileBanner.screenshot({path:path.join(os.tmpdir(),'vx-home-mobile.png')});
   assert.ok(await mobileBanner.evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'mobile banner fits');
-  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.vx-home-price').first().evaluate(el=>getComputedStyle(el).animationName),'none');
-  console.log('PASS VX home: directly above original GIF, one banner, all prices/links/features, motion/pause/reduced motion, mobile fit');
+  console.log('PASS VX home: old-GIF visual language, directly above original GIF, all prices/links/features, automatic motion without button, mobile fit');
 }finally{await browser.close();server.close()}

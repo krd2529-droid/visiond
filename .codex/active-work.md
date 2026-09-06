@@ -1,6 +1,8 @@
-# Active patch: Animated homepage VX packages
+# Active patch: Finish VX banner and redesign Blog
 
-- Status: PATCH_DELIVERED
+- Status: PATCH_READY
+- Verified: VX browser animation changes highlight automatically after two seconds with no button; old-GIF visual treatment, placement, prices, links, “ค้นหาสินค้านางฟ้า”, and mobile fit pass. Blog storefront header/footer, hero, three live article links, VX CTA, desktop/mobile layout pass. Diff check clean.
+- Added: match the existing teal promo GIF, animate automatically without a control, add “ค้นหาสินค้านางฟ้า”, and redesign `/blog` with the full storefront shell and editorial cards.
 - Verified: browser placement directly above original GIF, prices/links, desktop/mobile screenshots, pause/resume and reduced-motion. Diff check passed; 486cbfe5 pushed to origin main. Production homepage returns 200 with vx-home-banner.css?v=014581 and multi-channel commission copy.
 - Outcome: animated VX feature/price banner immediately above existing homepage bundle GIF; preserve GIF, checkout and rights.
 - Copy: multi-channel management, combined/per-channel commission dashboard, product search, A–F and Showcase. Prices 10/490, 20/980, 30/1290 THB for 30 days.
