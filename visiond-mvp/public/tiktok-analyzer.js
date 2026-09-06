@@ -815,7 +815,8 @@ function reconcileProductPrepInventory(products = []) {
     let item = [...list.querySelectorAll(".product-prep-item")].find((row) => normalizeProductName(row.querySelector(".product-ranking-copy b")?.textContent) === key);
     const grade = /^[A-F]$/.test(product.product_type) ? product.product_type : "";
     if (!item) {
-      list.insertAdjacentHTML("beforeend", `<div class="product-prep-item ranked"><span></span><div class="product-ranking-copy"><b>${escapeHtml(product.name)}</b><small>${escapeHtml(product.evidence || "เพิ่มเข้าลิสต์คัดสินค้าแล้ว")}</small></div><strong class="ranking-score pending">—</strong><i class="product-prep-grade"></i><div class="product-prep-actions"><button type="button" data-inventory="discarded" data-product-name="${escapeHtml(product.name)}" data-product-grade="${grade}">คัดออก</button></div></div>`);
+      const actionData = `data-product-name="${escapeHtml(product.name)}" data-product-grade="${grade}" data-product-score="${Number(product.score) || 0}" data-product-evidence="${escapeHtml(product.evidence || "")}"`;
+      list.insertAdjacentHTML("beforeend", `<div class="product-prep-item ranked"><span></span><div class="product-ranking-copy"><b>${escapeHtml(product.name)}</b><small>${escapeHtml(product.evidence || "เพิ่มเข้าลิสต์คัดสินค้าแล้ว")}</small></div><strong class="ranking-score pending">—</strong><i class="product-prep-grade"></i><div class="inventory-actions product-prep-actions"><button type="button" data-inventory="kept" ${actionData}>เก็บไว้</button><button type="button" class="danger" data-inventory="discarded" ${actionData}>คัดออก</button></div></div>`);
       item = list.lastElementChild;
     }
     const badge = item.querySelector(".product-prep-grade");
