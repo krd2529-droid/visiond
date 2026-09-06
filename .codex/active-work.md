@@ -1,6 +1,6 @@
 # Active patch: Separate VX and digital-product GIF concepts
 
-- Status: PATCH_READY — upper VX GIF now has a distinct multi-channel analytics/dashboard composition with the exact VX mark; lower GIF remains a separate VisionD digital-products/bundle promotion without VX branding. They share only the teal-black theme and production quality. Cache advanced to `014589`; visual inspection, desktop/mobile browser test and diff check pass.
+- Status: PATCH_DELIVERED — distinct VX artwork `3fe9fcb5` pushed to `origin main`; Production homepage/CSS/top/lower GIF return 200 with cache `014589` and exact sizes 4,125,109 / 2,153,146 bytes. Upper VX uses analytics/network artwork with the VX mark; lower remains a separate digital-products/bundle promotion without VX branding. Visual inspection, desktop/mobile browser test and diff check pass.
 - Design split: VX uses its own analytics/network artwork from `vx-banner-master-v014589.png`; the digital-products banner retains shopping imagery from `vx-paired-banner-master-v014585.png` without VX branding.
 - Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
 - Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
