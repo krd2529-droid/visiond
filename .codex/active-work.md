@@ -1,4 +1,12 @@
-# Active patch: Vtools VX 30-day rights
+# Active patch: Animated homepage VX packages
+
+- Status: PATCH_READY
+- Verified: browser placement directly above original GIF, prices/links, desktop/mobile screenshots, pause/resume and reduced-motion. Diff check passed; sending scoped files to origin main.
+- Outcome: animated VX feature/price banner immediately above existing homepage bundle GIF; preserve GIF, checkout and rights.
+- Copy: multi-channel management, combined/per-channel commission dashboard, product search, A–F and Showcase. Prices 10/490, 20/980, 30/1290 THB for 30 days.
+- Implementation: scoped HTML/CSS motion with pause and reduced-motion support, link to Vtools plans; desktop/mobile visual and placement/link tests, scoped commit/push and live check.
+
+## Previous VX rights delivery
 
 - Status: PATCH_DELIVERED
 - Delivery: 9ad7d975 base and 9fbeb073 EasySlip addition pushed to origin main. Production /vtools returns 200 with v014580 and EasySlip text; /api/vtools returns all three exact 30-day prices/limits. No production payment made.
