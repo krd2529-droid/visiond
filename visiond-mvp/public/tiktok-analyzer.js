@@ -212,9 +212,27 @@ function decorateSoldProductSelection(products = []) {
       return;
     }
     const selected = selectedNames.has(normalizeProductName(name));
-    const count = row.cells[4]?.textContent?.trim() || "";
-    row.insertAdjacentHTML("beforeend", `<td><button class="marketplace-row-add marketplace-selection-add" type="button" data-select-sold-product data-product-name="${escapeHtml(product.name)}" data-product-url="${escapeHtml(product.product_url || "")}" data-product-evidence="ขายจากออเดอร์ TikTok Shop${count ? ` · ${escapeHtml(count)}` : ""}" ${selected ? "disabled" : ""}>${selected ? "อยู่ในลิสต์คัดสินค้าแล้ว" : "เพิ่มเข้าลิสต์คัดสินค้า"}</button></td>`);
+    const sales = Number((row.cells[4]?.textContent || "").replace(/[^0-9]/g, "")) || 0;
+    const grade = shopSalesGrade(sales) || "D";
+    row.insertAdjacentHTML("beforeend", `<td><button class="marketplace-row-add marketplace-selection-add" type="button" data-select-sold-product data-product-name="${escapeHtml(product.name)}" data-product-url="${escapeHtml(product.product_url || "")}" data-product-grade="${grade}" data-product-sales="${sales}" data-product-evidence="ยอดขาย 30 วัน ${sales.toLocaleString()} ออเดอร์ · เกรด ${grade}" ${selected ? "disabled" : ""}>${selected ? "อยู่ในลิสต์คัดสินค้าแล้ว" : "เพิ่มเข้าลิสต์คัดสินค้า"}</button></td>`);
   });
+}
+async function syncSelectedSoldProductGrades() {
+  const selectedByName = new Map((state.inventoryProducts || []).filter((product) => product.inventory_status === "kept" && product.source_kind === "sold_product_selection").map((product) => [normalizeProductName(product.name), product]));
+  const updates = [...document.querySelectorAll("[data-select-sold-product]")].map((button) => ({ name: button.dataset.productName || "", grade: button.dataset.productGrade || "D", sales: Number(button.dataset.productSales) || 0 })).filter((item) => {
+    const current = selectedByName.get(normalizeProductName(item.name));
+    return current && current.product_type !== item.grade;
+  });
+  if (!updates.length) return;
+  const data = new FormData();
+  data.set("action", "sync_sold_product_grades");
+  data.set("channel_id", state.selected);
+  data.set("sales_grades", JSON.stringify(updates));
+  const synced = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
+  if (synced.products) {
+    state.inventoryProducts = synced.products;
+    renderPermanentInventory(synced.products, synced.product_events || []);
+  }
 }
 function safeProductImage(value) {
   try {
@@ -745,7 +763,10 @@ async function loadTikTokConnection(channelId = state.selected) {
   if (shopConnection) loadMarketplaceCategories();
   $("#tiktokShopState").innerHTML = shopConnection ? `<div class="shop-summary"><p><b>${escapeHtml(shopConnection.creator_username || "TikTok Shop Creator")}</b> · ตลาด ${escapeHtml(shopConnection.selection_region || "ยังไม่ระบุ")} · ซิงก์ ${escapeHtml(shopConnection.last_synced_at || "ยังไม่เคย")}</p>${shopConnection.last_sync_error ? `<p class="shop-error">ครั้งล่าสุด: ${escapeHtml(shopConnection.last_sync_error)}</p>` : ""}</div>` : data.shop_configured ? "<p>ยังไม่ได้เชื่อมข้อมูล Showcase และออเดอร์ Affiliate</p>" : "<p>ยังไม่ได้ตั้งค่า TikTok Shop App key และ App secret</p>";
   $("#soldProductsData").innerHTML = shopConnection ? shopRangeSummary(data, products, orders) : '<p class="hint">เชื่อม TikTok Shop เพื่อโหลดสินค้าที่ขายได้และออเดอร์</p>';
-  if (shopConnection) decorateSoldProductSelection(products);
+  if (shopConnection) {
+    decorateSoldProductSelection(products);
+    await syncSelectedSoldProductGrades();
+  }
   if (!data.configured && !connection) {
     $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
     return shopConnection;
@@ -963,10 +984,12 @@ async function setProductC(button) {
   data.set("evidence", button.dataset.productEvidence || "");
   data.set("product_url", button.dataset.productUrl || "");
   data.set("source_kind", button.dataset.sourceKind || "manual_selection");
+  data.set("requested_grade", button.dataset.requestedGrade || "D");
   button.disabled = true;
   try {
     const saved = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
-    const notice = saved.already_exists ? `\u201C${productName}\u201D \u0E21\u0E35\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E41\u0E25\u0E49\u0E27 \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : `\u0E40\u0E1E\u0E34\u0E48\u0E21 \u201C${productName}\u201D \u0E40\u0E1B\u0E47\u0E19 D \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \u0E41\u0E25\u0E30\u0E15\u0E31\u0E49\u0E07\u0E15\u0E23\u0E27\u0E08\u0E23\u0E2D\u0E1A\u0E41\u0E23\u0E01\u0E43\u0E19 3 \u0E27\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27`;
+    const savedGrade = saved.product_type || "D";
+    const notice = saved.already_exists ? `“${productName}” มีอยู่ในลิสต์คัดสินค้าแล้ว เกรดปัจจุบัน ${savedGrade}` : `เพิ่ม “${productName}” เป็นเกรด ${savedGrade} สำเร็จ`;
     message.textContent = notice;
     showToast(notice, saved.already_exists ? "warning" : "success");
     const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
@@ -1002,6 +1025,7 @@ async function addSoldProductToSelection(button) {
   button.dataset.setC = productName;
   button.dataset.productScore = "0";
   button.dataset.sourceKind = "sold_product_selection";
+  button.dataset.requestedGrade = button.dataset.productGrade || "D";
   const saved = await setProductC(button);
   if (saved) {
     button.textContent = "อยู่ในลิสต์คัดสินค้าแล้ว";

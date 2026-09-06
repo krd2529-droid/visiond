@@ -14,9 +14,15 @@ assert.match(client, /disabled>ข้อมูลไม่พร้อม/);
 assert.match(client, /sourceKind = "sold_product_selection"/);
 assert.match(client, /data-product-url/);
 assert.match(client, /data-product-evidence/);
-assert.match(client, /if \(shopConnection\) decorateSoldProductSelection\(products\)/);
+assert.match(client, /data-product-grade/);
+assert.match(client, /requestedGrade = button\.dataset\.productGrade \|\| "D"/);
+assert.match(client, /await syncSelectedSoldProductGrades\(\)/);
+assert.match(client, /action", "sync_sold_product_grades"/);
 assert.match(api, /'sold_product_selection'/);
-assert.match(api, /เพิ่มจากตารางสินค้าที่ขายได้เข้าลิสต์คัดสินค้าเป็น D/);
-assert.match(html, /tiktok-analyzer\.js\?v=02115/);
+assert.match(api, /savedGrade=sourceKind==='sold_product_selection'/);
+assert.match(api, /sales>=30\?'A':sales>=16\?'B':sales>0\?'C':'D'/);
+assert.match(api, /source_kind='sold_product_selection'/);
+assert.match(api, /เกรด \$\{savedGrade\} ตามยอดขายจริง 30 วัน/);
+assert.match(html, /tiktok-analyzer\.js\?v=02116/);
 
 console.log("TikTok sold-products selection-list column and action: PASS");

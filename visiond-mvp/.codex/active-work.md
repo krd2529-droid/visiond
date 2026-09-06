@@ -1,9 +1,8 @@
-# Active patch: Open Collaboration table edge spacing
+# Active patch: sales-driven shortlist grades
 
-- Event: PATCH_DELIVERED
-- Outcome: ปุ่มคอลัมน์ลิสต์คัดสินค้ามีระยะหายใจจากขอบขวาและไม่ดูตกกรอบ
-- Preserve: คอลัมน์และปุ่มเดิม, horizontal scrolling, responsive behavior, Marketplace actions
-- Acceptance: last column has explicit width/right padding; button fits within cell; related Marketplace tests pass
-- Phase: CSS spacing and 10 related Marketplace regressions PASS; production verified
-- Files: public/tiktok-analyzer.css, public/tiktok-analyzer.html, scripts/test-tiktok-marketplace-pagination-layout.mjs
-- Delivered: 0c6e1174 on origin/main; /tiktok-analyzer uses CSS v02086
+- Event: PATCH_TESTED
+- Outcome: สินค้าที่เพิ่มจากตารางยอดขายเข้า shortlist ด้วย A/B/C ตามยอดขาย 30 วัน; D ใช้เมื่อยอดเป็นศูนย์
+- Preserve: manual/Marketplace selections remain D, discarded products remain F
+- Acceptance: A >=30, B 16-29, C 1-15, D 0; existing sold selections reconcile on page load
+- Phase: implementation and 7 related regressions PASS; awaiting commit/push
+- Files: API handler, TikTok analyzer client/HTML, focused regressions
