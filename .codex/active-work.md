@@ -1,6 +1,7 @@
 # Active patch: Finish VX banner and redesign Blog
 
-- Status: PATCH_READY
+- Status: PATCH_DELIVERED
+- Delivery: blog/VX UI revision 32175a9a and supplied-logo GIF revision 406e534e pushed to origin main. Production homepage, blog and 1.77 MB GIF return 200; v014583 reference, angel-product copy and removal of motion button verified live.
 - GIF update: generated from the supplied VX logo reference with imagegen, then encoded as a 24-frame looping GIF (1.77 MB) with moving sheen/glints. Live HTML copy/prices remain selectable and accessible. Browser banner/blog tests still pass.
 - Verified: VX browser animation changes highlight automatically after two seconds with no button; old-GIF visual treatment, placement, prices, links, “ค้นหาสินค้านางฟ้า”, and mobile fit pass. Blog storefront header/footer, hero, three live article links, VX CTA, desktop/mobile layout pass. Diff check clean.
 - Added: match the existing teal promo GIF, animate automatically without a control, add “ค้นหาสินค้านางฟ้า”, and redesign `/blog` with the full storefront shell and editorial cards.
