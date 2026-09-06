@@ -48,6 +48,7 @@ $("#attachmentPeriodDays").addEventListener("change", correctLegacyEvidencePerio
 $("#channels").addEventListener("click", () => {
   setOutputScope("channel");
   setWorkspaceView("output");
+  setChannelView("products");
 }, { capture: true });
 const shopHeader = $("#shopDashboard .result-head>div"), resultHeader = $("#result .result-head>div"), manualHeader = $("#angelInventory .result-head>div");
 shopHeader.querySelector("small").textContent = "AUTOMATIC \xB7 TIKTOK SHOP API";
@@ -73,6 +74,22 @@ const safeJson = (value) => {
 const money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
 const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseHeading = $("#channelShopAnalysis .showcase-panel .showcase-heading");
 $(".workspace-switch")?.insertAdjacentHTML("afterend",'<section id="analysisChannelPicker" class="analysis-channel-picker" aria-labelledby="analysisChannelPickerTitle"><div><small>ช่องที่กำลังวิเคราะห์</small><h3 id="analysisChannelPickerTitle">เลือกช่องจากรายการที่เชื่อมแล้ว</h3></div><div id="analysisChannelOptions" class="analysis-channel-options" role="listbox" aria-label="เลือกช่องที่ต้องการวิเคราะห์"></div></section>');
+$("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button><button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button></nav>');
+function setChannelView(view) {
+  const commission = view === "commission";
+  document.body.classList.toggle("channel-view-products", !commission);
+  document.body.classList.toggle("channel-view-commission", commission);
+  $("#channelActionSwitch")?.querySelectorAll("[data-channel-view]").forEach((button) => {
+    const active = button.dataset.channelView === (commission ? "commission" : "products");
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-current", active ? "page" : "false");
+  });
+}
+$("#channelActionSwitch")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-channel-view]");
+  if (button) setChannelView(button.dataset.channelView);
+});
+setChannelView("products");
 $("#channelShopAnalysis .result-head")?.insertAdjacentHTML("afterend", '<section id="shopConnectionRequired" class="shop-connection-required" hidden><b>ช่องนี้ยังไม่ได้เชื่อมระบบ TikTok Shop</b><p>TikTok ใช้ข้อมูลโปรไฟล์และวิดีโอ ส่วนออเดอร์ Marketplace และ Showcase ต้องเชื่อมระบบ TikTok Shop แยกอีกครั้ง</p><button type="button" data-open-shop-settings>ไปหน้า 1 เพื่อเชื่อมระบบ TikTok Shop</button></section>');
 $("#shopConnectionRequired [data-open-shop-settings]")?.addEventListener("click", () => {
   setWorkspaceView("input");
@@ -557,6 +574,8 @@ renderShopDashboard = function(data, shopConnection) {
     return;
   }
   renderLiveShopDashboard(data, shopConnection);
+  shopHeader.querySelector("small").textContent = "ช่องที่เลือก · ค่าคอมมิชชัน";
+  shopHeader.querySelector("h2").textContent = "ค่าคอมของช่องที่เลือก";
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo }, rangeText = `${range.from} \u0E16\u0E36\u0E07 ${range.to}`;
   $("#shopDashboard .result-head>b").textContent = rangeText;
   shopHeader.querySelector(".source-caption").textContent = `\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E41\u0E25\u0E30\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49\u0E43\u0E19\u0E0A\u0E48\u0E27\u0E07 ${rangeText}`;
@@ -622,7 +641,7 @@ function renderAnalysisChannelPicker(){
   if(!box)return;
   box.innerHTML=connected.length?connected.map(channel=>`<button type="button" class="analysis-channel-option ${channel.id===state.selected?"active":""}" data-analysis-channel="${escapeHtml(channel.id)}" role="option" aria-selected="${channel.id===state.selected}">${channel.avatar_url?`<img src="${escapeHtml(channel.avatar_url)}" alt="">`:""}<span><b>${escapeHtml(channel.name)}</b><small>${channel.id===state.selected?"กำลังดูช่องนี้":"เลือกดูช่องนี้"}</small></span></button>`).join(""):'<p class="hint">ยังไม่มีช่องที่เชื่อม TikTok กรุณาเชื่อมจากหน้า 1 ก่อน</p>';
 }
-$("#analysisChannelOptions")?.addEventListener("click",async event=>{const button=event.target.closest("[data-analysis-channel]");if(!button||button.dataset.analysisChannel===state.selected)return;setOutputScope("channel");setWorkspaceView("output");await selectChannel(button.dataset.analysisChannel)});
+$("#analysisChannelOptions")?.addEventListener("click",async event=>{const button=event.target.closest("[data-analysis-channel]");if(!button||button.dataset.analysisChannel===state.selected)return;setOutputScope("channel");setWorkspaceView("output");setChannelView("products");await selectChannel(button.dataset.analysisChannel)});
 async function selectChannel(id) {
   state.selected = id;
   form.classList.add("existing-channel");

@@ -15,6 +15,6 @@ assert.match(client, /sold >= 30 \? "A" : sold >= 16 \? "B" : sold >= 1 \? "C" :
 assert.match(client, /gradeLabel = \/\^\[A-F\]\$\/\.test\(grade\) \? grade : "ไม่มีเกรด"/);
 assert.match(client, /F = สินค้าที่กดคัดออกหรือกดไม่ผ่านแล้ว · ไม่มีเกรด = ยอดขาย 0 หรือข้อมูลยังไม่พอ/);
 assert.match(client, /badge\.textContent = grade2 \|\| "ไม่มีเกรด"/);
-assert.match(html, /tiktok-analyzer\.js\?v=02117/);
+assert.match(html, /tiktok-analyzer\.js\?v=02118/);
 
 console.log("TikTok F versus ungraded separation regression: PASS");

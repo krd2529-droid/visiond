@@ -1,9 +1,8 @@
-# Active patch: visible AI grade-E recommendations
+# Active patch: selected-channel action switch
 
-- Event: PATCH_DELIVERED
-- Outcome: แสดงตารางสินค้าแนะนำจาก AI เกรด E ใต้ทิศทางช่อง
-- Preserve: ตารางสินค้านางฟ้า, สินค้าถัดไป, ลิสต์คัดสินค้า และตรรกะเกรดจากยอดขาย
-- Acceptance: แสดงเฉพาะ E, รวมข้อมูลจาก AI candidates และ daily ranking, ไม่แสดงชื่อซ้ำ, รองรับมือถือ
-- Phase: 12 focused/regression checks PASS; production verified
-- Files: TikTok analyzer HTML/JS/CSS and focused regression
-- Delivered: 3308b620 on origin/main; production uses JS v02117 and CSS v02087
+- Event: PATCH_READY
+- Outcome: เพิ่มแอ็กชันสลับ “จัดการสินค้า” และ “ดูค่าคอม” ใต้ช่องที่เลือก
+- Preserve: ช่องปัจจุบัน, ข้อมูลสินค้า, การเชื่อมบัญชี และข้อมูลค่าคอมเดิม
+- Acceptance: จัดการสินค้าเป็นค่าเริ่มต้น; สลับโดยไม่ reload; ดูค่าคอมเฉพาะช่อง; responsive
+- Phase: implementation complete; 14 focused/regression checks PASS; awaiting commit/push
+- Files: TikTok analyzer JS/CSS/HTML and focused regression

@@ -23,6 +23,6 @@ assert.match(api, /savedGrade=sourceKind==='sold_product_selection'/);
 assert.match(api, /sales>=30\?'A':sales>=16\?'B':sales>0\?'C':'D'/);
 assert.match(api, /source_kind='sold_product_selection'/);
 assert.match(api, /เกรด \$\{savedGrade\} ตามยอดขายจริง 30 วัน/);
-assert.match(html, /tiktok-analyzer\.js\?v=02117/);
+assert.match(html, /tiktok-analyzer\.js\?v=02118/);
 
 console.log("TikTok sold-products selection-list column and action: PASS");

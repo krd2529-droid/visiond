@@ -12,7 +12,7 @@ assert.match(html, /data-list="ai-recommendations"/);
 assert.match(client, /String\(item\?\.product_type \|\| item\?\.grade \|\| ""\)\.toUpperCase\(\) === "E"/);
 assert.match(client, /resultProductTable\(aiRecommendations, "fit_score"\)/);
 assert.match(css, /\.result-grid>\.direction-analysis,\.result-grid>\.ai-recommendations/);
-assert.match(html, /tiktok-analyzer\.js\?v=02117/);
-assert.match(html, /tiktok-analyzer\.css\?v=02087/);
+assert.match(html, /tiktok-analyzer\.js\?v=02118/);
+assert.match(html, /tiktok-analyzer\.css\?v=02088/);
 
 console.log("TikTok AI grade-E recommendations table: PASS");
