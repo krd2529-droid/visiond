@@ -11,10 +11,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_PACKAGE||'playwright');
 const root=path.resolve('public');
 const sharedNav=fs.readFileSync(path.join(root,'shared-nav.js'),'utf8');
 const vtoolsHtml=fs.readFileSync(path.join(root,'vtools.html'),'utf8');
+const homeHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert.match(sharedNav,/\/vtools','Vtools'/);
 assert.doesNotMatch(sharedNav,/\/bots\.html','VBot'/);
 assert.match(vtoolsHtml,/id="programs"/);
 assert.match(vtoolsHtml,/bots-storefront\.js\?v=014590/);
+assert.match(homeHtml,/shared-nav\.js\?v=014591/);
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/api/vtools'){const response=await catalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
@@ -29,6 +31,12 @@ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
 try{
   const page=await browser.newPage({viewport:{width:1365,height:1000}}),base=`http://127.0.0.1:${server.address().port}`;
+  const storefront=await browser.newPage({viewport:{width:1365,height:900}});
+  await storefront.goto(base+'/index.html');
+  await storefront.getByRole('link',{name:'Vtools',exact:true}).waitFor();
+  assert.equal(await storefront.getByRole('link',{name:'Vtools',exact:true}).count(),1);
+  assert.equal(await storefront.getByRole('link',{name:'VBot',exact:true}).count(),0);
+  await storefront.close();
   await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();
   assert.equal(await page.locator('[data-plan]').count(),3);
   await page.locator('.vbot-card').first().waitFor();
