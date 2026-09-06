@@ -1,6 +1,8 @@
 # Active patch: Finish VX banner and redesign Blog
 
-- Status: PATCH_READY
+- Status: PATCH_READY — paired GIF redesign replaces the earlier color-only correction.
+- Paired redesign: both 1600x260 banners now derive from `vx-paired-banner-master-v014585.png`, share the exact baskets, lighting, teal palette, 24-frame/90ms loop and synchronized moving sheen. The lower banner retains all four bundle discounts; the upper keeps accessible VX HTML pricing and feature copy.
+- Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
 - Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
 - Root cause: old GIF is 1600x260 (6.15:1, mean RGB 72/121/120); VX GIF is 1200x400 (3:1, mean RGB 7/32/33). The live frame also targets 1190px instead of the old artwork's roughly 980px center.
 - Correction: regenerate VX at 1600x260 with brighter teal grading and align its frame/content width to the old GIF.
