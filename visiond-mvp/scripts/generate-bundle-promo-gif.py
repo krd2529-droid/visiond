@@ -31,8 +31,6 @@ for index in range(24):
         draw.text((x + 85, 111), title, font=font(22), fill=ink, anchor="mm")
         draw.text((x + 85, 148), discount, font=font(29), fill=ink, anchor="mm")
     draw.text((800, 213), "เลือกสินค้าได้สูงสุด 30 ตะกร้า • ระบบคำนวณส่วนลดอัตโนมัติ", font=font(24), fill="white", anchor="mm")
-    x = int(-220 + phase * 2040)
-    draw.polygon([(x, 0), (x + 80, 0), (x - 20, 260), (x - 100, 260)], fill=(116, 255, 238, 26))
     frames.append(Image.alpha_composite(frame.convert("RGBA"), layer).convert("P", palette=Image.Palette.ADAPTIVE, colors=128))
 
 frames[0].save(TARGET, save_all=True, append_images=frames[1:], duration=90, loop=0, disposal=2, optimize=True)
