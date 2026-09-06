@@ -808,6 +808,22 @@ function reconcileProductPrepInventory(products = []) {
   const discarded = new Set(products.filter((product) => product.inventory_status === "discarded").map((product) => normalizeProductName(product.name)));
   const list = $('[data-list="plan"]');
   if (!list) return;
+  const kept = products.filter((product) => product.inventory_status === "kept");
+  for (const product of kept) {
+    const key = normalizeProductName(product.name);
+    if (!key) continue;
+    let item = [...list.querySelectorAll(".product-prep-item")].find((row) => normalizeProductName(row.querySelector(".product-ranking-copy b")?.textContent) === key);
+    const grade = /^[A-F]$/.test(product.product_type) ? product.product_type : "";
+    if (!item) {
+      list.insertAdjacentHTML("beforeend", `<div class="product-prep-item ranked"><span></span><div class="product-ranking-copy"><b>${escapeHtml(product.name)}</b><small>${escapeHtml(product.evidence || "เพิ่มเข้าลิสต์คัดสินค้าแล้ว")}</small></div><strong class="ranking-score pending">—</strong><i class="product-prep-grade"></i><div class="product-prep-actions"><button type="button" data-inventory="discarded" data-product-name="${escapeHtml(product.name)}" data-product-grade="${grade}">คัดออก</button></div></div>`);
+      item = list.lastElementChild;
+    }
+    const badge = item.querySelector(".product-prep-grade");
+    if (badge) { badge.textContent = grade || "ไม่มีเกรด"; badge.className = `product-prep-grade grade-${grade || "unknown"}`; }
+    item.querySelectorAll("[data-product-grade]").forEach((button) => button.dataset.productGrade = grade);
+  }
+  if (kept.length) $("#result").hidden = false;
+  if (!$("#productPrepSummary .total")) $("#productPrepSummary").innerHTML = `<span class="total">รวม <b>0/40</b> สินค้า</span>${Object.keys(typeLabels).map((grade) => `<span><i class="grade-dot grade-${grade}">${grade}</i><b>0</b> สินค้า</span>`).join("")}`;
   list.querySelectorAll(".product-prep-item").forEach((item) => {
     const name = item.querySelector(".product-ranking-copy b")?.textContent?.trim() || "";
     if (discarded.has(normalizeProductName(name))) item.remove();
@@ -949,11 +965,12 @@ async function setProductC(button) {
   button.disabled = true;
   try {
     const saved = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
-    const notice = saved.already_exists ? `\u201C${productName}\u201D \u0E21\u0E35\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E41\u0E25\u0E49\u0E27 \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : `\u0E40\u0E1E\u0E34\u0E48\u0E21 \u201C${productName}\u201D \u0E40\u0E1B\u0E47\u0E19 C \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \u0E41\u0E25\u0E30\u0E15\u0E31\u0E49\u0E07\u0E15\u0E23\u0E27\u0E08\u0E23\u0E2D\u0E1A\u0E41\u0E23\u0E01\u0E43\u0E19 3 \u0E27\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27`;
+    const notice = saved.already_exists ? `\u201C${productName}\u201D \u0E21\u0E35\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E41\u0E25\u0E49\u0E27 \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : `\u0E40\u0E1E\u0E34\u0E48\u0E21 \u201C${productName}\u201D \u0E40\u0E1B\u0E47\u0E19 D \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \u0E41\u0E25\u0E30\u0E15\u0E31\u0E49\u0E07\u0E15\u0E23\u0E27\u0E08\u0E23\u0E2D\u0E1A\u0E41\u0E23\u0E01\u0E43\u0E19 3 \u0E27\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27`;
     message.textContent = notice;
     showToast(notice, saved.already_exists ? "warning" : "success");
     const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
     state.inventoryProducts = latest.products || [];
+    reconcileProductPrepInventory(state.inventoryProducts);
     renderReviewSchedule(latest.products || [], Boolean(state.shopConnection), latest.product_events || []);
     renderPermanentInventory(latest.products || [], latest.product_events || []);
     return saved;
