@@ -26,7 +26,7 @@ assert.doesNotMatch(css, /\.tiktok-login-only/);
 assert.match(connect, /createNew=url\.searchParams\.get\('create'\)==='1'/);
 assert.match(callback, /async function channelForProfile/);
 assert.match(callback, /channelId=await channelForProfile/);
-assert.match(html, /tiktok-analyzer\.js\?v=02109/);
-assert.match(html, /tiktok-analyzer\.css\?v=02085/);
+assert.match(html, /tiktok-analyzer\.js\?v=02115/);
+assert.match(html, /tiktok-analyzer\.css\?v=02086/);
 
 console.log("TikTok direct product-management entry with + channel OAuth: PASS");
