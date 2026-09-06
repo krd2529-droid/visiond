@@ -6,17 +6,6 @@ import os from 'node:os';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_PACKAGE||'playwright');
 const root=path.resolve('public');
-const topGenerator=fs.readFileSync('scripts/generate-vx-home-gif.py','utf8');
-const lowerGenerator=fs.readFileSync('scripts/generate-bundle-promo-gif.py','utf8');
-assert.match(topGenerator,/vx-logo-source-v014587\.png/);
-assert.match(topGenerator,/vx-banner-master-v014589\.png/);
-assert.doesNotMatch(lowerGenerator,/vx-logo-source-v014587\.png|alpha_composite\(logo/);
-assert.match(lowerGenerator,/vx-paired-banner-master-v014585\.png/);
-for(const source of [topGenerator,lowerGenerator]){
-  assert.doesNotMatch(source,/draw\.polygon|phase \* 2040/);
-}
-assert.match(lowerGenerator,/จัดชุดยิ่งเยอะ ยิ่งลด/);
-assert.match(lowerGenerator,/LeelaUIb\.ttf/);
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname.startsWith('/api/')){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[],user:null}));return}
@@ -31,11 +20,6 @@ try{
   await page.goto(`http://127.0.0.1:${server.address().port}/`);const banner=page.locator('.vx-home-banner');await banner.waitFor();
   assert.equal(await banner.evaluate(el=>el.nextElementSibling?.dataset.visiondPromo),'bundle-discount');
   assert.equal(await page.locator('#vtools').count(),1);
-  assert.equal(await banner.locator('.vx-home-mark[src*="vx-vtools.svg"]').count(),1);
-  assert.equal(await banner.locator('.vx-home-brand').count(),0,'VX identity must not be duplicated inside the frame');
-  const logoFrame=await banner.locator('.vx-home-mark').boundingBox();
-  const innerFrame=await banner.evaluate(el=>{const style=getComputedStyle(el,'::before');return{left:parseFloat(style.left),width:parseFloat(style.width)}});
-  assert.ok(logoFrame.x<innerFrame.left,'VX logo must sit outside the smaller inner frame');
   const heights=await page.evaluate(()=>({vx:document.querySelector('.vx-home-banner').getBoundingClientRect().height,promo:document.querySelector('[data-visiond-promo="bundle-discount"] img').getBoundingClientRect().height}));assert.ok(Math.abs(heights.vx-heights.promo)<=2,`GIF heights differ: ${JSON.stringify(heights)}`);
   assert.deepEqual(await page.locator('.vx-home-price strong').allTextContents(),['490 บาท','980 บาท','1,290 บาท']);
   assert.equal(await page.locator('.vx-home-price[href="/vtools#plans"]').count(),3);

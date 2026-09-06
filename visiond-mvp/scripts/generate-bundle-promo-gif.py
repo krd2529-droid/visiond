@@ -1,37 +1,40 @@
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont
-import math
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "public" / "assets" / "vx-paired-banner-master-v014585.png"
 TARGET = ROOT / "public" / "assets" / "visiond-bundle-promo.gif"
-BOLD = r"C:\Windows\Fonts\LeelaUIb.ttf"
+FONT = ImageFont.truetype(r"C:\Windows\Fonts\tahomabd.ttf", 29)
+CARDS = [
+    ((440, 143, 590, 181), "ลด 15%"),
+    ((623, 143, 773, 181), "ลด 25%"),
+    ((805, 143, 955, 181), "ลด 50%"),
+    ((987, 143, 1137, 181), "ลด 75%"),
+]
 
-def font(size): return ImageFont.truetype(BOLD, size)
-
-source = Image.open(SOURCE).convert("RGB")
-crop_height = int(source.width / (1600 / 260))
-top = max(0, (source.height - crop_height) // 2)
-base = source.crop((0, top, source.width, top + crop_height)).resize((1600, 260), Image.Resampling.LANCZOS)
-cards = [(435, "5 ตะกร้า", "ลด 15%"), (620, "10 ตะกร้า", "ลด 25%"), (805, "20 ตะกร้า", "ลด 50%"), (990, "30 ตะกร้า", "ลด 75%")]
+source = Image.open(TARGET)
 frames = []
-for index in range(24):
-    phase = index / 24
-    frame = ImageEnhance.Brightness(base).enhance(0.96 + 0.035 * math.sin(phase * math.tau))
-    layer = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
-    draw.rounded_rectangle((390, 18, 1210, 242), radius=24, fill=(0, 31, 32, 226), outline=(38, 189, 180, 255), width=2)
-    draw.text((800, 52), "จัดชุดยิ่งเยอะ ยิ่งลด", font=font(43), fill="white", anchor="mm")
-    active = (index // 6) % 4
-    for card_index, (x, title, discount) in enumerate(cards):
-        fill = (17, 184, 176, 255) if card_index == active else (228, 235, 234, 255)
-        ink = "white" if card_index == active else (3, 65, 61)
-        outline = (255, 215, 126, 255) if card_index == active else (228, 235, 234, 255)
-        draw.rounded_rectangle((x, 83, x + 170, 177), radius=15, fill=fill, outline=outline, width=3)
-        draw.text((x + 85, 111), title, font=font(22), fill=ink, anchor="mm")
-        draw.text((x + 85, 148), discount, font=font(29), fill=ink, anchor="mm")
-    draw.text((800, 213), "เลือกสินค้าได้สูงสุด 30 ตะกร้า • ระบบคำนวณส่วนลดอัตโนมัติ", font=font(24), fill="white", anchor="mm")
-    frames.append(Image.alpha_composite(frame.convert("RGBA"), layer).convert("P", palette=Image.Palette.ADAPTIVE, colors=128))
+durations = []
+for index in range(source.n_frames):
+    source.seek(index)
+    frame = source.convert("RGB")
+    draw = ImageDraw.Draw(frame)
+    for box, text in CARDS:
+        background = frame.getpixel((box[0] + 4, box[1] + 4))
+        foreground = (255, 255, 255) if background[1] > background[0] * 1.35 else (0, 72, 69)
+        draw.rectangle(box, fill=background)
+        center_x = (box[0] + box[2]) // 2
+        center_y = (box[1] + box[3]) // 2
+        draw.text((center_x, center_y), text, font=FONT, fill=foreground, anchor="mm", stroke_width=0)
+    frames.append(frame)
+    durations.append(source.info.get("duration", 1000))
 
-frames[0].save(TARGET, save_all=True, append_images=frames[1:], duration=90, loop=0, disposal=2, optimize=True)
-print(f"created {TARGET} ({len(frames)} frames, {TARGET.stat().st_size} bytes)")
+frames[0].save(
+    TARGET,
+    save_all=True,
+    append_images=frames[1:],
+    duration=durations,
+    loop=source.info.get("loop", 0),
+    disposal=2,
+    optimize=False,
+)
+print(f"updated {TARGET} ({len(frames)} frames, {frames[0].size[0]}x{frames[0].size[1]})")
