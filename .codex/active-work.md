@@ -1,6 +1,6 @@
 # Active patch: Consolidate VBot programs into Vtools
 
-- Status: PATCH_READY — public navigation now says Vtools and routes to `/vtools`; the existing VBot program listing/detail flow is embedded in Vtools alongside VX plans. Program/cart links return to `/vtools?app=…`; internal/admin VBot terminology, products, prices, keys and checkout behavior are preserved. Desktop/mobile, cart, pricing, access and diff checks pass.
+- Status: PATCH_DELIVERED — Vtools consolidation `71b80b8f` pushed to `origin main`; Production `/vtools`, homepage and shared navigation return 200 and expose the program catalog plus Vtools menu/link. Existing VBot listing/detail flow is embedded alongside VX plans; program/cart links return to `/vtools?app=…`; internal/admin terminology, products, prices, keys and checkout are preserved. Desktop/mobile, cart, pricing, access and diff checks pass.
 - Design split: VX uses its own analytics/network artwork from `vx-banner-master-v014589.png`; the digital-products banner retains shopping imagery from `vx-paired-banner-master-v014585.png` without VX branding.
 - Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
 - Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
