@@ -4,8 +4,9 @@ import math
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "public" / "assets" / "vx-paired-banner-master-v014585.png"
+LOGO_SOURCE = ROOT / "public" / "assets" / "vx-logo-source-v014587.png"
 TARGET = ROOT / "public" / "assets" / "visiond-bundle-promo.gif"
-BOLD = r"C:\Windows\Fonts\tahomabd.ttf"
+BOLD = r"C:\Windows\Fonts\LeelaUIb.ttf"
 
 def font(size): return ImageFont.truetype(BOLD, size)
 
@@ -13,6 +14,10 @@ source = Image.open(SOURCE).convert("RGB")
 crop_height = int(source.width / (1600 / 260))
 top = max(0, (source.height - crop_height) // 2)
 base = source.crop((0, top, source.width, top + crop_height)).resize((1600, 260), Image.Resampling.LANCZOS)
+logo = Image.open(LOGO_SOURCE).convert("RGB").crop((115, 145, 910, 615)).resize((105, 62), Image.Resampling.LANCZOS)
+logo_alpha = logo.convert("L").point(lambda value: 0 if value < 12 else min(235, (value - 8) * 3))
+logo = logo.convert("RGBA")
+logo.putalpha(logo_alpha)
 cards = [(435, "5 ตะกร้า", "ลด 15%"), (620, "10 ตะกร้า", "ลด 25%"), (805, "20 ตะกร้า", "ลด 50%"), (990, "30 ตะกร้า", "ลด 75%")]
 frames = []
 for index in range(24):
@@ -21,7 +26,8 @@ for index in range(24):
     layer = Image.new("RGBA", frame.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
     draw.rounded_rectangle((390, 18, 1210, 242), radius=24, fill=(0, 31, 32, 226), outline=(38, 189, 180, 255), width=2)
-    draw.text((800, 52), "จัดชุดยิ่งเยอะ ยิ่งลด", font=font(43), fill="white", anchor="mm")
+    layer.alpha_composite(logo, (405, 27))
+    draw.text((815, 52), "จัดชุดยิ่งเยอะ ยิ่งลด", font=font(43), fill="white", anchor="mm")
     active = (index // 6) % 4
     for card_index, (x, title, discount) in enumerate(cards):
         fill = (17, 184, 176, 255) if card_index == active else (228, 235, 234, 255)

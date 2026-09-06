@@ -1,6 +1,6 @@
-# Active patch: Remove diagonal sweep from paired VX GIFs
+# Active patch: Correct Thai title and add VX logo inside paired GIFs
 
-- Status: PATCH_DELIVERED — diagonal sweep removal `fed264f0` pushed to `origin main`; Production homepage/CSS and both GIFs return 200 with cache token `014586` and exact deployed sizes 4,088,319 / 2,174,086 bytes. Both outputs remain 1600x260, 24 frames at 90ms, loop forever; paired artwork, copy, prices and card highlighting preserved. Browser desktop/mobile test and diff check pass.
+- Status: PATCH_READY — exact title “จัดชุดยิ่งเยอะ ยิ่งลด” now renders with Leelawadee UI Bold; the supplied VX mark is embedded directly in both GIF files. Cache advanced to `014587`; no diagonal sweep; 1600x260/24-frame/90ms loop, pricing and highlighting preserved. Visual inspection, desktop/mobile browser test and diff check pass.
 - Paired redesign: both 1600x260 banners now derive from `vx-paired-banner-master-v014585.png`, share the exact baskets, lighting, teal palette, 24-frame/90ms loop and synchronized moving sheen. The lower banner retains all four bundle discounts; the upper keeps accessible VX HTML pricing and feature copy.
 - Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
 - Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.

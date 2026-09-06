@@ -6,6 +6,14 @@ import os from 'node:os';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_PACKAGE||'playwright');
 const root=path.resolve('public');
+const topGenerator=fs.readFileSync('scripts/generate-vx-home-gif.py','utf8');
+const lowerGenerator=fs.readFileSync('scripts/generate-bundle-promo-gif.py','utf8');
+for(const source of [topGenerator,lowerGenerator]){
+  assert.match(source,/vx-logo-source-v014587\.png/);
+  assert.doesNotMatch(source,/draw\.polygon|phase \* 2040/);
+}
+assert.match(lowerGenerator,/จัดชุดยิ่งเยอะ ยิ่งลด/);
+assert.match(lowerGenerator,/LeelaUIb\.ttf/);
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname.startsWith('/api/')){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[],user:null}));return}
