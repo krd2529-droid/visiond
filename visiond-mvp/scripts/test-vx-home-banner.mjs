@@ -8,8 +8,9 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAY
 const root=path.resolve('public');
 const topGenerator=fs.readFileSync('scripts/generate-vx-home-gif.py','utf8');
 const lowerGenerator=fs.readFileSync('scripts/generate-bundle-promo-gif.py','utf8');
+assert.match(topGenerator,/vx-logo-source-v014587\.png/);
+assert.doesNotMatch(lowerGenerator,/vx-logo-source-v014587\.png|alpha_composite\(logo/);
 for(const source of [topGenerator,lowerGenerator]){
-  assert.match(source,/vx-logo-source-v014587\.png/);
   assert.doesNotMatch(source,/draw\.polygon|phase \* 2040/);
 }
 assert.match(lowerGenerator,/จัดชุดยิ่งเยอะ ยิ่งลด/);

@@ -1,6 +1,6 @@
-# Active patch: Correct Thai title and add VX logo inside paired GIFs
+# Active patch: Keep VX branding out of the digital-products GIF
 
-- Status: PATCH_DELIVERED — Thai-title/VX-logo correction `ed14a97f` pushed to `origin main`; Production homepage/CSS and both GIFs return 200 with cache `014587` and exact sizes 4,092,522 / 2,210,737 bytes. “จัดชุดยิ่งเยอะ ยิ่งลด” renders with Leelawadee UI Bold and the supplied VX mark is embedded in both GIFs; no diagonal sweep. Visual inspection, desktop/mobile browser test and diff check pass.
+- Status: PATCH_READY — supplied VX logo remains only in the upper VX package GIF and is absent from the lower VisionD digital-products promotion GIF. Cache advanced to `014588`; paired style, corrected Thai title, four discounts, dimensions and animation preserved. Visual inspection, browser desktop/mobile test and diff check pass.
 - Paired redesign: both 1600x260 banners now derive from `vx-paired-banner-master-v014585.png`, share the exact baskets, lighting, teal palette, 24-frame/90ms loop and synchronized moving sheen. The lower banner retains all four bundle discounts; the upper keeps accessible VX HTML pricing and feature copy.
 - Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
 - Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
