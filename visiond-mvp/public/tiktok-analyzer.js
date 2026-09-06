@@ -1299,7 +1299,7 @@ if (shopOauthStatus) {
 const oauthStatus = new URLSearchParams(location.search).get("tiktok");
 if (oauthStatus) {
   const detail = new URLSearchParams(location.search).get("detail") || "";
-  message.textContent = oauthStatus === "connected" ? "เชื่อมต่อ TikTok และนำเข้าข้อมูลสำเร็จ" : oauthStatus === "account_already_linked" ? `บัญชี TikTok นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี` : oauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : oauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : oauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok แล้ว" : "เชื่อมต่อ TikTok ไม่สำเร็จ กรุณาลองใหม่";
+  message.textContent = oauthStatus === "account_limit" ? detail : oauthStatus === "connected" ? "เชื่อมต่อ TikTok และนำเข้าข้อมูลสำเร็จ" : oauthStatus === "account_already_linked" ? `บัญชี TikTok นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี` : oauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : oauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : oauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok แล้ว" : "เชื่อมต่อ TikTok ไม่สำเร็จ กรุณาลองใหม่";
   history.replaceState({}, "", location.pathname);
 }
 form.remove();

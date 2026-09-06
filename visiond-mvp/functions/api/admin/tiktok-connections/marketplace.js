@@ -1,4 +1,5 @@
-import { json, requireAdmin } from "../../../_lib.js";
+import {json} from '../../../_lib.js';
+import {requireVxUser} from '../../../_vx_access.js';
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
 import { normalizeTikTokMarketplaceProduct, searchTikTokShopOpenCollaborationProducts, tikTokMarketplaceGrowth } from "../../../_tiktok_shop_api.js";
@@ -27,7 +28,7 @@ export const classifyMarketplaceError = error => {
 
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env); await ensureTikTokAnalyzerSchema(ctx.env);
-  const auth = await requireAdmin(ctx); if (auth.error) return auth.error;
+  const auth = await requireVxUser(ctx); if (auth.error) return auth.error;
   const body = await ctx.request.json().catch(() => ({})), connectionId = clean(body.connection_id, 100), channelId=clean(body.channel_id,80);
   const connection = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(connectionId, auth.user.id, channelId).first();
   if (!connection) return json({ error: "ไม่พบบัญชี TikTok Shop Creator ที่เชื่อมอยู่" }, 404, headers);

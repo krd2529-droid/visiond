@@ -1,3 +1,4 @@
+import {ensureVxAccess,VX_PLANS} from '../../_vx_access.js';
 import { json, requireUser, statusLabel } from "../../_lib.js";
 import { loadPaymentSettings, publicPaymentSettings } from "../../_payment.js";
 import { ensureDatabase } from "../../_schema.js";
@@ -21,6 +22,7 @@ async function ensureStarterProducts(env, slugs) {
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   await ensureLifetimeMemberPlan(ctx.env);
+  await ensureVxAccess(ctx.env);
   await ensureVision7Schema(ctx.env);
   await ensureVxReferralSchema(ctx.env);
   const a = await requireUser(ctx);
@@ -78,6 +80,8 @@ export async function onRequestPost(ctx) {
   if([...repeated].some(slug=>{const p=bySlug.get(slug);return p?.category!=='resale-rights'&&!p?.vision7_plan_id}))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์สและโปรแกรม Vision 7'},409);
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
   if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
+  const vxItems=orderedResults.filter(p=>p.product_kind==='vx-access');
+  if(vxItems.length && (orderedResults.length!==1||!VX_PLANS.some(p=>p.slug===vxItems[0].slug&&p.price===Number(vxItems[0].price))))return json({error:'สิทธิ์ VX ต้องชำระแยกครั้งละ 1 แพ็กเกจ กรุณาตรวจสอบตะกร้า'},400);
   const hasVision7=orderedResults.some(product=>product.vision7_plan_id);
   if(hasVision7&&!vision7LicenseEncryptionConfigured(ctx.env))return json({error:'Vision 7 ยังไม่ได้ตั้งค่า Secret เข้ารหัสคีย์ กรุณาติดต่อผู้ดูแลระบบ',code:'VISION7_LICENSE_ENCRYPTION_NOT_CONFIGURED'},503);
   const renewLicenseId=String(b.renew_license_id||'').trim();
@@ -101,7 +105,7 @@ export async function onRequestPost(ctx) {
   if(sellerItems.some(product=>!Number.isFinite(Number(product.price))||Number(product.price)<100))return json({error:'คอร์สจากผู้ขายต้องมีราคาอย่างน้อย 1 บาท กรุณาแจ้งผู้ขายให้แก้ราคา'},409);
   if(sellerItems.some(product=>Number(product.course_owner_user_id)===Number(a.user.id)))return json({error:'ไม่สามารถซื้อคอร์สของบัญชีตนเองได้'},409);
   for (const product of results) {
-    if(product.category==='resale-rights'||product.vision7_plan_id)continue;
+    if(product.category==='resale-rights'||product.vision7_plan_id||product.product_kind==='vx-access')continue;
     const entitlement = await ctx.env.DB.prepare(
       "SELECT id FROM entitlements WHERE user_id=? AND product_id=? AND active=1 LIMIT 1",
     )
@@ -127,9 +131,9 @@ export async function onRequestPost(ctx) {
       );
     }
   }
-  const promotion=await loadPromotion(ctx.env),normalProducts=orderedResults.filter(p=>p.product_kind!=='vision7-key'),promotedById=new Map(applyPromotion(normalProducts,promotion).map(p=>[Number(p.id),p])),pricedResults=orderedResults.map(p=>p.product_kind==='vision7-key'?{...p,original_price:p.price,sale_price:p.price,promotion_percent:0}:promotedById.get(Number(p.id))),
+  const promotion=await loadPromotion(ctx.env),normalProducts=orderedResults.filter(p=>!['vision7-key','vx-access'].includes(p.product_kind)),promotedById=new Map(applyPromotion(normalProducts,promotion).map(p=>[Number(p.id),p])),pricedResults=orderedResults.map(p=>['vision7-key','vx-access'].includes(p.product_kind)?{...p,original_price:p.price,sale_price:p.price,promotion_percent:0}:promotedById.get(Number(p.id))),
     subtotal = pricedResults.reduce((sum, p) => sum + Number(p.sale_price), 0),
-    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&p.category!=='bundle-deals'&&p.product_kind!=='vision7-key'&&(!p.product_kind||p.product_kind==='product')),
+    discountableItems = pricedResults.filter(p=>p.category!=='resale-rights'&&p.category!=='bundle-deals'&&!['vision7-key','vx-access'].includes(p.product_kind)&&(!p.product_kind||p.product_kind==='product')),
     discountableCount = discountableItems.length,
     discountRate =
       discountableCount >= 30
@@ -155,15 +159,15 @@ export async function onRequestPost(ctx) {
       "-" +
       Math.floor(Math.random() * 90 + 10);
   const seller=sellerItems[0],companyCourse=companyCourseItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=companyCourse?{active_account:'bank',bank_name:companyCourse.payment_bank_name,account_name:companyCourse.payment_account_name,account_number:companyCourse.payment_account_number,qr_url:''}:seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
-  const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
+  const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id&&p.product_kind!=='vx-access').map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds);
   const referralAttribution=await activeReferralAttribution(ctx.env,a.user.id);
   const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount,course_plan,teacher_revenue,visiond_revenue,course_api_fee,vx_referral_attribution_id)
     SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-    WHERE ?='[]' OR NOT EXISTS(
+    WHERE (?='[]' OR NOT EXISTS(
       SELECT 1 FROM orders existing_order JOIN order_items existing_item ON existing_item.order_id=existing_order.id
       WHERE existing_order.user_id=? AND existing_order.status IN ('awaiting_payment','pending_review','paid')
       AND existing_item.product_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))
-    )`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,seller?.course_plan||'rights',seller?revenue.teacher:0,seller?revenue.visiond:0,seller?revenue.apiFee:0,referralAttribution?.id||null,guardJson,a.user.id,guardJson)];
+    )) AND (?=0 OR NOT EXISTS(SELECT 1 FROM orders vo JOIN order_items vi ON vi.order_id=vo.id JOIN products vp ON vp.id=vi.product_id WHERE vo.user_id=? AND vo.status IN ('awaiting_payment','pending_review') AND vp.product_kind='vx-access'))`).bind(orderNo,a.user.id,total,paymentTarget.active_account,paymentTarget.bank_name,paymentTarget.account_number,paymentTarget.account_name,seller?.course_owner_user_id||null,seller?.seller_course_id||null,paymentTarget.qr_url||'',discountKind,discount,seller?.course_plan||'rights',seller?revenue.teacher:0,seller?revenue.visiond:0,seller?revenue.apiFee:0,referralAttribution?.id||null,guardJson,a.user.id,guardJson,vxItems.length,a.user.id)];
   for(const p of pricedResults)statements.push(ctx.env.DB.prepare('INSERT INTO order_items(order_id,product_id,product_title,price,vision7_renew_license_id) SELECT id,?,?,?,? FROM orders WHERE order_no=? AND user_id=?').bind(p.id,p.title,p.sale_price,renewLicenseId||null,orderNo,a.user.id));
   try{await ctx.env.DB.batch(statements)}catch(error){return json({error:'สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่'},409)}
   const created=await ctx.env.DB.prepare('SELECT id FROM orders WHERE order_no=? AND user_id=?').bind(orderNo,a.user.id).first(),orderId=created?.id;if(!orderId)return json({error:'มีสินค้าบางรายการซื้อแล้วหรือมีคำสั่งซื้อค้างอยู่ กรุณาตรวจสอบรายการของคุณ'},409);

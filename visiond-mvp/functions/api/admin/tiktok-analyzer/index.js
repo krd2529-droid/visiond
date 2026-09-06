@@ -1,4 +1,5 @@
-import {json,requireAdmin} from '../../../_lib.js';
+import {json} from '../../../_lib.js';
+import {requireVxUser} from '../../../_vx_access.js';
 import {ensureDatabase} from '../../../_schema.js';
 import {analyzeTikTok,ensureTikTokAnalyzerSchema,selectTikTokProvider} from '../../../_tiktok_analyzer.js';
 
@@ -14,7 +15,7 @@ const productKey=value=>String(value||'').normalize('NFKC').toLocaleLowerCase().
 const findMatchingProduct=async(db,channelId,name)=>{const rows=(await db.prepare('SELECT id,name,inventory_status,product_type FROM tiktok_channel_products WHERE channel_id=?').bind(channelId).all()).results||[],key=productKey(name);return rows.find(row=>productKey(row.name)===key)||null};
 
 export async function onRequestGet(ctx){
-  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
   const url=new URL(ctx.request.url),channelId=text(url.searchParams.get('channel_id'),80),runId=text(url.searchParams.get('run_id'),80);
   if(runId){const run=await ctx.env.DB.prepare(`SELECT r.*,c.name channel_name,c.channel_url,c.handle FROM tiktok_analysis_runs r JOIN tiktok_channels c ON c.id=r.channel_id WHERE r.id=? AND c.created_by=?`).bind(runId,auth.user.id).first();if(!run)return json({error:'ไม่พบรอบวิเคราะห์'},404,headers);const images=(await ctx.env.DB.prepare('SELECT id,file_name,mime_type,file_size,sort_order,object_key FROM tiktok_analysis_images WHERE run_id=? ORDER BY sort_order').bind(runId).all()).results||[];return json({run:{...run,result:parse(run.result_json),images:images.map(x=>({...x,url:'/api/media/'+x.object_key}))}},200,headers)}
   if(channelId){
@@ -30,7 +31,7 @@ export async function onRequestGet(ctx){
 }
 
 export async function onRequestPost(ctx){
-  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
   const form=await ctx.request.formData(),action=text(form.get('action'),40),name=text(form.get('channel_name'),120),channelUrl=text(form.get('channel_url'),500),existingId=text(form.get('channel_id'),80);
   if(action==='fail_c_product'){
     const productName=text(form.get('product_name'),500);if(!existingId||!productName)return json({error:'ข้อมูลสินค้าไม่ครบ'},400,headers);
@@ -69,6 +70,7 @@ export async function onRequestPost(ctx){
     const channel=await ctx.env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=?').bind(existingId,auth.user.id).first();if(!channel)return json({error:'ไม่พบช่องหรือไม่มีสิทธิ์ลบ'},404,headers);
     await ctx.env.DB.prepare('UPDATE tiktok_channels SET archived_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND created_by=?').bind(existingId,auth.user.id).run();return json({ok:true,deleted_channel_id:existingId,recoverable:true},200,headers);
   }
+  if(!auth.vx.admin && (action==='save_channel'||!existingId)) return json({error:'เพิ่มช่องด้วยปุ่ม + ช่องใหม่และล็อกอิน TikTok เท่านั้น'},400,headers);
   if(!name&&!channelUrl)return json({error:'กรุณาใส่ชื่อช่องหรือลิงก์ช่อง TikTok'},400,headers);
   if(action==='save_channel'){
     let saved=existingId?await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE id=? AND created_by=?').bind(existingId,auth.user.id).first():null;if(!saved&&channelUrl)saved=await ctx.env.DB.prepare('SELECT * FROM tiktok_channels WHERE channel_url=? AND created_by=?').bind(channelUrl,auth.user.id).first();

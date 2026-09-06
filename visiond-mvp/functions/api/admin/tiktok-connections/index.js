@@ -1,4 +1,5 @@
-import { json, requireAdmin } from "../../../_lib.js";
+import {json} from '../../../_lib.js';
+import {requireVxUser} from '../../../_vx_access.js';
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
 import { revokeTikTokToken, syncTikTokConnection } from "../../../_tiktok_oauth.js";
@@ -60,7 +61,7 @@ const shiftDate = (date, days) => {
 async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
   await ensureTikTokAnalyzerSchema(ctx.env);
-  const auth = await requireAdmin(ctx);
+  const auth = await requireVxUser(ctx);
   if (auth.error) return auth.error;
   const url = new URL(ctx.request.url), channelId = clean(url.searchParams.get("channel_id")), range = dateRange(url);
   const connections = (await ctx.env.DB.prepare(`SELECT * FROM tiktok_connections WHERE user_id=? AND status='active' AND (?='' OR channel_id=?) ORDER BY updated_at DESC`).bind(auth.user.id, channelId, channelId).all()).results || [];
@@ -82,7 +83,7 @@ async function onRequestGet(ctx) {
 async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   await ensureTikTokAnalyzerSchema(ctx.env);
-  const auth = await requireAdmin(ctx);
+  const auth = await requireVxUser(ctx);
   if (auth.error) return auth.error;
   const body = await ctx.request.json().catch(() => ({})), id = clean(body.id), action = clean(body.action, 30);
   if (action.startsWith("shop_")) {

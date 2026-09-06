@@ -1,10 +1,11 @@
-import {json,requireAdmin} from '../../_lib.js';
+import {json} from '../../_lib.js';
+import {requireVxUser} from '../../_vx_access.js';
 import {ensureDatabase} from '../../_schema.js';
 import {ensureTikTokAnalyzerSchema} from '../../_tiktok_analyzer.js';
 import {createTikTokState,tikTokAuthorizeUrl,tikTokOAuthConfig} from '../../_tiktok_oauth.js';
 
 export async function onRequestGet(ctx){
-  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
   const config=tikTokOAuthConfig(ctx.env);if(!config.configured)return json({error:'ยังไม่ได้ตั้งค่า TikTok Client key และ Client secret',code:'TIKTOK_OAUTH_NOT_CONFIGURED'},503);
   const url=new URL(ctx.request.url),channelId=String(url.searchParams.get('channel_id')||'').trim().slice(0,80),createNew=url.searchParams.get('create')==='1';
   if(!channelId&&!createNew)return json({error:'กรุณาเลือกช่องหรือเริ่มล็อกอินเพื่อเพิ่มช่องใหม่'},400);
