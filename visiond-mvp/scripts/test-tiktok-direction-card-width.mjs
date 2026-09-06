@@ -6,7 +6,7 @@ const html = read("public/tiktok-analyzer.html");
 const css = read("public/tiktok-analyzer.css");
 
 assert.match(html, /<article class="direction-analysis"><h3>ทิศทางช่อง<\/h3><div data-field="direction"><\/div><\/article>/);
-assert.match(css, /\.result-grid>\.direction-analysis\{grid-column:1\/-1;width:100%\}/);
+assert.match(css, /\.result-grid>\.direction-analysis,\.result-grid>\.ai-recommendations\{grid-column:1\/-1;width:100%\}/);
 assert.match(html, /data-list="winners"/);
 assert.match(html, /data-list="candidates"/);
 assert.equal(read("VERSION.txt").trim(), "v0.20.49");

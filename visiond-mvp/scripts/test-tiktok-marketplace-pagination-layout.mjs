@@ -6,5 +6,5 @@ assert.match(css, /\.marketplace-panel \.showcase-table-wrap\+\.showcase-paginat
 assert.doesNotMatch(css, /\.marketplace-table\+\.showcase-pagination/);
 assert.match(css, /\.marketplace-table th:last-child,\.marketplace-table td:last-child\{min-width:176px;padding-right:26px\}/);
 assert.match(css, /\.marketplace-panel \.showcase-pagination small\{flex-basis:100%;text-align:right\}/);
-assert.match(html, /tiktok-analyzer\.css\?v=02086/);
+assert.match(html, /tiktok-analyzer\.css\?v=02087/);
 console.log("TikTok Marketplace pagination is separated below the table and right aligned: PASS");

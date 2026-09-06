@@ -18,7 +18,7 @@ assert.doesNotMatch(showcaseRenderer, /<th>ลิงก์สินค้า<\/t
 assert.match(client, /upgradeLegacyProductLinkCells\(\$\("#angelProducts"\)\)/);
 assert.match(client, /upgradeLegacyProductLinkCells\(\$\("#result"\)\)/);
 assert.match(css, /\.copy-product-link\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02116/);
-assert.match(html, /tiktok-analyzer\.css\?v=02086/);
+assert.match(html, /tiktok-analyzer\.js\?v=02117/);
+assert.match(html, /tiktok-analyzer\.css\?v=02087/);
 
 console.log("TikTok product-link copy column across product tables: PASS");
