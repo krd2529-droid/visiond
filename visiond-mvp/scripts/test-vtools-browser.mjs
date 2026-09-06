@@ -9,9 +9,17 @@ import {onRequestGet as catalog} from '../functions/api/vtools.js';
 const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_PACKAGE||'playwright');
 const root=path.resolve('public');
+const sharedNav=fs.readFileSync(path.join(root,'shared-nav.js'),'utf8');
+const vtoolsHtml=fs.readFileSync(path.join(root,'vtools.html'),'utf8');
+assert.match(sharedNav,/\/vtools','Vtools'/);
+assert.doesNotMatch(sharedNav,/\/bots\.html','VBot'/);
+assert.match(vtoolsHtml,/id="programs"/);
+assert.match(vtoolsHtml,/bots-storefront\.js\?v=014590/);
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/api/vtools'){const response=await catalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
+  if(url.pathname==='/api/vision7/apps'){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[{code:'demo-bot',app_name:'โปรแกรมทดสอบ',app_description:'เครื่องมืออัตโนมัติ',platform_type:'windows',current_version:'1.0.0',offers:[{id:91,product_id:191,product_slug:'demo-bot-monthly',code:'monthly',duration_days:30,price:9900}]}]}));return}
+  if(url.pathname==='/api/vision7/apps'){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[{code:'demo-bot',app_name:'โปรแกรมทดสอบ',app_description:'เครื่องมืออัตโนมัติ',platform_type:'windows',current_version:'1.0.0',offers:[{id:91,product_id:191,product_slug:'demo-bot-monthly',code:'monthly',duration_days:30,price:9900}]}]}));return}
   if(url.pathname.startsWith('/api/')){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[],user:null}));return}
   let file=path.resolve(root,'.'+url.pathname);if(!file.startsWith(root+path.sep)){res.writeHead(404).end();return}
   if(!path.extname(file))file+='.html';
@@ -23,6 +31,12 @@ try{
   const page=await browser.newPage({viewport:{width:1365,height:1000}}),base=`http://127.0.0.1:${server.address().port}`;
   await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();
   assert.equal(await page.locator('[data-plan]').count(),3);
+  await page.locator('.vbot-card').first().waitFor();
+  assert.equal(await page.locator('#programs .vbot-card').count(),1);
+  assert.equal(await page.locator('#programs a[href="/vtools?app=demo-bot"]').count(),2);
+  await page.locator('.vbot-card').first().waitFor();
+  assert.equal(await page.locator('#programs .vbot-card').count(),1);
+  assert.equal(await page.locator('#programs a[href="/vtools?app=demo-bot"]').count(),2);
   await page.screenshot({path:path.join(os.tmpdir(),'vtools-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'เพิ่มลงตะกร้า'}).first().click();await page.waitForURL('**/cart');
   await page.waitForFunction(()=>document.querySelector('#cartItems')?.textContent.includes('VX'));

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const staleUtility=nav.closest('.topbar')?.querySelector(':scope > .header-utility'),languageSwitcher=staleUtility?.querySelector('.vd-language-switcher')||nav.querySelector('.vd-language-switcher');
     languageSwitcher?.remove();staleUtility?.remove();
     const path=location.pathname.replace(/\.html$/,'')||'/';
-    const links=[['nav-home-link','/','หน้าแรก'],['','/digital-products.html','สินค้าดิจิทัล'],['nav-course-basket','/course-center','ศูนย์จัดการคอร์ส'],['','/courses.html','ระบบ V-Learning'],['','/bots.html','VBot'],['','/blog.html','บทความ'],['','/about.html','เกี่ยวกับเรา']];
+    const links=[['nav-home-link','/','หน้าแรก'],['','/digital-products.html','สินค้าดิจิทัล'],['nav-course-basket','/course-center','ศูนย์จัดการคอร์ส'],['','/courses.html','ระบบ V-Learning'],['','/vtools','Vtools'],['','/blog.html','บทความ'],['','/about.html','เกี่ยวกับเรา']];
     nav.innerHTML=links.map(([className,href,label])=>{const target=href.replace(/\.html$/,'');const current=path===target;return `<a${className?` class="${className}"`:''} href="${href}"${current?' aria-current="page"':''}>${label}</a>`}).join('')+'<a id="navLogin" href="/login.html">เข้าสู่ระบบ</a><a id="navRegister" class="signup-link" href="/register.html">สมัครสมาชิก</a><a class="cart-nav" href="/cart.html"><span aria-hidden="true">🛒</span> รถเข็น <b data-cart-count>0</b></a>';
     if(languageSwitcher)nav.append(languageSwitcher);
   }
