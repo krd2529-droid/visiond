@@ -80,10 +80,7 @@ $("#shopConnectionRequired [data-open-shop-settings]")?.addEventListener("click"
 });
 marketplacePanel?.insertAdjacentHTML("beforebegin", '<section id="soldProductsPanel" class="sold-products-panel"><div class="showcase-heading"><div><h3>สินค้าที่ขายได้และออเดอร์</h3><p class="hint">ข้อมูลจริงของช่องที่เลือก เรียงตามจำนวนออเดอร์ในช่วงวันที่กำหนด</p></div><div id="soldProductsControls" class="related-table-controls"></div></div><div id="soldProductsData"><p class="hint">เชื่อม TikTok Shop เพื่อโหลดข้อมูล</p></div></section>');
 showcaseHeading?.insertAdjacentHTML("beforeend", '<div id="showcaseTableControls" class="related-table-controls"></div>');
-if ($("#syncTikTokShop")) {
-  $("#syncTikTokShop").textContent = "รีเฟรชสินค้าที่ขายได้และออเดอร์";
-  $("#soldProductsControls").append($("#syncTikTokShop"));
-}
+$("#syncTikTokShop")?.remove();
 if ($("#showcaseSyncLimitField")) {
   $("#showcaseSyncLimitField").firstChild.textContent = "จำนวนสินค้า Showcase ที่ต้องการโหลด";
   $("#showcaseTableControls").append($("#showcaseSyncLimitField"));
@@ -738,7 +735,6 @@ async function loadTikTokConnection(channelId = state.selected) {
   }
   $("#connectTikTok").hidden = false;
   $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
-  $("#syncTikTokShop").hidden = !shopConnection;
   $("#syncTikTokShowcase").hidden = !shopConnection;
   $("#showcaseSyncLimitField").hidden = !shopConnection;
   $("#disconnectTikTokShop").hidden = !shopConnection;
@@ -1082,7 +1078,6 @@ async function syncTikTokShopData(mode) {
     button.disabled = false;
   }
 }
-$("#syncTikTokShop").addEventListener("click", () => syncTikTokShopData("orders"));
 $("#syncTikTokShowcase").addEventListener("click", () => syncTikTokShopData("showcase"));
 $("#tiktokShopState").addEventListener("submit", async (event) => {
   if (event.target.id !== "shopDateFilter") return;
