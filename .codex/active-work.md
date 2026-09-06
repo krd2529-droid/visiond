@@ -1,6 +1,9 @@
 # Active patch: Finish VX banner and redesign Blog
 
-- Status: PATCH_DELIVERED
+- Status: PATCH_READY
+- Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
+- Root cause: old GIF is 1600x260 (6.15:1, mean RGB 72/121/120); VX GIF is 1200x400 (3:1, mean RGB 7/32/33). The live frame also targets 1190px instead of the old artwork's roughly 980px center.
+- Correction: regenerate VX at 1600x260 with brighter teal grading and align its frame/content width to the old GIF.
 - Delivery: blog/VX UI revision 32175a9a and supplied-logo GIF revision 406e534e pushed to origin main. Production homepage, blog and 1.77 MB GIF return 200; v014583 reference, angel-product copy and removal of motion button verified live.
 - GIF update: generated from the supplied VX logo reference with imagegen, then encoded as a 24-frame looping GIF (1.77 MB) with moving sheen/glints. Live HTML copy/prices remain selectable and accessible. Browser banner/blog tests still pass.
 - Verified: VX browser animation changes highlight automatically after two seconds with no button; old-GIF visual treatment, placement, prices, links, “ค้นหาสินค้านางฟ้า”, and mobile fit pass. Blog storefront header/footer, hero, three live article links, VX CTA, desktop/mobile layout pass. Diff check clean.

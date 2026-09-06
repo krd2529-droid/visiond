@@ -5,17 +5,23 @@ import math
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "public" / "assets" / "vx-home-banner-base-v014583.png"
 TARGET = ROOT / "public" / "assets" / "vx-home-banner-v014583.gif"
-base = Image.open(SOURCE).convert("RGB").resize((1200, 400), Image.Resampling.LANCZOS)
+source = Image.open(SOURCE).convert("RGB")
+target_ratio = 1600 / 260
+crop_height = int(source.width / target_ratio)
+top = (source.height - crop_height) // 2
+base = source.crop((0, top, source.width, top + crop_height)).resize((1600, 260), Image.Resampling.LANCZOS)
+teal = Image.new("RGB", base.size, (20, 155, 145))
+base = Image.blend(ImageEnhance.Brightness(base).enhance(1.7), teal, 0.42)
 frames = []
 for i in range(24):
     phase = i / 24
     frame = ImageEnhance.Brightness(base).enhance(0.91 + 0.05 * math.sin(phase * math.tau))
     glow = Image.new("RGBA", frame.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(glow)
-    x = int(-150 + phase * 670)
-    draw.polygon([(x, 25), (x + 80, 25), (x - 25, 380), (x - 105, 380)], fill=(119, 255, 242, 42))
+    x = int(-180 + phase * 900)
+    draw.polygon([(x, 12), (x + 85, 12), (x - 20, 248), (x - 105, 248)], fill=(119, 255, 242, 48))
     strength = int(80 + 100 * (0.5 + 0.5 * math.sin(phase * math.tau * 2)))
-    for sx, sy in [(75, 60), (430, 80), (1140, 60), (1065, 335)]:
+    for sx, sy in [(80, 42), (530, 58), (1510, 42), (1420, 220)]:
         radius = 5 + int(4 * (0.5 + 0.5 * math.sin(phase * math.tau + sx)))
         draw.line((sx-radius*3, sy, sx+radius*3, sy), fill=(130,255,239,strength), width=2)
         draw.line((sx, sy-radius*3, sx, sy+radius*3), fill=(255,244,184,strength), width=2)

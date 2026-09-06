@@ -20,6 +20,7 @@ try{
   await page.goto(`http://127.0.0.1:${server.address().port}/`);const banner=page.locator('.vx-home-banner');await banner.waitFor();
   assert.equal(await banner.evaluate(el=>el.nextElementSibling?.dataset.visiondPromo),'bundle-discount');
   assert.equal(await page.locator('#vtools').count(),1);
+  const heights=await page.evaluate(()=>({vx:document.querySelector('.vx-home-banner').getBoundingClientRect().height,promo:document.querySelector('[data-visiond-promo="bundle-discount"] img').getBoundingClientRect().height}));assert.ok(Math.abs(heights.vx-heights.promo)<=2,`GIF heights differ: ${JSON.stringify(heights)}`);
   assert.deepEqual(await page.locator('.vx-home-price strong').allTextContents(),['490 บาท','980 บาท','1,290 บาท']);
   assert.equal(await page.locator('.vx-home-price[href="/vtools#plans"]').count(),3);
   assert.match(await banner.innerText(),/ค่าคอมรวมทุกช่อง และแยกรายช่อง/);
