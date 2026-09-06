@@ -1,7 +1,7 @@
 # Active patch: Animated homepage VX packages
 
-- Status: PATCH_READY
-- Verified: browser placement directly above original GIF, prices/links, desktop/mobile screenshots, pause/resume and reduced-motion. Diff check passed; sending scoped files to origin main.
+- Status: PATCH_DELIVERED
+- Verified: browser placement directly above original GIF, prices/links, desktop/mobile screenshots, pause/resume and reduced-motion. Diff check passed; 486cbfe5 pushed to origin main. Production homepage returns 200 with vx-home-banner.css?v=014581 and multi-channel commission copy.
 - Outcome: animated VX feature/price banner immediately above existing homepage bundle GIF; preserve GIF, checkout and rights.
 - Copy: multi-channel management, combined/per-channel commission dashboard, product search, A–F and Showcase. Prices 10/490, 20/980, 30/1290 THB for 30 days.
 - Implementation: scoped HTML/CSS motion with pause and reduced-motion support, link to Vtools plans; desktop/mobile visual and placement/link tests, scoped commit/push and live check.
