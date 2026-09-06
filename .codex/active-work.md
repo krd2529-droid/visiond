@@ -1,6 +1,9 @@
 # Active patch: Vtools VX 30-day rights
 
 - Status: PATCH_READY
+- Delivery: base package patch 9ad7d975 pushed to origin main; EasySlip addition locally verified, preparing delivery.
+- EasySlip verification: mocked provider response exercised real upload handler and grant transaction; success, replay, amount/recipient mismatch, local duplicate, provider outage and missing key PASS. No real transfer or production slip submission.
+- Added requirement: VX purchases must automatically verify slips through platform EasySlip, independently of the Vision3 manual-mode switch. Grant only after amount, recipient and duplicate checks pass; verification failures never grant access.
 - Outcome: Vtools catalog and cart sell VX 30 days: 10 accounts / 490 THB; 20 / 980; 30 / 1290.
 - Contract: server prices, activation on approval, idempotent grant, renewal queues after current rights, refund revokes, expiry and channel quota enforced by server. Preserve admin access and owner isolation.
 - Phase: implementation and local verification passed; commit/push and production verification next. No live purchase/payment approval for testing.
