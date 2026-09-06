@@ -9,7 +9,9 @@ const root=path.resolve('public');
 const topGenerator=fs.readFileSync('scripts/generate-vx-home-gif.py','utf8');
 const lowerGenerator=fs.readFileSync('scripts/generate-bundle-promo-gif.py','utf8');
 assert.match(topGenerator,/vx-logo-source-v014587\.png/);
+assert.match(topGenerator,/vx-banner-master-v014589\.png/);
 assert.doesNotMatch(lowerGenerator,/vx-logo-source-v014587\.png|alpha_composite\(logo/);
+assert.match(lowerGenerator,/vx-paired-banner-master-v014585\.png/);
 for(const source of [topGenerator,lowerGenerator]){
   assert.doesNotMatch(source,/draw\.polygon|phase \* 2040/);
 }

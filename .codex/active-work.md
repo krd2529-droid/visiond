@@ -1,7 +1,7 @@
-# Active patch: Keep VX branding out of the digital-products GIF
+# Active patch: Separate VX and digital-product GIF concepts
 
-- Status: PATCH_READY — supplied VX logo remains only in the upper VX package GIF and is absent from the lower VisionD digital-products promotion GIF. Cache advanced to `014588`; paired style, corrected Thai title, four discounts, dimensions and animation preserved. Visual inspection, browser desktop/mobile test and diff check pass.
-- Paired redesign: both 1600x260 banners now derive from `vx-paired-banner-master-v014585.png`, share the exact baskets, lighting, teal palette, 24-frame/90ms loop and synchronized moving sheen. The lower banner retains all four bundle discounts; the upper keeps accessible VX HTML pricing and feature copy.
+- Status: PATCH_READY — upper VX GIF now has a distinct multi-channel analytics/dashboard composition with the exact VX mark; lower GIF remains a separate VisionD digital-products/bundle promotion without VX branding. They share only the teal-black theme and production quality. Cache advanced to `014589`; visual inspection, desktop/mobile browser test and diff check pass.
+- Design split: VX uses its own analytics/network artwork from `vx-banner-master-v014589.png`; the digital-products banner retains shopping imagery from `vx-paired-banner-master-v014585.png` without VX branding.
 - Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
 - Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
 - Root cause: old GIF is 1600x260 (6.15:1, mean RGB 72/121/120); VX GIF is 1200x400 (3:1, mean RGB 7/32/33). The live frame also targets 1190px instead of the old artwork's roughly 980px center.

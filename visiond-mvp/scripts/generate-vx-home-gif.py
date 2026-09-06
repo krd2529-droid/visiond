@@ -3,7 +3,7 @@ from PIL import Image, ImageEnhance
 import math
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "public" / "assets" / "vx-paired-banner-master-v014585.png"
+SOURCE = ROOT / "public" / "assets" / "vx-banner-master-v014589.png"
 LOGO_SOURCE = ROOT / "public" / "assets" / "vx-logo-source-v014587.png"
 TARGET = ROOT / "public" / "assets" / "vx-home-banner-v014583.gif"
 
