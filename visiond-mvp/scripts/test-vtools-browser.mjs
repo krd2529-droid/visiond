@@ -15,7 +15,7 @@ const homeHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert.match(sharedNav,/\/vtools','Vtools'/);
 assert.doesNotMatch(sharedNav,/\/bots\.html','VBot'/);
 assert.match(vtoolsHtml,/id="programs"/);
-assert.match(vtoolsHtml,/bots-storefront\.js\?v=014590/);
+assert.match(vtoolsHtml,/bots-storefront\.js\?v=014596/);
 assert.match(homeHtml,/shared-nav\.js\?v=014591/);
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
@@ -40,10 +40,15 @@ try{
   await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();
   assert.equal(await page.locator('[data-plan]').count(),3);
   await page.locator('.vbot-card').first().waitFor();
-  assert.equal(await page.locator('#programs .vbot-card').count(),1);
+  assert.equal(await page.locator('#programs .vbot-card').count(),2);
+  assert.equal(await page.locator('#programs .vbot-card').first().locator('h3').innerText(),'VX วิเคราะห์หลายช่อง TikTok');
+  assert.equal(await page.locator('#programs .vtools-vx-card a[href="#plans"]').count(),2);
   assert.equal(await page.locator('#programs a[href="/vtools?app=demo-bot"]').count(),2);
+  assert.match(await page.locator('.vbot-card-summary').nth(1).innerText(),/ราคาเริ่มต้น/);
+  assert.match(await page.locator('.vbot-card-summary').nth(1).innerText(),/99 บาท/);
+  assert.match(await page.locator('.vbot-card-actions').nth(1).innerText(),/ดูรายละเอียดและเลือกสิทธิ์/);
   await page.locator('.vbot-card').first().waitFor();
-  assert.equal(await page.locator('#programs .vbot-card').count(),1);
+  assert.equal(await page.locator('#programs .vbot-card').count(),2);
   assert.equal(await page.locator('#programs a[href="/vtools?app=demo-bot"]').count(),2);
   await page.screenshot({path:path.join(os.tmpdir(),'vtools-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'เพิ่มลงตะกร้า'}).first().click();await page.waitForURL('**/cart');
