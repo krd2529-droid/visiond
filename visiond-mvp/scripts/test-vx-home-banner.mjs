@@ -34,5 +34,6 @@ try{
   const mobileBanner=mobile.locator('.vx-home-banner');await mobileBanner.waitFor();
   await mobileBanner.screenshot({path:path.join(os.tmpdir(),'vx-home-mobile.png')});
   assert.ok(await mobileBanner.evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'mobile banner fits');
+  assert.ok(await mobileBanner.evaluate(el=>el.getBoundingClientRect().height<520),'mobile VX banner must stay visually balanced');
   console.log('PASS VX home: old-GIF visual language, directly above original GIF, all prices/links/features, automatic motion without button, mobile fit');
 }finally{await browser.close();server.close()}
