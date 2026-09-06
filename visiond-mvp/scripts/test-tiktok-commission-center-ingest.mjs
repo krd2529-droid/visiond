@@ -1,0 +1,10 @@
+import assert from'node:assert/strict';
+import crypto from'node:crypto';
+import{verifyCollectorRequest}from'../functions/api/internal/tiktok-commission-snapshots.js';
+const secret='collector-secret-for-focused-test',timestamp=String(Date.parse('2026-09-07T00:00:00Z')),body=JSON.stringify({connection_id:'shop-1',rows:[{day:'2026-09-06',amount:120.5,currency:'THB'}]});
+const signature=crypto.createHmac('sha256',secret).update(`${timestamp}.${body}`).digest('hex');
+const request=()=>new Request('https://visiondonline.com/api/internal/tiktok-commission-snapshots',{method:'POST',headers:{'x-visiond-timestamp':timestamp,'x-visiond-signature':signature},body});
+assert.equal(await verifyCollectorRequest(request(),secret,Date.parse('2026-09-07T00:01:00Z')),body);
+assert.equal(await verifyCollectorRequest(request(),'wrong-secret',Date.parse('2026-09-07T00:01:00Z')),null);
+assert.equal(await verifyCollectorRequest(request(),secret,Date.parse('2026-09-07T00:06:00Z')),null);
+console.log('TikTok Affiliate Center signed ingest: PASS');

@@ -45,6 +45,8 @@ export async function ensureTikTokAnalyzerSchema(env){
       connection_id TEXT NOT NULL,product_id TEXT NOT NULL,name TEXT NOT NULL DEFAULT '',image_url TEXT NOT NULL DEFAULT '',product_url TEXT NOT NULL DEFAULT '',origin TEXT NOT NULL DEFAULT '',price_json TEXT NOT NULL DEFAULT 'null',commission_json TEXT NOT NULL DEFAULT 'null',sort_order INTEGER NOT NULL DEFAULT 0,raw_json TEXT NOT NULL DEFAULT '{}',synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(connection_id,product_id),FOREIGN KEY(connection_id) REFERENCES tiktok_shop_creator_connections(id))`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_shop_affiliate_orders(
       connection_id TEXT NOT NULL,order_id TEXT NOT NULL,create_time INTEGER NOT NULL DEFAULT 0,product_ids TEXT NOT NULL DEFAULT '[]',status TEXT NOT NULL DEFAULT '',gmv_json TEXT NOT NULL DEFAULT 'null',commission_json TEXT NOT NULL DEFAULT 'null',raw_json TEXT NOT NULL DEFAULT '{}',synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(connection_id,order_id),FOREIGN KEY(connection_id) REFERENCES tiktok_shop_creator_connections(id))`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_commission_center_snapshots(
+      connection_id TEXT NOT NULL,commission_day TEXT NOT NULL,currency TEXT NOT NULL DEFAULT 'THB',amount REAL NOT NULL,status TEXT NOT NULL DEFAULT 'actual',captured_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(connection_id,commission_day,currency),FOREIGN KEY(connection_id) REFERENCES tiktok_shop_creator_connections(id) ON DELETE CASCADE)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_shop_marketplace_snapshots(
       id TEXT PRIMARY KEY,connection_id TEXT NOT NULL,product_id TEXT NOT NULL,units_sold INTEGER NOT NULL DEFAULT 0,
       commission_rate REAL NOT NULL DEFAULT 0,raw_json TEXT NOT NULL DEFAULT '{}',snapshot_date TEXT NOT NULL DEFAULT (date('now')),captured_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -70,6 +72,7 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_connections_channel ON tiktok_connections(channel_id,status)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_creator_channel ON tiktok_shop_creator_connections(channel_id,status)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_orders_time ON tiktok_shop_affiliate_orders(connection_id,create_time DESC)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_commission_center_day ON tiktok_commission_center_snapshots(connection_id,commission_day DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_shop_marketplace_snapshot_latest ON tiktok_shop_marketplace_snapshots(connection_id,product_id,snapshot_date DESC,captured_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_videos_connection ON tiktok_connection_videos(connection_id,create_time DESC)')
   ]);
