@@ -16,7 +16,7 @@ assert.match(client, /data-product-url/);
 assert.match(client, /data-product-evidence/);
 assert.match(client, /if \(shopConnection\) decorateSoldProductSelection\(products\)/);
 assert.match(api, /'sold_product_selection'/);
-assert.match(api, /เพิ่มจากตารางสินค้าที่ขายได้เข้าลิสต์คัดสินค้าเป็น C/);
-assert.match(html, /tiktok-analyzer\.js\?v=02108/);
+assert.match(api, /เพิ่มจากตารางสินค้าที่ขายได้เข้าลิสต์คัดสินค้าเป็น D/);
+assert.match(html, /tiktok-analyzer\.js\?v=02109/);
 
 console.log("TikTok sold-products selection-list column and action: PASS");

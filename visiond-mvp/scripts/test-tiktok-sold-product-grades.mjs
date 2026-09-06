@@ -17,7 +17,7 @@ assert.equal(shopSalesGrade(16), "B");
 assert.equal(shopSalesGrade(15), "C");
 assert.equal(shopSalesGrade(1), "C");
 assert.equal(shopSalesGrade(0), "");
-assert.match(client, /เกรดจากยอดออเดอร์จริงในช่วงวันที่เลือก/);
+assert.match(client, /เกรดจากยอดขายจริงต่อเดือน/);
 assert.match(client, /<th>เกรด<\/th>/);
 assert.match(client, /type-pill type-\$\{grade\}/);
 assert.match(client, /เกรด \$\{grade\} · คำนวณจาก \$\{row\.count\.toLocaleString\(\)\} ออเดอร์จริง/);

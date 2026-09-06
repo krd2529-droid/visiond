@@ -59,7 +59,7 @@ resultHeader.querySelector("small").textContent = "CHANNEL ANALYSIS RESULT";
 resultHeader.querySelector("h2").textContent = "\u0E1C\u0E25\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E0A\u0E48\u0E2D\u0E07";
 manualHeader.querySelector("small").textContent = "CHANNEL PRODUCT SELECTION LIST";
 manualHeader.querySelector("h2").textContent = "\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32";
-const typeLabels = { A: "\u2265 7 \u0E0A\u0E34\u0E49\u0E19/\u0E2A\u0E31\u0E1B\u0E14\u0E32\u0E2B\u0E4C", B: "4\u20136 \u0E0A\u0E34\u0E49\u0E19/\u0E2A\u0E31\u0E1B\u0E14\u0E32\u0E2B\u0E4C", C: "1\u20133 \u0E0A\u0E34\u0E49\u0E19/\u0E2A\u0E31\u0E1B\u0E14\u0E32\u0E2B\u0E4C", D: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E01\u0E23\u0E30\u0E41\u0E2A/\u0E24\u0E14\u0E39\u0E01\u0E32\u0E25/\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "AI \u0E41\u0E19\u0E30\u0E19\u0E33 \xB7 \u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E02\u0E49\u0E2D\u0E40\u0E2A\u0E19\u0E2D", F: "0 \u0E0A\u0E34\u0E49\u0E19/\u0E2A\u0E31\u0E1B\u0E14\u0E32\u0E2B\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
+const typeLabels = { A: "สินค้าหลัก · ≥30 ชิ้น/เดือน", B: "สินค้ารอง · 16–29 ชิ้น/เดือน", C: "ขายได้เล็กน้อย · 1–15 ชิ้น/เดือน", D: "สินค้าทดสอบ · คัดเข้าลิสต์คัดสินค้า", E: "สินค้ากระแส · สินค้าแนะนำจาก AI", F: "สินค้าคัดออก" };
 const safeJson = (value) => {
   try {
     return JSON.parse(value || "null");
@@ -191,7 +191,7 @@ function soldProductSummaryTable(products, orders) {
   }));
   const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
   if (!rows.length) return '<p class="shop-empty-range">\u0E0A\u0E48\u0E27\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E19\u0E35\u0E49\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</p>';
-  return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th><th>ลิงก์สินค้า</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td><td>${productLinkControl(row.product.product_url)}</td></tr>`; }).join("")}</tbody></table></div><div class="shop-grade-note"><b>เกรดจากยอดออเดอร์จริงในช่วงวันที่เลือก</b><span>A = 30 ออเดอร์ขึ้นไป · สินค้าหลัก</span><span>B = 16–29 ออเดอร์ · สินค้ารองที่ควรทำต่อ</span><span>C = 1–15 ออเดอร์ · สินค้าทดลองที่ต้องติดตาม</span><span>ไม่มีเกรด = 0 ออเดอร์ในช่วงนี้</span><small>เกรดเปลี่ยนตามช่วงวันที่เลือก ไม่ใช่คะแนนคุณภาพถาวรของสินค้า</small></div>`;
+  return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th><th>ลิงก์สินค้า</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td><td>${productLinkControl(row.product.product_url)}</td></tr>`; }).join("")}</tbody></table></div><div class="shop-grade-note"><b>เกรดจากยอดขายจริงต่อเดือน</b><span>A = 30 ชิ้นขึ้นไป · สินค้าหลัก</span><span>B = 16–29 ชิ้น · สินค้ารอง</span><span>C = 1–15 ชิ้น · สินค้าที่ขายได้เล็กน้อย</span><span>ไม่มีเกรด = 0 ชิ้นในเดือนนี้</span><small>เกรดเปลี่ยนตามข้อมูลยอดขายของแต่ละเดือน ไม่ใช่คะแนนคุณภาพถาวรของสินค้า</small></div>`;
 }
 function shopRangeSummary(data, products, orders) {
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo };
@@ -831,11 +831,11 @@ function reconcileProductPrepInventory(products = []) {
   });
 }
 function renderReviewSchedule(products = [], apiReady = false) {
-  const scheduled = products.filter((x) => x.inventory_status === "kept" && ["A", "B", "C"].includes(x.product_type)), now = Date.now(), format = (value) => value ? new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(/* @__PURE__ */ new Date(`${value.replace(" ", "T")}Z`)) : "-", sourceText = apiReady ? "\u0E15\u0E23\u0E27\u0E08\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34\u0E08\u0E32\u0E01 TikTok Shop API \xB7 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48" : "API \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E1E\u0E23\u0E49\u0E2D\u0E21 \xB7 \u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E16\u0E36\u0E07\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08", rows = scheduled.sort((a, b) => String(a.next_review_at || "9999").localeCompare(String(b.next_review_at || "9999"))).map((x) => {
-    const due = x.next_review_at ? (/* @__PURE__ */ new Date(`${x.next_review_at.replace(" ", "T")}Z`)).getTime() <= now : false, cycle = Number(x.review_cycle_days) || (x.product_type === "C" ? 3 : 7);
-    return `<div class="review-reminder${due ? " overdue" : ""}"><span class="type-pill type-${escapeHtml(x.product_type)}">${escapeHtml(x.product_type)}</span><div><b>${escapeHtml(x.name)}</b><small>\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14 ${format(x.attachment_date || x.review_started_at)} \xB7 ${sourceText}</small><strong>${x.next_review_at ? `${due ? "\u0E16\u0E36\u0E07\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27" : "\u0E15\u0E23\u0E27\u0E08\u0E04\u0E23\u0E31\u0E49\u0E07\u0E16\u0E31\u0E14\u0E44\u0E1B"} ${format(x.next_review_at)}` : "\u0E23\u0E2D\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E27\u0E31\u0E19\u0E15\u0E23\u0E27\u0E08"} \xB7 \u0E23\u0E2D\u0E1A ${cycle} \u0E27\u0E31\u0E19</strong></div>${x.product_type === "C" ? `<button type="button" class="fail-c-button" data-fail-c="${escapeHtml(x.name)}">\u0E44\u0E21\u0E48\u0E1C\u0E48\u0E32\u0E19 \u2192 F</button>` : ""}</div>`;
+  const scheduled = products.filter((x) => x.inventory_status === "kept" && ["A", "B", "C", "D"].includes(x.product_type)), now = Date.now(), format = (value) => value ? new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(/* @__PURE__ */ new Date(`${value.replace(" ", "T")}Z`)) : "-", sourceText = apiReady ? "\u0E15\u0E23\u0E27\u0E08\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34\u0E08\u0E32\u0E01 TikTok Shop API \xB7 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48" : "API \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E1E\u0E23\u0E49\u0E2D\u0E21 \xB7 \u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E16\u0E36\u0E07\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08", rows = scheduled.sort((a, b) => String(a.next_review_at || "9999").localeCompare(String(b.next_review_at || "9999"))).map((x) => {
+    const due = x.next_review_at ? (/* @__PURE__ */ new Date(`${x.next_review_at.replace(" ", "T")}Z`)).getTime() <= now : false, cycle = Number(x.review_cycle_days) || (x.product_type === "D" ? 3 : 30);
+    return `<div class="review-reminder${due ? " overdue" : ""}"><span class="type-pill type-${escapeHtml(x.product_type)}">${escapeHtml(x.product_type)}</span><div><b>${escapeHtml(x.name)}</b><small>\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14 ${format(x.attachment_date || x.review_started_at)} \xB7 ${sourceText}</small><strong>${x.next_review_at ? `${due ? "\u0E16\u0E36\u0E07\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27" : "\u0E15\u0E23\u0E27\u0E08\u0E04\u0E23\u0E31\u0E49\u0E07\u0E16\u0E31\u0E14\u0E44\u0E1B"} ${format(x.next_review_at)}` : "\u0E23\u0E2D\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E27\u0E31\u0E19\u0E15\u0E23\u0E27\u0E08"} \xB7 \u0E23\u0E2D\u0E1A ${cycle} \u0E27\u0E31\u0E19</strong></div>${x.product_type === "D" ? `<button type="button" class="fail-c-button" data-fail-c="${escapeHtml(x.name)}">\u0E44\u0E21\u0E48\u0E1C\u0E48\u0E32\u0E19 \u2192 F</button>` : ""}</div>`;
   }).join("");
-  $("#productReviewSchedule").innerHTML = `<div class="review-schedule-head"><div><h3>\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</h3><p>C \u0E15\u0E23\u0E27\u0E08\u0E23\u0E2D\u0E1A 3 \u0E27\u0E31\u0E19 \u0E2B\u0E23\u0E37\u0E2D\u0E01\u0E14\u0E44\u0E21\u0E48\u0E1C\u0E48\u0E32\u0E19\u0E44\u0E14\u0E49\u0E17\u0E31\u0E19\u0E17\u0E35 \xB7 A \u0E41\u0E25\u0E30 B \u0E15\u0E23\u0E27\u0E08\u0E17\u0E38\u0E01 7 \u0E27\u0E31\u0E19 \xB7 ${sourceText}</p></div><b>${scheduled.length} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</b></div>${rows || '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 A/B/C \u0E17\u0E35\u0E48\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49\u0E41\u0E25\u0E30\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08</p>'}`;
+  $("#productReviewSchedule").innerHTML = `<div class="review-schedule-head"><div><h3>\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E04\u0E31\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</h3><p>D \u0E15\u0E23\u0E27\u0E08\u0E23\u0E2D\u0E1A\u0E17\u0E14\u0E2A\u0E2D\u0E1A 3 \u0E27\u0E31\u0E19 \u0E2B\u0E23\u0E37\u0E2D\u0E01\u0E14\u0E44\u0E21\u0E48\u0E1C\u0E48\u0E32\u0E19\u0E44\u0E14\u0E49\u0E17\u0E31\u0E19\u0E17\u0E35 \xB7 A/B/C \u0E04\u0E33\u0E19\u0E27\u0E13\u0E08\u0E32\u0E01\u0E22\u0E2D\u0E14\u0E02\u0E32\u0E22 30 \u0E27\u0E31\u0E19 \xB7 ${sourceText}</p></div><b>${scheduled.length} \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</b></div>${rows || '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 A/B/C/D \u0E17\u0E35\u0E48\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49\u0E41\u0E25\u0E30\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08</p>'}`;
 }
 const renderReviewScheduleBase = renderReviewSchedule;
 renderReviewSchedule = function(products = [], apiReady = false, events = []) {
@@ -860,12 +860,12 @@ renderPermanentInventory = function(products = [], events = []) {
     if (product.product_type === "F") {
       delete button.dataset.inventory;
       button.dataset.retestF = name;
-      button.textContent = "\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 C";
+      button.textContent = "\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 D";
     }
   });
   $("#angelProducts").querySelectorAll(".timeline-event b").forEach((label) => {
-    if (label.textContent === "manual_retest") label.textContent = "\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 C";
-    if (label.textContent === "manual_c") label.textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1B\u0E47\u0E19 C \u0E14\u0E49\u0E27\u0E22\u0E15\u0E19\u0E40\u0E2D\u0E07";
+    if (label.textContent === "manual_retest") label.textContent = "\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 D";
+    if (label.textContent === "manual_c") label.textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1B\u0E47\u0E19 D \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E17\u0E14\u0E2A\u0E2D\u0E1A";
   });
 };
 async function setProductInventory(button) {
@@ -906,7 +906,7 @@ async function failCProduct(button) {
   button.disabled = true;
   try {
     await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
-    message.textContent = `\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19 ${productName} \u0E08\u0E32\u0E01 C \u0E40\u0E1B\u0E47\u0E19 F \u0E41\u0E25\u0E49\u0E27`;
+    message.textContent = `\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19 ${productName} \u0E08\u0E32\u0E01 D \u0E40\u0E1B\u0E47\u0E19 F \u0E41\u0E25\u0E49\u0E27`;
     const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
     renderReviewSchedule(latest.products || [], Boolean(state.shopConnection), latest.product_events || []);
     renderPermanentInventory(latest.products || [], latest.product_events || []);
@@ -920,7 +920,7 @@ async function retestFProduct(button) {
   if (!state.selected) return;
   const productName = button.dataset.retestF || "";
   if (!productName) return;
-  if (!confirm(`\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u201C${productName}\u201D \u0E40\u0E04\u0E22\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E41\u0E25\u0E49\u0E27\u0E41\u0E25\u0E30\u0E40\u0E1B\u0E47\u0E19 F \u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 C \u0E2D\u0E35\u0E01\u0E04\u0E23\u0E31\u0E49\u0E07\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21?`)) return;
+  if (!confirm(`\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u201C${productName}\u201D \u0E40\u0E04\u0E22\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E41\u0E25\u0E49\u0E27\u0E41\u0E25\u0E30\u0E40\u0E1B\u0E47\u0E19 F \u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 D \u0E2D\u0E35\u0E01\u0E04\u0E23\u0E31\u0E49\u0E07\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21?`)) return;
   const data = new FormData();
   data.set("action", "retest_f_product");
   data.set("channel_id", state.selected);
@@ -928,7 +928,7 @@ async function retestFProduct(button) {
   button.disabled = true;
   try {
     await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
-    message.textContent = `\u0E19\u0E33 ${productName} \u0E01\u0E25\u0E31\u0E1A\u0E21\u0E32\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E40\u0E1B\u0E47\u0E19 C \u0E41\u0E25\u0E30\u0E15\u0E31\u0E49\u0E07\u0E23\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48 3 \u0E27\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27`;
+    message.textContent = `\u0E19\u0E33 ${productName} \u0E01\u0E25\u0E31\u0E1A\u0E21\u0E32\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E40\u0E1B\u0E47\u0E19 D \u0E41\u0E25\u0E30\u0E15\u0E31\u0E49\u0E07\u0E23\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48 3 \u0E27\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27`;
     const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
     renderReviewSchedule(latest.products || [], Boolean(state.shopConnection), latest.product_events || []);
     renderPermanentInventory(latest.products || [], latest.product_events || []);
@@ -1287,6 +1287,13 @@ $(".workspace-switch")?.remove();
 $("#channelShopAnalysis > .result-head")?.remove();
 const marketplaceCategoryField = $("#marketplaceCategory")?.closest("label");
 if (marketplaceCategoryField) marketplaceCategoryField.hidden = true;
+$("#productPrepSummary")?.insertAdjacentHTML("beforebegin", `<div class="grade-explanation" aria-label="คำอธิบายเกรดสินค้า">${Object.entries(typeLabels).map(([grade, label]) => `<span><i class="grade-dot grade-${grade}">${grade}</i><b>${label}</b></span>`).join("")}</div>`);
+const manualGradeLabel = $("#manualCForm label");
+if (manualGradeLabel?.firstChild) manualGradeLabel.firstChild.textContent = "เพิ่มสินค้าทดสอบ D ด้วยตนเอง";
+const manualGradeButton = $("#manualCForm button");
+if (manualGradeButton) manualGradeButton.textContent = "เพิ่มเป็น D";
+const manualGradeHint = $("#manualCForm")?.nextElementSibling;
+if (manualGradeHint) manualGradeHint.textContent = "สินค้าที่เพิ่มเข้าลิสต์จะเป็น D เพื่อทดสอบรอบ 3 วัน · เมื่อมีข้อมูลยอดขายครบ 30 วัน ระบบคำนวณ A/B/C ตามยอดจริง · สินค้า F นำกลับมาทดสอบได้เป็น D";
 for (const hint of document.querySelectorAll("#result .hint")) {
   if (hint.textContent.trim().startsWith("เป้าหมาย 30 สินค้าหลัก")) hint.remove();
 }
