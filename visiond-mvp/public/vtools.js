@@ -8,6 +8,11 @@ async function loadVtools(){
     access.textContent=data.access?.admin?'บัญชีผู้ดูแลระบบ · ใช้งาน VX ได้':data.access?.active?`สิทธิ์ปัจจุบัน: ${data.access.account_limit} บัญชี · หมดอายุ ${date(data.access.expires_at)}`:data.access?'ยังไม่มีสิทธิ์ VX ที่ใช้งานอยู่ เลือกแพ็กเกจด้านล่างได้เลย':'เข้าสู่ระบบด้วยบัญชี VisionD ก่อนชำระเงิน สิทธิ์ VX จะผูกกับบัญชีที่ซื้อ';
     for(const item of data.scheduled||[]){const line=document.createElement('div');line.textContent=`รอบถัดไป: ${item.account_limit} บัญชี · ${date(item.starts_at)} ถึง ${date(item.expires_at)}`;access.append(line)}
     plans.innerHTML=data.items.map(p=>`<article class="plan"><p class="eyebrow">VX ACCESS</p><h3>${p.account_limit} บัญชี</h3><small>อายุสิทธิ์ ${p.duration_days} วัน</small><p class="price">฿${(p.price/100).toLocaleString('th-TH')}</p><p>เชื่อมและจัดการช่อง TikTok<br>สูงสุด ${p.account_limit} บัญชี</p><button data-plan="${esc(p.slug)}">เพิ่มลงตะกร้า</button></article>`).join('')||'ยังไม่มีแพ็กเกจเปิดขาย';
+    const requestedPlan=new URLSearchParams(location.search).get('plan');
+    if(requestedPlan){
+      const selected=plans.querySelector(`[data-plan="${CSS.escape(requestedPlan)}"]`)?.closest('.plan');
+      if(selected){selected.classList.add('plan-highlighted');requestAnimationFrame(()=>selected.scrollIntoView({behavior:'smooth',block:'center'}))}
+    }
     plans.addEventListener('click',event=>{
       const button=event.target.closest('[data-plan]');if(!button)return;
       const plan=data.items.find(p=>p.slug===button.dataset.plan);if(!plan)return;
