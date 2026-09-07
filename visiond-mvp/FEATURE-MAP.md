@@ -1,5 +1,14 @@
 # VisionD Feature Map
 
+## SALES-SEO-DAILY-001 — เซลเพจ SEO อัตโนมัติรายวัน
+
+- สถานะ: `COMPLETE` ใน v0.20.51
+- งานประจำวัน: `visiond-maintenance` เรียก `POST /api/internal/daily-seo-pages` เวลา 01:17 น. ประเทศไทย
+- สร้างสูงสุด 5 หน้าต่อวันจากสินค้าที่ `published` และยังไม่มีหน้า SEO เท่านั้น; บันทึก `daily_seo_runs` ป้องกันการ retry แล้วสร้างเกินโควตา
+- หน้าใหม่เผยแพร่พร้อม quality gate, canonical, WebPage/BreadcrumbList/ItemList/FAQPage และถูกรวมใน `/sitemap.xml`
+- ปุ่มซื้อและรายการสินค้าอ่านข้อมูลจริงจาก `products`; ไม่มีการสร้างราคา รีวิว หรือยอดขายสมมติ
+- Secret: `SEO_AUTOMATION_TOKEN` ต้องมีค่าเดียวกันใน Pages และ maintenance Worker
+
 ## USER-GUIDES-001 — คลังคู่มือการใช้งาน
 
 - สถานะ: `COMPLETE` ใน v0.20.50

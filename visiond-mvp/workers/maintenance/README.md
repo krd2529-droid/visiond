@@ -1,6 +1,6 @@
 # VisionD maintenance Worker
 
-Separate Cloudflare Worker that calls the Pages maintenance endpoints once a day. It runs ELON chat retention (60 days) and raw Analytics retention (90 days). Each job has its own secret and bounded three-attempt/eight-second request policy.
+Separate Cloudflare Worker that calls the Pages maintenance endpoints once a day. It runs ELON chat retention (60 days), raw Analytics retention (90 days), and creates up to five published SEO sales pages from real published products. Each job has its own secret and bounded three-attempt/eight-second request policy.
 
 ## Deploy
 
@@ -9,12 +9,13 @@ Separate Cloudflare Worker that calls the Pages maintenance endpoints once a day
    ```sh
    npx wrangler secret put APP_ORIGIN --config workers/maintenance/wrangler.toml
    ```
-2. Generate two different random values of at least 32 characters. Set the same values on the Pages project as `ELON_CLEANUP_TOKEN` and `ANALYTICS_CLEANUP_TOKEN`.
+2. Generate three different random values of at least 32 characters. Set the same values on the Pages project as `ELON_CLEANUP_TOKEN`, `ANALYTICS_CLEANUP_TOKEN`, and `SEO_AUTOMATION_TOKEN`.
 3. Add the Worker secrets without committing them:
 
    ```sh
    npx wrangler secret put ELON_CLEANUP_TOKEN --config workers/maintenance/wrangler.toml
    npx wrangler secret put ANALYTICS_CLEANUP_TOKEN --config workers/maintenance/wrangler.toml
+   npx wrangler secret put SEO_AUTOMATION_TOKEN --config workers/maintenance/wrangler.toml
    ```
 
 4. Deploy from the repository root:

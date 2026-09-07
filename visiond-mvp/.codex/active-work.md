@@ -1,10 +1,9 @@
-# Active patch: V-Learning Manuals Hub
+# Active patch: Daily SEO Sales Pages
 
-- Event: PATCH_DELIVERED
-- Outcome: เพิ่มเมนูคู่มือการใช้งานและหน้าคลังคู่มือสำหรับฟีเจอร์ VisionD
-- Acceptance: เมนูอยู่ระหว่าง Vtools และบทความ; เปิดหน้าคลังได้ทั้งเดสก์ท็อปและมือถือ; คู่มือ VX และ V-Learning ดาวน์โหลดได้จริง; คู่มือสมัครสมาชิกและซื้อสินค้าดิจิทัลแสดงสถานะกำลังจัดทำ; ไม่กระทบเมนูบัญชีและรถเข็น
-- Phase: delivered to production
-- Files: public/shared-nav.js, public/index.html, public/guides.html, public/guides.css, public/manuals/*, tests, VERSION.txt, FEATURE-MAP.md
-- Verification: focused regression, visible-version parity, syntax, desktop UI, mobile frontend audit, local download HTTP 200, production page and menu v0.20.50 pass
-- Delivered: 069fcdf5 on origin/main; `/guides.html` verified on production
-- Next: จัดทำคู่มือการสมัครสมาชิกและคู่มือการซื้อสินค้าดิจิทัล แล้วแทนสถานะเร็ว ๆ นี้ด้วยไฟล์ดาวน์โหลด
+- Event: PATCH_STARTED
+- Outcome: สร้างเซลเพจ SEO จากสินค้าจริงอัตโนมัติวันละ 5 หน้า
+- Acceptance: รันวันละครั้งตามเวลาไทย; ไม่สร้างซ้ำเมื่อ Worker retry; ใช้เฉพาะสินค้าที่ published และไม่ถูกลบ; หน้าใหม่ผ่าน quality gateและเผยแพร่พร้อม canonical/structured data/sitemap; ลิงก์ซื้อชี้หน้าสินค้าจริง; ไม่มีราคา รีวิว หรือสถิติที่แต่งขึ้น
+- Phase: verified locally; delivery pending
+- Files: functions/_daily_seo.js, functions/api/internal/daily-seo-pages.js, functions/_sales_pages.js, migrations/0085_daily_seo_runs.sql, workers/maintenance/*, tests, docs, VERSION.txt
+- Verification: daily SEO limit/idempotency PASS; maintenance Worker PASS; manuals regression PASS; visible version parity PASS; syntax and diff checks PASS. Historical v0.14.234/v0.14.476 tests only fail their obsolete hard-coded version assertions.
+- Delivery: pending commit and push to origin/main

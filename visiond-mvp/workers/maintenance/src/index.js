@@ -1,6 +1,7 @@
 const JOBS = [
   { name: 'elon-retention', path: '/api/internal/elon-retention', token: 'ELON_CLEANUP_TOKEN' },
-  { name: 'analytics-retention', path: '/api/internal/analytics-retention', token: 'ANALYTICS_CLEANUP_TOKEN' }
+  { name: 'analytics-retention', path: '/api/internal/analytics-retention', token: 'ANALYTICS_CLEANUP_TOKEN' },
+  { name: 'daily-seo-pages', path: '/api/internal/daily-seo-pages', token: 'SEO_AUTOMATION_TOKEN' }
 ];
 const TIMEOUT_MS = 8000;
 const MAX_ATTEMPTS = 3;
@@ -50,7 +51,7 @@ export async function callMaintenanceJob(fetcher, origin, job, token) {
 export async function runMaintenance(env, fetcher = fetch) {
   const origin = parseAppOrigin(env?.APP_ORIGIN);
   const credentials = JOBS.map(job => ({ job, token: readToken(env, job.token) }));
-  if (credentials[0].token === credentials[1].token) throw new Error('MAINTENANCE_TOKENS_MUST_DIFFER');
+  if (new Set(credentials.map(item => item.token)).size !== credentials.length) throw new Error('MAINTENANCE_TOKENS_MUST_DIFFER');
   const results = await Promise.allSettled(credentials.map(({ job, token }) => callMaintenanceJob(fetcher, origin, job, token)));
   const failures = results.filter(result => result.status === 'rejected');
   if (failures.length) throw new Error(`MAINTENANCE_FAILED_${failures.length}`);
