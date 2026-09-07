@@ -1,12 +1,11 @@
-# Active patch: Hide channel names from commission share cards
+# Active patch: VX affiliate commission payout billing
 
-- Event: PATCH_DELIVERED
-- Outcome: รูปค่าคอมสาธารณะไม่แสดงหรือผูกกับชื่อช่องจริง เหลือหมายเลขช่องและยอดเท่านั้น
-- Preserve: ปุ่มแสดงเมื่อมีค่าคอมจริงเท่านั้น, ข้อมูลจริงจาก TikTok, แชร์หรือดาวน์โหลดได้, ไม่สร้างตัวเลขทดแทน
-- Acceptance: canvas ไม่มีชื่อช่อง; fingerprint ไม่บรรจุชื่อช่อง; ลำดับและยอดคงเดิม; dashboard ส่วนตัวคงชื่อช่อง; cache รูปเก่าที่มีชื่อไม่ถูกนำกลับมาใช้
-- Phase: delivered to production; implementation, regressions, push, and production asset checks passed
+- Event: PATCH_READY
+- Outcome: VisionD ออกเอกสารสรุปการจ่ายค่าคอมจากรอบจ่ายจริง ให้ลูกค้าตรวจยอดขายเต็ม เปอร์เซ็นต์ค่าคอม และยอดค่าคอมได้
+- Preserve: รอบจ่ายวันที่ 1 และ cutoff เวลาไทย; ตัวเลขจาก ledger จริงเท่านั้น; สิทธิ์ลูกค้าเห็นเฉพาะเอกสารของตน; Boss เห็นได้เพื่อดำเนินการจ่าย; ระบบใบเสร็จเดิมไม่เปลี่ยน
+- Acceptance: payout API ตรวจ owner/Boss; เอกสารแสดงเลขที่รอบ ผู้รับ สถานะ รายการขาย ยอดเต็ม อัตรา ค่าคอมต่อรายการ และยอดรวมค่าคอมทั้งหมด; ผลรวมตรง payout ledger; ลูกค้าและหน้า admin มีทางเข้า; พิมพ์/บันทึก PDF ได้
+- Phase: implementation complete; delivery in progress
 - Blocker: ไม่มี
-- Files: public/tiktok-commission-card.js, public/tiktok-analyzer.js, focused regressions, FEATURE-MAP.md
-- Verification: canvas regression confirms real channel names are absent; cache fingerprint uses privacyVersion 2 and amount-only channel data; pagination, library isolation, social workflow, preview, syntax, and diff checks pass
-- Delivered: 5f896146 on origin/main; production page 02122 and commission card 02092 verified
-- Next: สร้างรูปค่าคอมใหม่เพื่อรับรูปที่แสดงเฉพาะหมายเลขช่องและยอด
+- Files: functions/api/vx/referrals.js, functions/api/vx/payouts/[id].js, public/vx-affiliate.*, public/vx-affiliate-admin.*, public/vx-commission-statement.*, focused regression, FEATURE-MAP.md
+- Verification: owner access, cross-user denial, ledger mismatch rejection, totals/rates, monthly cutoff regression, syntax, and diff checks pass
+- Next: inspect final diff, commit relevant files, push origin main, and verify production assets
