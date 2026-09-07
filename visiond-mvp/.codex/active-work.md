@@ -1,12 +1,11 @@
-# Active patch: Commission image preview
+# Active patch: Hide channel names from commission share cards
 
-- Event: PATCH_DELIVERED
-- Outcome: หลังสร้างรูปค่าคอมให้แสดงภาพเทมเพลตที่ใส่ยอดจริงแล้วบนหน้าค่าคอมก่อนแชร์
+- Event: PATCH_READY
+- Outcome: รูปค่าคอมสาธารณะไม่แสดงหรือผูกกับชื่อช่องจริง เหลือหมายเลขช่องและยอดเท่านั้น
 - Preserve: ปุ่มแสดงเมื่อมีค่าคอมจริงเท่านั้น, ข้อมูลจริงจาก TikTok, แชร์หรือดาวน์โหลดได้, ไม่สร้างตัวเลขทดแทน
-- Acceptance: แสดง preview ครบทุกไฟล์ของชุด; ใช้ไฟล์เดียวกับที่บันทึก/แชร์; รองรับชุด cache เดิม; ไม่สร้างเลขปลอม; คืน object URL เก่าเมื่อสร้างใหม่
-- Phase: delivered to production; preview, cached/generated file parity, memory cleanup, responsive CSS, push, and production checks passed
+- Acceptance: canvas ไม่มีชื่อช่อง; fingerprint ไม่บรรจุชื่อช่อง; ลำดับและยอดคงเดิม; dashboard ส่วนตัวคงชื่อช่อง; cache รูปเก่าที่มีชื่อไม่ถูกนำกลับมาใช้
+- Phase: implementation complete; delivery in progress
 - Blocker: ไม่มี
-- Files: public/tiktok-analyzer.js, public/tiktok-analyzer.css, tiktok-analyzer.html, focused regression, FEATURE-MAP.md
-- Verification: preview renders every prepared file, uses the same File objects as sharing, revokes prior object URLs, and production page/assets expose the new gallery
-- Delivered: 345b2afb on origin/main; production page 02121 and CSS 02093 verified
-- Next: กดสร้างรูปในหน้าค่าคอมเพื่อเห็นรูปที่ใส่ยอดจริงทุกหน้าก่อนแชร์
+- Files: public/tiktok-commission-card.js, public/tiktok-analyzer.js, focused regressions, FEATURE-MAP.md
+- Verification: canvas regression confirms real channel names are absent; cache fingerprint uses privacyVersion 2 and amount-only channel data; pagination, library isolation, social workflow, preview, syntax, and diff checks pass
+- Next: inspect final diff, commit relevant files, push origin main, verify production assets

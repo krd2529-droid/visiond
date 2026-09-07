@@ -16,7 +16,7 @@ const requestedChannelId = new URLSearchParams(location.search).get("channel_id"
 let state = { channels: [], selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const shopConnectionRequests = new Map();
 const commissionCardScript = document.createElement("script");
-commissionCardScript.src = "/tiktok-commission-card.js?v=02091";
+commissionCardScript.src = "/tiktok-commission-card.js?v=02092";
 document.head.append(commissionCardScript);
 let toastTimer;
 function showToast(text, type = "success") {
