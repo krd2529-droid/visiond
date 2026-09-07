@@ -1,14 +1,14 @@
 import {json,requireAdmin} from '../../../_lib.js';
 import {ensureCatalogProducts} from '../../../_catalog.js';
-import {ensureDatabase} from '../../../_schema.js';
+import {ensureAdminCatalogIndexes,ensureDatabase} from '../../../_schema.js';
 // Feature: PROD-ADMIN-001 / PROD-FILE-001 — รายการ สร้าง และรับไฟล์สินค้าหลังบ้าน
 const ext=(name,type)=>type==='image/png'?'png':type==='image/webp'?'webp':type==='application/zip'?'zip':name?.toLowerCase().endsWith('.zip')?'zip':type==='application/pdf'?'pdf':'jpg';
 const validFile=(file,max,types)=>file&&typeof file.arrayBuffer==='function'&&file.size>0&&file.size<=max&&(types.includes(file.type)||(types.includes('application/zip')&&/\.zip$/i.test(file.name||''))||(types.includes('application/pdf')&&/\.pdf$/i.test(file.name||'')));
 
 const searchPattern=value=>`%${String(value||'').trim().slice(0,120).replace(/[\\%_]/g,'\\$&')}%`;
 export async function onRequestGet(ctx){
-  await ensureDatabase(ctx.env);const a=await requireAdmin(ctx);if(a.error)return a.error;await ensureCatalogProducts(ctx.env);
-  const params=new URL(ctx.request.url).searchParams,purpose=params.get('purpose')||'list',vision4=params.get('queue')==='vision4',status=params.get('status'),category=String(params.get('category')||'').trim(),query=String(params.get('q')||'').trim(),cursor=Math.max(0,Number(params.get('cursor'))||0),maxLimit=['options','sample'].includes(purpose)?500:100,limit=Math.min(maxLimit,Math.max(1,Number(params.get('limit'))||24)),bindings=[],clauses=["p.deleted_at IS NULL","p.product_kind='product'","(p.slug='course-selling-rights' OR (p.category<>'resale-rights' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights'))))",vision4?"p.source='vision4' AND p.status='draft'":"NOT(p.source='vision4' AND p.status='draft')"];
+  await ensureDatabase(ctx.env);const a=await requireAdmin(ctx);if(a.error)return a.error;await ensureAdminCatalogIndexes(ctx.env);await ensureCatalogProducts(ctx.env);
+  const params=new URL(ctx.request.url).searchParams,purpose=params.get('purpose')||'list',vision4=params.get('queue')==='vision4',status=params.get('status'),category=String(params.get('category')||'').trim(),query=String(params.get('q')||'').trim(),cursor=Math.max(0,Number(params.get('cursor'))||0),maxLimit=['options','sample'].includes(purpose)?500:100,limit=Math.min(maxLimit,Math.max(1,Number(params.get('limit'))||24)),bindings=[],clauses=["p.deleted_at IS NULL","COALESCE(p.product_kind,'product')='product'","(p.slug='course-selling-rights' OR (p.category<>'resale-rights' AND NOT EXISTS(SELECT 1 FROM courses c WHERE c.product_id=p.id AND (c.owner_user_id IS NOT NULL OR c.course_origin='seller_rights' OR c.course_type='resale_rights'))))",vision4?"p.source='vision4' AND p.status='draft'":"NOT(p.source='vision4' AND p.status='draft')"];
   if(['published','draft'].includes(status)){clauses.push('p.status=?');bindings.push(status)}
   if(category){clauses.push('p.category=?');bindings.push(category)}
   if(query){clauses.push("(CAST(p.id AS TEXT)=? OR p.title LIKE ? ESCAPE '\\' OR p.slug LIKE ? ESCAPE '\\')");bindings.push(query,searchPattern(query),searchPattern(query))}

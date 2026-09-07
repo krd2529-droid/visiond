@@ -3,11 +3,11 @@ ON product_files(product_id, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_products_admin_status_id
 ON products(status, id DESC)
-WHERE deleted_at IS NULL AND product_kind='product';
+WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product';
 
 CREATE INDEX IF NOT EXISTS idx_products_admin_category_status
 ON products(category, status)
-WHERE deleted_at IS NULL AND product_kind='product';
+WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product';
 
 CREATE INDEX IF NOT EXISTS idx_products_public_cover
 ON products(cover_url)

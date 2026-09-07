@@ -2,7 +2,19 @@
 // checks only need to run once per D1 binding in that isolate, not on every API
 // call. A rejected initialization is removed so the next request can retry.
 const schemaReadyByDatabase=new WeakMap();
+const adminCatalogIndexesByDatabase=new WeakMap();
 const RUNTIME_SCHEMA_VERSION=66;
+
+export async function ensureAdminCatalogIndexes(env){
+  if(!env?.DB)return;
+  let ready=adminCatalogIndexesByDatabase.get(env.DB);
+  if(!ready){ready=(async()=>{
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_product_files_product_latest ON product_files(product_id,id DESC)').run();
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").run();
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_category_status ON products(category,status) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").run();
+  })().catch(error=>{adminCatalogIndexesByDatabase.delete(env.DB);throw error});adminCatalogIndexesByDatabase.set(env.DB,ready)}
+  return ready;
+}
 
 async function persistentSchemaReady(env){
   try{
@@ -125,8 +137,8 @@ async function initializeDatabase(env) {
   if (!productColumns.includes('demand_basis')) await env.DB.prepare("ALTER TABLE products ADD COLUMN demand_basis TEXT").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_product_files_product_latest ON product_files(product_id,id DESC)').run();
-  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND product_kind='product'").run();
-  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_category_status ON products(category,status) WHERE deleted_at IS NULL AND product_kind='product'").run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_category_status ON products(category,status) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_products_public_cover ON products(cover_url) WHERE deleted_at IS NULL').run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_public_preview_1 ON products(json_extract(preview_urls,'$[0]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)").run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_public_preview_2 ON products(json_extract(preview_urls,'$[1]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)").run();

@@ -1,9 +1,10 @@
 import {json,requireAdmin} from '../../../_lib.js';
-import {ensureDatabase} from '../../../_schema.js';
+import {ensureAdminCatalogIndexes,ensureDatabase} from '../../../_schema.js';
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  await ensureAdminCatalogIndexes(ctx.env);
   const {results}=await ctx.env.DB.prepare(`SELECT c.*,COALESCE(pc.product_count,0) product_count FROM categories c LEFT JOIN (SELECT p.category,COUNT(*) product_count FROM products p WHERE p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product' AND (p.category<>'resale-rights' OR p.slug='course-selling-rights') GROUP BY p.category) pc ON pc.category=c.slug ORDER BY c.sort_order,c.id`).all();
   return json({items:results});
 }
