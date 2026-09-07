@@ -414,7 +414,8 @@
     "test:v02051": "node scripts/test-v02051-daily-seo.mjs",
     "test:v02053": "node scripts/test-v02053.mjs",
     "test:v02054": "node scripts/test-v02054-tha1-catalog.mjs",
-    "test:v02055": "node scripts/test-v02055-tiktok-reviewer-login.mjs"
+    "test:v02055": "node scripts/test-v02055-tiktok-reviewer-login.mjs",
+    "test:v02056": "node scripts/test-v02056-online-guides.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
