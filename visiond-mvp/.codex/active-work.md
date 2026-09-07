@@ -7,5 +7,6 @@
 - Phase: complete
 - Files changed: public/admin.js, public/admin.html, public/product-sample-archive.js, functions/api/admin/products/index.js, functions/api/admin/categories/index.js, functions/api/media/[key].js, functions/_schema.js, migrations/0086_admin_product_catalog_indexes.sql, scripts/test-admin-product-d1-efficiency.mjs, VERSION.txt, public/index.html
 - Verification: efficiency regression PASS; admin/public parity PASS; visible version parity PASS; predeploy PASS 9 / WARN 8 / FAIL 0
-- Delivery note: remote migration CLI needs CLOUDFLARE_API_TOKEN; runtime schema also creates the indexes automatically after deployment
-- Next action: commit related files only, push origin main, verify public deployment
+- Delivery: commit b24f6a3a pushed to origin/main; production WEB/ADMIN v0.20.52 verified in browser
+- Delivery note: remote migration CLI needs CLOUDFLARE_API_TOKEN; runtime schema also creates the indexes automatically when the product API is first called after deployment
+- Next action: monitor Cloudflare D1 Query Insights after the daily quota resets
