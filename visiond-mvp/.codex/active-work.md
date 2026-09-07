@@ -1,12 +1,10 @@
-# Active patch: VX affiliate commission payout billing
+# Active patch: V-Learning Manuals Hub
 
-- Event: PATCH_DELIVERED
-- Outcome: VisionD ออกเอกสารสรุปการจ่ายค่าคอมจากรอบจ่ายจริง ให้ลูกค้าตรวจยอดขายเต็ม เปอร์เซ็นต์ค่าคอม และยอดค่าคอมได้
-- Preserve: รอบจ่ายวันที่ 1 และ cutoff เวลาไทย; ตัวเลขจาก ledger จริงเท่านั้น; สิทธิ์ลูกค้าเห็นเฉพาะเอกสารของตน; Boss เห็นได้เพื่อดำเนินการจ่าย; ระบบใบเสร็จเดิมไม่เปลี่ยน
-- Acceptance: payout API ตรวจ owner/Boss; เอกสารแสดงเลขที่รอบ ผู้รับ สถานะ รายการขาย ยอดเต็ม อัตรา ค่าคอมต่อรายการ และยอดรวมค่าคอมทั้งหมด; ผลรวมตรง payout ledger; ลูกค้าและหน้า admin มีทางเข้า; พิมพ์/บันทึก PDF ได้
-- Phase: delivered to production; implementation, regressions, push, and production checks passed
-- Blocker: ไม่มี
-- Files: functions/api/vx/referrals.js, functions/api/vx/payouts/[id].js, public/vx-affiliate.*, public/vx-affiliate-admin.*, public/vx-commission-statement.*, focused regression, FEATURE-MAP.md
-- Verification: owner access, cross-user denial, ledger mismatch rejection, totals/rates, monthly cutoff regression, syntax, and diff checks pass
-- Delivered: 4d1bfdda on origin/main; customer entry, statement fields, client link, and anonymous 401 verified on production
-- Next: เมื่อสร้างรอบจ่าย ลูกค้าเปิด “เอกสารค่าคอมของฉัน” เพื่อดูรายการและบันทึก PDF ได้
+- Event: PATCH_STARTED
+- Outcome: เพิ่มเมนูคู่มือการใช้งานและหน้าคลังคู่มือสำหรับฟีเจอร์ VisionD
+- Acceptance: เมนูอยู่ระหว่าง Vtools และบทความ; เปิดหน้าคลังได้ทั้งเดสก์ท็อปและมือถือ; คู่มือ VX และ V-Learning ดาวน์โหลดได้จริง; คู่มือสมัครสมาชิกและซื้อสินค้าดิจิทัลแสดงสถานะกำลังจัดทำ; ไม่กระทบเมนูบัญชีและรถเข็น
+- Event: PATCH_READY
+- Phase: implementation complete; delivery verification in progress
+- Files: public/shared-nav.js, public/index.html, public/guides.html, public/guides.css, public/manuals/*, tests, VERSION.txt, FEATURE-MAP.md
+- Verification: focused regression, syntax, desktop UI, mobile frontend audit, download HTTP 200 pass; visible-version gate fixed and pending rerun
+- Next: rerun gates, inspect diff, commit selected files, push origin/main, verify production

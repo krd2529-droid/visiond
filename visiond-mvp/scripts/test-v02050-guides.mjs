@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const nav=read('public/shared-nav.js'),home=read('public/index.html'),guides=read('public/guides.html'),css=read('public/guides.css');
+assert.equal(read('VERSION.txt').trim(),'v0.20.50');
+assert.match(home,/WEB v0\.20\.50/);
+assert.match(nav,/\/vtools','Vtools'\],\['nav-guides-link','\/guides\.html','คู่มือการใช้งาน'\],\['','\/blog\.html','บทความ'/);
+assert.match(guides,/aria-current="page">คู่มือการใช้งาน/);
+assert.match(guides,/\/manuals\/visiond-vx-customer-guide\.docx/);
+assert.match(guides,/\/manuals\/visiond-vlearning-partner-customer-guide\.docx/);
+assert.match(guides,/การสมัครสมาชิก/);
+assert.match(guides,/การซื้อสินค้าดิจิทัล/);
+assert.match(css,/@media\(max-width:640px\)/);
+for(const file of ['public/manuals/visiond-vx-customer-guide.docx','public/manuals/visiond-vlearning-partner-customer-guide.docx'])assert.ok(fs.statSync(new URL('../'+file,import.meta.url)).size>100000,file);
+console.log('PASS v0.20.50 user manuals hub');
