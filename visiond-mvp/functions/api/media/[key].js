@@ -4,7 +4,7 @@ const pendingPreview=/^vision4-pending-preview-/;
 const companyPaymentQr=/^payment-qr-/;
 async function isReferenced(env,key){
   const url='/api/media/'+key;
-  if(productImage.test(key))return Boolean(await env.DB.prepare(`SELECT 1 FROM products p WHERE p.deleted_at IS NULL AND (p.cover_url=? OR EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(p.preview_urls) THEN p.preview_urls ELSE '[]' END) j WHERE j.value=?)) LIMIT 1`).bind(url,url).first());
+  if(productImage.test(key))return Boolean(await env.DB.prepare(`SELECT 1 FROM products WHERE deleted_at IS NULL AND cover_url=? LIMIT 1`).bind(url).first()||await env.DB.prepare(`SELECT 1 FROM products WHERE deleted_at IS NULL AND (json_extract(preview_urls,'$[0]')=? OR json_extract(preview_urls,'$[1]')=? OR json_extract(preview_urls,'$[2]')=?) LIMIT 1`).bind(url,url,url).first());
   if(pendingPreview.test(key))return Boolean(await env.DB.prepare(`SELECT 1 FROM vision4_pending_files f WHERE f.status='waiting_bundle' AND EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(f.preview_urls) THEN f.preview_urls ELSE '[]' END) j WHERE j.value=?) LIMIT 1`).bind(url).first());
   if(companyPaymentQr.test(key))return Boolean(await env.DB.prepare("SELECT 1 FROM settings WHERE key='qr_url' AND value=? LIMIT 1").bind(url).first());
   return false;

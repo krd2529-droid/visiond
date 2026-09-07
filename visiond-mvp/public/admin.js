@@ -30,6 +30,19 @@ const PUBLISHED_PRODUCTS_PER_PAGE = 10;
 const DRAFT_PRODUCTS_PER_PAGE = 5;
 let publishedProductPage = 1;
 let draftProductPage = 1;
+const PRODUCT_LIST_TTL = 5 * 60 * 1000;
+const productPageState = {
+  published: { hasMore: false, nextCursor: null },
+  draft: { hasMore: false, nextCursor: null },
+};
+let productListLoadedAt = 0;
+let productListQuery = "";
+const productListInflight = new Map();
+let productListRequestGeneration = 0;
+let productOptions = [];
+let productOptionsPromise = null;
+let productPdfSummary = [];
+let productSearchTimer = null;
 
 function setVision2PendingProductFiles(files) {
   vision2PendingProductFiles = files;
@@ -130,7 +143,12 @@ categoryEditor.onsubmit = saveCategory;
 deleteCategoryButton.onclick = deleteCategory;
 downloadCategoryPreviews.onclick = downloadPreviewArchive;
 previewExportCategory.onchange = loadPreviewBatches;
-productSearchInput.oninput = () => { publishedProductPage = 1; draftProductPage = 1; renderProductAdminList(productSearchInput.value); };
+productSearchInput.oninput = () => {
+  publishedProductPage = 1;
+  draftProductPage = 1;
+  clearTimeout(productSearchTimer);
+  productSearchTimer = setTimeout(() => loadProducts(true), 300);
+};
 refreshTrashButton.onclick = loadTrash;
 trashList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-trash-action]");
@@ -597,30 +615,66 @@ async function deleteCategory() {
 }
 
 // Feature: PROD-ADMIN-001 — โหลดและแยกตะกร้าวางจำหน่าย/แบบร่างสำหรับผู้ดูแล
-async function loadProducts() {
-  publishedProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าที่วางจำหน่าย…</div>';
-  draftProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าแบบร่าง…</div>';
-  await loadCategories(false);
-  const r = await fetch("/api/admin/products");
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    const error = `<div class="admin-empty">${esc(d.error || "โหลดสินค้าไม่สำเร็จ")}</div>`;
-    publishedProductList.innerHTML = error;
-    draftProductList.innerHTML = error;
+const productListUrl = (status, cursor = null, query = productSearchInput.value.trim()) => {
+  const params = new URLSearchParams({ status, limit: "24" });
+  if (query) params.set("q", query);
+  if (cursor) params.set("cursor", String(cursor));
+  return `/api/admin/products?${params}`;
+};
+function invalidateProductList(){ productListLoadedAt = 0; productListQuery = ""; productOptions=[]; }
+async function loadAllProductOptions(force=false){
+  if(productOptions.length&&!force)return productOptions;
+  if(productOptionsPromise&&!force)return productOptionsPromise;
+  productOptionsPromise=(async()=>{const collected=[];let cursor=null;do{const params=new URLSearchParams({purpose:'options',limit:'500'});if(cursor)params.set('cursor',String(cursor));const response=await fetch(`/api/admin/products?${params}`,{cache:'no-store'}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'โหลดรายการสินค้าไม่สำเร็จ');collected.push(...(data.items||[]));cursor=data.pagination?.has_more?data.pagination.next_cursor:null}while(cursor);productOptions=collected;return productOptions})().finally(()=>{productOptionsPromise=null});
+  return productOptionsPromise;
+}
+async function loadProducts(force = false) {
+  const query = productSearchInput.value.trim();
+  if (!force && productListLoadedAt && productListQuery === query && Date.now() - productListLoadedAt < PRODUCT_LIST_TTL) {
+    renderProductAdminList(query);
     return;
   }
-  products = d.items || [];
-  renderProductPdfInventory();
-  for(const id of [...bulkSelectedProducts])if(!products.some(product=>Number(product.id)===Number(id)))bulkSelectedProducts.delete(id);
-  updateProductSlugPreview();
-  renderProductAdminList(productSearchInput.value);
+  const requestKey=query||'__all__';
+  if (productListInflight.has(requestKey)) return productListInflight.get(requestKey);
+  const generation=++productListRequestGeneration;
+  publishedProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าที่วางจำหน่าย…</div>';
+  draftProductList.innerHTML = '<div class="admin-empty">กำลังโหลดสินค้าแบบร่าง…</div>';
+  const request = (async()=>{
+    if (!categories.length) await loadCategories(false);
+    const responses = await Promise.all([fetch(productListUrl("published",null,query),{cache:"no-store"}),fetch(productListUrl("draft",null,query),{cache:"no-store"}),fetch('/api/admin/products?purpose=summary',{cache:'no-store'})]);
+    const payloads = await Promise.all(responses.map(response=>response.json().catch(()=>({}))));
+    const failed = responses.findIndex(response=>!response.ok);
+    if (failed >= 0) {
+      const error = `<div class="admin-empty">${esc(payloads[failed].error || "โหลดสินค้าไม่สำเร็จ")}</div>`;
+      publishedProductList.innerHTML = error; draftProductList.innerHTML = error; return;
+    }
+    if(generation!==productListRequestGeneration)return;
+    products = [...(payloads[0].items||[]),...(payloads[1].items||[])];productPdfSummary=payloads[2].items||[];
+    for (const [index,status] of ["published","draft"].entries()) {
+      productPageState[status].hasMore = payloads[index].pagination?.has_more === true;
+      productPageState[status].nextCursor = payloads[index].pagination?.next_cursor || null;
+    }
+    productListLoadedAt = Date.now(); productListQuery = query;
+    renderProductPdfInventory();
+    for(const id of [...bulkSelectedProducts])if(!products.some(product=>Number(product.id)===Number(id)))bulkSelectedProducts.delete(id);
+    updateProductSlugPreview(); renderProductAdminList(query);
+  })().finally(()=>{ productListInflight.delete(requestKey); });
+  productListInflight.set(requestKey,request);
+  return request;
+}
+async function loadMoreProducts(status){
+  const state=productPageState[status];if(!state?.hasMore||!state.nextCursor)return;
+  const response=await fetch(productListUrl(status,state.nextCursor),{cache:"no-store"}),data=await response.json().catch(()=>({}));
+  if(!response.ok)return alert(data.error||"โหลดสินค้าเพิ่มไม่สำเร็จ");
+  const existing=new Set(products.map(product=>Number(product.id)));for(const item of data.items||[])if(!existing.has(Number(item.id)))products.push(item);
+  state.hasMore=data.pagination?.has_more===true;state.nextCursor=data.pagination?.next_cursor||null;renderProductAdminList(productSearchInput.value);
 }
 function renderProductPdfInventory(){
   const grid=document.getElementById('productPdfInventoryGrid'),total=document.getElementById('productPdfInventoryTotal');if(!grid||!total)return;
-  const categoryNames=new Map(categories.map(category=>[String(category.slug),String(category.name||category.slug)])),pdfProducts=products.filter(product=>String(product.file_type||'').toUpperCase().includes('PDF')&&product.slug!=='course-selling-rights'),groups=new Map();
-  for(const product of pdfProducts){const slug=String(product.category||'uncategorized'),group=groups.get(slug)||{slug,name:categoryNames.get(slug)||product.category_label||slug||'ไม่ระบุหมวด',products:0,pages:0,published:0,drafts:0};group.products++;group.pages+=Math.max(0,Number(product.pages)||0);if(product.status==='published')group.published++;else group.drafts++;groups.set(slug,group)}
+  const categoryNames=new Map(categories.map(category=>[String(category.slug),String(category.name||category.slug)])),groups=new Map();
+  for(const item of productPdfSummary){const slug=String(item.category||'uncategorized'),group=groups.get(slug)||{slug,name:categoryNames.get(slug)||slug||'ไม่ระบุหมวด',products:0,pages:0,published:0,drafts:0};const count=Number(item.pdf_products)||0;group.products+=count;group.pages+=Number(item.pdf_pages)||0;if(item.status==='published')group.published+=count;else group.drafts+=count;groups.set(slug,group)}
   const categoryOrder=new Map([['development-game',1],['worksheet',2],['coloring',3],['bundle-deals',4]]),rows=[...groups.values()].sort((a,b)=>(categoryOrder.get(a.slug)||99)-(categoryOrder.get(b.slug)||99)||b.pages-a.pages||a.name.localeCompare(b.name,'th')),pages=rows.reduce((sum,row)=>sum+row.pages,0);
-  total.textContent=`${pdfProducts.length.toLocaleString('th-TH')} PDF · ${pages.toLocaleString('th-TH')} หน้า`;
+  const pdfCount=rows.reduce((sum,row)=>sum+row.products,0);total.textContent=`${pdfCount.toLocaleString('th-TH')} PDF · ${pages.toLocaleString('th-TH')} หน้า`;
   grid.innerHTML=rows.length?rows.map(row=>`<article class="product-pdf-stat" data-category="${esc(row.slug)}"><b>${esc(row.name)}</b><strong>${row.pages.toLocaleString('th-TH')} หน้า</strong><small>${row.products.toLocaleString('th-TH')} PDF · เปิดขาย ${row.published.toLocaleString('th-TH')} · ร่าง ${row.drafts.toLocaleString('th-TH')}</small></article>`).join(''):'<div class="admin-empty">ยังไม่มีสินค้าที่ระบุประเภทไฟล์ PDF</div>';
 }
 function renderProductAdminList(search = "") {
@@ -632,7 +686,7 @@ function renderProductAdminList(search = "") {
     ),
     published = visible.filter((product) => product.status === "published"),
     drafts = visible.filter((product) => product.status !== "published");
-  productSearchCount.textContent = `${query ? `พบ ${visible.length} จาก ${products.length}` : `ทั้งหมดในระบบ ${products.length}`} ตะกร้า · วางจำหน่าย ${published.length} · แบบร่าง ${drafts.length}`;
+  productSearchCount.textContent = `${query ? `พบ ${visible.length} รายการที่โหลด` : `โหลดแล้ว ${products.length}`} ตะกร้า · วางจำหน่าย ${published.length} · คลังงาน ${drafts.length}${productPageState.published.hasMore||productPageState.draft.hasMore?' · มีรายการถัดไป':''}`;
   renderProductGroup(published, "published");
   renderProductGroup(drafts, "draft");
   productAdminList.querySelectorAll('[data-select-product]').forEach(input=>input.onchange=()=>{const id=Number(input.dataset.selectProduct);input.checked?bulkSelectedProducts.add(id):bulkSelectedProducts.delete(id);input.closest('.product-admin-card')?.classList.toggle('bulk-selected',input.checked);updateBulkProductBar()});
@@ -666,17 +720,17 @@ function renderProductGroup(items, status) {
     );
   renderProductPagination(status, totalPages, items.length, perPage);
 }
-function renderProductPagination(status,totalPages,totalItems,perPage){const isPublished=status==='published',nav=isPublished?publishedProductPagination:draftProductPagination,currentPage=isPublished?publishedProductPage:draftProductPage,target=isPublished?publishedProductList:draftProductList;if(totalItems<=perPage){nav.innerHTML='';nav.hidden=true;return}nav.hidden=false;const pages=[];for(let page=1;page<=totalPages;page++)if(page===1||page===totalPages||Math.abs(page-currentPage)<=2)pages.push(page);let previous=0,html=`<button type="button" data-product-page="${currentPage-1}" ${currentPage===1?'disabled':''}>ก่อนหน้า</button>`;for(const page of pages){if(previous&&page-previous>1)html+='<span>…</span>';html+=`<button type="button" data-product-page="${page}" class="${page===currentPage?'active':''}" ${page===currentPage?'aria-current="page"':''}>${page}</button>`;previous=page}html+=`<button type="button" data-product-page="${currentPage+1}" ${currentPage===totalPages?'disabled':''}>ถัดไป</button>`;nav.innerHTML=html;nav.querySelectorAll('[data-product-page]:not([disabled])').forEach(button=>button.onclick=()=>{if(isPublished)publishedProductPage=Number(button.dataset.productPage);else draftProductPage=Number(button.dataset.productPage);renderProductAdminList(productSearchInput.value);target.scrollIntoView({behavior:'smooth',block:'start'})})}
+function renderProductPagination(status,totalPages,totalItems,perPage){const isPublished=status==='published',nav=isPublished?publishedProductPagination:draftProductPagination,currentPage=isPublished?publishedProductPage:draftProductPage,target=isPublished?publishedProductList:draftProductList,state=productPageState[status];if(totalItems<=perPage&&!state.hasMore){nav.innerHTML='';nav.hidden=true;return}nav.hidden=false;const pages=[];for(let page=1;page<=totalPages;page++)if(page===1||page===totalPages||Math.abs(page-currentPage)<=2)pages.push(page);let previous=0,html=`<button type="button" data-product-page="${currentPage-1}" ${currentPage===1?'disabled':''}>ก่อนหน้า</button>`;for(const page of pages){if(previous&&page-previous>1)html+='<span>…</span>';html+=`<button type="button" data-product-page="${page}" class="${page===currentPage?'active':''}" ${page===currentPage?'aria-current="page"':''}>${page}</button>`;previous=page}html+=currentPage<totalPages?`<button type="button" data-product-page="${currentPage+1}">ถัดไป</button>`:state.hasMore?`<button type="button" data-product-load-more="${status}">โหลดเพิ่ม</button>`:'<button type="button" disabled>หน้าสุดท้าย</button>';nav.innerHTML=html;nav.querySelectorAll('[data-product-page]:not([disabled])').forEach(button=>button.onclick=()=>{if(isPublished)publishedProductPage=Number(button.dataset.productPage);else draftProductPage=Number(button.dataset.productPage);renderProductAdminList(productSearchInput.value);target.scrollIntoView({behavior:'smooth',block:'start'})});nav.querySelector('[data-product-load-more]')?.addEventListener('click',async event=>{event.currentTarget.disabled=true;event.currentTarget.textContent='กำลังโหลด…';await loadMoreProducts(status)})}
 function updateBulkProductBar(){const count=bulkSelectedProducts.size,output=document.getElementById('bulkProductCount'),deleteButton=document.getElementById('bulkDeleteProducts'),moveButton=document.getElementById('bulkMoveCategoryButton');if(output)output.textContent=count?`เลือกแล้ว ${count} ตะกร้า · พร้อมย้ายหมวด`:'เลือกแล้ว 0 ตะกร้า · ค้นหาแล้วติ๊กช่องหน้าตะกร้าที่ต้องการย้าย';if(deleteButton)deleteButton.disabled=!count;if(moveButton){moveButton.disabled=false;moveButton.textContent=count?`ย้ายหมวด ${count} ตะกร้า`:'ย้ายหมวดหลายตะกร้า'}}
 // Feature: PROD-ADMIN-001 — soft delete ตะกร้าที่เลือกโดยไม่ลบข้อมูลจริงทันที
-async function bulkDeleteSelectedProducts(){const ids=[...bulkSelectedProducts];if(!ids.length)return;if(!confirm(`ย้ายตะกร้าที่เลือก ${ids.length} รายการไปถังขยะ 30 วันหรือไม่?`))return;const button=document.getElementById('bulkDeleteProducts');button.disabled=true;let deleted=0,failed=0;for(const id of ids){const response=await fetch('/api/admin/products/'+id,{method:'DELETE'});if(response.ok){deleted++;bulkSelectedProducts.delete(id)}else failed++}await loadProducts();alert(`ย้ายไปถังขยะแล้ว ${deleted} ตะกร้า${failed?` · ลบไม่สำเร็จ ${failed} ตะกร้า`:''}`)}
+async function bulkDeleteSelectedProducts(){const ids=[...bulkSelectedProducts];if(!ids.length)return;if(!confirm(`ย้ายตะกร้าที่เลือก ${ids.length} รายการไปถังขยะ 30 วันหรือไม่?`))return;const button=document.getElementById('bulkDeleteProducts');button.disabled=true;let deleted=0,failed=0;for(const id of ids){const response=await fetch('/api/admin/products/'+id,{method:'DELETE'});if(response.ok){deleted++;bulkSelectedProducts.delete(id)}else failed++}invalidateProductList();await loadProducts(true);alert(`ย้ายไปถังขยะแล้ว ${deleted} ตะกร้า${failed?` · ลบไม่สำเร็จ ${failed} ตะกร้า`:''}`)}
 document.getElementById('bulkClearProducts')?.addEventListener('click',()=>{bulkSelectedProducts.clear();renderProductAdminList(productSearchInput.value)});
 document.getElementById('bulkDeleteProducts')?.addEventListener('click',bulkDeleteSelectedProducts);
 const bulkMoveCategoryDialog=document.getElementById('bulkMoveCategoryDialog'),bulkMoveCategoryForm=document.getElementById('bulkMoveCategoryForm'),bulkMoveCategoryState=document.getElementById('bulkMoveCategoryState');
 function closeBulkMoveCategory(){bulkMoveCategoryDialog.close();bulkMoveCategoryState.textContent=''}
 function openBulkMoveCategory(){const ids=[...bulkSelectedProducts];if(!ids.length){productSearchInput.scrollIntoView({behavior:'smooth',block:'center'});productSearchInput.focus();return alert('พิมพ์ค้นหาตะกร้า แล้วติ๊กช่องสี่เหลี่ยมหน้าตะกร้าที่ต้องการ จากนั้นกด “ย้ายหมวดหลายตะกร้า” อีกครั้ง')}const selected=ids.map(id=>products.find(product=>Number(product.id)===Number(id))).filter(Boolean);bulkMoveCategoryForm.elements.category.innerHTML=categories.filter(category=>Number(category.active)&&!String(category.slug).startsWith('set-')&&category.slug!=='resale-rights').map(category=>`<option value="${esc(category.slug)}">${esc(category.name)} (${esc(category.slug)})</option>`).join('');bulkMoveCategoryForm.elements.confirmed.checked=false;document.getElementById('bulkMoveCategorySummary').textContent=`เลือก ${selected.length} ตะกร้า: ${selected.slice(0,5).map(product=>`#${product.id} ${product.title}`).join(' · ')}${selected.length>5?' …':''}`;bulkMoveCategoryDialog.showModal()}
 // Feature: PROD-CATEGORY-MOVE-001 — ย้ายหมวดหลายตะกร้าและคงเลขรหัสสินค้าเดิม
-async function moveSelectedProductsCategory(event){event.preventDefault();const ids=[...bulkSelectedProducts],category=bulkMoveCategoryForm.elements.category.value;if(!ids.length)return closeBulkMoveCategory();if(!bulkMoveCategoryForm.elements.confirmed.checked)return;const submit=bulkMoveCategoryForm.querySelector('[type="submit"]');submit.disabled=true;bulkMoveCategoryState.textContent='กำลังย้ายหมวดและปรับข้อมูลตะกร้า…';try{const response=await fetch('/api/admin/products/bulk-category',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ids,category,confirmed:true})}),data=await response.json().catch(()=>({}));if(!response.ok){bulkMoveCategoryState.textContent=data.error||'ย้ายหมวดไม่สำเร็จ';return}bulkSelectedProducts.clear();closeBulkMoveCategory();await loadProducts();alert(`ย้ายหมวดสำเร็จ ${Number(data.updated)||0} ตะกร้า · เลขรหัสสินค้าเดิมไม่เปลี่ยน`)}finally{submit.disabled=false}}
+async function moveSelectedProductsCategory(event){event.preventDefault();const ids=[...bulkSelectedProducts],category=bulkMoveCategoryForm.elements.category.value;if(!ids.length)return closeBulkMoveCategory();if(!bulkMoveCategoryForm.elements.confirmed.checked)return;const submit=bulkMoveCategoryForm.querySelector('[type="submit"]');submit.disabled=true;bulkMoveCategoryState.textContent='กำลังย้ายหมวดและปรับข้อมูลตะกร้า…';try{const response=await fetch('/api/admin/products/bulk-category',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ids,category,confirmed:true})}),data=await response.json().catch(()=>({}));if(!response.ok){bulkMoveCategoryState.textContent=data.error||'ย้ายหมวดไม่สำเร็จ';return}bulkSelectedProducts.clear();closeBulkMoveCategory();invalidateProductList();await loadProducts(true);alert(`ย้ายหมวดสำเร็จ ${Number(data.updated)||0} ตะกร้า · เลขรหัสสินค้าเดิมไม่เปลี่ยน`)}finally{submit.disabled=false}}
 document.getElementById('bulkMoveCategoryButton')?.addEventListener('click',openBulkMoveCategory);document.getElementById('bulkMoveCategoryClose')?.addEventListener('click',closeBulkMoveCategory);document.getElementById('bulkMoveCategoryCancel')?.addEventListener('click',closeBulkMoveCategory);bulkMoveCategoryForm?.addEventListener('submit',moveSelectedProductsCategory);
 function setBundleMode(active) {
   bundleMode = active;
@@ -691,12 +745,12 @@ function setBundleMode(active) {
     const eligibleCategories = categories.filter((category) => {
       if (!Number(category.active) || String(category.slug).startsWith("set-") || category.slug === "resale-rights") return false;
       if (category.slug === currentSourceCategory) return true;
-      return products.filter((product) => product.status === "published" && product.category === category.slug && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length >= 2;
+      return productOptions.filter((product) => product.status === "published" && product.category === category.slug && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length >= 2;
     });
     const originalCategory = productEditor.dataset.originalCategory || "",
       promotionSourceCategories = new Set(["worksheet", "coloring", "development-game"]),
       promotionCategoryActive = categories.some((category) => category.slug === "bundle-deals" && Number(category.active)),
-      promotionReadyCount = products.filter((product) => product.status === "published" && promotionSourceCategories.has(product.category) && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length,
+      promotionReadyCount = productOptions.filter((product) => product.status === "published" && promotionSourceCategories.has(product.category) && (!product.bundled_into_id || Number(product.bundled_into_id) === currentId)).length,
       promotionOption = promotionCategoryActive && (promotionReadyCount >= 2 || originalCategory === "bundle-deals") ? '<option value="bundle-deals">โปรยกชุด (แบบฝึกหัด + ระบายสี + เกมเสริมพัฒนาการ)</option>' : '',
       generatedOptions = promotionOption + eligibleCategories
       .map((category) => `<option value="set-${esc(category.slug)}">ชุดรวม ${esc(category.name)}</option>`)
@@ -714,7 +768,7 @@ const promotionBundleCategories = new Set(["worksheet", "coloring", "development
 function renderBundlePicker(selected = []) {
   const selectedSet = new Set(selected.map(Number)),
     currentId = Number(productEditor.elements.id.value) || 0,
-    candidates = products.filter(
+    candidates = productOptions.filter(
       (p) =>
         p.status === "published" &&
         p.id !== currentId &&
@@ -803,8 +857,9 @@ productEditor.elements.bundle_preview_count.onchange=updateBundleCount;
 async function scoreBundleImage(img){if(!img.complete)await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject});const canvas=document.createElement('canvas'),size=80;canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,size,size);const pixels=ctx.getImageData(0,0,size,size).data;let light=0,saturation=0,edges=0,last=0;for(let i=0;i<pixels.length;i+=4){const max=Math.max(pixels[i],pixels[i+1],pixels[i+2]),min=Math.min(pixels[i],pixels[i+1],pixels[i+2]),lum=(max+min)/510;light+=lum;saturation+=(max-min)/255;if(i&&Math.abs(lum-last)>.18)edges++;last=lum}const count=pixels.length/4;return Math.round(Math.max(0,Math.min(100,(light/count*.48+(1-saturation/count)*.27+Math.min(edges/count*4,1)*.25)*100)))}
 bundleAutoAnalyze.onclick=async()=>{const figures=[...bundlePreviewGallery.querySelectorAll('figure')],limit=Number(productEditor.elements.bundle_preview_count.value)||1;setMessage(`กำลังตรวจรูป ${figures.length} รูป…`);for(const figure of figures){try{figure.dataset.score=await scoreBundleImage(figure.querySelector('img'));figure.title=Number(figure.dataset.score)>=62?`แนะนำเป็นใบงาน ${figure.dataset.score}/100`:`ควรตรวจด้วยตา ${figure.dataset.score}/100`}catch{figure.dataset.score=0}}figures.sort((a,b)=>Number(b.dataset.score)-Number(a.dataset.score)).forEach(figure=>bundlePreviewGallery.append(figure));bundlePreviewGallery.querySelectorAll('input').forEach(input=>input.checked=false);figures.slice(0,limit).forEach(figure=>figure.querySelector('input').checked=true);productEditor.elements.bundle_preview_urls.value=figures.slice(0,limit).map(figure=>figure.querySelector('input').value).join("\n");bundlePreviewCount.textContent=`เลือกอัตโนมัติ ${Math.min(limit,figures.length)} รูป · กรุณาตรวจด้วยตา`;setMessage('ตรวจรูปเสร็จแล้ว กรุณาดูรูปที่เลือกก่อนบันทึก')};
 productEditor.elements.price.addEventListener("input",()=>{if(bundleMode)updateBundleCount()});
-function openBundleBuilder() {
+async function openBundleBuilder() {
   resetProductForm();
+  try{await loadAllProductOptions()}catch(error){return alert(error.message)}
   setBundleMode(true);
   productEditor.elements.category.value = productCategorySelect.options[0]?.value || "";
   productEditor.elements.status.value = "draft";
@@ -855,6 +910,7 @@ async function editProduct(id) {
   document.body.classList.add("product-editor-active");
   const p = d.item,
     isBundle = p.source === "bundle" || String(p.category || "").startsWith("set-") || d.bundle_items?.length;
+  if(isBundle)try{await loadAllProductOptions()}catch(error){return alert(error.message)}
   productEditor.elements.id.value = p.id;
   productEditor.dataset.originalCategory = p.category || "";
   setBundleMode(Boolean(isBundle));
@@ -1042,7 +1098,8 @@ async function deleteProduct() {
   if (!r.ok) return setMessage(d.error || "ลบไม่สำเร็จ", true);
   resetProductForm();
   setMessage("ย้ายสินค้าไปถังขยะแล้ว สามารถกู้คืนได้ภายใน 30 วัน");
-  loadProducts();
+  invalidateProductList();
+  loadProducts(true);
 }
 function formatBytes(n) {
   n = Number(n) || 0;
@@ -1392,18 +1449,14 @@ async function act(id, action, rights = false, testSeller = false, partner = fal
   );
 }
 async function loadUsers() {
-  const [userResponse, productResponse] = await Promise.all([
+  const [userResponse, availableProducts] = await Promise.all([
     fetch("/api/admin/users"),
-    products.length ? Promise.resolve(null) : fetch("/api/admin/products"),
+    loadAllProductOptions(),
   ]);
   const d = await userResponse.json();
   if (!userResponse.ok) {
     usersTable.innerHTML = `<p>${esc(d.error || "โหลดสมาชิกไม่สำเร็จ")}</p>`;
     return;
-  }
-  if (productResponse) {
-    const productData = await productResponse.json().catch(() => ({}));
-    if (productResponse.ok) products = productData.items || [];
   }
   users = d.items || [];
   unlockUserSelect.innerHTML = users
@@ -1413,7 +1466,7 @@ async function loadUsers() {
         `<option value="${u.id}">${esc(u.name)} · ${esc(u.username || u.email)}</option>`,
     )
     .join("");
-  const published = products.filter((p) => p.status === "published");
+  const published = availableProducts.filter((p) => p.status === "published");
   unlockProductSelect.innerHTML = published
     .map(
       (p) =>
