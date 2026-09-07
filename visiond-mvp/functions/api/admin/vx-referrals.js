@@ -5,13 +5,14 @@ const headers = { 'cache-control': 'private, no-store' }, clean = (value, length
 async function authorize(ctx) { await ensureDatabase(ctx.env); await ensureVxReferralSchema(ctx.env); return requireBoss(ctx); }
 export async function onRequestGet(ctx) {
   const access = await authorize(ctx); if (access.error) return access.error;
+  await ctx.env.DB.prepare("UPDATE vx_referral_commissions SET status='payable',updated_at=CURRENT_TIMESTAMP WHERE status='approved' AND payout_id IS NULL AND EXISTS(SELECT 1 FROM orders o WHERE o.id=vx_referral_commissions.order_id AND o.status='paid' AND date(o.updated_at,'+7 hours')<date('now','+7 hours','start of month'))").run();
   const status = clean(new URL(ctx.request.url).searchParams.get('status'), 20);
   const [commissions, payouts, adjustments] = await Promise.all([
     ctx.env.DB.prepare("SELECT c.*,COALESCE(u.name,u.username,u.email) referrer FROM vx_referral_commissions c JOIN users u ON u.id=c.referrer_user_id WHERE (?='' OR c.status=?) ORDER BY c.created_at DESC LIMIT 500").bind(status, status).all(),
     ctx.env.DB.prepare("SELECT p.*,COALESCE(u.name,u.username,u.email) referrer FROM vx_referral_payouts p JOIN users u ON u.id=p.referrer_user_id ORDER BY p.created_at DESC LIMIT 200").all(),
     ctx.env.DB.prepare("SELECT a.*,COALESCE(u.name,u.username,u.email) referrer FROM vx_referral_adjustments a JOIN users u ON u.id=a.referrer_user_id ORDER BY a.created_at DESC LIMIT 200").all()
   ]);
-  return json({ items: commissions.results || [], payouts: payouts.results || [], adjustments: adjustments.results || [] }, 200, headers);
+  return json({ items: commissions.results || [], payouts: payouts.results || [], adjustments: adjustments.results || [], payout_cycle:{clear_day:1,cutoff_rule:'paid_before_bangkok_month_start'} }, 200, headers);
 }
 export async function onRequestPost(ctx) {
   const access = await authorize(ctx); if (access.error) return access.error;
@@ -20,7 +21,7 @@ export async function onRequestPost(ctx) {
   const id = crypto.randomUUID(), payoutNo = `VX-${Date.now()}-${crypto.randomUUID().slice(0, 5).toUpperCase()}`, payloadIds = JSON.stringify(ids);
   let results;
   try { results = await ctx.env.DB.batch([
-    ctx.env.DB.prepare("UPDATE vx_referral_commissions SET status='processing',payout_id=?,updated_at=CURRENT_TIMESTAMP WHERE status='payable' AND payout_id IS NULL AND EXISTS(SELECT 1 FROM orders o WHERE o.id=vx_referral_commissions.order_id AND o.status='paid') AND id IN(SELECT value FROM json_each(?))").bind(id, payloadIds),
+    ctx.env.DB.prepare("UPDATE vx_referral_commissions SET status='processing',payout_id=?,updated_at=CURRENT_TIMESTAMP WHERE status='payable' AND payout_id IS NULL AND EXISTS(SELECT 1 FROM orders o WHERE o.id=vx_referral_commissions.order_id AND o.status='paid' AND date(o.updated_at,'+7 hours')<date('now','+7 hours','start of month')) AND id IN(SELECT value FROM json_each(?))").bind(id, payloadIds),
     ctx.env.DB.prepare("INSERT INTO vx_referral_payouts(id,payout_no,referrer_user_id,amount,currency,status,created_by) SELECT ?,?,MIN(referrer_user_id),SUM(amount),MIN(currency),'processing',? FROM vx_referral_commissions WHERE payout_id=? AND NOT EXISTS(SELECT 1 FROM vx_referral_adjustments a WHERE a.referrer_user_id IN(SELECT referrer_user_id FROM vx_referral_commissions WHERE payout_id=?) AND a.status='open') HAVING COUNT(*)=? AND MIN(referrer_user_id)=MAX(referrer_user_id) AND MIN(currency)=MAX(currency)").bind(id, payoutNo, access.user.id, id, id, ids.length),
     ctx.env.DB.prepare("INSERT INTO vx_referral_payout_items(payout_id,commission_id,amount) SELECT ?,id,amount FROM vx_referral_commissions WHERE payout_id=? AND EXISTS(SELECT 1 FROM vx_referral_payouts WHERE id=?)").bind(id, id, id),
     ctx.env.DB.prepare("UPDATE vx_referral_commissions SET status='payable',payout_id=NULL,updated_at=CURRENT_TIMESTAMP WHERE payout_id=? AND NOT EXISTS(SELECT 1 FROM vx_referral_payouts WHERE id=?)").bind(id, id)
@@ -51,7 +52,7 @@ export async function onRequestPatch(ctx) {
   }
   const status = clean(body.status, 20), allowed = new Set(['approved', 'payable', 'void']);
   if (!allowed.has(status) || !id) return json({ error: 'ข้อมูลไม่ถูกต้อง' }, 400, headers);
-  const transition = status === 'approved' ? "status='pending'" : status === 'payable' ? "status='approved' AND hold_until<=CURRENT_TIMESTAMP" : "status IN('pending','approved','payable')";
+  const transition = status === 'approved' ? "status='pending'" : status === 'payable' ? "status='approved' AND EXISTS(SELECT 1 FROM orders o WHERE o.id=vx_referral_commissions.order_id AND o.status='paid' AND date(o.updated_at,'+7 hours')<date('now','+7 hours','start of month'))" : "status IN('pending','approved','payable')";
   const result = await ctx.env.DB.prepare(`UPDATE vx_referral_commissions SET status=?,void_reason=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND ${transition}`).bind(status, status === 'void' ? clean(body.reason, 300) : '', id).run();
   return Number(result?.meta?.changes) ? json({ ok: true, status }, 200, headers) : json({ error: 'สถานะเปลี่ยนไม่ได้หรือรายการถูกดำเนินการแล้ว' }, 409, headers);
 }

@@ -1,12 +1,11 @@
-# Active patch: Commission image input and social share workflow
+# Active patch: VX referral monthly payout cutoff
 
-- Event: PATCH_DELIVERED
-- Outcome: เพิ่มฟอร์มชื่อและช่วงวันที่ สร้างรูปก่อน แล้วแสดงปุ่มแชร์พร้อม caption, hashtags และ VX referral link เดิมของผู้ใช้
+- Event: PATCH_READY
+- Outcome: รอบจ่ายวันที่ 1 ใช้ค่าคอมจากยอดชำระเต็มที่เกิดก่อนวันที่ 1; ยอดตั้งแต่วันที่ 1 เข้ารอบถัดไป
 - Preserve: ปุ่มแสดงเมื่อมีค่าคอมจริงเท่านั้น, ข้อมูลจริงจาก TikTok, แชร์หรือดาวน์โหลดได้, ไม่สร้างตัวเลขทดแทน
-- Acceptance: ชื่อแก้ได้; วันที่/ช่วงวันที่เปลี่ยนแล้วโหลดข้อมูลช่วงเดียวกันก่อนวาด; รูปบันทึกคลังก่อนแสดงปุ่มแชร์; caption และ hashtags แก้ได้; referral link ใช้ API เดิมและคัดลอกได้
-- Phase: delivered to production; social workflow, image library, referral integration, syntax, push, and production asset checks passed
+- Acceptance: คำนวณ amount จาก base_amount เต็มตาม rate เดิม; cutoff ใช้วันชำระ order เวลาไทยก่อนต้นเดือน; รายการวันที่ 1 ไม่เข้ารอบปัจจุบัน; สร้าง payout ไม่สามารถข้าม cutoff; คง approval/proof/refund controls
+- Phase: implementation complete; Bangkok cutoff, full-base calculation, payout enforcement, UI copy, syntax, and regression checks passed
 - Blocker: ไม่มี
-- Files: public/tiktok-analyzer.js, public/tiktok-commission-card.js, public/tiktok-analyzer.css, tiktok-analyzer.html, regressions, FEATURE-MAP.md
-- Verification: form includes owner/exact date range/caption/hashtags/referral link; changed dates reload authoritative totals before generation; share controls remain hidden until library save/cache succeeds
-- Delivered: f1f36ba9 on origin/main; production page 02120, CSS 02092, and commission card 02091 verified
-- Next: ผู้ใช้กรอกชื่อและวันเดียว/ช่วงวันที่ กดสร้างรูป แล้วแชร์พร้อม caption, hashtags และ VX referral link
+- Files: functions/api/admin/vx-referrals.js, public/vx-affiliate-admin.js, referral regression, FEATURE-MAP.md
+- Verification: cutoff appears in automatic payable transition, manual payable transition, and payout creation; base_amount × rate remains authoritative; admin page explains the monthly rule
+- Next: commit relevant files, push origin/main, verify production API and admin assets
