@@ -136,5 +136,8 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Live multi-agent coordination state; local and continuously updated.
+/.agents/WORKBOARD.md
+
 # Cloudflare Wrangler local runtime state, databases, caches and temporary bundles
 **/.wrangler/

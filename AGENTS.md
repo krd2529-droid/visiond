@@ -1,5 +1,16 @@
 # VisionD Repository Instructions
 
+## Single Live Workboard
+
+- The current task must have one source of truth at `.agents/WORKBOARD.md`. Jarvis keeps the latest request, acceptance criteria, status, evidence, blockers, and next action synchronized with the user's instructions.
+- Jarvis, Elon, and Mark must read the same workboard and operate on the same shared worktree. Do not distribute copied requirement documents or create parallel briefs that can drift apart.
+- Each agent must re-read `WORKBOARD.md` before starting, before editing, and before a final verdict so that live user updates replace stale instructions.
+- Use the permanent team first: Elon owns implementation and Mark owns reproduction and verification. Do not create temporary agents or separate investigation lanes automatically. Another agent is allowed only when the user explicitly requests one for the current task.
+- When the user explicitly permits another agent, never send the full conversation with `fork_turns: all`. Send no inherited turns or at most three recent turns, plus the workboard path and shared evidence paths.
+- Store large images, videos, logs, reports, and artifacts as shared files and pass their paths. Do not embed or duplicate large payloads in agent messages.
+- Elon is the only code writer during an implementation phase. Mark reports independent findings to the workboard. If Mark is authorized to make a narrow UI correction, record the file boundary on the workboard first to avoid overlapping edits.
+- Work is not complete until the workboard status and evidence match the latest real result.
+
 ## การส่งงาน
 
 - ทุกงานเมื่อแก้เสร็จ ต้องทดสอบในสัดส่วนที่เหมาะสมกับความเสี่ยงของงาน
