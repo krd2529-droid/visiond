@@ -26,11 +26,16 @@
     const total=Number(model?.total);if(!Number.isFinite(total))throw new Error('ไม่มีข้อมูลค่าคอมสำหรับสร้างรูป');
     return channelPages(model.channels).map((_,index)=>drawCommissionCard(model,index));
   }
+  const hex=bytes=>[...new Uint8Array(bytes)].map(value=>value.toString(16).padStart(2,'0')).join('');
+  async function fingerprint(model){const data=JSON.stringify({owner:model.owner,range:model.range,total:Number(model.total),currency:model.currency,basis:model.basis,channels:(model.channels||[]).map(item=>[item.channel,Number(item.amount)]),referralUrl:model.referralUrl});return hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(data)))}
+  async function shareFiles(files,model){if(navigator.share&&navigator.canShare?.({files})){await navigator.share({title:'สรุปค่าคอม VisionD',text:model.referralUrl||'',files});return'shared'}files.forEach((file,index)=>setTimeout(()=>{const link=document.createElement('a');link.download=file.name;link.href=URL.createObjectURL(file);link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)},index*250));return'downloaded'}
   async function shareCommissionCard(model){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(model.dateFrom||'')||!/^\d{4}-\d{2}-\d{2}$/.test(model.dateTo||''))throw new Error('กรุณาเลือกช่วงวันที่ก่อนสร้างรูป');
+    const digest=await fingerprint(model),query=new URLSearchParams({from:model.dateFrom,to:model.dateTo,currency:model.currency||'THB',basis:model.basis||'unknown',fingerprint:digest}),cached=await fetch(`/api/admin/tiktok-commission-cards?${query}`,{cache:'no-store'}),cachedData=await cached.json().catch(()=>({}));if(!cached.ok)throw new Error(cachedData.error||'เปิดคลังรูปไม่สำเร็จ');
+    if(cachedData.items?.length){const files=await Promise.all(cachedData.items.map(async(item,index)=>{const response=await fetch(item.url,{cache:'no-store'});if(!response.ok)throw new Error('ดึงรูปเดิมจากคลังไม่สำเร็จ');return new File([await response.blob()],`visiond-commission-${model.dateFrom}-${model.dateTo}-${index+1}of${cachedData.items.length}.png`,{type:'image/png'})}));return shareFiles(files,model)}
     const canvases=drawCommissionCards(model),stamp=Date.now(),files=[];
     for(let index=0;index<canvases.length;index++){const blob=await new Promise(resolve=>canvases[index].toBlob(resolve,'image/png'));if(!blob)throw new Error('สร้างรูปไม่สำเร็จ');files.push(new File([blob],`visiond-commission-${stamp}-${index+1}of${canvases.length}.png`,{type:'image/png'}))}
-    if(navigator.share&&navigator.canShare?.({files})){await navigator.share({title:'สรุปค่าคอม VisionD',text:model.referralUrl||'',files});return'shared'}
-    files.forEach((file,index)=>setTimeout(()=>{const link=document.createElement('a');link.download=file.name;link.href=URL.createObjectURL(file);link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)},index*250));return'downloaded';
+    const form=new FormData();for(const [key,value]of query)form.set(key,value);files.forEach(file=>form.append('image',file));const saved=await fetch('/api/admin/tiktok-commission-cards',{method:'POST',body:form}),savedData=await saved.json().catch(()=>({}));if(!saved.ok)throw new Error(savedData.error||'บันทึกรูปเข้าคลังไม่สำเร็จ');return shareFiles(files,model);
   }
   global.VisionDCommissionCard={drawCommissionCard,drawCommissionCards,shareCommissionCard};
 })(window);
