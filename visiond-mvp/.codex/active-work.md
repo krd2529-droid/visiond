@@ -1,12 +1,11 @@
-# Active patch: Per-user commission image library
+# Active patch: Commission image input and social share workflow
 
-- Event: PATCH_DELIVERED
-- Outcome: บันทึกภาพค่าคอมเข้าคลังของผู้ใช้และใช้ชุดเดิมเมื่อเรียกช่วงวันที่เดิมกับข้อมูลเดิม
+- Event: PATCH_READY
+- Outcome: เพิ่มฟอร์มชื่อและช่วงวันที่ สร้างรูปก่อน แล้วแสดงปุ่มแชร์พร้อม caption, hashtags และ VX referral link เดิมของผู้ใช้
 - Preserve: ปุ่มแสดงเมื่อมีค่าคอมจริงเท่านั้น, ข้อมูลจริงจาก TikTok, แชร์หรือดาวน์โหลดได้, ไม่สร้างตัวเลขทดแทน
-- Acceptance: cache key แยกผู้ใช้และ exact date range; 1–15 ก.ย. ไม่ชน 14 ก.ย.; ข้อมูลเปลี่ยนสร้างชุดใหม่; ไฟล์ private; แชร์/ดาวน์โหลดพฤติกรรมเดิม
-- Phase: delivered to production; focused regressions, push, asset verification, and private API authentication check passed
+- Acceptance: ชื่อแก้ได้; วันที่/ช่วงวันที่เปลี่ยนแล้วโหลดข้อมูลช่วงเดียวกันก่อนวาด; รูปบันทึกคลังก่อนแสดงปุ่มแชร์; caption และ hashtags แก้ได้; referral link ใช้ API เดิมและคัดลอกได้
+- Phase: implementation complete; social workflow, image library, template, referral integration, syntax, and diff checks passed
 - Blocker: ไม่มี
-- Files: migration 0084, commission-card API and private file route, public/tiktok-commission-card.js, public/tiktok-analyzer.js, regression tests, FEATURE-MAP.md
-- Verification: exact date-range and user isolation asserted; changed-data fingerprint invalidation asserted; private ownership route and existing 10-channel template regressions passed
-- Delivered: bdbc5960 on origin/main; production asset v02090 and authenticated library endpoint verified
-- Next: เลือกช่วงวันที่แล้วกดสร้างรูป; ช่วงและข้อมูลเดิมใช้ชุดในคลัง ส่วนช่วงหรือยอดต่างกันสร้างชุดใหม่
+- Files: public/tiktok-analyzer.js, public/tiktok-commission-card.js, public/tiktok-analyzer.css, tiktok-analyzer.html, regressions, FEATURE-MAP.md
+- Verification: form includes owner/exact date range/caption/hashtags/referral link; changed dates reload authoritative totals before generation; share controls remain hidden until library save/cache succeeds
+- Next: review branch and diff, commit relevant files, push origin/main, verify production assets
