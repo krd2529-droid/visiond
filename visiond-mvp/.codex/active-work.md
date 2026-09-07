@@ -1,12 +1,12 @@
-# Active patch: Admin Product Catalog D1 Efficiency
+# Active patch: ฐ1 Storefront Catalog and Production Migration Gate
 
-- Event: PATCH_DELIVERED
-- Outcome: ลดการอ่าน D1 ของหน้าจัดการสินค้า โดยไม่โหลดทั้งคลังซ้ำและยังคงการจัดการตะกร้าครบ
-- Acceptance: รายการแบ่งหน้าฝั่ง SQL ไม่เกิน 24 รายการ; ค้นหา/สถานะทำที่ server; กลับแท็บเดิมภายใน TTL ไม่ยิงซ้ำ; คำขอซ้อนรวมเป็นหนึ่ง; รายละเอียดโหลดเมื่อเปิด; รูปอ้างอิงใช้ index แทน scan JSON; production Query Insights ลดลงอย่างมีนัยสำคัญ
-- Root cause: `/api/admin/products` คืนทั้งคลังพร้อม correlated subqueries และ client refetch ทุกครั้ง; `/api/media/[key]` scan catalog ต่อรูป
-- Phase: complete
-- Files changed: public/admin.js, public/admin.html, public/product-sample-archive.js, functions/api/admin/products/index.js, functions/api/admin/categories/index.js, functions/api/media/[key].js, functions/_schema.js, migrations/0086_admin_product_catalog_indexes.sql, scripts/test-admin-product-d1-efficiency.mjs, VERSION.txt, public/index.html
-- Verification: efficiency regression PASS; regression contracts 10/10 PASS; visible version parity PASS; predeploy PASS 9 / WARN 8 / FAIL 0
-- Delivery: commits b24f6a3a and 95dcd636 pushed to origin/main; production WEB/ADMIN v0.20.53 returned HTTP 200
-- Delivery note: admin catalog endpoints install the required indexes once per D1 binding, so the fix does not depend on remote migration CLI access
-- Next action: monitor Cloudflare D1 Query Insights after the daily quota resets
+- Event: PATCH_READY
+- Outcome: ลด D1 ของหน้าร้านและรูปสินค้า พร้อมป้องกันกรณี deploy โค้ดแต่ลืม apply migration
+- Acceptance: Production migration มีคำสั่งเฉพาะและตรวจสถานะได้; public catalog ใช้ server filter/keyset ไม่เกิน 24; cart ขอเฉพาะ slug ที่อยู่ในตะกร้า; catalog ไม่โหลดออเดอร์ย้อนหลัง 2,000 รายการ; รูปใช้ indexed lookup; cache key แยก query/cursor; pagination ไม่ซ้ำ/ไม่ตกหล่น
+- Preserved: โปรโมชั่น, การจัดหมวด, สถานะซื้อแล้ว, รถเข็นสูงสุด 30 ชิ้น, หน้ารายละเอียดสินค้า และสิทธิ์ผู้ใช้เดิม
+- Root causes: migration 0086 ไม่ถูก apply ใน Production; `/api/products` คืนทั้งคลังและ aggregate ทั้งระบบ; catalog/cart โหลด orders/catalog ทั้งชุด
+- Phase: local verification complete
+- Files changed: functions/api/products/index.js, functions/api/orders/product-status.js, functions/api/media/[key].js, functions/_schema.js, migrations/0087_storefront_catalog_indexes.sql, public/catalog-sync.js, public/cart.js, version/cache-bust files, package scripts, regression tests
+- Production blocker: D1 daily row-read quota exceeded; migration apply/EXPLAIN ต้องทำหลัง reset
+- Verification: v0.20.54 ฐ1 catalog PASS; v0.20.53 admin D1 regression PASS; visible version parity PASS
+- Next action: run predeploy gate, commit/push, verify production response; apply remote migration after D1 quota reset if runtime compatibility gate cannot complete it first

@@ -3,7 +3,32 @@
 // call. A rejected initialization is removed so the next request can retry.
 const schemaReadyByDatabase=new WeakMap();
 const adminCatalogIndexesByDatabase=new WeakMap();
+const storefrontCatalogSchemaByDatabase=new WeakMap();
 const RUNTIME_SCHEMA_VERSION=66;
+
+export async function ensureStorefrontCatalogSchema(env){
+  if(!env?.DB)return;
+  let ready=storefrontCatalogSchemaByDatabase.get(env.DB);
+  if(!ready){ready=(async()=>{
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS runtime_schema_state (schema_key TEXT PRIMARY KEY,version INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+    const state=await env.DB.prepare("SELECT version FROM runtime_schema_state WHERE schema_key='storefront_catalog'").first();
+    if(Number(state?.version)>=87)return;
+    const statements=[
+      'CREATE INDEX IF NOT EXISTS idx_product_files_product_latest ON product_files(product_id,id DESC)',
+      "CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'",
+      "CREATE INDEX IF NOT EXISTS idx_products_admin_category_status ON products(category,status) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'",
+      'CREATE INDEX IF NOT EXISTS idx_products_public_cover ON products(cover_url) WHERE deleted_at IS NULL',
+      "CREATE INDEX IF NOT EXISTS idx_products_public_preview_1 ON products(json_extract(preview_urls,'$[0]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
+      "CREATE INDEX IF NOT EXISTS idx_products_public_preview_2 ON products(json_extract(preview_urls,'$[1]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
+      "CREATE INDEX IF NOT EXISTS idx_products_public_preview_3 ON products(json_extract(preview_urls,'$[2]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
+      'CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id,id DESC)',
+      'CREATE INDEX IF NOT EXISTS idx_order_items_order_product ON order_items(order_id,product_id)',
+    ];
+    for(const sql of statements)await env.DB.prepare(sql).run();
+    await env.DB.prepare("INSERT INTO runtime_schema_state(schema_key,version,updated_at) VALUES('storefront_catalog',87,CURRENT_TIMESTAMP) ON CONFLICT(schema_key) DO UPDATE SET version=excluded.version,updated_at=CURRENT_TIMESTAMP").run();
+  })().catch(error=>{storefrontCatalogSchemaByDatabase.delete(env.DB);throw error});storefrontCatalogSchemaByDatabase.set(env.DB,ready)}
+  return ready;
+}
 
 export async function ensureAdminCatalogIndexes(env){
   if(!env?.DB)return;

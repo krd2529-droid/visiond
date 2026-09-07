@@ -7,6 +7,8 @@
     "dev": "wrangler pages dev public --d1=DB --r2=FILES",
     "deploy": "wrangler pages deploy public",
     "db:init": "wrangler d1 execute visiond-db --file=./migrations/0001_init.sql",
+    "db:migrate:catalog": "wrangler d1 execute visiond-db --remote --file=./migrations/0086_admin_product_catalog_indexes.sql",
+    "db:migrate:storefront": "wrangler d1 execute visiond-db --remote --file=./migrations/0087_storefront_catalog_indexes.sql",
     "vision5:backup": "node scripts/vision5-backup.mjs",
     "vision5:restore": "node scripts/vision5-restore.mjs",
     "test:elon-provider": "node scripts/test-elon-provider.mjs",
@@ -410,7 +412,8 @@
     "test:v014476": "node scripts/test-v014476.mjs",
     "test:v02050": "node scripts/test-v02050-guides.mjs",
     "test:v02051": "node scripts/test-v02051-daily-seo.mjs",
-    "test:v02053": "node scripts/test-v02053.mjs"
+    "test:v02053": "node scripts/test-v02053.mjs",
+    "test:v02054": "node scripts/test-v02054-tha1-catalog.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

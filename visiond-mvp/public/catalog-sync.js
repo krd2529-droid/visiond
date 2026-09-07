@@ -118,7 +118,7 @@ import('/nav-account.js?v=014407');
   (bundlePanel?.parentElement || grid).insertAdjacentElement("afterend", catalogPager);
   document.head.insertAdjacentHTML(
     "beforeend",
-    '<style>.catalog-pagination{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:28px 0 8px}.catalog-pagination a{display:grid;place-items:center;min-width:42px;height:42px;padding:0 11px;border:1px solid #8bc8c4;border-radius:10px;background:#fff;color:#08756f;font-weight:900}.catalog-pagination a.active{background:#08756f;color:#fff;border-color:#08756f}.catalog-pagination a:first-child{padding-inline:16px}</style>',
+    '<style>.catalog-pagination{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:28px 0 8px}.catalog-pagination a,.catalog-pagination button{display:grid;place-items:center;min-width:42px;height:42px;padding:0 11px;border:1px solid #8bc8c4;border-radius:10px;background:#fff;color:#08756f;font-weight:900;cursor:pointer}.catalog-pagination a.active,.catalog-pagination button.active{background:#08756f;color:#fff;border-color:#08756f}.catalog-pagination a:first-child,.catalog-pagination button:first-child{padding-inline:16px}</style>',
   );
   const renderBundlePanel = () => {
     if (!bundlePanel) return;
@@ -166,17 +166,18 @@ import('/nav-account.js?v=014407');
       );
   updateCartCount();
   renderBundlePanel();
-  const loadOrderPages=async()=>{const items=[];let cursor='';for(let page=0;page<20;page++){const query=cursor?`?limit=100&cursor=${encodeURIComponent(cursor)}`:'?limit=100',response=await fetch(`/api/orders${query}`,{cache:'no-store'});if(!response.ok)return {items:[]};const data=await response.json();items.push(...(data.items||[]));if(!data.pagination?.has_more||!data.pagination?.next_cursor)break;cursor=String(data.pagination.next_cursor)}return {items}};
+  const routeParams=new URLSearchParams(location.search),catalogRequestParams=new URLSearchParams({limit:'24'});
+  for(const key of ['cursor','q'])if(routeParams.get(key))catalogRequestParams.set(key,routeParams.get(key));
+  const requestedGroup=routeParams.get('group')||routeParams.get('category');if(requestedGroup&&requestedGroup!=='all')catalogRequestParams.set('group',requestedGroup);
   Promise.all([
-    fetch("/api/products").then((r) => (r.ok ? r.json() : Promise.reject())),
+    fetch(`/api/products?${catalogRequestParams}`).then((r) => (r.ok ? r.json() : Promise.reject())),
     fetch("/api/categories").then((r) => (r.ok ? r.json() : { items: [] })),
-    loadOrderPages()
-      .catch(() => ({ items: [] })),
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { user: null }))
       .catch(() => ({ user: null })),
   ])
-    .then(([data, categoryData, orderData, accountData]) => {
+    .then(async([data, categoryData, accountData]) => {
+      const slugs=(data.items||[]).map(item=>item.slug).filter(Boolean),statusData=accountData.user&&slugs.length?await fetch(`/api/orders/product-status?slugs=${encodeURIComponent(slugs.join(','))}`,{cache:'no-store'}).then(response=>response.ok?response.json():{items:[]}).catch(()=>({items:[]})):{items:[]},orderData={items:(statusData.items||[]).map(item=>({status:item.status,items:[{slug:item.slug}]}))};
       grid.querySelector(".product-loading")?.remove();
       const products = [...(data.items || [])].sort((a, b) => {
           const tattooLast = (item) => /tattoo|รอยสัก|แบบสัก/.test(`${item.category || ""} ${item.category_label || ""} ${item.title || ""}`.toLowerCase()) ? 1 : 0;
@@ -393,7 +394,8 @@ import('/nav-account.js?v=014407');
         },
         { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "paper-doll": 0, "resale-rights": 0 },
       );
-      const requestedCategory = new URLSearchParams(location.search).get("category"),
+      if(homeSearch)homeSearch.value=routeParams.get('q')||'';
+      const requestedCategory = requestedGroup,
         initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "paper-doll", "resale-rights"].includes(requestedCategory)
           ? requestedCategory
           : "all";
@@ -402,6 +404,7 @@ import('/nav-account.js?v=014407');
         requestedPage = Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1);
       let currentCategory = initialCategory,
         selectedPage = requestedPage;
+      const catalogHref=(next={})=>{const params=new URLSearchParams();const selected=next.group??currentCategory,search=next.q??String(homeSearch?.value||'').trim(),cursor=next.cursor||'';if(selected&&selected!=='all')params.set('group',selected);if(search)params.set('q',search);if(cursor)params.set('cursor',cursor);return `${location.pathname}${params.size?'?'+params:''}`};
       const applyCategory = (category, resetPage = false) => {
         currentCategory = category;
         if (resetPage) selectedPage = 1;
@@ -420,22 +423,15 @@ import('/nav-account.js?v=014407');
           .querySelectorAll(".vd-card")
           .forEach((card) => (card.hidden = !visibleCards.has(card)));
         if (homeSearchCount) homeSearchCount.textContent = searchText ? `พบ ${matchingCards.length} สินค้าที่ตรงกับ “${homeSearch.value.trim()}”` : `แสดงสินค้า ${matchingCards.length} รายการ`;
-        const categoryValue = category === "all" ? "" : encodeURIComponent(category),
-          firstPageHref = location.pathname === "/"
-            ? categoryValue ? `/?category=${categoryValue}` : "/"
-            : categoryValue ? `/digital-products?category=${categoryValue}` : "/digital-products";
         catalogPager.innerHTML = Array.from({ length: totalPages }, (_, index) => index + 1)
-          .map((page) => `<a class="${page === currentPage ? "active" : ""}" href="${page === 1 ? firstPageHref : `/digital-products?page=${page}${categoryValue ? `&category=${categoryValue}` : ""}`}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้า 1" : page}</a>`)
+          .map((page) => `<button type="button" data-catalog-local-page="${page}" class="${page === currentPage ? "active" : ""}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้า 1" : page}</button>`)
           .join("");
+        catalogPager.querySelectorAll('[data-catalog-local-page]').forEach(button=>button.onclick=()=>{selectedPage=Number(button.dataset.catalogLocalPage)||1;applyCategory(currentCategory);grid.scrollIntoView({behavior:'smooth',block:'start'})});
+        if(data.pagination?.has_more&&data.pagination?.next_cursor)catalogPager.insertAdjacentHTML('beforeend',`<a href="${esc(catalogHref({cursor:data.pagination.next_cursor}))}">สินค้าถัดไป →</a>`);
       };
-      filters.querySelectorAll("button").forEach(
-        (button) =>
-          (button.onclick = () => {
-            applyCategory(button.dataset.category, true);
-          }),
-      );
-      if (homeSearch) homeSearch.oninput = () => applyCategory(currentCategory, true);
-      if (clearHomeSearch) clearHomeSearch.onclick = () => { homeSearch.value = ""; applyCategory(currentCategory, true); homeSearch.focus(); };
+      filters.querySelectorAll("button").forEach(button=>button.onclick=()=>{location.href=catalogHref({group:button.dataset.category,cursor:''})});
+      let searchTimer=null;if(homeSearch)homeSearch.oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{location.href=catalogHref({q:homeSearch.value.trim(),cursor:''})},350)};
+      if (clearHomeSearch) clearHomeSearch.onclick = () => { location.href=catalogHref({q:'',cursor:''}); };
       applyCategory(initialCategory);
     })
     .catch(() => {

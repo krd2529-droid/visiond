@@ -45,13 +45,14 @@ const saveCart = (items) => {
   render();
 };
 async function refreshCartPrices(){
-  if(!getCart().length)return;
+  const before=getCart();if(!before.length)return;
   try{
-    const [productsResponse,coursesResponse,vbotResponse,vtoolsResponse]=await Promise.all([fetch('/api/products',{cache:'no-store'}),fetch('/api/courses',{cache:'no-store'}),fetch('/api/vision7/apps',{cache:'no-store'}),fetch('/api/vtools',{cache:'no-store'})]);if(!productsResponse.ok||!coursesResponse.ok||!vbotResponse.ok||!vtoolsResponse.ok)return;
+    const slugs=before.map(item=>item.slug).filter(Boolean).slice(0,30),productQuery=encodeURIComponent(slugs.join(','));
+    const [productsResponse,coursesResponse,vbotResponse,vtoolsResponse]=await Promise.all([fetch(`/api/products?slugs=${productQuery}`,{cache:'no-store'}),fetch('/api/courses',{cache:'no-store'}),fetch('/api/vision7/apps',{cache:'no-store'}),fetch('/api/vtools',{cache:'no-store'})]);if(!productsResponse.ok||!coursesResponse.ok||!vbotResponse.ok||!vtoolsResponse.ok)return;
     const [products,courses,vbot,vtools]=await Promise.all([productsResponse.json(),coursesResponse.json(),vbotResponse.json(),vtoolsResponse.json()]);
     const publicPlans=new Set(['monthly','yearly','lifetime']),vbotOffers=[];
     for(const app of vbot.items||[]){let offers=app.offers||[];if(typeof offers==='string'){try{offers=JSON.parse(offers)}catch{offers=[]}}offers=(Array.isArray(offers)?offers:[]).filter(offer=>publicPlans.has(String(offer.code||offer.plan_code))&&Number(offer.price)>0&&offer.product_slug&&Number(offer.product_id)>0).map(offer=>({id:Number(offer.product_id),slug:offer.product_slug,title:`${app.name||app.code} · คีย์ ${offer.name||''}`,price:Number(offer.price),cover_url:app.cover_url,category:'vbot-key',category_label:'โปรแกรม VBot พร้อมคีย์',product_kind:'vision7-key',vision7_plan_id:Number(offer.id),vbot_plan_code:String(offer.code||offer.plan_code),vbot_duration_days:offer.duration_days,vbot_app_code:app.code,vbot_platform_type:app.platform_type}));for(const offer of offers)vbotOffers.push({...offer,vbot_offers:offers})}
-    const available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,course_id:course.id,product_kind:'course',category:'online-course'})),...vbotOffers,...(vtools.items||[])],bySlug=new Map(available.map(item=>[item.slug,item])),before=getCart(),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return [];return [{...item,...product,id:product.id,course_id:product.course_id||item.course_id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,cover_url:product.cover_url||item.cover_url}]});
+    const available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,course_id:course.id,product_kind:'course',category:'online-course'})),...vbotOffers,...(vtools.items||[])],bySlug=new Map(available.map(item=>[item.slug,item])),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return [];return [{...item,...product,id:product.id,course_id:product.course_id||item.course_id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,cover_url:product.cover_url||item.cover_url}]});
     if(fresh.length!==before.length)resetActiveOrder();
     localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
     if(fresh.length!==before.length)alert(`นำสินค้า ${before.length-fresh.length} รายการออกจากตะกร้าแล้ว เพราะสินค้าปิดขายหรือถูกลบ`);
@@ -279,19 +280,10 @@ slipForm.onsubmit = async (e) => {
   }
 };
 async function removeUnavailableCartItems() {
-  const orders=[];let cursor='';
-  for(let page=0;page<20;page++){
-    const query=cursor?`?limit=100&cursor=${encodeURIComponent(cursor)}`:'?limit=100',response=await fetch(`/api/orders${query}`,{cache:'no-store'}).catch(()=>null);
-    if(!response?.ok)return;
-    const data=await response.json().catch(()=>({items:[],pagination:{}}));orders.push(...(data.items||[]));
-    if(!data.pagination?.has_more||!data.pagination?.next_cursor)break;
-    cursor=String(data.pagination.next_cursor);
-  }
-  const blocked = new Set();
-  for (const order of orders)
-    if (["paid", "pending_review", "awaiting_payment"].includes(order.status))
-      for (const item of order.items || []) if(item.slug!=='course-selling-rights')blocked.add(item.slug);
-  const before = getCart(),
+  const before=getCart(),slugs=before.map(item=>item.slug).filter(Boolean).slice(0,30);if(!slugs.length)return;
+  const response=await fetch(`/api/orders/product-status?slugs=${encodeURIComponent(slugs.join(','))}`,{cache:'no-store'}).catch(()=>null);if(!response?.ok)return;
+  const data=await response.json().catch(()=>({items:[]})),blocked=new Set((data.items||[]).filter(item=>item.blocked&&item.slug!=='course-selling-rights').map(item=>item.slug));
+  const
     after = before.filter((item) => !blocked.has(item.slug));
   if (after.length !== before.length) {
     saveCart(after);
