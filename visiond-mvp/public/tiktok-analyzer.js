@@ -1397,4 +1397,18 @@ if (manualGradeHint) manualGradeHint.textContent = "สินค้าที่�
 for (const hint of document.querySelectorAll("#result .hint")) {
   if (hint.textContent.trim().startsWith("เป้าหมาย 30 สินค้าหลัก")) hint.remove();
 }
-loadChannels();
+async function bootstrapReviewerAccess(){
+  try{
+    const response=await fetch('/api/auth/me',{cache:'no-store'});
+    if(response.status===401){
+      sessionStorage.setItem('vd_return_to',`${location.pathname}${location.search}${location.hash}`);
+      location.replace('/login.html');
+      return;
+    }
+    if(!response.ok)throw new Error(response.status===503?'ระบบสมาชิกถึงขีดจำกัดชั่วคราว กรุณาลองใหม่หลังระบบรีเซ็ต':'ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ');
+    await loadChannels();
+  }catch(error){
+    $('#channels').innerHTML=`<p class="shop-error">${escapeHtml(error.message||'เปิดระบบ VX ไม่สำเร็จ')}</p><button type="button" onclick="location.reload()">ลองใหม่</button>`;
+  }
+}
+bootstrapReviewerAccess();

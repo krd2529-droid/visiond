@@ -2,7 +2,8 @@ import {json} from '../../_lib.js';
 import {rateLimit,rateLimitIdentity,verifyTurnstile,verifyPassword,securityLog} from '../../_security.js';
 import {recordSuccessfulLogin} from '../../_first_order_promo.js';
 import {claimVisitorHistory} from '../../_analytics.js';
-import {ensureVision7AuthSchema} from '../../_vision7_auth.js';
+
+const databaseLimitError=error=>/D1|quota|daily operation limit|1101/i.test(String(error?.message||error||''));
 
 export async function onRequestPost(ctx){
  try{
@@ -19,7 +20,6 @@ export async function onRequestPost(ctx){
   const u=await ctx.env.DB.prepare('SELECT * FROM users WHERE lower(email)=? OR lower(username)=? ORDER BY CASE WHEN lower(username)=? THEN 0 ELSE 1 END,id LIMIT 1').bind(login,login,login).first();
   if(u){const accountLimited=await rateLimitIdentity(ctx.env,ctx.request,'login_account',`user:${u.id}`,10,15,30);if(accountLimited.error)return accountLimited.error;}
   if(!u||!await verifyPassword(String(b.password||''),u.password_hash)){await securityLog(ctx.env,ctx.request,'login_failed','warning',login);return json({error:'ไอดีหรือรหัสผ่านไม่ถูกต้อง'},401)}
-  await ensureVision7AuthSchema(ctx.env);
   const remember=b.remember===true,sessionDuration=remember?'+30 days':'+24 hours';
   const id=crypto.randomUUID(),statements=[];
   if(u.role!=='boss'){
@@ -28,12 +28,15 @@ export async function onRequestPost(ctx){
   }
   statements.push(ctx.env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now',?))").bind(id,u.id,sessionDuration));
   await ctx.env.DB.batch(statements);
-  await recordSuccessfulLogin(ctx.env,u.id);
-  const claimed=await claimVisitorHistory(ctx.env,ctx.request,u.id);
-  await ctx.env.DB.prepare(`INSERT INTO customer_events(visitor_key,user_id,event_type,path,metadata) VALUES(?,?,'login_success','/login',?)`).bind(claimed.visitor_key,u.id,JSON.stringify({claimed_guest_events:claimed.claimed})).run().catch(()=>{});
-  await securityLog(ctx.env,ctx.request,'login_success','info','',u.id);
+  const recordLoginActivity=async()=>{
+    await recordSuccessfulLogin(ctx.env,u.id).catch(()=>{});
+    const claimed=await claimVisitorHistory(ctx.env,ctx.request,u.id).catch(()=>null);
+    if(claimed)await ctx.env.DB.prepare(`INSERT INTO customer_events(visitor_key,user_id,event_type,path,metadata) VALUES(?,?,'login_success','/login',?)`).bind(claimed.visitor_key,u.id,JSON.stringify({claimed_guest_events:claimed.claimed})).run().catch(()=>{});
+    await securityLog(ctx.env,ctx.request,'login_success','info','',u.id);
+  };
+  if(ctx.waitUntil)ctx.waitUntil(recordLoginActivity());else await recordLoginActivity();
   const maxAge=remember?'; Max-Age=2592000':'';
   return json({ok:true},200,{'set-cookie':`vd_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/${maxAge}`});
- }catch(error){console.error('AUTH_LOGIN_FAILED',error);return json({error:'ระบบเข้าสู่ระบบขัดข้อง [AUTH-LOGIN]'},500)}
+ }catch(error){console.error('AUTH_LOGIN_FAILED',error);return databaseLimitError(error)?json({error:'ระบบสมาชิกใช้ฐานข้อมูลครบขีดจำกัดรายวัน กรุณาลองใหม่หลังระบบรีเซ็ต',code:'DATABASE_DAILY_LIMIT'},503,{'retry-after':'3600'}):json({error:'ระบบเข้าสู่ระบบขัดข้อง [AUTH-LOGIN]',code:'AUTH_LOGIN_FAILED'},500)}
 }
 // Feature: AUTH-ACCOUNT-001 — session login boundary

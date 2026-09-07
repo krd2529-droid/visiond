@@ -1,13 +1,12 @@
-# Active patch: ฐ1 Storefront Catalog and Production Migration Gate
+# Active patch: TikTok Reviewer Login Reliability
 
-- Event: PATCH_DELIVERED
-- Outcome: ลด D1 ของหน้าร้านและรูปสินค้า พร้อมป้องกันกรณี deploy โค้ดแต่ลืม apply migration
-- Acceptance: Production migration มีคำสั่งเฉพาะและตรวจสถานะได้; public catalog ใช้ server filter/keyset ไม่เกิน 24; cart ขอเฉพาะ slug ที่อยู่ในตะกร้า; catalog ไม่โหลดออเดอร์ย้อนหลัง 2,000 รายการ; รูปใช้ indexed lookup; cache key แยก query/cursor; pagination ไม่ซ้ำ/ไม่ตกหล่น
-- Preserved: โปรโมชั่น, การจัดหมวด, สถานะซื้อแล้ว, รถเข็นสูงสุด 30 ชิ้น, หน้ารายละเอียดสินค้า และสิทธิ์ผู้ใช้เดิม
-- Root causes: migration 0086 ไม่ถูก apply ใน Production; `/api/products` คืนทั้งคลังและ aggregate ทั้งระบบ; catalog/cart โหลด orders/catalog ทั้งชุด
-- Phase: deployed; production data verification waiting for the existing D1 daily quota reset
-- Files changed: functions/api/products/index.js, functions/api/orders/product-status.js, functions/api/media/[key].js, functions/_schema.js, migrations/0087_storefront_catalog_indexes.sql, public/catalog-sync.js, public/cart.js, version/cache-bust files, package scripts, regression tests
-- Production blocker: D1 daily row-read quota exceeded; migration apply/EXPLAIN ต้องทำหลัง reset
-- Verification: v0.20.54 ฐ1 catalog PASS; v0.20.53 admin D1 regression PASS; visible version parity PASS; predeploy PASS 9 / WARN 8 / FAIL 0; production homepage serves WEB v0.20.54
-- Delivery: commit 13e01fbd pushed to origin/main; public catalog API currently returns the pre-existing D1 quota 500 until Cloudflare resets the daily limit
-- Next action: after D1 quota reset, verify `/api/products?limit=1`, confirm runtime migration state 87/indexes, then monitor Query Insights before starting ฐ1 round 2
+- Event: PATCH_READY
+- Outcome: ผู้ตรวจ TikTok ที่ยังไม่ล็อกอินต้องถูกพาไปหน้าเข้าสู่ระบบและกลับเข้า VX ได้ทันที โดย login ไม่ทำ schema DDL หรือ telemetry หนักในเส้นทางตอบกลับ
+- Acceptance: guest เปิด `/tiktok-analyzer.html` แล้วไป login พร้อม return path; login สำเร็จกลับหน้า analyzer; 401/403/503 แสดงสถานะถูกต้อง; ไม่มี review demo/ข้อมูลปลอม/การข้ามสิทธิ์ VX; ชุดทดสอบ auth และ TikTok เดิมผ่าน
+- Preserved: การตรวจรหัสผ่าน, rate limit, one-session policy, active VX requirement, TikTok OAuth และสิทธิ์ข้อมูลจริง
+- Root cause: D1 daily limit ทำให้ rate-limit query throw เป็น `[AUTH-LOGIN]`; analyzer เรียก private API ทันทีแต่ไม่มี auth bootstrap/return path; login รัน Vision7 DDL และ telemetry ก่อนตอบสำเร็จ
+- Phase: implementation and local verification complete
+- Files changed: public/tiktok-analyzer.js, functions/api/auth/login.js, VERSION.txt, public/index.html, public/admin.html, package.json, focused regression tests
+- Production blocker: D1 quota ปัจจุบันยังเต็ม; ต้องรอ reset เพื่อทดสอบบัญชี reviewer จริง end-to-end
+- Verification: syntax PASS; v0.20.55 reviewer login PASS; ฐ1 catalog regressions PASS; visible version parity PASS; predeploy PASS 9 / WARN 8 / FAIL 0; historical v0.20.48 test has a pre-existing stale grade-label assertion unrelated to this patch
+- Next action: commit/push and verify deployed static reviewer flow; real reviewer credential/VX gate remains after D1 resets at 2026-09-08 07:00 Asia/Bangkok
