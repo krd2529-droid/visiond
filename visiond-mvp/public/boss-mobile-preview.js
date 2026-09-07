@@ -1,12 +1,17 @@
+import {getSession, subscribeAuth} from '/auth-session.js?v=02057';
+let cleanupPreview = () => {};
 const bossPreviewDesktop = !matchMedia("(max-width: 760px), (pointer: coarse)").matches;
-if (window.self === window.top && !location.pathname.startsWith("/admin") && bossPreviewDesktop) initBossMobilePreview();
+if (window.self === window.top && !location.pathname.startsWith("/admin") && bossPreviewDesktop) {
+  subscribeAuth(user => {
+    cleanupPreview();
+    cleanupPreview = () => {};
+    if (user?.role === "boss") initBossMobilePreview();
+  });
+  getSession();
+}
 
 async function initBossMobilePreview() {
   try {
-    const response = await fetch("/api/auth/me", { cache: "no-store" });
-    if (!response.ok) return;
-    const { user } = await response.json();
-    if (user?.role !== "boss") return;
     document.head.insertAdjacentHTML("beforeend", `<style id="boss-mobile-preview-style">
       .boss-mobile-launch{position:fixed;z-index:10020;left:12px;top:50%;display:grid;place-items:center;gap:4px;width:76px;min-height:76px;padding:9px 6px;border:1px solid #ffffffb8;border-radius:18px;background:linear-gradient(145deg,#073f3d,#078b85);color:#fff;box-shadow:0 14px 34px #033d3a47;font:900 11px/1.25 Arial,"Noto Sans Thai",sans-serif;transform:translateY(-50%)}.boss-mobile-launch span{font-size:23px}
       .boss-mobile-overlay{position:fixed;z-index:10030;inset:0;display:grid;grid-template-columns:minmax(200px,1fr) auto;background:#032725b8;backdrop-filter:blur(5px)}.boss-mobile-overlay[hidden]{display:none}.boss-mobile-away{cursor:zoom-out}.boss-mobile-panel{width:min(490px,100vw);height:100vh;padding:14px;overflow:auto;background:#e8f8f6;box-shadow:-18px 0 55px #0004}.boss-mobile-tools{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:end;margin-bottom:12px}.boss-mobile-tools label{display:grid;gap:5px;color:#123b39;font-weight:900}.boss-mobile-tools select{width:100%;min-height:43px;padding:9px;border:1px solid #9ed2ce;border-radius:11px;background:#fff;font:inherit}.boss-mobile-actions{display:flex;gap:7px}.boss-mobile-actions button,.boss-mobile-actions a{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid #87c9c4;border-radius:11px;background:#fff;color:#075e5a;font-weight:900;text-decoration:none}.boss-mobile-device{width:390px;max-width:100%;margin:auto;padding:10px;border:5px solid #123b39;border-radius:38px;background:#123b39;box-shadow:0 20px 45px #003d3940}.boss-mobile-speaker{width:74px;height:6px;margin:0 auto 9px;border-radius:99px;background:#7ba09d}.boss-mobile-frame{display:block;width:100%;height:min(780px,calc(100vh - 160px));min-height:560px;border:0;border-radius:25px;background:#fff}
@@ -19,7 +24,14 @@ async function initBossMobilePreview() {
     const close=()=>{overlay.hidden=true;document.body.style.overflow=""};
     launch.onclick=()=>{overlay.hidden=false;document.body.style.overflow="hidden";if(!frame.getAttribute("src"))load()};
     route.onchange=load;overlay.querySelector(".boss-mobile-reload").onclick=()=>frame.contentWindow?.location.reload();overlay.querySelector(".boss-mobile-close").onclick=close;overlay.querySelector(".boss-mobile-away").onclick=close;
-    document.addEventListener("keydown",event=>event.key==="Escape"&&!overlay.hidden&&close());
+    const onKey = event => event.key === "Escape" && !overlay.hidden && close();
+    document.addEventListener("keydown", onKey);
+    cleanupPreview = () => {
+      if (!overlay.hidden) close();
+      launch.remove();overlay.remove();
+      document.querySelector("#boss-mobile-preview-style")?.remove();
+      document.removeEventListener("keydown", onKey);
+    };
   } catch (error) { console.warn("Boss mobile preview unavailable", error); }
 }
 

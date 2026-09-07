@@ -7,7 +7,7 @@ const guides = read('public/guides.html');
 const css = read('public/guides.css');
 const version = read('VERSION.txt').trim();
 
-assert.equal(version, 'v0.20.56');
+assert.equal(version, 'v0.20.57');
 for (const slug of ['visiond-vx-customer-guide', 'visiond-vlearning-partner-customer-guide']) {
   assert.match(guides, new RegExp(`/manuals/${slug}\\.pdf`));
   assert.match(guides, new RegExp(`/manuals/${slug}\\.docx`));

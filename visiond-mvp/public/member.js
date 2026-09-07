@@ -1,5 +1,5 @@
 document.documentElement.dataset.feature='CATEGORY-MEMBER-001';
-import('/nav-account.js?v=014407');
+import('/nav-account.js?v=02057');
 const money=value=>new Intl.NumberFormat('th-TH').format((Number(value)||0)/100)+' บาท';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const thaiDate=value=>String(value||'').startsWith('9999-')?'ตลอดชีพ':new Date(String(value).replace(' ','T')+'Z').toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});

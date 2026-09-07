@@ -202,8 +202,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
 
 
 /* VisionD v0.2.3 — member login and registration */
-.topbar .signup-link{padding:9px 15px;border-radius:999px;background:#fff;color:var(--tiffany-dark);box-shadow:0 8px 24px rgba(4,78,76,.18)}
-.topbar .signup-link:hover{background:var(--tiffany-soft);color:var(--tiffany-deep)}
+.topbar :is(.signup-link,.login-link){padding:9px 15px;border-radius:999px;background:#fff;color:var(--tiffany-dark);box-shadow:0 8px 24px rgba(4,78,76,.18)}
+.topbar :is(.signup-link,.login-link):hover{background:var(--tiffany-soft);color:var(--tiffany-deep)}
 .topbar,.topbar nav,.topbar nav a,.topbar nav button{font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif}.topbar nav a,.topbar nav button{font-size:13px;font-weight:800;line-height:1.25}.topbar nav .nav-course-basket{border-color:rgba(255,255,255,.52);background:#fff;color:#086b66}
 .topbar nav:has(>.nav-primary-group){display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-content:center;justify-items:stretch}.topbar nav .nav-primary-group,.topbar nav .nav-utility-group{display:flex;align-items:center;gap:18px;min-width:0}.topbar nav .nav-primary-group{justify-content:flex-end}.topbar nav .nav-utility-group{justify-content:flex-end;gap:10px}.topbar nav .nav-utility-group .vd-language-switcher{flex:0 0 auto}.topbar nav .nav-primary-group a{font-size:13px}.topbar nav .nav-utility-group .course-owner-badge{width:auto!important;min-width:max-content!important}
 @media(min-width:801px) and (max-width:1100px){.topbar{align-items:flex-start}.topbar nav:has(>.nav-primary-group){flex:1}.topbar nav .nav-primary-group{gap:12px;flex-wrap:wrap}.topbar nav .nav-utility-group{flex-wrap:nowrap}}
@@ -221,7 +221,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
 .register-cta a{padding:9px 14px;border-radius:10px;background:var(--tiffany-soft);color:var(--tiffany-dark);font-weight:900}
 .purchase-steps{display:grid;gap:5px;margin-top:18px;padding:15px;border-radius:14px;background:linear-gradient(135deg,var(--tiffany-pale),var(--tiffany-soft));color:var(--tiffany-deep)}
 .purchase-steps span{font-size:13px;color:var(--muted)}
-@media(max-width:760px){.topbar .signup-link{display:inline-flex}.hero-login-card{padding:24px}}
+@media(max-width:760px){.topbar :is(.signup-link,.login-link){display:inline-flex}.hero-login-card{padding:24px}}
 .member-nav-status{padding:8px 12px;border-radius:999px;background:#fff;color:var(--tiffany-dark)!important}.member-status-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}.member-status-head h2{margin:0 0 6px}.member-status-avatar{display:grid;place-items:center;width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,var(--tiffany),#59d9d4);color:#fff;font-size:20px;font-weight:1000}.home-member-detail{display:grid;gap:0;margin:0 0 18px}.home-member-detail div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}.home-member-detail dt{color:var(--muted)}.home-member-detail dd{margin:0;font-weight:900;text-align:right}.status-active{color:#078c69}.home-logout{margin-top:10px;padding:12px;border:1px solid #d6aaaa;border-radius:11px;background:#fff;color:#9c3535;font-weight:900;cursor:pointer}.hero-login-card .secondary-button{margin-top:10px}
 
 
@@ -285,8 +285,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rad
   .topbar nav .nav-member-account b{display:block;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .topbar nav .nav-logout{order:-2}
   .topbar nav .nav-admin-link{order:-1}
-  .topbar .signup-link,.member-nav-status{display:inline-flex!important;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid rgba(255,255,255,.52);border-radius:12px;background:rgba(4,78,76,.22);color:#fff!important;box-shadow:none}
-  .topbar .signup-link:hover,.member-nav-status:hover{background:rgba(255,255,255,.16);color:#fff!important}
+  .topbar :is(.signup-link,.login-link),.member-nav-status{display:inline-flex!important;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid rgba(255,255,255,.52);border-radius:12px;background:rgba(4,78,76,.22);color:#fff!important;box-shadow:none}
+  .topbar :is(.signup-link,.login-link):hover,.member-nav-status:hover{background:rgba(255,255,255,.16);color:#fff!important}
 }
 .site-visitor-counter{margin:14px 0 0;color:#d7fffc;font-size:13px}.site-visitor-counter b{font-size:18px;color:#fff}
 

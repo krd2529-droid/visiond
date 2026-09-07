@@ -1,6 +1,6 @@
-import("/facebook-chat.js?v=014407");
+import("/facebook-chat.js?v=02057");
 import("/mouse-ui.js?v=014407");
-import('/nav-account.js?v=014407');
+import('/nav-account.js?v=02057');
 (() => {
   document.querySelectorAll('a[href="/cart.html"]').forEach((link) => link.setAttribute("href", "/cart"));
   document.querySelectorAll('a[href^="/digital-products.html"]').forEach((link) => link.setAttribute("href", link.getAttribute("href").replace("/digital-products.html", "/digital-products")));
@@ -438,5 +438,5 @@ import('/nav-account.js?v=014407');
       grid.innerHTML = '<div class="product-loading"><b>โหลดแคตตาล็อกไม่สำเร็จ</b><p>การเชื่อมต่อใช้เวลานาน กรุณากดลองใหม่</p><button type="button" onclick="location.reload()">ลองโหลดอีกครั้ง</button></div>';
     });
 })();
-import("/nav-account.js?v=014407").then((module) => module.initAccountNav());
+import("/nav-account.js?v=02057").then((module) => module.initAccountNav());
 // Feature: CATALOG-STOREFRONT-001 — แคตตาล็อกสินค้าดิจิทัลหน้าร้าน

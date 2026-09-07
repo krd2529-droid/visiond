@@ -34,4 +34,4 @@ import('/i18n.js?v=014407');
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
 import('/mouse-ui.js?v=014407');
-import('/boss-mobile-preview.js?v=014407');
+import('/boss-mobile-preview.js?v=02057');
