@@ -1,7 +1,7 @@
 import {json} from '../../_lib.js';
 import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {ensureDatabase,ensureStorefrontCatalogSchema} from '../../_schema.js';
-import {loadBasketVisibility} from '../../_basket_visibility.js';
+import {loadBasketVisibility,loadDigitalStorefrontPaused} from '../../_basket_visibility.js';
 
 const CACHE_SECONDS=60,MAX_PAGE=24,MAX_LOOKUP=30;
 const escapeLike=value=>String(value||'').replace(/[\\%_]/g,'\\$&');
@@ -20,7 +20,9 @@ export async function onRequestGet(ctx){
   if(cursor===false)return json({error:'cursor ไม่ถูกต้อง'},400);
   if(group&&!allowedGroups.has(group))return json({error:'หมวดสินค้าไม่ถูกต้อง'},400);
   if(params.has('slugs')&&!lookupSlugs.length)return json({items:[],pagination:{limit:MAX_LOOKUP,has_more:false,next_cursor:null}});
-  await ensureDatabase(ctx.env);await ensureStorefrontCatalogSchema(ctx.env);
+  await ensureDatabase(ctx.env);
+  if(await loadDigitalStorefrontPaused(ctx.env))return json({items:[],storefront_closed:true,message:'หน้าร้านไฟล์ดิจิทัลปิดปรับปรุงชั่วคราว งานและสิทธิ์ดาวน์โหลดเดิมยังอยู่ครบ',category_counts:{all:0,tattoo:0,coloring:0,worksheet:0,'development-game':0,'paper-doll':0,'resale-rights':0},pagination:{limit,has_more:false,next_cursor:null,total:0,range_from:0,range_to:0}},200,{'cache-control':'private, no-store'});
+  await ensureStorefrontCatalogSchema(ctx.env);
   const revision=String((await ctx.env.DB.prepare("SELECT value FROM settings WHERE key='storefront_catalog_revision'").first())?.value||'0'),key=cacheKey(ctx.request,revision),cache=globalThis.caches?.default,cached=cache?await cache.match(key):null;if(cached)return cached;
   const visibility=await loadBasketVisibility(ctx.env),clauses=["p.status='published'","p.deleted_at IS NULL","COALESCE(p.product_kind,'product')='product'","(p.category<>'resale-rights' OR p.slug='course-selling-rights')"],baseBindings=[];
   if(visibility.mode==='all'&&visibility.action==='closed')clauses.push('0=1');

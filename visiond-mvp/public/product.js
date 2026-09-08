@@ -77,7 +77,7 @@ function renderProduct(product){
 async function loadProduct(){
   const slug=String(new URLSearchParams(location.search).get('slug')||'').trim();
   if(!slug){renderProductError('ไม่พบรหัสสินค้า');return}
-  try{const response=await fetch('/api/products/'+encodeURIComponent(slug),{cache:'no-store'});if(!response.ok){renderProductError(response.status===404?'ไม่พบสินค้านี้':'โหลดสินค้าไม่สำเร็จ');return}const data=await response.json();if(!data?.item?.id||!data.item.slug){renderProductError('ข้อมูลสินค้าไม่สมบูรณ์');return}renderProduct(data.item);}catch(error){renderProductError('เชื่อมต่อข้อมูลสินค้าไม่สำเร็จ');}
+  try{const response=await fetch('/api/products/'+encodeURIComponent(slug),{cache:'no-store'});if(!response.ok){const failure=await response.json().catch(()=>({}));renderProductError(failure.storefront_closed?'หน้าร้านไฟล์ดิจิทัลปิดปรับปรุงชั่วคราว งานและสิทธิ์ดาวน์โหลดที่ซื้อไว้ยังอยู่ครบ':failure.error||(response.status===404?'ไม่พบสินค้านี้':'โหลดสินค้าไม่สำเร็จ'));return}const data=await response.json();if(!data?.item?.id||!data.item.slug){renderProductError('ข้อมูลสินค้าไม่สมบูรณ์');return}renderProduct(data.item);}catch(error){renderProductError('เชื่อมต่อข้อมูลสินค้าไม่สำเร็จ');}
 }
 async function checkEntitlement(productId){
   const box=document.querySelector('#downloadBox');

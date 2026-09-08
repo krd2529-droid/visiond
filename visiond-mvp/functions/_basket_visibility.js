@@ -1,4 +1,5 @@
 const KEY='visiond_basket_visibility';
+export const DIGITAL_STOREFRONT_PAUSE_KEY='visiond_digital_storefront_paused';
 const fallback={mode:'all',action:'open',prefixes:[]};
 const text=value=>String(value??'').trim();
 export function normalizeBasketVisibility(value){
@@ -10,3 +11,5 @@ export function normalizeBasketVisibility(value){
 export async function loadBasketVisibility(env){const row=await env.DB.prepare('SELECT value FROM settings WHERE key=?').bind(KEY).first();return row?.value?normalizeBasketVisibility(row.value):fallback}
 export function basketVisible(title,config){const rule=normalizeBasketVisibility(config),match=rule.prefixes.some(prefix=>text(title).toLocaleLowerCase('th-TH').startsWith(prefix.toLocaleLowerCase('th-TH')));if(rule.mode==='all')return rule.action==='open';return rule.action==='open'?match:!match}
 export async function saveBasketVisibility(env,value){const rule=normalizeBasketVisibility(value);if(rule.mode==='specific'&&!rule.prefixes.length)throw new Error('กรุณากรอกชื่อขึ้นต้นอย่างน้อย 1 รายการ');await env.DB.prepare("INSERT INTO settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(KEY,JSON.stringify(rule)).run();return rule}
+export async function loadDigitalStorefrontPaused(env){const row=await env.DB.prepare('SELECT value FROM settings WHERE key=?').bind(DIGITAL_STOREFRONT_PAUSE_KEY).first();return String(row?.value||'0')==='1'}
+export async function saveDigitalStorefrontPaused(env,paused){const value=paused===true?'1':'0';await env.DB.prepare("INSERT INTO settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(DIGITAL_STOREFRONT_PAUSE_KEY,value).run();return value==='1'}

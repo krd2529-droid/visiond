@@ -28,6 +28,7 @@ const cartSignature = (items) =>
     .sort()
     .join("|");
 let activeOrder = null;
+let digitalStorefrontPaused = false;
 const getCart = () => {
   try {
     const saved = JSON.parse(localStorage.getItem("vd_cart") || "[]"),
@@ -50,9 +51,10 @@ async function refreshCartPrices(){
     const slugs=before.map(item=>item.slug).filter(Boolean).slice(0,30),productQuery=encodeURIComponent(slugs.join(','));
     const [productsResponse,coursesResponse,vbotResponse,vtoolsResponse]=await Promise.all([fetch(`/api/products?slugs=${productQuery}`,{cache:'no-store'}),fetch('/api/courses',{cache:'no-store'}),fetch('/api/vision7/apps',{cache:'no-store'}),fetch('/api/vtools',{cache:'no-store'})]);if(!productsResponse.ok||!coursesResponse.ok||!vbotResponse.ok||!vtoolsResponse.ok)return;
     const [products,courses,vbot,vtools]=await Promise.all([productsResponse.json(),coursesResponse.json(),vbotResponse.json(),vtoolsResponse.json()]);
+    digitalStorefrontPaused=products.storefront_closed===true;
     const publicPlans=new Set(['monthly','yearly','lifetime']),vbotOffers=[];
     for(const app of vbot.items||[]){let offers=app.offers||[];if(typeof offers==='string'){try{offers=JSON.parse(offers)}catch{offers=[]}}offers=(Array.isArray(offers)?offers:[]).filter(offer=>publicPlans.has(String(offer.code||offer.plan_code))&&Number(offer.price)>0&&offer.product_slug&&Number(offer.product_id)>0).map(offer=>({id:Number(offer.product_id),slug:offer.product_slug,title:`${app.name||app.code} · คีย์ ${offer.name||''}`,price:Number(offer.price),cover_url:app.cover_url,category:'vbot-key',category_label:'โปรแกรม VBot พร้อมคีย์',product_kind:'vision7-key',vision7_plan_id:Number(offer.id),vbot_plan_code:String(offer.code||offer.plan_code),vbot_duration_days:offer.duration_days,vbot_app_code:app.code,vbot_platform_type:app.platform_type}));for(const offer of offers)vbotOffers.push({...offer,vbot_offers:offers})}
-    const available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,course_id:course.id,product_kind:'course',category:'online-course'})),...vbotOffers,...(vtools.items||[])],bySlug=new Map(available.map(item=>[item.slug,item])),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return [];return [{...item,...product,id:product.id,course_id:product.course_id||item.course_id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,cover_url:product.cover_url||item.cover_url}]});
+    const available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,course_id:course.id,product_kind:'course',category:'online-course'})),...vbotOffers,...(vtools.items||[])],bySlug=new Map(available.map(item=>[item.slug,item])),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return digitalStorefrontPaused&&String(item.product_kind||'product')==='product'?[item]:[];return [{...item,...product,id:product.id,course_id:product.course_id||item.course_id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,cover_url:product.cover_url||item.cover_url}]});
     if(fresh.length!==before.length)resetActiveOrder();
     localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
     if(fresh.length!==before.length)alert(`นำสินค้า ${before.length-fresh.length} รายการออกจากตะกร้าแล้ว เพราะสินค้าปิดขายหรือถูกลบ`);
@@ -118,6 +120,7 @@ function render() {
     ? `⚠ เลือกสินค้าโปรเพิ่มอีก ${next - discountableCount} ตะกร้า จะได้รับส่วนลด ${discountRate(next)}%`
     : "✓ ครบ 30 ตะกร้า · ได้รับส่วนลดสูงสุด 75% แล้ว";
   if(items.some(p=>p.product_kind==='vx-access'))cartNextDiscount.textContent='VX ชำระแยก 1 แพ็กเกจ · ไม่ร่วมโปรส่วนลด · ต่ออายุจากวันหมดอายุเดิม';
+  else if(digitalStorefrontPaused&&items.some(item=>String(item.product_kind||'product')==='product'&&item.category!=='resale-rights'&&item.slug!=='course-selling-rights'))cartNextDiscount.textContent='หน้าร้านไฟล์ดิจิทัลปิดปรับปรุงชั่วคราว รายการเดิมยังอยู่ในตะกร้าแต่ยังสั่งซื้อไม่ได้';
   cartNextDiscount.classList.toggle("complete", !next);
   cartItems.innerHTML = items.length
     ? items

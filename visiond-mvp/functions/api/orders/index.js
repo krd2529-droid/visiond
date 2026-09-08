@@ -11,6 +11,7 @@ import {firstOrderPromoStatus,calculateFirstOrderDiscount} from '../../_first_or
 import {courseRevenue} from '../../_course_plans.js';
 import {ensureLifetimeMemberPlan} from '../../_member_plan.js';
 import {activeReferralAttribution,ensureVxReferralSchema} from '../../_vx_referrals.js';
+import {loadDigitalStorefrontPaused} from '../../_basket_visibility.js';
 const starterProducts = [1, 2, 3, 4].map((n) => ({
   slug: `dinosaur-coloring-200-set-${n}`,
   title: `ชุดรวมระบายสีไดโนเสาร์ 200 แผ่นชุดที่ ${n}`,
@@ -76,6 +77,7 @@ export async function onRequestPost(ctx) {
       400,
     );
   const bySlug=new Map(results.map(product=>[product.slug,product]));
+  if(await loadDigitalStorefrontPaused(ctx.env)&&results.some(product=>String(product.product_kind||'product')==='product'&&!product.seller_course_id&&product.category!=='resale-rights'))return json({error:'หน้าร้านไฟล์ดิจิทัลปิดปรับปรุงชั่วคราว กรุณากลับมาใหม่ภายหลัง',storefront_closed:true},503,{'cache-control':'private, no-store'});
   const repeated=new Set(requestedSlugs.filter((slug,index,list)=>list.indexOf(slug)!==index));
   if([...repeated].some(slug=>{const p=bySlug.get(slug);return p?.category!=='resale-rights'&&!p?.vision7_plan_id}))return json({error:'สินค้าดิจิทัลแต่ละตะกร้าซื้อได้ 1 ชิ้น รายการที่ซื้อซ้ำได้มีเฉพาะสิทธิ์ลงขายคอร์สและโปรแกรม Vision 7'},409);
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));

@@ -165,18 +165,28 @@ import('/nav-account.js?v=02057');
             : "ใส่รถเข็น"),
       );
   updateCartCount();
-  renderBundlePanel();
   const routeParams=new URLSearchParams(location.search),catalogRequestParams=new URLSearchParams({limit:'24'});
   for(const key of ['cursor','q'])if(routeParams.get(key))catalogRequestParams.set(key,routeParams.get(key));
   const requestedGroup=routeParams.get('group')||routeParams.get('category');if(requestedGroup&&requestedGroup!=='all')catalogRequestParams.set('group',requestedGroup);
-  Promise.all([
-    fetch(`/api/products?${catalogRequestParams}`).then((r) => (r.ok ? r.json() : Promise.reject())),
-    fetch("/api/categories").then((r) => (r.ok ? r.json() : { items: [] })),
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .catch(() => ({ user: null })),
-  ])
-    .then(async([data, categoryData, accountData]) => {
+  fetch(`/api/products?${catalogRequestParams}`).then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then(data=>{
+      if(data.storefront_closed){
+        filters.hidden=true;catalogPager.hidden=true;if(homeSearch)homeSearch.disabled=true;if(clearHomeSearch)clearHomeSearch.disabled=true;
+        if(promotionSection)promotionSection.hidden=true;if(bundlePanel)bundlePanel.hidden=true;
+        grid.innerHTML='<div class="product-loading storefront-paused" role="status"><b>หน้าร้านไฟล์ดิจิทัลปิดปรับปรุงชั่วคราว</b><p>งานและสิทธิ์ดาวน์โหลดที่ซื้อไว้ยังอยู่ครบ เปิดไฟล์เดิมได้จาก “สินค้าของฉัน”</p><a href="/dashboard.html#my-products">ไปยังสินค้าของฉัน</a></div>';
+        if(homeSearchCount)homeSearchCount.textContent='ปิดรับคำสั่งซื้อไฟล์ดิจิทัลชั่วคราว';
+        return null;
+      }
+      return Promise.all([
+        Promise.resolve(data),
+        fetch("/api/categories").then((r) => (r.ok ? r.json() : { items: [] })),
+        fetch("/api/auth/me", { cache: "no-store" }).then((r) => (r.ok ? r.json() : { user: null })).catch(() => ({ user: null })),
+      ]);
+    })
+    .then(async payload => {
+      if(!payload)return;
+      const [data,categoryData,accountData]=payload;
+      renderBundlePanel();
       const slugs=(data.items||[]).map(item=>item.slug).filter(Boolean),statusData=accountData.user&&slugs.length?await fetch(`/api/orders/product-status?slugs=${encodeURIComponent(slugs.join(','))}`,{cache:'no-store'}).then(response=>response.ok?response.json():{items:[]}).catch(()=>({items:[]})):{items:[]},orderData={items:(statusData.items||[]).map(item=>({status:item.status,items:[{slug:item.slug}]}))};
       grid.querySelector(".product-loading")?.remove();
       const products = [...(data.items || [])].sort((a, b) => {

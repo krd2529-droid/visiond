@@ -404,6 +404,7 @@ async function init() {
     return;
   }
   setupBossMobilePreview();
+  await loadDigitalStorefrontEmergency();
   adminPanel.hidden = false;
   Object.entries(panels).forEach(
     ([name, panel]) => (panel.hidden = name !== "orders"),
@@ -643,6 +644,13 @@ async function loadProductOptions(force=false,query="",category="",append=false)
   productOptionsQuery=query;productOptionsCategory=category;productOptionsPromise=(async()=>{const params=new URLSearchParams({purpose:'options',limit:'24'});if(query)params.set('q',query);if(category)params.set('category',category);if(append&&productOptionsNextCursor)params.set('cursor',productOptionsNextCursor);const response=await fetch(`/api/admin/products?${params}`,{cache:'no-store'}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'โหลดรายการสินค้าไม่สำเร็จ');const incoming=data.items||[];productOptions=append&&same?[...productOptions,...incoming.filter(item=>!productOptions.some(current=>Number(current.id)===Number(item.id)))]:incoming;productOptionsNextCursor=data.pagination?.next_cursor||null;return productOptions})().finally(()=>{productOptionsPromise=null});
   return productOptionsPromise;
 }
+
+let digitalStorefrontPaused=null;
+async function loadDigitalStorefrontEmergency(){
+  const button=document.querySelector('#digitalStorefrontEmergency'),status=document.querySelector('#digitalStorefrontEmergencyStatus');if(!button)return;
+  try{const response=await fetch('/api/admin/basket-visibility',{cache:'no-store'}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'อ่านสถานะไม่สำเร็จ');digitalStorefrontPaused=data.storefront_paused===true;button.querySelector('b').textContent=digitalStorefrontPaused?'เปิดหน้าร้านไฟล์ดิจิทัล':'ปิดหน้าร้านไฟล์ดิจิทัล';status.textContent=digitalStorefrontPaused?'สถานะ: ปิดชั่วคราว':'สถานะ: เปิดขาย';button.classList.toggle('is-paused',digitalStorefrontPaused);button.disabled=false}catch(error){button.disabled=true;button.querySelector('b').textContent='ตรวจสถานะไม่สำเร็จ';status.textContent=error.message}
+}
+const digitalStorefrontEmergency=document.querySelector('#digitalStorefrontEmergency');if(digitalStorefrontEmergency)digitalStorefrontEmergency.onclick=async()=>{const next=!digitalStorefrontPaused,verb=next?'ปิด':'เปิด';if(!confirm(`${verb}หน้าร้านไฟล์ดิจิทัลตอนนี้หรือไม่? งานหลังบ้านและไฟล์ของผู้ซื้อจะไม่ถูกแก้ไข`))return;digitalStorefrontEmergency.disabled=true;try{const response=await fetch('/api/admin/basket-visibility',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({paused:next})}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'บันทึกไม่สำเร็จ');digitalStorefrontPaused=data.storefront_paused===true;await loadDigitalStorefrontEmergency();alert(data.message)}catch(error){alert(error.message);digitalStorefrontEmergency.disabled=false}};
 async function loadProducts(force = false) {
   const query = productSearchInput.value.trim();
   if (!force && productListLoadedAt && productListQuery === query && Date.now() - productListLoadedAt < PRODUCT_LIST_TTL) {

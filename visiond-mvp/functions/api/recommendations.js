@@ -2,6 +2,7 @@ import {currentUser,json} from '../_lib.js';
 import {ensureDatabase} from '../_schema.js';
 import {visitorKeyFromRequest} from '../_analytics.js';
 import {applyPromotion,loadPromotion} from '../_promotion.js';
+import {loadDigitalStorefrontPaused} from '../_basket_visibility.js';
 
 const familyFromTitle=title=>String(title||'').replace(/\s*(?:ชุด\s*ที่|ชุด|set)\s*[-:#]?\s*\d+\s*$/iu,'').trim()||String(title||'').trim();
 const seriesFromTitle=title=>{const m=String(title||'').match(/(?:ชุด\s*ที่|ชุด|set)\s*[-:#]?\s*(\d+)\s*$/iu);return m?Number(m[1]):1};
@@ -9,6 +10,7 @@ const identityExpr="COALESCE(CAST(user_id AS TEXT),visitor_key)";
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
+  if(await loadDigitalStorefrontPaused(ctx.env))return json({items:[],interest:[],storefront_closed:true},200,{'cache-control':'private, no-store'});
   const user=await currentUser(ctx),visitorKey=await visitorKeyFromRequest(ctx.request);
   if(!user?.id&&!visitorKey)return json({items:[],interest:[]});
   const where=user?.id?'user_id=?':'visitor_key=?',identity=user?.id?user.id:visitorKey;

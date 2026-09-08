@@ -1,7 +1,8 @@
 import {json,requireAdmin} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
-import {loadBasketVisibility,saveBasketVisibility} from '../../_basket_visibility.js';
+import {loadBasketVisibility,loadDigitalStorefrontPaused,saveBasketVisibility,saveDigitalStorefrontPaused} from '../../_basket_visibility.js';
 const headers={'cache-control':'no-store'};
 async function auth(ctx){await ensureDatabase(ctx.env);const result=await requireAdmin(ctx);return result.error?{error:result.error}:result}
-export async function onRequestGet(ctx){const access=await auth(ctx);if(access.error)return access.error;return json({rule:await loadBasketVisibility(ctx.env)},200,headers)}
+export async function onRequestGet(ctx){const access=await auth(ctx);if(access.error)return access.error;const [rule,storefrontPaused]=await Promise.all([loadBasketVisibility(ctx.env),loadDigitalStorefrontPaused(ctx.env)]);return json({rule,storefront_paused:storefrontPaused},200,headers)}
 export async function onRequestPut(ctx){const access=await auth(ctx);if(access.error)return access.error;try{const rule=await saveBasketVisibility(ctx.env,await ctx.request.json().catch(()=>({})));return json({ok:true,rule,message:rule.mode==='all'?`${rule.action==='open'?'เปิด':'ปิด'}ตะกร้า VisionD ทั้งหมดแล้ว`:`${rule.action==='open'?'เปิด':'ปิด'}เฉพาะชื่อขึ้นต้น ${rule.prefixes.join(', ')} แล้ว`},200,headers)}catch(error){return json({error:error.message||'บันทึกไม่สำเร็จ'},400,headers)}}
+export async function onRequestPost(ctx){const access=await auth(ctx);if(access.error)return access.error;const body=await ctx.request.json().catch(()=>({}));if(typeof body.paused!=='boolean')return json({error:'สถานะหน้าร้านไม่ถูกต้อง'},400,headers);const storefrontPaused=await saveDigitalStorefrontPaused(ctx.env,body.paused);return json({ok:true,storefront_paused:storefrontPaused,message:storefrontPaused?'ปิดหน้าร้านไฟล์ดิจิทัลชั่วคราวแล้ว':'เปิดหน้าร้านไฟล์ดิจิทัลแล้ว'},200,headers)}
