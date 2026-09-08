@@ -7,7 +7,7 @@ export function readConfig(env=process.env){
   try{accounts=JSON.parse(env.TIKTOK_COMMISSION_ACCOUNTS_JSON||'[]')}catch{throw new Error('ACCOUNTS_JSON_INVALID')}
   if(!Array.isArray(accounts))throw new Error('ACCOUNTS_JSON_INVALID');
   accounts=accounts.map(item=>({connection_id:clean(item?.connection_id,100),session_secret_name:clean(item?.session_secret_name,300)})).filter(item=>item.connection_id&&item.session_secret_name);
-  return{ingestUrl:clean(env.VISIOND_INGEST_URL,1000),statusUrl:clean(env.VISIOND_STATUS_URL,1000),secret:String(env.TIKTOK_COMMISSION_COLLECTOR_SECRET||''),adapter:clean(env.TIKTOK_COMMISSION_SOURCE_ADAPTER,100),maxAttempts:Math.min(5,Math.max(1,Number(env.TIKTOK_COMMISSION_MAX_ATTEMPTS)||3)),accounts};
+  return{ingestUrl:clean(env.VISIOND_INGEST_URL,1000),statusUrl:clean(env.VISIOND_STATUS_URL,1000),secret:String(env.TIKTOK_COMMISSION_COLLECTOR_SECRET||''),breakerUrl:clean(env.VISIOND_D1_BREAKER_URL,1000),adapter:clean(env.TIKTOK_COMMISSION_SOURCE_ADAPTER,100),maxAttempts:Math.min(5,Math.max(1,Number(env.TIKTOK_COMMISSION_MAX_ATTEMPTS)||3)),accounts};
 }
 
 export function readiness(config){
@@ -16,7 +16,8 @@ export function readiness(config){
   if(config.secret.length<32)missing.push('TIKTOK_COMMISSION_COLLECTOR_SECRET');
   if(!config.adapter)missing.push('TIKTOK_COMMISSION_SOURCE_ADAPTER');
   if(!config.accounts.length)missing.push('TIKTOK_COMMISSION_ACCOUNTS_JSON');
-  return{ready:missing.length===0,missing,accounts:config.accounts.length};
+  if(!config.breakerUrl)missing.push('VISIOND_D1_BREAKER_URL');
+  return{ready:missing.length===0,missing,accounts:config.accounts.length,breaker_configured:Boolean(config.breakerUrl)};
 }
 
 export function signedRequest(body,secret,now=Date.now()){
@@ -27,6 +28,8 @@ export function signedRequest(body,secret,now=Date.now()){
 export async function runCollector(config,{readRows,fetchImpl=fetch,now=Date.now()}={}){
   const state=readiness(config);if(!state.ready)return{ok:false,status:503,error:'collector_not_configured',...state};
   if(typeof readRows!=='function')return{ok:false,status:503,error:'source_adapter_not_loaded'};
+  const probe={action:'collector_status'},signedProbe=signedRequest(probe,config.secret,now);
+  try{const response=await fetchImpl(config.breakerUrl,{method:'POST',headers:{'content-type':'application/json','x-visiond-timestamp':signedProbe.timestamp,'x-visiond-signature':signedProbe.signature},body:signedProbe.text}),data=await response.json().catch(()=>({})),control=data?.quota_breaker;if(!response.ok||control?.control_available!==true||typeof control.auto_closed!=='boolean')return{ok:false,status:503,error:'d1_quota_control_unavailable'};if(control.auto_closed)return{ok:true,status:200,skipped:true,reason:'d1_quota_breaker',results:[]}}catch{return{ok:false,status:503,error:'d1_quota_control_unavailable'}}
   const results=[],report=async(account,status,error='')=>{if(!config.statusUrl)return;const body={connection_id:account.connection_id,status,error,at:new Date(now).toISOString()},signed=signedRequest(body,config.secret,now);await fetchImpl(config.statusUrl,{method:'POST',headers:{'content-type':'application/json','x-visiond-timestamp':signed.timestamp,'x-visiond-signature':signed.signature},body:signed.text})};
   for(const account of config.accounts){
     await report(account,'connecting');let rows,lastError;

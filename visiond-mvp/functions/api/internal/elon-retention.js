@@ -1,6 +1,7 @@
 import {json} from '../../_lib.js';
 import {ensureElonWebSchema} from '../../_elon_databases.js';
 import {purgeExpiredElonData} from '../../_elon.js';
+import {requireD1DataFetchAvailable} from '../../_d1_quota_breaker.js';
 
 const noStore={'cache-control':'private, no-store'};
 async function digest(value){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))}
@@ -11,6 +12,7 @@ async function validToken(request,secret){
 }
 export async function onRequestPost(ctx){
   if(!(await validToken(ctx.request,ctx.env.ELON_CLEANUP_TOKEN)))return json({error:'ไม่อนุญาต'},401,noStore);
+  const blocked=await requireD1DataFetchAvailable(ctx,'elon_retention');if(blocked)return blocked;
   if(!ctx.env.ELON_WEB_DB)return json({error:'ELON_WEB_DB_BINDING_REQUIRED'},503,noStore);
   await ensureElonWebSchema(ctx.env);
   const result=await purgeExpiredElonData(ctx.env,{force:true});

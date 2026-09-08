@@ -1,6 +1,7 @@
 import {json} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
 import {runAnalyticsMaintenance} from '../../_analytics.js';
+import {requireD1DataFetchAvailable} from '../../_d1_quota_breaker.js';
 
 const noStore={'cache-control':'private, no-store'};
 async function digest(value){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))}
@@ -13,6 +14,7 @@ async function validToken(request,secret){
 }
 export async function onRequestPost(ctx){
   if(!(await validToken(ctx.request,ctx.env.ANALYTICS_CLEANUP_TOKEN)))return json({error:'ไม่อนุญาต'},401,noStore);
+  const blocked=await requireD1DataFetchAvailable(ctx,'analytics_retention');if(blocked)return blocked;
   await ensureDatabase(ctx.env);
   const result=await runAnalyticsMaintenance(ctx.env);
   return json({ok:true,...result,completed_at:new Date().toISOString()},result.busy?202:200,noStore);

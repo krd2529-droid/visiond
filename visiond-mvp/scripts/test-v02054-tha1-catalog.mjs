@@ -42,10 +42,10 @@ assert.match(schema,/idx_products_public_preview_1/,'media lookup index must be 
 assert.match(migration,/idx_orders_user_id/,'order user lookup index must be deployable');
 assert.match(migration,/idx_order_items_order_product/,'order item lookup index must be deployable');
 
-for(const html of [indexHtml,adminHtml])assert.match(html,/v0\.20\.62/);
+for(const html of [indexHtml,adminHtml])assert.match(html,/v0\.20\.63/);
 for(const html of [indexHtml,digitalHtml])assert.match(html,/catalog-sync\.js\?v=02060/);
 assert.match(cartHtml,/cart\.js\?v=02059/);
-assert.equal(version.trim(),'v0.20.62');
+assert.equal(version.trim(),'v0.20.63');
 
 const sqlite=new DatabaseSync(':memory:');
 const executed=[];

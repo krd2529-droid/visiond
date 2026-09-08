@@ -2,6 +2,7 @@ import {json} from '../../../_lib.js';
 import {requireVxUser} from '../../../_vx_access.js';
 import {ensureDatabase} from '../../../_schema.js';
 import {analyzeTikTok,ensureTikTokAnalyzerSchema,selectTikTokProvider} from '../../../_tiktok_analyzer.js';
+import {requireD1DataFetchAvailable} from '../../../_d1_quota_breaker.js';
 
 const headers={'cache-control':'private, no-store'};
 const text=(value,max=2000)=>String(value||'').trim().slice(0,max);
@@ -52,8 +53,11 @@ export async function onRequestGet(ctx){
 }
 
 export async function onRequestPost(ctx){
-  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
-  const form=await ctx.request.formData(),action=text(form.get('action'),40),name=text(form.get('channel_name'),120),channelUrl=text(form.get('channel_url'),500),existingId=text(form.get('channel_id'),80);
+  await ensureDatabase(ctx.env);const form=await ctx.request.clone().formData(),action=text(form.get('action'),40),name=text(form.get('channel_name'),120),channelUrl=text(form.get('channel_url'),500),existingId=text(form.get('channel_id'),80);
+  const localActions=new Set(['sync_sold_product_grades','fail_c_product','retest_f_product','set_product_c','set_product_inventory','delete_channel','save_channel']);
+  const auth=await requireVxUser(ctx,{bootstrap:localActions.has(action)});if(auth.error)return auth.error;
+  if(!localActions.has(action)){const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_ai_analysis');if(blocked)return blocked}
+  await ensureTikTokAnalyzerSchema(ctx.env);
   if(action==='sync_sold_product_grades'){
     if(!existingId)return json({error:'ไม่พบช่อง'},400,headers);const channel=await ctx.env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL').bind(existingId,auth.user.id).first();if(!channel)return json({error:'ไม่พบช่องหรือไม่มีสิทธิ์แก้ไข'},404,headers);
     let updates=[];try{updates=JSON.parse(String(form.get('sales_grades')||'[]'))}catch{return json({error:'ข้อมูลเกรดไม่ถูกต้อง'},400,headers)}

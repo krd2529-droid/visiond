@@ -7,6 +7,7 @@ import { decryptChannelValue } from "../../../_channel_crypto.js";
 import { addTikTokShopShowcaseProducts, normalizeTikTokOrderProducts, removeTikTokShopShowcaseProducts, syncTikTokShopCreator } from "../../../_tiktok_shop_api.js";
 import { tikTokShopCreatorCapabilities } from "../../../_tiktok_shop_oauth.js";
 import { commissionAvailability } from "../../../_tiktok_commission.js";
+import { requireD1DataFetchAvailable } from "../../../_d1_quota_breaker.js";
 const headers = { "cache-control": "private, no-store" }, clean = (v, n = 80) => String(v || "").trim().slice(0, n);
 const parsed = (value) => {
   try {
@@ -82,10 +83,11 @@ async function onRequestGet(ctx) {
 }
 async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
-  await ensureTikTokAnalyzerSchema(ctx.env);
-  const auth = await requireVxUser(ctx);
+  const body = await ctx.request.clone().json().catch(() => ({})), id = clean(body.id), action = clean(body.action, 30), guarded=action==='sync'||action==='shop_sync';
+  const auth = await requireVxUser(ctx,{bootstrap:!guarded});
   if (auth.error) return auth.error;
-  const body = await ctx.request.json().catch(() => ({})), id = clean(body.id), action = clean(body.action, 30);
+  if(guarded){const blocked=await requireD1DataFetchAvailable(ctx,action==='sync'?'tiktok_profile_sync':'tiktok_shop_sync');if(blocked)return blocked}
+  await ensureTikTokAnalyzerSchema(ctx.env);
   if (action.startsWith("shop_")) {
     const requestedChannelId=clean(body.channel_id),shop = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(id, auth.user.id, requestedChannelId).first();
     if (!shop) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E1A\u0E31\u0E0D\u0E0A\u0E35 TikTok Shop Creator \u0E17\u0E35\u0E48\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E2D\u0E22\u0E39\u0E48" }, 404, headers);
@@ -107,6 +109,7 @@ async function onRequestPost(ctx) {
       try {
         const result = await addTikTokShopShowcaseProducts(ctx.env, shop, productIds);
         if (result.errors?.length && !result.added) return json({ error: "TikTok ปฏิเสธสินค้าทุกรายการ", detail: result.errors, ...result }, 422, headers);
+        const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_shop_post_add_refresh');if(blocked)return json({ok:true,...result,synced:false,sync_deferred:'d1_quota_breaker',warning:'เพิ่มสินค้าเข้า Showcase แล้ว แต่ระบบพักการดึงรายการล่าสุดตามโควตา D1'},200,headers);
         try {
           await syncTikTokShopCreator(ctx.env, shop, { days: 30 });
           return json({ ok: true, ...result, synced: true, warning: result.errors?.length ? `เพิ่มสำเร็จ ${result.added} จาก ${result.requested} รายการ กรุณาตรวจรายการที่ TikTok ปฏิเสธ` : "" }, 200, headers);

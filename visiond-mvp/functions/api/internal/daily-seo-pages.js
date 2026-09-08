@@ -1,6 +1,7 @@
 import {json} from '../../_lib.js';
 import {ensureDatabase} from '../../_schema.js';
 import {createDailySeoPages,DAILY_SEO_PAGE_LIMIT} from '../../_daily_seo.js';
+import {requireD1DataFetchAvailable} from '../../_d1_quota_breaker.js';
 
 const noStore={'cache-control':'private, no-store'};
 async function digest(value){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))}
@@ -13,6 +14,7 @@ async function validToken(request,secret){
 }
 export async function onRequestPost(ctx){
   if(!(await validToken(ctx.request,ctx.env.SEO_AUTOMATION_TOKEN)))return json({error:'ไม่อนุญาต'},401,noStore);
+  const blocked=await requireD1DataFetchAvailable(ctx,'daily_seo_pages');if(blocked)return blocked;
   await ensureDatabase(ctx.env);
   const result=await createDailySeoPages(ctx.env,{limit:DAILY_SEO_PAGE_LIMIT});
   return json(result,200,noStore);

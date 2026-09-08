@@ -33,17 +33,17 @@ export function vxGrantStatement(env, order, slug) {
     ) WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND user_id=? AND status='pending_review')`)
     .bind(order.id,order.user_id,plan.slug,plan.account_limit,order.user_id,order.id,order.user_id);
 }
-export async function vxAccess(env, user) {
-  await ensureVxAccess(env);
+export async function vxAccess(env, user,{bootstrap=true}={}) {
+  if(bootstrap)await ensureVxAccess(env);
   if(['boss','admin'].includes(user.role)) return {active:true,admin:true,account_limit:null};
   const grant=await env.DB.prepare(`SELECT g.* FROM vx_access_grants g JOIN orders o ON o.id=g.order_id
     WHERE g.user_id=? AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP
     ORDER BY g.expires_at DESC LIMIT 1`).bind(user.id).first();
   return grant?{...grant,active:true,admin:false}:{active:false,admin:false,account_limit:0};
 }
-export async function requireVxUser(ctx) {
+export async function requireVxUser(ctx,options={}) {
   const auth=await requireUser(ctx); if(auth.error) return auth;
-  const access=await vxAccess(ctx.env,auth.user);
+  const access=await vxAccess(ctx.env,auth.user,options);
   const url=new URL(ctx.request.url),path=url.pathname.replace(/\/$/,'');
   // Owners must still be able to remove channels and revoke consent after expiry.
   if(path==='/api/admin/tiktok-analyzer'){

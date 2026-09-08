@@ -1,9 +1,11 @@
 import {json,requireAdmin,sha256} from '../../_lib.js';
 import {decryptChannelValue,encryptChannelValue} from '../../_channel_crypto.js';
 import {fetchFacebookProfile} from '../../_facebook_profile.js';
+import {requireD1DataFetchAvailable} from '../../_d1_quota_breaker.js';
 const headers={'cache-control':'private, no-store'},clean=(v,n=500)=>String(v||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().replace(/\s+/g,' ').slice(0,n),https=v=>/^https:\/\//i.test(v||'')?clean(v,1000):'';
 export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const blocked=await requireD1DataFetchAvailable(ctx,'v12_facebook_history_import');if(blocked)return blocked;
   const body=await ctx.request.json().catch(()=>({})),after=clean(body.after,300),row=await ctx.env.DB.prepare("SELECT shop_id,external_account_id,token_ciphertext FROM v12_channel_credentials WHERE provider='facebook' AND verified_at IS NOT NULL").first();
   if(!row?.token_ciphertext)return json({error:'Facebook Page ยังไม่พร้อม'},409,headers);
   try{

@@ -3,6 +3,7 @@ import {requireVxUser} from '../../../_vx_access.js';
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
 import { normalizeTikTokMarketplaceProduct, searchTikTokShopOpenCollaborationProducts, tikTokMarketplaceGrowth } from "../../../_tiktok_shop_api.js";
+import { requireD1DataFetchAvailable } from "../../../_d1_quota_breaker.js";
 
 const headers = { "cache-control": "private, no-store" }, clean = (value, max = 255) => String(value ?? "").trim().slice(0, max);
 const optionalNumber = value => value === "" || value === null || value === undefined ? null : Number(value);
@@ -27,9 +28,12 @@ export const classifyMarketplaceError = error => {
 };
 
 export async function onRequestPost(ctx) {
-  await ensureDatabase(ctx.env); await ensureTikTokAnalyzerSchema(ctx.env);
-  const auth = await requireVxUser(ctx); if (auth.error) return auth.error;
-  const body = await ctx.request.json().catch(() => ({})), connectionId = clean(body.connection_id, 100), channelId=clean(body.channel_id,80);
+  await ensureDatabase(ctx.env);
+  const body = await ctx.request.clone().json().catch(() => ({})),guarded=body.categories_only!==true;
+  const auth = await requireVxUser(ctx,{bootstrap:!guarded}); if (auth.error) return auth.error;
+  const connectionId = clean(body.connection_id, 100), channelId=clean(body.channel_id,80);
+  if(guarded){const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_marketplace_search');if(blocked)return blocked}
+  await ensureTikTokAnalyzerSchema(ctx.env);
   const connection = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(connectionId, auth.user.id, channelId).first();
   if (!connection) return json({ error: "ไม่พบบัญชี TikTok Shop Creator ที่เชื่อมอยู่" }, 404, headers);
   if (body.categories_only === true) {

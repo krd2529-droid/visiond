@@ -3,7 +3,9 @@ main = "src/index.js"
 compatibility_date = "2026-08-10"
 
 [triggers]
-crons = ["17 18 * * *"] # 01:17 Asia/Bangkok, daily
+crons = ["*/5 * * * *", "17 18 * * *"] # quota monitor every 5 minutes; maintenance 01:17 Asia/Bangkok daily
 
 # APP_ORIGIN and all three job tokens are configured with `wrangler secret put`.
+# The quota monitor additionally requires D1_QUOTA_BREAKER_TOKEN, CF_ACCOUNT_ID,
+# and a least-privilege CF_ACCOUNT_ANALYTICS_TOKEN (Account Analytics Read).
 # This deployable config intentionally contains no site origin or credentials.

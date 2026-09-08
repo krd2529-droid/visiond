@@ -1,3 +1,5 @@
+import {runD1QuotaMonitor} from './d1-quota-monitor.js';
+
 const JOBS = [
   { name: 'elon-retention', path: '/api/internal/elon-retention', token: 'ELON_CLEANUP_TOKEN' },
   { name: 'analytics-retention', path: '/api/internal/analytics-retention', token: 'ANALYTICS_CLEANUP_TOKEN' },
@@ -36,6 +38,7 @@ export async function callMaintenanceJob(fetcher, origin, job, token) {
         redirect: 'error',
         signal: controller.signal
       });
+      if(response.headers?.get?.('x-visiond-control')?.startsWith('d1-quota-'))return {name:job.name,ok:true,skipped:true,attempts:attempt,reason:response.headers.get('x-visiond-control')};
       if (response.ok) return { name: job.name, ok: true, attempts: attempt };
       lastError = new Error(`${job.name}_HTTP_${response.status}`);
       if (!retryableStatus(response.status)) break;
@@ -59,7 +62,8 @@ export async function runMaintenance(env, fetcher = fetch) {
 }
 
 export default {
-  async scheduled(_event, env, ctx) {
-    ctx.waitUntil(runMaintenance(env));
+  async scheduled(event, env, ctx) {
+    if(event?.cron==='*/5 * * * *')ctx.waitUntil(runD1QuotaMonitor(env));
+    else if(event?.cron==='17 18 * * *')ctx.waitUntil(runMaintenance(env));
   }
 };

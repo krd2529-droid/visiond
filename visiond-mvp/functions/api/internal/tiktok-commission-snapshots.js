@@ -1,6 +1,7 @@
 import{json}from'../../_lib.js';
 import{ensureDatabase}from'../../_schema.js';
 import{ensureTikTokAnalyzerSchema}from'../../_tiktok_analyzer.js';
+import{requireD1DataFetchAvailable}from'../../_d1_quota_breaker.js';
 const DAY=/^\d{4}-\d{2}-\d{2}$/;
 const clean=(value,max=120)=>String(value??'').trim().slice(0,max);
 const hex=bytes=>[...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
@@ -15,6 +16,7 @@ export async function verifyCollectorRequest(request,secret,now=Date.now()){
 }
 export async function onRequestPost(ctx){
   const bodyText=await verifyCollectorRequest(ctx.request,ctx.env.TIKTOK_COMMISSION_COLLECTOR_SECRET);if(bodyText===null)return json({error:'unauthorized'},401);
+  const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_commission_snapshot_ingest');if(blocked)return blocked;
   await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);let body;try{body=JSON.parse(bodyText)}catch{return json({error:'invalid_json'},400)}
   const connectionId=clean(body.connection_id,100),rows=Array.isArray(body.rows)?body.rows.slice(0,366):[];
   if(!connectionId||!await ctx.env.DB.prepare("SELECT id FROM tiktok_shop_creator_connections WHERE id=? AND status='active'").bind(connectionId).first())return json({error:'connection_not_found'},404);
