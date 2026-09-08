@@ -1,4 +1,14 @@
-# Active patch: Cloudflare D1 quota auto-breaker at 70%
+# Active patch: VX Shop connection CTA and two-tab navigation
+
+- Event: PATCH_READY (v0.20.64)
+- Requested outcome: remove obsolete page-one navigation, make the yellow warning connect TikTok Shop directly for the currently selected owned channel, and make both Products and Commission tabs restore the output workspace after legacy input mode.
+- Root cause: the warning still calls `setWorkspaceView("input")` even though the old workspace switch is removed, while the two current tabs only toggle their channel-view class. This leaves the product output hidden by `.workspace-input`; the warning and no-channel copy also retain obsolete page-one language.
+- Preservation: no provider/OAuth configuration, channel data, API, D1, storefront pause, Worker, or automatic sync behavior changes. Tab switching and warning rendering add zero network/D1 calls; connection failure remains visibly unconnected and the existing Shop management/disconnect/capability controls remain authoritative.
+- Implemented: the yellow warning resolves the currently selected owned channel at click time and navigates directly to the existing Shop authorization endpoint; missing/stale selection is a no-op. Both product and commission tabs always restore output without fetching. A compact selection-guarded management affordance keeps the existing connection/disconnect controls reachable, stays hidden during channel-load races, and its Shop link also resolves current state at click time. Empty channel and commission states are explicit and contain no obsolete page number.
+- Version/cache: analyzer JS/CSS stamps are `02125`/`02094`; analyzer, WEB, ADMIN and `VERSION.txt` are v0.20.64. Only corresponding current cache/version assertions changed; no API, D1, schema, OAuth/provider setting, Worker, or storefront-pause change.
+- Verification: `npm run test:v02064` executes the production navigation factory in a VM with throwing fetch/API spies and covers input→products/commission output restore, management, A→B current-channel URLs, stale/missing selection, empty copy and stamps. All 13 analyzer cache-bound regressions, v02058/v02059/v02061/v02062/v02063, admin product D1 efficiency, visible-version, syntax and `git diff --check` pass. Mark/Jarvis frozen review remains before commit/push; Jarvis owns deployed desktop/mobile/console/network verification.
+
+# Delivered patch: Cloudflare D1 quota auto-breaker at 70%
 
 - Event: PATCH_DELIVERED (v0.20.63)
 - Requested outcome: automatically close the ordinary digital-file storefront and reject only reviewed expensive external/background data-fetch jobs when authoritative daily Cloudflare D1 usage reaches 70%, while normal stored-data reads, login, admin controls/uploads, existing purchases/downloads, course, VX and Vision 7 remain available. Prior A-E v0.20.62 stays delivered and production remains manually paused at `'1'`.

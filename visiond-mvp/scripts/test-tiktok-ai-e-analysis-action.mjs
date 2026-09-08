@@ -11,6 +11,6 @@ assert.match(client, /api\("\/api\/admin\/tiktok-analyzer", \{ method: "POST", b
 assert.match(client, /renderResult\(response\.result \|\| \{\}\)/);
 assert.match(client, /AI วิเคราะห์สินค้าแนะนำเกรด E เรียบร้อยแล้ว/);
 assert.match(css, /\.ai-recommendations-head button\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02124/);
-assert.match(html, /tiktok-analyzer\.css\?v=02093/);
+assert.match(html, /tiktok-analyzer\.js\?v=02125/);
+assert.match(html, /tiktok-analyzer\.css\?v=02094/);
 console.log("TikTok AI grade-E analysis action: PASS");
