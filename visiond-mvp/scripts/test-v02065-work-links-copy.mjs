@@ -117,10 +117,10 @@ assert.doesNotMatch(prefix, /\bfetch\s*\(|\brequest\s*\(|\bloadMore\s*\(|locatio
 assert.match(css, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/, 'mobile actions must fit as two columns');
 assert.match(css, /\.link-row p\{[^}]*overflow-wrap:anywhere/);
 assert.match(css, /\.copy-link-manual\{min-width:0;width:100%/);
-assert.match(html, /work-links\.js\?v=02065/);
-assert.match(html, /work-links\.css\?v=014588/);
-assert.equal(version.trim(), 'v0.20.65');
-assert.match(indexHtml, /WEB v0\.20\.65/);
-assert.match(adminHtml, /ADMIN v0\.20\.65/);
+assert.match(html, /work-links\.js\?v=02066/);
+assert.match(html, /work-links\.css\?v=014589/);
+assert.equal(version.trim(), 'v0.20.66');
+assert.match(indexHtml, /WEB v0\.20\.66/);
+assert.match(adminHtml, /ADMIN v0\.20\.66/);
 
 console.log('PASS v0.20.65 work-link exact URL copy, honest fallback, repeat ordering, zero-network and mobile fit');

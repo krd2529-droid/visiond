@@ -1,3 +1,12 @@
+# Active patch: Work-link logo presentation
+
+- Event: PATCH_READY (v0.20.66)
+- Requested outcome: show one centered, complete platform/site logo in each work-link tile instead of the clipped stacked chain-plus-image presentation, retaining a single chain fallback only when the image is unavailable or fails.
+- Preservation: keep the compact platform badge, icon domains, v0.20.65 copy behavior, Open/Edit/Delete/search/load-more, bounded API/security and all D1/provider/Worker behavior unchanged. No new requests beyond the existing image load.
+- Implemented: the main tile replaces its seeded chain with one image node before assigning `src`; load/error listeners are attached first, cached-complete images are handled immediately, and failures replace the broken image with one centered chain. The compact badge still uses its prior append/remove path and icon domains are unchanged. A blank reserved tile while the lazy image is pending is accepted; no fallback and successful image are ever stacked.
+- Version/cache: work-links JS/CSS stamps are `02066`/`014589`; WEB, ADMIN and `VERSION.txt` are v0.20.66. Only current global version/cache assertions changed.
+- Verification: `npm run test:v02066`, `npm run test:v02065`, `npm run test:v02058`, `npm run test:visible-version`, JS/test syntax and `git diff --check` pass. The focused runtime gate covers listener ordering, pending single node, normal/cached load, normal/cached error fallback, exactly one child, badge preservation and unchanged TikTok favicon resolution. Awaiting Mark/Root frozen review before commit/push; Root owns live desktop/mobile geometry verification.
+
 # Delivered patch: Work links copy button
 
 - Event: PATCH_DELIVERED (v0.20.65)
