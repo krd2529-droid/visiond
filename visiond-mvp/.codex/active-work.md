@@ -1,6 +1,6 @@
 # Active patch: ฐ1 catalog counts and bounded data fetching
 
-- Event: PATCH_READY3
+- Event: PATCH_DELIVERED
 - Requested outcome: Storefront/category totals come from authoritative server-side counts, result copy shows the current keyset page range against the total, and confirmed TikTok/admin unbounded data paths are replaced with bounded or purpose-specific flows.
 - Implemented: Storefront counts are grouped server-side after active visibility/search filters and before the selected group/cursor; keyset cursors carry the authoritative page position; catalog copy reports `range_from–range_to / total` and category chips use the server counts.
 - Implemented: TikTok channel selection uses one bounded overview request, inventory/runs/events are separate keyset resources with defaults and maxima of 24, identical in-flight inventory requests are deduplicated, and mutations invalidate/refetch only the bounded inventory resource.
@@ -15,5 +15,7 @@
 - Verification after round 3 passed: `npm run test:v02058` now exercises a real Cache API mock across a product mutation (same public URL returns fresh authoritative totals under a new revision key), asserts the indexed settings lookup, and executes the multi-search bundle-selection state transition. `npm run test:v02057`; `node scripts/test-admin-product-d1-efficiency.mjs`; `npm run test:visible-version`; focused TikTok marketplace/refresh/sold/AI/direct-product regressions; relevant `node --check`; and `git diff --check` also pass.
 - Preserved: Unrelated untracked manuals, images, attachments, output, and earlier auth/navigation work were not staged or modified for this patch.
 - Deferred follow-up: Unbounded maintenance/detail/export endpoints that are not directly connected to the current user-visible flows remain outside this acceptance scope and should be audited separately rather than expanding this patch.
-- Delivery: Awaiting Mark's third independent verification and Jarvis review; no commit or push yet.
-- Next action: Mark verifies the durable cache revision and multi-search bundle selection independently. After a passing verdict, Elon will create a task-only commit and push `origin main` without force.
+- Independent verdict: Mark passed round 3 with all prior blockers closed, including durable catalog cache invalidation and bundle selection across bounded search/page/edit/submit.
+- Delivery: Scoped commit `573c111c14745f663f6238242f7f6112c7132f91` pushed to `origin/main` without force (`HEAD...origin/main = 0/0`). D1 migration 0088 applied successfully (17 queries; bookmark `000010e6-00000006-000050e0-8ff09618b3eef2d3f53f8e8f711e81a3`). Cloudflare Git auto-deployed source `573c111` to Production/main as deployment `56eeaa10-8598-4849-af5c-6c185c3d8fd0` at `https://56eeaa10.visiond.pages.dev`.
+- Production verification: `visiondonline.com` returns HTTP 200 and WEB v0.20.58. Browser shows `แสดง 1–24 จากทั้งหมด 609 รายการ` and authoritative category counts `609/87/86/185/247/3/1`; direct API cursor checks preserve total 609 and advance `range_from/range_to` from `1/1` to `2/2`. Deployed admin/TikTok assets contain the persistent bundle-selection and request-dedup paths. Remote D1 metadata confirms the 32-character catalog revision, all 8 revision triggers, and all 6 new indexes.
+- Next action: None for this patch. Audit disconnected maintenance/detail/export endpoints only as a separate follow-up.
