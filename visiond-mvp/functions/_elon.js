@@ -1,4 +1,5 @@
 import {elonWebDb} from './_elon_databases.js';
+import {claimMaintenanceLease,releaseMaintenanceLease} from './_maintenance.js';
 
 export const ELON_MAX_MESSAGE_LENGTH=1200;
 export const ELON_HISTORY_LIMIT=12;
@@ -406,7 +407,6 @@ export async function enforceElonRateLimit(env,userId){
   await db.prepare(`INSERT INTO elon_web_rate_limits(subject_id,window_start,hits) VALUES(?,?,1)
     ON CONFLICT(subject_id,window_start) DO UPDATE SET hits=hits+1`).bind(subjectId,windowStart).run();
   const row=await db.prepare('SELECT hits FROM elon_web_rate_limits WHERE subject_id=? AND window_start=?').bind(subjectId,windowStart).first();
-  if(Math.random()<0.02)await db.prepare("DELETE FROM elon_web_rate_limits WHERE window_start<datetime('now','-1 day')").run();
   if(Number(row?.hits||0)>ELON_RATE_LIMIT_PER_MINUTE)return false;
   const memberDaily=boundedInt(env.ELON_MEMBER_DAILY_LIMIT,100,10,1000);
   return incrementUsage(env,`member:day:${userId}`,'day',memberDaily);
@@ -419,17 +419,29 @@ export async function enforceElonGlobalBudget(env){
 
 // Runs at most hourly from ELON traffic. Deletes expired conversations from
 // their last real message first, then trims messages outside the audit window.
-export async function purgeExpiredElonData(env,{force=false}={}){
-  const db=elonWebDb(env),marker=await db.prepare("SELECT value FROM elon_web_settings WHERE key='elon_last_retention_purge'").first();
-  const lastRun=Date.parse(String(marker?.value||''));
-  if(!force&&Number.isFinite(lastRun)&&Date.now()-lastRun<ELON_PURGE_INTERVAL_MS)return false;
-  const now=new Date().toISOString();
-  await db.batch([
-    db.prepare(`DELETE FROM elon_web_conversations WHERE datetime(COALESCE((SELECT MAX(m.created_at) FROM elon_web_messages m WHERE m.conversation_id=elon_web_conversations.id),created_at))<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
-    db.prepare(`DELETE FROM elon_web_messages WHERE datetime(created_at)<datetime('now',?)`).bind(`-${ELON_RETENTION_DAYS} days`),
-    db.prepare("DELETE FROM elon_web_rate_limits WHERE window_start<datetime('now','-1 day')"),
-    db.prepare("DELETE FROM elon_web_usage_limits WHERE window_start<date('now','-2 days')"),
-    db.prepare("INSERT INTO elon_web_settings(key,value,updated_at) VALUES('elon_last_retention_purge',?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP").bind(now)
-  ]);
-  return true;
+export async function purgeExpiredElonData(env,options={}){
+  const force=Boolean(options.force),db=elonWebDb(env),batchSize=Math.max(1,Math.min(100,Number(options.batchSize)||100)),maxBatches=Math.max(1,Math.min(force?4:1,Number(options.maxBatches)||(force?4:1))),deadlineMs=Math.max(100,Math.min(5000,Number(options.deadlineMs)||5000)),now=options.now||Date.now,startedAt=Number(now()),leaseOptions={...options,now,minIntervalMs:force?5*60*1000:ELON_PURGE_INTERVAL_MS,table:'elon_web_maintenance_jobs'},lease=await claimMaintenanceLease(db,'elon-retention',leaseOptions);
+  if(!lease)return {ran:false,busy:true,has_more:false};
+  let completed=false,messages=0,conversations=0,rateLimits=0,usageLimits=0,hasMore=false,deadlineReached=false;
+  try{
+    for(let batch=0;batch<maxBatches;batch++){
+      const [m,c,r,u]=await db.batch([
+        db.prepare(`DELETE FROM elon_web_messages WHERE id IN (SELECT id FROM elon_web_messages WHERE created_at<datetime('now',?) ORDER BY created_at,id LIMIT ?)`).bind(`-${ELON_RETENTION_DAYS} days`,batchSize),
+        db.prepare(`DELETE FROM elon_web_conversations WHERE id IN (SELECT c.id FROM elon_web_conversations c WHERE c.created_at<datetime('now',?) AND NOT EXISTS(SELECT 1 FROM elon_web_messages m WHERE m.conversation_id=c.id) ORDER BY c.created_at,c.id LIMIT ?)`).bind(`-${ELON_RETENTION_DAYS} days`,batchSize),
+        db.prepare("DELETE FROM elon_web_rate_limits WHERE (subject_id,window_start) IN (SELECT subject_id,window_start FROM elon_web_rate_limits WHERE window_start<datetime('now','-1 day') ORDER BY window_start,subject_id LIMIT ?)").bind(batchSize),
+        db.prepare("DELETE FROM elon_web_usage_limits WHERE (rate_key,window_start) IN (SELECT rate_key,window_start FROM elon_web_usage_limits WHERE window_start<date('now','-2 days') ORDER BY window_start,rate_key LIMIT ?)").bind(batchSize)
+      ]);
+      const changes=result=>Number(result?.meta?.changes)||0,counts=[changes(m),changes(c),changes(r),changes(u)];messages+=counts[0];conversations+=counts[1];rateLimits+=counts[2];usageLimits+=counts[3];if(counts.every(count=>count<batchSize))break;
+      if(Number(now())-startedAt>=deadlineMs){deadlineReached=true;break}
+    }
+    const pending=await Promise.all([
+      db.prepare("SELECT 1 FROM elon_web_messages WHERE created_at<datetime('now',?) LIMIT 1").bind(`-${ELON_RETENTION_DAYS} days`).first(),
+      db.prepare("SELECT 1 FROM elon_web_conversations c WHERE c.created_at<datetime('now',?) AND NOT EXISTS(SELECT 1 FROM elon_web_messages m WHERE m.conversation_id=c.id) LIMIT 1").bind(`-${ELON_RETENTION_DAYS} days`).first(),
+      db.prepare("SELECT 1 FROM elon_web_rate_limits WHERE window_start<datetime('now','-1 day') LIMIT 1").first(),
+      db.prepare("SELECT 1 FROM elon_web_usage_limits WHERE window_start<date('now','-2 days') LIMIT 1").first()
+    ]);hasMore=pending.some(Boolean);completed=true;
+    return {ran:true,busy:false,retention_days:ELON_RETENTION_DAYS,messages_removed:messages,conversations_removed:conversations,rate_limits_removed:rateLimits,usage_limits_removed:usageLimits,deadline_reached:deadlineReached,has_more:hasMore};
+  }finally{
+    await releaseMaintenanceLease(db,'elon-retention',lease,{...leaseOptions,completed});
+  }
 }

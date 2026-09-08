@@ -280,7 +280,7 @@
     return { pages, samples: samples.slice(0, Math.min(3, pages)) };
   };
   const loadCategories = async () => {
-    const response = await fetch("/api/admin/categories", {
+    const response = await fetch("/api/admin/categories?purpose=options", {
         cache: "no-store",
       }),
       data = await response.json().catch(() => ({}));

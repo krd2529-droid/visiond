@@ -47,6 +47,8 @@ let productOptionsNextCursor = null;
 const bundleSelectedProducts = new Map();
 let productPdfSummary = [];
 let productSearchTimer = null;
+const CATEGORY_COUNTS_TTL=30*1000,CATEGORY_OPTIONS_TTL=5*60*1000;
+let categoryCounts=new Map(),categoryCountsLoadedAt=0,categoryCountsPromise=null,categoryCountsGeneration=0,categoryOptionsPromise=null,categoryOptionsLoadedAt=0;
 
 function setVision2PendingProductFiles(files) {
   vision2PendingProductFiles = files;
@@ -176,6 +178,7 @@ trashList.addEventListener("click", async (event) => {
   );
   const data = await response.json().catch(() => ({}));
   if (!response.ok) alert(data.error || "ดำเนินการไม่สำเร็จ");
+  else if(type==='product')invalidateProductList();
   await loadTrash();
 });
 
@@ -469,11 +472,11 @@ function categoryOptions(includeInactive = false) {
       .join("") + '<option value="__custom__">+ ระบุหมวดหมู่ใหม่</option>'
   );
 }
-function productCategoryOptions() {
+function productCategoryOptions(selected = "") {
   return categories
     .filter(
       (c) =>
-        Number(c.active) &&
+        (Number(c.active) || c.slug === selected) &&
         !starterCategorySlugs.has(c.slug) &&
         !["set-coloring", "set-tattoo"].includes(c.slug),
     )
@@ -484,31 +487,14 @@ async function loadCategories(render = true) {
   if (render)
     categoryAdminList.innerHTML =
       '<div class="admin-empty">กำลังโหลดหมวดหมู่…</div>';
-  const r = await fetch("/api/admin/categories");
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    if (render)
-      categoryAdminList.innerHTML = `<div class="admin-empty">${esc(d.error || "โหลดหมวดไม่สำเร็จ")}</div>`;
-    return;
+  let optionsChanged=false;
+  if(!categoryOptionsLoadedAt||Date.now()-categoryOptionsLoadedAt>=CATEGORY_OPTIONS_TTL){
+    if(!categoryOptionsPromise)categoryOptionsPromise=(async()=>{const response=await fetch("/api/admin/categories?purpose=options",{cache:"no-store"}),data=await response.json().catch(() => ({}));if(!response.ok)throw new Error(data.error||"โหลดหมวดไม่สำเร็จ");categories=data.items||[];categoryOptionsLoadedAt=Date.now();return categories})().finally(()=>{categoryOptionsPromise=null});
+    try{await categoryOptionsPromise;optionsChanged=true}catch(error){if(render)categoryAdminList.innerHTML=`<div class="admin-empty">${esc(error.message)}</div>`;return}
   }
-  categories = d.items || [];
-  const categoryFamily = (category) => {
-    const text = `${category?.slug || ""} ${category?.name || ""}`.toLowerCase();
-    if (/tattoo|รอยสัก|แบบสัก/.test(text)) return "tattoo";
-    if (/coloring|ระบายสี/.test(text)) return "coloring";
-    if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
-    if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
-    return "";
-  };
-  const populatedFamilies = new Set(
-    categories.filter((category) => Number(category.product_count) > 0).map(categoryFamily).filter(Boolean),
-  );
-  categories = categories.filter(
-    (category) => Number(category.product_count) > 0 || !populatedFamilies.has(categoryFamily(category)),
-  );
-  const exportCategories=categories.filter((c)=>Number(c.product_count)>0);
-  previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + exportCategories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)} (${Number(c.product_count)||0} สินค้า)</option>`).join("");
-  await loadPreviewBatches();
+  const exportCategories=categories.filter((c)=>Number(c.active));
+  previewExportCategory.innerHTML = '<option value="">ทุกหมวด</option>' + exportCategories.map((c) => `<option value="${esc(c.slug)}">${c.parent_slug ? "↳ " : ""}${esc(c.name)}</option>`).join("");
+  if(optionsChanged)await loadPreviewBatches();
   productCategorySelect.innerHTML = productCategoryOptions();
   if (!productEditor.elements.id.value) {
     productCategorySelect.value = [...productCategorySelect.options].some(
@@ -521,8 +507,23 @@ async function loadCategories(render = true) {
   parentCategorySelect.innerHTML =
     '<option value="">— หมวดหลัก —</option>' + categoryOptions(true);
   if (!render) return;
+  let counts;try{counts=await loadCategoryCounts()}catch(error){categoryAdminList.innerHTML=`<div class="admin-empty">${esc(error.message)}</div>`;return}const withCounts=categories.map(category=>({...category,product_count:counts.get(String(category.slug))||0}));
+  const categoryFamily = (category) => {
+    const text = `${category?.slug || ""} ${category?.name || ""}`.toLowerCase();
+    if (/tattoo|รอยสัก|แบบสัก/.test(text)) return "tattoo";
+    if (/coloring|ระบายสี/.test(text)) return "coloring";
+    if (/development-game|เกมเสริมพัฒนาการ|เขาวงกต|maze/.test(text)) return "development-game";
+    if (/worksheet|แบบฝึก|ฝึกหัด/.test(text)) return "worksheet";
+    return "";
+  };
+  const populatedFamilies = new Set(
+    withCounts.filter((category) => Number(category.product_count) > 0).map(categoryFamily).filter(Boolean),
+  );
+  const displayCategories = withCounts.filter(
+    (category) => Number(category.product_count) > 0 || !populatedFamilies.has(categoryFamily(category)),
+  );
   categoryAdminList.innerHTML =
-    categories
+    displayCategories
       .filter((c) => !starterCategorySlugs.has(c.slug))
       .map(
         (c) =>
@@ -538,6 +539,15 @@ async function loadCategories(render = true) {
           editCategory(Number(button.dataset.editCategory))),
     );
 }
+async function loadCategoryCounts(force=false){
+  if(!force&&categoryCountsLoadedAt&&Date.now()-categoryCountsLoadedAt<CATEGORY_COUNTS_TTL)return categoryCounts;
+  if(categoryCountsPromise&&!force)return categoryCountsPromise;
+  const generation=categoryCountsGeneration,task=(async()=>{const response=await fetch('/api/admin/categories?purpose=counts',{cache:'no-store'}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'โหลดจำนวนสินค้าไม่สำเร็จ');if(generation!==categoryCountsGeneration)return categoryCountsPromise&&categoryCountsPromise!==task?categoryCountsPromise:loadCategoryCounts();categoryCounts=new Map((data.items||[]).map(item=>[String(item.category),Number(item.product_count)||0]));categoryCountsLoadedAt=Date.now();return categoryCounts})();
+  const wrapped=task.finally(()=>{if(categoryCountsPromise===wrapped)categoryCountsPromise=null});categoryCountsPromise=wrapped;
+  return wrapped;
+}
+function invalidateCategoryCounts(){categoryCountsGeneration++;categoryCountsLoadedAt=0;categoryCounts=new Map();categoryCountsPromise=null}
+function invalidateCategoryOptions(){categoryOptionsLoadedAt=0;categoryOptionsPromise=null}
 let previewExportCursor='';
 async function loadPreviewBatches(cursor=''){
   const category=previewExportCategory.value;
@@ -627,6 +637,8 @@ async function deleteCategory() {
     return;
   }
   resetCategoryForm();
+  invalidateCategoryOptions();
+  invalidateCategoryCounts();
   loadCategories();
 }
 
@@ -637,7 +649,7 @@ const productListUrl = (status, cursor = null, query = productSearchInput.value.
   if (cursor) params.set("cursor", String(cursor));
   return `/api/admin/products?${params}`;
 };
-function invalidateProductList(){ productListLoadedAt = 0; productListQuery = ""; productOptions=[]; productOptionsQuery=""; productOptionsCategory="";productOptionsNextCursor=null; }
+function invalidateProductList(){ productListLoadedAt = 0; productListQuery = ""; productOptions=[]; productOptionsQuery=""; productOptionsCategory="";productOptionsNextCursor=null;invalidateCategoryCounts(); }
 async function loadProductOptions(force=false,query="",category="",append=false){
   query=String(query||'').trim();category=String(category||'').trim();const same=productOptionsQuery===query&&productOptionsCategory===category;if(productOptions.length&&!force&&same&&!append)return productOptions;
   if(productOptionsPromise&&!force&&same)return productOptionsPromise;
@@ -937,6 +949,7 @@ async function editProduct(id) {
   setBundleMode(Boolean(isBundle));
   productEditor.elements.title.value = p.title || "";
   productEditor.elements.slug.value = p.slug || "";
+  productEditor.elements.category.innerHTML = productCategoryOptions(p.category || "");
   productEditor.elements.category.value = p.category || "";
   productEditor.elements.file_type.value = p.file_type || "PDF";
   productEditor.elements.price.value = (Number(p.price) || 0) / 100;

@@ -1,5 +1,10 @@
+import {claimMaintenanceLease,releaseMaintenanceLease} from './_maintenance.js';
+import {purgeExpiredTrash} from './_trash.js';
+
 const RAW_RETENTION_DAYS=90;
-const BATCH_SIZE=5000;
+const BATCH_SIZE=500;
+const MAX_BATCHES=2;
+const DEADLINE_MS=5000;
 
 const number=value=>Number(value)||0;
 
@@ -51,27 +56,45 @@ export async function topViewedProducts(env,limit=10){
 
 // One bounded pass per invocation: aggregate legacy rows first, then remove only
 // already-aggregated raw rows older than 90 days. Safe for a daily cron retry.
-export async function maintainAnalyticsRetention(env){
-  const pending=await env.DB.prepare(`SELECT COALESCE(MAX(id),0) max_id,COUNT(*) count FROM
-    (SELECT id FROM page_views WHERE aggregated_at IS NULL ORDER BY id LIMIT ?)`).bind(BATCH_SIZE).first();
-  const maxId=number(pending?.max_id),backfilled=number(pending?.count);
-  if(maxId){
-    await env.DB.batch([
-      env.DB.prepare(`INSERT INTO analytics_daily(day_local,path,product_id,views)
-        SELECT date(viewed_at,'+7 hours'),path,COALESCE(product_id,0),COUNT(*) FROM page_views
-        WHERE aggregated_at IS NULL AND id<=? GROUP BY date(viewed_at,'+7 hours'),path,COALESCE(product_id,0)
-        ON CONFLICT(day_local,path,product_id) DO UPDATE SET views=views+excluded.views`).bind(maxId),
-      env.DB.prepare(`INSERT INTO analytics_visitors(visitor_key,first_seen_at,last_seen_at)
-        SELECT visitor_key,MIN(viewed_at),MAX(viewed_at) FROM page_views WHERE aggregated_at IS NULL AND id<=? GROUP BY visitor_key
-        ON CONFLICT(visitor_key) DO UPDATE SET first_seen_at=MIN(first_seen_at,excluded.first_seen_at),last_seen_at=MAX(last_seen_at,excluded.last_seen_at)`).bind(maxId),
-      env.DB.prepare('UPDATE page_views SET aggregated_at=CURRENT_TIMESTAMP WHERE aggregated_at IS NULL AND id<=?').bind(maxId)
-    ]);
+export async function maintainAnalyticsRetention(env,{batchSize=BATCH_SIZE,maxBatches=MAX_BATCHES,deadlineMs=DEADLINE_MS,now=Date.now}={}){
+  batchSize=Math.max(1,Math.min(BATCH_SIZE,Number(batchSize)||BATCH_SIZE));maxBatches=Math.max(1,Math.min(MAX_BATCHES,Number(maxBatches)||MAX_BATCHES));
+  deadlineMs=Math.max(100,Math.min(DEADLINE_MS,Number(deadlineMs)||DEADLINE_MS));const startedAt=Number(now());
+  let backfilled=0,removed=0,customerEventsRemoved=0,deadlineReached=false;
+  for(let batch=0;batch<maxBatches;batch++){
+    const pending=await env.DB.prepare(`SELECT COALESCE(MAX(id),0) max_id,COUNT(*) count FROM
+      (SELECT id FROM page_views WHERE aggregated_at IS NULL ORDER BY id LIMIT ?)`).bind(batchSize).first(),maxId=number(pending?.max_id),count=number(pending?.count);
+    if(maxId){
+      await env.DB.batch([
+        env.DB.prepare(`INSERT INTO analytics_daily(day_local,path,product_id,views)
+          SELECT date(viewed_at,'+7 hours'),path,COALESCE(product_id,0),COUNT(*) FROM page_views
+          WHERE aggregated_at IS NULL AND id<=? GROUP BY date(viewed_at,'+7 hours'),path,COALESCE(product_id,0)
+          ON CONFLICT(day_local,path,product_id) DO UPDATE SET views=views+excluded.views`).bind(maxId),
+        env.DB.prepare(`INSERT INTO analytics_visitors(visitor_key,first_seen_at,last_seen_at)
+          SELECT visitor_key,MIN(viewed_at),MAX(viewed_at) FROM page_views WHERE aggregated_at IS NULL AND id<=? GROUP BY visitor_key
+          ON CONFLICT(visitor_key) DO UPDATE SET first_seen_at=MIN(first_seen_at,excluded.first_seen_at),last_seen_at=MAX(last_seen_at,excluded.last_seen_at)`).bind(maxId),
+        env.DB.prepare('UPDATE page_views SET aggregated_at=CURRENT_TIMESTAMP WHERE aggregated_at IS NULL AND id<=?').bind(maxId)
+      ]);backfilled+=count;
+    }
+    const oldViews=await env.DB.prepare(`DELETE FROM page_views WHERE id IN
+      (SELECT id FROM page_views WHERE aggregated_at IS NOT NULL AND viewed_at<datetime('now',?) ORDER BY viewed_at,id LIMIT ?)`).bind(`-${RAW_RETENTION_DAYS} days`,batchSize).run();
+    const oldEvents=await env.DB.prepare(`DELETE FROM customer_events WHERE id IN (SELECT id FROM customer_events WHERE created_at<datetime('now',?) ORDER BY created_at,id LIMIT ?)` ).bind(`-${RAW_RETENTION_DAYS} days`,batchSize).run();
+    removed+=number(oldViews?.meta?.changes);customerEventsRemoved+=number(oldEvents?.meta?.changes);
+    if(count<batchSize&&number(oldViews?.meta?.changes)<batchSize&&number(oldEvents?.meta?.changes)<batchSize)break;
+    if(Number(now())-startedAt>=deadlineMs){deadlineReached=true;break}
   }
-  const removed=await env.DB.prepare(`DELETE FROM page_views WHERE id IN
-    (SELECT id FROM page_views WHERE aggregated_at IS NOT NULL AND viewed_at<datetime('now',?) ORDER BY id LIMIT ?)`)
-    .bind(`-${RAW_RETENTION_DAYS} days`,BATCH_SIZE).run();
-  const customerEventsRemoved=await env.DB.prepare(`DELETE FROM customer_events WHERE id IN (SELECT id FROM customer_events WHERE created_at<datetime('now',?) ORDER BY id LIMIT ?)` ).bind(`-${RAW_RETENTION_DAYS} days`,BATCH_SIZE).run();
-  return {retention_days:RAW_RETENTION_DAYS,backfilled,removed:number(removed?.meta?.changes),customer_events_removed:number(customerEventsRemoved?.meta?.changes),more_backfill:backfilled===BATCH_SIZE};
+  const [pending,oldViews,oldEvents]=await Promise.all([
+    env.DB.prepare('SELECT 1 FROM page_views WHERE aggregated_at IS NULL LIMIT 1').first(),
+    env.DB.prepare("SELECT 1 FROM page_views WHERE aggregated_at IS NOT NULL AND viewed_at<datetime('now',?) LIMIT 1").bind(`-${RAW_RETENTION_DAYS} days`).first(),
+    env.DB.prepare("SELECT 1 FROM customer_events WHERE created_at<datetime('now',?) LIMIT 1").bind(`-${RAW_RETENTION_DAYS} days`).first()
+  ]);
+  return {retention_days:RAW_RETENTION_DAYS,backfilled,removed,customer_events_removed:customerEventsRemoved,deadline_reached:deadlineReached,has_more:Boolean(pending||oldViews||oldEvents)};
+}
+
+export async function runAnalyticsMaintenance(env,options={}){
+  const leaseOptions={...options,minIntervalMs:options.minIntervalMs??5*60*1000},lease=await claimMaintenanceLease(env.DB,'analytics-retention',leaseOptions);if(!lease)return {busy:true,has_more:true};
+  let completed=false;
+  try{const retention=await maintainAnalyticsRetention(env,options),trash=await purgeExpiredTrash(env,options);completed=true;return {...retention,trash,has_more:Boolean(retention.has_more||trash.has_more)}}
+  finally{await releaseMaintenanceLease(env.DB,'analytics-retention',lease,{...leaseOptions,completed})}
 }
 
 

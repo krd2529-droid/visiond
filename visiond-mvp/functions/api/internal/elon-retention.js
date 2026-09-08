@@ -1,5 +1,5 @@
 import {json} from '../../_lib.js';
-import {ensureDatabase} from '../../_schema.js';
+import {ensureElonWebSchema} from '../../_elon_databases.js';
 import {purgeExpiredElonData} from '../../_elon.js';
 
 const noStore={'cache-control':'private, no-store'};
@@ -11,8 +11,9 @@ async function validToken(request,secret){
 }
 export async function onRequestPost(ctx){
   if(!(await validToken(ctx.request,ctx.env.ELON_CLEANUP_TOKEN)))return json({error:'ไม่อนุญาต'},401,noStore);
-  await ensureDatabase(ctx.env);
-  await purgeExpiredElonData(ctx.env,{force:true});
-  return json({ok:true,retention_days:60,completed_at:new Date().toISOString()},200,noStore);
+  if(!ctx.env.ELON_WEB_DB)return json({error:'ELON_WEB_DB_BINDING_REQUIRED'},503,noStore);
+  await ensureElonWebSchema(ctx.env);
+  const result=await purgeExpiredElonData(ctx.env,{force:true});
+  return json({ok:true,...result,completed_at:new Date().toISOString()},result.busy?202:200,noStore);
 }
 export async function onRequestGet(){return json({error:'ใช้ POST เท่านั้น'},405,{...noStore,allow:'POST'})}

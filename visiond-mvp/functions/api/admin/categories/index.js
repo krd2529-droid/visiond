@@ -3,10 +3,18 @@ import {ensureAdminCatalogIndexes,ensureDatabase} from '../../../_schema.js';
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);
-  const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
+  const auth=await requireAdmin(ctx,{includeCourseOwner:false});if(auth.error)return auth.error;
+  const purpose=new URL(ctx.request.url).searchParams.get('purpose')||'options';
+  if(purpose==='options'){
+    // Categories are a small managed dictionary. Return every row so an inactive
+    // value already selected by a draft is never truncated from an edit form.
+    const {results}=await ctx.env.DB.prepare('SELECT id,slug,name,parent_slug,file_type,active,sort_order FROM categories ORDER BY sort_order,id').all();
+    return json({items:results},200,{'cache-control':'private, no-store'});
+  }
+  if(purpose!=='counts')return json({error:'purpose ไม่ถูกต้อง'},400,{'cache-control':'private, no-store'});
   await ensureAdminCatalogIndexes(ctx.env);
-  const {results}=await ctx.env.DB.prepare(`SELECT c.*,COALESCE(pc.product_count,0) product_count FROM categories c LEFT JOIN (SELECT p.category,COUNT(*) product_count FROM products p WHERE p.status='published' AND p.deleted_at IS NULL AND COALESCE(p.product_kind,'product')='product' AND (p.category<>'resale-rights' OR p.slug='course-selling-rights') GROUP BY p.category) pc ON pc.category=c.slug ORDER BY c.sort_order,c.id`).all();
-  return json({items:results});
+  const {results}=await ctx.env.DB.prepare(`SELECT category,COUNT(*) product_count FROM products WHERE status='published' AND deleted_at IS NULL AND COALESCE(product_kind,'product')='product' AND (category<>'resale-rights' OR slug='course-selling-rights') GROUP BY category`).all();
+  return json({items:results},200,{'cache-control':'private, no-store'});
 }
 
 export async function onRequestPost(ctx){

@@ -7,42 +7,17 @@ const storefrontCatalogSchemaByDatabase=new WeakMap();
 const RUNTIME_SCHEMA_VERSION=66;
 
 export async function ensureStorefrontCatalogSchema(env){
-  if(!env?.DB)return;
+  if(!env?.DB)return false;
   let ready=storefrontCatalogSchemaByDatabase.get(env.DB);
   if(!ready){ready=(async()=>{
-    await env.DB.prepare("CREATE TABLE IF NOT EXISTS runtime_schema_state (schema_key TEXT PRIMARY KEY,version INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-    const state=await env.DB.prepare("SELECT version FROM runtime_schema_state WHERE schema_key='storefront_catalog'").first();
-    if(Number(state?.version)>=89)return;
-    const statements=[
-      'CREATE INDEX IF NOT EXISTS idx_product_files_product_latest ON product_files(product_id,id DESC)',
-      "CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'",
-      "CREATE INDEX IF NOT EXISTS idx_products_admin_category_status ON products(category,status) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'",
-      'CREATE INDEX IF NOT EXISTS idx_products_public_cover ON products(cover_url) WHERE deleted_at IS NULL',
-      "CREATE INDEX IF NOT EXISTS idx_products_public_preview_1 ON products(json_extract(preview_urls,'$[0]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
-      "CREATE INDEX IF NOT EXISTS idx_products_public_preview_2 ON products(json_extract(preview_urls,'$[1]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
-      "CREATE INDEX IF NOT EXISTS idx_products_public_preview_3 ON products(json_extract(preview_urls,'$[2]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
-      "CREATE INDEX IF NOT EXISTS idx_vision4_pending_preview_1 ON vision4_pending_files(json_extract(preview_urls,'$[0]')) WHERE status='waiting_bundle' AND json_valid(preview_urls)",
-      "CREATE INDEX IF NOT EXISTS idx_vision4_pending_preview_2 ON vision4_pending_files(json_extract(preview_urls,'$[1]')) WHERE status='waiting_bundle' AND json_valid(preview_urls)",
-      "CREATE INDEX IF NOT EXISTS idx_vision4_pending_preview_3 ON vision4_pending_files(json_extract(preview_urls,'$[2]')) WHERE status='waiting_bundle' AND json_valid(preview_urls)",
-      'CREATE INDEX IF NOT EXISTS idx_products_normalized_title ON products(lower(trim(title)))',
-      'CREATE INDEX IF NOT EXISTS idx_categories_public_order ON categories(active,sort_order,id)',
-      'CREATE INDEX IF NOT EXISTS idx_products_slug_nocase ON products(slug COLLATE NOCASE)',
-      'CREATE INDEX IF NOT EXISTS idx_product_slug_history_old_nocase ON product_slug_history(old_slug COLLATE NOCASE)',
-      'CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id,id DESC)',
-      'CREATE INDEX IF NOT EXISTS idx_order_items_order_product ON order_items(order_id,product_id)',
-      "INSERT OR IGNORE INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision','0',CURRENT_TIMESTAMP)",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_products_insert AFTER INSERT ON products BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_products_update AFTER UPDATE ON products BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_products_delete AFTER DELETE ON products BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_categories_insert AFTER INSERT ON categories BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_categories_update AFTER UPDATE ON categories BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_categories_delete AFTER DELETE ON categories BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_settings_insert AFTER INSERT ON settings WHEN NEW.key IN ('visiond_basket_visibility','promotion_enabled','promotion_scope','promotion_scopes','promotion_percent') BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_settings_update AFTER UPDATE ON settings WHEN NEW.key IN ('visiond_basket_visibility','promotion_enabled','promotion_scope','promotion_scopes','promotion_percent') BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
-    ];
-    for(const sql of statements)await env.DB.prepare(sql).run();
-    await env.DB.prepare("INSERT INTO runtime_schema_state(schema_key,version,updated_at) VALUES('storefront_catalog',89,CURRENT_TIMESTAMP) ON CONFLICT(schema_key) DO UPDATE SET version=excluded.version,updated_at=CURRENT_TIMESTAMP").run();
-  })().catch(error=>{storefrontCatalogSchemaByDatabase.delete(env.DB);throw error});storefrontCatalogSchemaByDatabase.set(env.DB,ready)}
+    try{
+      const state=await env.DB.prepare("SELECT r.version,m.ready FROM runtime_schema_state r JOIN storefront_catalog_metadata_state m ON m.id=1 WHERE r.schema_key='storefront_catalog'").first();
+      return Number(state?.version)>=91&&Number(state?.ready)===1;
+    }catch(error){
+      if(/no such (?:table|column)/i.test(String(error?.message||error)))return false;
+      throw error;
+    }
+  })().then(value=>{if(!value)storefrontCatalogSchemaByDatabase.delete(env.DB);return value}).catch(error=>{storefrontCatalogSchemaByDatabase.delete(env.DB);throw error});storefrontCatalogSchemaByDatabase.set(env.DB,ready)}
   return ready;
 }
 

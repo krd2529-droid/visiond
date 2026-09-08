@@ -18,8 +18,13 @@ export async function ensureElonWebSchema(env){
     db.prepare(`CREATE TABLE IF NOT EXISTS elon_web_messages (id INTEGER PRIMARY KEY AUTOINCREMENT,conversation_id TEXT NOT NULL,subject_id TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('user','assistant')),content TEXT NOT NULL,page_path TEXT NOT NULL DEFAULT '',page_title TEXT NOT NULL DEFAULT '',page_context TEXT NOT NULL DEFAULT '{}',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(conversation_id) REFERENCES elon_web_conversations(id) ON DELETE CASCADE)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS elon_web_rate_limits (subject_id TEXT NOT NULL,window_start TEXT NOT NULL,hits INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(subject_id,window_start))`),
     db.prepare(`CREATE TABLE IF NOT EXISTS elon_web_usage_limits (rate_key TEXT NOT NULL,window_start TEXT NOT NULL,hits INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(rate_key,window_start))`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS elon_web_maintenance_jobs (job_key TEXT PRIMARY KEY,lease_token TEXT NOT NULL DEFAULT '',lease_expires_at TEXT,last_completed_at TEXT,next_run_at TEXT,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_conversations_subject_updated ON elon_web_conversations(subject_id,updated_at DESC)`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_messages_conversation_created ON elon_web_messages(conversation_id,created_at DESC,id DESC)`)
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_messages_conversation_created ON elon_web_messages(conversation_id,created_at DESC,id DESC)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_messages_retention ON elon_web_messages(created_at,id)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_conversations_retention ON elon_web_conversations(created_at,id)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_rate_limits_retention ON elon_web_rate_limits(window_start,subject_id)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_elon_web_usage_limits_retention ON elon_web_usage_limits(window_start,rate_key)`)
   ]);
   return db;
 }
