@@ -39,5 +39,5 @@ seenSql.length=0;const preview=await readMedia({env,params:{key:'preview-2-test.
 const [ui,html,version]=await Promise.all(['../public/admin.js','../public/admin.html','../VERSION.txt'].map(path=>readFile(new URL(path,import.meta.url),'utf8')));
 for(const token of ['PRODUCT_LIST_TTL','productListInflight','productListLoadedAt','loadMoreProducts','status, limit: "24"','invalidateProductList'])assert.ok(ui.includes(token),token);
 const sampleArchive=await readFile(new URL('../public/product-sample-archive.js',import.meta.url),'utf8');assert.match(sampleArchive,/purpose:'sample'/);
-assert.match(html,/คลังงาน/);assert.match(html,/admin\.js\?v=02063/);assert.equal(version.trim(),'v0.20.64');
+assert.match(html,/คลังงาน/);assert.match(html,/admin\.js\?v=02063/);assert.equal(version.trim(),'v0.20.65');
 console.log('PASS admin product D1 efficiency: indexed keyset pagination, literal search, bounded page and indexed media lookup');

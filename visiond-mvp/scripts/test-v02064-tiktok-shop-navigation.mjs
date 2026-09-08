@@ -64,9 +64,9 @@ assert.match(html, /id="shopConnectionManagement"/);
 assert.match(html, /id="disconnectTikTokShop"/);
 assert.match(css, /\.manage-channel-connections/);
 
-assert.equal(version.trim(), 'v0.20.64');
-assert.match(home, /WEB v0\.20\.64/);
-assert.match(admin, /ADMIN v0\.20\.64/);
+assert.equal(version.trim(), 'v0.20.65');
+assert.match(home, /WEB v0\.20\.65/);
+assert.match(admin, /ADMIN v0\.20\.65/);
 assert.match(html, /<b>v0\.20\.64<\/b>/);
 assert.match(html, /tiktok-analyzer\.css\?v=02094/);
 assert.match(html, /tiktok-analyzer\.js\?v=02125/);

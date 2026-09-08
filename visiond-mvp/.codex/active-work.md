@@ -1,3 +1,12 @@
+# Active patch: Work links copy button
+
+- Event: PATCH_READY (v0.20.65)
+- Requested outcome: add a copy button beside every loaded work-link row that copies the exact saved URL, with accessible nearby success feedback and an honest manual-copy fallback when Clipboard access is missing or denied.
+- Preservation: keep the bounded work-links API, pagination, search, Open/Edit/Delete actions, authentication, D1 behavior and unrelated features unchanged. Copying must not fetch, navigate, reload, sync or write data.
+- Implemented: each row now has a native `type="button"` action that awaits Clipboard API completion for the exact raw `item.url`. Success is announced in a nearby live status; missing, throwing or denied Clipboard access shows and selects a readonly exact-URL field for manual copying. Per-row attempt ordering prevents an older async result from overwriting a newer click, and the handler performs no request, reload or navigation.
+- Responsive/cache: action buttons wrap as a two-column grid at <=700px, long labels/URLs wrap without overlapping actions, and the manual field stays within the row. Work-links JS/CSS cache stamps are `02065`/`014588`; WEB, ADMIN and `VERSION.txt` are v0.20.65.
+- Verification: `npm run test:v02065`, `npm run test:v02058`, `npm run test:v02064`, `npm run test:visible-version`, JS/test syntax and `git diff --check` pass. The focused VM gate covers exact URL rather than a distinct note, success, denial, missing/throwing Clipboard access, out-of-order repeated clicks, native accessibility attributes, manual selection, zero network/navigation calls and mobile CSS. Awaiting Mark/Root frozen review before commit/push and Root production desktop/mobile Clipboard verification after deployment.
+
 # Delivered patch: VX Shop connection CTA and two-tab navigation
 
 - Event: PATCH_DELIVERED (v0.20.64)

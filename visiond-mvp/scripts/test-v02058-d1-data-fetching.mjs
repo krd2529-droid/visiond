@@ -40,7 +40,7 @@ assert.doesNotMatch(sampleClient,/do\{[^]*next_cursor/,'sample dialog must not e
 for(const source of [vision4,notes,links,trash,webhooks]){assert.match(source,/Math\.min\(24/);assert.match(source,/LIMIT \?/)}
 assert.match(vision4Client,/data-v4-draft-next/);assert.match(vision4Client,/data-v4-pending-next/);assert.match(adminClient,/data-trash-more/);assert.match(webhookClient,/data-more/);
 assert.match(previews,/productLimit=24/);assert.match(previews,/id<\?/);assert.match(previews,/LIMIT \?/);assert.match(adminClient,/previewExportCursor/);
-assert.match(tiktokHtml,/tiktok-analyzer\.js\?v=02125/);assert.match(notesHtml,/work-notes\.js\?v=02058/);assert.match(linksHtml,/work-links\.js\?v=02058/);
+assert.match(tiktokHtml,/tiktok-analyzer\.js\?v=02125/);assert.match(notesHtml,/work-notes\.js\?v=02058/);assert.match(linksHtml,/work-links\.js\?v=02065/);
 for(const index of ['idx_tiktok_products_channel_seen','idx_tiktok_product_events_channel_page','idx_tiktok_runs_channel_page']){assert.ok(analyzerSchema.includes(index));assert.ok(migration.includes(index))}
 
 const db=new DatabaseSync(':memory:');
