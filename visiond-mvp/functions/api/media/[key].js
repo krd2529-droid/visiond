@@ -1,4 +1,4 @@
-const notFound=()=>new Response('Not found',{status:404,headers:{'cache-control':'no-store','x-content-type-options':'nosniff'}});
+const notFound=head=>new Response(head?null:'Not found',{status:404,headers:{'cache-control':'no-store','x-content-type-options':'nosniff'}});
 const productImage=/^(?:cover-|preview-[23]-|product-image-|course-cover-|user-course-cover-|seller-course-cover-)/;
 const pendingPreview=/^vision4-pending-preview-/;
 const companyPaymentQr=/^payment-qr-/;
@@ -22,12 +22,14 @@ async function isReferenced(env,key){
   if(companyPaymentQr.test(key))return await env.DB.prepare("SELECT 1 FROM settings WHERE key='qr_url' AND value=? LIMIT 1").bind(url).first()?'public':'';
   return '';
 }
-export async function onRequestGet(ctx){
+async function readMedia(ctx,{head=false}={}){
   const key=String(ctx.params.key||'');
   // Only DB-referenced public images are served here. Seller QR, slips, lessons and
   // paid product files use their dedicated authenticated routes and never match.
-  const visibility=await isReferenced(ctx.env,key);if(!visibility)return notFound();
-  const obj=await ctx.env.FILES.get(key);if(!obj)return notFound();
-  const contentType=String(obj.httpMetadata?.contentType||'').toLowerCase();if(!contentType.startsWith('image/'))return notFound();
-  const headers=new Headers();obj.writeHttpMetadata(headers);headers.set('cache-control',visibility==='public'?'public, max-age=86400':'private, no-store');headers.set('etag',obj.httpEtag);headers.set('x-content-type-options','nosniff');headers.delete('content-disposition');return new Response(obj.body,{headers});
+  const visibility=await isReferenced(ctx.env,key);if(!visibility)return notFound(head);
+  const obj=head?await ctx.env.FILES.head(key):await ctx.env.FILES.get(key);if(!obj)return notFound(head);
+  const contentType=String(obj.httpMetadata?.contentType||'').toLowerCase();if(!contentType.startsWith('image/'))return notFound(head);
+  const headers=new Headers();obj.writeHttpMetadata(headers);headers.set('cache-control',visibility==='public'?'public, max-age=86400':'private, no-store');headers.set('etag',obj.httpEtag);headers.set('x-content-type-options','nosniff');headers.delete('content-disposition');return new Response(head?null:obj.body,{headers});
 }
+export const onRequestGet=ctx=>readMedia(ctx);
+export const onRequestHead=ctx=>readMedia(ctx,{head:true});

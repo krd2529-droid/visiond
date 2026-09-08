@@ -78,5 +78,5 @@ const rightsOnlyOrder=await checkout({env,request:orderRequest(['rights-test'])}
 const unauthorized=await savePause({env,request:request('/api/admin/basket-visibility',{method:'POST',headers:{'content-type':'application/json'},body:'{"paused":false}'})});assert.equal(unauthorized.status,401);assert.equal(sqlite.prepare("SELECT value FROM settings WHERE key='visiond_digital_storefront_paused'").get().value,'1');
 const reopened=await savePause({env,request:request('/api/admin/basket-visibility',{method:'POST',headers:{cookie:'vd_session=pause-admin','content-type':'application/json'},body:'{"paused":false}'})});assert.equal(reopened.status,200);assert.equal((await reopened.json()).storefront_paused,false);assert.equal(sqlite.prepare("SELECT value FROM settings WHERE key='visiond_digital_storefront_paused'").get().value,'0');
 const reclosed=await savePause({env,request:request('/api/admin/basket-visibility',{method:'POST',headers:{cookie:'vd_session=pause-admin','content-type':'application/json'},body:'{"paused":true}'})});assert.equal(reclosed.status,200);assert.equal((await reclosed.json()).storefront_paused,true);
-assert.equal(version.trim(),'v0.20.60');
-console.log('v0.20.60 urgent digital storefront pause regression: short-circuit, stale-cache bypass, access preservation and authorization PASS');
+assert.equal(version.trim(),'v0.20.61');
+console.log('v0.20.61 urgent digital storefront pause regression: short-circuit, stale-cache bypass, access preservation and authorization PASS');
