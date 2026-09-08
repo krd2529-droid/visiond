@@ -25,6 +25,7 @@
     "test:v014482": "node scripts/test-v014482.mjs",
     "test:v014483": "node scripts/test-v014483.mjs",
     "test:maintenance-worker": "node scripts/test-maintenance-worker.mjs",
+    "test:worker-redirects": "node scripts/test-worker-redirects.mjs",
     "test:mobile-frontend": "node scripts/test-mobile-frontend.mjs",
     "test:first-order-promo": "node scripts/test-first-order-promo.mjs",
     "predeploy:check": "node scripts/predeploy-check.mjs",

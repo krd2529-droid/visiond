@@ -15,7 +15,7 @@ const successFetch = async (url, init) => {
 const results = await runMaintenance({ APP_ORIGIN: 'https://visiondonline.com', ELON_CLEANUP_TOKEN: secretA, ANALYTICS_CLEANUP_TOKEN: secretB, SEO_AUTOMATION_TOKEN: secretC }, successFetch);
 assert.equal(results.length, 3);
 assert.deepEqual(requests.map(x => new URL(x.url).pathname).sort(), ['/api/internal/analytics-retention', '/api/internal/daily-seo-pages', '/api/internal/elon-retention']);
-assert.equal(requests.every(x => x.init.method === 'POST' && x.init.redirect === 'error'), true);
+assert.equal(requests.every(x => x.init.method === 'POST' && x.init.redirect === 'manual'), true);
 assert.deepEqual(new Set(requests.map(x => x.init.headers.authorization)), new Set([`Bearer ${secretA}`, `Bearer ${secretB}`, `Bearer ${secretC}`]));
 
 await assert.rejects(() => runMaintenance({ APP_ORIGIN: 'https://visiondonline.com', ELON_CLEANUP_TOKEN: 'short', ANALYTICS_CLEANUP_TOKEN: secretB, SEO_AUTOMATION_TOKEN: secretC }, successFetch), /ELON_CLEANUP_TOKEN_INVALID/);
@@ -31,6 +31,10 @@ assert.equal(retried.attempts, 3);
 
 attempts = 0;
 await assert.rejects(() => callMaintenanceJob(async () => { attempts += 1; return new Response('', { status: 401 }); }, 'https://visiondonline.com', { name: 'test', path: '/internal' }, secretA), /HTTP_401/);
+assert.equal(attempts, 1);
+
+attempts = 0;
+await assert.rejects(() => callMaintenanceJob(async (_url,init) => { attempts += 1;assert.equal(init.redirect,'manual'); return new Response('', { status: 302,headers:{location:'https://attacker.invalid/'} }); }, 'https://visiondonline.com', { name: 'test', path: '/internal' }, secretA), /REDIRECT_REFUSED/);
 assert.equal(attempts, 1);
 
 attempts = 0;

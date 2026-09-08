@@ -11,10 +11,10 @@ const origin=value=>{let url;try{url=new URL(clean(value))}catch{throw new Error
 const intervalId=now=>String(Math.floor(now/300000));
 const errorText=error=>clean(error?.message||error||'D1_QUOTA_MONITOR_ERROR').slice(0,300);
 
-async function request(fetcher,url,init){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);try{return await fetcher(url,{...init,signal:controller.signal})}finally{clearTimeout(timer)}}
+async function request(fetcher,url,init){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);try{return await fetcher(url,{...init,redirect:'manual',signal:controller.signal})}finally{clearTimeout(timer)}}
 
 async function control(fetcher,config,body){
-  const response=await request(fetcher,`${config.origin}/api/internal/d1-quota-breaker`,{method:'POST',headers:{authorization:`Bearer ${config.breakerToken}`,'content-type':'application/json',accept:'application/json'},body:JSON.stringify(body),redirect:'error'}),payload=await response.json().catch(()=>({}));
+  const response=await request(fetcher,`${config.origin}/api/internal/d1-quota-breaker`,{method:'POST',headers:{authorization:`Bearer ${config.breakerToken}`,'content-type':'application/json',accept:'application/json'},body:JSON.stringify(body)});if(response.status>=300&&response.status<400)throw new Error('D1_QUOTA_CONTROL_REDIRECT_REFUSED');const payload=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(payload.code||payload.error||`D1_QUOTA_CONTROL_HTTP_${response.status}`);return payload;
 }
 
@@ -29,7 +29,7 @@ export function parseD1AccountUsage(payload){
 
 export async function fetchD1AccountUsage(config,{fetcher=fetch,now=Date.now()}={}){
   const sampledAt=new Date(now).toISOString(),sampleDay=sampledAt.slice(0,10),query=`query VisionDD1DailyUsage($accountTag:string!,$start:Date,$end:Date){viewer{accounts(filter:{accountTag:$accountTag}){d1AnalyticsAdaptiveGroups(limit:10000,filter:{date_geq:$start,date_leq:$end}){sum{rowsRead rowsWritten}}}}}`;
-  const response=await request(fetcher,GRAPHQL_URL,{method:'POST',headers:{authorization:`Bearer ${config.analyticsToken}`,'content-type':'application/json'},body:JSON.stringify({query,variables:{accountTag:config.accountId,start:sampleDay,end:sampleDay}})}),payload=await response.json().catch(()=>null);
+  const response=await request(fetcher,GRAPHQL_URL,{method:'POST',headers:{authorization:`Bearer ${config.analyticsToken}`,'content-type':'application/json'},body:JSON.stringify({query,variables:{accountTag:config.accountId,start:sampleDay,end:sampleDay}})});if(response.status>=300&&response.status<400)throw new Error('CF_ANALYTICS_REDIRECT_REFUSED');const payload=await response.json().catch(()=>null);
   if(!response.ok)throw new Error(`CF_ANALYTICS_HTTP_${response.status}`);const usage=parseD1AccountUsage(payload);
   return {sampleDay,sampledAt,...usage};
 }

@@ -35,9 +35,10 @@ export async function callMaintenanceJob(fetcher, origin, job, token) {
       const response = await fetcher(endpoint, {
         method: 'POST',
         headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
-        redirect: 'error',
+        redirect: 'manual',
         signal: controller.signal
       });
+      if(response.status>=300&&response.status<400){lastError=new Error(`${job.name}_REDIRECT_REFUSED`);break}
       if(response.headers?.get?.('x-visiond-control')?.startsWith('d1-quota-'))return {name:job.name,ok:true,skipped:true,attempts:attempt,reason:response.headers.get('x-visiond-control')};
       if (response.ok) return { name: job.name, ok: true, attempts: attempt };
       lastError = new Error(`${job.name}_HTTP_${response.status}`);
