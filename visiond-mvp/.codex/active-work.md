@@ -1,6 +1,6 @@
 # Active patch: urgent digital storefront pause
 
-- Event: PATCH_READY2
+- Event: PATCH_DELIVERED
 - Requested outcome: Add a durable, reversible emergency switch for the first-party ordinary digital-file storefront and leave production closed, while admin upload/management, courses, VX, Vision 7, resale rights, partner commerce, and existing purchaser downloads continue normally.
 - Persisted production state: Jarvis set `settings.visiond_digital_storefront_paused` to `'1'`; the existing `visiond_basket_visibility` rule was absent/open fallback and remains untouched.
 - Server contract: `/api/products` checks the pause key before catalog schema/cache/count/list work and returns a no-store closed payload; direct ordinary-product detail, first-party sales pages, and stale-cart ordinary digital order creation are blocked. Entitled owners may still open product detail, and download endpoints are unchanged.
@@ -10,10 +10,12 @@
 - Regression gates passed: `npm run test:v02058`, `node scripts/test-admin-product-d1-efficiency.mjs`, `npm run test:v02057`, `npm run test:visible-version`, relevant `node --check`, and `git diff --check`.
 - Version: v0.20.59; catalog, admin, and product client cache stamps were advanced. Production remains persisted closed (`'1'`); open/reopen was tested locally only.
 - READY2 remediation: paused cart hydration now retains existing ordinary and resale-rights rows instead of deleting them from local storage, shows the pause state for ordinary items, and still lets server-authoritative service orders proceed. Paused `/s` classification no longer runs the sales-page schema installer; it performs only existing indexed page/product checks and stops before product-card/image rendering.
+- Delivery: commit `afff9345` pushed to `origin/main` without force and deployed by Cloudflare as `bfbd73f8-0f5e-490d-900e-a04e105ea94e` (source `afff934`). Production WEB v0.20.59 and the pause key remains `'1'`.
+- Production verification: products/categories/recommendations return closed empty private responses; guest ordinary product detail returns 503 while resale-rights remains 200. Browser shows the Thai pause notice with no product cards or images. Admin/download production clicks were not exercised without a session; their unchanged paths and local functional authorization/entitlement tests passed independently.
 
-## Paused patch: D1 repeated-fetch remediation
+## Active patch: D1 repeated-fetch remediation
 
-- Event: PATCH_STARTED
+- Event: PATCH_READY
 - Requested outcome: Reduce abnormal D1 rows read near the Cloudflare quota limit without weakening private-data cache controls or regressing the bounded v0.20.58 catalog/admin flows.
 - Earliest verified cause: Cloudflare D1 Insights shows the current product-preview media authorization query ran 4,738 times in 24 hours and read about 3,099,838 rows (about 654 rows per request). Its three `json_extract(preview_urls, ...)` predicates are joined by `OR`, so SQLite does not use the existing per-slot expression indexes as efficient single-key lookups.
 - Amplifier: `functions/_middleware.js` overwrites every `/api/` response with `cache-control: private, no-store`, including the media endpoint's explicit `public, max-age=86400`. Browsers therefore re-enter the Function and repeat the D1 reference check for images that are intentionally public.
@@ -21,12 +23,19 @@
 - Planned correction: split media authorization into indexed `UNION ALL` equality branches, add equivalent indexed three-slot lookup for Vision4 pending previews, remove schema DDL from the image-request path, and preserve an endpoint's explicit public cache header only on a narrow GET allowlist while all other API responses remain private/no-store.
 - Required verification: representative SQLite `EXPLAIN QUERY PLAN` proves every media branch uses its intended index; tests prove public media/API cache headers survive middleware while private/auth/error responses remain no-store; existing catalog pagination/dedup/cache-invalidation and visible-version tests remain green.
 - Continuity: The TikTok reviewer login task below remains blocked on the missing production reviewer identity/password and TikTok Sandbox target membership. This D1 patch does not change auth accounts or OAuth configuration.
+- Resumed baseline: v0.20.59 / `afff9345`, with production storefront intentionally still paused. Scope now also includes Mark's verified paused/unchanged learning-progress writes and V12 active inbox polling/unbounded list; retention cleanup and computed storefront classification remain residuals unless a small safe correction is proven.
+- Implemented: Public-media reference checks use indexed UNION branches and no per-image schema installer. Middleware preserves upstream public caching only for published generic media, site settings, and aggregate analytics on successful GET/HEAD responses; draft/pending/customer/auth/error/cookie responses remain private/no-store. Catalog responses remain browser-private and the client requests them with `cache:'no-store'`, preserving immediate storefront pause behavior.
+- Implemented: Learning progress sends only changed state while video is playing or on a dirty final event, retains lesson-bound payloads across navigation, shares per-lesson retry cooldown/suspension, and bounds transient retries. The server returns early for identical/stale progress and no longer recomputes course-wide summary/resume data after every tick.
+- Implemented: V12 inbox lists active conversations in indexed 24-row keyset pages with server search and connected load-more. In-flight requests and short TTL responses are keyed by platform/search/cursor, A→B→A intent cannot render out of order, mutations advance a revision, and automatic refresh runs only for the visible active Inbox without search or appended pages.
+- Migration: production 0089 installed successfully before code deploy; 10 CREATE INDEX-only statements, SHA256 `16789A613192AE9941225348A9B81BF3F8C35570851544E84428BF0D86AB1557`, bookmark `00001100-00000006-000050e0-7c7581b7d82e47ca3e11b32681f2f9ed`, 6,143 rows read / 2,592 rows written. Metadata confirms all indexes and `visiond_digital_storefront_paused='1'` remained unchanged.
+- Verification passed: `node scripts/test-v02060-d1-hot-paths.mjs`, urgent pause regression, `npm run test:v02058`, `npm run test:v02057`, admin product D1 efficiency, V12 query budget, visible-version parity, relevant syntax checks, and `git diff --check`. Tests include final cache/privacy headers, media/title/category/slug/V12 EXPLAIN plans, pagination no-duplicate/no-omission, deep-cursor range search, learning retry/state matrices, V12 request dedup/TTL/race/invalidation, and catalog pause browser-cache bypass.
+- Version: v0.20.60. Awaiting Mark's final independent verdict before scoped commit/push. Residual audit items intentionally not claimed fixed: computed storefront sort/count ranking, user-triggered V12 substring-search row work, direct product historical-slug OR lookup, and non-atomic Elon retention cleanup.
 
 ## Prior blocked patch: TikTok reviewer production login
 
 - Event: PATCH_BLOCKED
 - Requested outcome: The TikTok reviewer can authenticate at the submitted product URL with the configured review account, while normal member/boss login, logout, safe invalid-credential handling, and production security remain intact.
-- Earliest verified cause: Production D1 has no user whose case-insensitive email or username matches the submitted reviewer identifier. Username/alias checks also return zero, so the credential submitted to TikTok points to an account that was never provisioned in production.
+- Earliest verified cause: Production D1 had no user present at inspection whose case-insensitive email or username matched the submitted reviewer identifier. Username/alias checks also returned zero, so the submitted credential could not authenticate; this does not establish whether a matching account existed historically.
 - Exclusions: The hashed identity limiter is not blocked; all required auth/session tables exist; another production login succeeded recently; existing PBKDF2 account hashes are structurally valid. This is not a general auth endpoint, D1 binding, or session-schema outage.
 - Screenshot 500: `[AUTH-LOGIN]` indicates an additional transient uncaught exception. The source normally returns 401 for an absent account, but current diagnostics do not identify the failing stage and access to live production log tail was denied. Do not claim an exact 500 statement without evidence.
 - Changes: No application code or production account has been changed. The earliest verified cause was recorded in `.agents/WORKBOARD.md` before any implementation edit.

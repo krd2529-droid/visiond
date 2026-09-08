@@ -168,10 +168,10 @@ import('/nav-account.js?v=02057');
   const routeParams=new URLSearchParams(location.search),catalogRequestParams=new URLSearchParams({limit:'24'});
   for(const key of ['cursor','q'])if(routeParams.get(key))catalogRequestParams.set(key,routeParams.get(key));
   const requestedGroup=routeParams.get('group')||routeParams.get('category');if(requestedGroup&&requestedGroup!=='all')catalogRequestParams.set('group',requestedGroup);
-  fetch(`/api/products?${catalogRequestParams}`).then((r) => (r.ok ? r.json() : Promise.reject()))
+  fetch(`/api/products?${catalogRequestParams}`,{cache:'no-store'}).then((r) => (r.ok ? r.json() : Promise.reject()))
     .then(data=>{
       if(data.storefront_closed){
-        filters.hidden=true;catalogPager.hidden=true;if(homeSearch)homeSearch.disabled=true;if(clearHomeSearch)clearHomeSearch.disabled=true;
+        filters.hidden=true;filters.style.display='none';catalogPager.hidden=true;catalogPager.style.display='none';if(homeSearch)homeSearch.disabled=true;if(clearHomeSearch)clearHomeSearch.disabled=true;
         if(promotionSection)promotionSection.hidden=true;if(bundlePanel)bundlePanel.hidden=true;
         grid.innerHTML='<div class="product-loading storefront-paused" role="status"><b>หน้าร้านไฟล์ดิจิทัลปิดปรับปรุงชั่วคราว</b><p>งานและสิทธิ์ดาวน์โหลดที่ซื้อไว้ยังอยู่ครบ เปิดไฟล์เดิมได้จาก “สินค้าของฉัน”</p><a href="/dashboard.html#my-products">ไปยังสินค้าของฉัน</a></div>';
         if(homeSearchCount)homeSearchCount.textContent='ปิดรับคำสั่งซื้อไฟล์ดิจิทัลชั่วคราว';

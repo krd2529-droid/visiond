@@ -1,4 +1,12 @@
-export async function ensureSettings(env){await env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run()}
+const settingsReadyByDatabase=new WeakMap();
+export async function ensureSettings(env){
+  let ready=settingsReadyByDatabase.get(env.DB);
+  if(!ready){
+    ready=env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run().catch(error=>{settingsReadyByDatabase.delete(env.DB);throw error});
+    settingsReadyByDatabase.set(env.DB,ready);
+  }
+  await ready;
+}
 export async function loadPaymentSettings(env){
   await ensureSettings(env);
   const {results}=await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('bank_name','account_name','account_number','qr_url','accepting_orders','payment_message','vision3_auto_verify','vision5_rights_auto_verify','active_payment_account','personal_bank_name','personal_account_name','personal_account_number','company_bank_name','company_account_name','company_account_number')`).all();

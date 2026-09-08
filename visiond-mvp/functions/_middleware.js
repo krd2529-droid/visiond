@@ -13,6 +13,14 @@ const trustedMobileOrigins=new Set(['null','capacitor://localhost','http://local
 const mobileMutationPaths=['/api/vision7/auth/veasy-activate','/api/vision7/auth/logout','/api/vision7/auth/veasy-device','/api/vision7/shops/','/api/vision7/runtime/'];
 const isScopedMobileMutation=(pathname,origin)=>trustedMobileOrigins.has(origin||'')&&mobileMutationPaths.some(path=>pathname===path||pathname.startsWith(path));
 export const isIncomingWebhookPath=pathname=>/^\/hooks\/v1\/(line|facebook|easyslip|generic)\/wh_[a-f0-9]{48}$/.test(pathname);
+const publicCacheApiPaths=[
+  /^\/api\/media\/[^/]+$/,
+  /^\/api\/site-settings$/,
+  /^\/api\/analytics\/view$/,
+];
+export const mayPreservePublicApiCache=(pathname,method,response)=>
+  ['GET','HEAD'].includes(method)&&response.status>=200&&response.status<300&&!response.headers.has('set-cookie')&&
+  publicCacheApiPaths.some(pattern=>pattern.test(pathname))&&/^public(?:\s*,|$)/i.test(response.headers.get('cache-control')||'');
 export async function onRequest(ctx){
   const request=ctx.request,url=new URL(request.url),method=request.method.toUpperCase();
   if(!isIncomingWebhookPath(url.pathname)&&url.pathname.startsWith('/api/')&&['POST','PUT','PATCH','DELETE'].includes(method)){
@@ -33,12 +41,12 @@ export async function onRequest(ctx){
   const headers=new Headers(response.headers);
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
   headers.set('x-frame-options','SAMEORIGIN');
-  if(url.pathname.startsWith('/api/'))headers.set('cache-control','private, no-store');
   const country=String(request.cf?.country||request.headers.get('cf-ipcountry')||'').toUpperCase();
   const cookies=request.headers.get('cookie')||'';
   const isHtml=(request.headers.get('accept')||'').includes('text/html');
   if(isHtml&&/^[A-Z]{2}$/.test(country)&&!cookies.includes(`vd_country=${country}`)){
     headers.append('set-cookie',`vd_country=${country}; Path=/; Max-Age=2592000; SameSite=Lax; Secure`);
   }
+  if(url.pathname.startsWith('/api/')&&!mayPreservePublicApiCache(url.pathname,method,{status:response.status,headers}))headers.set('cache-control','private, no-store');
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }
