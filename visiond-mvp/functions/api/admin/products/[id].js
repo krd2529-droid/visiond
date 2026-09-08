@@ -46,7 +46,7 @@ export async function onRequestGet(ctx) {
       .bind(item.id)
       .all(),
     bundle = await ctx.env.DB.prepare(
-      "SELECT p.id,p.slug,p.title,p.cover_url,b.sort_order FROM product_bundle_items b JOIN products p ON p.id=b.source_product_id WHERE b.bundle_product_id=? ORDER BY b.sort_order",
+      "SELECT p.id,p.slug,p.title,p.cover_url,p.preview_urls,p.price,p.pages,p.category,p.status,b.sort_order FROM product_bundle_items b JOIN products p ON p.id=b.source_product_id WHERE b.bundle_product_id=? ORDER BY b.sort_order",
     )
       .bind(item.id)
       .all();

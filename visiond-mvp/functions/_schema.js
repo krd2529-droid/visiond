@@ -12,7 +12,7 @@ export async function ensureStorefrontCatalogSchema(env){
   if(!ready){ready=(async()=>{
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS runtime_schema_state (schema_key TEXT PRIMARY KEY,version INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
     const state=await env.DB.prepare("SELECT version FROM runtime_schema_state WHERE schema_key='storefront_catalog'").first();
-    if(Number(state?.version)>=87)return;
+    if(Number(state?.version)>=88)return;
     const statements=[
       'CREATE INDEX IF NOT EXISTS idx_product_files_product_latest ON product_files(product_id,id DESC)',
       "CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'",
@@ -23,9 +23,18 @@ export async function ensureStorefrontCatalogSchema(env){
       "CREATE INDEX IF NOT EXISTS idx_products_public_preview_3 ON products(json_extract(preview_urls,'$[2]')) WHERE deleted_at IS NULL AND json_valid(preview_urls)",
       'CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id,id DESC)',
       'CREATE INDEX IF NOT EXISTS idx_order_items_order_product ON order_items(order_id,product_id)',
+      "INSERT OR IGNORE INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision','0',CURRENT_TIMESTAMP)",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_products_insert AFTER INSERT ON products BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_products_update AFTER UPDATE ON products BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_products_delete AFTER DELETE ON products BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_categories_insert AFTER INSERT ON categories BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_categories_update AFTER UPDATE ON categories BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_categories_delete AFTER DELETE ON categories BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_settings_insert AFTER INSERT ON settings WHEN NEW.key IN ('visiond_basket_visibility','promotion_enabled','promotion_scope','promotion_scopes','promotion_percent') BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
+      "CREATE TRIGGER IF NOT EXISTS trg_storefront_catalog_settings_update AFTER UPDATE ON settings WHEN NEW.key IN ('visiond_basket_visibility','promotion_enabled','promotion_scope','promotion_scopes','promotion_percent') BEGIN INSERT INTO settings(key,value,updated_at) VALUES('storefront_catalog_revision',lower(hex(randomblob(16))),CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP; END",
     ];
     for(const sql of statements)await env.DB.prepare(sql).run();
-    await env.DB.prepare("INSERT INTO runtime_schema_state(schema_key,version,updated_at) VALUES('storefront_catalog',87,CURRENT_TIMESTAMP) ON CONFLICT(schema_key) DO UPDATE SET version=excluded.version,updated_at=CURRENT_TIMESTAMP").run();
+    await env.DB.prepare("INSERT INTO runtime_schema_state(schema_key,version,updated_at) VALUES('storefront_catalog',88,CURRENT_TIMESTAMP) ON CONFLICT(schema_key) DO UPDATE SET version=excluded.version,updated_at=CURRENT_TIMESTAMP").run();
   })().catch(error=>{storefrontCatalogSchemaByDatabase.delete(env.DB);throw error});storefrontCatalogSchemaByDatabase.set(env.DB,ready)}
   return ready;
 }
@@ -37,6 +46,8 @@ export async function ensureAdminCatalogIndexes(env){
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_product_files_product_latest ON product_files(product_id,id DESC)').run();
     await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_status_id ON products(status,id DESC) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").run();
     await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_admin_category_status ON products(category,status) WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").run();
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_vision4_review ON products(source,status,id DESC) WHERE deleted_at IS NULL").run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_vision4_pending_status_id ON vision4_pending_files(status,id DESC)').run();
   })().catch(error=>{adminCatalogIndexesByDatabase.delete(env.DB);throw error});adminCatalogIndexesByDatabase.set(env.DB,ready)}
   return ready;
 }

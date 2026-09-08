@@ -416,7 +416,8 @@
     "test:v02054": "node scripts/test-v02054-tha1-catalog.mjs",
     "test:v02055": "node scripts/test-v02055-tiktok-reviewer-login.mjs",
     "test:v02056": "node scripts/test-v02056-online-guides.mjs",
-    "test:v02057": "node scripts/test-v02057-login-button.mjs && node scripts/test-v02057-auth-session.mjs"
+    "test:v02057": "node scripts/test-v02057-login-button.mjs && node scripts/test-v02057-auth-session.mjs",
+    "test:v02058": "node scripts/test-v02054-tha1-catalog.mjs && node scripts/test-v02058-d1-data-fetching.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

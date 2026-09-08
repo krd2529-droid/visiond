@@ -13,8 +13,10 @@ const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Da
 };
 const savedUiValue = (key) => { try { return localStorage.getItem(key) || ""; } catch { return ""; } }, saveUiValue = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
 const requestedChannelId = new URLSearchParams(location.search).get("channel_id") || savedUiValue("visiond_tiktok_channel_id") || null;
-let state = { channels: [], selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, analysisRuns: [], runPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const shopConnectionRequests = new Map();
+const inventoryRequests = new Map();
+const inventoryVersions = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02092";
 document.head.append(commissionCardScript);
@@ -248,11 +250,8 @@ async function syncSelectedSoldProductGrades() {
   data.set("action", "sync_sold_product_grades");
   data.set("channel_id", state.selected);
   data.set("sales_grades", JSON.stringify(updates));
-  const synced = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
-  if (synced.products) {
-    state.inventoryProducts = synced.products;
-    renderPermanentInventory(synced.products, synced.product_events || []);
-  }
+  await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
+  invalidateChannelInventory();replaceInventory(await loadChannelInventory());renderInventoryState();
 }
 function safeProductImage(value) {
   try {
@@ -597,6 +596,19 @@ async function api(url, options) {
   }
   return body;
 }
+function loadChannelInventory(channelId=state.selected){
+  const key=String(channelId||''),version=inventoryVersions.get(key)||0;if(!key)return Promise.resolve({products:[],product_events:[]});
+  const pending=inventoryRequests.get(key);if(pending?.version===version)return pending.request;
+  const request=api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(key)}&resource=inventory&limit=24`,{cache:'no-store'}).finally(()=>{if(inventoryRequests.get(key)?.request===request)inventoryRequests.delete(key)});
+  inventoryRequests.set(key,{version,request});return request;
+}
+function invalidateChannelInventory(channelId=state.selected){const key=String(channelId||'');if(!key)return;inventoryVersions.set(key,(inventoryVersions.get(key)||0)+1);inventoryRequests.delete(key)}
+const mergeById=(current,next)=>{const seen=new Set(current.map(item=>String(item.id)));return current.concat((next||[]).filter(item=>!seen.has(String(item.id))))};
+function replaceInventory(data){state.inventoryProducts=data.products||[];state.inventoryEvents=data.product_events||[];state.inventoryCounts=data.inventory_counts||{};state.inventoryPagination=data.pagination||{};return data}
+function renderInventoryState(){renderPermanentInventory(state.inventoryProducts,state.inventoryEvents);reconcileProductPrepInventory(state.inventoryProducts);renderReviewSchedule(state.inventoryProducts,Boolean(state.shopConnection),state.inventoryEvents)}
+async function loadMoreInventoryResource(resource){const page=state.inventoryPagination?.[resource],cursor=page?.next_cursor;if(!cursor)return;const key=resource==='products'?'product_cursor':'event_cursor',params=new URLSearchParams({channel_id:state.selected,resource,limit:'24',[key]:cursor}),data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});if(resource==='products'){state.inventoryProducts=mergeById(state.inventoryProducts,data.products);state.inventoryCounts=data.inventory_counts||state.inventoryCounts}else state.inventoryEvents=mergeById(state.inventoryEvents,data.product_events);state.inventoryPagination[resource]=data.pagination?.[resource]||{};renderInventoryState()}
+function renderRunHistory(){const old=document.querySelector('#analysisRunHistory');old?.remove();if(!state.analysisRuns.length)return;const section=document.createElement('section');section.id='analysisRunHistory';section.className='hint';section.innerHTML=`<b>รอบวิเคราะห์ที่โหลดแล้ว ${state.analysisRuns.length.toLocaleString('th-TH')} รอบ</b><div>${state.analysisRuns.map(run=>`<button type="button" data-analysis-run="${escapeHtml(run.id)}">${escapeHtml(run.title||run.created_at)}</button>`).join('')}</div>${state.runPagination?.has_more?'<button type="button" data-load-more-runs>โหลดรอบวิเคราะห์ก่อนหน้า</button>':''}`;$('#result').append(section)}
+async function loadMoreRuns(){const cursor=state.runPagination?.next_cursor;if(!cursor)return;const params=new URLSearchParams({channel_id:state.selected,resource:'runs',limit:'24',run_cursor:cursor}),data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});state.analysisRuns=mergeById(state.analysisRuns,data.runs);state.runPagination=data.pagination?.runs||{};renderRunHistory()}
 function marketplaceErrorMessage(error) {
   const detail = String(error?.detail || "").trim(), requestId = String(error?.requestId || "").trim();
   return `${error?.message || "ค้นหาไม่สำเร็จ"}${detail && !String(error?.message || "").includes(detail) ? ` · TikTok: ${detail}` : ""}${requestId ? ` · Request ID: ${requestId}` : ""}`;
@@ -628,6 +640,7 @@ async function loadChannels() {
   try {
     const data = await api("/api/admin/tiktok-analyzer");
     state.channels = data.channels || [];
+    state.channelPagination=data.pagination||{};
     const aiState = $("#aiState");
     if (aiState) aiState.textContent = data.provider_configured ? "AI \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C" : "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 AI";
     const selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected));
@@ -639,7 +652,7 @@ async function loadChannels() {
   }
 }
 function renderChannels() {
-  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? "ยังไม่เชื่อม TikTok" : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("") : '<p class="hint">ยังไม่มีช่อง กด “ช่องใหม่” แล้วเริ่มช่องแรกได้เลย</p>';
+  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? "ยังไม่เชื่อม TikTok" : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("")+(state.channelPagination?.has_more?'<button type="button" data-load-more-channels>โหลดช่องเพิ่มเติม</button>':'') : '<p class="hint">ยังไม่มีช่อง กด “ช่องใหม่” แล้วเริ่มช่องแรกได้เลย</p>';
   renderAnalysisChannelPicker();
 }
 function renderAnalysisChannelPicker(){
@@ -652,7 +665,7 @@ async function selectChannel(id) {
   state.selected = id;
   form.classList.add("existing-channel");
   renderChannels();
-  const data = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`), channel = data.channel, products = data.products || [];
+  const data = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}&resource=overview&limit=24&run_limit=1`,{cache:'no-store'}), channel = data.channel, products = data.products || [];
   form.channel_id.value = channel.id;
   form.channel_name.value = channel.name;
   form.channel_url.value = channel.channel_url || "";
@@ -667,6 +680,7 @@ async function selectChannel(id) {
   }).join("") : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 A\u2013F \u0E43\u0E19\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49</p>';
   upgradeLegacyProductLinkCells($("#angelProducts"));
   if (data.runs[0]) renderResult(data.runs[0].result);
+  return data;
 }
 function newChannel() {
   state.selected = null;
@@ -763,9 +777,7 @@ $("#analyzeAiRecommendations")?.addEventListener("click", async (event) => {
   try {
     const response = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
     renderResult(response.result || {});
-    const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
-    state.inventoryProducts = inventory.products || [];
-    renderPermanentInventory(inventory.products || [], inventory.product_events || []);
+    invalidateChannelInventory();replaceInventory(await loadChannelInventory());renderInventoryState();
     showToast("AI วิเคราะห์สินค้าแนะนำเกรด E เรียบร้อยแล้ว", "success");
     $(".ai-recommendations")?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
@@ -957,6 +969,10 @@ renderPermanentInventory = function(products = [], events = []) {
     if (label.textContent === "manual_retest") label.textContent = "\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1B\u0E47\u0E19 D";
     if (label.textContent === "manual_c") label.textContent = "\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1B\u0E47\u0E19 D \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E17\u0E14\u0E2A\u0E2D\u0E1A";
   });
+  const keptTotal=Number(state.inventoryCounts?.kept)||products.filter(item=>item.inventory_status==='kept').length,discardedTotal=Number(state.inventoryCounts?.discarded)||products.filter(item=>item.inventory_status==='discarded').length,remaining=Math.max(0,30-keptTotal);
+  $("#angelCount").textContent=`เก็บแล้ว ${keptTotal}/30 · ${remaining?`เหลือ ${remaining}`:'ครบ 30 แล้ว'} · คัดออก ${discardedTotal}`;
+  const headings=$("#angelProducts").querySelectorAll('.permanent-list h3 small');if(headings[0])headings[0].textContent=`${keptTotal}/30 รายการ`;if(headings[1])headings[1].textContent=`${discardedTotal} รายการ`;
+  const productMore=state.inventoryPagination?.products?.has_more,eventMore=state.inventoryPagination?.events?.has_more;if(productMore||eventMore)$("#angelProducts").insertAdjacentHTML('beforeend',`<div class="showcase-pagination">${productMore?'<button type="button" data-load-more-inventory="products">โหลดสินค้าเก่ากว่า</button>':''}${eventMore?'<button type="button" data-load-more-inventory="events">โหลดประวัติเหตุการณ์เก่ากว่า</button>':''}<small>โหลดเพิ่มครั้งละไม่เกิน 24 รายการ</small></div>`);
 };
 async function setProductInventory(button) {
   if (!state.selected) return;
@@ -971,12 +987,11 @@ async function setProductInventory(button) {
   button.disabled = true;
   try {
     const saved = await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
-    const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`), kept = (latest.products || []).filter((x) => x.inventory_status === "kept"), position = kept.findIndex((x) => normalizeProductName(x.name) === normalizeProductName(productName)) + 1, countText = position ? ` \xB7 \u0E25\u0E33\u0E14\u0E31\u0E1A ${position}/30` : "";
-    const notice = saved.already_exists ? button.dataset.inventory === "kept" ? `\u201C${productName}\u201D \u0E21\u0E35\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E41\u0E25\u0E49\u0E27${countText} \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : `\u201C${productName}\u201D \u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E1B\u0E23\u0E30\u0E27\u0E31\u0E15\u0E34\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01\u0E41\u0E25\u0E49\u0E27 \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : button.dataset.inventory === "kept" ? `\u0E40\u0E01\u0E47\u0E1A \u201C${productName}\u201D \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08${countText}` : `\u0E04\u0E31\u0E14 \u201C${productName}\u201D \u0E2D\u0E2D\u0E01\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \xB7 \u0E40\u0E2B\u0E25\u0E37\u0E2D ${kept.length}/30`;
+    invalidateChannelInventory();const latest=replaceInventory(await loadChannelInventory()),kept=(latest.products||[]).filter(x=>x.inventory_status==="kept"),keptTotal=Number(state.inventoryCounts.kept)||kept.length,position=kept.findIndex(x=>normalizeProductName(x.name)===normalizeProductName(productName))+1,countText=position?` \xB7 \u0E25\u0E33\u0E14\u0E31\u0E1A ${position}/${keptTotal}`:"";
+    const notice = saved.already_exists ? button.dataset.inventory === "kept" ? `\u201C${productName}\u201D \u0E21\u0E35\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E41\u0E25\u0E49\u0E27${countText} \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : `\u201C${productName}\u201D \u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E1B\u0E23\u0E30\u0E27\u0E31\u0E15\u0E34\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01\u0E41\u0E25\u0E49\u0E27 \u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E0B\u0E49\u0E33` : button.dataset.inventory === "kept" ? `\u0E40\u0E01\u0E47\u0E1A \u201C${productName}\u201D \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08${countText}` : `\u0E04\u0E31\u0E14 \u201C${productName}\u201D \u0E2D\u0E2D\u0E01\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08 \xB7 \u0E40\u0E2B\u0E25\u0E37\u0E2D ${keptTotal}/30`;
     message.textContent = notice;
     showToast(notice, saved.already_exists ? "warning" : "success");
-    renderPermanentInventory(latest.products || [], latest.product_events || []);
-    reconcileProductPrepInventory(latest.products || []);
+    replaceInventory(latest);renderInventoryState();
   } catch (error) {
     message.textContent = error.message;
     showToast(error.message, "error");
@@ -997,9 +1012,7 @@ async function failCProduct(button) {
   try {
     await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
     message.textContent = `\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19 ${productName} \u0E08\u0E32\u0E01 D \u0E40\u0E1B\u0E47\u0E19 F \u0E41\u0E25\u0E49\u0E27`;
-    const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
-    renderReviewSchedule(latest.products || [], Boolean(state.shopConnection), latest.product_events || []);
-    renderPermanentInventory(latest.products || [], latest.product_events || []);
+    invalidateChannelInventory();replaceInventory(await loadChannelInventory());renderInventoryState();
   } catch (error) {
     message.textContent = error.message;
   } finally {
@@ -1019,9 +1032,7 @@ async function retestFProduct(button) {
   try {
     await api("/api/admin/tiktok-analyzer", { method: "POST", body: data });
     message.textContent = `\u0E19\u0E33 ${productName} \u0E01\u0E25\u0E31\u0E1A\u0E21\u0E32\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E40\u0E1B\u0E47\u0E19 D \u0E41\u0E25\u0E30\u0E15\u0E31\u0E49\u0E07\u0E23\u0E2D\u0E1A\u0E43\u0E2B\u0E21\u0E48 3 \u0E27\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27`;
-    const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
-    renderReviewSchedule(latest.products || [], Boolean(state.shopConnection), latest.product_events || []);
-    renderPermanentInventory(latest.products || [], latest.product_events || []);
+    invalidateChannelInventory();replaceInventory(await loadChannelInventory());renderInventoryState();
   } catch (error) {
     message.textContent = error.message;
   } finally {
@@ -1048,11 +1059,7 @@ async function setProductC(button) {
     const notice = saved.already_exists ? `“${productName}” มีอยู่ในลิสต์คัดสินค้าแล้ว เกรดปัจจุบัน ${savedGrade}` : `เพิ่ม “${productName}” เป็นเกรด ${savedGrade} สำเร็จ`;
     message.textContent = notice;
     showToast(notice, saved.already_exists ? "warning" : "success");
-    const latest = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(state.selected)}`);
-    state.inventoryProducts = latest.products || [];
-    reconcileProductPrepInventory(state.inventoryProducts);
-    renderReviewSchedule(latest.products || [], Boolean(state.shopConnection), latest.product_events || []);
-    renderPermanentInventory(latest.products || [], latest.product_events || []);
+    invalidateChannelInventory();replaceInventory(await loadChannelInventory());renderInventoryState();
     return saved;
   } catch (error) {
     message.textContent = error.message;
@@ -1115,10 +1122,14 @@ $("#manualCForm").addEventListener("submit", async (event) => {
   if (saved) input.value = "";
 });
 $("#result").addEventListener("click", (event) => {
+  const runButton=event.target.closest('[data-analysis-run]'),moreRuns=event.target.closest('[data-load-more-runs]');
+  if(runButton){api(`/api/admin/tiktok-analyzer?run_id=${encodeURIComponent(runButton.dataset.analysisRun)}`,{cache:'no-store'}).then(data=>renderResult(data.run?.result||{}));return}
+  if(moreRuns){moreRuns.disabled=true;loadMoreRuns().catch(error=>showToast(error.message,'error')).finally(()=>moreRuns.disabled=false);return}
   const button = event.target.closest("[data-inventory]");
   if (button) setProductInventory(button);
 });
 $("#angelProducts").addEventListener("click", (event) => {
+  const more=event.target.closest('[data-load-more-inventory]');if(more){more.disabled=true;loadMoreInventoryResource(more.dataset.loadMoreInventory).catch(error=>showToast(error.message,'error')).finally(()=>more.disabled=false);return}
   const retestButton = event.target.closest("[data-retest-f]"), button = event.target.closest("[data-inventory]");
   if (retestButton) retestFProduct(retestButton);
   else if (button) setProductInventory(button);
@@ -1131,16 +1142,14 @@ const selectChannelBase = selectChannel;
 selectChannel = async function(id) {
   saveUiValue("visiond_tiktok_channel_id", String(id));
   state.shopConnection = null;
-  await selectChannelBase(id);
-  const inventory = await api(`/api/admin/tiktok-analyzer?channel_id=${encodeURIComponent(id)}`);
-  state.inventoryProducts = inventory.products || [];
-  renderPermanentInventory(inventory.products || [], inventory.product_events || []);
-  reconcileProductPrepInventory(inventory.products || []);
+  const inventory = await selectChannelBase(id);
+  replaceInventory(inventory);state.analysisRuns=inventory.runs||[];state.runPagination=inventory.pagination?.runs||{};renderInventoryState();renderRunHistory();
   await loadTikTokConnection();
   document.body.classList.toggle("shop-connected", Boolean(state.shopConnection));
-  renderReviewSchedule(inventory.products || [], Boolean(state.shopConnection), inventory.product_events || []);
+  renderReviewSchedule(state.inventoryProducts,Boolean(state.shopConnection),state.inventoryEvents);
 };
 $("#channels").addEventListener("click", async (event) => {
+  const moreChannels=event.target.closest('[data-load-more-channels]');if(moreChannels){const cursor=state.channelPagination?.next_cursor;if(!cursor)return;moreChannels.disabled=true;try{const params=new URLSearchParams({limit:'24',cursor}),data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});state.channels=mergeById(state.channels,data.channels);state.channelPagination=data.pagination||{};renderChannels()}catch(error){showToast(error.message,'error')}return}
   const deleteButton = event.target.closest("[data-delete-id]"), button = event.target.closest("[data-id]");
   if (deleteButton) {
     const name = deleteButton.dataset.deleteName;

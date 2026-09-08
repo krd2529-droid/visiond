@@ -33,18 +33,17 @@ function previewEntries(rows){
 
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
-  const params=new URL(ctx.request.url).searchParams,category=params.get('category')?.trim()||'',productId=Math.max(0,Number(params.get('product_id'))||0);
+  const params=new URL(ctx.request.url).searchParams,category=params.get('category')?.trim()||'',productId=Math.max(0,Number(params.get('product_id'))||0),cursor=Math.max(0,Number(params.get('cursor'))||0),productLimit=24;
   let rows=[];
   if(productId)rows=(await ctx.env.DB.prepare("SELECT id,slug,title,cover_url,preview_urls FROM products WHERE id=? AND deleted_at IS NULL AND COALESCE(product_kind,'product')='product'").bind(productId).all()).results;
-  else if(category)rows=(await ctx.env.DB.prepare("SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product' AND category=? ORDER BY id").bind(category).all()).results;
-  else rows=(await ctx.env.DB.prepare("SELECT id,slug,title,cover_url,preview_urls FROM products WHERE deleted_at IS NULL AND COALESCE(product_kind,'product')='product' ORDER BY category,id").all()).results;
+  else {const clauses=["deleted_at IS NULL","COALESCE(product_kind,'product')='product'"],bindings=[];if(category){clauses.push('category=?');bindings.push(category)}if(cursor){clauses.push('id<?');bindings.push(cursor)}rows=(await ctx.env.DB.prepare(`SELECT id,slug,title,cover_url,preview_urls FROM products WHERE ${clauses.join(' AND ')} ORDER BY id DESC LIMIT ?`).bind(...bindings,productLimit+1).all()).results}
   if(!rows.length)return json({error:'หมวดนี้ยังไม่มีสินค้า'},404);
-  const batchSize=80,entries=previewEntries(rows),totalBatches=Math.ceil(entries.length/batchSize);
-  if(params.get('info')==='1')return json({category,total_images:entries.length,total_batches:totalBatches,batch_size:batchSize,batches:Array.from({length:totalBatches},(_,index)=>({batch:index+1,from:index*batchSize+1,to:Math.min((index+1)*batchSize,entries.length),count:Math.min(batchSize,entries.length-index*batchSize)}))});
+  const hasMore=!productId&&rows.length>productLimit,productRows=rows.slice(0,productLimit),nextCursor=hasMore?Number(productRows.at(-1)?.id)||null:null,batchSize=80,entries=previewEntries(productRows),totalBatches=Math.ceil(entries.length/batchSize);
+  if(params.get('info')==='1')return json({category,total_images:entries.length,total_batches:totalBatches,batch_size:batchSize,batches:Array.from({length:totalBatches},(_,index)=>({batch:index+1,from:index*batchSize+1,to:Math.min((index+1)*batchSize,entries.length),count:Math.min(batchSize,entries.length-index*batchSize)})),pagination:{limit:productLimit,has_more:hasMore,next_cursor:nextCursor}});
   const batch=Math.max(1,Math.min(totalBatches,Number(params.get('batch'))||1)),selected=entries.slice((batch-1)*batchSize,batch*batchSize);
   const files=[];let total=0,missing=0;
   for(const entry of selected){const image=await imageBytes(ctx,entry.url);if(!image){missing++;continue}total+=image.bytes.length;if(total>80*1024*1024)return json({error:'รูปชุดนี้รวมเกิน 80 MB กรุณาแจ้งจาวิสเพื่อแบ่งชุดให้เล็กลง'},413);files.push({name:`${String(entry.position).padStart(4,'0')}-${safe(entry.product.slug)}-${String(entry.index+1).padStart(2,'0')}-${entry.index===0?'ปก':'ตัวอย่าง'}.${ext(image.type,entry.url)}`,bytes:image.bytes})}
   if(!files.length)return json({error:'ไม่พบรูปตัวอย่างที่ดาวน์โหลดได้'},404);
-  const zip=makeZip(files),label=safe(productId?(rows[0]?.slug||rows[0]?.title):category||'ทุกหมวด'),filename=productId?`${label}-รูปปกและรูปตัวอย่าง.zip`:`visiond-previews-${label}-ชุด-${batch}-${selected[0].position}-${selected[selected.length-1].position}.zip`;
+  const zip=makeZip(files),label=safe(productId?(productRows[0]?.slug||productRows[0]?.title):category||'ทุกหมวด'),filename=productId?`${label}-รูปปกและรูปตัวอย่าง.zip`:`visiond-previews-${label}-ชุด-${batch}-${selected[0].position}-${selected[selected.length-1].position}.zip`;
   return new Response(zip,{headers:{'content-type':'application/zip','content-disposition':`attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,'cache-control':'no-store','x-visiond-files':String(files.length),'x-visiond-missing':String(missing)}});
 }

@@ -385,22 +385,14 @@ import('/nav-account.js?v=02057');
         renderBundlePanel();
         syncCartButtons();
       }
-      const categoryCounts = [...grid.querySelectorAll(".vd-card")].reduce(
-        (counts, card) => {
-          counts.all += 1;
-          if (counts[card.dataset.category] !== undefined)
-            counts[card.dataset.category] += 1;
-          return counts;
-        },
-        { all: 0, worksheet: 0, "development-game": 0, coloring: 0, tattoo: 0, "paper-doll": 0, "resale-rights": 0 },
-      );
+      const categoryCounts = {all:0,worksheet:0,"development-game":0,coloring:0,tattoo:0,"paper-doll":0,"resale-rights":0,...(data.category_counts||{})};
       if(homeSearch)homeSearch.value=routeParams.get('q')||'';
       const requestedCategory = requestedGroup,
         initialCategory = ["all", "tattoo", "coloring", "worksheet", "development-game", "paper-doll", "resale-rights"].includes(requestedCategory)
           ? requestedCategory
           : "all";
-      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><button data-category="paper-doll" type="button">ตุ๊กตากระดาษ ${categoryCounts["paper-doll"]}</button>`;
-      const pageSize = 8,
+      filters.innerHTML = `<button data-category="all" type="button">ทั้งหมด ${categoryCounts.all}</button><button data-category="tattoo" type="button">แบบรอยสัก ${categoryCounts.tattoo}</button><button data-category="coloring" type="button">ระบายสี ${categoryCounts.coloring}</button><button data-category="worksheet" type="button">แบบฝึกหัด ${categoryCounts.worksheet}</button><button data-category="development-game" type="button">เกมเสริมพัฒนาการ ${categoryCounts["development-game"]}</button><button data-category="paper-doll" type="button">ตุ๊กตากระดาษ ${categoryCounts["paper-doll"]}</button><button data-category="resale-rights" type="button">สิทธิ์ลงขายคอร์ส ${categoryCounts["resale-rights"]}</button>`;
+      const pageSize = 24,
         requestedPage = Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1);
       let currentCategory = initialCategory,
         selectedPage = requestedPage;
@@ -422,7 +414,8 @@ import('/nav-account.js?v=02057');
         grid
           .querySelectorAll(".vd-card")
           .forEach((card) => (card.hidden = !visibleCards.has(card)));
-        if (homeSearchCount) homeSearchCount.textContent = searchText ? `พบ ${matchingCards.length} สินค้าที่ตรงกับ “${homeSearch.value.trim()}”` : `แสดงสินค้า ${matchingCards.length} รายการ`;
+        const rangeFrom=Number(data.pagination?.range_from)||0,rangeTo=Number(data.pagination?.range_to)||0,total=Number(data.pagination?.total)||0,rangeText=rangeTo?`แสดง ${rangeFrom.toLocaleString("th-TH")}–${rangeTo.toLocaleString("th-TH")} จากทั้งหมด ${total.toLocaleString("th-TH")} รายการ`:`ไม่พบสินค้า จากทั้งหมด ${total.toLocaleString("th-TH")} รายการ`;
+        if (homeSearchCount) homeSearchCount.textContent = searchText ? `${rangeText} ที่ตรงกับ “${homeSearch.value.trim()}”` : rangeText;
         catalogPager.innerHTML = Array.from({ length: totalPages }, (_, index) => index + 1)
           .map((page) => `<button type="button" data-catalog-local-page="${page}" class="${page === currentPage ? "active" : ""}" aria-label="แคตตาล็อกหน้า ${page}">${page === 1 ? "หน้า 1" : page}</button>`)
           .join("");
