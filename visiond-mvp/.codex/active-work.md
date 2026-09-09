@@ -1,11 +1,12 @@
 # Active patch: account-aware TikTok connection preflight
 
-- Event: PATCH_READY (v0.20.71, LOCAL_VERIFIED; production delivery pending).
+- Event: PATCH_BLOCKED (v0.20.71, LOCAL_VERIFIED and COMMITTED; not pushed or deployed).
 - Outcome: every existing TikTok Login Kit and TikTok Shop connection entry shows the captured VisionD channel and provider before leaving VisionD, warns that the provider may use the account signed into the current browser profile, and offers a safe same-origin handoff link for a separate browser profile.
 - Safety contract: cancel/Escape/copy never starts OAuth; stale, removed, missing or changed channel targets cannot navigate; confirmation navigates once. Handoff hints are allowlisted, contain no state/code/token/credential, and open the preflight only after normal website authorization and exact owned-channel loading.
 - Preserved: callback, backend, schema, environment variables, encrypted tokens, v0.20.70 channel ownership, bounded requests and existing provider restrictions remain unchanged. No cookie manipulation, logout, provider action, account conversion, sync/import or analysis is part of this patch.
 - Current phase: Root and Mark independently passed the frozen candidate. Focused v71, v70 isolation, explicit-account selection, Shop binding, multi-channel, quota, syntax, requirement/patch coverage and visible-version checks pass. Actual local browser confirms exact-channel preflight, safe handoff reopen, cancel/copy zero OAuth, canonical mobile buttons, 360px/desktop fit and missing-target refusal. Final JS SHA-256 is `9CB4B6B2BC166BC508CC7E82E87B26D456A8B47DFA45E9C387873B5D462FED65`. Jarvis owns scoped Git delivery and production verification.
 - Baseline test limitation: evergreen regression is 9/10; the unchanged commerce test still expects the removed 20-page cart loop. It fails before and after this patch, outside the TikTok scope. No assertion was weakened and no commerce source changed. Predeploy has 9 PASS, 8 existing example/config warnings and 0 FAIL. This is not a broad-suite PASS.
+- Delivery blocker: local application commit `a38b04b1` contains 40 scoped files. Auto-review rejected `git push origin main` because the failing broad gate would accompany a production deployment, and requires explicit acknowledgement of that risk. No push or deployment occurred. Await user confirmation for that specific condition; do not bypass via direct deployment, another remote or tool. Production remains v0.20.70.
 
 # Delivered patch: channel-owned TikTok Analyzer view and actions
 
