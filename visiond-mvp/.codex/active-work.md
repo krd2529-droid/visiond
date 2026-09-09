@@ -1,3 +1,12 @@
+# Active patch: account-aware TikTok connection preflight
+
+- Event: PATCH_READY (v0.20.71, LOCAL_VERIFIED; production delivery pending).
+- Outcome: every existing TikTok Login Kit and TikTok Shop connection entry shows the captured VisionD channel and provider before leaving VisionD, warns that the provider may use the account signed into the current browser profile, and offers a safe same-origin handoff link for a separate browser profile.
+- Safety contract: cancel/Escape/copy never starts OAuth; stale, removed, missing or changed channel targets cannot navigate; confirmation navigates once. Handoff hints are allowlisted, contain no state/code/token/credential, and open the preflight only after normal website authorization and exact owned-channel loading.
+- Preserved: callback, backend, schema, environment variables, encrypted tokens, v0.20.70 channel ownership, bounded requests and existing provider restrictions remain unchanged. No cookie manipulation, logout, provider action, account conversion, sync/import or analysis is part of this patch.
+- Current phase: Root and Mark independently passed the frozen candidate. Focused v71, v70 isolation, explicit-account selection, Shop binding, multi-channel, quota, syntax, requirement/patch coverage and visible-version checks pass. Actual local browser confirms exact-channel preflight, safe handoff reopen, cancel/copy zero OAuth, canonical mobile buttons, 360px/desktop fit and missing-target refusal. Final JS SHA-256 is `9CB4B6B2BC166BC508CC7E82E87B26D456A8B47DFA45E9C387873B5D462FED65`. Jarvis owns scoped Git delivery and production verification.
+- Baseline test limitation: evergreen regression is 9/10; the unchanged commerce test still expects the removed 20-page cart loop. It fails before and after this patch, outside the TikTok scope. No assertion was weakened and no commerce source changed. Predeploy has 9 PASS, 8 existing example/config warnings and 0 FAIL. This is not a broad-suite PASS.
+
 # Delivered patch: channel-owned TikTok Analyzer view and actions
 
 - Event: PATCH_DELIVERED (v0.20.70). Application commit `68fb0b82` is on `origin/main`; Cloudflare Production deployment `55023549-76a1-4ea0-a131-fa61e4bfc3bf` serves source `68fb0b8`. Public Analyzer JavaScript matches frozen SHA-256 `AB02556F6AA18A365A809E07A487E55BA7522FC690CDCF75DC47C6959BE49C2C`, returns HTTP 200, and WEB/ADMIN/Analyzer report v0.20.70 with script stamp `02127`.

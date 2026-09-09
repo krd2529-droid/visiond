@@ -48,5 +48,5 @@ const publicGet=await request('cover-public.jpg','GET');assert.equal(publicGet.s
 const [source,version,indexHtml,adminHtml]=await Promise.all([
   readFile(new URL('../functions/api/media/[key].js',import.meta.url),'utf8'),readFile(new URL('../VERSION.txt',import.meta.url),'utf8'),readFile(new URL('../public/index.html',import.meta.url),'utf8'),readFile(new URL('../public/admin.html',import.meta.url),'utf8'),
 ]);
-assert.match(source,/export const onRequestHead=ctx=>readMedia\(ctx,\{head:true\}\)/);assert.match(source,/ctx\.env\.FILES\.head\(key\)/);assert.equal(version.trim(),'v0.20.70');assert.match(indexHtml,/WEB v0\.20\.70/);assert.match(adminHtml,/ADMIN v0\.20\.70/);
+assert.match(source,/export const onRequestHead=ctx=>readMedia\(ctx,\{head:true\}\)/);assert.match(source,/ctx\.env\.FILES\.head\(key\)/);assert.equal(version.trim(),'v0.20.71');assert.match(indexHtml,/WEB v0\.20\.71/);assert.match(adminHtml,/ADMIN v0\.20\.71/);
 console.log('PASS v0.20.63 explicit media HEAD: dispatch, R2 metadata-only body, privacy and GET regression');

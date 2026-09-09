@@ -1190,6 +1190,7 @@
 ## TIKTOK-ANALYZER-001 — วิเคราะห์ช่อง TikTok และสินค้าถัดไป
 
 - หน้าใช้งาน: `public/tiktok-analyzer.html`, `public/tiktok-analyzer.js`, `public/tiktok-analyzer.css`; มีปุ่มเชื่อม ซิงก์ และยกเลิกบัญชี TikTok ต่อช่อง
+- Connection preflight: ทุกจุดเริ่ม Login Kit/TikTok Shop แสดงช่อง VisionD และ provider ที่จับไว้ก่อนออกจากเว็บ, ปฏิเสธ intent ที่ stale/ถูกลบ, และคัดลอก handoff URL same-origin สำหรับเปิดใน browser profile อื่นโดยไม่เริ่ม OAuth หรือใส่ token/state/credential ใน URL
 - API: `functions/api/admin/tiktok-analyzer/index.js`, `functions/api/tiktok/connect.js`, `functions/api/tiktok/callback.js`, `functions/api/admin/tiktok-connections/index.js`; ผู้ใช้ต้องผ่าน `requireAdmin`
 - TikTok Shop Creator OAuth: `functions/api/tiktok-shop/connect.js` และ `functions/api/tiktok-shop/callback.js` ใช้ Affiliate app แยกจาก Login Kit, ตรวจ state แบบใช้ครั้งเดียว, ยืนยัน `user_type=1` และเก็บ token แบบเข้ารหัสใน `tiktok_shop_creator_connections`
 - TikTok Shop Creator sync: `_tiktok_shop_api.js` ลงลายเซ็น HMAC-SHA256, รีเฟรช token ก่อนหมดอายุ, ดึง Creator Profile / Showcase / Affiliate Orders แบบจำกัดหน้า และเก็บ raw response สำหรับรองรับฟิลด์ GMV/commission เฉพาะเมื่อ TikTok ส่งกลับจริง

@@ -192,7 +192,7 @@ assert.match(source, /payload\.set\("channel_id", operationChannelId\)/, 'all ba
 for (const token of ['state.preparedCommission = null', 'state.commissionCards = []', 'state.lastCommissionCard = null', 'URL.revokeObjectURL']) assert.ok(clearSource.includes(token), `channel switch must clear ${token}`);
 assert.match(source, /stampChannelOwnedActions\(\$\("#shopDashboard"\), context\)/, 'commission actions must be stamped with their channel owner');
 
-assert.equal(version.trim(), 'v0.20.70');
-assert.match(html, /<b>v0\.20\.70<\/b>/);
-assert.match(html, /tiktok-analyzer\.js\?v=02127/);
+assert.equal(version.trim(), 'v0.20.71');
+assert.match(html, /<b>v0\.20\.71<\/b>/);
+assert.match(html, /tiktok-analyzer\.js\?v=02128/);
 console.log('PASS v0.20.70 channel-owned analyzer view, async responses and mutations');

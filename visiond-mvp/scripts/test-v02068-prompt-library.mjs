@@ -100,5 +100,5 @@ let copied='';assert.equal(await copyPromptExactly(exact,{writeText:async value=
 // Public assets contain no seeded prompt, media embed/provider fetch, or public cache; UI remains responsive and explicit.
 for(const token of ['Mink — ฝ่าวงล้อมกลางห้องประชุม 30 วินาที','BAC7C398F0FCA22CFC4C551EC7DB7EAA0A5561ECAA6AD817900486BBEE52CF29'])assert.doesNotMatch(client+html,new RegExp(token));
 assert.doesNotMatch(client+html,/<(?:img|video|iframe)|localStorage|sessionStorage/i);assert.match(html,/ค้นหาชื่อขึ้นต้น/);assert.match(html,/ยังไม่มีลิงก์ตัวอย่าง/);assert.match(html,/prompt-library\.js\?v=02068/);assert.match(html,/prompt-library\.css\?v=014591/);assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/\.prompt-detail \[hidden\]\{display:none!important\}/);assert.match(admin,/href="\/prompt-library\.html"[^>]+PROMPT-LIBRARY-001/);
-assert.equal(version.trim(),'v0.20.70');assert.match(indexHtml,/WEB v0\.20\.70/);assert.match(admin,/ADMIN v0\.20\.70/);
+assert.equal(version.trim(),'v0.20.71');assert.match(indexHtml,/WEB v0\.20\.71/);assert.match(admin,/ADMIN v0\.20\.71/);
 console.log('PASS v0.20.68 owner-private prompt library, exact raw fidelity, indexed keysets, lazy caches and safe client workflow');
