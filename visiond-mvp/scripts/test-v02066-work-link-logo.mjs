@@ -109,8 +109,8 @@ assert.match(css, /\.link-logo\{[^}]*place-items:center[^}]*line-height:1/);
 assert.match(css, /\.link-logo img\{[^}]*width:32px[^}]*height:32px[^}]*object-fit:contain/);
 assert.match(html, /work-links\.js\?v=02067/);
 assert.match(html, /work-links\.css\?v=014590/);
-assert.equal(version.trim(), 'v0.20.67');
-assert.match(indexHtml, /WEB v0\.20\.67/);
-assert.match(adminHtml, /ADMIN v0\.20\.67/);
+assert.equal(version.trim(), 'v0.20.68');
+assert.match(indexHtml, /WEB v0\.20\.68/);
+assert.match(adminHtml, /ADMIN v0\.20\.68/);
 
 console.log('PASS v0.20.66 work-link logo single-image load, cached completion and fallback-only error states');

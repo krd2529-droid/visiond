@@ -1,0 +1,24 @@
+<!doctype html><html lang="th"><head>
+<link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>คลัง Prompt Seedance | VisionD Control</title><link rel="stylesheet" href="/visiond-design-system.css?v=014407"><link rel="stylesheet" href="/prompt-library.css?v=014591"><link rel="stylesheet" href="/visiond-button-system.css?v=014407">
+</head><body>
+<header class="prompt-toolbar"><a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a><div><small>VISIOND CONTROL · PROMPT-LIBRARY-001</small><h1>คลัง Prompt Seedance</h1><p>เก็บ Prompt ส่วนตัว เปิดรายละเอียดเมื่อต้องใช้ และคัดลอกต้นฉบับได้ครบถ้วน</p></div></header>
+<main class="prompt-shell" data-feature="PROMPT-LIBRARY-001">
+  <section class="prompt-card editor-card" hidden><div class="section-heading"><div><h2 id="formTitle">เพิ่ม Prompt</h2><p>ข้อมูลจะบันทึกในบัญชีหลังบ้านนี้เท่านั้น</p></div><button id="cancelEdit" class="vds-btn vds-btn--secondary" type="button">ปิดแบบฟอร์ม</button></div>
+    <form id="promptForm">
+      <label>ชื่อ Prompt *<input id="promptTitle" maxlength="160" required placeholder="ตั้งชื่อให้ค้นหาได้ง่าย"></label>
+      <label>โมเดล/คอลเลกชัน *<input id="modelLabel" maxlength="80" required value="Seedance"></label>
+      <label>แหล่งที่มา/แพลตฟอร์ม *<input id="sourcePlatform" maxlength="80" required placeholder="เช่น Migoo"></label>
+      <label>รายละเอียดแหล่งที่มา <textarea id="sourceNote" maxlength="1000" rows="2" placeholder="เช่น จากกลุ่มปิด (ผู้ใช้ส่งต้นฉบับมาเก็บ)"></textarea></label>
+      <label class="wide">หมายเหตุ <textarea id="promptNotes" maxlength="2000" rows="2" placeholder="บริบทหรือวิธีใช้ Prompt"></textarea></label>
+      <label class="wide prompt-body-label">Prompt ต้นฉบับ * <span>ไม่ตัดข้อความ · สูงสุด 60,000 ตัวอักษร / 64 KiB</span><textarea id="promptText" rows="16" required spellcheck="false" placeholder="วาง Prompt หรือเลือกไฟล์ด้านล่าง"></textarea></label>
+      <div class="wide file-row"><label class="vds-btn vds-btn--secondary file-button">อ่านไฟล์ .txt / .json<input id="promptFile" type="file" accept=".txt,.json,text/plain,application/json"></label><span id="fileStatus">ไฟล์จะถูกอ่านในเครื่อง และยังไม่ส่งจนกดบันทึก</span></div>
+      <label>ลิงก์ตัวอย่าง HTTPS <input id="exampleUrl" type="url" maxlength="2048" placeholder="https://... (ไม่จำเป็น)"></label>
+      <label>หมายเหตุตัวอย่าง <textarea id="exampleNote" maxlength="1000" rows="2" placeholder="เช่น ตัวอย่างอยู่ในกลุ่มปิด"></textarea></label>
+      <div class="wide form-actions"><button id="savePrompt" class="vds-btn vds-btn--primary" type="submit" disabled>บันทึก Prompt</button></div>
+    </form>
+  </section>
+  <section class="prompt-card library-card"><div class="list-heading"><div class="library-title-row"><div><h2>Prompt ของฉัน</h2><b id="promptCount">0 รายการ</b></div><button id="newPrompt" class="vds-btn vds-btn--primary" type="button">+ เพิ่ม Prompt</button></div><label>ค้นหาชื่อขึ้นต้น<input id="promptSearch" type="search" maxlength="160" placeholder="ค้นหาชื่อขึ้นต้น" aria-describedby="promptSearchScope"></label><small id="promptSearchScope">ค้นหาชื่อทั้งหมดในคลังด้วยดัชนี ไม่ค้นหาในเนื้อหา Prompt</small></div><p id="promptStatus" role="status" aria-live="polite"></p><div id="promptList" class="prompt-list"></div></section>
+</main>
+<dialog id="promptDetail" class="prompt-detail"><div class="detail-head"><div><small id="detailModel"></small><h2 id="detailTitle"></h2></div><button id="closeDetail" class="vds-btn vds-btn--text" type="button" aria-label="ปิดรายละเอียด">✕</button></div><div id="detailMeta" class="detail-meta"></div><section><h3>Prompt ต้นฉบับ</h3><pre id="detailPrompt" tabindex="0"></pre><div class="copy-row"><button id="copyPrompt" class="vds-btn vds-btn--primary" type="button">คัดลอก Prompt ทั้งหมด</button><span id="copyStatus" role="status" aria-live="polite"></span></div><textarea id="manualPrompt" class="manual-copy" readonly hidden aria-label="Prompt สำหรับคัดลอกด้วยตนเอง"></textarea></section><section id="exampleSection"><h3>ตัวอย่าง</h3><p id="exampleEmpty">ยังไม่มีลิงก์ตัวอย่าง</p><a id="exampleLink" class="vds-btn vds-btn--secondary" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>เปิดตัวอย่าง</a><p id="exampleDetailNote"></p></section><div class="detail-actions"><button id="editDetail" class="vds-btn vds-btn--secondary" type="button">แก้ไข</button><button id="deleteDetail" class="vds-btn vds-btn--danger" type="button">ลบ</button></div></dialog>
+<script src="/prompt-library.js?v=02068" type="module"></script><script src="/visiond-button-system.js?v=014407" defer></script></body></html>

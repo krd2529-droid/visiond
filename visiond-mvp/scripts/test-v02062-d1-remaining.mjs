@@ -156,7 +156,7 @@ const elonPlan=(sql,...args)=>elonSqlite.prepare(`EXPLAIN QUERY PLAN ${sql}`).al
 const unconfigured=await runElonRetention({env:{FILES:{get:async()=>null},ELON_CLEANUP_TOKEN:'x'.repeat(32)},request:new Request('https://visiondonline.com/api/internal/elon-retention',{method:'POST',headers:{authorization:`Bearer ${'x'.repeat(32)}`}})});assert.equal(unconfigured.status,503);assert.equal((await unconfigured.json()).error,'ELON_WEB_DB_BINDING_REQUIRED');
 
 const [adminSource,trashSource,elonSource,version]=await Promise.all(['public/admin.js','functions/_trash.js','functions/_elon.js','VERSION.txt'].map(read));
-assert.match(adminSource,/productCategoryOptions\(p\.category \|\| ""\)/);assert.match(adminSource,/categoryCountsGeneration/);assert.doesNotMatch(elonSource,/Math\.random\(\)<0\.02/);assert.match(trashSource,/product_bundle_items b/);assert.equal(version.trim(),'v0.20.67');
+assert.match(adminSource,/productCategoryOptions\(p\.category \|\| ""\)/);assert.match(adminSource,/categoryCountsGeneration/);assert.doesNotMatch(elonSource,/Math\.random\(\)<0\.02/);assert.match(trashSource,/product_bundle_items b/);assert.equal(version.trim(),'v0.20.68');
 
 // Browser-side dictionary/count cache behavior: sequential tab opens reuse the
 // same options/count snapshots; invalidation prevents an older response from
