@@ -15,6 +15,6 @@ const client = fs.readFileSync(new URL("../public/tiktok-analyzer.js", import.me
 const callback = fs.readFileSync(new URL("../functions/api/tiktok/callback.js", import.meta.url), "utf8");
 assert.match(client, /เลือกบัญชี TikTok เพื่อเชื่อม/);
 assert.match(client, /เลือกบัญชี TikTok ใหม่/);
-assert.match(callback, /back\('connected','',stateRow\.channel_id\)/, "callback must return to the card that started OAuth");
+assert.match(callback, /back\('connected','',channelId\)/, "callback must return to the resolved selected-channel card");
 
 console.log("TikTok explicit account selection: PASS");

@@ -18,5 +18,5 @@ const env={DB:{prepare(){throw new Error('D1 daily operation limit exceeded erro
 const response=await login({env,request:new Request('https://visiondonline.com/api/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({login:'reviewer@example.invalid',password:'wrong'})})});
 assert.equal(response.status,503);assert.equal((await response.json()).code,'DATABASE_DAILY_LIMIT');assert.equal(response.headers.get('retry-after'),'3600');
 assert.doesNotMatch(html,/reviewDemoLink|review_demo=1|reviewDemoNotice/);
-assert.equal(version.trim(),'v0.20.57');
+assert.equal(version.trim(),'v0.20.69');
 console.log('v0.20.55 TikTok reviewer login reliability tests passed');

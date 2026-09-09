@@ -240,6 +240,8 @@
     min-height: 42px;
   }
 }
+#tiktokReviewerAccess[hidden],#loadMoreTikTokReviewers[hidden]{display:none!important}
+
 @media (max-width: 600px) {
   .admin-wrap {
     padding: 18px 10px 60px;
@@ -406,6 +408,15 @@
   }
   .topbar .brand {
     font-size: 18px;
+  }
+}
+@media (max-width: 600px) {
+  #tiktokReviewerForm .editor-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  #tiktokReviewerForm .editor-actions > button {
+    width: 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {

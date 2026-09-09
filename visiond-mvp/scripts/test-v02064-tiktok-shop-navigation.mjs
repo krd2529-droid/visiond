@@ -17,7 +17,12 @@ const helperSource = source.slice(0, source.indexOf('const $ ='));
 let networkCalls = 0;
 const rejectNetwork = () => { networkCalls += 1; throw new Error('NAVIGATION_MUST_NOT_FETCH'); };
 const context = vm.createContext({ encodeURIComponent, fetch: rejectNetwork, api: rejectNetwork });
-vm.runInContext(`${helperSource}\nthis.createNavigation=createTikTokShopNavigation;`, context);
+vm.runInContext(`${helperSource}\nthis.createNavigation=createTikTokShopNavigation;this.actionVisibility=tiktokShopActionVisibility;`, context);
+
+assert.deepEqual({ ...context.actionVisibility({ loading: true, selectable: true, connected: false }) }, { connect: false, manage: false });
+assert.deepEqual({ ...context.actionVisibility({ selectable: false, connected: false }) }, { connect: false, manage: false });
+assert.deepEqual({ ...context.actionVisibility({ selectable: true, connected: false }) }, { connect: true, manage: false });
+assert.deepEqual({ ...context.actionVisibility({ selectable: true, connected: true }) }, { connect: false, manage: true });
 
 let workspace = 'input', scope = '', view = '';
 const navigated = [];
@@ -56,19 +61,19 @@ assert.match(source, /tiktokShopNavigation\.showTab\(button\.dataset\.channelVie
 assert.match(source, /connectTikTokShop[^]*?preventDefault\(\)[^]*?tiktokShopNavigation\.connect\(\)/);
 assert.match(source, /manageChannelConnections[^]*?showManagement\(\)/);
 assert.ok(source.indexOf('$("#manageChannelConnections").hidden = true;') < source.indexOf('const data = await fetchTikTokConnectionData(requestedChannelId)'), 'management must remain hidden while a new channel connection is loading');
+assert.match(source, /const shopActions = tiktokShopActionVisibility\([^]*?manageChannelConnections"\)\.hidden = !shopActions\.manage[^]*?shopConnectionRequired"\)\.hidden = !shopActions\.connect/);
 assert.match(source, /shop-connection-missing", !shopConnection/);
-assert.match(source, /shopConnectionRequired"\)\.hidden = Boolean\(shopConnection\)/);
 assert.match(source, /ยังไม่มีข้อมูลค่าคอมของช่องนี้/);
 assert.match(source, /กด “\+ ช่องใหม่”/);
 assert.match(html, /id="shopConnectionManagement"/);
 assert.match(html, /id="disconnectTikTokShop"/);
 assert.match(css, /\.manage-channel-connections/);
 
-assert.equal(version.trim(), 'v0.20.68');
-assert.match(home, /WEB v0\.20\.68/);
-assert.match(admin, /ADMIN v0\.20\.68/);
-assert.match(html, /<b>v0\.20\.64<\/b>/);
+assert.equal(version.trim(), 'v0.20.69');
+assert.match(home, /WEB v0\.20\.69/);
+assert.match(admin, /ADMIN v0\.20\.69/);
+assert.match(html, /<b>v0\.20\.69<\/b>/);
 assert.match(html, /tiktok-analyzer\.css\?v=02094/);
-assert.match(html, /tiktok-analyzer\.js\?v=02125/);
+assert.match(html, /tiktok-analyzer\.js\?v=02126/);
 
 console.log('PASS v0.20.64 TikTok Shop CTA selection, two-tab output restore, empty states and zero-fetch navigation');

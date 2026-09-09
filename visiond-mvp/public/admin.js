@@ -394,6 +394,7 @@ manualUnlockForm.insertAdjacentHTML(
 refreshUnlockHistory.onclick = loadUnlockHistory;
 
 async function init() {
+  clearTikTokReviewerSecrets();
   const me = await fetch("/api/auth/me");
   if (!me.ok) {
     deny("กรุณาเข้าสู่ระบบก่อน");
@@ -1512,6 +1513,8 @@ async function loadUsers() {
   document.querySelectorAll('[data-save-user]').forEach(button=>button.onclick=()=>saveUserRow(button.dataset.saveUser));
   document.querySelector('#createTestUser')?.addEventListener('click',createTestUser);
   document.querySelectorAll('[data-add-course-credit]').forEach(button=>button.onclick=()=>addCourseCredits(button));
+  const reviewerAccess=document.querySelector('#tiktokReviewerAccess');
+  if(reviewerAccess){reviewerAccess.hidden=viewer.role!=='boss';if(viewer.role==='boss')loadTikTokReviewerAccess().catch(error=>setTikTokReviewerMessage(error.message,true));else clearTikTokReviewerSecrets()}
   loadUnlockHistory();
 }
 function toggleUserEdit(id,editing){
@@ -1542,6 +1545,46 @@ async function createTestUser(){
   const response=await fetch('/api/admin/users/test-user',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username,email,phone,password})}),data=await response.json().catch(()=>({}));
   alert(data.error||data.message||'สร้างยูสเทสแล้ว');if(response.ok)await loadUsers();
 }
+let tiktokReviewerCache=null,tiktokReviewerRequests=new Map(),tiktokReviewerMutation=false,tiktokReviewerGeneration=0,tiktokReviewerItems=[],tiktokReviewerNextCursor=null;
+const tiktokReviewerCacheTtl=15000;
+function clearTikTokReviewerSecrets(){const form=document.querySelector('#tiktokReviewerForm');if(form?.password){form.password.value='';form.password.type='password'}}
+function setTikTokReviewerMessage(text,error=false){const element=document.querySelector('#tiktokReviewerMessage');if(element){element.textContent=text||'';element.classList.toggle('error',Boolean(error))}}
+function reviewerStatusText(item){return item.status==='active'?`ใช้งานถึง ${new Date(String(item.expires_at).replace(' ','T')+'Z').toLocaleString('th-TH')}`:item.status==='expired'?'หมดอายุแล้ว':'ยกเลิกแล้ว'}
+function renderTikTokReviewerAccess(items=[],nextCursor=null){
+  const list=document.querySelector('#tiktokReviewerList');if(!list)return;
+  tiktokReviewerItems=items;tiktokReviewerNextCursor=nextCursor;
+  list.innerHTML=items.length?items.map(item=>`<div class="user-row" data-review-grant="${Number(item.id)}"><div><b>${esc(item.name)}</b><small>${esc(item.email)}</small></div><span>${esc(item.username)}</span><span>1 ช่อง</span><div class="user-status-stack"><b>${esc(reviewerStatusText(item))}</b><small>Reviewer · 30 วัน</small></div><div class="user-manage-actions">${item.status==='active'?`<button class="danger" type="button" data-revoke-review="${Number(item.id)}">ยกเลิกสิทธิ์</button>`:`<button type="button" data-renew-review="${Number(item.id)}">ต่ออายุ 30 วัน</button>`}</div></div>`).join(''):'<p class="empty-state">ยังไม่มีบัญชี Reviewer เฉพาะงาน TikTok</p>';
+  const more=document.querySelector('#loadMoreTikTokReviewers');if(more){more.hidden=!nextCursor;more.disabled=false}
+}
+async function loadTikTokReviewerAccess({force=false,after=null,append=false}={}){
+  const now=Date.now(),generation=tiktokReviewerGeneration,owner=String(viewer?.id||'');if(!owner||viewer?.role!=='boss')return [];
+  if(!after&&!force&&tiktokReviewerCache&&tiktokReviewerCache.owner===owner&&now-tiktokReviewerCache.at<tiktokReviewerCacheTtl){renderTikTokReviewerAccess(tiktokReviewerCache.items,tiktokReviewerCache.next_cursor);return tiktokReviewerCache.items}
+  const key=`${owner}:${after||''}`;if(!force&&tiktokReviewerRequests.has(key))return tiktokReviewerRequests.get(key);
+  const request=(async()=>{const url=new URL('/api/admin/users/tiktok-reviewer',location.origin);if(after)url.searchParams.set('cursor',after);const response=await fetch(url,{cache:'no-store'}),data=await response.json().catch(()=>({}));if(!response.ok){if(response.status===401||response.status===403){invalidateTikTokReviewerAccess();clearTikTokReviewerSecrets();renderTikTokReviewerAccess([])}throw new Error(data.error||'โหลดบัญชี Reviewer ไม่สำเร็จ')}const items=Array.isArray(data.items)?data.items:[];if(generation!==tiktokReviewerGeneration||owner!==String(viewer?.id||''))return items;const merged=append?[...tiktokReviewerItems]:[];if(append){const seen=new Set(merged.map(item=>Number(item.id)));for(const item of items)if(!seen.has(Number(item.id))){seen.add(Number(item.id));merged.push(item)}}else merged.push(...items);tiktokReviewerCache={at:Date.now(),owner,items:merged,next_cursor:data.next_cursor||null};renderTikTokReviewerAccess(merged,data.next_cursor||null);return items})();
+  tiktokReviewerRequests.set(key,request);try{return await request}finally{if(tiktokReviewerRequests.get(key)===request)tiktokReviewerRequests.delete(key)}
+}
+function invalidateTikTokReviewerAccess(){tiktokReviewerGeneration++;tiktokReviewerCache=null;tiktokReviewerRequests.clear();tiktokReviewerItems=[];tiktokReviewerNextCursor=null}
+function strongReviewerPassword(){
+  const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@',bytes=new Uint8Array(20);crypto.getRandomValues(bytes);return Array.from(bytes,value=>alphabet[value&63]).join('');
+}
+document.querySelector('#generateReviewerPassword')?.addEventListener('click',()=>{const input=document.querySelector('#tiktokReviewerForm [name="password"]');if(input){input.value=strongReviewerPassword();input.type='password';input.focus();setTikTokReviewerMessage('สร้างรหัสผ่านใหม่แล้ว กดคัดลอกรหัสผ่านก่อนบันทึก')}});
+document.querySelector('#copyReviewerPassword')?.addEventListener('click',async()=>{const input=document.querySelector('#tiktokReviewerForm [name="password"]'),value=input?.value||'';if(!value)return setTikTokReviewerMessage('กรุณาสร้างหรือกรอกรหัสผ่านก่อน',true);try{const clipboard=navigator.clipboard;if(!clipboard?.writeText)throw new Error('CLIPBOARD_UNAVAILABLE');await clipboard.writeText(value);setTikTokReviewerMessage('คัดลอกรหัสผ่านแล้ว')}catch{input.focus();input.select();setTikTokReviewerMessage('คัดลอกอัตโนมัติไม่ได้ กรุณากด Ctrl+C จากช่องรหัสผ่าน',true)}});
+document.querySelector('#tiktokReviewerForm')?.addEventListener('submit',async event=>{
+  event.preventDefault();if(tiktokReviewerMutation)return setTikTokReviewerMessage('กำลังจัดการบัญชี Reviewer อยู่ กรุณารอสักครู่');
+  const form=event.currentTarget,data=new FormData(form),body={action:'provision',name:data.get('name'),username:data.get('username'),email:data.get('email'),password:data.get('password')};
+  if(!confirm('สร้างบัญชี User สำหรับ TikTok Reviewer พร้อมสิทธิ์ VX 1 ช่อง นาน 30 วันหรือไม่?'))return;
+  tiktokReviewerMutation=true;invalidateTikTokReviewerAccess();form.querySelectorAll('button,input').forEach(control=>control.disabled=true);clearTikTokReviewerSecrets();
+  try{const response=await fetch('/api/admin/users/tiktok-reviewer',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'สร้างบัญชี Reviewer ไม่สำเร็จ');form.reset();form.password.type='password';invalidateTikTokReviewerAccess();await loadTikTokReviewerAccess({force:true});setTikTokReviewerMessage(result.replayed?'บัญชีและสิทธิ์เดิมพร้อมใช้งาน โดยไม่ต่อวันเพิ่ม':'สร้างบัญชี Reviewer และสิทธิ์ 30 วันแล้ว');await loadUsers()}catch(error){setTikTokReviewerMessage(error.message,true)}finally{tiktokReviewerMutation=false;form.querySelectorAll('button,input').forEach(control=>control.disabled=false)}
+});
+document.querySelector('#tiktokReviewerList')?.addEventListener('click',async event=>{
+  const button=event.target.closest('[data-revoke-review],[data-renew-review]');if(!button||tiktokReviewerMutation)return;
+  const expected_grant_id=Number(button.dataset.revokeReview||button.dataset.renewReview),renew=Boolean(button.dataset.renewReview);
+  if(!confirm(renew?'ต่อสิทธิ์ Reviewer อีก 30 วันหรือไม่?':'ยกเลิกสิทธิ์และออกจากระบบ Reviewer ทุกอุปกรณ์หรือไม่?'))return;
+  tiktokReviewerMutation=true;invalidateTikTokReviewerAccess();button.disabled=true;
+  try{const response=await fetch('/api/admin/users/tiktok-reviewer',{method:renew?'POST':'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify(renew?{action:'renew',expected_grant_id}:{expected_grant_id})}),result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'จัดการสิทธิ์ Reviewer ไม่สำเร็จ');invalidateTikTokReviewerAccess();await loadTikTokReviewerAccess({force:true});setTikTokReviewerMessage(renew?'ต่อสิทธิ์ Reviewer 30 วันแล้ว':'ยกเลิกสิทธิ์และ Session ของ Reviewer แล้ว')}catch(error){setTikTokReviewerMessage(error.message,true)}finally{tiktokReviewerMutation=false;button.disabled=false}
+});
+document.querySelector('#loadMoreTikTokReviewers')?.addEventListener('click',async event=>{const button=event.currentTarget;if(!tiktokReviewerNextCursor||tiktokReviewerMutation)return;button.disabled=true;try{await loadTikTokReviewerAccess({after:tiktokReviewerNextCursor,append:true})}catch(error){setTikTokReviewerMessage(error.message,true)}finally{button.disabled=false}});
+addEventListener('pagehide',clearTikTokReviewerSecrets);
 async function addCourseCredits(button){
   const raw=prompt(`เพิ่มแต้มสิทธิ์ให้ ${button.dataset.userName}\nกรอกจำนวนแต้ม (1–100)`,`1`);if(raw===null)return;
   const credits=Math.floor(Number(raw));if(!Number.isInteger(credits)||credits<1||credits>100)return alert('กรุณากรอกจำนวน 1–100 แต้ม');

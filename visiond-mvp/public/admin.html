@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
     <link rel="stylesheet" href="/admin-navigation.css?v=014478" />
-    <link rel="stylesheet" href="/admin-mobile.css?v=014127" />
+    <link rel="stylesheet" href="/admin-mobile.css?v=014129" />
     <style>
       .v3-review-section {
         display: grid;
@@ -886,7 +886,7 @@
       <nav>
         <a href="/">ดูหน้าร้าน</a><a href="/dashboard.html">บัญชีของฉัน</a>
       </nav>
-      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.20.68</span>
+      <span class="visiond-build-version" title="เวอร์ชันระบบหลังบ้าน VisionD">ADMIN v0.20.69</span>
     </header>
     <button
       id="mobilePreviewLauncher"
@@ -2107,6 +2107,32 @@
               บันทึกการขายและปลดล็อก
             </button>
           </form>
+          <section id="tiktokReviewerAccess" class="manual-unlock-card" hidden aria-labelledby="tiktokReviewerTitle">
+            <div>
+              <small>TIKTOK APP REVIEW</small>
+              <h3 id="tiktokReviewerTitle">บัญชี Reviewer แบบจำกัดสิทธิ์</h3>
+              <p>สร้าง User เฉพาะงานรีวิว ใช้ VX ได้ 1 ช่อง นานสูงสุด 30 วัน โดยไม่ให้สิทธิ์ Admin และไม่สร้างคำสั่งซื้อปลอม</p>
+            </div>
+            <form id="tiktokReviewerForm">
+              <div class="form-two">
+                <label>ชื่อผู้รีวิว<input name="name" maxlength="120" autocomplete="off" required></label>
+                <label>Username<input name="username" minlength="4" maxlength="50" pattern="[A-Za-z0-9._-]+" autocomplete="off" required></label>
+              </div>
+              <div class="form-two">
+                <label>อีเมล<input name="email" type="email" maxlength="160" autocomplete="off" required></label>
+                <label>รหัสผ่านใหม่อย่างน้อย 12 ตัว<input name="password" type="password" minlength="12" maxlength="200" autocomplete="new-password" required></label>
+              </div>
+              <div class="editor-actions">
+                <button id="generateReviewerPassword" type="button">สร้างรหัสผ่านแข็งแรง</button>
+                <button id="copyReviewerPassword" type="button">คัดลอกรหัสผ่าน</button>
+                <button class="primary" type="submit">สร้างบัญชีและสิทธิ์ 30 วัน</button>
+              </div>
+              <p class="form-message">คัดลอกรหัสผ่านก่อนบันทึก ช่องรหัสจะถูกล้างทันทีและระบบจะไม่แสดงรหัสผ่านกลับมา</p>
+            </form>
+            <p id="tiktokReviewerMessage" class="form-message" role="status" aria-live="polite"></p>
+            <div id="tiktokReviewerList" class="user-table"></div>
+            <button id="loadMoreTikTokReviewers" type="button" hidden>โหลดบัญชี Reviewer เพิ่ม</button>
+          </section>
           <div id="usersTable"></div>
         </section>
         <section id="elonPanel" class="elon-admin-panel" hidden>
@@ -2278,7 +2304,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-<script src="/admin.js?v=02063"></script>
+<script src="/admin.js?v=02069"></script>
     <script src="/vision2.js?v=014422"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=02058"></script>

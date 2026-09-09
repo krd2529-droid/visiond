@@ -28,6 +28,11 @@ function createTikTokShopNavigation({ getState, setOutputScope, setWorkspaceView
   };
 }
 
+function tiktokShopActionVisibility({ loading = false, selectable = false, connected = false } = {}) {
+  const ready = !loading && Boolean(selectable);
+  return { connect: ready && !connected, manage: ready && connected };
+}
+
 const $ = (selector) => document.querySelector(selector), escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[c]);
 const normalizeProductName = (value) => String(value ?? "").normalize("NFKC").toLocaleLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const arrayValue = (value) => Array.isArray(value) ? value : value === null || value === void 0 || value === "" ? [] : [value], textValue = (value) => Array.isArray(value) ? value.join(" \xB7 ") : String(value ?? "");
@@ -852,11 +857,12 @@ async function loadTikTokConnection(channelId = state.selected) {
   const data = await fetchTikTokConnectionData(requestedChannelId);
   const connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
   if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return shopConnection;
-  $("#manageChannelConnections").hidden = false;
   state.connection = connection;
   state.shopConnection = shopConnection;
+  const shopActions = tiktokShopActionVisibility({ selectable: Boolean(tiktokShopNavigation.connectUrl()), connected: Boolean(shopConnection) });
+  $("#manageChannelConnections").hidden = !shopActions.manage;
   $("#channelShopAnalysis").classList.toggle("shop-connection-missing", !shopConnection);
-  $("#shopConnectionRequired").hidden = Boolean(shopConnection) || !tiktokShopNavigation.connectUrl();
+  $("#shopConnectionRequired").hidden = !shopActions.connect;
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
   if (shopConnection) {

@@ -426,7 +426,8 @@
     "test:v02065": "node scripts/test-v02065-work-links-copy.mjs",
     "test:v02066": "node scripts/test-v02066-work-link-logo.mjs",
     "test:v02067": "node scripts/test-v02067-work-links-d1.mjs",
-    "test:v02068": "node scripts/test-v02068-prompt-library.mjs"
+    "test:v02068": "node scripts/test-v02068-prompt-library.mjs",
+    "test:v02069": "node scripts/test-v02069-tiktok-reviewer.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

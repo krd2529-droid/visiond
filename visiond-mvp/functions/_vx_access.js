@@ -1,4 +1,4 @@
-import {json, requireUser} from './_lib.js';
+import {json,currentUser,requireUser} from './_lib.js';
 
 export const VX_PLANS = [
   {slug:'vx-30-days-10', account_limit:10, price:49000},
@@ -33,13 +33,31 @@ export function vxGrantStatement(env, order, slug) {
     ) WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND user_id=? AND status='pending_review')`)
     .bind(order.id,order.user_id,plan.slug,plan.account_limit,order.user_id,order.id,order.user_id);
 }
-export async function vxAccess(env, user,{bootstrap=true}={}) {
+export async function vxAccess(env, user,{bootstrap=false}={}) {
   if(bootstrap)await ensureVxAccess(env);
   if(['boss','admin'].includes(user.role)) return {active:true,admin:true,account_limit:null};
   const grant=await env.DB.prepare(`SELECT g.* FROM vx_access_grants g JOIN orders o ON o.id=g.order_id
     WHERE g.user_id=? AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP
     ORDER BY g.expires_at DESC LIMIT 1`).bind(user.id).first();
-  return grant?{...grant,active:true,admin:false}:{active:false,admin:false,account_limit:0};
+  if(grant)return {...grant,active:true,admin:false,access_source:'paid'};
+  const review=await env.DB.prepare(`SELECT g.id,g.scope,g.account_limit,g.starts_at,g.expires_at FROM vx_review_access_grants g
+    JOIN users u ON u.id=g.user_id AND u.role='user' AND COALESCE(u.is_test_user,0)=0
+    WHERE g.user_id=? AND g.scope='tiktok_app_review' AND g.revoked_at IS NULL
+      AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP
+    ORDER BY g.expires_at DESC,g.id DESC LIMIT 1`).bind(user.id).first();
+  return review?{...review,active:true,admin:false,access_source:'review'}:{active:false,admin:false,account_limit:0};
+}
+export async function vxAccessStillCurrent(env,userOrId,expected){
+  const user=typeof userOrId==='object'&&userOrId?userOrId:await env.DB.prepare('SELECT id,role FROM users WHERE id=?').bind(userOrId).first();if(!user)return false;
+  const current=await vxAccess(env,user);
+  if(expected?.admin)return current.active&&current.admin;
+  if(expected?.access_source==='paid')return current.active&&current.access_source==='paid'&&Number(current.order_id)===Number(expected.order_id);
+  if(expected?.access_source==='review')return current.active&&current.access_source==='review'&&Number(current.id)===Number(expected.id);
+  return false;
+}
+export async function vxRequestAccessStillCurrent(ctx,expectedAuth){
+  const user=await currentUser(ctx,{includeCourseOwner:false});if(!user||Number(user.id)!==Number(expectedAuth?.user?.id))return false;
+  return vxAccessStillCurrent(ctx.env,user,expectedAuth?.vx);
 }
 export async function requireVxUser(ctx,options={}) {
   const auth=await requireUser(ctx); if(auth.error) return auth;

@@ -19,7 +19,9 @@ class Bound{
   async run(){const r=sqlite.prepare(this.sql).run(...this.args);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}
 }
 const DB={prepare:s=>new Bound(s),exec:async s=>sqlite.exec(s),async batch(statements){sqlite.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sqlite.exec('COMMIT');return out}catch(e){sqlite.exec('ROLLBACK');throw e}}};
-const env={DB};await ensureDatabase(env);await ensureTikTokAnalyzerSchema(env);await ensureVxAccess(env);
+const sampledAt=new Date().toISOString(),control=JSON.stringify({version:1,revision:1,auto_closed:false,auto_closed_day:'',status:'ok',reason:'below_close_threshold',sample_day:sampledAt.slice(0,10),sampled_at:sampledAt,reported_at:sampledAt,rows_read:0,rows_written:0,read_limit:5000000,write_limit:100000,read_percent:0,write_percent:0,usage_percent:0,source:'test',last_error:'',monitor_configured:true,monitor_interval:'1234567',monitor_lease:null,audit:[]});
+const FILES={async get(){return{etag:'open-test',text:async()=>control}}};
+const env={DB,FILES};await ensureDatabase(env);await ensureTikTokAnalyzerSchema(env);await ensureVxAccess(env);sqlite.exec(await (await import('node:fs/promises')).readFile(new URL('../migrations/0094_vx_review_access.sql',import.meta.url),'utf8'));
 for(let id=1;id<=4;id++){
   sqlite.prepare("INSERT INTO users(id,email,name,password_hash,role) VALUES(?,?,?,'test',?)").run(id,`vx${id}@example.invalid`,`VX Test ${id}`,id===4?'admin':'customer');
   sqlite.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+1 day'))").run(`vx-${id}`,id);
