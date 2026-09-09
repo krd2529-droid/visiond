@@ -33,5 +33,6 @@ assert.match(admin,/id=\? AND user_id=\? AND channel_id=\?/);
 assert.match(admin,/created_by=\? AND archived_at IS NULL/);
 assert.match(marketplace,/id=\? AND user_id=\? AND channel_id=\?/);
 assert.match(client,/connectionLoadSeq/);
-assert.match(client,/requestedChannelId!==state\.selected/);
+assert.match(client,/function createTikTokChannelOwnership/);
+assert.match(client,/loadSeq!==state\.connectionLoadSeq\|\|!context\|\|!channelOwnership\.current\(context\)/);
 console.log("TikTok one-card-one-channel isolation: PASS");

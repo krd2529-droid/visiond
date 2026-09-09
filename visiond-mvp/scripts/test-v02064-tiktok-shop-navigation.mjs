@@ -69,11 +69,11 @@ assert.match(html, /id="shopConnectionManagement"/);
 assert.match(html, /id="disconnectTikTokShop"/);
 assert.match(css, /\.manage-channel-connections/);
 
-assert.equal(version.trim(), 'v0.20.69');
-assert.match(home, /WEB v0\.20\.69/);
-assert.match(admin, /ADMIN v0\.20\.69/);
-assert.match(html, /<b>v0\.20\.69<\/b>/);
+assert.equal(version.trim(), 'v0.20.70');
+assert.match(home, /WEB v0\.20\.70/);
+assert.match(admin, /ADMIN v0\.20\.70/);
+assert.match(html, /<b>v0\.20\.70<\/b>/);
 assert.match(html, /tiktok-analyzer\.css\?v=02094/);
-assert.match(html, /tiktok-analyzer\.js\?v=02126/);
+assert.match(html, /tiktok-analyzer\.js\?v=02127/);
 
 console.log('PASS v0.20.64 TikTok Shop CTA selection, two-tab output restore, empty states and zero-fetch navigation');

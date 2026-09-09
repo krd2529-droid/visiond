@@ -30,7 +30,7 @@ assert.deepEqual(actions({ loading: false, selectable: true, connected: true }),
 
 const loadingHide = source.indexOf('$("#manageChannelConnections").hidden = true;', source.indexOf('async function loadTikTokConnection'));
 const request = source.indexOf('const data = await fetchTikTokConnectionData(requestedChannelId)', loadingHide);
-const staleGuard = source.indexOf('if(loadSeq!==state.connectionLoadSeq||requestedChannelId!==state.selected)return shopConnection;', request);
+const staleGuard = source.indexOf('if(loadSeq!==state.connectionLoadSeq||!context||!channelOwnership.current(context))return shopConnection;', request);
 const visibilityCommit = source.indexOf('const shopActions = tiktokShopActionVisibility', staleGuard);
 assert.ok(loadingHide >= 0 && loadingHide < request, 'both actions start hidden before connection fetch');
 assert.ok(request < staleGuard && staleGuard < visibilityCommit, 'stale response must exit before publishing either action');
@@ -45,7 +45,7 @@ assert.ok(callbackFinalAccess>callbackSource.indexOf('channelForProfile(')&&call
 assert.ok(callbackSource.lastIndexOf('archived_at IS NULL',callbackSave)<callbackFinalAccess,'regular callback must refresh access after its final selected-channel ownership await');
 const shopSave=shopCallbackSource.indexOf('saveTikTokShopCreatorConnection('),shopFinalAccess=shopCallbackSource.lastIndexOf('vxRequestAccessStillCurrent',shopSave);
 assert.ok(shopFinalAccess>shopCallbackSource.lastIndexOf('archived_at IS NULL',shopSave)&&shopFinalAccess<shopSave,'Shop callback must recheck live access after its final ownership await');
-assert.equal(version.trim(),'v0.20.69');assert.match(adminHtml,/ADMIN v0\.20\.69/);assert.match(adminHtml,/admin\.js\?v=02069/);assert.match(adminHtml,/admin-mobile\.css\?v=014129/);assert.match(analyzerHtml,/<b>v0\.20\.69<\/b>/);assert.match(analyzerHtml,/tiktok-analyzer\.js\?v=02126/);
+assert.equal(version.trim(),'v0.20.70');assert.match(adminHtml,/ADMIN v0\.20\.70/);assert.match(adminHtml,/admin\.js\?v=02069/);assert.match(adminHtml,/admin-mobile\.css\?v=014129/);assert.match(analyzerHtml,/<b>v0\.20\.70<\/b>/);assert.match(analyzerHtml,/tiktok-analyzer\.js\?v=02127/);
 
 console.log('PASS v0.20.69 TikTok Shop disconnected/connected/loading/stale action visibility');
 

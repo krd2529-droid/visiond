@@ -5,7 +5,7 @@ const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "
 const client = read("public/tiktok-analyzer.js");
 const css = read("public/tiktok-analyzer.css");
 
-assert.match(client, /async function selectChannel\(id\)[\s\S]*?form\.classList\.add\("existing-channel"\)/);
+assert.match(client, /async function selectChannel\(id, context\)[\s\S]*?form\.classList\.add\("existing-channel"\)/);
 assert.match(client, /function newChannel\(\)[\s\S]*?form\.classList\.remove\("existing-channel"\)/);
 assert.match(css, /\.api-focused-form\.existing-channel>\.title/);
 assert.match(css, />\.grid>label:nth-child\(-n\+2\)/);

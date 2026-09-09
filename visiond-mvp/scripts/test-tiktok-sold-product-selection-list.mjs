@@ -16,13 +16,13 @@ assert.match(client, /data-product-url/);
 assert.match(client, /data-product-evidence/);
 assert.match(client, /data-product-grade/);
 assert.match(client, /requestedGrade = button\.dataset\.productGrade \|\| "D"/);
-assert.match(client, /await syncSelectedSoldProductGrades\(\)/);
+assert.match(client, /await syncSelectedSoldProductGrades\(context\)/, "grade sync must stay bound to the loaded channel context");
 assert.match(client, /action", "sync_sold_product_grades"/);
 assert.match(api, /'sold_product_selection'/);
 assert.match(api, /savedGrade=sourceKind==='sold_product_selection'/);
 assert.match(api, /sales>=30\?'A':sales>=16\?'B':sales>0\?'C':'D'/);
 assert.match(api, /source_kind='sold_product_selection'/);
 assert.match(api, /เกรด \$\{savedGrade\} ตามยอดขายจริง 30 วัน/);
-assert.match(html, /tiktok-analyzer\.js\?v=02126/);
+assert.match(html, /tiktok-analyzer\.js\?v=02127/);
 
 console.log("TikTok sold-products selection-list column and action: PASS");

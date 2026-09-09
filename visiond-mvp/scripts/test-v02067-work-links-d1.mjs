@@ -156,6 +156,6 @@ assert.match(client,/seen\.add\(item\.id\);items\.push\(item\)/);
 assert.match(client,/if\(!shown\.length\)[\s\S]*if\(nextCursor\)/,'zero local matches must not hide Load more');
 assert.match(html,/placeholder="ค้นหาในรายการที่โหลด"/);assert.match(html,/ค้นหาเฉพาะรายการที่โหลดแล้ว/);
 
-assert.equal(version.trim(),'v0.20.69');assert.match(indexHtml,/WEB v0\.20\.69/);assert.match(adminHtml,/ADMIN v0\.20\.69/);
+assert.equal(version.trim(),'v0.20.70');assert.match(indexHtml,/WEB v0\.20\.70/);assert.match(adminHtml,/ADMIN v0\.20\.70/);
 assert.match(html,/work-links\.js\?v=02067/);assert.match(html,/work-links\.css\?v=014590/);
 console.log('PASS current work-links migration, indexed keyset, strict/atomic API and document-memory request races');

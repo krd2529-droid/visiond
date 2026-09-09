@@ -15,7 +15,7 @@ assert.equal((analyzerClient.match(/resource=inventory/g)||[]).length,1,'all inv
 assert.doesNotMatch(analyzerClient,/tiktok-analyzer\?channel_id=\$\{encodeURIComponent\([^)]*\)\}`/,'bare heavy channel aggregate must be removed');
 assert.match(analyzerClient,/pending\?\.version===version/,'identical in-flight inventory requests must deduplicate');
 assert.match(analyzerClient,/invalidateChannelInventory/,'product mutations must invalidate only the selected channel inventory cache');
-assert.match(analyzerClient,/const inventory = await selectChannelBase\(id\)/,'selection wrapper must reuse the base response');
+assert.match(analyzerClient,/inventory=await selectChannelBase\(state\.selected, context\)/,'selection wrapper must reuse the base response for its captured channel');
 for(const token of ['data-load-more-inventory','loadMoreInventoryResource','loadMoreRuns','data-load-more-channels','inventory_counts'])assert.ok(analyzerClient.includes(token),token);
 assert.match(analyzerApi,/channel_id=\? AND name_key=\?/,'normalized product matching must use the indexed canonical key');assert.match(analyzerSchema,/idx_tiktok_products_channel_name_key/);assert.match(migration,/idx_tiktok_products_channel_name_key/);
 
@@ -41,7 +41,7 @@ for(const source of [vision4,notes,trash,webhooks]){assert.match(source,/Math\.m
 assert.match(links,/\^\(\?:\[1-9\]\|1\\d\|2\[0-4\]\)\$/);assert.match(links,/LIMIT \?/);assert.doesNotMatch(links,/CREATE TABLE|ALTER TABLE/);
 assert.match(vision4Client,/data-v4-draft-next/);assert.match(vision4Client,/data-v4-pending-next/);assert.match(adminClient,/data-trash-more/);assert.match(webhookClient,/data-more/);
 assert.match(previews,/productLimit=24/);assert.match(previews,/id<\?/);assert.match(previews,/LIMIT \?/);assert.match(adminClient,/previewExportCursor/);
-assert.match(tiktokHtml,/tiktok-analyzer\.js\?v=02126/);assert.match(notesHtml,/work-notes\.js\?v=02058/);assert.match(linksHtml,/work-links\.js\?v=02067/);
+assert.match(tiktokHtml,/tiktok-analyzer\.js\?v=02127/);assert.match(notesHtml,/work-notes\.js\?v=02058/);assert.match(linksHtml,/work-links\.js\?v=02067/);
 for(const index of ['idx_tiktok_products_channel_seen','idx_tiktok_product_events_channel_page','idx_tiktok_runs_channel_page']){assert.ok(analyzerSchema.includes(index));assert.ok(migration.includes(index))}
 
 const db=new DatabaseSync(':memory:');

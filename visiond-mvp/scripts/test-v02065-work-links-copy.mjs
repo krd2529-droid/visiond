@@ -119,8 +119,8 @@ assert.match(css, /\.link-row p\{[^}]*overflow-wrap:anywhere/);
 assert.match(css, /\.copy-link-manual\{min-width:0;width:100%/);
 assert.match(html, /work-links\.js\?v=02067/);
 assert.match(html, /work-links\.css\?v=014590/);
-assert.equal(version.trim(), 'v0.20.69');
-assert.match(indexHtml, /WEB v0\.20\.69/);
-assert.match(adminHtml, /ADMIN v0\.20\.69/);
+assert.equal(version.trim(), 'v0.20.70');
+assert.match(indexHtml, /WEB v0\.20\.70/);
+assert.match(adminHtml, /ADMIN v0\.20\.70/);
 
 console.log('PASS v0.20.65 work-link exact URL copy, honest fallback, repeat ordering, zero-network and mobile fit');

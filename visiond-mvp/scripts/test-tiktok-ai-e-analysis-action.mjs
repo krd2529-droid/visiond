@@ -8,9 +8,10 @@ assert.match(html, />ให้ AI วิเคราะห์สินค้า�
 assert.match(client, /#analyzeAiRecommendations/);
 assert.match(client, /กรุณาเชื่อม TikTok Shop ก่อนให้ AI วิเคราะห์/);
 assert.match(client, /api\("\/api\/admin\/tiktok-analyzer", \{ method: "POST", body: data \}\)/);
-assert.match(client, /renderResult\(response\.result \|\| \{\}\)/);
+assert.match(client, /renderOwnedResult\(response\.result \|\| \{\}, context\)/);
+assert.match(client, /if \(!channelOwnership\.current\(context\)\) return/);
 assert.match(client, /AI วิเคราะห์สินค้าแนะนำเกรด E เรียบร้อยแล้ว/);
 assert.match(css, /\.ai-recommendations-head button\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02126/);
+assert.match(html, /tiktok-analyzer\.js\?v=02127/);
 assert.match(html, /tiktok-analyzer\.css\?v=02094/);
 console.log("TikTok AI grade-E analysis action: PASS");
