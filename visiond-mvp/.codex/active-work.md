@@ -1,11 +1,13 @@
-# Active patch: Work-link logo presentation
+# Delivered patch: Work-link logo presentation
 
-- Event: PATCH_READY (v0.20.66)
+- Event: PATCH_DELIVERED (v0.20.66)
 - Requested outcome: show one centered, complete platform/site logo in each work-link tile instead of the clipped stacked chain-plus-image presentation, retaining a single chain fallback only when the image is unavailable or fails.
 - Preservation: keep the compact platform badge, icon domains, v0.20.65 copy behavior, Open/Edit/Delete/search/load-more, bounded API/security and all D1/provider/Worker behavior unchanged. No new requests beyond the existing image load.
 - Implemented: the main tile replaces its seeded chain with one image node before assigning `src`; load/error listeners are attached first, cached-complete images are handled immediately, and failures replace the broken image with one centered chain. The compact badge still uses its prior append/remove path and icon domains are unchanged. A blank reserved tile while the lazy image is pending is accepted; no fallback and successful image are ever stacked.
 - Version/cache: work-links JS/CSS stamps are `02066`/`014589`; WEB, ADMIN and `VERSION.txt` are v0.20.66. Only current global version/cache assertions changed.
-- Verification: `npm run test:v02066`, `npm run test:v02065`, `npm run test:v02058`, `npm run test:visible-version`, JS/test syntax and `git diff --check` pass. The focused runtime gate covers listener ordering, pending single node, normal/cached load, normal/cached error fallback, exactly one child, badge preservation and unchanged TikTok favicon resolution. Awaiting Mark/Root frozen review before commit/push; Root owns live desktop/mobile geometry verification.
+- Verification: `npm run test:v02066`, `npm run test:v02065`, `npm run test:v02058`, `npm run test:visible-version`, JS/test syntax and `git diff --check` pass. The focused runtime gate covers listener ordering, pending single node, normal/cached load, normal/cached error fallback, exactly one child, badge preservation and unchanged TikTok favicon resolution. Mark issued FINAL LOCAL PASS and Root independently passed the frozen gates.
+- Delivery: application commit `25e3df61566ea10ff6d9c526a53eeca4ecb0277e` is on `origin/main`; Cloudflare production deployment `1d58ba14-56a3-4eac-8617-affb07e07b6b` serves source `25e3df6`. Public WEB is v0.20.66, live assets are JS `02066` / CSS `014589`, and the served JS matches the reviewed local source.
+- Production verification: on authenticated desktop and 360px mobile, all five logo tiles contain exactly one loaded image, no chain text, fit fully inside the 52px tile, and are centered with 0px offset on both axes. Copy/Open/Edit/Delete remain visible, client width equals scroll width, and no console warnings/errors appeared. No production record, credential, provider, sync or API mutation was performed.
 
 # Delivered patch: Work links copy button
 
