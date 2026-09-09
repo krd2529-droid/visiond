@@ -117,8 +117,10 @@ const bootstrap = source.slice(source.indexOf('async function bootstrapReviewerA
 assert.ok(bootstrap.indexOf("if(!response.ok)") < bootstrap.indexOf('pageAuthorized=true;'));
 assert.ok(bootstrap.indexOf('pageAuthorized=true;') < bootstrap.indexOf('await loadChannels();'));
 assert.doesNotMatch(source.slice(source.indexOf('$("#saveChannel")'), source.indexOf('form.addEventListener("submit"')), /pageAuthorized/);
-assert.match(source, /connectTikTok"\)\?\.addEventListener[^]*?connectionPreflight\.open\("tiktok"\)/);
-assert.match(source, /newChannel"\)\.addEventListener[^]*?connectionPreflight\.open\("tiktok_new"\)/);
+assert.match(source, /connectTikTok"\)\?\.addEventListener[^]*?routeProfileConnection\("tiktok"\)/,
+  'selected LoginKit connection must route through the current channel profile');
+assert.match(source, /newChannel"\)\.addEventListener[^]*?browserLauncher\.launchNew\(\)/,
+  'new channel must always launch a fresh isolated browser slot');
 assert.match(css, /\.connection-preflight/);
 assert.match(source, /ช่อง VisionD และบัญชี TikTok เป็นคนละส่วนกัน/);
 assert.doesNotMatch(source, /localStorage\.(?:setItem|getItem)[^\n]*connect/);
@@ -130,6 +132,7 @@ assert.match(admin, /ADMIN v0\.20\.71/);
 assert.match(html, /<b>v0\.20\.71<\/b>/);
 assert.match(html, /tiktok-analyzer\.css\?v=02095/);
 assert.match(html, /visiond-button-system\.css\?v=014407/);
+assert.match(html, /browser-profile-launcher\.js\?v=1/);
 assert.match(html, /tiktok-analyzer\.js\?v=02128/);
 assert.match(source, /vds-btn vds-btn--secondary/);
 assert.match(source, /vds-btn vds-btn--primary/);

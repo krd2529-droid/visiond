@@ -33,7 +33,13 @@ function createTikTokConnectionPreflight({ dialog, getIntent, isCurrent, navigat
   let intent = null, navigationStarted = false, copyAttempt = 0, copyPending = false;
   const field = (name) => dialog?.querySelector(`[data-preflight-${name}]`);
   const providerLabel = (mode) => mode === "shop" ? "TikTok Shop Creator" : "TikTok Login Kit";
-  const oauthUrl = (target) => target.mode === "shop" ? `/api/tiktok-shop/connect?channel_id=${encodeURIComponent(target.channelId)}` : target.mode === "tiktok_new" ? "/api/tiktok/connect?create=1" : `/api/tiktok/connect?channel_id=${encodeURIComponent(target.channelId)}`;
+  const oauthUrl = (target) => {
+    const url = target.mode === "shop" ? new URL("/api/tiktok-shop/connect", origin) : new URL("/api/tiktok/connect", origin);
+    if (target.mode === "tiktok_new") url.searchParams.set("create", "1");
+    else url.searchParams.set("channel_id", target.channelId);
+    if (target.mode !== "shop" && target.profileSlotId) url.searchParams.set("profile_slot_id", target.profileSlotId);
+    return `${url.pathname}${url.search}`;
+  };
   const handoffUrl = (target) => {
     const url = new URL("/tiktok-analyzer", origin);
     if (target.mode !== "tiktok_new") url.searchParams.set("channel_id", target.channelId);
@@ -191,8 +197,14 @@ const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Da
 const savedUiValue = (key) => { try { return localStorage.getItem(key) || ""; } catch { return ""; } }, saveUiValue = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
 const pageParams = new URLSearchParams(location.search), requestedConnectMode = ["tiktok", "shop", "tiktok_new"].includes(pageParams.get("connect")) ? pageParams.get("connect") : "", handoffChannelId = requestedConnectMode && requestedConnectMode !== "tiktok_new" ? pageParams.get("channel_id") || "" : "";
 const requestedChannelId = handoffChannelId || pageParams.get("channel_id") || savedUiValue("visiond_tiktok_channel_id") || null;
-let handoffOpened = false, pageAuthorized = false;
+const browserProfileUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,launcherProfileRequested=pageParams.get("launcher_profile")==="1",launcherMode=["new","existing"].includes(pageParams.get("launcher_mode"))?pageParams.get("launcher_mode"):"",launcherSlot=browserProfileUuid.test(pageParams.get("launcher_slot")||"")?pageParams.get("launcher_slot"):"",launcherChannelId=launcherMode==="existing"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"";
+const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launcherMode==="new"&&launcherSlot)||(launcherMode==="existing"&&launcherChannelId))?Object.freeze({mode:launcherMode,slotId:launcherSlot,channelId:launcherChannelId||(launcherMode==="new"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"")}):null;
+let launcherContext=launcherContextFromQuery;
+let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "";
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, analysisRuns: [], runPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label>กำลังตรวจโปรไฟล์ของช่อง</small></div><div class="browser-profile-actions"><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิดช่องนี้ใน Chrome แยก</button><button class="vds-btn vds-btn--secondary" type="button" data-reopen-pending-profile hidden>เปิดโปรไฟล์ที่รอเชื่อมอีกครั้ง</button><button class="vds-btn vds-btn--primary" type="button" data-continue-pending hidden>เชื่อม TikTok ในโปรไฟล์ใหม่นี้</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
+const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
+const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
 const channelOwnership = createTikTokChannelOwnership(() => state.selected);
 const shopConnectionRequests = new Map();
 const inventoryRequests = new Map();
@@ -284,7 +296,7 @@ $("#connectTikTokShop")?.addEventListener("click", (event) => {
 });
 $("#connectTikTok")?.addEventListener("click", (event) => {
   event.preventDefault();
-  connectionPreflight.open("tiktok");
+  routeProfileConnection("tiktok");
 });
 marketplacePanel?.insertAdjacentHTML("beforebegin", '<section id="soldProductsPanel" class="sold-products-panel"><div class="showcase-heading"><div><h3>สินค้าที่ขายได้และออเดอร์</h3><p class="hint">ข้อมูลจริงของช่องที่เลือก เรียงตามจำนวนออเดอร์ในช่วงวันที่กำหนด</p></div><div id="soldProductsControls" class="related-table-controls"></div></div><div id="soldProductsData"><p class="hint">เชื่อม TikTok Shop เพื่อโหลดข้อมูล</p></div></section>');
 showcaseHeading?.insertAdjacentHTML("beforeend", '<div id="showcaseTableControls" class="related-table-controls"></div>');
@@ -324,17 +336,39 @@ const connectionPreflight = createTikTokConnectionPreflight({
   dialog: $("#tiktokConnectionPreflight"),
   getIntent(mode) {
     if (!pageAuthorized) return null;
-    if (mode === "tiktok_new") return { mode, revision: channelOwnership.revision(), channelId: "", channelName: "" };
+    if (mode === "tiktok_new") return { mode, revision: channelOwnership.revision(), channelId: "", channelName: "", profileSlotId: launcherContext?.mode==="new"?launcherContext.slotId:"" };
     const context = channelOwnership.capture();
     if (!context) return null;
     const channel = state.channels.find((item) => String(item.id) === context.channelId);
     if (!channel) return null;
-    return { ...context, mode, channelName: String(channel.name || "ช่องที่เลือก") };
+    return { ...context, mode, channelName: String(channel.name || "ช่องที่เลือก"), profileSlotId: String(channel.browser_profile_slot_id||"") };
   },
-  isCurrent(target) { return target.mode === "tiktok_new" ? channelOwnership.unchanged(target.revision) : channelOwnership.current(target) && state.channels.some((item) => String(item.id) === target.channelId); },
+  isCurrent(target) { return target.mode === "tiktok_new" ? channelOwnership.unchanged(target.revision)&&(!target.profileSlotId||launcherContext?.mode==="new"&&launcherContext.slotId===target.profileSlotId) : channelOwnership.current(target) && state.channels.some((item) => String(item.id) === target.channelId&&String(item.browser_profile_slot_id||"")===String(target.profileSlotId||"")); },
   navigate: (url) => location.assign(url)
 });
-const tiktokShopNavigation = createTikTokShopNavigation({ getState: () => state, setOutputScope, setWorkspaceView, setChannelView, navigate: () => connectionPreflight.open("shop") });
+function selectedChannel(){return state.channels.find(channel=>String(channel.id)===String(state.selected))||null}
+function browserProfileMatches(channel){
+  if(!launcherContext||!channel)return false;
+  const slot=String(channel.browser_profile_slot_id||"");
+  return slot?launcherContext.slotId===slot:launcherContext.mode==="existing"&&!launcherContext.slotId&&launcherContext.channelId===String(channel.id);
+}
+function routeProfileConnection(mode){
+  const context=channelOwnership.capture(),channel=context&&selectedChannel();
+  if(!context||!channel||String(channel.id)!==context.channelId){setBrowserProfileStatus("กรุณารอให้ช่องที่เลือกโหลดเสร็จก่อน","error");return false}
+  if(browserProfileMatches(channel))return connectionPreflight.open(mode);
+  if(!browserLauncher){setBrowserProfileStatus("เบราว์เซอร์นี้ยังไม่มี VisionD Browser Launcher จึงไม่ได้เปิด OAuth","error");return false}
+  return browserLauncher.launchExisting(context.channelId,String(channel.browser_profile_slot_id||""),mode);
+}
+function updateBrowserProfilePanel(){
+  const channel=selectedChannel(),label=$("[data-browser-profile-label]"),open=$("[data-open-channel-profile]"),pending=$("[data-continue-pending]"),reopen=$("[data-reopen-pending-profile]");
+  const savedPending=browserLauncher?.readPending?.()||"",boundPending=savedPending&&state.channels.some(item=>String(item.browser_profile_slot_id||"")===savedPending);if(boundPending)browserLauncher.clearPending(savedPending);
+  const currentBound=launcherContext?.slotId?state.channels.find(item=>String(item.browser_profile_slot_id||"")===launcherContext.slotId):null,boundHere=channel&&browserProfileMatches(channel),pendingHere=launcherContext?.mode==="new"&&launcherContext.slotId&&!currentBound;
+  if(label)label.textContent=currentBound?`โปรไฟล์นี้ประจำช่อง ${currentBound.name||"ที่ผูกไว้"}`:pendingHere?"โปรไฟล์ใหม่นี้ยังรอเชื่อมกับช่องจริง":boundHere?`โปรไฟล์นี้ประจำช่อง ${channel.name||"ที่เลือก"}`:channel?.browser_profile_slot_id?`ช่อง ${channel.name||"ที่เลือก"} มี Chrome แยกที่ผูกแล้ว`:channel?`ช่อง ${channel.name||"ที่เลือก"} ยังใช้โปรไฟล์แยกแบบเดิม`:"เลือกช่องเพื่อดูโปรไฟล์";
+  if(open)open.hidden=!channel||boundHere;
+  if(pending)pending.hidden=!pendingHere;
+  if(reopen)reopen.hidden=!browserLauncher?.readPending?.()||pendingHere;
+}
+const tiktokShopNavigation = createTikTokShopNavigation({ getState: () => state, setOutputScope, setWorkspaceView, setChannelView, navigate: () => routeProfileConnection("shop") });
 async function loadPortfolioDashboard() {
   const [data, commission, referral] = await Promise.all([api(`/api/admin/tiktok-connections?${shopDateQuery()}`), api(`/api/admin/tiktok-commissions?from=${state.shopDateFrom}&to=${state.shopDateTo}`), api('/api/vx/referrals').catch(() => null)]);
   renderShopDashboard({ ...data, shop_products: data.shop_portfolio?.products || [], shop_orders: data.shop_portfolio?.orders || [] }, data.shop_connections?.[0] || null);
@@ -941,6 +975,15 @@ async function loadChannels() {
     state.channelPagination=data.pagination||{};
     const aiState = $("#aiState");
     if (aiState) aiState.textContent = data.provider_configured ? "AI \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C" : "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 AI";
+    if(!launcherTargetConsumed&&launcherContext?.channelId){
+      state.selected=launcherContext.channelId;renderChannels();
+      const selected=await selectChannel(launcherContext.channelId);if(!selected)throw new Error("ไม่พบช่องเป้าหมายในบัญชีนี้");
+      const actualSlot=String(selected.channel?.browser_profile_slot_id||"");
+      if(actualSlot!==launcherContext.slotId)throw new Error(actualSlot?"ช่องนี้ผูกกับ Chrome โปรไฟล์อื่นแล้ว กรุณาเปิดใหม่จากรายการช่อง":"ข้อมูลโปรไฟล์ของช่องนี้ไม่ตรงกัน กรุณาเปิดใหม่จากรายการช่อง");
+      launcherTargetConsumed=true;updateBrowserProfilePanel();
+      if(requestedConnectMode&&!handoffOpened)handoffOpened=connectionPreflight.open(requestedConnectMode);
+      return;
+    }
     if (!handoffOpened && requestedConnectMode && requestedConnectMode !== "tiktok_new") {
       if (!handoffChannelId) throw new Error("ลิงก์เชื่อมบัญชีไม่ระบุช่อง กรุณาเลือกช่องอีกครั้ง");
       state.selected = handoffChannelId;
@@ -950,18 +993,23 @@ async function loadChannels() {
       if (!handoffOpened) handoffOpened = connectionPreflight.open(requestedConnectMode);
       return;
     }
-    const selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected));
+    let selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected)),selectedLoaded=false;
+    if(!selectedExists&&browserProfileUuid.test(String(state.selected||""))){try{selectedLoaded=Boolean(await selectChannel(state.selected))}catch{state.selected=null}}
+    selectedExists=selectedLoaded||state.channels.some((channel) => String(channel.id) === String(state.selected));
     if (!selectedExists) state.selected = state.channels.find((channel) => channel.follower_count !== null && channel.follower_count !== void 0)?.id || state.channels[0]?.id || null;
     renderChannels();
-    if (state.selected) await selectChannel(state.selected).catch(()=>{});
+    if (state.selected&&!selectedLoaded) await selectChannel(state.selected).catch(()=>{});
     if (requestedConnectMode === "tiktok_new" && !handoffOpened) handoffOpened = connectionPreflight.open("tiktok_new");
+    updateBrowserProfilePanel();
   } catch (error) {
     $("#channels").innerHTML = `<p class="shop-error">${escapeHtml(error.message || "โหลดช่องไม่สำเร็จ")}</p>`;
+    setBrowserProfileStatus(error.message||"โหลดข้อมูลโปรไฟล์ไม่สำเร็จ","error");
   }
 }
 function renderChannels() {
   $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? "ยังไม่เชื่อม TikTok" : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("")+(state.channelPagination?.has_more?'<button type="button" data-load-more-channels>โหลดช่องเพิ่มเติม</button>':'') : '<p class="hint">ยังไม่มีช่อง กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
   renderAnalysisChannelPicker();
+  updateBrowserProfilePanel();
 }
 function renderAnalysisChannelPicker(){
   const box=$("#analysisChannelOptions"),connected=state.channels.filter(channel=>channel.follower_count!==null&&channel.follower_count!==void 0);
@@ -1518,8 +1566,12 @@ $("#channels").addEventListener("click", async (event) => {
   if (button) { resetMarketplaceView(); selectChannel(button.dataset.id).catch(()=>{}); }
 });
 $("#newChannel").addEventListener("click", () => {
-  connectionPreflight.open("tiktok_new");
+  if(browserLauncher)browserLauncher.launchNew();
+  else setBrowserProfileStatus("โหลด VisionD Browser Launcher ไม่สำเร็จ จึงไม่ได้เปิดช่องใหม่ในโปรไฟล์หลัก","error");
 });
+$("[data-open-channel-profile]")?.addEventListener("click",()=>{const channel=selectedChannel();if(channel&&browserLauncher)browserLauncher.launchExisting(String(channel.id),String(channel.browser_profile_slot_id||""),"view")});
+$("[data-reopen-pending-profile]")?.addEventListener("click",()=>browserLauncher?.reopenPending?.());
+$("[data-continue-pending]")?.addEventListener("click",()=>{if(launcherContext?.mode==="new"&&launcherContext.slotId)connectionPreflight.open("tiktok_new")});
 async function syncTikTokShopData(mode) {
   const context=channelOwnership.capture(),shopConnection=context&&state.shopConnection&&String(state.shopConnection.channel_id)===context.channelId?state.shopConnection:null;
   if (!context||!shopConnection) return;
@@ -1746,17 +1798,18 @@ form.addEventListener("submit", async (event) => {
     $("#analyze").disabled = false;
   }
 });
+const cleanProviderCallbackUrl=()=>{const source=new URLSearchParams(location.search),keep=new URLSearchParams();for(const key of['channel_id','launcher_profile','launcher_mode','launcher_slot']){const value=source.get(key);if(value)keep.set(key,value)}history.replaceState({},"",`${location.pathname}${keep.size?`?${keep}`:""}`)};
 const shopOauthStatus = new URLSearchParams(location.search).get("tiktok_shop");
 if (shopOauthStatus) {
   const detail = new URLSearchParams(location.search).get("detail") || "";
   message.textContent = shopOauthStatus === "connected" ? "เชื่อมบัญชี TikTok Shop Creator พร้อมใช้ Marketplace และ Showcase แล้ว" : shopOauthStatus === "account_already_linked" ? `บัญชี TikTok Shop นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี กลับไปกดเชื่อมระบบ TikTok แล้วเลือกบัญชีของช่องนี้` : shopOauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok Shop อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : shopOauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : shopOauthStatus === "permissions_required" ? `เชื่อมบัญชี Creator แล้ว แต่สิทธิ์ยังไม่ครบ: ${detail} กรุณาเปิดสิทธิ์ใน TikTok Partner Center แล้วเชื่อมใหม่` : shopOauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok Shop แล้ว" : `เชื่อม TikTok Shop ไม่สำเร็จ${detail ? `: ${detail}` : " กรุณาลองใหม่"}`;
-  history.replaceState({}, "", location.pathname);
+  cleanProviderCallbackUrl();
 }
 const oauthStatus = new URLSearchParams(location.search).get("tiktok");
 if (oauthStatus) {
   const detail = new URLSearchParams(location.search).get("detail") || "";
-  message.textContent = oauthStatus === "account_limit" ? detail : oauthStatus === "connected" ? "เชื่อมต่อ TikTok และนำเข้าข้อมูลสำเร็จ" : oauthStatus === "account_already_linked" ? `บัญชี TikTok นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี` : oauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : oauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : oauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok แล้ว" : "เชื่อมต่อ TikTok ไม่สำเร็จ กรุณาลองใหม่";
-  history.replaceState({}, "", location.pathname);
+  message.textContent = oauthStatus === "account_limit" ? detail : oauthStatus === "connected" ? "เชื่อมต่อ TikTok สำเร็จ กำลังตรวจข้อมูล Chrome โปรไฟล์ของช่อง" : oauthStatus === "profile_conflict" ? "Chrome โปรไฟล์นี้ถูกผูกกับช่องหรือบัญชีอื่นแล้ว ระบบไม่ได้ย้ายการเชื่อมต่อ" : oauthStatus === "account_already_linked" ? `บัญชี TikTok นี้เชื่อมกับ “${detail || "ช่องอื่น"}” อยู่แล้ว ระบบจึงไม่ย้ายบัญชี` : oauthStatus === "channel_already_linked" ? `การ์ดช่องนี้เชื่อมกับ “${detail || "บัญชี TikTok อื่น"}” อยู่แล้ว กรุณายกเลิกการเชื่อมต่อเดิมก่อน` : oauthStatus === "channel_unavailable" ? "ไม่สามารถเชื่อมได้ เพราะการ์ดช่องนี้ถูกลบหรือไม่ใช่ช่องของบัญชีคุณ" : oauthStatus === "denied" ? "ยกเลิกการอนุญาต TikTok แล้ว" : "เชื่อมต่อ TikTok ไม่สำเร็จ กรุณาลองใหม่";
+  cleanProviderCallbackUrl();
 }
 form.remove();
 $(".workspace-switch")?.remove();
@@ -1782,6 +1835,12 @@ async function bootstrapReviewerAccess(){
       return;
     }
     if(!response.ok)throw new Error(response.status===503?'ระบบสมาชิกถึงขีดจำกัดชั่วคราว กรุณาลองใหม่หลังระบบรีเซ็ต':'ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ');
+    const authPayload=await response.json().catch(()=>({}));pageViewerId=String(authPayload?.user?.id||"");if(!/^\d+$/.test(pageViewerId))throw new Error('ตรวจสอบเจ้าของโปรไฟล์ไม่สำเร็จ');
+    try{
+      const key='visiond_browser_launcher_context';
+      if(launcherContextFromQuery)sessionStorage.setItem(key,JSON.stringify({...launcherContextFromQuery,ownerId:pageViewerId}));
+      else{const saved=JSON.parse(sessionStorage.getItem(key)||'null');launcherContext=saved&&String(saved.ownerId)===pageViewerId&&['new','existing'].includes(saved.mode)&&(!saved.slotId||browserProfileUuid.test(saved.slotId))&&(!saved.channelId||browserProfileUuid.test(saved.channelId))?Object.freeze({mode:saved.mode,slotId:saved.slotId||'',channelId:saved.channelId||''}):null}
+    }catch{if(!launcherContextFromQuery)launcherContext=null}
     pageAuthorized=true;
     await loadChannels();
   }catch(error){

@@ -5,26 +5,48 @@ const clean=(value,max=1000)=>String(value??'').trim().slice(0,max);
 const integer=value=>Math.max(0,Number(value)||0);
 const redirectDefault='https://visiondonline.com/api/tiktok/callback';
 const scopes=['user.info.basic','user.info.profile','user.info.stats','video.list'];
+const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export const canonicalTikTokProfileSlot=value=>{
+  const slot=typeof value==='string'?value:'';
+  return uuidPattern.test(slot)&&slot!=='00000000-0000-0000-0000-000000000000'?slot:'';
+};
 
 export function tikTokOAuthConfig(env={}){
   const clientKey=clean(env.TIKTOK_CLIENT_KEY,200),clientSecret=clean(env.TIKTOK_CLIENT_SECRET,500),redirectUri=clean(env.TIKTOK_REDIRECT_URI,1000)||redirectDefault;
   return {clientKey,clientSecret,redirectUri,configured:Boolean(clientKey&&clientSecret),scopes:[...scopes]};
 }
 
-export async function createTikTokState(env,userId,channelId=''){
+export async function createTikTokState(env,userId,channelId='',profileSlotId=''){
   const state=crypto.randomUUID().replaceAll('-','')+crypto.randomUUID().replaceAll('-',''),stateHash=await sha256(state);
-  await env.DB.batch([
-    env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE expires_at<=CURRENT_TIMESTAMP"),
-    env.DB.prepare("INSERT INTO tiktok_oauth_states(state_hash,user_id,channel_id,expires_at) VALUES(?,?,?,datetime('now','+10 minutes'))").bind(stateHash,userId,clean(channelId,80))
-  ]);
+  const slot=canonicalTikTokProfileSlot(profileSlotId),savedChannelId=slot?`profile:${clean(channelId,72)}`:clean(channelId,80),statements=[env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE state_hash IN (SELECT state_hash FROM tiktok_oauth_states WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,state_hash LIMIT 24)")];
+  if(slot){
+    statements.push(
+      env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE state_hash IN (SELECT state_hash FROM tiktok_oauth_profile_slots WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,state_hash LIMIT 24)"),
+      env.DB.prepare("DELETE FROM tiktok_oauth_profile_slots WHERE state_hash IN (SELECT state_hash FROM tiktok_oauth_profile_slots WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,state_hash LIMIT 24)"),
+      env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE state_hash IN (SELECT state_hash FROM tiktok_oauth_profile_slots WHERE slot_id=? AND expires_at<=CURRENT_TIMESTAMP)").bind(slot),
+      env.DB.prepare("DELETE FROM tiktok_oauth_profile_slots WHERE slot_id=? AND expires_at<=CURRENT_TIMESTAMP").bind(slot),
+      env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE state_hash IN (SELECT state_hash FROM tiktok_oauth_profile_slots WHERE user_id=? AND slot_id=?)").bind(userId,slot),
+      env.DB.prepare("DELETE FROM tiktok_oauth_profile_slots WHERE user_id=? AND slot_id=?").bind(userId,slot)
+    );
+  }
+  statements.push(env.DB.prepare("INSERT INTO tiktok_oauth_states(state_hash,user_id,channel_id,expires_at) VALUES(?,?,?,datetime('now','+10 minutes'))").bind(stateHash,userId,savedChannelId));
+  if(slot)statements.push(env.DB.prepare("INSERT INTO tiktok_oauth_profile_slots(state_hash,slot_id,user_id,expires_at) VALUES(?,?,?,datetime('now','+10 minutes'))").bind(stateHash,slot,userId));
+  await env.DB.batch(statements);
   return state;
 }
 
 export async function consumeTikTokState(env,state,userId){
-  const stateHash=await sha256(clean(state,200)),row=await env.DB.prepare("SELECT state_hash,user_id,channel_id FROM tiktok_oauth_states WHERE state_hash=? AND user_id=? AND expires_at>CURRENT_TIMESTAMP").bind(stateHash,userId).first();
+  const stateHash=await sha256(clean(state,200)),row=await env.DB.prepare("SELECT s.state_hash,s.user_id,s.channel_id,COALESCE(p.slot_id,'') profile_slot_id FROM tiktok_oauth_states s LEFT JOIN tiktok_oauth_profile_slots p ON p.state_hash=s.state_hash AND p.user_id=s.user_id AND p.expires_at>CURRENT_TIMESTAMP WHERE s.state_hash=? AND s.user_id=? AND s.expires_at>CURRENT_TIMESTAMP").bind(stateHash,userId).first();
   if(!row)return null;
-  const deleted=await env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE state_hash=? AND user_id=?").bind(stateHash,userId).run();
-  return deleted.meta?.changes===1?row:null;
+  const [deleted]=await env.DB.batch([
+    env.DB.prepare("DELETE FROM tiktok_oauth_states WHERE state_hash=? AND user_id=? AND expires_at>CURRENT_TIMESTAMP").bind(stateHash,userId),
+    env.DB.prepare("DELETE FROM tiktok_oauth_profile_slots WHERE state_hash=? AND user_id=?").bind(stateHash,userId)
+  ]);
+  if(deleted.meta?.changes!==1)return null;
+  const profileRequired=String(row.channel_id||'').startsWith('profile:');
+  if(profileRequired&&!canonicalTikTokProfileSlot(row.profile_slot_id))return null;
+  return{...row,channel_id:profileRequired?String(row.channel_id).slice(8):row.channel_id,profile_slot_id:profileRequired?row.profile_slot_id:''};
 }
 
 export function tikTokAuthorizeUrl(config,state){
@@ -57,7 +79,7 @@ export async function fetchTikTokVideos(token,fetchImpl=fetch,maxVideos=100){
 }
 
 const isoAfter=seconds=>new Date(Date.now()+integer(seconds)*1000).toISOString();
-export async function saveTikTokConnection(env,userId,channelId,token,profile){
+export async function prepareTikTokConnection(env,userId,channelId,token,profile){
   const openId=clean(profile.open_id,200),requestedChannelId=clean(channelId,80);
   const existing=await env.DB.prepare(`SELECT c.id,c.channel_id,c.status,COALESCE(ch.name,'') channel_name FROM tiktok_connections c LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.open_id=?`).bind(userId,openId).first();
   if(existing?.status==='active'&&existing.channel_id&&existing.channel_id!==requestedChannelId){const error=new Error('TIKTOK_ACCOUNT_ALREADY_LINKED');error.code='TIKTOK_ACCOUNT_ALREADY_LINKED';error.channelName=clean(existing.channel_name,120)||'ช่องอื่น';throw error}
@@ -65,9 +87,23 @@ export async function saveTikTokConnection(env,userId,channelId,token,profile){
   if(occupied){const error=new Error('TIKTOK_CHANNEL_ALREADY_LINKED');error.code='TIKTOK_CHANNEL_ALREADY_LINKED';error.accountName=clean(occupied.account_name,120)||'บัญชี TikTok อื่น';throw error}
   const id=existing?.id||crypto.randomUUID();
   const access=await encryptChannelValue(env,token.access_token),refresh=await encryptChannelValue(env,token.refresh_token);
-  await env.DB.prepare(`INSERT INTO tiktok_connections(id,user_id,channel_id,open_id,union_id,display_name,avatar_url,profile_url,bio,is_verified,follower_count,following_count,likes_count,video_count,access_token_ciphertext,refresh_token_ciphertext,scopes,access_expires_at,refresh_expires_at,status,last_synced_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',CURRENT_TIMESTAMP) ON CONFLICT(user_id,open_id) DO UPDATE SET channel_id=excluded.channel_id,union_id=excluded.union_id,display_name=excluded.display_name,avatar_url=excluded.avatar_url,profile_url=excluded.profile_url,bio=excluded.bio,is_verified=excluded.is_verified,follower_count=excluded.follower_count,following_count=excluded.following_count,likes_count=excluded.likes_count,video_count=excluded.video_count,access_token_ciphertext=excluded.access_token_ciphertext,refresh_token_ciphertext=excluded.refresh_token_ciphertext,scopes=excluded.scopes,access_expires_at=excluded.access_expires_at,refresh_expires_at=excluded.refresh_expires_at,status='active',last_synced_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP`).bind(id,userId,requestedChannelId,openId,clean(profile.union_id,200),clean(profile.display_name,200),clean(profile.avatar_url),clean(profile.profile_deep_link),clean(profile.bio_description,2000),profile.is_verified?1:0,integer(profile.follower_count),integer(profile.following_count),integer(profile.likes_count),integer(profile.video_count),access,refresh,clean(token.scope,500),isoAfter(token.expires_in),isoAfter(token.refresh_expires_in)).run();
-  return id;
+  const statement=env.DB.prepare(`INSERT INTO tiktok_connections(id,user_id,channel_id,open_id,union_id,display_name,avatar_url,profile_url,bio,is_verified,follower_count,following_count,likes_count,video_count,access_token_ciphertext,refresh_token_ciphertext,scopes,access_expires_at,refresh_expires_at,status,last_synced_at)
+    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',CURRENT_TIMESTAMP
+    WHERE EXISTS(SELECT 1 FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL)
+    ON CONFLICT(user_id,open_id) DO UPDATE SET channel_id=excluded.channel_id,union_id=excluded.union_id,display_name=excluded.display_name,avatar_url=excluded.avatar_url,profile_url=excluded.profile_url,bio=excluded.bio,is_verified=excluded.is_verified,follower_count=excluded.follower_count,following_count=excluded.following_count,likes_count=excluded.likes_count,video_count=excluded.video_count,access_token_ciphertext=excluded.access_token_ciphertext,refresh_token_ciphertext=excluded.refresh_token_ciphertext,scopes=excluded.scopes,access_expires_at=excluded.access_expires_at,refresh_expires_at=excluded.refresh_expires_at,status='active',last_synced_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP`).bind(id,userId,requestedChannelId,openId,clean(profile.union_id,200),clean(profile.display_name,200),clean(profile.avatar_url),clean(profile.profile_deep_link),clean(profile.bio_description,2000),profile.is_verified?1:0,integer(profile.follower_count),integer(profile.following_count),integer(profile.likes_count),integer(profile.video_count),access,refresh,clean(token.scope,500),isoAfter(token.expires_in),isoAfter(token.refresh_expires_in),requestedChannelId,userId);
+  return{id,openId,statement};
+}
+
+export async function saveTikTokConnection(env,userId,channelId,token,profile){
+  const prepared=await prepareTikTokConnection(env,userId,channelId,token,profile);
+  await prepared.statement.run();
+  return prepared.id;
+}
+
+export function tikTokProfileBindingStatement(env,{slotId,userId,channelId,openId}){
+  return env.DB.prepare(`INSERT INTO tiktok_browser_profile_bindings(slot_id,user_id,channel_id,provider_open_id)
+    VALUES(?,?,?,?) ON CONFLICT(slot_id) DO UPDATE SET user_id=excluded.user_id,channel_id=excluded.channel_id,provider_open_id=excluded.provider_open_id`)
+    .bind(slotId,userId,channelId,openId);
 }
 
 async function activeToken(env,connection,fetchImpl=fetch){

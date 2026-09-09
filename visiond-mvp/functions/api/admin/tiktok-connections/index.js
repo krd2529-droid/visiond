@@ -153,7 +153,9 @@ async function onRequestPost(ctx) {
   if (action === "bind") {
     const channelId = clean(body.channel_id);
     if (channelId && !await ctx.env.DB.prepare("SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL").bind(channelId,auth.user.id).first()) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E48\u0E2D\u0E07" }, 404, headers);
-    await ctx.env.DB.prepare("UPDATE tiktok_connections SET channel_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?").bind(channelId, id, auth.user.id).run();
+    const profileBinding=await ctx.env.DB.prepare('SELECT channel_id,provider_open_id FROM tiktok_browser_profile_bindings WHERE user_id=? AND (channel_id=? OR provider_open_id=?) LIMIT 1').bind(auth.user.id,channelId,connection.open_id).first();
+    if(profileBinding&&(profileBinding.channel_id!==channelId||profileBinding.provider_open_id!==connection.open_id))return json({error:'บัญชีหรือช่องนี้ผูกกับ Chrome โปรไฟล์อื่นอยู่แล้ว',code:'TIKTOK_PROFILE_BINDING_CONFLICT'},409,headers);
+    try{await ctx.env.DB.prepare("UPDATE tiktok_connections SET channel_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?").bind(channelId, id, auth.user.id).run()}catch(error){if(String(error?.message||error).includes('TIKTOK_PROFILE_BINDING'))return json({error:'บัญชีหรือช่องนี้ผูกกับ Chrome โปรไฟล์อื่นอยู่แล้ว',code:'TIKTOK_PROFILE_BINDING_CONFLICT'},409,headers);throw error}
     return json({ ok: true }, 200, headers);
   }
   return json({ error: "\u0E04\u0E33\u0E2A\u0E31\u0E48\u0E07\u0E44\u0E21\u0E48\u0E16\u0E39\u0E01\u0E15\u0E49\u0E2D\u0E07" }, 400, headers);

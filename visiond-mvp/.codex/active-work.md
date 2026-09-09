@@ -1,3 +1,21 @@
+# Active patch: verified per-channel Chrome profile binding
+
+- Event: PATCH_READY (v0.20.71 workflow candidate; locally verified, not deployed).
+- Outcome: a fresh Windows Chrome slot is carried only by a one-time owner-scoped Login Kit state, and the verified callback atomically saves the actual TikTok connection plus an immutable global slot/channel/provider binding. Subsequent owner-scoped channel responses let the launcher reopen that exact slot; unbound legacy channels retain their channel-directory fallback.
+- Safety boundary: no website session, cookie, token or credential is copied between profiles. Strict UUID/native fixed-origin inputs, current VisionD/VX ownership, verified provider `open_id`, immutable uniqueness and transactional rollback prevent URL/local-storage claims, cross-owner reuse and concurrent slot/account swaps. Profile OAuth fails closed until migration 0095 is installed.
+- UI/native phase: the normal Analyzer now has a visible Chrome-profile panel. `+ ช่องใหม่` always requests a fresh slot, pending slots can be explicitly reopened/continued, and selecting B while inside A launches B's saved directory instead of starting OAuth in A. OAuth remains behind the existing explicit preflight and user consent.
+- Verification: Mark issued FINAL LOCAL PASS on the frozen 24-file manifest. The permanent `test:v02071` gate executes the preflight, native parser/slot reuse, live-state client routing, transactional schema/state/callback and local read-only fixture; independent SQL 11/11 additionally proves the normal-OAuth/slot race rolls back without an orphan. Root's local desktop/mobile fixture confirms the compact full-width panel, bound A/B and exact off-page channel flow, pending-slot state and zero automatic OAuth.
+- Installed helper checkpoint: Root upgraded the exact reviewed source `ADE5550BA45903878E4ED07507BA290A808F451E1AA833CB4DD7953A08CF4781`; the owned installed EXE is `A6F71BD448512DA7FE408E00A42BEB678D1A01C7C8DA80920EC6308C470ABE14`. Ownership/hash checks pass and all three existing profile directories were preserved. Native `--inspect` proves the bound slot target, but no browser-button-to-native end-to-end input or provider action is claimed yet.
+- Current phase: migration 0095 is not installed and no application code is pushed/deployed; no provider login/consent or production data mutation occurred. Rollout remains migration-first. The unrelated broad commerce gate remains 9/10 on its pre-existing stale assertion, so deployment/push stays blocked and that file remains untouched.
+
+# Superseded local trial: isolated Chrome profiles for TikTok connections
+
+- Event: SUPERSEDED (historical local Windows trial; replaced by the active verified-binding candidate above).
+- Outcome: the historical local-only trial proved isolated deterministic profile directories and registered URI handling. Its `launcher_trial=1` bridge has been removed; the active candidate uses the normal visible Analyzer workflow and a server-verified slot binding.
+- Native boundary: the per-user `visiond-profile` helper accepts only canonical UUID-based `existing` or `new` requests, reconstructs the fixed HTTPS VisionD analyzer target itself, and never accepts arbitrary URLs, executables, paths, flags, OAuth values, commands or cookie data. Existing channels map deterministically to `channel-<UUID>`; unbound trials use `slot-<UUID>`.
+- Safety/delivery: install/uninstall are HKCU-only with collision and ownership checks; uninstall preserves Chrome profile data. No provider authorization, login/consent or credential access was performed during the historical trial.
+- Historical trial result: the helper was installed and direct A/B plus registered root-slash slot launches created/reused isolated directories. Browser-page custom-scheme forwarding remained only partially observed, and pending slots were not yet server-bound. The active patch above supersedes that limitation; do not treat this historical trial state as the current completion claim.
+
 # Active patch: account-aware TikTok connection preflight
 
 - Event: PATCH_BLOCKED (v0.20.71, LOCAL_VERIFIED and COMMITTED; not pushed or deployed).
