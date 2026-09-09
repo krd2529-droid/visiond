@@ -1565,10 +1565,11 @@ $("#channels").addEventListener("click", async (event) => {
   }
   if (button) { resetMarketplaceView(); selectChannel(button.dataset.id).catch(()=>{}); }
 });
-$("#newChannel").addEventListener("click", () => {
-  if(browserLauncher)browserLauncher.launchNew();
-  else setBrowserProfileStatus("โหลด VisionD Browser Launcher ไม่สำเร็จ จึงไม่ได้เปิดช่องใหม่ในโปรไฟล์หลัก","error");
-});
+function requestNewBrowserProfile(){
+  if(!browserLauncher){setBrowserProfileStatus("โหลด VisionD Browser Launcher ไม่สำเร็จ จึงไม่ได้เปิดช่องใหม่ในโปรไฟล์หลัก","error");updateBrowserProfilePanel();return false}
+  const launched=browserLauncher.launchNew();updateBrowserProfilePanel();return launched;
+}
+$("#newChannel").addEventListener("click",requestNewBrowserProfile);
 $("[data-open-channel-profile]")?.addEventListener("click",()=>{const channel=selectedChannel();if(channel&&browserLauncher)browserLauncher.launchExisting(String(channel.id),String(channel.browser_profile_slot_id||""),"view")});
 $("[data-reopen-pending-profile]")?.addEventListener("click",()=>browserLauncher?.reopenPending?.());
 $("[data-continue-pending]")?.addEventListener("click",()=>{if(launcherContext?.mode==="new"&&launcherContext.slotId)connectionPreflight.open("tiktok_new")});

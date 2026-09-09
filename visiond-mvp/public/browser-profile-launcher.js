@@ -31,6 +31,7 @@
         : `visiond-profile://open?mode=existing&channel_id=${channelId}&intent=${intent}`;
     };
     const launchNew = () => {
+      if (locked) return false;
       let slotId = "";
       try { slotId = String(cryptoApi?.randomUUID?.() || "").toLowerCase(); } catch {}
       const uri = protocolNew(slotId);

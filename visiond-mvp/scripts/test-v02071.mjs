@@ -119,8 +119,9 @@ assert.ok(bootstrap.indexOf('pageAuthorized=true;') < bootstrap.indexOf('await l
 assert.doesNotMatch(source.slice(source.indexOf('$("#saveChannel")'), source.indexOf('form.addEventListener("submit"')), /pageAuthorized/);
 assert.match(source, /connectTikTok"\)\?\.addEventListener[^]*?routeProfileConnection\("tiktok"\)/,
   'selected LoginKit connection must route through the current channel profile');
-assert.match(source, /newChannel"\)\.addEventListener[^]*?browserLauncher\.launchNew\(\)/,
-  'new channel must always launch a fresh isolated browser slot');
+assert.match(source, /function requestNewBrowserProfile\(\)[^]*?browserLauncher\.launchNew\(\);updateBrowserProfilePanel\(\)/,
+  'new channel must launch a fresh isolated slot and immediately refresh its pending/reopen state');
+assert.match(source, /newChannel"\)\.addEventListener\("click",requestNewBrowserProfile\)/);
 assert.match(css, /\.connection-preflight/);
 assert.match(source, /ช่อง VisionD และบัญชี TikTok เป็นคนละส่วนกัน/);
 assert.doesNotMatch(source, /localStorage\.(?:setItem|getItem)[^\n]*connect/);

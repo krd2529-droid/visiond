@@ -17,6 +17,7 @@ Assert-VisionDProtocolState -Exists $schemeExists -CurrentCommand $currentComman
 
 if ($schemeExists) {
     Remove-Item -LiteralPath $schemeKey -Recurse -Force
+    Send-VisionDShellAssociationChanged
 }
 
 if ($fileState -eq 'Owned') {

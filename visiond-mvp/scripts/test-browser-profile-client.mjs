@@ -91,6 +91,25 @@ const runtime = ({ selected, channels, launcherContext, pending = "" }) => {
   assert.equal(value.nodes.get("[data-continue-pending]").hidden, false, "an unbound new slot exposes an explicit Continue action");
 }
 
+const newProfileAction = (launcher) => {
+  let panelUpdates = 0, unavailable = 0, oauthStarts = 0;
+  const sandbox = {
+    browserLauncher: launcher,
+    updateBrowserProfilePanel: () => { panelUpdates += 1; },
+    setBrowserProfileStatus: () => { unavailable += 1; },
+    connectionPreflight: { open: () => { oauthStarts += 1; } }
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(`${functionSource("requestNewBrowserProfile")};this.run=requestNewBrowserProfile;`, sandbox);
+  return { result: sandbox.run(), panelUpdates, unavailable, oauthStarts };
+};
+assert.deepEqual(newProfileAction({ launchNew: () => true }), { result: true, panelUpdates: 1, unavailable: 0, oauthStarts: 0 },
+  "a successful +new request must immediately reveal its saved pending/reopen state without starting OAuth");
+assert.deepEqual(newProfileAction({ launchNew: () => false }), { result: false, panelUpdates: 1, unavailable: 0, oauthStarts: 0 },
+  "a locked or failed request keeps its launcher result while refreshing only the pending panel");
+assert.deepEqual(newProfileAction(null), { result: false, panelUpdates: 1, unavailable: 1, oauthStarts: 0 },
+  "an unavailable helper remains honest and never falls back to OAuth in the current profile");
+
 assert.match(source, /oauthStatus === "connected" \? "เชื่อมต่อ TikTok สำเร็จ กำลังตรวจข้อมูล Chrome โปรไฟล์ของช่อง"/,
   "query status alone must not claim an authoritative profile binding");
 assert.doesNotMatch(source, /oauthStatus === "connected" \? "[^"]*ผูก Chrome โปรไฟล์/);

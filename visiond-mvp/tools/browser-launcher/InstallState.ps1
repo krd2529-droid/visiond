@@ -1,4 +1,33 @@
 $script:VisionDLauncherMarkerVersion = 'VisionD Browser Launcher v1'
+$script:VisionDShellAssociationChangedEvent = [uint32]0x08000000
+$script:VisionDShellAssociationNotifyFlags = [uint32](0x0000 -bor 0x1000)
+
+function Send-VisionDShellAssociationChanged {
+    param([scriptblock]$NotifyOverride)
+
+    if ($null -ne $NotifyOverride) {
+        & $NotifyOverride $script:VisionDShellAssociationChangedEvent $script:VisionDShellAssociationNotifyFlags
+        return
+    }
+    if ($null -eq ([System.Management.Automation.PSTypeName]'VisionD.ShellAssociationNative').Type) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+namespace VisionD {
+    public static class ShellAssociationNative {
+        [DllImport("shell32.dll")]
+        public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
+    }
+}
+'@
+    }
+    [VisionD.ShellAssociationNative]::SHChangeNotify(
+        $script:VisionDShellAssociationChangedEvent,
+        $script:VisionDShellAssociationNotifyFlags,
+        [IntPtr]::Zero,
+        [IntPtr]::Zero
+    )
+}
 
 function Get-VisionDLauncherSha256 {
     param([Parameter(Mandatory = $true)][string]$Path)

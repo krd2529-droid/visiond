@@ -31,6 +31,7 @@ Set-Item -LiteralPath $schemeKey -Value 'URL:VisionD isolated Chrome profile'
 New-ItemProperty -LiteralPath $schemeKey -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
 New-Item -Path $commandKey -Force | Out-Null
 Set-Item -LiteralPath $commandKey -Value $expectedCommand
+Send-VisionDShellAssociationChanged
 
 Write-Output 'VisionD Browser Launcher installed for the current Windows user.'
 Write-Output 'Browser profiles are stored under LocalAppData\VisionD\BrowserLauncher\Profiles.'

@@ -67,6 +67,20 @@ try {
   assert.match(installSource, /Assert-VisionDProtocolState/);
   assert.match(uninstallSource, /Assert-VisionDProtocolState/);
   assert.match(uninstallSource, /preserved under LocalAppData/);
+  assert.match(installStateSource, /VisionDShellAssociationChangedEvent = \[uint32\]0x08000000/);
+  assert.match(installStateSource, /VisionDShellAssociationNotifyFlags = \[uint32\]\(0x0000 -bor 0x1000\)/);
+  const installRegistryWrite = installSource.indexOf("Set-Item -LiteralPath $commandKey -Value $expectedCommand");
+  const installNotify = installSource.indexOf("Send-VisionDShellAssociationChanged");
+  const installSuccess = installSource.indexOf("VisionD Browser Launcher installed");
+  assert.ok(installSource.indexOf("Assert-VisionDProtocolState") < installRegistryWrite && installRegistryWrite < installNotify && installNotify < installSuccess,
+    "install must notify only after its owned protocol write and before claiming success");
+  const uninstallRemoval = uninstallSource.indexOf("Remove-Item -LiteralPath $schemeKey -Recurse -Force");
+  const uninstallNotify = uninstallSource.indexOf("Send-VisionDShellAssociationChanged");
+  const uninstallSuccess = uninstallSource.indexOf("VisionD Browser Launcher protocol and executable removed");
+  assert.ok(uninstallRemoval >= 0 && uninstallRemoval < uninstallNotify && uninstallNotify < uninstallSuccess,
+    "uninstall must notify only inside the actual owned-removal branch and before claiming success");
+  assert.match(uninstallSource, /if \(\$schemeExists\) \{\s*Remove-Item -LiteralPath \$schemeKey -Recurse -Force\s*Send-VisionDShellAssociationChanged\s*\}/,
+    "an absent protocol must be a notification no-op, while an owned removal notifies once");
 
   const stateRoot = join(work, "Install State With Spaces");
   const stateTest = join(work, "install-state-test.ps1");
@@ -85,6 +99,10 @@ Add-Content -LiteralPath (Join-Path $root 'VisionDBrowserLauncher.exe') -Value '
 try { Get-VisionDLauncherFileState -InstallRoot $root; exit 14 } catch {}
 try { Assert-VisionDProtocolState -Exists $true -CurrentCommand 'foreign' -ExpectedCommand 'ours' -FileState 'Owned'; exit 15 } catch {}
 Assert-VisionDProtocolState -Exists $false -CurrentCommand '' -ExpectedCommand 'ours' -FileState 'Empty'
+$script:notification = @()
+Send-VisionDShellAssociationChanged -NotifyOverride { param($eventId, $flags) $script:notification = @($eventId, $flags) }
+if ($script:notification.Count -ne 2 -or $script:notification[0] -ne 0x08000000 -or $script:notification[1] -ne 0x1000) { exit 16 }
+try { Send-VisionDShellAssociationChanged -NotifyOverride { throw 'notify-failed' }; exit 17 } catch { if ($_.Exception.Message -ne 'notify-failed') { exit 18 } }
 exit 0
 `, "utf8");
   const stateResult = spawnSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", stateTest], { encoding: "utf8" });
@@ -146,6 +164,30 @@ exit 0
     assert.equal(failureInvocations.length, 0);
     assert.ok(failureMessages.at(-1)?.includes("ไม่ได้เปิด Chrome แยก"));
   }
+
+  const deniedValues = new Map(), deniedMessages = [];
+  const deniedInvoke = create({
+    storage: { getItem: (key) => deniedValues.get(key) || "", setItem: (key, value) => deniedValues.set(key, value), removeItem: (key) => deniedValues.delete(key) },
+    cryptoApi: { randomUUID: () => slot },
+    invoke: () => { throw new Error("protocol unavailable"); },
+    setStatus: (...message) => deniedMessages.push(message),
+    getOwnerId: () => "2"
+  });
+  assert.equal(deniedInvoke.launchNew(), false);
+  assert.equal(deniedInvoke.readPending(), slot, "a denied native invocation retains only its nonsecret UUID so the user can retry the same profile");
+  assert.equal(deniedMessages.at(-1)?.[1], "error");
+
+  const raceStorage = new Map(), raceInvocations = [], raceSlots = [slot, "33333333-3333-4333-8333-333333333333"];
+  const race = create({
+    storage: { getItem: (key) => raceStorage.get(key) || "", setItem: (key, value) => raceStorage.set(key, value), removeItem: (key) => raceStorage.delete(key) },
+    cryptoApi: { randomUUID: () => raceSlots.shift() },
+    invoke: (uri) => raceInvocations.push(uri), setStatus: () => {}, getOwnerId: () => "2"
+  });
+  assert.equal(race.launchNew(), true);
+  assert.equal(race.launchNew(), false, "the lock must reject before generating or saving a replacement slot");
+  assert.equal(raceInvocations.length, 1);
+  assert.equal(race.readPending(), slot, "rapid +new must preserve the slot that was actually invoked");
+  assert.equal(raceSlots.length, 1, "the locked call must not consume a UUID");
 
   assert.match(analyzerSource, /browserLauncher\.launchNew\(\)/, "+new must always request a fresh isolated slot");
   assert.match(analyzerSource, /browserLauncher\.launchExisting\(context\.channelId,String\(channel\.browser_profile_slot_id\|\|""\),mode\)/);
