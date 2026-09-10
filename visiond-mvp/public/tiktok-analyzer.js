@@ -138,7 +138,9 @@ shopHeader.querySelector("small").textContent = "AUTOMATIC \xB7 TIKTOK SHOP API"
 shopHeader.querySelector("h2").textContent = "\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E21\u0E34\u0E0A\u0E0A\u0E31\u0E19\u0E23\u0E27\u0E21\u0E41\u0E25\u0E30\u0E41\u0E22\u0E01\u0E17\u0E38\u0E01\u0E0A\u0E48\u0E2D\u0E07";
 shopHeader.insertAdjacentHTML("beforeend", '<p class="source-caption">\u0E22\u0E2D\u0E14\u0E23\u0E27\u0E21 30 \u0E27\u0E31\u0E19 \u0E01\u0E23\u0E32\u0E1F\u0E23\u0E32\u0E22\u0E27\u0E31\u0E19 \u0E41\u0E25\u0E30\u0E01\u0E32\u0E23\u0E40\u0E1B\u0E23\u0E35\u0E22\u0E1A\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E04\u0E48\u0E32\u0E04\u0E2D\u0E21\u0E02\u0E2D\u0E07\u0E41\u0E15\u0E48\u0E25\u0E30\u0E0A\u0E48\u0E2D\u0E07</p>');
 form.insertAdjacentHTML("afterbegin", '<div class="manual-source-note"><b>MANUAL ANALYSIS \xB7 \u0E20\u0E32\u0E1E\u0E41\u0E25\u0E30\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E17\u0E35\u0E48\u0E01\u0E23\u0E2D\u0E01\u0E40\u0E2D\u0E07</b><span>\u0E43\u0E0A\u0E49\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E44\u0E14\u0E49\u0E01\u0E48\u0E2D\u0E19 TikTok \u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 API \u0E41\u0E25\u0E30\u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E22\u0E2D\u0E14\u0E08\u0E32\u0E01 Showcase \u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34</span></div>');
-$("#newChannel").textContent = "+ ช่องใหม่";
+$("#newChannel").textContent = "กำลังตรวจ Helper…";
+$("#newChannel").disabled = true;
+$("#newChannel").setAttribute('aria-busy','true');
 resultHeader.querySelector("small").textContent = "CHANNEL ANALYSIS RESULT";
 resultHeader.querySelector("h2").textContent = "\u0E1C\u0E25\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E0A\u0E48\u0E2D\u0E07";
 manualHeader.querySelector("small").textContent = "CHANNEL PRODUCT SELECTION LIST";
@@ -269,6 +271,13 @@ function readLauncherStatus(commandId){
   if(!pending){pending=launcherFetch('/api/launcher/status?command_id='+encodeURIComponent(commandId)).finally(()=>launcherStatusReads.delete(commandId));launcherStatusReads.set(commandId,pending)}
   return pending.then(response=>response.clone?response.clone():response);
 }
+async function initializeLauncherReadiness(){
+ const control=$('#newChannel'),owner=pageViewerId;
+ if(control){control.disabled=true;control.setAttribute('aria-busy','true');control.textContent='กำลังตรวจ Helper…'}
+ try{await prepareLauncherReadiness()}
+ catch(error){if(launcherPageActive&&pageAuthorized&&owner===pageViewerId)helperRecoveryStatus(control,error.message)}
+ finally{if(control){control.disabled=false;control.removeAttribute('aria-busy');control.textContent='+ ช่องใหม่'}}
+}
 function clearProfileCommand(pending){
  if(profileHandoffRequests.get(pending.key)!==pending)return false;
  profileOAuthPendingKeys.delete(pending.key);profileHandoffRequests.delete(pending.key);profileOAuthPending=profileHandoffRequests.size>0;return true;
@@ -308,8 +317,10 @@ async function issueProfileOAuth(mode,control){
   const channelId=create?'':context?.channelId||'',key=create?'new':channelId;
   if(profileOAuthRequests.has(key))return false;
   if(profileOAuthPendingKeys.has(key))return reconcileProfileCommand(mode,control,profileHandoffRequests.get(key));
+  if(!launcherPageActive)return false;
   if(!pageAuthorized||!commandLauncher||!create&&(!context||String(selectedChannel()?.id)!==channelId)){connectionActionStatus(control,'กรุณารอให้ช่องโหลดเสร็จแล้วลองอีกครั้ง','error');return false}
-  if(launcherReadiness.owner!==owner||launcherReadiness.expires<=Date.now()){
+  if(launcherReadiness.owner!==owner||!launcherReadiness.helper&&launcherReadiness.expires<=Date.now()){
+    connectionActionStatus(control,'กำลังตรวจ Helper…');
     try{await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))(launcherReadiness.helper?connectionActionStatus(control,launcherRegisteredMessage()):helperRecoveryStatus(control,launcherRegisteredMessage()))}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))helperRecoveryStatus(control,e.message)}return false;
   }
   const helper=launcherReadiness.helper;
@@ -1837,10 +1848,12 @@ async function bootstrapReviewerAccess(){
       else{const saved=JSON.parse(sessionStorage.getItem(key)||'null');launcherContext=saved&&String(saved.ownerId)===pageViewerId&&['new','existing'].includes(saved.mode)&&(!saved.slotId||browserProfileUuid.test(saved.slotId))&&(!saved.channelId||browserProfileUuid.test(saved.channelId))?Object.freeze({mode:saved.mode,slotId:saved.slotId||'',channelId:saved.channelId||''}):null}
     }catch{if(!launcherContextFromQuery)launcherContext=null}
     pageAuthorized=true;
-    prepareLauncherReadiness().catch(()=>{});
+    await initializeLauncherReadiness();
     await loadChannels();
   }catch(error){
     $('#channels').innerHTML=`<p class="shop-error">${escapeHtml(error.message||'เปิดระบบ VX ไม่สำเร็จ')}</p><button type="button" onclick="location.reload()">ลองใหม่</button>`;
+  }finally{
+    $('#newChannel').disabled=false;$('#newChannel').removeAttribute('aria-busy');$('#newChannel').textContent='+ ช่องใหม่';
   }
 }
 bootstrapReviewerAccess();
