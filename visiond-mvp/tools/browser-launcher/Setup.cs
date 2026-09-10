@@ -6,13 +6,13 @@ using System.Management;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Microsoft.Win32;
-[assembly:System.Reflection.AssemblyVersion("0.20.73.0")]
-[assembly:System.Reflection.AssemblyFileVersion("0.20.73.0")]
+[assembly:System.Reflection.AssemblyVersion("0.20.74.0")]
+[assembly:System.Reflection.AssemblyFileVersion("0.20.74.0")]
 [assembly:System.Reflection.AssemblyProduct("VisionD Helper")]
 
 namespace VisionDBrowserLauncher {
  internal static class Setup {
-  internal const string Version="0.20.73";
+  internal const string Version="0.20.74";
   private const string Marker="VisionD Browser Launcher v1";
   private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VisionD","BrowserLauncher");
   private static readonly string Exe=Path.Combine(Root,"VisionDBrowserLauncher.exe");

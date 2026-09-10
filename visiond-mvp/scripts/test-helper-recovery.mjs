@@ -9,7 +9,7 @@ function fixture(fetch,storage=new Map(),hash='#id='+id){
 }
 const response=(status,body={})=>({ok:status===200,status,json:async()=>body});
 {
- const f=fixture(async()=>response(401));await flush();assert.deepEqual(f.calls,['/api/auth/me']);assert.equal(f.node('login').hidden,false);assert.equal(f.node('confirm').disabled,true);assert.equal(f.node('retry').disabled,false);assert.ok(f.storage.has('visiond_pair_pending'));f.node('login').events.click();assert.equal(f.storage.get('vd_return_to'),'/launcher-pair.html');
+ const f=fixture(async()=>response(401));await flush();assert.deepEqual(f.calls,['/api/auth/me']);assert.equal(f.node('login').hidden,false);assert.equal(f.node('confirm').disabled,true);assert.equal(f.node('retry').disabled,false);assert.ok(f.storage.has('visiond_pair_pending'));f.node('login').events.click();assert.equal(f.storage.get('vd_return_to'),'/launcher-pair');
  const restored=fixture(async p=>response(200,p.endsWith('prepare')?{pair_code:'12345678',confirm_nonce:'n'}:{}),f.storage,'');await flush();assert.deepEqual(restored.calls,['/api/auth/me','/api/launcher/pair-prepare']);restored.node('match').checked=true;restored.node('match').events.change();assert.equal(restored.node('confirm').disabled,false);
 }
 {
@@ -25,6 +25,6 @@ console.log('PASS pair auth-first, login/refresh hint, explicit checkbox, expiry
 const setup=readFileSync('public/launcher-setup.js','utf8'),html=readFileSync('public/launcher-setup.html','utf8');assert.doesNotMatch(html.match(/<a id="download"[^>]+>/)[0],/href=/);
 for(const valid of [false,true]){
  const nodes=new Map(),timers=[];const node=k=>{if(!nodes.has(k))nodes.set(k,{removeAttribute(){}});return nodes.get(k)};
- vm.runInNewContext(setup,{AbortController,document:{getElementById:node},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.73':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'a'.repeat(64)}})});await flush();assert.equal(!!node('download').href,valid);
+ vm.runInNewContext(setup,{AbortController,document:{getElementById:node},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.74':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'a'.repeat(64)}})});await flush();assert.equal(!!node('download').href,valid);
 }
 console.log('PASS download remains unavailable until exact version/file/hash/signature manifest validation');

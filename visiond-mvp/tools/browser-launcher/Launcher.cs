@@ -281,6 +281,12 @@ namespace VisionDBrowserLauncher
             {if(response.StatusCode!=HttpStatusCode.OK)throw new InvalidDataException();using(var reader=new StreamReader(response.GetResponseStream())){char[] buffer=new char[8193];int n=0,count;while(n<buffer.Length&&(count=reader.Read(buffer,n,buffer.Length-n))>0)n+=count;if(n>8192)throw new InvalidDataException();return Json.Deserialize<Dictionary<string,object>>(new string(buffer,0,n));}}
         }
         internal static string PairStatus="";
+        internal static ProcessStartInfo PairStartInfo(Dictionary<string,object> stage)
+        {
+            string id=Field(stage,"pair_id");
+            if(id.Length!=36||!Regex.IsMatch(id,"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"))throw new InvalidDataException("คำตอบผูกเครื่องไม่ถูกต้อง กรุณาลองใหม่");
+            return new ProcessStartInfo(Origin+"/launcher-pair#id="+id){UseShellExecute=true};
+        }
         internal static int Pair()
         {
             Load();return PairLoaded();
@@ -291,7 +297,7 @@ namespace VisionDBrowserLauncher
             // --pair is an explicit setup action, never invoked automatically by install/serve.
             Console.WriteLine("Match this installation code before confirming: "+Field(config,"pair_code"));
             Console.WriteLine("Open VisionD and click: ยืนยันผูกตัวช่วยเครื่องนี้");
-            var start=new ProcessStartInfo(Origin+"/launcher-pair.html#id="+Field(config,"helper_id"));start.UseShellExecute=true;Process.Start(start);
+            Process.Start(PairStartInfo(stage));
             PairCodeMessage(IntPtr.Zero,"รหัสตัวช่วยเครื่องนี้: "+Field(config,"pair_code")+"\nตรวจว่าตรงกับหน้า VisionD ก่อนกดยืนยันผูกตัวช่วยเครื่องนี้", "VisionD · ยืนยันตัวช่วย",0);PairStatus="ส่งคำขอเปิดหน้าผูกเครื่องแล้ว ทำตามรหัสในหน้า VisionD การปิดกล่องรหัสยังไม่ใช่การยืนยันผูกเครื่อง";return 0;
         }
         [System.Runtime.InteropServices.DllImport("user32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode,EntryPoint="MessageBoxW")]

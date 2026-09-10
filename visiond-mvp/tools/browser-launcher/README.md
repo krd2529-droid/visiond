@@ -1,5 +1,7 @@
 # VisionD Browser Launcher
 
+Pairing boundary v0.20.74: native validates the pair-stage response's pair_id and opens clean `/launcher-pair#id=...` without a canonical HTML redirect. The page accepts up to eight validated distinct hash arrivals within five minutes, aborts prior prepare work and ignores stale responses. Duplicate/invalid hashes cannot replace approval; no hash replaces an in-flight confirmation or completed page. Expired/conflicting requests require a new explicit Helper request. Identifiers remain non-authorizing fragment hints; auth/session/VX/nonce and human code-match confirmation are unchanged. This hardening does not claim a proved cause for the previously observed external Chrome fragment absence; real pairing verification remains required.
+
 This Windows-only, per-user helper opens fixed destinations in isolated Chrome directories. Normal v72 transport does not depend on Chrome custom-scheme discovery. View opens TikTok Login without issuing OAuth; Connect/new uses official consent. The helper never reads, copies, exports or logs cookies.
 
 ## Paired local transport (v0.20.72)
