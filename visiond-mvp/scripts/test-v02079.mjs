@@ -10,7 +10,7 @@ for(const status of ['pending','claimed','process_started','unknown','failed','c
  const f=fixture(),u=ui(f),first=f.s.run('tiktok',u.control);await tick();f.reply(f.pending[0]);await first;
  const original=[...f.s.requests.values()][0];assert.equal(original.provider,'tiktok');assert.equal(original.intent,'reconnect');
  const check=f.s.run('shop',u.control);await tick();assert.match(f.pending[1].url,/\/status\?/);f.reply(f.pending[1],{status:status==='complete'?'process_started':status==='expired'?'pending':status,oauth_status:status==='complete'?'complete':'issued',expired:status==='expired'});assert.equal(await check,false);assert.equal(f.opened.length,1,'reconciliation does not create new command');
- if(['failed','cancelled','expired','complete'].includes(status)){assert.equal(f.s.requests.size,0);const next=u.children.find(n=>n.textContent==='เชื่อม TikTok Shop ต่อ');assert.ok(next);next.events.click();assert.equal(f.opened.length,2);assert.equal(f.opened[1].provider,'shop');await tick();f.reply(f.pending.at(-1));await tick();continue}
+ if(['failed','cancelled','expired','complete'].includes(status)){assert.equal(f.s.requests.size,0);assert.equal(u.children.length,0,'terminal status has no synthesized retry button');const next=f.s.run('shop',u.control);assert.equal(f.opened.length,2);assert.equal(f.opened[1].provider,'shop');await tick();f.reply(f.pending.at(-1));await tick();continue}
  assert.equal(f.s.requests.size,1);
  const resume=u.children.find(n=>n.textContent==='เปิดคำขอเดิมต่อ');assert.equal(Boolean(resume),['pending','claimed'].includes(status));
  if(resume){resume.events.click();assert.deepEqual(u.resumed,[original.commandId]);assert.equal(f.opened.length,1);assert.equal(f.s.requests.size,1);await tick()}
