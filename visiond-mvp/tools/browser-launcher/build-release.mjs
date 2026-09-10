@@ -3,7 +3,7 @@ import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync,existsSync,unlinkSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
-const version='0.20.74',dir=resolve('public/downloads/visiond-helper',version),exe=join(dir,'VisionD-Helper-Setup.exe'),zip=join(dir,'VisionD-Helper-Source.zip');
+const version='0.20.75',dir=resolve('public/downloads/visiond-helper',version),exe=join(dir,'VisionD-Helper-Setup.exe'),zip=join(dir,'VisionD-Helper-Source.zip');
 mkdirSync(dir,{recursive:true});
 const compiler=join(process.env.WINDIR||'C:\\Windows','Microsoft.NET','Framework64','v4.0.30319','csc.exe');
 execFileSync(compiler,['/nologo','/target:winexe','/platform:x64','/optimize+','/r:System.Security.dll','/r:System.Web.Extensions.dll','/r:System.Windows.Forms.dll','/r:System.Drawing.dll','/r:System.Management.dll','/out:'+exe,'tools\\browser-launcher\\Launcher.cs','tools\\browser-launcher\\Setup.cs'],{stdio:'inherit'});

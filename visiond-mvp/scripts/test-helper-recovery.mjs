@@ -25,6 +25,6 @@ console.log('PASS pair auth-first, login/refresh hint, explicit checkbox, expiry
 const setup=readFileSync('public/launcher-setup.js','utf8'),html=readFileSync('public/launcher-setup.html','utf8');assert.doesNotMatch(html.match(/<a id="download"[^>]+>/)[0],/href=/);
 for(const valid of [false,true]){
  const nodes=new Map(),timers=[];const node=k=>{if(!nodes.has(k))nodes.set(k,{removeAttribute(){}});return nodes.get(k)};
- vm.runInNewContext(setup,{AbortController,document:{getElementById:node},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.74':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'a'.repeat(64)}})});await flush();assert.equal(!!node('download').href,valid);
+ vm.runInNewContext(setup,{AbortController,document:{getElementById:node},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.75':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'a'.repeat(64)}})});await flush();assert.equal(!!node('download').href,valid);
 }
 console.log('PASS download remains unavailable until exact version/file/hash/signature manifest validation');

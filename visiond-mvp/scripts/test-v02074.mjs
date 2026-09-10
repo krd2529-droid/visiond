@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 const script=readFileSync('public/launcher-pair.js','utf8'),A='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',B='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',flush=()=>new Promise(r=>setImmediate(r));
 assert.match(readFileSync('public/launcher-pair.html','utf8'),/id="retry" hidden disabled/,'no dead retry before script loads');
-const setupPage=readFileSync('public/launcher-setup.html','utf8');assert.match(setupPage,/0\.20\.74 ขึ้นไป/);assert.match(setupPage,/0\.20\.73 หรือต่ำกว่า/);assert.doesNotMatch(setupPage,/0\.20\.73 ขึ้นไป/);
+const setupPage=readFileSync('public/launcher-setup.html','utf8');assert.match(setupPage,/0\.20\.75 ขึ้นไป/);assert.match(setupPage,/0\.20\.74 หรือต่ำกว่า/);assert.doesNotMatch(setupPage,/0\.20\.73 ขึ้นไป/);
 function fixture(hash=''){
  const nodes=new Map(),events={},pending=[],storage=new Map(),timers=[];
  const node=k=>{if(!nodes.has(k))nodes.set(k,{checked:false,events:{},addEventListener:(t,f)=>node(k).events[t]=f});return nodes.get(k)};

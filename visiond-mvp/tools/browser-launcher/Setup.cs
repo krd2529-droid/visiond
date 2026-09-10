@@ -6,13 +6,13 @@ using System.Management;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Microsoft.Win32;
-[assembly:System.Reflection.AssemblyVersion("0.20.74.0")]
-[assembly:System.Reflection.AssemblyFileVersion("0.20.74.0")]
+[assembly:System.Reflection.AssemblyVersion("0.20.75.0")]
+[assembly:System.Reflection.AssemblyFileVersion("0.20.75.0")]
 [assembly:System.Reflection.AssemblyProduct("VisionD Helper")]
 
 namespace VisionDBrowserLauncher {
  internal static class Setup {
-  internal const string Version="0.20.74";
+  internal const string Version="0.20.75";
   private const string Marker="VisionD Browser Launcher v1";
   private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VisionD","BrowserLauncher");
   private static readonly string Exe=Path.Combine(Root,"VisionDBrowserLauncher.exe");
@@ -25,6 +25,7 @@ namespace VisionDBrowserLauncher {
    }
   }
   private static string ServeCommand {get{return "\""+Exe+"\" --serve";}}
+  internal static int PairExplicit(bool replace=false){int result=0;try{RunExclusive(()=>{if(!Owned())throw new InvalidOperationException("กรุณาติดตั้งตัวช่วยก่อน");LocalHelper.PairStatus="ยกเลิกการเริ่มผูกเครื่อง ยังไม่มีการยืนยัน";if(MessageBox.Show("คุณเพิ่งกดเริ่มผูกเครื่องจากหน้า VisionD ที่เข้าสู่ระบบอยู่ใช่หรือไม่? จะแสดงรหัสให้กรอกในเบราว์เซอร์เดิม ไม่เปิดเว็บไซต์ใหม่","ยืนยันเริ่มผูกเครื่อง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;result=replace?LocalHelper.ReplacePair():LocalHelper.Pair();});}catch(Exception e){LocalHelper.PairStatus="เริ่มผูกเครื่องไม่สำเร็จ: "+e.Message;MessageBox.Show(LocalHelper.PairStatus,"VisionD Helper");result=2;}return result;}
   private static string ProtocolCommand {get{return "\""+Exe+"\" \"%1\"";}}
   [System.Runtime.InteropServices.DllImport("shell32.dll")] private static extern void SHChangeNotify(uint eventId,uint flags,IntPtr item1,IntPtr item2);
   private static void NotifyRegistry(){SHChangeNotify(0x08000000,0,IntPtr.Zero,IntPtr.Zero);}
@@ -114,7 +115,7 @@ namespace VisionDBrowserLauncher {
    var remove=new Button{Left=20,Top=178,Width=500,Height=38,Text="ถอนการติดตั้ง / หยุดตัวช่วย"};var status=new Label{Left=20,Top=235,Width=500,Height=65,AutoSize=false};
    Action<Action> run=action=>{install.Enabled=pair.Enabled=remove.Enabled=false;try{RunExclusive(action);}catch(Exception e){status.Text="ไม่สำเร็จ: "+e.Message;}finally{install.Enabled=pair.Enabled=remove.Enabled=true;}};
    install.Click+=(sender,args)=>run(()=>{if(MessageBox.Show(form,"ติดตั้ง / อัปเดตเฉพาะตัวช่วย VisionD ของผู้ใช้ Windows นี้? โปรไฟล์เดิมจะคงอยู่","ยืนยันติดตั้ง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;Install();status.Text="ติดตั้งและตรวจตัวช่วยแล้ว กดผูกเครื่องเพื่อดำเนินการต่อ";});
-   pair.Click+=(sender,args)=>run(()=>{if(!Owned())throw new InvalidOperationException("กรุณาติดตั้งตัวช่วยก่อน");if(MessageBox.Show(form,"จะเปิดหน้า VisionD เพื่อเข้าสู่ระบบและเทียบรหัส ก่อนกดยืนยันผูกเครื่อง","เปิดขั้นตอนผูกเครื่อง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;LocalHelper.Pair();status.Text=LocalHelper.PairStatus;});
+   pair.Click+=(sender,args)=>run(()=>{PairExplicit();status.Text=LocalHelper.PairStatus;});
    remove.Click+=(sender,args)=>run(()=>{if(MessageBox.Show(form,"ถอนเฉพาะตัวช่วยและการเริ่มอัตโนมัติ? โปรไฟล์และข้อมูลการผูกเครื่องจะคงอยู่ หากกำลังเปิดจากตำแหน่งติดตั้ง ไฟล์โปรแกรมจะเก็บไว้","ถอนการติดตั้ง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;Disable();status.Text=File.Exists(Exe)?"ถอนการตั้งค่าแล้ว ไฟล์ที่กำลังเปิดยังคงอยู่ หากต้องการลบไฟล์ให้ปิดหน้านี้แล้วถอนผ่านไฟล์ Setup ที่ดาวน์โหลด":"ถอนตัวช่วยแล้ว โปรไฟล์และข้อมูลการผูกเครื่องคงอยู่";});
    form.Controls.AddRange(new Control[]{text,install,pair,remove,status});Application.Run(form);return 0;
   }

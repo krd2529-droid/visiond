@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 public static class PairUrlHarness {
  public static void Main(){
-  string id="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
-  var start=VisionDBrowserLauncher.LocalHelper.PairStartInfo(new Dictionary<string,object>{{"pair_id",id}});
-  if(start.FileName!="https://visiondonline.com/launcher-pair#id="+id||!start.UseShellExecute||start.Arguments!="")throw new Exception("exact returned-id shell URL contract");
-  foreach(string value in new[]{"",id.ToUpperInvariant(),id+"\n",id+"&evil=1",id+"#fragment","https://evil.test","00000000-0000-0000-0000-000000000000"}){
-   bool rejected=false;try{VisionDBrowserLauncher.LocalHelper.PairStartInfo(new Dictionary<string,object>{{"pair_id",value}});}catch(InvalidDataException){rejected=true;}if(!rejected)throw new Exception("invalid returned id accepted");
-  }
-  Console.WriteLine("PASS actual native returned pair_id→clean canonical shell URL, strict rejection; no Process.Start/browser/config access");
+  const string uri="visiond-profile://setup/pair";
+  if(!VisionDBrowserLauncher.Program.IsSetupPairUri(uri))throw new Exception("literal setup verb rejected");
+  foreach(string value in new[]{"",uri.ToUpperInvariant(),uri+"\n",uri+"?code=123",uri+"#fragment",uri+"/","https://evil.test"})
+   if(VisionDBrowserLauncher.Program.IsSetupPairUri(value))throw new Exception("noncanonical setup verb accepted");
+  Console.WriteLine("PASS actual native exact setup verb and hostile rejection; no Process.Start/browser/config access (v75 supersedes website shell URL)");
  }
 }

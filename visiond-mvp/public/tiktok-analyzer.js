@@ -247,10 +247,17 @@ async function launcherFetch(url,options={},timeout=5000){
   finally{clearTimeout(timer);launcherControllers.delete(controller)}
 }
 const launcherStatusReads=new Map();
-let launcherReadiness={owner:'',helper:null,expires:0},launcherReadinessRequest=null;
-async function prepareLauncherReadiness(){
-  if(launcherReadinessRequest)return launcherReadinessRequest;const owner=pageViewerId;
-  launcherReadinessRequest=(async()=>{const response=await launcherFetch('/api/launcher/helpers'),data=await response.json();if(owner!==pageViewerId||!pageAuthorized)return null;if(!response.ok)throw new Error('ตรวจสถานะตัวช่วยไม่ได้ กรุณาเข้าสู่ระบบหรือดูหน้าตั้งค่า Helper');let saved='';try{saved=localStorage.getItem('visiond_launcher_helper')||''}catch{}const helper=data.items?.find(h=>h.id===saved)||null;launcherReadiness={owner,helper,expires:Date.now()+30000};return helper})().finally(()=>{launcherReadinessRequest=null});return launcherReadinessRequest;
+let launcherReadiness={owner:'',helper:null,items:[],expires:0,hasMore:false,after:''},launcherReadinessRequest=null;
+function renderLauncherChoices(){
+ const root=$('#browserProfilePanel');if(!root)return;let box=root.querySelector('[data-helper-choice]');if(!box){box=document.createElement('div');box.dataset.helperChoice='';root.appendChild(box)}box.textContent='';
+ if(!launcherReadiness.helper&&launcherReadiness.items?.length){const label=document.createElement('label');label.textContent='เลือก Helper ที่ผูกกับบัญชีนี้ ';const select=document.createElement('select'),empty=document.createElement('option');empty.value='';empty.textContent='เลือกเครื่อง…';select.appendChild(empty);for(const h of launcherReadiness.items){const option=document.createElement('option');option.value=h.id;option.textContent='Helper '+h.id.slice(-8)+' · '+(h.created_at||'');select.appendChild(option)}select.addEventListener('change',()=>{const helper=launcherReadiness.items.find(h=>h.id===select.value);if(!helper||launcherReadiness.owner!==pageViewerId)return;launcherReadiness.helper=helper;try{localStorage.setItem('visiond_launcher_helper',helper.id)}catch{}renderLauncherChoices();setBrowserProfileStatus('เลือกตัวช่วยที่ผูกกับบัญชีแล้ว กดเชื่อมช่องเพื่อตรวจการตอบรับจากเครื่อง')});label.appendChild(select);box.appendChild(label)}
+ if(launcherReadiness.hasMore){const more=document.createElement('button');more.type='button';more.textContent='ดู Helper เพิ่ม';more.addEventListener('click',()=>prepareLauncherReadiness(true,launcherReadiness.nextCursor).catch(e=>setBrowserProfileStatus(e.message,'error')));box.appendChild(more)}
+}
+function launcherRegisteredMessage(){return launcherReadiness.helper?'พบ Helper ที่ผูกกับบัญชีแล้ว กดเชื่อมช่องเพื่อตรวจการตอบรับจริงจากเครื่อง':launcherReadiness.items?.length?'บัญชีนี้มี Helper ที่ผูกแล้ว โปรดเลือกเครื่องด้านบน':'ไม่พบ Helper ที่ผูกกับบัญชี VisionD ที่เข้าสู่ระบบนี้ ตรวจบัญชีหรือไปตั้งค่า Helper';}
+async function prepareLauncherReadiness(force=false,after=''){
+ const owner=pageViewerId,key=owner+':'+after;if(launcherReadinessRequest?.key===key)return launcherReadinessRequest.promise;
+ if(!force&&launcherReadiness.owner===owner&&launcherReadiness.expires>Date.now()&&launcherReadiness.after===after)return launcherReadiness.helper;
+ const pending={key};pending.promise=(async()=>{const response=await launcherFetch('/api/launcher/helpers'+(after?'?after='+encodeURIComponent(after):'')),data=await response.json();if(owner!==pageViewerId||!pageAuthorized||!launcherPageActive||launcherReadinessRequest!==pending)return null;if(!response.ok){launcherReadiness={owner,helper:null,items:[],expires:0};throw new Error('ตรวจสถานะตัวช่วยไม่ได้ กรุณาเข้าสู่ระบบหรือลองรีเฟรชอีกครั้ง')}let saved='';try{saved=localStorage.getItem('visiond_launcher_helper')||''}catch{}const items=Array.isArray(data.items)?data.items:[],helper=items.find(h=>h.id===saved)||(!after&&items.length===1&&!data.has_more?items[0]:null);launcherReadiness={owner,helper,items,hasMore:!!data.has_more,nextCursor:data.next_cursor||'',after,expires:Date.now()+30000};if(helper)try{localStorage.setItem('visiond_launcher_helper',helper.id)}catch{}renderLauncherChoices();return helper})().finally(()=>{if(launcherReadinessRequest===pending)launcherReadinessRequest=null});launcherReadinessRequest=pending;return pending.promise;
 }
 function readLauncherStatus(commandId){
   let pending=launcherStatusReads.get(commandId);
@@ -269,10 +276,10 @@ async function issueProfileOAuth(mode,control){
   }
   if(!pageAuthorized||!commandLauncher||!create&&(!context||String(selectedChannel()?.id)!==channelId)){connectionActionStatus(control,'กรุณารอให้ช่องโหลดเสร็จแล้วลองอีกครั้ง','error');return false}
   if(launcherReadiness.owner!==owner||launcherReadiness.expires<=Date.now()){
-    try{const helper=await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,helper?'ตรวจการผูกเครื่องแล้ว กดเชื่อมอีกครั้งเพื่อเปิด Chrome':'ยังไม่ยืนยันการผูกเครื่องนี้ ไปที่ ติดตั้ง / ตั้งค่า Helper ด้านบน','error')}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,e.message,'error')}return false;
+    try{await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,launcherRegisteredMessage())}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,e.message,'error')}return false;
   }
   const helper=launcherReadiness.helper;
-  if(!helper){connectionActionStatus(control,'ยังไม่ยืนยันการผูกเครื่องนี้ ไปที่ ติดตั้ง / ตั้งค่า Helper ด้านบน','error');return false}
+  if(!helper){connectionActionStatus(control,launcherRegisteredMessage(),'error');return false}
   const attempt={};profileOAuthRequests.add(key);if(control){profileControlAttempts.set(control,attempt);control.setAttribute('aria-busy','true')}
   connectionActionStatus(control,'กำลังเปิด TikTok ใน Chrome ประจำบัญชี…');
   const current=()=>launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context));
@@ -1501,7 +1508,8 @@ $("#newChannel").addEventListener("click",requestNewBrowserProfile);
 $("[data-open-channel-profile]")?.addEventListener("click",event=>issueProfileOAuth('view',event.currentTarget));
 let profileRefreshRequest=null;
 const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return profileRefreshRequest;const fresh=profileHandoffRequests.get('new'),target=fresh&&channelOwnership.unchanged(fresh.revision)?fresh:profileHandoffRequests.get(String(state.selected)),requests=target?[target]:[];profileRefreshRequest=(async()=>{
- if(!requests.length){if(!profileHandoffRequests.size)await loadChannels();return}
+ const owner=pageViewerId,revision=channelOwnership.revision();await prepareLauncherReadiness(true);if(owner!==pageViewerId||!channelOwnership.unchanged(revision))return;
+ if(!requests.length){setBrowserProfileStatus(launcherRegisteredMessage());if(!profileHandoffRequests.size)await loadChannels();return}
  await Promise.all(requests.map(async request=>{
   const response=await readLauncherStatus(request.commandId);if(!response.ok)throw new Error('อ่านสถานะการเชื่อมไม่ได้');const result=await response.json();
   if(profileHandoffRequests.get(request.key)!==request||request.owner!==pageViewerId)return;
