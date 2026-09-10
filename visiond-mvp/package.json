@@ -429,7 +429,8 @@
     "test:v02068": "node scripts/test-v02068-prompt-library.mjs",
     "test:v02069": "node scripts/test-v02069-tiktok-reviewer.mjs",
     "test:v02070": "node scripts/test-v02070.mjs",
-    "test:v02071": "node scripts/test-tiktok-handoff.mjs && node scripts/test-tiktok-handoff-identity-race.mjs && node scripts/test-tiktok-preflight-async.mjs && node scripts/test-v02071.mjs && node scripts/test-browser-profile-launcher.mjs && node scripts/test-browser-profile-client.mjs && node scripts/test-tiktok-profile-binding.mjs && node tools/browser-launcher/trial-fixture.mjs --self-test"
+    "test:v02071": "node scripts/test-tiktok-handoff.mjs && node scripts/test-tiktok-handoff-identity-race.mjs && node scripts/test-tiktok-preflight-async.mjs && node scripts/test-v02071.mjs && node scripts/test-browser-profile-launcher.mjs && node scripts/test-browser-profile-client.mjs && node scripts/test-tiktok-profile-binding.mjs && node tools/browser-launcher/trial-fixture.mjs --self-test",
+    "test:v02072": "node scripts/test-v02072.mjs && node scripts/test-launcher-pages.mjs && node scripts/test-browser-launcher-transport.mjs && node scripts/test-browser-launcher-native-http.mjs && node scripts/test-tiktok-direct-chain.mjs && node scripts/test-tiktok-handoff.mjs && node scripts/test-tiktok-handoff-identity-race.mjs && node scripts/test-browser-profile-launcher.mjs && node scripts/test-tiktok-profile-binding.mjs && node tools/browser-launcher/trial-fixture.mjs --self-test"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

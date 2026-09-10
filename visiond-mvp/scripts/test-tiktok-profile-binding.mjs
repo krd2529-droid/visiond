@@ -41,6 +41,7 @@ class TestD1 {
       CREATE TABLE tiktok_oauth_states(state_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',expires_at TEXT NOT NULL);
     `);
     this.sqlite.exec(migration);
+    this.sqlite.exec("ALTER TABLE tiktok_browser_profile_bindings ADD COLUMN profile_kind TEXT NOT NULL DEFAULT 'slot'");
   }
   prepare(sql) { return new Bound(this, sql); }
   async batch(statements) {

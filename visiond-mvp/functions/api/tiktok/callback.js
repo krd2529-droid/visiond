@@ -3,7 +3,7 @@ import {ensureDatabase} from '../../_schema.js';
 import {ensureTikTokAnalyzerSchema} from '../../_tiktok_analyzer.js';
 import {consumeTikTokState,exchangeTikTokCode,fetchTikTokProfile,prepareTikTokConnection,syncTikTokConnection,tikTokOAuthConfig,tikTokProfileBindingStatement} from '../../_tiktok_oauth.js';
 import {requireD1DataFetchAvailable} from '../../_d1_quota_breaker.js';
-import {consumeHandoff,handoffGuardStatements,handoffCompletion} from '../../_tiktok_handoff.js';
+import {consumeHandoff,handoffGuardStatements,handoffCompletion,prepareHandoffContinuation} from '../../_tiktok_handoff.js';
 
 const back=(status,detail='',channelId='',profileSlotId='')=>{
   const url=new URL('https://visiondonline.com/tiktok-analyzer');
@@ -55,7 +55,9 @@ export async function onRequestGet(ctx){
     if(!await vxRequestAccessStillCurrent(ctx,auth))return done('access_expired','',channelId);
     if(plan.statement)statements.push(plan.statement);
     statements.push(prepared.statement);
-    if(profileSlotId)statements.push(tikTokProfileBindingStatement(ctx.env,{slotId:profileSlotId,userId:auth.user.id,channelId,openId:prepared.openId}));
+    if(profileSlotId)statements.push(tikTokProfileBindingStatement(ctx.env,{slotId:profileSlotId,userId:auth.user.id,channelId,openId:prepared.openId,profileKind:auth.handoff?.profile_kind||'slot'}));
+    const continuation=handoff?await prepareHandoffContinuation(ctx.env,auth,channelId):null;
+    if(continuation)statements.push(...continuation.statements);
     let results=[];
     try{const guards=handoffGuardStatements(ctx.env,auth);results=(await ctx.env.DB.batch([...guards,...statements])).slice(guards.length)}catch(error){
         const failure=String(error?.message||error).toLowerCase();
@@ -66,6 +68,7 @@ export async function onRequestGet(ctx){
     const connectionResult=results[plan.statement?1:0];
     if(plan.statement&&results[0]?.meta?.changes!==1)throw new Error('VX_ACCOUNT_LIMIT');
     if(connectionResult?.meta?.changes!==1)return done('profile_conflict','',channelId);
+    if(continuation)return continuation.response;
     const connection=await ctx.env.DB.prepare("SELECT * FROM tiktok_connections WHERE id=? AND user_id=? AND channel_id=? AND open_id=? AND status='active'").bind(prepared.id,auth.user.id,channelId,prepared.openId).first();if(!connection)return done('channel_unavailable','',channelId);
     if(handoff)return done('connected','',channelId);
     const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_oauth_post_connect_sync');if(blocked)return done('connected','sync_deferred_d1_quota',channelId);await syncTikTokConnection(ctx.env,connection);return done('connected','',channelId);

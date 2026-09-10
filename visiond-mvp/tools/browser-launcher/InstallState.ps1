@@ -2,6 +2,30 @@ $script:VisionDLauncherMarkerVersion = 'VisionD Browser Launcher v1'
 $script:VisionDShellAssociationChangedEvent = [uint32]0x08000000
 $script:VisionDShellAssociationNotifyFlags = [uint32](0x0000 -bor 0x1000)
 
+function Assert-VisionDStartupState {
+    param([AllowEmptyString()][string]$CurrentCommand,[Parameter(Mandatory=$true)][string]$ExpectedCommand,[Parameter(Mandatory=$true)][string]$FileState)
+    if ($CurrentCommand -and ($CurrentCommand -ne $ExpectedCommand -or $FileState -ne 'Owned')) { throw 'The VisionD launcher startup entry is not owned. Nothing was changed.' }
+}
+
+function Get-VisionDOwnedService {
+    param([Parameter(Mandatory=$true)][string]$LauncherPath)
+    $canonicalLauncher = [IO.Path]::GetFullPath($LauncherPath)
+    @(Get-CimInstance Win32_Process -Filter "Name='VisionDBrowserLauncher.exe'" | Where-Object {
+        $_.ExecutablePath -and [IO.Path]::GetFullPath($_.ExecutablePath) -eq $canonicalLauncher -and
+        $_.CommandLine -eq ('"' + $canonicalLauncher + '" --serve')
+    })
+}
+
+function Stop-VisionDOwnedService {
+    param([Parameter(Mandatory=$true)][string]$LauncherPath,[Parameter(Mandatory=$true)][string]$FileState)
+    if ($FileState -ne 'Owned') { return }
+    foreach ($service in @(Get-VisionDOwnedService -LauncherPath $LauncherPath)) {
+        # Re-read the same PID and its exact executable/serve command immediately before stopping.
+        $fresh = @(Get-VisionDOwnedService -LauncherPath $LauncherPath | Where-Object { $_.ProcessId -eq $service.ProcessId })
+        if ($fresh.Count -eq 1) { Stop-Process -Id $fresh[0].ProcessId -ErrorAction Stop; Wait-Process -Id $fresh[0].ProcessId -Timeout 5 -ErrorAction SilentlyContinue }
+    }
+}
+
 function Send-VisionDShellAssociationChanged {
     param([scriptblock]$NotifyOverride)
 

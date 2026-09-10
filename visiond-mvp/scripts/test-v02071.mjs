@@ -1,3 +1,4 @@
+// Historical v71 release contract. v72 direct login is covered by test-v02072.mjs.
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';

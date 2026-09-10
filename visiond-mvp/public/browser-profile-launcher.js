@@ -45,12 +45,27 @@
       if (!uri) { setStatus("ข้อมูลช่องหรือโปรไฟล์ไม่ถูกต้อง จึงไม่ได้เปิด Chrome", "error"); return false; }
       return run(uri, intent === "view" ? "ส่งคำขอเปิด Chrome ประจำช่องแล้ว" : "ส่งคำขอเปิดขั้นตอนเชื่อมบัญชีใน Chrome ประจำช่องแล้ว");
     };
-    const launchHandoff=({id,slot_id,ticket})=>{
-      if(!validUuid(id)||!validUuid(slot_id)||!/^[0-9a-f]{64}$/.test(ticket||''))return false;
-      return run(`visiond-profile://open?mode=handoff&slot_id=${slot_id}&id=${id}&ticket=${ticket}`,"ส่งขั้นตอนอนุญาตไปยัง Chrome โปรไฟล์ที่เลือกแล้ว");
+    const launchHandoff=({id,slot_id,ticket,profile_kind='slot'})=>{
+      if(!validUuid(id)||!validUuid(slot_id)||!['slot','channel'].includes(profile_kind)||!/^[0-9a-f]{64}$/.test(ticket||''))return false;
+      const key=profile_kind+':'+slot_id;if(handoffLocks.has(key))return false;handoffLocks.add(key);
+      try{invoke(`visiond-profile://open?mode=handoff&profile_kind=${profile_kind}&slot_id=${slot_id}&id=${id}&ticket=${ticket}`);return true}
+      catch{setStatus('เปิด Chrome ไม่สำเร็จ กรุณาตรวจ VisionD Browser Launcher','error');return false}
+      finally{setTimeout(()=>handoffLocks.delete(key),1200)}
     };
+    const handoffLocks=new Set();
     return { launchNew, launchExisting, launchHandoff, reopenPending, readPending, clearPending, rememberPending, protocolNew, protocolExisting, validUuid };
   }
 
   window.createVisionDBrowserLauncher = createVisionDBrowserLauncher;
+  window.createVisionDCommandLauncher = ({cryptoApi,openWindow}) => ({
+    openCommand({provider,intent,channel_id=''}){
+      const command_id=cryptoApi.randomUUID();
+      if(!validUuid(command_id)||!['new','reconnect','view'].includes(intent)||!['tiktok','shop'].includes(provider)||intent!=='new'&&!validUuid(channel_id))throw new Error('คำขอโปรไฟล์ไม่ถูกต้อง');
+      const params=new URLSearchParams({command_id});
+      // Synchronous genuine-click bootstrap. With noopener a null return is expected;
+      // only authenticated server status can establish whether the helper started Chrome.
+      openWindow('/launcher-open.html#'+params.toString(),'_blank','noopener,noreferrer');
+      return command_id;
+    }
+  });
 })();

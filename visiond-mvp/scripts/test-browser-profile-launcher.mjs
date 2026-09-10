@@ -16,13 +16,16 @@ const exe = join(work, "VisionDBrowserLauncher.exe");
 const compiler = join(process.env.WINDIR || "C:\\Windows", "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe");
 
 try {
-  execFileSync(compiler, ["/nologo", "/target:exe", "/optimize+", `/out:${exe}`, "tools\\browser-launcher\\Launcher.cs"], { stdio: "pipe" });
+  execFileSync(compiler, ["/nologo", "/target:winexe", "/optimize+", "/r:System.Security.dll", "/r:System.Web.Extensions.dll", `/out:${exe}`, "tools\\browser-launcher\\Launcher.cs"], { stdio: "pipe" });
 
   const inspect = (uri) => spawnSync(exe, ["--inspect", uri], { encoding: "utf8" });
   const a = "74747d05-d182-4745-a0e1-dad444952cf5";
   const b = "3a6c1ca9-260b-4179-9a77-0fff095f0007";
   const slot = "f5a2ae61-e93f-4dd0-8ab8-e594234fcf2a";
   const a1 = inspect(`visiond-profile://open?mode=existing&channel_id=${a}`);
+  const initContract=spawnSync('powershell.exe',['-NoProfile','-Command',`$p=Start-Process -FilePath '${exe.replaceAll("'","''")}' -ArgumentList '--inspect','visiond-profile://open?mode=existing&channel_id=${a}' -WindowStyle Hidden -PassThru -Wait; exit $p.ExitCode`],{encoding:'utf8'});
+  assert.equal(initContract.status,0,'actual GUI-subsystem process completion uses exit code without stdout');
+  assert.doesNotMatch(installSource,/\$metadata|\$portLine/);assert.match(installSource,/Get-NetTCPConnection -State Listen -OwningProcess \$service.Id/);
   const a2 = inspect(`visiond-profile://open?mode=existing&channel_id=${a}`);
   const b1 = inspect(`visiond-profile://open?mode=existing&channel_id=${b}`);
   const n1 = inspect(`visiond-profile://open?mode=new&slot_id=${slot}`);
@@ -73,6 +76,12 @@ try {
   assert.match(handoff.stdout,/target=https:\/\/visiondonline.com\/tiktok-handoff.html/);
   assert.match(handoff.stdout,/target_has_query=false/);assert.doesNotMatch(handoff.stdout,/a{64}/,'inspect must not print capability');
   assert.match(a1.stdout,/target=https:\/\/www.tiktok.com\/login/,'view reuses legacy directory without VisionD login');
+  for(const kind of ['slot','channel']){
+    const direct=inspect(`visiond-profile://open?mode=handoff&profile_kind=${kind}&slot_id=${slot}&id=${a}&ticket=${'a'.repeat(64)}`);
+    assert.equal(direct.status,0);assert.match(direct.stdout,new RegExp(`profile_leaf=${kind}-${slot}`));
+    assert.match(direct.stdout,/target=https:\/\/visiondonline.com\/tiktok-handoff.html/);assert.doesNotMatch(direct.stdout,/a{64}/);
+  }
+  assert.notEqual(inspect(`visiond-profile://open?mode=handoff&profile_kind=evil&slot_id=${slot}&id=${a}&ticket=${'a'.repeat(64)}`).status,0);
 
   assert.match(launcherSource, /UseShellExecute = false/);
   assert.match(launcherSource, /QuoteArgument\("--no-default-browser-check"\)/);
@@ -170,6 +179,11 @@ exit 0
   assert.equal(controller.launchExisting("../../not-a-channel", "", "view"), false);
   assert.equal(controller.launchExisting(b, slot, "evil"), false);
   assert.equal(invoked.length, 4);
+  const directController=create({invoke:uri=>invoked.push(uri),setStatus:()=>{}});
+  const directTicket={id:a,slot_id:a,profile_kind:'channel',ticket:'a'.repeat(64)};
+  assert.equal(directController.launchHandoff(directTicket),true);
+  assert.equal(directController.launchHandoff(directTicket),false,'same physical profile is deduplicated');
+  assert.equal(directController.launchHandoff({...directTicket,id:b,slot_id:b}),true,'A lock must not prevent immediate B dispatch');
 
   for (const cryptoApi of [{}, { randomUUID() { throw new Error("blocked"); } }, { randomUUID: () => "not-a-uuid" }]) {
     const failureMessages = [], failureInvocations = [];
@@ -209,13 +223,12 @@ exit 0
   assert.equal(race.readPending(), slot, "rapid +new must preserve the slot that was actually invoked");
   assert.equal(raceSlots.length, 1, "the locked call must not consume a UUID");
 
-  assert.match(analyzerSource, /browserLauncher\.launchNew\(\)/, "+new must always request a fresh isolated slot");
-  assert.match(analyzerSource, /เปิด TikTok Login ในโปรไฟล์นี้อีกครั้ง/);
-  assert.match(analyzerSource, /ยังไม่ได้ตรวจสถานะล็อกอินหรือการเชื่อม API/);
-  assert.match(analyzerSource, /browserLauncher\.launchHandoff\(body\)/);
+  assert.match(analyzerSource, /requestNewBrowserProfile\(\)\{return routeProfileConnection\('tiktok_new'/, "+new must issue a real fresh server-authorized LoginKit flow");
+  assert.doesNotMatch(analyzerSource, /data-continue-pending|data-restore-profile|createTikTokConnectionPreflight/);
+  assert.match(analyzerSource, /commandLauncher\.openCommand\(/);
   assert.doesNotMatch(analyzerSource, /navigate: \(url\) => location.assign\(url\)/);
-  assert.match(analyzerSource, /launcherContext\?\.slotId\?state\.channels\.find/,
-    "current profile identity must be resolved against any owned channel, not only the selected channel");
+  assert.match(analyzerSource, /issueProfileOAuth\('view',event.currentTarget\)/,
+    "view must use the authenticated command path; native profile-kind parser assertions above still apply");
   assert.match(analyzerSource, /if\(!launcherTargetConsumed&&launcherContext\?\.channelId\)/,
     "existing profile deep links must resolve the exact owner-scoped channel once");
   assert.match(analyzerSource, /actualSlot!==launcherContext\.slotId/,

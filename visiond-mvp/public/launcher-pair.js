@@ -1,0 +1,9 @@
+(() => {
+ const pair_id=new URLSearchParams(location.hash.slice(1)).get('id');history.replaceState(null,'',location.pathname);
+ const status=document.getElementById('status'),button=document.getElementById('confirm'),match=document.getElementById('match');let prepared=null;
+ const post=async(action,body)=>{const r=await fetch('/api/launcher/'+action,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),data=await r.json();if(!r.ok)throw new Error(data.error||'ผูกตัวช่วยไม่สำเร็จ');return data};
+ if(!/^[0-9a-f-]{36}$/.test(pair_id||'')){status.textContent='กรุณาเริ่ม --pair จากตัวช่วยบนเครื่องนี้ก่อน';return}
+ post('pair-prepare',{pair_id}).then(data=>{prepared=data;document.getElementById('code').textContent='รหัสยืนยัน: '+data.pair_code;document.getElementById('replace').textContent=data.replace_id?'จะเพิกถอนและแทนตัวช่วยเดิม '+data.replace_id:'เป็นการผูกตัวช่วยใหม่';status.textContent='ตรวจรหัสกับตัวช่วยบนเครื่องก่อนยืนยัน อย่ายืนยันลิงก์ที่ผู้อื่นส่งมา';button.disabled=!match.checked}).catch(e=>status.textContent=e.message);
+ match.addEventListener('change',()=>button.disabled=!prepared||!match.checked);
+ button.addEventListener('click',async()=>{if(!prepared||!match.checked)return;button.disabled=true;try{const data=await post('pair-confirm',{pair_id,confirm_nonce:prepared.confirm_nonce,pair_code:prepared.pair_code,replace_id:prepared.replace_id});try{localStorage.setItem('visiond_launcher_helper',data.helper_id)}catch{}status.textContent='ผูกตัวช่วยแล้ว กลับไปกดเชื่อม TikTok ที่ช่องที่ต้องการได้ หากแท็บนี้ไม่ปิดอัตโนมัติ สามารถปิดได้เลย';prepared=null;match.disabled=true;button.textContent='ปิดแท็บนี้';button.disabled=false;button.addEventListener('click',()=>window.close());setTimeout(()=>window.close(),800)}catch(e){status.textContent=e.message;button.disabled=false}});
+})();

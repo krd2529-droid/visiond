@@ -1,3 +1,4 @@
+// Historical v71 panel/preflight snapshot. Current direct-action client contract is test-v02072.mjs.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";

@@ -100,10 +100,10 @@ export async function saveTikTokConnection(env,userId,channelId,token,profile){
   return prepared.id;
 }
 
-export function tikTokProfileBindingStatement(env,{slotId,userId,channelId,openId}){
-  return env.DB.prepare(`INSERT INTO tiktok_browser_profile_bindings(slot_id,user_id,channel_id,provider_open_id)
-    VALUES(?,?,?,?) ON CONFLICT(slot_id) DO UPDATE SET user_id=excluded.user_id,channel_id=excluded.channel_id,provider_open_id=excluded.provider_open_id`)
-    .bind(slotId,userId,channelId,openId);
+export function tikTokProfileBindingStatement(env,{slotId,userId,channelId,openId,profileKind='slot'}){
+  return env.DB.prepare(`INSERT INTO tiktok_browser_profile_bindings(slot_id,user_id,channel_id,provider_open_id,profile_kind)
+    VALUES(?,?,?,?,?) ON CONFLICT(slot_id) DO UPDATE SET user_id=excluded.user_id,channel_id=excluded.channel_id,provider_open_id=excluded.provider_open_id,profile_kind=excluded.profile_kind`)
+    .bind(slotId,userId,channelId,openId,profileKind);
 }
 
 async function activeToken(env,connection,fetchImpl=fetch){

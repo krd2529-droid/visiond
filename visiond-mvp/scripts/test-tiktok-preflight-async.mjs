@@ -1,3 +1,4 @@
+// Historical v71 preflight-only snapshot; v72 has no intermediary dialog.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('../public/tiktok-analyzer.js',import.meta.url),'utf8');
