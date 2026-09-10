@@ -9,7 +9,7 @@ const code=source.slice(source.indexOf('function connectionActionStatus('),sourc
 function fixture(){
  const pending=[],opened=[],statuses=[],timers=[],events={};let serial=0;
  const s={Set,Map,WeakMap,Date,Promise,JSON,AbortController,encodeURIComponent,window:{addEventListener:(name,fn)=>events[name]=fn},setTimeout:fn=>{timers.push(fn);return fn},clearTimeout:fn=>{const i=timers.indexOf(fn);if(i>=0)timers.splice(i,1)},pageAuthorized:true,pageViewerId:'1',selected:A,rev:0,selectedChannel:()=>({id:s.selected}),$:()=>null,setBrowserProfileStatus:(...a)=>statuses.push(a),commandLauncher:{openCommand:body=>{opened.push(body);return (++serial===1?A:B)}},fetch:async(url,options)=>url.endsWith('/helpers')?{ok:true,json:async()=>({items:[{id:A}]})}:url==='/api/tiktok/handoff'?{ok:true,json:async()=>({command_id:JSON.parse(options.body).command_id})}:new Promise(resolve=>pending.push({url,resolve})),channelOwnership:{capture:()=>({channelId:s.selected,generation:s.rev}),revision:()=>s.rev,unchanged:r=>r===s.rev,current:c=>c.channelId===s.selected&&c.generation===s.rev}};
- vm.createContext(s);vm.runInContext(code+';this.run=issueProfileOAuth;this.requests=profileHandoffRequests;this.readStatus=readLauncherStatus;',s);
+ vm.createContext(s);vm.runInContext(code+';this.run=issueProfileOAuth;this.requests=profileHandoffRequests;this.readStatus=readLauncherStatus;launcherReadiness={owner:pageViewerId,helper:{id:"'+A+'"},expires:Date.now()+30000};this.unready=()=>{launcherReadiness={owner:"",helper:null,expires:0}};',s);
  const reply=(request,body={status:'process_started'},ok=true)=>request.resolve({ok,json:async()=>body});
  return{s,pending,opened,statuses,reply,timers,events};
 }
@@ -32,6 +32,17 @@ function fixture(){
  assert.equal(launcher.openCommand({provider:'tiktok',intent:'new'}),A,'noopener null is not interpreted as failure');assert.equal(opens[0][2],'noopener,noreferrer');assert.match(opens[0][0],/^\/launcher-open\.html#/);assert.doesNotMatch(opens[0][0],/ticket|secret|visiond-profile:/);
 }
 console.log('PASS v72 synchronous noopener command bootstrap, null return, direct new/view, per-channel dedup, Map/WeakMap ownership, stale status and bounded teardown');
+for(const status of [200,401,503]){
+ const f=fixture();f.s.unready();let calls=0;f.s.fetch=async url=>{calls++;assert.equal(url,'/api/launcher/helpers');return{ok:status===200,status,json:async()=>({items:[]})}};
+ assert.equal(await f.s.run('shop'),false);assert.equal(f.opened.length,0);assert.equal(f.s.requests.size,0);assert.equal(calls,1);
+ assert.equal(await f.s.run('shop'),false);assert.equal(f.opened.length,0,'unready retry cannot create orphan bootstrap');
+}
+{
+ const f=fixture();f.s.unready();f.s.localStorage={getItem:()=>A};
+ assert.equal(await f.s.run('shop'),false);assert.equal(f.opened.length,0,'readiness await does not open popup');
+ const run=f.s.run('shop');assert.equal(f.opened.length,1,'second genuine ready click opens synchronously');await new Promise(resolve=>setImmediate(resolve));f.reply(f.pending[0]);assert.equal(await run,true);
+}
+console.log('PASS empty/401/503 readiness creates no command or orphan, ready second click preserves activation');
 for(const bodyHung of [false,true]){
  const f=fixture();f.s.fetch=async()=>bodyHung?{ok:true,json:()=>new Promise(()=>{})}:new Promise(()=>{});
  const run=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.timers.length,1);f.timers[0]();assert.equal(await run,false,'hung headers/body settles at deadline');assert.equal(await f.s.run('shop'),false);assert.equal(f.opened.length,1,'timeout preserves ambiguous request instead of relaunching');

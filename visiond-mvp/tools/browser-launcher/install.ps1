@@ -27,7 +27,7 @@ if (-not (Test-Path -LiteralPath $compiler)) { throw 'The required Windows C# co
 
 New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 if (Test-Path -LiteralPath $candidatePath) { Remove-Item -LiteralPath $candidatePath -Force }
-& $compiler /nologo /target:winexe /optimize+ /r:System.Security.dll /r:System.Web.Extensions.dll /out:$candidatePath (Join-Path $PSScriptRoot 'Launcher.cs')
+& $compiler /nologo /target:winexe /optimize+ /r:System.Security.dll /r:System.Web.Extensions.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Management.dll /out:$candidatePath (Join-Path $PSScriptRoot 'Launcher.cs') (Join-Path $PSScriptRoot 'Setup.cs')
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $candidatePath)) { throw 'Launcher compilation failed.' }
 Stop-VisionDOwnedService -LauncherPath $launcherPath -FileState $fileState
 Move-Item -LiteralPath $candidatePath -Destination $launcherPath -Force

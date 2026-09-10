@@ -16,7 +16,7 @@ const exe = join(work, "VisionDBrowserLauncher.exe");
 const compiler = join(process.env.WINDIR || "C:\\Windows", "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe");
 
 try {
-  execFileSync(compiler, ["/nologo", "/target:winexe", "/optimize+", "/r:System.Security.dll", "/r:System.Web.Extensions.dll", `/out:${exe}`, "tools\\browser-launcher\\Launcher.cs"], { stdio: "pipe" });
+  execFileSync(compiler, ["/nologo", "/target:winexe", "/optimize+", "/r:System.Security.dll", "/r:System.Web.Extensions.dll", "/r:System.Windows.Forms.dll", "/r:System.Drawing.dll", "/r:System.Management.dll", `/out:${exe}`, "tools\\browser-launcher\\Launcher.cs", "tools\\browser-launcher\\Setup.cs"], { stdio: "pipe" });
 
   const inspect = (uri) => spawnSync(exe, ["--inspect", uri], { encoding: "utf8" });
   const a = "74747d05-d182-4745-a0e1-dad444952cf5";

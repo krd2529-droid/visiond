@@ -1,6 +1,16 @@
 /
   Cache-Control: no-cache, no-store, must-revalidate
 
+/downloads/visiond-helper/0.20.73/VisionD-Helper-Setup.exe
+  Content-Type: application/octet-stream
+  Content-Disposition: attachment; filename="VisionD-Helper-Setup-0.20.73.exe"
+  X-Content-Type-Options: nosniff
+
+/downloads/visiond-helper/0.20.73/VisionD-Helper-Source.zip
+  Content-Type: application/zip
+  Content-Disposition: attachment; filename="VisionD-Helper-Source-0.20.73.zip"
+  X-Content-Type-Options: nosniff
+
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 

@@ -37,6 +37,14 @@ Install migrations 0095–0098 in order and upgrade/pair the owned helper before
 
 ## Install and uninstall
 
+End users: visit `https://visiondonline.com/launcher-setup.html`, validate the version/SHA256 manifest, download the frozen **VisionD-Helper-Setup.exe**, and double-click it. This is a Windows x64 .NET Framework 4.8 application. Choose Install/Update explicitly, then Pair explicitly; neither runs just by opening Setup. The source ZIP includes the repository MIT LICENSE. These release bytes are unsigned: Windows or organization policy can block them. Do not disable security settings to proceed. No byte-reproducible-build claim is made.
+
+The GUI installer checks exact prior ownership, backs up the old owned binary, verifies initialization and the new process's single loopback listener, and restores the old binary/service on failure. Registry rollback restores only values written by this attempt when they still match; unrelated values are preserved. Opening the already-installed executable never overwrites its executing image: Install checks/starts its service. To update the bytes, use the new downloaded Setup. Uninstall from the installed executable disables owned startup/protocol/service but retains the executing file; close it and uninstall using the downloaded Setup to remove that file. Profiles and Transport are always retained.
+
+The Analyzer caches only the explicitly paired helper ID's owner-scoped readiness. If readiness is unknown, its first click checks without opening a tab; the next explicit click may proceed. An unpaired/error state shows Setup and creates no command or wait tab. An active server row alone never proves a service is running on this machine. Pairing authenticates first and offers login/retry/expiry recovery; sessionStorage retains only a short-lived non-authorizing pair ID.
+
+Maintainers can build frozen public bytes with `node tools/browser-launcher/build-release.mjs`; it compiles and archives without executing Setup. The following source-install scripts remain maintenance alternatives, not required user steps.
+
 Run `install.ps1` as the current user. It compiles with the bundled Windows .NET Framework C# compiler and registers `visiond-profile` under `HKCU` only if the scheme is absent or already owned by this exact install. No download or administrator access is required.
 
 Run `uninstall.ps1` to stop only the verified owned listener and remove its exact owned Run entry, protocol registration, executable and marker. It preserves Profiles and DPAPI Transport configuration for reinstall. It never stops unrelated processes or deletes browser data. Replacing the paired helper explicitly revokes its previous backend key.

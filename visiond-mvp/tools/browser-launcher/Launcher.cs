@@ -40,10 +40,11 @@ namespace VisionDBrowserLauncher
             @"\Avisiond-profile://open/?\?mode=new&slot_id=([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})\z",
             RegexOptions.CultureInvariant);
 
-        private static int Main(string[] args)
+        [STAThread] private static int Main(string[] args)
         {
             try
             {
+                if (args.Length == 0) return Setup.Show();
                 if (args.Length == 1 && args[0] == "--init") return LocalHelper.Initialize();
                 if (args.Length == 1 && args[0] == "--serve") return LocalHelper.Serve();
                 if (args.Length == 1 && args[0] == "--pair") return LocalHelper.Pair();
@@ -279,18 +280,19 @@ namespace VisionDBrowserLauncher
             using(var response=(HttpWebResponse)request.GetResponse())
             {if(response.StatusCode!=HttpStatusCode.OK)throw new InvalidDataException();using(var reader=new StreamReader(response.GetResponseStream())){char[] buffer=new char[8193];int n=0,count;while(n<buffer.Length&&(count=reader.Read(buffer,n,buffer.Length-n))>0)n+=count;if(n>8192)throw new InvalidDataException();return Json.Deserialize<Dictionary<string,object>>(new string(buffer,0,n));}}
         }
+        internal static string PairStatus="";
         internal static int Pair()
         {
             Load();return PairLoaded();
         }
         private static int PairLoaded()
         {
-            var stage=Api("pair-stage",config);if(Field(stage,"paired")=="True"){Console.WriteLine("This helper is already paired.");return 0;}
+            var stage=Api("pair-stage",config);if(Field(stage,"paired")=="True"){PairStatus="ตัวช่วยนี้ผูกบัญชีแล้ว กลับ VisionD ด้วยบัญชีและเบราว์เซอร์ที่ยืนยันไว้ หากยังเชื่อมไม่ได้ให้ตรวจสถานะในหน้าเว็บไซต์";Console.WriteLine("This helper is already paired.");return 0;}
             // --pair is an explicit setup action, never invoked automatically by install/serve.
             Console.WriteLine("Match this installation code before confirming: "+Field(config,"pair_code"));
             Console.WriteLine("Open VisionD and click: ยืนยันผูกตัวช่วยเครื่องนี้");
             var start=new ProcessStartInfo(Origin+"/launcher-pair.html#id="+Field(config,"helper_id"));start.UseShellExecute=true;Process.Start(start);
-            PairCodeMessage(IntPtr.Zero,"รหัสตัวช่วยเครื่องนี้: "+Field(config,"pair_code")+"\nตรวจว่าตรงกับหน้า VisionD ก่อนกดยืนยันผูกตัวช่วยเครื่องนี้", "VisionD · ยืนยันตัวช่วย",0);return 0;
+            PairCodeMessage(IntPtr.Zero,"รหัสตัวช่วยเครื่องนี้: "+Field(config,"pair_code")+"\nตรวจว่าตรงกับหน้า VisionD ก่อนกดยืนยันผูกตัวช่วยเครื่องนี้", "VisionD · ยืนยันตัวช่วย",0);PairStatus="ส่งคำขอเปิดหน้าผูกเครื่องแล้ว ทำตามรหัสในหน้า VisionD การปิดกล่องรหัสยังไม่ใช่การยืนยันผูกเครื่อง";return 0;
         }
         [System.Runtime.InteropServices.DllImport("user32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode,EntryPoint="MessageBoxW")]
         private static extern int PairCodeMessage(IntPtr owner,string text,string caption,uint type);

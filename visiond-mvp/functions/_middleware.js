@@ -41,7 +41,7 @@ export async function onRequest(ctx){
   const headers=new Headers(response.headers);
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
   headers.set('x-frame-options','SAMEORIGIN');
-  if(['/launcher-open','/launcher-open.html','/launcher-pair','/launcher-pair.html'].includes(url.pathname)){
+  if(['/launcher-open','/launcher-open.html','/launcher-pair','/launcher-pair.html','/launcher-setup','/launcher-setup.html'].includes(url.pathname)){
     headers.set('referrer-policy','no-referrer');headers.set('x-frame-options','DENY');headers.set('cache-control','private, no-store');
     headers.set('content-security-policy',"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
   }

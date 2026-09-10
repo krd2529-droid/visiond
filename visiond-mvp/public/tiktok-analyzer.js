@@ -90,7 +90,7 @@ const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launche
 let launcherContext=launcherContextFromQuery;
 let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "";
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, analysisRuns: [], runPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
-$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label></small></div><div class="browser-profile-actions"><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิด TikTok ของช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
+$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label></small></div><div class="browser-profile-actions"><a class="vds-btn vds-btn--secondary" href="/launcher-setup.html">ติดตั้ง / ตั้งค่า Helper</a><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิด TikTok ของช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
 const commandLauncher=window.createVisionDCommandLauncher?.({cryptoApi:window.crypto,openWindow:(...args)=>window.open(...args)})||null;
@@ -247,6 +247,11 @@ async function launcherFetch(url,options={},timeout=5000){
   finally{clearTimeout(timer);launcherControllers.delete(controller)}
 }
 const launcherStatusReads=new Map();
+let launcherReadiness={owner:'',helper:null,expires:0},launcherReadinessRequest=null;
+async function prepareLauncherReadiness(){
+  if(launcherReadinessRequest)return launcherReadinessRequest;const owner=pageViewerId;
+  launcherReadinessRequest=(async()=>{const response=await launcherFetch('/api/launcher/helpers'),data=await response.json();if(owner!==pageViewerId||!pageAuthorized)return null;if(!response.ok)throw new Error('ตรวจสถานะตัวช่วยไม่ได้ กรุณาเข้าสู่ระบบหรือดูหน้าตั้งค่า Helper');let saved='';try{saved=localStorage.getItem('visiond_launcher_helper')||''}catch{}const helper=data.items?.find(h=>h.id===saved)||null;launcherReadiness={owner,helper,expires:Date.now()+30000};return helper})().finally(()=>{launcherReadinessRequest=null});return launcherReadinessRequest;
+}
 function readLauncherStatus(commandId){
   let pending=launcherStatusReads.get(commandId);
   if(!pending){pending=launcherFetch('/api/launcher/status?command_id='+encodeURIComponent(commandId)).finally(()=>launcherStatusReads.delete(commandId));launcherStatusReads.set(commandId,pending)}
@@ -263,16 +268,17 @@ async function issueProfileOAuth(mode,control){
     return false;
   }
   if(!pageAuthorized||!commandLauncher||!create&&(!context||String(selectedChannel()?.id)!==channelId)){connectionActionStatus(control,'กรุณารอให้ช่องโหลดเสร็จแล้วลองอีกครั้ง','error');return false}
+  if(launcherReadiness.owner!==owner||launcherReadiness.expires<=Date.now()){
+    try{const helper=await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,helper?'ตรวจการผูกเครื่องแล้ว กดเชื่อมอีกครั้งเพื่อเปิด Chrome':'ยังไม่ยืนยันการผูกเครื่องนี้ ไปที่ ติดตั้ง / ตั้งค่า Helper ด้านบน','error')}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,e.message,'error')}return false;
+  }
+  const helper=launcherReadiness.helper;
+  if(!helper){connectionActionStatus(control,'ยังไม่ยืนยันการผูกเครื่องนี้ ไปที่ ติดตั้ง / ตั้งค่า Helper ด้านบน','error');return false}
   const attempt={};profileOAuthRequests.add(key);if(control){profileControlAttempts.set(control,attempt);control.setAttribute('aria-busy','true')}
   connectionActionStatus(control,'กำลังเปิด TikTok ใน Chrome ประจำบัญชี…');
   const current=()=>launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context));
   try{
     const commandId=commandLauncher.openCommand({provider,intent:create?'new':mode==='view'?'view':'reconnect',channel_id:channelId});
     const pending={commandId,revision,owner,key};profileOAuthPendingKeys.add(key);profileOAuthPending=true;profileHandoffRequests.set(key,pending);
-    const helpersResponse=await launcherFetch('/api/launcher/helpers'),helpers=await helpersResponse.json();if(!current())return false;
-    if(!helpersResponse.ok)throw new Error('ตรวจตัวช่วยไม่ได้');
-    let saved='';try{saved=localStorage.getItem('visiond_launcher_helper')||''}catch{}
-    const helper=helpers.items?.find(h=>h.id===saved)||(helpers.items?.length===1?helpers.items[0]:null);if(!helper)throw new Error('ยังไม่ได้ผูกตัวช่วยเครื่องนี้ โปรดเริ่ม --pair และยืนยันรหัสหนึ่งครั้ง');
     const issued=await launcherFetch('/api/tiktok/handoff',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({helper_id:helper.id,command_id:commandId,provider,intent:create?'new':mode==='view'?'view':'reconnect',channel_id:channelId})}),issueBody=await issued.json();if(!current())return false;
     if(!issued.ok||issueBody.command_id!==commandId)throw new Error(issueBody.error||'สร้างคำขอไม่สำเร็จ กรุณาตรวจสถานะก่อนลองใหม่');
     const pollDeadline=Date.now()+25000;
@@ -1781,6 +1787,7 @@ async function bootstrapReviewerAccess(){
       else{const saved=JSON.parse(sessionStorage.getItem(key)||'null');launcherContext=saved&&String(saved.ownerId)===pageViewerId&&['new','existing'].includes(saved.mode)&&(!saved.slotId||browserProfileUuid.test(saved.slotId))&&(!saved.channelId||browserProfileUuid.test(saved.channelId))?Object.freeze({mode:saved.mode,slotId:saved.slotId||'',channelId:saved.channelId||''}):null}
     }catch{if(!launcherContextFromQuery)launcherContext=null}
     pageAuthorized=true;
+    prepareLauncherReadiness().catch(()=>{});
     await loadChannels();
   }catch(error){
     $('#channels').innerHTML=`<p class="shop-error">${escapeHtml(error.message||'เปิดระบบ VX ไม่สำเร็จ')}</p><button type="button" onclick="location.reload()">ลองใหม่</button>`;
