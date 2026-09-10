@@ -90,7 +90,7 @@ const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launche
 let launcherContext=launcherContextFromQuery;
 let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "";
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, analysisRuns: [], runPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
-$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label></small></div><div class="browser-profile-actions"><a class="vds-btn vds-btn--secondary" href="/launcher-setup.html">ติดตั้ง / ตั้งค่า Helper</a><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิด TikTok ของช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
+$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label></small></div><div class="browser-profile-actions"><a class="vds-btn vds-btn--secondary" href="/launcher-setup">ติดตั้ง / ตั้งค่า Helper</a><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิด TikTok ของช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
 const commandLauncher=window.createVisionDCommandLauncher?.({cryptoApi:window.crypto,openWindow:(...args)=>window.open(...args)})||null;
@@ -231,6 +231,11 @@ function connectionActionStatus(control,text,type=''){
   let node=control?.parentElement?.querySelector('[data-connection-action-status]');
   if(!node&&control){node=document.createElement('p');node.dataset.connectionActionStatus='';node.setAttribute('role','status');node.className='browser-profile-status';control.insertAdjacentElement('afterend',node)}
   if(node){node.textContent=text;node.dataset.type=type}else setBrowserProfileStatus(text,type);
+  return node;
+}
+function helperRecoveryStatus(control,text){
+ const node=connectionActionStatus(control,text+' หากยังไม่ติดตั้งหรือ Helper ไม่ทำงาน ให้เปิดขั้นตอนติดตั้งด้านล่าง โดยยังเก็บคำขอเดิมไว้','error')||$('[data-browser-profile-status]');
+ if(node?.appendChild){const link=document.createElement('a');link.href='/launcher-setup';link.textContent='ดาวน์โหลด / ติดตั้ง / แก้ไข Helper';link.className='vds-btn vds-btn--secondary';link.dataset.helperRecovery='';node.appendChild(document.createElement('br'));node.appendChild(link)}
 }
 function routeProfileConnection(mode,control){return issueProfileOAuth(mode,control||$(mode==='tiktok_new'?'#newChannel':mode==='shop'?'#connectTikTokShop':'#connectTikTok'))}
 function consumeLegacyConnectionHint(){handoffOpened=true;setBrowserProfileStatus(requestedConnectMode==='tiktok_new'?'กด + ช่องใหม่ เพื่อเข้าสู่ TikTok ในโปรไฟล์ใหม่':'เปิดช่องที่ระบุแล้ว กดปุ่มเชื่อม TikTok ของช่องนี้เพื่อดำเนินการ')}
@@ -269,17 +274,17 @@ async function issueProfileOAuth(mode,control){
   const channelId=create?'':context?.channelId||'',key=create?'new':channelId;
   if(profileOAuthRequests.has(key))return false;
   if(profileOAuthPendingKeys.has(key)){
-    connectionActionStatus(control,'มีคำขอเชื่อมที่เปิดแล้ว กรุณาทำต่อใน Chrome หรือกดลองใหม่หากเปิดไม่สำเร็จ');
+    helperRecoveryStatus(control,'มีคำขอเชื่อมที่เปิดแล้ว ตรวจหน้าต่างเดิมและสถานะคำขอก่อนเปิดซ้ำ');
     const node=control?.parentElement?.querySelector('[data-connection-action-status]');
-    if(node){const retry=document.createElement('button');retry.type='button';retry.textContent='ตรวจสถานะก่อนลองใหม่';retry.addEventListener('click',async()=>{const pending=profileHandoffRequests.get(key);if(!pending||retry.disabled)return;retry.disabled=true;try{const r=await launcherFetch('/api/launcher/cancel',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({command_id:pending.commandId})});if(!r.ok)throw new Error('ตัวช่วยรับคำขอแล้วหรือสถานะยังไม่แน่นอน กรุณาตรวจหน้าต่างเดิมก่อนและยังไม่เปิดซ้ำ');if(profileHandoffRequests.get(key)===pending&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context))){profileOAuthPendingKeys.delete(key);profileHandoffRequests.delete(key);connectionActionStatus(control,'คำขอเดิมสิ้นสุดแล้ว กดเชื่อมอีกครั้งเพื่อเปิดใหม่ หากมีหน้าต่างเดิมอยู่ให้ใช้หน้าต่างนั้นก่อน')}}catch(e){if(channelOwnership.unchanged(revision))connectionActionStatus(control,e.message,'error')}finally{retry.disabled=false}});node.appendChild(retry)}
+    if(node){const retry=document.createElement('button');retry.type='button';retry.textContent='ตรวจสถานะก่อนลองใหม่';retry.addEventListener('click',async()=>{const pending=profileHandoffRequests.get(key);if(!pending||retry.disabled)return;retry.disabled=true;try{const r=await launcherFetch('/api/launcher/cancel',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({command_id:pending.commandId})});if(!r.ok)throw new Error('ตัวช่วยรับคำขอแล้วหรือสถานะยังไม่แน่นอน กรุณาตรวจหน้าต่างเดิมก่อนและยังไม่เปิดซ้ำ');if(profileHandoffRequests.get(key)===pending&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context))){profileOAuthPendingKeys.delete(key);profileHandoffRequests.delete(key);connectionActionStatus(control,'คำขอเดิมสิ้นสุดแล้ว กดเชื่อมอีกครั้งเพื่อเปิดใหม่ หากมีหน้าต่างเดิมอยู่ให้ใช้หน้าต่างนั้นก่อน')}}catch(e){if(channelOwnership.unchanged(revision))helperRecoveryStatus(control,e.message)}finally{retry.disabled=false}});node.appendChild(retry)}
     return false;
   }
   if(!pageAuthorized||!commandLauncher||!create&&(!context||String(selectedChannel()?.id)!==channelId)){connectionActionStatus(control,'กรุณารอให้ช่องโหลดเสร็จแล้วลองอีกครั้ง','error');return false}
   if(launcherReadiness.owner!==owner||launcherReadiness.expires<=Date.now()){
-    try{await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,launcherRegisteredMessage())}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))connectionActionStatus(control,e.message,'error')}return false;
+    try{await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))(launcherReadiness.helper?connectionActionStatus(control,launcherRegisteredMessage()):helperRecoveryStatus(control,launcherRegisteredMessage()))}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))helperRecoveryStatus(control,e.message)}return false;
   }
   const helper=launcherReadiness.helper;
-  if(!helper){connectionActionStatus(control,launcherRegisteredMessage(),'error');return false}
+  if(!helper){helperRecoveryStatus(control,launcherRegisteredMessage());return false}
   const attempt={};profileOAuthRequests.add(key);if(control){profileControlAttempts.set(control,attempt);control.setAttribute('aria-busy','true')}
   connectionActionStatus(control,'กำลังเปิด TikTok ใน Chrome ประจำบัญชี…');
   const current=()=>launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context));
@@ -298,7 +303,7 @@ async function issueProfileOAuth(mode,control){
       if(['failed','unknown','cancelled'].includes(body.status)||body.expired)throw new Error(body.status==='unknown'?'สถานะการเปิดไม่แน่นอน กรุณาตรวจหน้าต่างเดิมก่อนลองใหม่':'ตัวช่วยเปิดไม่สำเร็จ กรุณาตรวจการติดตั้งและสถานะคำขอ');
     }
     throw new Error('ยังไม่พบการยืนยันจากตัวช่วย ตรวจว่า helper ทำงานและผูกเครื่องแล้ว จากนั้นกดตรวจสถานะก่อนลองใหม่');
-  }catch(error){if(current())connectionActionStatus(control,error.message,'error');return false}
+  }catch(error){if(current())helperRecoveryStatus(control,error.message);return false}
   finally{profileOAuthRequests.delete(key);if(control&&profileControlAttempts.get(control)===attempt){profileControlAttempts.delete(control);control.removeAttribute('aria-busy')}}
 }
 function updateBrowserProfilePanel(){

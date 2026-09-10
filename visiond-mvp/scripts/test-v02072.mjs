@@ -6,6 +6,7 @@ assert.doesNotMatch(source,/createTikTokConnectionPreflight|data-continue-pendin
 assert.match(source,/consumeLegacyConnectionHint/);assert.doesNotMatch(source,/browserLauncher\.launchHandoff/);
 const A='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',B='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const code=source.slice(source.indexOf('function connectionActionStatus('),source.indexOf('const tiktokShopNavigation'));
+export {fixture};
 function fixture(){
  const pending=[],opened=[],statuses=[],timers=[],events={};let serial=0;
  const s={Set,Map,WeakMap,Date,Promise,JSON,AbortController,encodeURIComponent,window:{addEventListener:(name,fn)=>events[name]=fn},setTimeout:fn=>{timers.push(fn);return fn},clearTimeout:fn=>{const i=timers.indexOf(fn);if(i>=0)timers.splice(i,1)},pageAuthorized:true,pageViewerId:'1',selected:A,rev:0,selectedChannel:()=>({id:s.selected}),$:()=>null,setBrowserProfileStatus:(...a)=>statuses.push(a),commandLauncher:{openCommand:body=>{opened.push(body);return (++serial===1?A:B)}},fetch:async(url,options)=>url.endsWith('/helpers')?{ok:true,json:async()=>({items:[{id:A}]})}:url==='/api/tiktok/handoff'?{ok:true,json:async()=>({command_id:JSON.parse(options.body).command_id})}:new Promise(resolve=>pending.push({url,resolve})),channelOwnership:{capture:()=>({channelId:s.selected,generation:s.rev}),revision:()=>s.rev,unchanged:r=>r===s.rev,current:c=>c.channelId===s.selected&&c.generation===s.rev}};
