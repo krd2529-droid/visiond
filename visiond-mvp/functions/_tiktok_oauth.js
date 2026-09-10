@@ -4,7 +4,11 @@ import {encryptChannelValue,decryptChannelValue} from './_channel_crypto.js';
 const clean=(value,max=1000)=>String(value??'').trim().slice(0,max);
 const integer=value=>Math.max(0,Number(value)||0);
 const redirectDefault='https://visiondonline.com/api/tiktok/callback';
-const scopes=['user.info.basic','user.info.profile','user.info.stats','video.list'];
+const scopes=['user.info.basic','video.list'];
+const optionalScopes=['user.info.profile','user.info.stats'];
+export const tikTokGrantedScopes=value=>[...new Set((Array.isArray(value)?value:String(value||'').split(/[\s,]+/)).filter(x=>[...scopes,...optionalScopes].includes(x)))];
+export function tikTokCapabilities(value){const granted=tikTokGrantedScopes(value);return{basic:granted.includes('user.info.basic'),profile:granted.includes('user.info.profile'),stats:granted.includes('user.info.stats'),videos:granted.includes('video.list')}}
+export function tikTokVisibleProfile(row){const capabilities=tikTokCapabilities(row.scopes);return{...row,capabilities,reconnect_required:!capabilities.basic,...(!capabilities.basic?{display_name:null,avatar_url:null,status:'reconnect_required'}:{}),...(!capabilities.basic||!capabilities.profile?{profile_url:null,bio:null,is_verified:null}:{}),...(!capabilities.basic||!capabilities.stats?{follower_count:null,following_count:null,likes_count:null,video_count:null}:{})}}
 const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export const canonicalTikTokProfileSlot=value=>{
@@ -14,7 +18,7 @@ export const canonicalTikTokProfileSlot=value=>{
 
 export function tikTokOAuthConfig(env={}){
   const clientKey=clean(env.TIKTOK_CLIENT_KEY,200),clientSecret=clean(env.TIKTOK_CLIENT_SECRET,500),redirectUri=clean(env.TIKTOK_REDIRECT_URI,1000)||redirectDefault;
-  return {clientKey,clientSecret,redirectUri,configured:Boolean(clientKey&&clientSecret),scopes:[...scopes]};
+  return {clientKey,clientSecret,redirectUri,configured:Boolean(clientKey&&clientSecret),scopes:[...scopes,...tikTokGrantedScopes(env.TIKTOK_APPROVED_OPTIONAL_SCOPES).filter(x=>optionalScopes.includes(x))]};
 }
 
 export async function createTikTokState(env,userId,channelId='',profileSlotId=''){
@@ -67,8 +71,10 @@ async function apiJson(url,token,options={},fetchImpl=fetch){
   if(!response.ok||payload.error?.code&&payload.error.code!=='ok')throw new Error(`TIKTOK_API_${response.status}_${clean(payload.error?.code||'FAILED',100)}`);return payload.data||{};
 }
 
-export async function fetchTikTokProfile(token,fetchImpl=fetch){
-  const fields='open_id,union_id,avatar_url,display_name,profile_deep_link,bio_description,is_verified,follower_count,following_count,likes_count,video_count';
+export async function fetchTikTokProfile(token,fetchImpl=fetch,grantedScopes=''){
+  const capabilities=tikTokCapabilities(grantedScopes);
+  if(!capabilities.basic)throw new Error('TIKTOK_BASIC_SCOPE_REQUIRED');
+  const fields=['open_id','union_id','avatar_url','display_name',...(capabilities.profile?['profile_deep_link','bio_description','is_verified']:[]),...(capabilities.stats?['follower_count','following_count','likes_count','video_count']:[])].join(',');
   const data=await apiJson(`https://open.tiktokapis.com/v2/user/info/?fields=${encodeURIComponent(fields)}`,token,{},fetchImpl);return data.user||{};
 }
 
@@ -109,11 +115,14 @@ export function tikTokProfileBindingStatement(env,{slotId,userId,channelId,openI
 async function activeToken(env,connection,fetchImpl=fetch){
   if(Date.parse(connection.access_expires_at)>Date.now()+60000)return decryptChannelValue(env,connection.access_token_ciphertext);
   const config=tikTokOAuthConfig(env),refresh=await decryptChannelValue(env,connection.refresh_token_ciphertext),token=await refreshTikTokToken(config,refresh,fetchImpl),accessCipher=await encryptChannelValue(env,token.access_token),refreshCipher=await encryptChannelValue(env,token.refresh_token||refresh);
-  await env.DB.prepare("UPDATE tiktok_connections SET access_token_ciphertext=?,refresh_token_ciphertext=?,scopes=?,access_expires_at=?,refresh_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(accessCipher,refreshCipher,clean(token.scope||connection.scopes,500),isoAfter(token.expires_in),token.refresh_expires_in?isoAfter(token.refresh_expires_in):connection.refresh_expires_at,connection.id).run();return token.access_token;
+  const granted=token.scope===undefined?connection.scopes:token.scope;
+  await env.DB.prepare("UPDATE tiktok_connections SET access_token_ciphertext=?,refresh_token_ciphertext=?,scopes=?,access_expires_at=?,refresh_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(accessCipher,refreshCipher,clean(granted,500),isoAfter(token.expires_in),token.refresh_expires_in?isoAfter(token.refresh_expires_in):connection.refresh_expires_at,connection.id).run();connection.scopes=granted;return token.access_token;
 }
 
 export async function syncTikTokConnection(env,connection,fetchImpl=fetch){
-  const token=await activeToken(env,connection,fetchImpl),[profile,videos]=await Promise.all([fetchTikTokProfile(token,fetchImpl),fetchTikTokVideos(token,fetchImpl)]),statements=[];
+  const token=await activeToken(env,connection,fetchImpl),capabilities=tikTokCapabilities(connection.scopes);
+  if(!capabilities.basic)throw new Error('TIKTOK_BASIC_SCOPE_REQUIRED');
+  const [profile,videos]=await Promise.all([fetchTikTokProfile(token,fetchImpl,connection.scopes),capabilities.videos?fetchTikTokVideos(token,fetchImpl):Promise.resolve([])]),statements=[];
   statements.push(env.DB.prepare("UPDATE tiktok_connections SET display_name=?,avatar_url=?,profile_url=?,bio=?,is_verified=?,follower_count=?,following_count=?,likes_count=?,video_count=?,last_synced_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(clean(profile.display_name,200),clean(profile.avatar_url),clean(profile.profile_deep_link),clean(profile.bio_description,2000),profile.is_verified?1:0,integer(profile.follower_count),integer(profile.following_count),integer(profile.likes_count),integer(profile.video_count),connection.id));
   for(const item of videos)statements.push(env.DB.prepare(`INSERT INTO tiktok_connection_videos(connection_id,video_id,title,description,create_time,duration,cover_url,embed_link,view_count,like_count,comment_count,share_count) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(connection_id,video_id) DO UPDATE SET title=excluded.title,description=excluded.description,create_time=excluded.create_time,duration=excluded.duration,cover_url=excluded.cover_url,embed_link=excluded.embed_link,view_count=excluded.view_count,like_count=excluded.like_count,comment_count=excluded.comment_count,share_count=excluded.share_count,synced_at=CURRENT_TIMESTAMP`).bind(connection.id,clean(item.id,200),clean(item.title,500),clean(item.video_description,2000),integer(item.create_time),integer(item.duration),clean(item.cover_image_url),clean(item.embed_link),integer(item.view_count),integer(item.like_count),integer(item.comment_count),integer(item.share_count)));
   if(statements.length)await env.DB.batch(statements);return {profile,videos};

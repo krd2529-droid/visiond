@@ -435,7 +435,8 @@
     "test:v02074": "npm run test:v02073 && node scripts/test-v02074.mjs",
     "test:v02075": "npm run test:v02074 && node scripts/test-v02075.mjs && node scripts/test-v02075-client.mjs",
     "test:v02076": "npm run test:v02075 && node scripts/test-v02076.mjs && node scripts/test-v02076-install.mjs",
-    "test:v02077": "npm run test:v02076 && node scripts/test-v02077.mjs"
+    "test:v02077": "npm run test:v02076 && node scripts/test-v02077.mjs",
+    "test:v02078": "npm run test:v02077 && node scripts/test-v02078.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

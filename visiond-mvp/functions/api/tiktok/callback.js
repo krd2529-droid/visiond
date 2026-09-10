@@ -44,7 +44,7 @@ export async function onRequestGet(ctx){
   let channelId=stateRow.channel_id;
   try{
     const config=tikTokOAuthConfig(ctx.env);if(!config.configured)return done('not_configured','',channelId);
-    const token=await exchangeTikTokCode(config,code),profile=await fetchTikTokProfile(token.access_token);if(!profile.open_id)return done('profile_failed','',channelId);
+    const token=await exchangeTikTokCode(config,code),profile=await fetchTikTokProfile(token.access_token,fetch,token.scope);if(!profile.open_id)return done('profile_failed','',channelId);
     if(!await vxRequestAccessStillCurrent(ctx,auth))return done('access_expired','',stateRow.channel_id);
     const plan=await channelPlanForProfile(ctx,auth,channelId,profile,auth.vx.account_limit);if(!plan)return done('channel_unavailable','',stateRow.channel_id);channelId=plan.channelId;
     if(!await vxRequestAccessStillCurrent(ctx,auth))return done('access_expired','',channelId);

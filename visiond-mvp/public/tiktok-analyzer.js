@@ -939,7 +939,7 @@ async function loadChannels() {
     let selectedExists = state.channels.some((channel) => String(channel.id) === String(state.selected)),selectedLoaded=false;
     if(!selectedExists&&browserProfileUuid.test(String(state.selected||""))){try{selectedLoaded=Boolean(await selectChannel(state.selected))}catch{state.selected=null}}
     selectedExists=selectedLoaded||state.channels.some((channel) => String(channel.id) === String(state.selected));
-    if (!selectedExists) state.selected = state.channels.find((channel) => channel.follower_count !== null && channel.follower_count !== void 0)?.id || state.channels[0]?.id || null;
+    if (!selectedExists) state.selected = state.channels.find((channel) => channel.tiktok_connected ?? (channel.follower_count !== null && channel.follower_count !== void 0))?.id || state.channels[0]?.id || null;
     renderChannels();
     if (state.selected&&!selectedLoaded) await selectChannel(state.selected).catch(()=>{});
     if (requestedConnectMode === "tiktok_new" && !handoffOpened) consumeLegacyConnectionHint();
@@ -950,12 +950,12 @@ async function loadChannels() {
   }
 }
 function renderChannels() {
-  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? "ยังไม่เชื่อม TikTok" : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("")+(state.channelPagination?.has_more?'<button type="button" data-load-more-channels>โหลดช่องเพิ่มเติม</button>':'') : '<p class="hint">ยังไม่มีช่อง กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
+  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? (x.tiktok_connected ? "เชื่อมข้อมูลพื้นฐาน · ยังไม่มีสิทธิ์สถิติ" : "ยังไม่เชื่อม TikTok") : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("")+(state.channelPagination?.has_more?'<button type="button" data-load-more-channels>โหลดช่องเพิ่มเติม</button>':'') : '<p class="hint">ยังไม่มีช่อง กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
   renderAnalysisChannelPicker();
   updateBrowserProfilePanel();
 }
 function renderAnalysisChannelPicker(){
-  const box=$("#analysisChannelOptions"),connected=state.channels.filter(channel=>channel.follower_count!==null&&channel.follower_count!==void 0);
+  const box=$("#analysisChannelOptions"),connected=state.channels.filter(channel=>channel.tiktok_connected ?? (channel.follower_count!==null&&channel.follower_count!==void 0));
   if(!box)return;
   box.innerHTML=connected.length?connected.map(channel=>`<button type="button" class="analysis-channel-option ${channel.id===state.selected?"active":""}" data-analysis-channel="${escapeHtml(channel.id)}" role="option" aria-selected="${channel.id===state.selected}">${channel.avatar_url?`<img src="${escapeHtml(channel.avatar_url)}" alt="">`:""}<span><b>${escapeHtml(channel.name)}</b><small>${channel.id===state.selected?"กำลังดูช่องนี้":"เลือกดูช่องนี้"}</small></span></button>`).join(""):'<p class="hint">ยังไม่มีช่องที่เชื่อม TikTok กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
 }
@@ -1159,16 +1159,22 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
     if (loadSeq !== state.connectionLoadSeq || !channelOwnership.current(context)) return null;
   }
   if (!data.configured && !connection) {
-    $("#tiktokConnectionState").innerHTML = "<b>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 TikTok API</b><p>\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21 Sandbox Client key \u0E41\u0E25\u0E30 Client secret \u0E43\u0E19 Cloudflare \u0E01\u0E48\u0E2D\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E1A\u0E31\u0E0D\u0E0A\u0E35</p>";
+    $("#tiktokConnectionState").innerHTML = "<b>ยังไม่ได้ตั้งค่า TikTok API</b><p>ผู้ดูแลต้องตั้งค่า Login Kit client key และ secret ของ environment ที่ได้รับอนุมัติ</p>";
     return shopConnection;
   }
   if (!connection) {
-    $("#tiktokConnectionState").innerHTML = "<b>\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E17\u0E32\u0E07\u0E01\u0E32\u0E23\u0E08\u0E32\u0E01 TikTok</b><p>\u0E14\u0E36\u0E07\u0E42\u0E1B\u0E23\u0E44\u0E1F\u0E25\u0E4C \u0E2A\u0E16\u0E34\u0E15\u0E34 \u0E41\u0E25\u0E30\u0E27\u0E34\u0E14\u0E35\u0E42\u0E2D\u0E2A\u0E32\u0E18\u0E32\u0E23\u0E13\u0E30\u0E02\u0E2D\u0E07\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E17\u0E35\u0E48\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15 \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E43\u0E0A\u0E49\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E35\u0E49</p>";
+    $("#tiktokConnectionState").innerHTML = "<b>เชื่อมข้อมูลพื้นฐานและวิดีโอที่ได้รับอนุญาต</b><p>โปรไฟล์เสริมและสถิติเป็นสิทธิ์เพิ่มเติม ไม่จำเป็นต่อการบันทึกบัญชีพื้นฐาน</p>";
     $("#tiktokVideoSummary").innerHTML = "";
     return shopConnection;
   }
-  $("#tiktokConnectionState").innerHTML = `<b>เชื่อมบัญชี TikTok ของช่องนี้แล้ว</b><p>ข้อมูลโปรไฟล์และสถิติแสดงอยู่ในการ์ดช่องด้านซ้าย · ซิงก์ล่าสุด ${escapeHtml(connection.last_synced_at || "ยังไม่เคย")}</p>`;
-  $("#tiktokVideoSummary").innerHTML = `<p>\u0E19\u0E33\u0E40\u0E02\u0E49\u0E32\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E04\u0E25\u0E34\u0E1B\u0E41\u0E25\u0E49\u0E27 ${videos.length} \u0E04\u0E25\u0E34\u0E1B \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E43\u0E0A\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19\u0E43\u0E19\u0E01\u0E32\u0E23\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C</p>`;
+  const granted = String(connection.scopes || '').split(/[\s,]+/);
+  if (!granted.includes('user.info.basic')) {
+    $("#tiktokConnectionState").innerHTML = '<b>ต้องเชื่อม TikTok ใหม่</b><p>ไม่มีสิทธิ์ข้อมูลพื้นฐานแล้ว จึงยังใช้ข้อมูลบัญชีนี้ไม่ได้</p>';
+    $("#tiktokVideoSummary").innerHTML = '';
+    return shopConnection;
+  }
+  $("#tiktokConnectionState").innerHTML = `<b>เชื่อมบัญชี TikTok ของช่องนี้แล้ว</b><p>ข้อมูลพื้นฐาน: เชื่อมแล้ว · วิดีโอ: ${granted.includes('video.list')?'ได้รับสิทธิ์':'ยังไม่ได้รับสิทธิ์'} · ข้อมูลเสริมโปรไฟล์: ${granted.includes('user.info.profile')?'ได้รับสิทธิ์':'ยังไม่ได้รับสิทธิ์'} · สถิติผู้ติดตาม: ${granted.includes('user.info.stats')?'ได้รับสิทธิ์':'ยังไม่ได้รับสิทธิ์'} · ซิงก์ล่าสุด ${escapeHtml(connection.last_synced_at || "ยังไม่เคย")}</p>`;
+  $("#tiktokVideoSummary").innerHTML = granted.includes("video.list") ? `<p>รายการคลิปที่บันทึกไว้ ${videos.length} คลิป</p>` : "<p>ยังไม่ได้รับสิทธิ์วิดีโอ — บัญชีพื้นฐานยังเชื่อมอยู่ และจะไม่นำคลิปเก่ามาใช้วิเคราะห์</p>";
   return shopConnection;
 }
 const renderResultMonthlyCorrectionBase = renderResult;

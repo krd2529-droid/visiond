@@ -2,7 +2,7 @@ import {json} from '../../../_lib.js';
 import {requireVxUser} from '../../../_vx_access.js';
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
-import { revokeTikTokToken, syncTikTokConnection } from "../../../_tiktok_oauth.js";
+import { revokeTikTokToken, syncTikTokConnection, tikTokCapabilities, tikTokVisibleProfile } from "../../../_tiktok_oauth.js";
 import { decryptChannelValue } from "../../../_channel_crypto.js";
 import { addTikTokShopShowcaseProducts, normalizeTikTokOrderProducts, removeTikTokShopShowcaseProducts, syncTikTokShopCreator } from "../../../_tiktok_shop_api.js";
 import { tikTokShopCreatorCapabilities } from "../../../_tiktok_shop_oauth.js";
@@ -41,7 +41,7 @@ const parsed = (value) => {
   return Object.entries(currencies).map(([currency, value]) => ({ currency, total_30: Number(value.total30.toFixed(2)), daily: Object.entries(value.byDay).sort(([a], [b]) => b.localeCompare(a)).map(([date, amount]) => ({ date, amount: Number(amount.toFixed(2)) })), channels: Object.entries(value.channels).sort(([,a], [,b]) => b.amount-a.amount).map(([channel_id, item]) => ({ channel_id, channel: item.channel, amount: Number(item.amount.toFixed(2)) })) }));
 };
 export { commissionDashboard };
-const publicConnection = (row) => ({ id: row.id, channel_id: row.channel_id, display_name: row.display_name, avatar_url: row.avatar_url, profile_url: row.profile_url, bio: row.bio, is_verified: Boolean(row.is_verified), follower_count: Number(row.follower_count) || 0, following_count: Number(row.following_count) || 0, likes_count: Number(row.likes_count) || 0, video_count: Number(row.video_count) || 0, scopes: row.scopes, status: row.status, last_synced_at: row.last_synced_at });
+const publicConnection = (row) => tikTokVisibleProfile({ id: row.id, channel_id: row.channel_id, display_name: row.display_name, avatar_url: row.avatar_url, profile_url: row.profile_url, bio: row.bio, is_verified: Boolean(row.is_verified), follower_count: Number(row.follower_count) || 0, following_count: Number(row.following_count) || 0, likes_count: Number(row.likes_count) || 0, video_count: Number(row.video_count) || 0, scopes: row.scopes, status: row.status, last_synced_at: row.last_synced_at });
 const shiftDate = (date, days) => {
   const [y, m, d] = date.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) + days * 864e5).toISOString().slice(0, 10);
@@ -67,7 +67,7 @@ async function onRequestGet(ctx) {
   const url = new URL(ctx.request.url), channelId = clean(url.searchParams.get("channel_id")), range = dateRange(url);
   const connections = (await ctx.env.DB.prepare(`SELECT * FROM tiktok_connections WHERE user_id=? AND status='active' AND (?='' OR channel_id=?) ORDER BY updated_at DESC`).bind(auth.user.id, channelId, channelId).all()).results || [];
   let videos = [];
-  if (channelId && connections[0]) videos = (await ctx.env.DB.prepare("SELECT video_id,title,description,create_time,duration,cover_url,embed_link,view_count,like_count,comment_count,share_count,synced_at FROM tiktok_connection_videos WHERE connection_id=? ORDER BY create_time DESC LIMIT 100").bind(connections[0].id).all()).results || [];
+  if (channelId && connections[0] && tikTokCapabilities(connections[0].scopes).basic && tikTokCapabilities(connections[0].scopes).videos) videos = (await ctx.env.DB.prepare("SELECT video_id,title,description,create_time,duration,cover_url,embed_link,view_count,like_count,comment_count,share_count,synced_at FROM tiktok_connection_videos WHERE connection_id=? ORDER BY create_time DESC LIMIT 100").bind(connections[0].id).all()).results || [];
   const shopConnections = (await ctx.env.DB.prepare(`SELECT id,channel_id,open_id,scopes,status,creator_username,creator_avatar_url,selection_region,last_synced_at,last_sync_error,created_at,updated_at FROM tiktok_shop_creator_connections WHERE user_id=? AND status='active' AND (?='' OR channel_id=?) ORDER BY updated_at DESC`).bind(auth.user.id, channelId, channelId).all()).results || [];
   let shopProducts = [], shopOrders = [], shopGrowthOrders = [];
   if (channelId && shopConnections[0]) {
