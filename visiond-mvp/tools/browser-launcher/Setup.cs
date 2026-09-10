@@ -6,13 +6,13 @@ using System.Management;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Microsoft.Win32;
-[assembly:System.Reflection.AssemblyVersion("0.20.75.0")]
-[assembly:System.Reflection.AssemblyFileVersion("0.20.75.0")]
+[assembly:System.Reflection.AssemblyVersion("0.20.76.0")]
+[assembly:System.Reflection.AssemblyFileVersion("0.20.76.0")]
 [assembly:System.Reflection.AssemblyProduct("VisionD Helper")]
 
 namespace VisionDBrowserLauncher {
  internal static class Setup {
-  internal const string Version="0.20.75";
+  internal const string Version="0.20.76";
   private const string Marker="VisionD Browser Launcher v1";
   private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VisionD","BrowserLauncher");
   private static readonly string Exe=Path.Combine(Root,"VisionDBrowserLauncher.exe");
@@ -70,22 +70,31 @@ namespace VisionDBrowserLauncher {
    }
   }
   private static Process Start(string argument){return Process.Start(new ProcessStartInfo(Exe,argument){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden});}
+  internal sealed class StartupFailure:InvalidOperationException {
+   internal readonly int ExitCode;internal readonly bool Occupied;
+   internal StartupFailure(int code,bool occupied):base("ตัวช่วยหยุดก่อนพร้อม (exit="+code+")"+(occupied?" พอร์ตที่ตั้งไว้ยังถูกใช้งาน กดซ่อมพอร์ตเพื่อยืนยันเครื่องใหม่":" ยังไม่มีหลักฐานว่าพอร์ตถูกใช้ กรุณาตรวจข้อผิดพลาดก่อนซ่อม")){ExitCode=code;Occupied=occupied;}
+  }
+  internal static bool NeedsRepair;
+  internal static bool CanKeepDegraded(bool owned,bool serviceRunning,Exception error){var failure=error as StartupFailure;return owned&&!serviceRunning&&failure!=null&&failure.ExitCode==48&&failure.Occupied;}
   private static void Ready(Process service){
+   ReadyOnPort(service,LocalHelper.ConfiguredPort());
+  }
+  internal static void ReadyOnPort(Process service,int configuredPort){
    for(int attempt=0;attempt<20;attempt++){
-    service.Refresh();if(service.HasExited)throw new InvalidOperationException("ตัวช่วยเริ่มไม่สำเร็จ อาจมีโปรแกรมใช้พอร์ตเดิม");
+    service.Refresh();if(service.HasExited)throw new StartupFailure(service.ExitCode,!LocalHelper.PortAvailable(configuredPort));
     using(var search=new ManagementObjectSearcher(@"root\StandardCimv2","SELECT LocalAddress,LocalPort FROM MSFT_NetTCPConnection WHERE State=2 AND OwningProcess="+service.Id)){
-     var rows=search.Get();if(rows.Count==1)foreach(ManagementObject row in rows){int port=Convert.ToInt32(row["LocalPort"]);if(Convert.ToString(row["LocalAddress"])=="127.0.0.1"&&port>=49152&&port<=65535)return;throw new InvalidOperationException("ที่อยู่ตัวช่วยไม่ผ่านการตรวจสอบ");}
+     var rows=search.Get();if(rows.Count==1)foreach(ManagementObject row in rows){int port=Convert.ToInt32(row["LocalPort"]);if(Convert.ToString(row["LocalAddress"])=="127.0.0.1"&&port==configuredPort&&port>=49152&&port<=65535)return;throw new InvalidOperationException("ที่อยู่ตัวช่วยไม่ผ่านการตรวจสอบ");}
     }
     System.Threading.Thread.Sleep(100);
    }
    throw new InvalidOperationException("ยังยืนยันพอร์ตของตัวช่วยไม่ได้");
   }
   private static void Install(){
-   bool owned=Owned();CheckRegistry(owned);string source=Process.GetCurrentProcess().MainModule.FileName;
+   NeedsRepair=false;bool owned=Owned();CheckRegistry(owned);string source=Process.GetCurrentProcess().MainModule.FileName;
    if(String.Equals(source,Exe,StringComparison.OrdinalIgnoreCase)){
     if(!owned)throw new InvalidOperationException("ต้องติดตั้งจากไฟล์ดาวน์โหลดที่ตรวจสอบแล้ว");
     bool running=false;using(var search=new ManagementObjectSearcher("SELECT ProcessId,ExecutablePath,CommandLine FROM Win32_Process WHERE Name='VisionDBrowserLauncher.exe'"))foreach(ManagementObject row in search.Get())if(IsService(row)){Ready(Process.GetProcessById(Convert.ToInt32(row["ProcessId"])));running=true;break;}
-    Process created=null;var repair=new List<Action>();try{if(!running){created=Start("--serve");Ready(created);}WriteRegistration(repair);NotifyRegistry();}catch{try{for(int i=repair.Count-1;i>=0;i--)repair[i]();NotifyRegistry();}finally{if(created!=null)StopCreated(created);}throw;}finally{if(created!=null)created.Dispose();}return;
+    Process created=null;var repair=new List<Action>();try{if(!running){created=Start("--serve");try{Ready(created);}catch(Exception error){if(!CanKeepDegraded(owned,HasOwnedService(),error))throw;NeedsRepair=true;}}WriteRegistration(repair);NotifyRegistry();}catch{try{for(int i=repair.Count-1;i>=0;i--)repair[i]();NotifyRegistry();}finally{if(created!=null)StopCreated(created);}throw;}finally{if(created!=null)created.Dispose();}return;
    }
    Directory.CreateDirectory(Root);string backup=Path.Combine(Root,"setup-previous.exe"),candidate=Path.Combine(Root,"setup-candidate.exe");
    if(File.Exists(backup)||File.Exists(candidate))throw new InvalidOperationException("พบไฟล์กู้คืนจากการติดตั้งก่อนหน้า กรุณาติดต่อ VisionD ก่อนแก้ไข");
@@ -95,29 +104,42 @@ namespace VisionDBrowserLauncher {
     if(owned){stopped=HasOwnedService();StopOwned();File.Move(Exe,backup);}File.Move(candidate,Exe);swapped=true;
     File.WriteAllLines(Owner,new[]{Marker,"sha256="+expected});
     using(var init=Start("--init")){if(!init.WaitForExit(10000)){init.Kill();init.WaitForExit(5000);throw new InvalidOperationException("เตรียมข้อมูลตัวช่วยหมดเวลา");}if(init.ExitCode!=0)throw new InvalidOperationException("เตรียมข้อมูลตัวช่วยไม่สำเร็จ");}
-    service=Start("--serve");Ready(service);
+    service=Start("--serve");try{Ready(service);}catch(Exception error){if(!CanKeepDegraded(owned,HasOwnedService(),error))throw;NeedsRepair=true;}
     WriteRegistration(undo);NotifyRegistry();
     if(owned)File.Delete(backup);
-   }catch{
+   }catch(Exception failure){try{
     if(service!=null)StopCreated(service);
     if(swapped&&File.Exists(Exe))File.Delete(Exe);
     if(owned&&File.Exists(backup)){File.Move(backup,Exe);File.WriteAllText(Owner,oldMarker);}
     else if(!owned&&File.Exists(Owner))File.Delete(Owner);
     try{for(int index=undo.Count-1;index>=0;index--)undo[index]();NotifyRegistry();}finally{if(owned&&stopped&&File.Exists(Exe))Ready(Start("--serve"));}
-    throw;
+    }catch(Exception rollback){throw new InvalidOperationException("ติดตั้งไม่สำเร็จ: "+failure.Message+"; การกู้คืนยังไม่พร้อม: "+rollback.Message);}throw;
    }finally{if(File.Exists(candidate))File.Delete(candidate);if(service!=null)service.Dispose();}
+  }
+  private static void Repair(){
+   if(!Owned())throw new InvalidOperationException("ติดตั้งรุ่นใหม่นี้ก่อนซ่อม");CheckRegistry(true);
+   if(HasOwnedService())throw new InvalidOperationException("ยังมีตัวช่วยเดิมทำงานอยู่ ไม่หยุดหรือเปลี่ยนข้อมูลอัตโนมัติ");
+   if(LocalHelper.HasRepairCandidate()||(!LocalHelper.AwaitingRepairStart()&&!LocalHelper.PortAvailable(LocalHelper.ConfiguredPort()))){
+    if(!LocalHelper.RepairPort())return;
+   }
+   // After confirmation the old backend key is revoked; no rollback to that key.
+   Process created=null;try{created=Start("--serve");Ready(created);LocalHelper.CompleteRepairStartup();NeedsRepair=false;LocalHelper.PairStatus="ซ่อมและตรวจตัวช่วยพร้อมแล้ว กลับ VisionD และรีเฟรชสถานะช่อง";}
+   catch(Exception e){if(created!=null)StopCreated(created);LocalHelper.PairStatus="ยังเริ่มตัวช่วยไม่ได้ ข้อมูลที่ยืนยันแล้วคงอยู่ กดซ่อมอีกครั้งเพื่อตรวจหรือดำเนินการต่อ: "+e.Message;throw new InvalidOperationException(LocalHelper.PairStatus);}
+   finally{if(created!=null)created.Dispose();}
   }
   private static void Disable(){if(!Owned())return;CheckRegistry(true);StopOwned();using(var run=Registry.CurrentUser.OpenSubKey(RunKey,true))if(run!=null&&Convert.ToString(run.GetValue("VisionDBrowserLauncher",""))==ServeCommand)run.DeleteValue("VisionDBrowserLauncher");using(var key=Registry.CurrentUser.OpenSubKey(ProtocolKey))if(key!=null)Registry.CurrentUser.DeleteSubKeyTree(ProtocolKey);if(RegistryValue(UninstallKey,"UninstallString")=="\""+Exe+"\"")Registry.CurrentUser.DeleteSubKeyTree(UninstallKey);if(!String.Equals(Process.GetCurrentProcess().MainModule.FileName,Exe,StringComparison.OrdinalIgnoreCase)){File.Delete(Exe);File.Delete(Owner);}NotifyRegistry();}
   [STAThread] internal static int Show(){
-   Application.EnableVisualStyles();var form=new Form{Text="VisionD Helper "+Version,Width=560,Height=340,StartPosition=FormStartPosition.CenterScreen,MaximizeBox=false};
+   Application.EnableVisualStyles();var form=new Form{Text="VisionD Helper "+Version,Width=560,Height=400,StartPosition=FormStartPosition.CenterScreen,MaximizeBox=false};
    var text=new Label{Left=20,Top=20,Width=500,Height=90,Text="ตัวช่วย Windows สำหรับ Chrome แยกบัญชี TikTok\nติดตั้งเฉพาะผู้ใช้ Windows นี้ ไม่คัดลอกคุกกี้หรือเปลี่ยนโปรไฟล์เดิม\nไฟล์นี้ยังไม่มีลายเซ็นผู้เผยแพร่ ตรวจแหล่งดาวน์โหลดและ SHA256 จาก VisionD ก่อนติดตั้ง"};
    var install=new Button{Left=20,Top=120,Width=240,Height=42,Text="ติดตั้ง / อัปเดตตัวช่วย"};var pair=new Button{Left=280,Top=120,Width=240,Height=42,Text="ผูกเครื่องกับ VisionD"};
-   var remove=new Button{Left=20,Top=178,Width=500,Height=38,Text="ถอนการติดตั้ง / หยุดตัวช่วย"};var status=new Label{Left=20,Top=235,Width=500,Height=65,AutoSize=false};
-   Action<Action> run=action=>{install.Enabled=pair.Enabled=remove.Enabled=false;try{RunExclusive(action);}catch(Exception e){status.Text="ไม่สำเร็จ: "+e.Message;}finally{install.Enabled=pair.Enabled=remove.Enabled=true;}};
-   install.Click+=(sender,args)=>run(()=>{if(MessageBox.Show(form,"ติดตั้ง / อัปเดตเฉพาะตัวช่วย VisionD ของผู้ใช้ Windows นี้? โปรไฟล์เดิมจะคงอยู่","ยืนยันติดตั้ง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;Install();status.Text="ติดตั้งและตรวจตัวช่วยแล้ว กดผูกเครื่องเพื่อดำเนินการต่อ";});
+   var repairPort=new Button{Left=20,Top=173,Width=500,Height=38,Text="ซ่อมพอร์ต / ยืนยันเครื่องใหม่"};
+   var remove=new Button{Left=20,Top=219,Width=500,Height=38,Text="ถอนการติดตั้ง / หยุดตัวช่วย"};var status=new Label{Left=20,Top=272,Width=500,Height=80,AutoSize=false};
+   Action<Action> run=action=>{install.Enabled=pair.Enabled=remove.Enabled=repairPort.Enabled=false;try{RunExclusive(action);}catch(Exception e){status.Text="ไม่สำเร็จ: "+e.Message;}finally{install.Enabled=pair.Enabled=remove.Enabled=repairPort.Enabled=true;}};
+   install.Click+=(sender,args)=>run(()=>{if(MessageBox.Show(form,"ติดตั้ง / อัปเดตเฉพาะตัวช่วย VisionD ของผู้ใช้ Windows นี้? โปรไฟล์เดิมจะคงอยู่","ยืนยันติดตั้ง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;Install();status.Text=NeedsRepair?"ติดตั้งไฟล์และการตั้งค่าแล้ว แต่ตัวช่วยยังไม่พร้อม พอร์ตเดิมถูกใช้งาน กดซ่อมพอร์ต / ยืนยันเครื่องใหม่":"ติดตั้งและตรวจตัวช่วยแล้ว กดผูกเครื่องเพื่อดำเนินการต่อ";});
+   repairPort.Click+=(sender,args)=>run(()=>{if(MessageBox.Show(form,"ซ่อมพอร์ตโดยขอรหัสใหม่และยืนยันแทนตัวช่วยเดิมในหน้า VisionD ที่เปิดอยู่? ก่อนยืนยันข้อมูลเดิมจะคงอยู่ ไม่ปิด Chrome หรือโปรแกรมอื่น","ยืนยันซ่อมพอร์ต",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;Repair();status.Text=LocalHelper.PairStatus;});
    pair.Click+=(sender,args)=>run(()=>{PairExplicit();status.Text=LocalHelper.PairStatus;});
    remove.Click+=(sender,args)=>run(()=>{if(MessageBox.Show(form,"ถอนเฉพาะตัวช่วยและการเริ่มอัตโนมัติ? โปรไฟล์และข้อมูลการผูกเครื่องจะคงอยู่ หากกำลังเปิดจากตำแหน่งติดตั้ง ไฟล์โปรแกรมจะเก็บไว้","ถอนการติดตั้ง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;Disable();status.Text=File.Exists(Exe)?"ถอนการตั้งค่าแล้ว ไฟล์ที่กำลังเปิดยังคงอยู่ หากต้องการลบไฟล์ให้ปิดหน้านี้แล้วถอนผ่านไฟล์ Setup ที่ดาวน์โหลด":"ถอนตัวช่วยแล้ว โปรไฟล์และข้อมูลการผูกเครื่องคงอยู่";});
-   form.Controls.AddRange(new Control[]{text,install,pair,remove,status});Application.Run(form);return 0;
+   form.Controls.AddRange(new Control[]{text,install,pair,repairPort,remove,status});Application.Run(form);return 0;
   }
  }
 }

@@ -263,6 +263,15 @@ namespace VisionDBrowserLauncher
             using(var file=new FileStream(ConfigPath,FileMode.CreateNew,FileAccess.Write,FileShare.None)){file.Write(cipher,0,cipher.Length);file.Flush(true);}
             Console.WriteLine("helper_id="+Field(config,"helper_id"));Console.WriteLine("port="+port);return 0;
         }
+        internal static int ConfiguredPort(){Load();return Int32.Parse(Field(config,"port"));}
+        internal static bool HasRepairCandidate(){return File.Exists(Path.Combine(Root,"helper.repair.dpapi"));}
+        internal static bool AwaitingRepairStart(){Load();return config.ContainsKey("repair_active_hash");}
+        internal static void CompleteRepairStartup(){Load();if(!config.ContainsKey("repair_active_hash"))return;config.Remove("repair_active_hash");config.Remove("replaces_helper_id");string pending=Path.Combine(Root,"helper.started.dpapi");byte[] data=ProtectedData.Protect(Encoding.UTF8.GetBytes(Json.Serialize(config)),null,DataProtectionScope.CurrentUser);using(var file=new FileStream(pending,FileMode.Create,FileAccess.Write,FileShare.None)){file.Write(data,0,data.Length);file.Flush(true);}File.Replace(pending,ConfigPath,null);}
+        internal static bool PortAvailable(int port){
+            var listener=new TcpListener(IPAddress.Loopback,port);listener.ExclusiveAddressUse=true;
+            try{listener.Start();return true;}catch(SocketException e){if(e.SocketErrorCode==SocketError.AddressAlreadyInUse)return false;throw;}finally{listener.Stop();}
+        }
+        internal static int FreshPort(){var listener=new TcpListener(IPAddress.Loopback,0);listener.ExclusiveAddressUse=true;try{listener.Start();int port=((IPEndPoint)listener.LocalEndpoint).Port;if(port<49152||port>65535)throw new InvalidOperationException("ephemeral_port_outside_range");return port;}finally{listener.Stop();}}
         private static void Load()
         {
             byte[] cipher=File.ReadAllBytes(ConfigPath);if(cipher.Length>8192)throw new InvalidDataException();
@@ -288,7 +297,7 @@ namespace VisionDBrowserLauncher
         }
         private static int PairLoaded()
         {
-            string code=RandomHex().Substring(0,12).ToUpperInvariant();var attempt=new Dictionary<string,object>(config);attempt["pair_code"]=code;
+            string code=RandomHex().Substring(0,12).ToUpperInvariant();var attempt=new Dictionary<string,object>();foreach(string key in new[]{"helper_id","owner_hash","port","secret"})attempt[key]=config[key];attempt["pair_code"]=code;if(config.ContainsKey("replaces_helper_id"))attempt["replaces_helper_id"]=config["replaces_helper_id"];
             var stage=Api("pair-stage",attempt);if(Field(stage,"paired")=="True"){PairStatus="ตัวช่วยนี้ผูกบัญชีแล้ว ไม่ต้องผูกซ้ำ กลับหน้า VisionD ที่ใช้อยู่แล้วกดรีเฟรชสถานะ Helper";PairCodeMessage(IntPtr.Zero,PairStatus,"VisionD Helper",0);return 0;}
             string id=Field(stage,"pair_id");if(id!=Field(config,"helper_id"))throw new InvalidDataException("คำตอบผูกเครื่องไม่ตรงกับตัวช่วยนี้");
             PairCodeMessage(IntPtr.Zero,"รหัสคำขอนี้: "+code+"\nใช้ภายใน 5 นาที กรอกในหน้า VisionD ตั้งค่า Helper ที่คุณเปิดอยู่ แล้วตรวจและยืนยันในเบราว์เซอร์เดิม\nอย่าแจ้งรหัสแก่ผู้อื่น ตัวช่วยจะไม่เปิดเบราว์เซอร์ให้", "VisionD · รหัสผูกเครื่อง",0);PairStatus="แสดงรหัสคำขอแล้ว กรอกและยืนยันในหน้า VisionD เดิม การปิดกล่องนี้ยังไม่ใช่การยืนยัน";return 0;
@@ -312,6 +321,34 @@ namespace VisionDBrowserLauncher
             // Keep the active key untouched unless the authenticated backend confirms replacement.
             for(int i=0;i<60;i++){Thread.Sleep(3000);try{var status=Signed("pair-state",Field(config,"helper_id"),"");if(Field(status,"paired")=="True"&&Field(status,"helper_id")==Field(config,"helper_id")){File.Replace(candidate,ConfigPath,null);return 0;}}catch(WebException){/* Resume the same staged key after a transient TLS/network failure. */}}
             Console.Error.WriteLine("pairing_confirmation_timeout_active_key_preserved");return 2;
+        }
+        internal static bool RepairPort()
+        {
+            Load();string activeHash=Setup.Hash(ConfigPath),oldId=Field(config,"helper_id"),candidate=Path.Combine(Root,"helper.repair.dpapi");
+            if(File.Exists(candidate)){
+                byte[] staged=File.ReadAllBytes(candidate);if(staged.Length>8192)throw new InvalidDataException();
+                var pending=Json.Deserialize<Dictionary<string,object>>(Encoding.UTF8.GetString(ProtectedData.Unprotect(staged,null,DataProtectionScope.CurrentUser)));
+                Guid id;int port;if(!Guid.TryParseExact(Field(pending,"helper_id"),"D",out id)||id==Guid.Empty||Field(pending,"owner_hash")!=Field(config,"owner_hash")||Field(pending,"replaces_helper_id")!=oldId||Field(pending,"repair_active_hash")!=activeHash||!Int32.TryParse(Field(pending,"port"),out port)||port<49152||port>65535)throw new InvalidDataException("ข้อมูลคำขอซ่อมไม่ตรงกับตัวช่วยเดิม หยุดโดยไม่เปลี่ยนข้อมูล");Unhex(Field(pending,"secret"));config=pending;
+            }else{
+                config=new Dictionary<string,object>(config);config["helper_id"]=Guid.NewGuid().ToString("D");config["secret"]=RandomHex();config["port"]=FreshPort();config["replaces_helper_id"]=oldId;config["repair_active_hash"]=activeHash;
+                byte[] data=ProtectedData.Protect(Encoding.UTF8.GetBytes(Json.Serialize(config)),null,DataProtectionScope.CurrentUser);using(var file=new FileStream(candidate,FileMode.CreateNew,FileAccess.Write,FileShare.None)){file.Write(data,0,data.Length);file.Flush(true);}
+            }
+            // A previous browser confirmation may have succeeded before a local crash.
+            // Query this SAME candidate first; never rotate/revoke another key on retry.
+            Func<bool> confirmed=()=>{var status=Signed("pair-state",Field(config,"helper_id"),"");return Field(status,"paired")=="True"&&Field(status,"helper_id")==Field(config,"helper_id")&&Field(status,"replaces_helper_id")==oldId;};
+            bool ready=AwaitRepairConfirmation(confirmed,()=>PairLoaded(),()=>Thread.Sleep(3000),60);
+            if(!ready){PairStatus="ยังไม่มีการยืนยันซ่อมจาก VisionD ข้อมูลเดิมยังคงอยู่ กดซ่อมอีกครั้งเพื่อใช้คำขอเดิม";return false;}
+            PromoteRepair(ConfigPath,candidate,activeHash);Load();return true;
+        }
+        internal static void PromoteRepair(string activePath,string candidate,string expectedHash){
+            if(Setup.Hash(activePath)!=expectedHash)throw new InvalidDataException("ข้อมูลตัวช่วยเปลี่ยนระหว่างซ่อม หยุดเพื่อไม่เขียนทับ");
+            // The server has already activated this candidate: never roll back to revoked key.
+            File.Replace(candidate,activePath,null);
+        }
+        internal static bool AwaitRepairConfirmation(Func<bool> confirmed,Action stage,Action wait,int attempts){
+            try{if(confirmed())return true;}catch(WebException){}
+            stage();for(int i=0;i<attempts;i++){wait();try{if(confirmed())return true;}catch(WebException){}}
+            return false;
         }
         private static Dictionary<string,object> Signed(string purpose,string command,string payload)
         {
@@ -367,8 +404,8 @@ namespace VisionDBrowserLauncher
             Load();bool created;
             using(var mutex=new Mutex(true,"Local\\VisionDLauncher-"+Field(config,"owner_hash"),out created))
             {
-                if(!created)return 0;
-                var listener=new TcpListener(IPAddress.Loopback,Int32.Parse(Field(config,"port")));listener.ExclusiveAddressUse=true;listener.Start(8);
+                if(!created)return 32;
+                var listener=new TcpListener(IPAddress.Loopback,Int32.Parse(Field(config,"port")));listener.ExclusiveAddressUse=true;try{listener.Start(8);}catch(SocketException e){return e.SocketErrorCode==SocketError.AddressAlreadyInUse?48:49;}
                 while(true){var client=listener.AcceptTcpClient();if(Interlocked.Increment(ref active)>8){Interlocked.Decrement(ref active);client.Close();continue;}
                     ThreadPool.QueueUserWorkItem(delegate{try{Handle(client,Int32.Parse(Field(config,"port")),Execute);}catch{}finally{client.Close();Interlocked.Decrement(ref active);}});}
             }

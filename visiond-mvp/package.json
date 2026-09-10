@@ -433,7 +433,8 @@
     "test:v02072": "node scripts/test-v02072.mjs && node scripts/test-launcher-pages.mjs && node scripts/test-browser-launcher-transport.mjs && node scripts/test-browser-launcher-native-http.mjs && node scripts/test-tiktok-direct-chain.mjs && node scripts/test-tiktok-handoff.mjs && node scripts/test-tiktok-handoff-identity-race.mjs && node scripts/test-browser-profile-launcher.mjs && node scripts/test-tiktok-profile-binding.mjs && node tools/browser-launcher/trial-fixture.mjs --self-test",
     "test:v02073": "npm run test:v02072 && node scripts/test-helper-recovery.mjs && node scripts/test-helper-package.mjs",
     "test:v02074": "npm run test:v02073 && node scripts/test-v02074.mjs",
-    "test:v02075": "npm run test:v02074 && node scripts/test-v02075.mjs && node scripts/test-v02075-client.mjs"
+    "test:v02075": "npm run test:v02074 && node scripts/test-v02075.mjs && node scripts/test-v02075-client.mjs",
+    "test:v02076": "npm run test:v02075 && node scripts/test-v02076.mjs && node scripts/test-v02076-install.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

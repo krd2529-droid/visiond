@@ -90,13 +90,15 @@ export async function launcherRoute(ctx){
   return reply({status:'cancelled'});
  }
  if(action==='pair-stage'){
+  const replaces=body?.replaces_helper_id||'';
   const code=body?.pair_code,modern=typeof code==='string'&&code.length===12&&/^[A-F0-9]{12}$/.test(code);
-  if(request.headers.has('origin')||!exact(body,['helper_id','owner_hash','port','secret','pair_code'])||!uuid(body.helper_id)||!launcherHex(body.owner_hash)||!launcherHex(body.secret)||(!modern&&!(typeof code==='string'&&code.length===8&&/^[A-F0-9]{8}$/.test(code)))||!Number.isInteger(body.port)||body.port<49152||body.port>65535)return fail();
+  if(request.headers.has('origin')||!exact(body,['helper_id','owner_hash','port','secret','pair_code',...(Object.hasOwn(body||{},'replaces_helper_id')?['replaces_helper_id']:[])])||!uuid(body.helper_id)||!launcherHex(body.owner_hash)||!launcherHex(body.secret)||(!modern&&!(typeof code==='string'&&code.length===8&&/^[A-F0-9]{8}$/.test(code)))||!Number.isInteger(body.port)||body.port<49152||body.port>65535||Object.hasOwn(body||{},'replaces_helper_id')&&(!modern||!uuid(replaces)||replaces===body.helper_id))return fail();
   const limited=await rateLimit(ctx.env,request,'launcher_pair',5,10,10);if(limited.error)return limited.error;
   const existing=await ctx.env.DB.prepare('SELECT * FROM browser_launcher_helpers WHERE id=?').bind(body.helper_id).first();
   if(existing){
    if(existing.owner_hash!==body.owner_hash||existing.port!==body.port||!equalLauncherMac(await secretFor(ctx.env,existing),body.secret)||existing.status==='revoked')return fail(409);
    if(existing.status==='active')return reply({pair_id:existing.id,paired:true});
+   if((existing.replaces_helper_id||'')!==replaces)return fail(409);
    if(existing.pair_code===code){
     if(modern&&Date.parse(existing.expires_at.replace(' ','T')+'Z')<=Date.now())return fail(409);
     if(modern||Date.parse(existing.expires_at.replace(' ','T')+'Z')>Date.now())return reply({pair_id:existing.id,paired:false});
@@ -105,9 +107,10 @@ export async function launcherRoute(ctx){
    const changed=await ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET user_id=NULL,session_id=NULL,confirm_nonce=NULL,secret_cipher=?,pair_code=?,status='staged',expires_at=datetime('now','+5 minutes') WHERE id=? AND status=? AND pair_code=? AND expires_at=? AND COALESCE(user_id,0)=? AND COALESCE(session_id,'')=? AND COALESCE(confirm_nonce,'')=?").bind(cipher,code,existing.id,existing.status,existing.pair_code,existing.expires_at,existing.user_id||0,existing.session_id||'',existing.confirm_nonce||'').run();
    return changed.meta?.changes===1?reply({pair_id:existing.id,paired:false}):fail(409);
   }
+  if(replaces&&!await ctx.env.DB.prepare("SELECT id FROM browser_launcher_helpers WHERE id=? AND owner_hash=? AND status='active'").bind(replaces,body.owner_hash).first())return fail(409);
   const h={id:body.helper_id,user_id:0,key_version:1},cipher=await sealLauncher(ctx.env,body.secret,helperAAD(h));
   await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM browser_launcher_helpers WHERE id IN (SELECT id FROM browser_launcher_helpers WHERE status IN ('staged','prepared') AND expires_at<=CURRENT_TIMESTAMP ORDER BY status,expires_at,id LIMIT 24)"),
-   ctx.env.DB.prepare("INSERT INTO browser_launcher_helpers(id,owner_hash,port,secret_cipher,pair_code,status,expires_at) VALUES(?,?,?,?,?,'staged',datetime('now','+5 minutes'))").bind(h.id,body.owner_hash,body.port,cipher,code)]);
+   ctx.env.DB.prepare("INSERT INTO browser_launcher_helpers(id,owner_hash,port,secret_cipher,pair_code,status,expires_at,replaces_helper_id) VALUES(?,?,?,?,?,'staged',datetime('now','+5 minutes'),?)").bind(h.id,body.owner_hash,body.port,cipher,code,replaces||null)]);
   return reply({pair_id:h.id,paired:false});
  }
  if(['pair-prepare','pair-prepare-code','pair-confirm'].includes(action)){
@@ -123,15 +126,16 @@ export async function launcherRoute(ctx){
    h=await ctx.env.DB.prepare("SELECT * FROM browser_launcher_helpers WHERE id=? AND status IN ('staged','prepared') AND expires_at>CURRENT_TIMESTAMP").bind(body.pair_id).first();if(!h)return fail(409);
   }
   if(action!=='pair-confirm'){
+   if(h.replaces_helper_id&&!await ctx.env.DB.prepare("SELECT id FROM browser_launcher_helpers WHERE id=? AND user_id=? AND owner_hash=? AND status='active'").bind(h.replaces_helper_id,auth.user.id,h.owner_hash).first())return fail(409);
    if(action==='pair-prepare'&&(!exact(body,['pair_id'])||h.pair_code.length!==8))return fail(409);
    if(h.status==='prepared'&&(Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)))return fail(409);
    const nonce=h.confirm_nonce||launcherRandom(),secret=await secretFor(ctx.env,h),bound={...h,user_id:auth.user.id},cipher=await sealLauncher(ctx.env,secret,helperAAD(bound));
-   const result=await ctx.env.DB.prepare(`UPDATE browser_launcher_helpers SET user_id=?,session_id=?,confirm_nonce=?,secret_cipher=?,status='prepared' WHERE id=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND COALESCE(confirm_nonce,'')=? AND (status='staged' OR (status='prepared' AND user_id=? AND session_id=?)) AND ${pairLive}`).bind(auth.user.id,session(request),nonce,cipher,h.id,h.pair_code,h.expires_at,h.confirm_nonce||'',auth.user.id,session(request),...pairLiveArgs(request,auth)).run();if(result.meta?.changes!==1)return fail(409);
+   const result=await ctx.env.DB.prepare(`UPDATE browser_launcher_helpers SET user_id=?,session_id=?,confirm_nonce=?,secret_cipher=?,status='prepared' WHERE id=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND COALESCE(confirm_nonce,'')=? AND (status='staged' OR (status='prepared' AND user_id=? AND session_id=?)) AND (replaces_helper_id IS NULL OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=browser_launcher_helpers.replaces_helper_id AND old.user_id=? AND old.owner_hash=browser_launcher_helpers.owner_hash AND old.status='active')) AND ${pairLive}`).bind(auth.user.id,session(request),nonce,cipher,h.id,h.pair_code,h.expires_at,h.confirm_nonce||'',auth.user.id,session(request),auth.user.id,...pairLiveArgs(request,auth)).run();if(result.meta?.changes!==1)return fail(409);
    const prior=await ctx.env.DB.prepare("SELECT id,created_at FROM browser_launcher_helpers WHERE user_id=? AND owner_hash=? AND status='active' ORDER BY id LIMIT 1").bind(auth.user.id,h.owner_hash).first();
    return reply({pair_id:h.id,pair_code:h.pair_code,confirm_nonce:nonce,replace_id:prior?.id||'',port:h.port});
   }
   if(!exact(body,['pair_id','confirm_nonce','pair_code','replace_id'])||body.confirm_nonce!==h.confirm_nonce||body.pair_code!==h.pair_code||h.status!=='prepared'||Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)||body.replace_id&&!uuid(body.replace_id))return fail(409);
-  const guard=ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT id FROM browser_launcher_helpers WHERE id=? AND status='prepared' AND user_id=? AND session_id=? AND confirm_nonce=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND ${pairLive} AND NOT EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.user_id=? AND old.owner_hash=? AND old.status='active' AND old.id<>?) AND (?='' OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=? AND old.user_id=? AND old.owner_hash=? AND old.status='active'))))`).bind(h.id,auth.user.id,session(request),body.confirm_nonce,body.pair_code,h.expires_at,...pairLiveArgs(request,auth),auth.user.id,h.owner_hash,body.replace_id,body.replace_id,body.replace_id,auth.user.id,h.owner_hash);
+  const guard=ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT id FROM browser_launcher_helpers WHERE id=? AND status='prepared' AND user_id=? AND session_id=? AND confirm_nonce=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND (replaces_helper_id IS NULL OR replaces_helper_id=?) AND ${pairLive} AND NOT EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.user_id=? AND old.owner_hash=? AND old.status='active' AND old.id<>?) AND (?='' OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=? AND old.user_id=? AND old.owner_hash=? AND old.status='active'))))`).bind(h.id,auth.user.id,session(request),body.confirm_nonce,body.pair_code,h.expires_at,body.replace_id,...pairLiveArgs(request,auth),auth.user.id,h.owner_hash,body.replace_id,body.replace_id,body.replace_id,auth.user.id,h.owner_hash);
   await ctx.env.DB.batch([guard,ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET status='revoked' WHERE id=? AND user_id=? AND owner_hash=? AND status='active'").bind(body.replace_id,auth.user.id,h.owner_hash),ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET status='active',confirm_nonce=NULL WHERE id=?").bind(h.id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(h.id)]);
   return reply({paired:true,helper_id:h.id,port:h.port});
  }
@@ -149,7 +153,7 @@ export async function launcherRoute(ctx){
   const requestHash=await sha256(canonical);if(n.used_hash&&n.used_hash!==requestHash)return fail(409);
   if(action==='pair-state'){
    if(body.command_id!==h.id||body.payload!=='')return fail();
-   const used=await ctx.env.DB.prepare('UPDATE browser_launcher_nonces SET used_hash=? WHERE id=? AND expires_at>CURRENT_TIMESTAMP AND (used_hash IS NULL OR used_hash=?)').bind(requestHash,n.id,requestHash).run();if(used.meta?.changes!==1)return fail(409);return reply({paired:h.status==='active',helper_id:h.id});
+   const used=await ctx.env.DB.prepare('UPDATE browser_launcher_nonces SET used_hash=? WHERE id=? AND expires_at>CURRENT_TIMESTAMP AND (used_hash IS NULL OR used_hash=?)').bind(requestHash,n.id,requestHash).run();if(used.meta?.changes!==1)return fail(409);return reply({paired:h.status==='active',replaces_helper_id:h.replaces_helper_id||'',helper_id:h.id});
   }
   let c=await ctx.env.DB.prepare(`SELECT c.*,COALESCE(f.slot_id,c.slot_id) resolved_slot,COALESCE(f.profile_kind,c.profile_kind) resolved_kind,f.status oauth_status FROM browser_launcher_commands c LEFT JOIN tiktok_oauth_handoffs f ON f.id=c.handoff_id WHERE c.id=? AND c.helper_id=? AND c.key_version=? AND c.expires_at>CURRENT_TIMESTAMP AND ${liveCommand}`).bind(body.command_id,h.id,h.key_version).first();if(!c)return fail(409);
   if(action==='claim'&&!['pending','claimed'].includes(c.status))return reply({status:c.status});

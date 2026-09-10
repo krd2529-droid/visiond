@@ -5,7 +5,7 @@ import {launcherRoute,launcherIssue} from '../functions/_browser_launcher.js';
 import {launcherMac,launcherCanonical,sealLauncher,openLauncher,helperAAD} from '../functions/_browser_launcher_crypto.js';
 import {sha256} from '../functions/_lib.js';
 const schema=await readFile('functions/_tiktok_analyzer.js','utf8');
-const migrations=await Promise.all(['0095_tiktok_browser_profile_bindings.sql','0096_tiktok_oauth_handoffs.sql','0097_tiktok_direct_profile_login.sql','0098_browser_launcher_transport.sql'].map(f=>readFile('migrations/'+f,'utf8')));
+const migrations=await Promise.all(['0095_tiktok_browser_profile_bindings.sql','0096_tiktok_oauth_handoffs.sql','0097_tiktok_direct_profile_login.sql','0098_browser_launcher_transport.sql','0100_browser_launcher_replacement_proof.sql'].map(f=>readFile('migrations/'+f,'utf8')));
 const channel='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',helper='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',secret='ab'.repeat(32),owner='cd'.repeat(32);
 class DB{
  constructor(){this.raw=new DatabaseSync(':memory:');this.raw.exec(`CREATE TABLE users(id INTEGER PRIMARY KEY,role TEXT,email TEXT,username TEXT,name TEXT,phone TEXT,created_at TEXT,is_test_user INTEGER);INSERT INTO users(id,role,is_test_user)VALUES(1,'boss',0),(2,'boss',0);
