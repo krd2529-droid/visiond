@@ -273,6 +273,14 @@ function clearProfileCommand(pending){
  if(profileHandoffRequests.get(pending.key)!==pending)return false;
  profileOAuthPendingKeys.delete(pending.key);profileHandoffRequests.delete(pending.key);profileOAuthPending=profileHandoffRequests.size>0;return true;
 }
+function launcherOAuthStage(result){
+ if(result.oauth_status==='complete')return (result.oauth_provider==='shop'?'บันทึกการอนุญาต TikTok Shop แล้ว':result.oauth_provider==='tiktok'?'บันทึกการอนุญาต TikTok Login Kit แล้ว':'บันทึกการอนุญาตแล้ว')+' สถานะสิทธิ์ API แสดงแยกตามช่อง';
+ if(result.expired)return 'คำขอเปิดหมดอายุ ตรวจหน้าต่างเดิมก่อนเริ่มใหม่สำหรับช่องเดิม';
+ if(['failed','cancelled'].includes(result.status))return 'คำขอเปิดสิ้นสุดแล้ว ยังไม่ยืนยันการอนุญาต API';
+ if(result.status==='unknown')return 'ผลการเปิดยังไม่แน่นอน ตรวจหน้าต่างเดิมก่อน ยังไม่เปิดซ้ำ';
+ const stage=result.oauth_provider==='tiktok'?(result.oauth_continuation==='shop'?'ขั้นแรก: อนุญาต Login Kit เพื่อยืนยันโปรไฟล์ช่องนี้ก่อน จากนั้นจะไป TikTok Shop ในหน้าต่างเดิม':'กำลังรอการอนุญาต TikTok Login Kit ในหน้าต่างประจำช่อง'):result.oauth_provider==='shop'?'กำลังรอการอนุญาต TikTok Shop Creator ในหน้าต่างประจำช่อง':'ยังไม่มีขั้น OAuth ที่ยืนยันจากเซิร์ฟเวอร์';
+ return (result.status==='process_started'?'ตัวช่วยยืนยันว่าเริ่ม Chrome แล้ว · ':'')+stage;
+}
 async function reconcileProfileCommand(mode,control,pending){
  if(!pending||profileOAuthRequests.has(pending.key))return false;
  const revision=channelOwnership.revision(),owner=pageViewerId,attempt={};
@@ -283,9 +291,9 @@ async function reconcileProfileCommand(mode,control,pending){
   if(!response.ok||result.command_id&&result.command_id!==pending.commandId)throw new Error('อ่านสถานะคำขอเดิมไม่ได้ ยังไม่เปิดคำขอซ้ำ');
   const terminal=result.oauth_status==='complete'||result.expired||['failed','cancelled'].includes(result.status);
   if(result.oauth_status==='complete'&&pending.key==='new'&&typeof refreshProfileStatus==='function'){await refreshProfileStatus();return false}
-  if(terminal){clearProfileCommand(pending);connectionActionStatus(control,result.oauth_status==='complete'?'คำขอเดิมอนุญาตเสร็จแล้ว กดปุ่มด้านล่างเพื่อทำขั้นตอนที่เลือก':'คำขอเดิมสิ้นสุดแล้ว กดปุ่มด้านล่างเพื่อเริ่มใหม่');
-   const node=control?.parentElement?.querySelector('[data-connection-action-status]');if(node){const next=document.createElement('button');next.type='button';next.textContent=mode==='shop'?'เชื่อม TikTok Shop ต่อ':'เริ่มคำขอที่เลือก';next.addEventListener('click',()=>{if(launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&!profileHandoffRequests.has(pending.key)&&(pending.key==='new'||String(selectedChannel()?.id)===pending.key))issueProfileOAuth(mode,control)});node.appendChild(next)}return false}
-  helperRecoveryStatus(control,['process_started','unknown'].includes(result.status)?'คำขอเดิมเริ่มเปิดแล้วหรือผลยังไม่แน่นอน ตรวจหน้าต่างเดิมก่อน ยังไม่สร้างคำขอซ้ำ':'คำขอเดิมยังรอการตอบรับ ใช้คำขอเดิมต่อได้โดยไม่สร้าง OAuth ใหม่');
+  if(terminal){clearProfileCommand(pending);connectionActionStatus(control,launcherOAuthStage(result)+' · กดปุ่มด้านล่างเพื่อทำขั้นตอนที่เลือก');
+   const node=control?.parentElement?.querySelector('[data-connection-action-status]');if(node){const next=document.createElement('button');next.type='button';next.textContent=mode==='shop'?(result.oauth_status==='complete'&&result.oauth_provider==='shop'?'เริ่มคำขอ TikTok Shop ใหม่':'เชื่อม TikTok Shop ต่อ'):'เริ่มคำขอที่เลือก';next.addEventListener('click',()=>{if(launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&!profileHandoffRequests.has(pending.key)&&(pending.key==='new'||String(selectedChannel()?.id)===pending.key))issueProfileOAuth(mode,control)});node.appendChild(next)}return false}
+  helperRecoveryStatus(control,launcherOAuthStage(result)+' · ยังเก็บคำขอเดิมไว้ ไม่สร้าง OAuth ซ้ำ');
   const node=control?.parentElement?.querySelector('[data-connection-action-status]');
   const action=(label,fn)=>{if(!node)return;const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>{if(current()&&!button.disabled){button.disabled=true;try{Promise.resolve(fn()).catch(e=>{if(current())helperRecoveryStatus(control,e.message)}).finally(()=>{button.disabled=false})}catch(e){button.disabled=false;if(current())helperRecoveryStatus(control,e.message)}}});node.appendChild(button)};
   if(['pending','claimed'].includes(result.status))action('เปิดคำขอเดิมต่อ',()=>{commandLauncher.resumeCommand(pending.commandId);connectionActionStatus(control,'ส่งคำขอเดิมไปยัง Helper แล้ว กดตรวจสถานะเพื่อดูผลตอบรับ');});
@@ -320,9 +328,10 @@ async function issueProfileOAuth(mode,control){
       const response=await readLauncherStatus(commandId),body=await response.json();if(!current())return false;
       if(!response.ok)throw new Error('ตรวจสถานะตัวช่วยไม่สำเร็จ กรุณาลองรีเฟรชสถานะ');
       if(body.handoff_id){pending.id=body.handoff_id;pending.slotId=body.slot_id}
-      if(body.oauth_status==='complete'){if(pending.key==='new'&&typeof refreshProfileStatus==='function')await refreshProfileStatus();else clearProfileCommand(pending);connectionActionStatus(control,'บันทึกการอนุญาตแล้ว กดเชื่อม TikTok Shop ได้เมื่อพร้อม');return true}
-      if(body.status==='process_started'){connectionActionStatus(control,'ตัวช่วยยืนยันว่าเริ่ม Chrome แล้ว · การเข้าสู่ระบบและอนุญาต API ยังต้องทำในหน้าต่างนั้น');if(mode==='view'){profileOAuthPendingKeys.delete(key);profileHandoffRequests.delete(key)}return true}
-      if(['failed','unknown','cancelled'].includes(body.status)||body.expired)throw new Error(body.status==='unknown'?'สถานะการเปิดไม่แน่นอน กรุณาตรวจหน้าต่างเดิมก่อนลองใหม่':'ตัวช่วยเปิดไม่สำเร็จ กรุณาตรวจการติดตั้งและสถานะคำขอ');
+      if(['pending','claimed'].includes(body.status))connectionActionStatus(control,launcherOAuthStage(body));
+      if(body.oauth_status==='complete'){if(pending.key==='new'&&typeof refreshProfileStatus==='function')await refreshProfileStatus();else clearProfileCommand(pending);connectionActionStatus(control,launcherOAuthStage(body));return true}
+      if(body.status==='process_started'){connectionActionStatus(control,launcherOAuthStage(body));if(mode==='view'){profileOAuthPendingKeys.delete(key);profileHandoffRequests.delete(key)}return true}
+      if(['failed','unknown','cancelled'].includes(body.status)||body.expired)throw new Error(launcherOAuthStage(body));
     }
     throw new Error('ยังไม่พบการยืนยันจากตัวช่วย ตรวจว่า helper ทำงานและผูกเครื่องแล้ว จากนั้นกดตรวจสถานะก่อนลองใหม่');
   }catch(error){if(current())helperRecoveryStatus(control,error.message);return false}
@@ -1540,22 +1549,22 @@ function requestNewBrowserProfile(){return routeProfileConnection('tiktok_new',$
 $("#newChannel").addEventListener("click",requestNewBrowserProfile);
 $("[data-open-channel-profile]")?.addEventListener("click",event=>issueProfileOAuth('view',event.currentTarget));
 let profileRefreshRequest=null;
-const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return profileRefreshRequest;const fresh=profileHandoffRequests.get('new'),target=fresh&&channelOwnership.unchanged(fresh.revision)?fresh:profileHandoffRequests.get(String(state.selected)),requests=target?[target]:[];profileRefreshRequest=(async()=>{
- const owner=pageViewerId,revision=channelOwnership.revision();await prepareLauncherReadiness(true);if(owner!==pageViewerId||!channelOwnership.unchanged(revision))return;
+const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return profileRefreshRequest;const fresh=profileHandoffRequests.get('new'),target=fresh&&channelOwnership.unchanged(fresh.revision)?fresh:profileHandoffRequests.get(String(state.selected)),requests=target?[target]:[],owner=pageViewerId,revision=channelOwnership.revision();let selected=String(state.selected);const current=()=>launcherPageActive&&pageAuthorized&&owner===pageViewerId&&channelOwnership.unchanged(revision)&&String(state.selected)===selected;profileRefreshRequest=(async()=>{
+ await prepareLauncherReadiness(true);if(!current())return;
  if(!requests.length){setBrowserProfileStatus(launcherRegisteredMessage());if(!profileHandoffRequests.size)await loadChannels();return}
  await Promise.all(requests.map(async request=>{
   const response=await readLauncherStatus(request.commandId);if(!response.ok)throw new Error('อ่านสถานะการเชื่อมไม่ได้');const result=await response.json();
-  if(profileHandoffRequests.get(request.key)!==request||request.owner!==pageViewerId)return;
+  if(!current()||profileHandoffRequests.get(request.key)!==request||request.owner!==pageViewerId)return;
   if(result.oauth_status==='complete'){
    profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key);
-   if(browserProfileUuid.test(result.channel_id)&&channelOwnership.unchanged(request.revision)){state.selected=result.channel_id;await loadChannels();browserLauncher?.clearPending(request.slotId)}
-   setBrowserProfileStatus('บันทึกการอนุญาตแล้ว สถานะสิทธิ์ API แสดงแยกตามช่อง');
-  }else if(result.status==='process_started'){setBrowserProfileStatus('ตัวช่วยยืนยันว่าเริ่ม Chrome แล้ว การอนุญาต API ยังต้องทำในหน้าต่างนั้น');if(result.intent==='view'){profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key)}}
-  else if(result.expired){setBrowserProfileStatus('คำขอเปิดหมดอายุ หากไม่พบหน้าต่างเดิมให้กดตรวจสถานะก่อนลองใหม่','error')}
-  else setBrowserProfileStatus('ยังไม่มีผลการเชื่อมที่ยืนยันแล้ว เมื่ออนุญาตเสร็จกดรีเฟรชสถานะอีกครั้ง');
+   setBrowserProfileStatus(launcherOAuthStage(result));
+   if(browserProfileUuid.test(result.channel_id)&&channelOwnership.unchanged(request.revision)){state.selected=result.channel_id;selected=String(result.channel_id);browserLauncher?.clearPending(request.slotId);await loadChannels()}
+  }else if(result.status==='process_started'){setBrowserProfileStatus(launcherOAuthStage(result));if(result.intent==='view'){profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key)}}
+  else if(result.expired){setBrowserProfileStatus(launcherOAuthStage(result),'error')}
+  else setBrowserProfileStatus(launcherOAuthStage(result));
  }));
  profileOAuthPending=profileHandoffRequests.size>0;
-})().catch(error=>setBrowserProfileStatus(error.message,'error')).finally(()=>{profileRefreshRequest=null});return profileRefreshRequest};
+})().catch(error=>{if(current())setBrowserProfileStatus(error.message,'error')}).finally(()=>{profileRefreshRequest=null});return profileRefreshRequest};
 $("[data-refresh-profile]")?.addEventListener('click',refreshProfileStatus);
 window.addEventListener('focus',()=>{if(profileOAuthPending)refreshProfileStatus()});
 async function syncTikTokShopData(mode) {
