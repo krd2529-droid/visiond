@@ -1,3 +1,4 @@
+const COMMISSION_WORKSPACE_ENABLED = false; // Set true to restore the commission workspace and its data requests.
 function createTikTokShopNavigation({ getState, setOutputScope, setWorkspaceView, setChannelView, navigate }) {
   const connectUrl = () => {
     const current = getState(), selected = String(current?.selected ?? "");
@@ -100,7 +101,7 @@ const inventoryRequests = new Map();
 const inventoryVersions = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02092";
-document.head.append(commissionCardScript);
+if(COMMISSION_WORKSPACE_ENABLED)document.head.append(commissionCardScript);
 let toastTimer;
 function showToast(text, type = "success") {
   let toast = $("#actionToast");
@@ -159,9 +160,9 @@ const safeJson = (value) => {
 const money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
 const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseHeading = $("#channelShopAnalysis .showcase-panel .showcase-heading");
 $(".workspace-switch")?.insertAdjacentHTML("afterend",'<section id="analysisChannelPicker" class="analysis-channel-picker" aria-labelledby="analysisChannelPickerTitle"><div><small>ช่องที่กำลังวิเคราะห์</small><h3 id="analysisChannelPickerTitle">เลือกช่องจากรายการที่เชื่อมแล้ว</h3></div><div id="analysisChannelOptions" class="analysis-channel-options" role="listbox" aria-label="เลือกช่องที่ต้องการวิเคราะห์"></div></section>');
-$("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button><button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button></nav><button id="manageChannelConnections" class="manage-channel-connections" type="button" hidden>จัดการการเชื่อมต่อ</button>');
+$("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button>' + (COMMISSION_WORKSPACE_ENABLED ? '<button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button>' : '') + '</nav><button id="manageChannelConnections" class="manage-channel-connections" type="button" hidden>จัดการการเชื่อมต่อ</button>');
 function setChannelView(view) {
-  const commission = view === "commission";
+  const commission = COMMISSION_WORKSPACE_ENABLED && view === "commission";
   document.body.classList.toggle("channel-view-products", !commission);
   document.body.classList.toggle("channel-view-commission", commission);
   $("#channelActionSwitch")?.querySelectorAll("[data-channel-view]").forEach((button) => {
@@ -355,9 +356,14 @@ function updateBrowserProfilePanel(){
 }
 const tiktokShopNavigation = createTikTokShopNavigation({ getState: () => state, setOutputScope, setWorkspaceView, setChannelView, navigate: () => routeProfileConnection("shop") });
 async function loadPortfolioDashboard() {
-  const [data, commission, referral] = await Promise.all([api(`/api/admin/tiktok-connections?${shopDateQuery()}`), api(`/api/admin/tiktok-commissions?from=${state.shopDateFrom}&to=${state.shopDateTo}`), api('/api/vx/referrals').catch(() => null)]);
+  const [data, [commission, referral]] = await Promise.all([api(`/api/admin/tiktok-connections?${shopDateQuery()}`), loadCommissionWorkspace(`from=${state.shopDateFrom}&to=${state.shopDateTo}`)]);
   renderShopDashboard({ ...data, shop_products: data.shop_portfolio?.products || [], shop_orders: data.shop_portfolio?.orders || [] }, data.shop_connections?.[0] || null);
-  renderAccurateCommission(commission, referral);
+  if(COMMISSION_WORKSPACE_ENABLED)renderAccurateCommission(commission, referral);
+}
+
+async function loadCommissionWorkspace(query){
+  if(!COMMISSION_WORKSPACE_ENABLED)return [null,null];
+  return Promise.all([api(`/api/admin/tiktok-commissions?${query}`),api('/api/vx/referrals').catch(()=>null)]);
 }
 
 function renderAccurateCommission(data, referral) {
@@ -371,6 +377,7 @@ function renderAccurateCommission(data, referral) {
   $('#shopCommissionDashboard').insertAdjacentHTML('afterbegin',`<div class="collector-channel-status"><b>สถานะตัวอ่านค่าคอม</b>${collectorChannels.length?collectorChannels.map(item=>`<span data-status="${escapeHtml(item.status||'not_connected')}">${escapeHtml(item.channel||'ไม่ระบุช่อง')} · ${escapeHtml(statusLabel[item.status]||item.status||'ยังไม่เชื่อม')}${item.last_success_at?` · ล่าสุด ${escapeHtml(item.last_success_at)}`:''}</span>`).join(''):'<span>ยังไม่มีช่องที่เชื่อม TikTok Shop</span>'}</div>`);
 }
 $("#shopCommissionDashboard").addEventListener("click", async event => {
+  if(!COMMISSION_WORKSPACE_ENABLED)return;
   const button = event.target.closest('[data-commission-days]');
   if (!button) return;
   const days = Number(button.dataset.commissionDays) || 30;
@@ -936,6 +943,7 @@ async function prepareOwnedCommission(context, model) {
   return context && !channelOwnership.current(context) ? null : prepared;
 }
 $("#shopCommissionDashboard").addEventListener("click", async (event) => {
+  if(!COMMISSION_WORKSPACE_ENABLED)return;
   const context=state.selected?channelContextFor(event.target):null;if(state.selected&&!context)return;
   const stillCurrent=()=>!context||channelOwnership.current(context);
   const copyLink=event.target.closest('[data-copy-vx-referral]');if(copyLink){try{let link=$('#commissionShareForm [name="referral_url"]')?.value;if(!link){const referral=await api('/api/vx/referrals');if(!stillCurrent())return;link=referral.link||'';const input=$('#commissionShareForm [name="referral_url"]');if(!input)return;input.value=link;copyLink.textContent='คัดลอกลิงก์'}if(link){await navigator.clipboard.writeText(link);if(stillCurrent())showToast('คัดลอกลิงก์แนะนำ VX แล้ว')}}catch(error){if(stillCurrent())showToast(error.message||'สร้างลิงก์แนะนำไม่สำเร็จ','error')}return}
@@ -1175,8 +1183,8 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   renderShowcasePermission();
   renderShopDashboard(data, shopConnection);
   stampChannelOwnedActions($("#shopDashboard"), context);
-  if (shopConnection) {
-    const [commission, referral] = await Promise.all([api(`/api/admin/tiktok-commissions?channel_id=${encodeURIComponent(requestedChannelId)}&from=${state.shopDateFrom}&to=${state.shopDateTo}`), api('/api/vx/referrals').catch(() => null)]);
+  if (shopConnection && COMMISSION_WORKSPACE_ENABLED) {
+    const [commission, referral] = await loadCommissionWorkspace(`channel_id=${encodeURIComponent(requestedChannelId)}&from=${state.shopDateFrom}&to=${state.shopDateTo}`);
     if (loadSeq !== state.connectionLoadSeq || !channelOwnership.current(context)) return null;
     renderAccurateCommission(commission, referral);
     stampChannelOwnedActions($("#shopDashboard"), context);
