@@ -17,6 +17,7 @@ namespace VisionDBrowserLauncher
     internal static class Program
     {
         private const string SchemePrefix = "visiond-profile://open";
+        private const string TikTokLoginUrl = "https://www.tiktok.com/login";
         private static readonly Regex ExistingPattern = new Regex(
             @"\Avisiond-profile://open/?\?mode=existing&channel_id=([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})(?:&intent=(view|tiktok|shop))?\z",
             RegexOptions.CultureInvariant);
@@ -46,7 +47,9 @@ namespace VisionDBrowserLauncher
                     Console.WriteLine("channel_id=" + (request.ChannelId == Guid.Empty ? "" : request.ChannelId.ToString("D")));
                     Console.WriteLine("slot_id=" + request.SlotId.ToString("D"));
                     Console.WriteLine("profile_leaf=" + Path.GetFileName(profileDirectory));
-                    Console.WriteLine("target=visiondonline.com/tiktok-analyzer");
+                    Uri targetUri = new Uri(target);
+                    Console.WriteLine("target=" + targetUri.GetLeftPart(UriPartial.Path));
+                    Console.WriteLine("target_has_query=" + (!String.IsNullOrEmpty(targetUri.Query) ? "true" : "false"));
                     return 0;
                 }
 
@@ -129,7 +132,7 @@ namespace VisionDBrowserLauncher
         {
             string slotId = request.SlotId.ToString("D");
             if (request.ChannelId == Guid.Empty)
-                return "https://visiondonline.com/tiktok-analyzer?launcher_profile=1&launcher_mode=new&launcher_slot=" + slotId + "&connect=tiktok_new";
+                return TikTokLoginUrl;
             string target = "https://visiondonline.com/tiktok-analyzer?channel_id=" + request.ChannelId.ToString("D") + "&launcher_profile=1&launcher_mode=existing";
             if (request.Kind == "slot") target += "&launcher_slot=" + slotId;
             if (request.Intent != "view") target += "&connect=" + request.Intent;

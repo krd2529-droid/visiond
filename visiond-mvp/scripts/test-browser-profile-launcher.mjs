@@ -36,8 +36,15 @@ try {
   assert.notEqual(a1.stdout, b1.stdout, "A and B must use different profile directories");
   assert.match(n1.stdout, new RegExp(`profile_leaf=slot-${slot}`));
   assert.doesNotMatch(n1.stdout, /channel-/);
+  const newTarget = n1.stdout.match(/^target=(.+)$/m)?.[1];
+  assert.equal(newTarget, "https://www.tiktok.com/login", "new profiles must open the fixed TikTok Login page");
+  assert.match(n1.stdout, /^target_has_query=false$/m, "the provider target must have no query payload");
+  assert.doesNotMatch(newTarget, new RegExp(slot), "the TikTok target must contain no slot, channel or auth value");
+  assert.doesNotMatch(newTarget, /visiondonline|launcher_|connect=|\?/, "new profile bootstrap must not open VisionD or an OAuth handoff");
   assert.equal(boundA.status, 0);
   assert.match(boundA.stdout, new RegExp(`profile_leaf=slot-${slot}`), "bound channel must reopen its original slot directory");
+  assert.match(boundA.stdout, /^target=https:\/\/visiondonline\.com\/tiktok-analyzer$/m, "bound channel actions must retain the fixed VisionD target");
+  assert.match(boundA.stdout, /^target_has_query=true$/m, "bound actions must retain their fixed channel handoff parameters");
   assert.equal(normalizedA.stdout, a1.stdout, "Windows-normalized empty root path must preserve the same channel profile");
   assert.equal(normalizedNew.stdout, n1.stdout, "Windows-normalized empty root path must preserve the same pending slot");
 
@@ -61,6 +68,7 @@ try {
 
   assert.match(launcherSource, /UseShellExecute = false/);
   assert.match(launcherSource, /QuoteArgument\("--user-data-dir=" \+ profileDirectory\)/);
+  assert.match(launcherSource, /private const string TikTokLoginUrl = "https:\/\/www\.tiktok\.com\/login"/);
   assert.match(launcherSource, /https:\/\/visiondonline\.com\/tiktok-analyzer/);
   assert.doesNotMatch(launcherSource, /cmd\.exe|powershell\.exe|ProcessStartInfo\(raw|Process\.Start\(raw/i);
   assert.match(installSource, /HKCU:\\Software\\Classes\\visiond-profile/);
@@ -143,6 +151,8 @@ exit 0
   timers.shift()();
   assert.equal(controller.reopenPending(), true);
   assert.equal(invoked.at(-1), `visiond-profile://open?mode=new&slot_id=${slot}`);
+  assert.ok(statuses.at(-1)?.includes("TikTok Login"));
+  assert.ok(statuses.at(-1)?.includes("ไม่ได้เชื่อม API เพิ่มโดยอัตโนมัติ"));
   timers.shift()();
   assert.equal(controller.launchExisting(b, slot, "shop"), true);
   assert.equal(invoked.at(-1), `visiond-profile://open?mode=existing&channel_id=${b}&slot_id=${slot}&intent=shop`);
@@ -190,6 +200,8 @@ exit 0
   assert.equal(raceSlots.length, 1, "the locked call must not consume a UUID");
 
   assert.match(analyzerSource, /browserLauncher\.launchNew\(\)/, "+new must always request a fresh isolated slot");
+  assert.match(analyzerSource, /เปิด TikTok Login ในโปรไฟล์นี้อีกครั้ง/);
+  assert.match(analyzerSource, /ยังไม่ได้ตรวจสถานะล็อกอินหรือการเชื่อม API/);
   assert.match(analyzerSource, /browserLauncher\.launchExisting\(context\.channelId,String\(channel\.browser_profile_slot_id\|\|""\),mode\)/);
   assert.match(analyzerSource, /launcherContext\?\.slotId\?state\.channels\.find/,
     "current profile identity must be resolved against any owned channel, not only the selected channel");
