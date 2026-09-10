@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const source=await readFile(new URL('../public/tiktok-analyzer.js',import.meta.url),'utf8');
+const start=source.indexOf('function createTikTokConnectionPreflight('),end=source.indexOf('\nfunction tiktokShopActionVisibility',start);
+const create=new Function(source.slice(start,end)+';return createTikTokConnectionPreflight;')();
+const fields=new Map();const dialog={open:false,querySelector(selector){if(!fields.has(selector))fields.set(selector,{disabled:false,textContent:'',dataset:{},addEventListener(){}});return fields.get(selector)},addEventListener(){},showModal(){this.open=true},close(){this.open=false}};
+let resolve,channel='channel-a';
+const pending=new Promise(r=>resolve=r);
+const preflight=create({dialog,getIntent:mode=>({mode,channelId:channel,channelName:channel}),isCurrent:()=>true,navigate:()=>pending,origin:'https://visiondonline.com'});
+preflight.open('tiktok');preflight.confirm();preflight.close();channel='channel-b';preflight.open('tiktok');resolve(true);await new Promise(r=>setTimeout(r,0));
+assert.equal(dialog.open,true,'Late A result must not close newly opened B confirmation');
+assert.equal(fields.get('[data-preflight-channel]').textContent,'channel-b');
+console.log('PASS late A promise cannot mutate new B preflight');

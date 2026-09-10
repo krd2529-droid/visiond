@@ -194,5 +194,5 @@ assert.match(source, /stampChannelOwnedActions\(\$\("#shopDashboard"\), context\
 
 assert.equal(version.trim(), 'v0.20.71');
 assert.match(html, /<b>v0\.20\.71<\/b>/);
-assert.match(html, /tiktok-analyzer\.js\?v=02128/);
+assert.match(html, /tiktok-analyzer\.js\?v=02129/);
 console.log('PASS v0.20.70 channel-owned analyzer view, async responses and mutations');

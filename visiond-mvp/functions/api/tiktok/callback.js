@@ -3,6 +3,7 @@ import {ensureDatabase} from '../../_schema.js';
 import {ensureTikTokAnalyzerSchema} from '../../_tiktok_analyzer.js';
 import {consumeTikTokState,exchangeTikTokCode,fetchTikTokProfile,prepareTikTokConnection,syncTikTokConnection,tikTokOAuthConfig,tikTokProfileBindingStatement} from '../../_tiktok_oauth.js';
 import {requireD1DataFetchAvailable} from '../../_d1_quota_breaker.js';
+import {consumeHandoff,handoffGuardStatements,handoffCompletion} from '../../_tiktok_handoff.js';
 
 const back=(status,detail='',channelId='',profileSlotId='')=>{
   const url=new URL('https://visiondonline.com/tiktok-analyzer');
@@ -31,10 +32,14 @@ async function channelPlanForProfile(ctx,auth,requestedChannelId,profile,limit){
 }
 
 export async function onRequestGet(ctx){
-  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireVxUser(ctx);if(auth.error)return back('login_required');
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);
+  const incomingState=new URL(ctx.request.url).searchParams.get('state')||'',isHandoff=incomingState.startsWith('h1');
+  const handoff=isHandoff?await consumeHandoff(ctx,incomingState,'tiktok'):null;
+  if(isHandoff&&!handoff)return handoffCompletion('invalid_state');
+  const auth=handoff?.auth||await requireVxUser(ctx);if(auth.error)return back('login_required');
   const url=new URL(ctx.request.url),providerError=String(url.searchParams.get('error')||'').slice(0,100),code=String(url.searchParams.get('code')||'').trim(),state=String(url.searchParams.get('state')||'').trim();if(!state)return back('invalid_callback');
-  const stateRow=await consumeTikTokState(ctx.env,state,auth.user.id);if(!stateRow)return back('invalid_state');
-  const profileSlotId=String(stateRow.profile_slot_id||''),done=(status,detail='',targetChannelId=stateRow.channel_id)=>back(status,detail,targetChannelId,profileSlotId);
+  const stateRow=handoff?.stateRow||await consumeTikTokState(ctx.env,state,auth.user.id);if(!stateRow)return back('invalid_state');
+  const profileSlotId=String(stateRow.profile_slot_id||''),done=(status,detail='',targetChannelId=stateRow.channel_id)=>handoff?handoffCompletion(status,targetChannelId,auth.handoff.id):back(status,detail,targetChannelId,profileSlotId);
   if(providerError)return done('denied',providerError);if(!code)return done('invalid_callback');
   let channelId=stateRow.channel_id;
   try{
@@ -52,7 +57,7 @@ export async function onRequestGet(ctx){
     statements.push(prepared.statement);
     if(profileSlotId)statements.push(tikTokProfileBindingStatement(ctx.env,{slotId:profileSlotId,userId:auth.user.id,channelId,openId:prepared.openId}));
     let results=[];
-    try{results=await ctx.env.DB.batch(statements)}catch(error){
+    try{const guards=handoffGuardStatements(ctx.env,auth);results=(await ctx.env.DB.batch([...guards,...statements])).slice(guards.length)}catch(error){
         const failure=String(error?.message||error).toLowerCase();
         if(failure.includes('profile_binding_prerequisite')&&plan.kind!=='existing'&&auth.vx.account_limit!==null){const count=await ctx.env.DB.prepare('SELECT COUNT(*) count FROM tiktok_channels WHERE created_by=? AND archived_at IS NULL').bind(auth.user.id).first();if(Number(count?.count)>=Number(auth.vx.account_limit))throw new Error('VX_ACCOUNT_LIMIT')}
         if(failure.includes('profile_binding')||failure.includes('unique')||failure.includes('constraint'))return done('profile_conflict','',channelId);
@@ -62,6 +67,7 @@ export async function onRequestGet(ctx){
     if(plan.statement&&results[0]?.meta?.changes!==1)throw new Error('VX_ACCOUNT_LIMIT');
     if(connectionResult?.meta?.changes!==1)return done('profile_conflict','',channelId);
     const connection=await ctx.env.DB.prepare("SELECT * FROM tiktok_connections WHERE id=? AND user_id=? AND channel_id=? AND open_id=? AND status='active'").bind(prepared.id,auth.user.id,channelId,prepared.openId).first();if(!connection)return done('channel_unavailable','',channelId);
+    if(handoff)return done('connected','',channelId);
     const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_oauth_post_connect_sync');if(blocked)return done('connected','sync_deferred_d1_quota',channelId);await syncTikTokConnection(ctx.env,connection);return done('connected','',channelId);
   }catch(error){
     if(error?.message==='VX_ACCESS_EXPIRED')return done('access_expired','',stateRow.channel_id);

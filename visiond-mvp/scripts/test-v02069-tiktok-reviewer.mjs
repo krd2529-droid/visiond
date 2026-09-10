@@ -45,7 +45,7 @@ assert.ok(callbackFinalAccess>callbackSource.indexOf('channelForProfile(')&&call
 assert.ok(callbackSource.lastIndexOf('archived_at IS NULL',callbackSave)<callbackFinalAccess,'regular callback must refresh access after its final selected-channel ownership await');
 const shopSave=shopCallbackSource.indexOf('saveTikTokShopCreatorConnection('),shopFinalAccess=shopCallbackSource.lastIndexOf('vxRequestAccessStillCurrent',shopSave);
 assert.ok(shopFinalAccess>shopCallbackSource.lastIndexOf('archived_at IS NULL',shopSave)&&shopFinalAccess<shopSave,'Shop callback must recheck live access after its final ownership await');
-assert.equal(version.trim(),'v0.20.71');assert.match(adminHtml,/ADMIN v0\.20\.71/);assert.match(adminHtml,/admin\.js\?v=02069/);assert.match(adminHtml,/admin-mobile\.css\?v=014129/);assert.match(analyzerHtml,/<b>v0\.20\.71<\/b>/);assert.match(analyzerHtml,/tiktok-analyzer\.js\?v=02128/);
+assert.equal(version.trim(),'v0.20.71');assert.match(adminHtml,/ADMIN v0\.20\.71/);assert.match(adminHtml,/admin\.js\?v=02069/);assert.match(adminHtml,/admin-mobile\.css\?v=014129/);assert.match(analyzerHtml,/<b>v0\.20\.71<\/b>/);assert.match(analyzerHtml,/tiktok-analyzer\.js\?v=02129/);
 
 console.log('PASS v0.20.69 TikTok Shop disconnected/connected/loading/stale action visibility');
 

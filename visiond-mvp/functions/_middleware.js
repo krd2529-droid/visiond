@@ -41,6 +41,10 @@ export async function onRequest(ctx){
   const headers=new Headers(response.headers);
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
   headers.set('x-frame-options','SAMEORIGIN');
+  if(['/tiktok-handoff','/tiktok-handoff.html','/api/tiktok/handoff','/api/tiktok/handoff-redeem','/api/tiktok/callback','/api/tiktok-shop/callback'].includes(url.pathname)){
+    headers.set('referrer-policy','no-referrer');headers.set('x-frame-options','DENY');headers.set('cache-control','private, no-store');
+    headers.set('content-security-policy',"default-src 'none'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+  }
   const country=String(request.cf?.country||request.headers.get('cf-ipcountry')||'').toUpperCase();
   const cookies=request.headers.get('cookie')||'';
   const isHtml=(request.headers.get('accept')||'').includes('text/html');

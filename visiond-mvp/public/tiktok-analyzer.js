@@ -30,7 +30,7 @@ function createTikTokShopNavigation({ getState, setOutputScope, setWorkspaceView
 
 function createTikTokConnectionPreflight({ dialog, getIntent, isCurrent, navigate, getClipboard = () => navigator.clipboard, origin = location.origin }) {
   const modes = new Set(["tiktok", "shop", "tiktok_new"]);
-  let intent = null, navigationStarted = false, copyAttempt = 0, copyPending = false;
+  let intent = null, navigationStarted = false, copyAttempt = 0, copyPending = false, navigationAttempt=0;
   const field = (name) => dialog?.querySelector(`[data-preflight-${name}]`);
   const providerLabel = (mode) => mode === "shop" ? "TikTok Shop Creator" : "TikTok Login Kit";
   const oauthUrl = (target) => {
@@ -53,6 +53,7 @@ function createTikTokConnectionPreflight({ dialog, getIntent, isCurrent, navigat
     status.dataset.type = type;
   };
   const close = () => {
+    navigationAttempt++;
     intent = null;
     navigationStarted = false;
     copyPending = false;
@@ -63,6 +64,7 @@ function createTikTokConnectionPreflight({ dialog, getIntent, isCurrent, navigat
     if (dialog?.open) dialog.close();
   };
   const open = (mode) => {
+    navigationAttempt++;
     if (!modes.has(mode)) return false;
     const target = getIntent(mode);
     if (!target || !isCurrent(target)) return false;
@@ -92,7 +94,9 @@ function createTikTokConnectionPreflight({ dialog, getIntent, isCurrent, navigat
     navigationStarted = true;
     field("confirm").disabled = true;
     try {
-      navigate(oauthUrl(intent));
+      const target=intent,attempt=++navigationAttempt,current=()=>attempt===navigationAttempt&&intent===target&&isCurrent(target);
+      const result=navigate(oauthUrl(target),current);
+      if(result?.then)result.then(ok=>{if(!current())return;if(ok)close();else{navigationStarted=false;field("confirm").disabled=false;setStatus("ยังเปิดการเชื่อมไม่ได้ ตรวจข้อความที่หน้าหลักแล้วลองอีกครั้ง","error")}}).catch(()=>{if(current()){navigationStarted=false;field("confirm").disabled=false}});
       return true;
     } catch {
       navigationStarted = false;
@@ -181,7 +185,7 @@ function createTikTokChannelOwnership(getSelected) {
 }
 
 const $ = (selector) => document.querySelector(selector), escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[c]);
-document.body.insertAdjacentHTML("beforeend", '<dialog id="tiktokConnectionPreflight" class="connection-preflight" aria-labelledby="connectionPreflightTitle"><form method="dialog"><div class="connection-preflight-head"><small>ตรวจสอบก่อนเชื่อมบัญชี</small><h2 id="connectionPreflightTitle">ช่อง VisionD และบัญชี TikTok เป็นคนละส่วนกัน</h2></div><dl><div><dt>ช่องใน VisionD</dt><dd data-preflight-channel></dd></div><div><dt>ระบบที่จะเชื่อม</dt><dd data-preflight-provider></dd></div></dl><p data-preflight-warning></p><details><summary>ต้องการใช้บัญชี TikTok คนละบัญชี?</summary><p>เปิดลิงก์นี้ในโปรไฟล์เบราว์เซอร์อีกโปรไฟล์ แล้วเข้าสู่ระบบด้วยบัญชี VisionD เดิมที่มีช่องนี้ จากนั้นเข้าสู่ TikTok ด้วยบัญชีที่ต้องการ โปรไฟล์เบราว์เซอร์ช่วยจำการเข้าสู่ระบบแยกกัน ส่วนหน้าต่างไม่ระบุตัวตนเป็นเพียงเซสชันชั่วคราว</p></details><div class="connection-preflight-actions"><button class="vds-btn vds-btn--secondary" type="button" data-preflight-copy>คัดลอกลิงก์เปิดช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-preflight-cancel>ยกเลิก</button><button class="vds-btn vds-btn--primary" type="button" data-preflight-confirm>ไปเลือกบัญชีบน TikTok</button></div><label data-preflight-manual hidden>คัดลอกลิงก์ด้วยตนเอง<input data-preflight-url type="text" readonly></label><p data-preflight-status role="status" aria-live="polite"></p></form></dialog>');
+document.body.insertAdjacentHTML("beforeend", '<dialog id="tiktokConnectionPreflight" class="connection-preflight" aria-labelledby="connectionPreflightTitle"><form method="dialog"><div class="connection-preflight-head"><small>ตรวจสอบก่อนเชื่อมบัญชี</small><h2 id="connectionPreflightTitle">ช่อง VisionD และบัญชี TikTok เป็นคนละส่วนกัน</h2></div><dl><div><dt>ช่องใน VisionD</dt><dd data-preflight-channel></dd></div><div><dt>ระบบที่จะเชื่อม</dt><dd data-preflight-provider></dd></div></dl><p data-preflight-warning></p><details><summary>ต้องการใช้บัญชี TikTok คนละบัญชี?</summary><p>ปุ่มยืนยันจะเปิดขั้นตอนอนุญาตใน Chrome แยกของช่องนี้ผ่าน VisionD Browser Launcher โดยไม่ต้องเข้าสู่ VisionD ซ้ำ ตรวจชื่อบัญชีบน TikTok ก่อนอนุญาต หากต้องการใช้โปรไฟล์ที่เปิดไว้ ให้ยกเลิกและเลือกผูกโปรไฟล์จากหน้าหลัก</p></details><div class="connection-preflight-actions"><button class="vds-btn vds-btn--secondary" type="button" data-preflight-copy>คัดลอกลิงก์เปิดช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-preflight-cancel>ยกเลิก</button><button class="vds-btn vds-btn--primary" type="button" data-preflight-confirm>ไปเลือกบัญชีบน TikTok</button></div><label data-preflight-manual hidden>คัดลอกลิงก์ด้วยตนเอง<input data-preflight-url type="text" readonly></label><p data-preflight-status role="status" aria-live="polite"></p></form></dialog>');
 const normalizeProductName = (value) => String(value ?? "").normalize("NFKC").toLocaleLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const arrayValue = (value) => Array.isArray(value) ? value : value === null || value === void 0 || value === "" ? [] : [value], textValue = (value) => Array.isArray(value) ? value.join(" \xB7 ") : String(value ?? "");
 const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Date(Date.now() + 252e5).toISOString(), thaiToday = () => thaiNow().slice(0, 10), shiftThaiDate = (date, days) => {
@@ -202,7 +206,7 @@ const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launche
 let launcherContext=launcherContextFromQuery;
 let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "";
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, analysisRuns: [], runPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
-$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label>กำลังตรวจโปรไฟล์ของช่อง</small></div><div class="browser-profile-actions"><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิดช่องนี้ใน Chrome แยก</button><button class="vds-btn vds-btn--secondary" type="button" data-reopen-pending-profile hidden>เปิด TikTok Login ในโปรไฟล์นี้อีกครั้ง</button><button class="vds-btn vds-btn--primary" type="button" data-continue-pending hidden>เชื่อม TikTok API กับ VisionD</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
+$("#channels").insertAdjacentHTML("beforebegin",'<section id="browserProfilePanel" class="browser-profile-panel"><div><b>Chrome แยกตามช่อง</b><small data-browser-profile-label>กำลังตรวจโปรไฟล์ของช่อง</small></div><div class="browser-profile-actions"><button class="vds-btn vds-btn--secondary" type="button" data-open-channel-profile hidden>เปิด TikTok ของช่องนี้</button><button class="vds-btn vds-btn--secondary" type="button" data-reopen-pending-profile hidden>เปิด TikTok Login ในโปรไฟล์นี้อีกครั้ง</button><button class="vds-btn vds-btn--primary" type="button" data-continue-pending hidden>เชื่อม TikTok API กับ VisionD</button></div><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></section>');
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
 const channelOwnership = createTikTokChannelOwnership(() => state.selected);
@@ -336,15 +340,15 @@ const connectionPreflight = createTikTokConnectionPreflight({
   dialog: $("#tiktokConnectionPreflight"),
   getIntent(mode) {
     if (!pageAuthorized) return null;
-    if (mode === "tiktok_new") return { mode, revision: channelOwnership.revision(), channelId: "", channelName: "", profileSlotId: launcherContext?.mode==="new"?launcherContext.slotId:"" };
+    if (mode === "tiktok_new") return { mode, revision: channelOwnership.revision(), channelId: "", channelName: "", profileSlotId: browserLauncher?.readPending()||(launcherContext?.mode==="new"?launcherContext.slotId:"") };
     const context = channelOwnership.capture();
     if (!context) return null;
     const channel = state.channels.find((item) => String(item.id) === context.channelId);
     if (!channel) return null;
-    return { ...context, mode, channelName: String(channel.name || "ช่องที่เลือก"), profileSlotId: String(channel.browser_profile_slot_id||"") };
+    const explicitPendingSlot=pendingReconnectSlot;pendingReconnectSlot="";return { ...context, mode, explicitPendingSlot, channelName: String(channel.name || "ช่องที่เลือก"), profileSlotId: explicitPendingSlot||String(channel.browser_profile_slot_id||"") };
   },
-  isCurrent(target) { return target.mode === "tiktok_new" ? channelOwnership.unchanged(target.revision)&&(!target.profileSlotId||launcherContext?.mode==="new"&&launcherContext.slotId===target.profileSlotId) : channelOwnership.current(target) && state.channels.some((item) => String(item.id) === target.channelId&&String(item.browser_profile_slot_id||"")===String(target.profileSlotId||"")); },
-  navigate: (url) => location.assign(url)
+  isCurrent(target) { return target.mode === "tiktok_new" ? channelOwnership.unchanged(target.revision)&&(!target.profileSlotId||browserLauncher?.readPending()===target.profileSlotId||launcherContext?.mode==="new"&&launcherContext.slotId===target.profileSlotId) : channelOwnership.current(target) && state.channels.some((item) => String(item.id) === target.channelId&&(target.explicitPendingSlot?browserLauncher?.readPending()===target.explicitPendingSlot:String(item.browser_profile_slot_id||"")===String(target.profileSlotId||""))); },
+  navigate: (url,current) => issueProfileOAuth(url,current)
 });
 function selectedChannel(){return state.channels.find(channel=>String(channel.id)===String(state.selected))||null}
 function browserProfileMatches(channel){
@@ -353,11 +357,29 @@ function browserProfileMatches(channel){
   return slot?launcherContext.slotId===slot:launcherContext.mode==="existing"&&!launcherContext.slotId&&launcherContext.channelId===String(channel.id);
 }
 function routeProfileConnection(mode){
+  pendingReconnectSlot='';
   const context=channelOwnership.capture(),channel=context&&selectedChannel();
   if(!context||!channel||String(channel.id)!==context.channelId){setBrowserProfileStatus("กรุณารอให้ช่องที่เลือกโหลดเสร็จก่อน","error");return false}
-  if(browserProfileMatches(channel))return connectionPreflight.open(mode);
   if(!browserLauncher){setBrowserProfileStatus("เบราว์เซอร์นี้ยังไม่มี VisionD Browser Launcher จึงไม่ได้เปิด OAuth","error");return false}
-  return browserLauncher.launchExisting(context.channelId,String(channel.browser_profile_slot_id||""),mode);
+  return connectionPreflight.open(mode);
+}
+let profileOAuthBusy=false,profileOAuthPending=false,pendingReconnectSlot='',profileHandoffRequest=null;
+async function issueProfileOAuth(rawUrl,isActive=()=>true){
+  if(profileOAuthBusy||!pageAuthorized||!browserLauncher)return false;
+  const url=new URL(rawUrl,location.origin),provider=url.pathname==='/api/tiktok-shop/connect'?'shop':'tiktok';
+  const create=url.searchParams.get('create')==='1',channelId=create?'':url.searchParams.get('channel_id')||'';
+  const context=channelOwnership.capture(),revision=channelOwnership.revision(),owner=pageViewerId;
+  const channel=create?null:selectedChannel(),slotId=create?(url.searchParams.get('profile_slot_id')||''):(url.searchParams.get('profile_slot_id')||channel?.browser_profile_slot_id||'');
+  pendingReconnectSlot='';
+  if(!browserProfileUuid.test(slotId)||!create&&(!context||context.channelId!==channelId)){setBrowserProfileStatus('ช่องนี้ยังไม่ผูกโปรไฟล์ เลือกใช้โปรไฟล์ที่เปิดไว้ก่อนหน้านี้ แล้วกดผูกกับช่องที่เลือก','error');return false}
+  if(provider==='shop'&&!channel?.browser_profile_slot_id){setBrowserProfileStatus('เชื่อม TikTok Login Kit ของช่องนี้ก่อน เพื่อผูกโปรไฟล์ที่ถูกต้อง แล้วจึงเชื่อม Shop','error');return false}
+  profileOAuthBusy=true;
+  try{
+    const response=await fetch('/api/tiktok/handoff',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({provider,intent:create?'new':'reconnect',slot_id:slotId,channel_id:channelId})}),body=await response.json();
+    if(!response.ok)throw new Error(body.error||'เริ่มเชื่อมไม่สำเร็จ');
+    if(!isActive()||owner!==pageViewerId||!pageAuthorized||!channelOwnership.unchanged(revision)||!create&&!channelOwnership.current(context))return false;
+    profileOAuthPending=browserLauncher.launchHandoff(body);if(profileOAuthPending)profileHandoffRequest={id:body.id,slotId,revision,owner};return profileOAuthPending;
+  }catch(error){setBrowserProfileStatus(error.message,'error');return false}finally{profileOAuthBusy=false}
 }
 function updateBrowserProfilePanel(){
   const channel=selectedChannel(),label=$("[data-browser-profile-label]"),open=$("[data-open-channel-profile]"),pending=$("[data-continue-pending]"),reopen=$("[data-reopen-pending-profile]");
@@ -365,8 +387,9 @@ function updateBrowserProfilePanel(){
   const currentBound=launcherContext?.slotId?state.channels.find(item=>String(item.browser_profile_slot_id||"")===launcherContext.slotId):null,boundHere=channel&&browserProfileMatches(channel),pendingHere=launcherContext?.mode==="new"&&launcherContext.slotId&&!currentBound;
   if(label)label.textContent=currentBound?`โปรไฟล์นี้ประจำช่อง ${currentBound.name||"ที่ผูกไว้"}`:pendingHere?"โปรไฟล์นี้มีไว้ล็อกอิน TikTok แยก ระบบยังไม่ได้ตรวจสถานะล็อกอินหรือการเชื่อม API":boundHere?`โปรไฟล์นี้ประจำช่อง ${channel.name||"ที่เลือก"}`:channel?.browser_profile_slot_id?`ช่อง ${channel.name||"ที่เลือก"} มี Chrome แยกที่ผูกแล้ว`:channel?`ช่อง ${channel.name||"ที่เลือก"} ยังใช้โปรไฟล์แยกแบบเดิม`:"เลือกช่องเพื่อดูโปรไฟล์";
   if(open)open.hidden=!channel||boundHere;
-  if(pending)pending.hidden=!pendingHere;
+  if(pending)pending.hidden=!(pendingHere||savedPending&&!boundPending);
   if(reopen)reopen.hidden=!browserLauncher?.readPending?.()||pendingHere;
+  const bind=$("[data-bind-pending-selected]");if(bind)bind.hidden=!(savedPending&&!boundPending&&channel&&!channel.browser_profile_slot_id);
 }
 const tiktokShopNavigation = createTikTokShopNavigation({ getState: () => state, setOutputScope, setWorkspaceView, setChannelView, navigate: () => routeProfileConnection("shop") });
 async function loadPortfolioDashboard() {
@@ -1572,7 +1595,25 @@ function requestNewBrowserProfile(){
 $("#newChannel").addEventListener("click",requestNewBrowserProfile);
 $("[data-open-channel-profile]")?.addEventListener("click",()=>{const channel=selectedChannel();if(channel&&browserLauncher)browserLauncher.launchExisting(String(channel.id),String(channel.browser_profile_slot_id||""),"view")});
 $("[data-reopen-pending-profile]")?.addEventListener("click",()=>browserLauncher?.reopenPending?.());
-$("[data-continue-pending]")?.addEventListener("click",()=>{if(launcherContext?.mode==="new"&&launcherContext.slotId)connectionPreflight.open("tiktok_new")});
+$("[data-continue-pending]")?.addEventListener("click",()=>connectionPreflight.open("tiktok_new"));
+$("#browserProfilePanel .browser-profile-actions")?.insertAdjacentHTML('beforeend','<button type="button" class="vds-btn vds-btn--secondary" data-bind-pending-selected hidden>ผูกโปรไฟล์ที่เปิดไว้กับช่องที่เลือก</button><button type="button" class="vds-btn vds-btn--secondary" data-refresh-profile>รีเฟรชสถานะช่อง</button>');
+$("[data-bind-pending-selected]")?.addEventListener('click',()=>{const slot=browserLauncher?.readPending();if(!slot||!selectedChannel()){setBrowserProfileStatus('ต้องมีโปรไฟล์ที่เปิดค้างและเลือกช่องก่อน','error');return}pendingReconnectSlot=slot;connectionPreflight.open('tiktok')});
+let profileRefreshRequest=null;
+const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return profileRefreshRequest;const request=profileHandoffRequest;profileRefreshRequest=(async()=>{
+ if(!request){await loadChannels();return}
+ const response=await fetch(`/api/tiktok/handoff-status?id=${encodeURIComponent(request.id)}`,{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw new Error('อ่านสถานะการเชื่อมไม่ได้');const result=await response.json();
+ if(request!==profileHandoffRequest||request.owner!==pageViewerId)return;
+ if(result.status==='complete'){
+   profileOAuthPending=false;profileHandoffRequest=null;
+   if(browserProfileUuid.test(result.channel_id)&&channelOwnership.unchanged(request.revision)){state.selected=result.channel_id;await loadChannels();browserLauncher?.clearPending(request.slotId)}
+   setBrowserProfileStatus('บันทึกการอนุญาตแล้ว สถานะสิทธิ์ API แสดงแยกตามช่อง');
+ }else if(result.status==='expired'){profileOAuthPending=false;profileHandoffRequest=null;setBrowserProfileStatus('คำขอหมดอายุ กรุณาเริ่มเชื่อมใหม่','error')}
+ else setBrowserProfileStatus('ยังไม่มีผลการเชื่อมที่ยืนยันแล้ว เมื่ออนุญาตเสร็จกดรีเฟรชสถานะอีกครั้ง');
+})().catch(error=>setBrowserProfileStatus(error.message,'error')).finally(()=>{profileRefreshRequest=null});return profileRefreshRequest};
+$("[data-refresh-profile]")?.addEventListener('click',refreshProfileStatus);
+$("#browserProfilePanel .browser-profile-actions")?.insertAdjacentHTML('beforeend','<details><summary>ใช้โปรไฟล์เดิม</summary><button type="button" class="vds-btn vds-btn--secondary" data-restore-profile>ใช้โปรไฟล์ที่เปิดไว้ก่อนหน้านี้</button></details>');
+$("[data-restore-profile]")?.addEventListener('click',()=>{const slot=String(prompt('ใส่รหัสโปรไฟล์ UUID ที่เปิดไว้ ระบบจะจำโปรไฟล์นี้เป็นโปรไฟล์รอผูก และตรวจบัญชี TikTok ก่อนผูกช่อง')||'').trim().toLowerCase();if(!slot)return;if(!browserProfileUuid.test(slot)){setBrowserProfileStatus('รหัสโปรไฟล์ไม่ถูกต้อง','error');return}if(browserLauncher?.rememberPending(slot)){setBrowserProfileStatus('จำโปรไฟล์นี้แล้ว เลือกเพิ่มช่องใหม่หรือผูกกับช่องที่เลือก แล้วอนุญาต TikTok');updateBrowserProfilePanel()}});
+window.addEventListener('focus',()=>{if(profileOAuthPending)refreshProfileStatus()});
 async function syncTikTokShopData(mode) {
   const context=channelOwnership.capture(),shopConnection=context&&state.shopConnection&&String(state.shopConnection.channel_id)===context.channelId?state.shopConnection:null;
   if (!context||!shopConnection) return;

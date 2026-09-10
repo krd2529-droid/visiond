@@ -12,6 +12,6 @@ assert.match(client, /renderOwnedResult\(response\.result \|\| \{\}, context\)/)
 assert.match(client, /if \(!channelOwnership\.current\(context\)\) return/);
 assert.match(client, /AI วิเคราะห์สินค้าแนะนำเกรด E เรียบร้อยแล้ว/);
 assert.match(css, /\.ai-recommendations-head button\{/);
-assert.match(html, /tiktok-analyzer\.js\?v=02128/);
+assert.match(html, /tiktok-analyzer\.js\?v=02129/);
 assert.match(html, /tiktok-analyzer\.css\?v=02095/);
 console.log("TikTok AI grade-E analysis action: PASS");

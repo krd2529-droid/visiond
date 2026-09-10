@@ -133,8 +133,8 @@ assert.match(admin, /ADMIN v0\.20\.71/);
 assert.match(html, /<b>v0\.20\.71<\/b>/);
 assert.match(html, /tiktok-analyzer\.css\?v=02095/);
 assert.match(html, /visiond-button-system\.css\?v=014407/);
-assert.match(html, /browser-profile-launcher\.js\?v=1/);
-assert.match(html, /tiktok-analyzer\.js\?v=02128/);
+assert.match(html, /browser-profile-launcher\.js\?v=2/);
+assert.match(html, /tiktok-analyzer\.js\?v=02129/);
 assert.match(source, /vds-btn vds-btn--secondary/);
 assert.match(source, /vds-btn vds-btn--primary/);
 

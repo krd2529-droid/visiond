@@ -68,8 +68,8 @@ const runtime = ({ selected, channels, launcherContext, pending = "" }) => {
   assert.equal(value.nodes.get("[data-continue-pending]").hidden, true, "bound slot A is not a pending slot after selecting B");
   assert.match(value.nodes.get("[data-browser-profile-label]").textContent, /ประจำช่อง A/);
   assert.equal(value.sandbox.route("tiktok"), true);
-  assert.deepEqual(JSON.parse(JSON.stringify(value.launches)), [[ids.b, ids.slotB, "tiktok"]]);
-  assert.deepEqual(value.preflights, [], "B OAuth must not begin inside A profile");
+  assert.deepEqual(value.launches, [], "preflight does not start native OAuth before explicit confirmation");
+  assert.deepEqual(value.preflights, ['tiktok'], "B is captured before authenticated handoff issuance");
 }
 {
   const value = runtime({ selected: ids.a, channels: [channelA, channelB], launcherContext: { mode: "existing", slotId: ids.slotA, channelId: ids.a } });
@@ -83,7 +83,8 @@ const runtime = ({ selected, channels, launcherContext, pending = "" }) => {
   const value = runtime({ selected: ids.b, channels: [channelA, legacyB], launcherContext: { mode: "existing", slotId: ids.slotA, channelId: ids.a } });
   value.sandbox.update();
   assert.equal(value.sandbox.route("tiktok"), true);
-  assert.deepEqual(JSON.parse(JSON.stringify(value.launches)), [[ids.b, "", "tiktok"]], "legacy B must use its B channel directory");
+  assert.deepEqual(value.launches, [], "unbound legacy must not silently open a fresh slot");
+  assert.deepEqual(value.preflights, ['tiktok']);
 }
 {
   const value = runtime({ selected: ids.b, channels: [legacyB], launcherContext: { mode: "new", slotId: ids.pending, channelId: "" } });

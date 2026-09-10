@@ -107,6 +107,7 @@ const callbackCase = async ({ atLimit = false, current = () => true } = {}) => {
   if (atLimit) DB.sqlite.prepare("INSERT INTO tiktok_channels(id,name,created_by) VALUES(?,?,1)").run(CHANNEL, "Existing");
   let providerCalls = 0;
   const handler = loadCallback({
+    handoffGuardStatements: () => [],
     requireVxUser: async () => ({ user: { id: 1 }, vx: { active: true, admin: false, account_limit: 1, access_source: "paid", order_id: 1 } }),
     vxRequestAccessStillCurrent: async () => current(), vxChannelInsert, vxChannelRestore,
     ensureDatabase: async () => {}, ensureTikTokAnalyzerSchema: async () => {},

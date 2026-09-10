@@ -12,12 +12,15 @@ namespace VisionDBrowserLauncher
         internal Guid ChannelId;
         internal Guid SlotId;
         internal string Intent;
+        internal string HandoffId;
+        internal string Ticket;
     }
 
     internal static class Program
     {
         private const string SchemePrefix = "visiond-profile://open";
         private const string TikTokLoginUrl = "https://www.tiktok.com/login";
+        private static readonly Regex HandoffPattern = new Regex(@"\Avisiond-profile://open/?\?mode=handoff&slot_id=([0-9a-f-]{36})&id=([0-9a-f-]{36})&ticket=([0-9a-f]{64})\z", RegexOptions.CultureInvariant);
         private static readonly Regex ExistingPattern = new Regex(
             @"\Avisiond-profile://open/?\?mode=existing&channel_id=([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})(?:&intent=(view|tiktok|shop))?\z",
             RegexOptions.CultureInvariant);
@@ -62,6 +65,7 @@ namespace VisionDBrowserLauncher
                 start.UseShellExecute = false;
                 start.CreateNoWindow = true;
                 start.Arguments = QuoteArgument("--user-data-dir=" + profileDirectory)
+                    + " " + QuoteArgument("--no-default-browser-check")
                     + " " + QuoteArgument("--new-window")
                     + " " + QuoteArgument(target);
                 Process.Start(start);
@@ -83,7 +87,16 @@ namespace VisionDBrowserLauncher
                 if (c < 0x21 || c > 0x7e || c == '%' || c == '#' || c == '\\' || c == '"' || c == '\'') return false;
             }
 
-            Match match = BoundExistingPattern.Match(raw);
+            Match match = HandoffPattern.Match(raw);
+            if(match.Success)
+            {
+                Guid slotId, handoffId;
+                if(!Guid.TryParseExact(match.Groups[1].Value,"D",out slotId)||!IsProfileSlot(slotId)
+                    ||!Guid.TryParseExact(match.Groups[2].Value,"D",out handoffId)||!IsProfileSlot(handoffId))return false;
+                request=new LaunchRequest { Kind="slot", SlotId=slotId, ChannelId=Guid.Empty, Intent="handoff", HandoffId=handoffId.ToString("D"), Ticket=match.Groups[3].Value };
+                return true;
+            }
+            match = BoundExistingPattern.Match(raw);
             if (match.Success)
             {
                 Guid channelId, slotId;
@@ -131,7 +144,8 @@ namespace VisionDBrowserLauncher
         internal static string TargetUrl(LaunchRequest request)
         {
             string slotId = request.SlotId.ToString("D");
-            if (request.ChannelId == Guid.Empty)
+            if(request.Intent=="handoff")return "https://visiondonline.com/tiktok-handoff.html#id="+request.HandoffId+"&slot_id="+slotId+"&ticket="+request.Ticket;
+            if (request.ChannelId == Guid.Empty || request.Intent == "view")
                 return TikTokLoginUrl;
             string target = "https://visiondonline.com/tiktok-analyzer?channel_id=" + request.ChannelId.ToString("D") + "&launcher_profile=1&launcher_mode=existing";
             if (request.Kind == "slot") target += "&launcher_slot=" + slotId;

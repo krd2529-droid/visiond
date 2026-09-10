@@ -56,6 +56,7 @@ export async function vxAccessStillCurrent(env,userOrId,expected){
   return false;
 }
 export async function vxRequestAccessStillCurrent(ctx,expectedAuth){
+  if(expectedAuth?.handoff){const {handoffStillCurrent}=await import('./_tiktok_handoff.js');return handoffStillCurrent(ctx,expectedAuth)}
   const user=await currentUser(ctx,{includeCourseOwner:false});if(!user||Number(user.id)!==Number(expectedAuth?.user?.id))return false;
   return vxAccessStillCurrent(ctx.env,user,expectedAuth?.vx);
 }

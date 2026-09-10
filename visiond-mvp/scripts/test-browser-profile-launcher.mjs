@@ -49,6 +49,9 @@ try {
   assert.equal(normalizedNew.stdout, n1.stdout, "Windows-normalized empty root path must preserve the same pending slot");
 
   const invalid = [
+    `visiond-profile://open?mode=handoff&slot_id=${slot}&id=${a}&ticket=${'a'.repeat(63)}`,
+    `visiond-profile://open?mode=handoff&slot_id=${slot}&id=${a}&ticket=${'a'.repeat(64)}&url=https://evil.example`,
+    `visiond-profile://open?mode=handoff&slot_id=${slot}&id=${a}&ticket=${'A'.repeat(64)}`,
     "https://visiondonline.com/tiktok-analyzer",
     `visiond-profile://evil?mode=existing&channel_id=${a}`,
     `visiond-profile://open/path?mode=existing&channel_id=${a}`,
@@ -65,8 +68,15 @@ try {
     `visiond-profile://open?mode=new&slot_id=${slot}\r\n--load-extension=evil`
   ];
   for (const uri of invalid) assert.notEqual(inspect(uri).status, 0, `must reject ${JSON.stringify(uri)}`);
+  const handoff=inspect(`visiond-profile://open?mode=handoff&slot_id=${slot}&id=${a}&ticket=${'a'.repeat(64)}`);
+  assert.equal(handoff.status,0);assert.match(handoff.stdout,new RegExp(`profile_leaf=slot-${slot}`));
+  assert.match(handoff.stdout,/target=https:\/\/visiondonline.com\/tiktok-handoff.html/);
+  assert.match(handoff.stdout,/target_has_query=false/);assert.doesNotMatch(handoff.stdout,/a{64}/,'inspect must not print capability');
+  assert.match(a1.stdout,/target=https:\/\/www.tiktok.com\/login/,'view reuses legacy directory without VisionD login');
 
   assert.match(launcherSource, /UseShellExecute = false/);
+  assert.match(launcherSource, /QuoteArgument\("--no-default-browser-check"\)/);
+  assert.doesNotMatch(launcherSource, /--no-first-run/);
   assert.match(launcherSource, /QuoteArgument\("--user-data-dir=" \+ profileDirectory\)/);
   assert.match(launcherSource, /private const string TikTokLoginUrl = "https:\/\/www\.tiktok\.com\/login"/);
   assert.match(launcherSource, /https:\/\/visiondonline\.com\/tiktok-analyzer/);
@@ -202,7 +212,8 @@ exit 0
   assert.match(analyzerSource, /browserLauncher\.launchNew\(\)/, "+new must always request a fresh isolated slot");
   assert.match(analyzerSource, /เปิด TikTok Login ในโปรไฟล์นี้อีกครั้ง/);
   assert.match(analyzerSource, /ยังไม่ได้ตรวจสถานะล็อกอินหรือการเชื่อม API/);
-  assert.match(analyzerSource, /browserLauncher\.launchExisting\(context\.channelId,String\(channel\.browser_profile_slot_id\|\|""\),mode\)/);
+  assert.match(analyzerSource, /browserLauncher\.launchHandoff\(body\)/);
+  assert.doesNotMatch(analyzerSource, /navigate: \(url\) => location.assign\(url\)/);
   assert.match(analyzerSource, /launcherContext\?\.slotId\?state\.channels\.find/,
     "current profile identity must be resolved against any owned channel, not only the selected channel");
   assert.match(analyzerSource, /if\(!launcherTargetConsumed&&launcherContext\?\.channelId\)/,

@@ -45,7 +45,11 @@
       if (!uri) { setStatus("ข้อมูลช่องหรือโปรไฟล์ไม่ถูกต้อง จึงไม่ได้เปิด Chrome", "error"); return false; }
       return run(uri, intent === "view" ? "ส่งคำขอเปิด Chrome ประจำช่องแล้ว" : "ส่งคำขอเปิดขั้นตอนเชื่อมบัญชีใน Chrome ประจำช่องแล้ว");
     };
-    return { launchNew, launchExisting, reopenPending, readPending, clearPending, protocolNew, protocolExisting, validUuid };
+    const launchHandoff=({id,slot_id,ticket})=>{
+      if(!validUuid(id)||!validUuid(slot_id)||!/^[0-9a-f]{64}$/.test(ticket||''))return false;
+      return run(`visiond-profile://open?mode=handoff&slot_id=${slot_id}&id=${id}&ticket=${ticket}`,"ส่งขั้นตอนอนุญาตไปยัง Chrome โปรไฟล์ที่เลือกแล้ว");
+    };
+    return { launchNew, launchExisting, launchHandoff, reopenPending, readPending, clearPending, rememberPending, protocolNew, protocolExisting, validUuid };
   }
 
   window.createVisionDBrowserLauncher = createVisionDBrowserLauncher;

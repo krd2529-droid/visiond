@@ -74,6 +74,6 @@ assert.match(home, /WEB v0\.20\.71/);
 assert.match(admin, /ADMIN v0\.20\.71/);
 assert.match(html, /<b>v0\.20\.71<\/b>/);
 assert.match(html, /tiktok-analyzer\.css\?v=02095/);
-assert.match(html, /tiktok-analyzer\.js\?v=02128/);
+assert.match(html, /tiktok-analyzer\.js\?v=02129/);
 
 console.log('PASS v0.20.64 TikTok Shop CTA selection, two-tab output restore, empty states and zero-fetch navigation');
