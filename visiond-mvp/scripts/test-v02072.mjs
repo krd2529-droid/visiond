@@ -15,7 +15,7 @@ function fixture(){
  return{s,pending,opened,statuses,reply,timers,events};
 }
 {
- const f=fixture(),a=f.s.run('shop');assert.equal(f.opened.length,1,'popup opens synchronously before any await');assert.equal(f.opened[0].channel_id,A);assert.equal(await f.s.run('tiktok'),false,'same channel cross-provider duplicate is suppressed');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.pending.length,1);f.reply(f.pending[0]);assert.equal(await a,true);assert.equal(await f.s.run('shop'),false,'ack does not blindly reissue');assert.equal(f.opened.length,1);
+ const f=fixture(),a=f.s.run('shop');assert.equal(f.opened.length,1,'popup opens synchronously before any await');assert.equal(f.opened[0].channel_id,A);assert.equal(await f.s.run('tiktok'),false,'same channel cross-provider duplicate is suppressed');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.pending.length,1);f.reply(f.pending[0]);assert.equal(await a,true);const check=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));f.reply(f.pending[1]);assert.equal(await check,false,'ack status read does not blindly reissue');assert.equal(f.opened.length,1);
 }
 {
  const f=fixture(),attrs=new Map(),node={textContent:'',dataset:{}},control={parentElement:{querySelector:()=>node},setAttribute:(k,v)=>attrs.set(k,v),removeAttribute:k=>attrs.delete(k)};
@@ -46,12 +46,12 @@ for(const status of [200,401,503]){
 console.log('PASS empty/401/503 readiness creates no command or orphan, ready second click preserves activation');
 for(const bodyHung of [false,true]){
  const f=fixture();f.s.fetch=async()=>bodyHung?{ok:true,json:()=>new Promise(()=>{})}:new Promise(()=>{});
- const run=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.timers.length,1);f.timers[0]();assert.equal(await run,false,'hung headers/body settles at deadline');assert.equal(await f.s.run('shop'),false);assert.equal(f.opened.length,1,'timeout preserves ambiguous request instead of relaunching');
+ const run=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.timers.length,1);f.timers[0]();assert.equal(await run,false,'hung headers/body settles at deadline');const check=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));f.timers[0]();assert.equal(await check,false);assert.equal(f.opened.length,1,'timeout preserves ambiguous request instead of relaunching');
  const status=f.s.readStatus(A);await new Promise(resolve=>setImmediate(resolve));f.timers[0]();await assert.rejects(status);const again=f.s.readStatus(A);await new Promise(resolve=>setImmediate(resolve));f.timers[0]();await assert.rejects(again,'timed out status dedup entry is released');
 }
 for(const bodyHung of [false,true]){
  const f=fixture();f.s.fetch=async url=>url.endsWith('/helpers')?{ok:true,json:async()=>({items:[{id:A}]})}:bodyHung?{ok:true,json:()=>new Promise(()=>{})}:new Promise(()=>{});
- const run=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.timers.length,1);f.timers[0]();assert.equal(await run,false,'hung issue headers/body releases busy lock');assert.equal(await f.s.run('shop'),false);assert.equal(f.opened.length,1);
+ const run=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.timers.length,1);f.timers[0]();assert.equal(await run,false,'hung issue headers/body releases busy lock');const check=f.s.run('shop');await new Promise(resolve=>setImmediate(resolve));f.timers[0]();assert.equal(await check,false);assert.equal(f.opened.length,1);
 }
 {
  const f=fixture(),a=f.s.readStatus(A),b=f.s.readStatus(A);assert.equal(f.pending.length,1,'focus/manual and active polling coalesce the same indexed status read');f.reply(f.pending[0]);await Promise.all([a,b]);

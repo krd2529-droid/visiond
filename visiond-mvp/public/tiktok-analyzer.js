@@ -269,16 +269,37 @@ function readLauncherStatus(commandId){
   if(!pending){pending=launcherFetch('/api/launcher/status?command_id='+encodeURIComponent(commandId)).finally(()=>launcherStatusReads.delete(commandId));launcherStatusReads.set(commandId,pending)}
   return pending.then(response=>response.clone?response.clone():response);
 }
+function clearProfileCommand(pending){
+ if(profileHandoffRequests.get(pending.key)!==pending)return false;
+ profileOAuthPendingKeys.delete(pending.key);profileHandoffRequests.delete(pending.key);profileOAuthPending=profileHandoffRequests.size>0;return true;
+}
+async function reconcileProfileCommand(mode,control,pending){
+ if(!pending||profileOAuthRequests.has(pending.key))return false;
+ const revision=channelOwnership.revision(),owner=pageViewerId,attempt={};
+ const current=()=>launcherPageActive&&pageAuthorized&&owner===pageViewerId&&pending.owner===owner&&channelOwnership.unchanged(revision)&&profileHandoffRequests.get(pending.key)===pending&&(pending.key==='new'||String(selectedChannel()?.id)===pending.key);
+ profileOAuthRequests.add(pending.key);if(control){profileControlAttempts.set(control,attempt);control.setAttribute('aria-busy','true')}
+ try{
+  const response=await readLauncherStatus(pending.commandId),result=await response.json();if(!current())return false;
+  if(!response.ok||result.command_id&&result.command_id!==pending.commandId)throw new Error('อ่านสถานะคำขอเดิมไม่ได้ ยังไม่เปิดคำขอซ้ำ');
+  const terminal=result.oauth_status==='complete'||result.expired||['failed','cancelled'].includes(result.status);
+  if(result.oauth_status==='complete'&&pending.key==='new'&&typeof refreshProfileStatus==='function'){await refreshProfileStatus();return false}
+  if(terminal){clearProfileCommand(pending);connectionActionStatus(control,result.oauth_status==='complete'?'คำขอเดิมอนุญาตเสร็จแล้ว กดปุ่มด้านล่างเพื่อทำขั้นตอนที่เลือก':'คำขอเดิมสิ้นสุดแล้ว กดปุ่มด้านล่างเพื่อเริ่มใหม่');
+   const node=control?.parentElement?.querySelector('[data-connection-action-status]');if(node){const next=document.createElement('button');next.type='button';next.textContent=mode==='shop'?'เชื่อม TikTok Shop ต่อ':'เริ่มคำขอที่เลือก';next.addEventListener('click',()=>{if(launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&!profileHandoffRequests.has(pending.key)&&(pending.key==='new'||String(selectedChannel()?.id)===pending.key))issueProfileOAuth(mode,control)});node.appendChild(next)}return false}
+  helperRecoveryStatus(control,['process_started','unknown'].includes(result.status)?'คำขอเดิมเริ่มเปิดแล้วหรือผลยังไม่แน่นอน ตรวจหน้าต่างเดิมก่อน ยังไม่สร้างคำขอซ้ำ':'คำขอเดิมยังรอการตอบรับ ใช้คำขอเดิมต่อได้โดยไม่สร้าง OAuth ใหม่');
+  const node=control?.parentElement?.querySelector('[data-connection-action-status]');
+  const action=(label,fn)=>{if(!node)return;const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>{if(current()&&!button.disabled){button.disabled=true;try{Promise.resolve(fn()).catch(e=>{if(current())helperRecoveryStatus(control,e.message)}).finally(()=>{button.disabled=false})}catch(e){button.disabled=false;if(current())helperRecoveryStatus(control,e.message)}}});node.appendChild(button)};
+  if(['pending','claimed'].includes(result.status))action('เปิดคำขอเดิมต่อ',()=>{commandLauncher.resumeCommand(pending.commandId);connectionActionStatus(control,'ส่งคำขอเดิมไปยัง Helper แล้ว กดตรวจสถานะเพื่อดูผลตอบรับ');});
+  action('ตรวจสถานะคำขอเดิม',()=>reconcileProfileCommand(mode,control,pending));
+  if(['pending','waiting'].includes(result.status))action('ยกเลิกคำขอเดิม',async()=>{const r=await launcherFetch('/api/launcher/cancel',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({command_id:pending.commandId})});if(!current())return;if(!r.ok)throw new Error('คำขอถูก Helper รับแล้วหรือยังไม่แน่นอน กรุณาตรวจสถานะใหม่');clearProfileCommand(pending);connectionActionStatus(control,'ยกเลิกคำขอเดิมแล้ว กดเชื่อมอีกครั้งเพื่อเริ่มใหม่')});
+  return false;
+ }catch(e){if(current())helperRecoveryStatus(control,e.message);return false}
+ finally{profileOAuthRequests.delete(pending.key);if(control&&profileControlAttempts.get(control)===attempt){profileControlAttempts.delete(control);control.removeAttribute('aria-busy')}}
+}
 async function issueProfileOAuth(mode,control){
   const create=mode==='tiktok_new',provider=mode==='shop'?'shop':'tiktok',context=channelOwnership.capture(),revision=channelOwnership.revision(),owner=pageViewerId;
   const channelId=create?'':context?.channelId||'',key=create?'new':channelId;
   if(profileOAuthRequests.has(key))return false;
-  if(profileOAuthPendingKeys.has(key)){
-    helperRecoveryStatus(control,'มีคำขอเชื่อมที่เปิดแล้ว ตรวจหน้าต่างเดิมและสถานะคำขอก่อนเปิดซ้ำ');
-    const node=control?.parentElement?.querySelector('[data-connection-action-status]');
-    if(node){const retry=document.createElement('button');retry.type='button';retry.textContent='ตรวจสถานะก่อนลองใหม่';retry.addEventListener('click',async()=>{const pending=profileHandoffRequests.get(key);if(!pending||retry.disabled)return;retry.disabled=true;try{const r=await launcherFetch('/api/launcher/cancel',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({command_id:pending.commandId})});if(!r.ok)throw new Error('ตัวช่วยรับคำขอแล้วหรือสถานะยังไม่แน่นอน กรุณาตรวจหน้าต่างเดิมก่อนและยังไม่เปิดซ้ำ');if(profileHandoffRequests.get(key)===pending&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context))){profileOAuthPendingKeys.delete(key);profileHandoffRequests.delete(key);connectionActionStatus(control,'คำขอเดิมสิ้นสุดแล้ว กดเชื่อมอีกครั้งเพื่อเปิดใหม่ หากมีหน้าต่างเดิมอยู่ให้ใช้หน้าต่างนั้นก่อน')}}catch(e){if(channelOwnership.unchanged(revision))helperRecoveryStatus(control,e.message)}finally{retry.disabled=false}});node.appendChild(retry)}
-    return false;
-  }
+  if(profileOAuthPendingKeys.has(key))return reconcileProfileCommand(mode,control,profileHandoffRequests.get(key));
   if(!pageAuthorized||!commandLauncher||!create&&(!context||String(selectedChannel()?.id)!==channelId)){connectionActionStatus(control,'กรุณารอให้ช่องโหลดเสร็จแล้วลองอีกครั้ง','error');return false}
   if(launcherReadiness.owner!==owner||launcherReadiness.expires<=Date.now()){
     try{await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))(launcherReadiness.helper?connectionActionStatus(control,launcherRegisteredMessage()):helperRecoveryStatus(control,launcherRegisteredMessage()))}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))helperRecoveryStatus(control,e.message)}return false;
@@ -290,7 +311,7 @@ async function issueProfileOAuth(mode,control){
   const current=()=>launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context));
   try{
     const commandId=commandLauncher.openCommand({provider,intent:create?'new':mode==='view'?'view':'reconnect',channel_id:channelId});
-    const pending={commandId,revision,owner,key};profileOAuthPendingKeys.add(key);profileOAuthPending=true;profileHandoffRequests.set(key,pending);
+    const pending={commandId,revision,owner,key,provider,intent:create?'new':mode==='view'?'view':'reconnect'};profileOAuthPendingKeys.add(key);profileOAuthPending=true;profileHandoffRequests.set(key,pending);
     const issued=await launcherFetch('/api/tiktok/handoff',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({helper_id:helper.id,command_id:commandId,provider,intent:create?'new':mode==='view'?'view':'reconnect',channel_id:channelId})}),issueBody=await issued.json();if(!current())return false;
     if(!issued.ok||issueBody.command_id!==commandId)throw new Error(issueBody.error||'สร้างคำขอไม่สำเร็จ กรุณาตรวจสถานะก่อนลองใหม่');
     const pollDeadline=Date.now()+25000;
@@ -299,6 +320,7 @@ async function issueProfileOAuth(mode,control){
       const response=await readLauncherStatus(commandId),body=await response.json();if(!current())return false;
       if(!response.ok)throw new Error('ตรวจสถานะตัวช่วยไม่สำเร็จ กรุณาลองรีเฟรชสถานะ');
       if(body.handoff_id){pending.id=body.handoff_id;pending.slotId=body.slot_id}
+      if(body.oauth_status==='complete'){if(pending.key==='new'&&typeof refreshProfileStatus==='function')await refreshProfileStatus();else clearProfileCommand(pending);connectionActionStatus(control,'บันทึกการอนุญาตแล้ว กดเชื่อม TikTok Shop ได้เมื่อพร้อม');return true}
       if(body.status==='process_started'){connectionActionStatus(control,'ตัวช่วยยืนยันว่าเริ่ม Chrome แล้ว · การเข้าสู่ระบบและอนุญาต API ยังต้องทำในหน้าต่างนั้น');if(mode==='view'){profileOAuthPendingKeys.delete(key);profileHandoffRequests.delete(key)}return true}
       if(['failed','unknown','cancelled'].includes(body.status)||body.expired)throw new Error(body.status==='unknown'?'สถานะการเปิดไม่แน่นอน กรุณาตรวจหน้าต่างเดิมก่อนลองใหม่':'ตัวช่วยเปิดไม่สำเร็จ กรุณาตรวจการติดตั้งและสถานะคำขอ');
     }

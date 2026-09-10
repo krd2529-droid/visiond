@@ -58,6 +58,11 @@
 
   window.createVisionDBrowserLauncher = createVisionDBrowserLauncher;
   window.createVisionDCommandLauncher = ({cryptoApi,openWindow}) => ({
+    resumeCommand(command_id){
+      if(!validUuid(command_id))throw new Error('คำขอโปรไฟล์ไม่ถูกต้อง');
+      openWindow('/launcher-open.html#'+new URLSearchParams({command_id}).toString(),'_blank','noopener,noreferrer');
+      return command_id;
+    },
     openCommand({provider,intent,channel_id=''}){
       const command_id=cryptoApi.randomUUID();
       if(!validUuid(command_id)||!['new','reconnect','view'].includes(intent)||!['tiktok','shop'].includes(provider)||intent!=='new'&&!validUuid(channel_id))throw new Error('คำขอโปรไฟล์ไม่ถูกต้อง');
