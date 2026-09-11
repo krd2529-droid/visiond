@@ -1,5 +1,5 @@
 import {json} from '../../../_lib.js';
-import {requireVxUser} from '../../../_vx_access.js';
+import {requireVxUser,vxRequestAccessStillCurrent} from '../../../_vx_access.js';
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
 import { revokeTikTokToken, syncTikTokConnection, tikTokCapabilities, tikTokVisibleProfile } from "../../../_tiktok_oauth.js";
@@ -8,6 +8,7 @@ import { addTikTokShopShowcaseProducts, normalizeTikTokOrderProducts, removeTikT
 import { tikTokShopCreatorCapabilities } from "../../../_tiktok_shop_oauth.js";
 import { commissionAvailability } from "../../../_tiktok_commission.js";
 import { requireD1DataFetchAvailable } from "../../../_d1_quota_breaker.js";
+import {orderCoverage,syncOrderPage,canReadOrders} from '../../../_tiktok_order_sync.js';
 const headers = { "cache-control": "private, no-store" }, clean = (v, n = 80) => String(v || "").trim().slice(0, n);
 const parsed = (value) => {
   try {
@@ -70,6 +71,7 @@ async function onRequestGet(ctx) {
   if (channelId && connections[0] && tikTokCapabilities(connections[0].scopes).basic && tikTokCapabilities(connections[0].scopes).videos) videos = (await ctx.env.DB.prepare("SELECT video_id,title,description,create_time,duration,cover_url,embed_link,view_count,like_count,comment_count,share_count,synced_at FROM tiktok_connection_videos WHERE connection_id=? ORDER BY create_time DESC LIMIT 100").bind(connections[0].id).all()).results || [];
   const shopConnections = (await ctx.env.DB.prepare(`SELECT id,channel_id,open_id,scopes,status,creator_username,creator_avatar_url,selection_region,last_synced_at,last_sync_error,created_at,updated_at FROM tiktok_shop_creator_connections WHERE user_id=? AND status='active' AND (?='' OR channel_id=?) ORDER BY updated_at DESC`).bind(auth.user.id, channelId, channelId).all()).results || [];
   let shopProducts = [], shopOrders = [], shopGrowthOrders = [];
+  const orderState=await orderCoverage(ctx.env,channelId?shopConnections[0]:null,range);
   if (channelId && shopConnections[0]) {
     const shopProductRows = (await ctx.env.DB.prepare(`SELECT product_id,name,image_url,product_url,origin,price_json,commission_json,product_grade,raw_json,synced_at FROM tiktok_shop_showcase_products WHERE connection_id=? ORDER BY product_grade,sort_order LIMIT 2000`).bind(shopConnections[0].id).all()).results || [];
     shopProducts = shopProductRows.map(({ raw_json: rawJson, ...product }) => ({ ...product, raw_image_url: rawImage(rawJson) }));
@@ -79,11 +81,11 @@ async function onRequestGet(ctx) {
     shopGrowthOrders = growthRows.map(({ raw_json: rawJson, ...order }) => ({ ...order, product_details: normalizeTikTokOrderProducts(rawJson) }));
   }
   const portfolioProducts = (await ctx.env.DB.prepare(`SELECT p.connection_id,p.product_id,p.name,p.image_url,p.product_url,p.commission_json,p.product_grade,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_showcase_products p JOIN tiktok_shop_creator_connections c ON c.id=p.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) ORDER BY p.product_grade,p.name LIMIT 2000`).bind(auth.user.id, channelId, channelId).all()).results || [], portfolioOrders = (await ctx.env.DB.prepare(`SELECT o.connection_id,o.order_id,o.create_time,o.product_ids,o.commission_json,c.channel_id,c.creator_username,ch.name channel_name FROM tiktok_shop_affiliate_orders o JOIN tiktok_shop_creator_connections c ON c.id=o.connection_id LEFT JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.status='active' AND (?='' OR c.channel_id=?) AND o.create_time>=? AND o.create_time<? ORDER BY o.create_time DESC LIMIT 5000`).bind(auth.user.id, channelId, channelId, range.fromEpoch, range.toExclusive).all()).results || [];
-  return json({ configured: Boolean(ctx.env.TIKTOK_CLIENT_KEY && ctx.env.TIKTOK_CLIENT_SECRET), shop_configured: Boolean(ctx.env.TIKTOK_SHOP_APP_KEY && ctx.env.TIKTOK_SHOP_APP_SECRET), connections: connections.map(publicConnection), shop_connections: shopConnections.map(row => ({ ...row, capabilities: tikTokShopCreatorCapabilities(row.scopes) })), shop_products: shopProducts, shop_orders: shopOrders, shop_growth_orders: shopGrowthOrders, date_range: { from: range.from, to: range.to }, commission_availability: { ready: range.availability.ready, latest_date: range.availability.latestDate, next_ready_at: range.availability.nextReadyAt }, shop_portfolio: { products: portfolioProducts, orders: portfolioOrders, commission: commissionDashboard(portfolioOrders) }, videos }, 200, headers);
+  return json({ configured: Boolean(ctx.env.TIKTOK_CLIENT_KEY && ctx.env.TIKTOK_CLIENT_SECRET), shop_configured: Boolean(ctx.env.TIKTOK_SHOP_APP_KEY && ctx.env.TIKTOK_SHOP_APP_SECRET), connections: connections.map(publicConnection), shop_connections: shopConnections.map(row => ({ ...row, can_read_orders: canReadOrders(row), capabilities: tikTokShopCreatorCapabilities(row.scopes) })), order_sync: { ...orderState, truncated: shopOrders.length >= 5000 }, shop_products: shopProducts, shop_orders: shopOrders, shop_growth_orders: shopGrowthOrders, date_range: { from: range.from, to: range.to }, commission_availability: { ready: range.availability.ready, latest_date: range.availability.latestDate, next_ready_at: range.availability.nextReadyAt }, shop_portfolio: { products: portfolioProducts, orders: portfolioOrders, commission: commissionDashboard(portfolioOrders) }, videos }, 200, headers);
 }
 async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
-  const body = await ctx.request.clone().json().catch(() => ({})), id = clean(body.id), action = clean(body.action, 30), guarded=action==='sync'||action==='shop_sync';
+  const body = await ctx.request.clone().json().catch(() => ({})), id = clean(body.id), action = clean(body.action, 30), guarded=action==='sync'||action==='shop_sync'||action==='shop_orders';
   const auth = await requireVxUser(ctx,{bootstrap:!guarded});
   if (auth.error) return auth.error;
   if(guarded){const blocked=await requireD1DataFetchAvailable(ctx,action==='sync'?'tiktok_profile_sync':'tiktok_shop_sync');if(blocked)return blocked}
@@ -91,6 +93,14 @@ async function onRequestPost(ctx) {
   if (action.startsWith("shop_")) {
     const requestedChannelId=clean(body.channel_id),shop = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(id, auth.user.id, requestedChannelId).first();
     if (!shop) return json({ error: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E1A\u0E31\u0E0D\u0E0A\u0E35 TikTok Shop Creator \u0E17\u0E35\u0E48\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E2D\u0E22\u0E39\u0E48" }, 404, headers);
+    if(action==='shop_orders'){
+      const rangeUrl=new URL(ctx.request.url);rangeUrl.search=new URLSearchParams({date_from:body.date_from||'',date_to:body.date_to||''}).toString();
+      const range=dateRange(rangeUrl);
+      if(range.from!==body.date_from||range.to!==body.date_to)return json({error:'กรุณาเลือกช่วงวันที่ที่ผ่านมาไม่เกิน 90 วัน',order_sync:{status:'invalid_range'}},400,headers);
+      if(!range.availability.ready&&range.to===range.availability.latestDate)return json({error:'ยังไม่ถึงเวลาที่เปิดให้ดึงข้อมูลรายวัน กรุณาลองหลัง 12:00 น.',order_sync:{status:'provider_not_ready'}},409,headers);
+      let result;try{result=await syncOrderPage(ctx.env,shop,range,body.request_id,{expectedRevision:body.revision,stillAuthorized:()=>vxRequestAccessStillCurrent(ctx,auth)})}catch{return json({error:'ระบบข้อมูลออเดอร์ยังไม่พร้อม กรุณาลองใหม่ภายหลัง'},503,headers)}
+      return json({ok:['complete','partial','running'].includes(result.status),order_sync:result},200,headers);
+    }
     if (action === "shop_sync") {
       try {
         const maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(body.max_showcase) || 100)));
@@ -133,7 +143,7 @@ async function onRequestPost(ctx) {
       }
     }
     if (action === "shop_disconnect") {
-      await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM tiktok_shop_marketplace_snapshots WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_affiliate_orders WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_creator_connections WHERE id=? AND user_id=?").bind(id, auth.user.id)]);
+      await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM tiktok_shop_order_coverage WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_marketplace_snapshots WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_showcase_products WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_affiliate_orders WHERE connection_id=?").bind(id), ctx.env.DB.prepare("DELETE FROM tiktok_shop_creator_connections WHERE id=? AND user_id=?").bind(id, auth.user.id)]);
       return json({ ok: true }, 200, headers);
     }
     return json({ error: "\u0E04\u0E33\u0E2A\u0E31\u0E48\u0E07 TikTok Shop \u0E44\u0E21\u0E48\u0E16\u0E39\u0E01\u0E15\u0E49\u0E2D\u0E07" }, 400, headers);

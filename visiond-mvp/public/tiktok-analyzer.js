@@ -439,14 +439,19 @@ function soldProductSummaryTable(products, orders) {
     sold.set(key, row);
   }));
   const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
-  if (!rows.length) return '<p class="shop-empty-range">\u0E0A\u0E48\u0E27\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E19\u0E35\u0E49\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</p>';
+  if (!rows.length) return orders.length?'<p class="hint">พบออเดอร์ แต่ยังไม่มีรายละเอียดสินค้าที่ใช้แสดงผล</p>':'<p class="shop-empty-range">ช่วงวันที่นี้ยังไม่มีสินค้าที่ขายได้</p>';
   return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th><th>ลิงก์สินค้า</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td><td>${productLinkControl(row.product.product_url)}</td></tr>`; }).join("")}</tbody></table></div><div class="shop-grade-note"><b>เกรดจากยอดขายจริงต่อเดือน</b><span>A = 30 ชิ้นขึ้นไป · สินค้าหลัก</span><span>B = 16–29 ชิ้น · สินค้ารอง</span><span>C = 1–15 ชิ้น · สินค้าที่ขายได้เล็กน้อย</span><span>ไม่มีเกรด = 0 ชิ้นในเดือนนี้</span><small>เกรดเปลี่ยนตามข้อมูลยอดขายของแต่ละเดือน ไม่ใช่คะแนนคุณภาพถาวรของสินค้า</small></div>`;
 }
 function shopRangeSummary(data, products, orders) {
+  const sync=data.order_sync||{status:'never'},verified=sync.status==='complete'&&!sync.truncated;
+  const explanations={never:'ยังไม่ได้ดึงออเดอร์ในช่วงนี้ จึงยังสรุปยอดขายไม่ได้',failed:'ดึงออเดอร์ไม่สำเร็จ ข้อมูลเดิมยังอยู่ กรุณาลองใหม่',partial:'ดึงข้อมูลมาแล้วบางส่วน กดดึงหน้าถัดไปเพื่อให้ครบ',running:'กำลังดึงออเดอร์ กรุณากดแสดงผลเพื่อตรวจสถานะ',missing_scope:'บัญชีนี้ยังไม่ได้ให้สิทธิ์อ่านออเดอร์ creator.affiliate_collaboration.read',provider_not_ready:'ยังไม่ถึงเวลาที่เปิดให้ดึงข้อมูลรายวัน กรุณาลองหลัง 12:00 น.',unavailable:'ไม่พบการเชื่อมต่อของช่องนี้',invalid_range:'กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน',complete:sync.truncated?'ผลลัพธ์มีมากกว่าขอบเขตที่แสดง กรุณาลดช่วงวันที่':'ดึงออเดอร์ครบช่วงวันที่แล้ว'};
+  const syncText=explanations[sync.status]||'ยังยืนยันความครบถ้วนของข้อมูลไม่ได้';
+  const syncAction=sync.can_read_orders!==false&&sync.status!=='missing_scope'?`<button type="button" data-fetch-sold-orders ${sync.busy?'disabled':''}>${sync.status==='partial'?'ดึงออเดอร์หน้าถัดไป':sync.status==='failed'?'ลองดึงออเดอร์อีกครั้ง':'ดึงข้อมูลออเดอร์จาก TikTok'}</button>`:'';
+  const syncPanel=`<p class="hint" role="status">${escapeHtml(syncText)}</p>${syncAction}`;
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo };
   const rangeLabel = `${displayDate(range.from)}–${displayDate(range.to)}`;
-  const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = availability.ready ? `ยอดล่าสุดดูได้ถึง ${availability.latestDate}` : `ยอดวันที่ ${availability.latestDate} กำลังประมวลผล กรุณารอ 12:00 น. เป็นต้นไป`;
-  return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${availability.latestDate}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${availability.latestDate}" required></label><button type="submit">แสดงผล</button></form><p class="hint commission-availability-note">${escapeHtml(availabilityText)}</p><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${orders.length.toLocaleString()}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${soldProductSummaryTable(products, orders)}`;
+  const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = availability.ready ? `ยอดล่าสุดดูได้ถึง ${availability.latestDate}` : `เปิดให้ดึงข้อมูลวันที่ ${availability.latestDate} หลัง 12:00 น. · วันที่ก่อนหน้ายังดึงได้`;
+  return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${availability.latestDate}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${availability.latestDate}" required></label><button type="submit">แสดงผล</button></form>${syncPanel}<p class="hint commission-availability-note">${escapeHtml(availabilityText)}</p><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${verified?orders.length.toLocaleString():'ยังไม่สรุป'}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${orders.length||verified?soldProductSummaryTable(products, orders):''}`;
 }
 function decorateSoldProductSelection(products = []) {
   const table = $("#soldProductsData .shop-product-table");
@@ -1149,10 +1154,10 @@ $("#analyzeAiRecommendations")?.addEventListener("click", async (event) => {
   }
 });
 function fetchTikTokConnectionData(channelId) {
-  const key = String(channelId || "");
-  if (!key) return Promise.resolve(null);
+  if (!channelId) return Promise.resolve(null);
+  const query=shopDateQuery(String(channelId)),key=(typeof pageViewerId==='undefined'?'':pageViewerId)+':'+String(query);
   if (shopConnectionRequests.has(key)) return shopConnectionRequests.get(key);
-  const request = api(`/api/admin/tiktok-connections?${shopDateQuery(key)}`, { cache: "no-store" }).finally(() => {
+  const request = api(`/api/admin/tiktok-connections?${query}`, { cache: "no-store" }).finally(() => {
     if (shopConnectionRequests.get(key) === request) shopConnectionRequests.delete(key);
   });
   shopConnectionRequests.set(key, request);
@@ -1169,12 +1174,14 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   }
   box.hidden = false;
   $("#manageChannelConnections").hidden = true;
-  const requestedChannelId=String(channelId),loadSeq=++state.connectionLoadSeq;
+  const requestedChannelId=String(channelId),loadSeq=++state.connectionLoadSeq,requestedRange=String(shopDateQuery(requestedChannelId));
   const data = await fetchTikTokConnectionData(requestedChannelId);
   const connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
-  if(loadSeq!==state.connectionLoadSeq||!context||!channelOwnership.current(context))return shopConnection;
+  if(loadSeq!==state.connectionLoadSeq||!context||!channelOwnership.current(context)||requestedRange!==String(shopDateQuery(requestedChannelId)))return shopConnection;
   state.connection = connection;
   state.shopConnection = shopConnection;
+  state.orderSync=data.order_sync||{status:'never',revision:0};
+  state.orderSyncRange=requestedRange;
   const shopActions = tiktokShopActionVisibility({ selectable: Boolean(tiktokShopNavigation.connectUrl()), connected: Boolean(shopConnection) });
   $("#manageChannelConnections").hidden = !shopActions.manage;
   $("#channelShopAnalysis").classList.toggle("shop-connection-missing", !shopConnection);
@@ -1632,6 +1639,26 @@ $("#tiktokShopState").addEventListener("submit", async (event) => {
     button.textContent = "\u0E40\u0E23\u0E35\u0E22\u0E01\u0E14\u0E39";
   }
 });
+const soldOrderRequests=new Map(),soldOrderAttempts=new Map();
+async function fetchSoldOrders(button){
+  const context=channelOwnership.capture(),connection=state.shopConnection;
+  if(!context||!connection||String(connection.channel_id)!==context.channelId)return;
+  if(state.orderSyncRange!==String(shopDateQuery(context.channelId))){message.textContent='กรุณารอแสดงผลช่วงวันที่ใหม่ก่อนดึงออเดอร์';return;}
+  const from=state.shopDateFrom,to=state.shopDateTo,key=JSON.stringify([connection.id,from,to]);
+  if(soldOrderRequests.has(key))return;
+  const attempt=soldOrderAttempts.get(key)||{id:crypto.randomUUID(),revision:state.orderSync?.revision||0},requestId=attempt.id,current=()=>channelOwnership.current(context)&&from===state.shopDateFrom&&to===state.shopDateTo;
+  soldOrderAttempts.set(key,attempt);
+  soldOrderRequests.set(key,requestId);button.disabled=true;button.setAttribute('aria-busy','true');
+  const original=button.textContent;button.textContent='กำลังดึงออเดอร์…';
+  try{
+    const result=await api('/api/admin/tiktok-connections',{method:'POST',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(45000),body:JSON.stringify({action:'shop_orders',id:connection.id,channel_id:context.channelId,date_from:from,date_to:to,request_id:requestId,revision:attempt.revision})});
+    if(result.order_sync?.status!=='running')soldOrderAttempts.delete(key);
+    if(!current())return;
+    await loadTikTokConnection(context.channelId,context);
+    if(current()&&result.order_sync?.status==='invalid_range')message.textContent='กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน';
+  }catch(error){if(current()){message.textContent=error.message;const note=document.createElement('p');note.setAttribute('role','status');note.textContent='ดึงออเดอร์ไม่สำเร็จ ข้อมูลเดิมยังอยู่: '+error.message;button.after(note)}}
+  finally{if(soldOrderRequests.get(key)===requestId)soldOrderRequests.delete(key);button.disabled=false;button.removeAttribute('aria-busy');button.textContent=original}
+}
 $("#soldProductsData").addEventListener("submit", async (event) => {
   if (event.target.id !== "shopDateFilter") return;
   event.preventDefault();
@@ -1642,6 +1669,8 @@ $("#soldProductsData").addEventListener("submit", async (event) => {
   await loadTikTokConnection(context.channelId,context).catch(error => {if(channelOwnership.current(context))message.textContent = error.message});
 });
 $("#soldProductsData").addEventListener("click", (event) => {
+  const fetchButton=event.target.closest('[data-fetch-sold-orders]');
+  if(fetchButton){void fetchSoldOrders(fetchButton);return;}
   const button = event.target.closest("[data-select-sold-product]");
   if (button) addSoldProductToSelection(button);
 });

@@ -71,6 +71,13 @@ const firstMoney = (row, names) => names.map((name) => money(row?.[name])).find(
   if (!values.length || currencies.length > 1) return null;
   return { amount: values.reduce((sum, x) => sum + (Number(x.amount) || 0), 0).toFixed(2), currency: currencies[0] || "" };
 };
+export function prepareTikTokOrderWrite(env,connectionId,order){
+  const rows=skuRows(order),details=normalizeTikTokOrderProducts(order),ids=[...new Set(details.map(x=>x.product_id))];
+  const gmv=money(order.gmv)||sumMoney(rows,['actual_commission_base','estimated_commission_base','price']);
+  const actual=sumMoney(rows,['actual_paid_commission','actual_commission']),estimated=sumMoney(rows,['estimated_paid_commission','estimated_commission']),value=actual||estimated||money(order.commission);
+  const commission=value?{...value,_visiond_basis:actual?'actual':estimated?'estimated':'unknown'}:null;
+  return env.DB.prepare(`INSERT INTO tiktok_shop_affiliate_orders(connection_id,order_id,create_time,product_ids,status,gmv_json,commission_json,raw_json,synced_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(connection_id,order_id) DO UPDATE SET create_time=excluded.create_time,product_ids=excluded.product_ids,status=excluded.status,gmv_json=excluded.gmv_json,commission_json=excluded.commission_json,raw_json=excluded.raw_json,synced_at=CURRENT_TIMESTAMP`).bind(connectionId,clean(order.order_id||order.id,100),Number(order.create_time),JSON.stringify(ids),clean(order.status,80),JSON.stringify(gmv),JSON.stringify(commission),JSON.stringify(order));
+}
 async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase = 100, maxOrders = 500, syncShowcase = true, syncOrders = true } = {}, fetchImpl = fetch) {
   maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(maxShowcase) || 100)));
   const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), call = (options) => tikTokShopRequest(config, access, options, fetchImpl), profile = await call({ path: "/affiliate_creator/202508/profiles" });
