@@ -1,4 +1,10 @@
-# Active patch: truthful sold-products fetch and results
+# Active patch: channel controls and provider-authoritative order availability
+
+- Event: PATCH_READY — v0.20.86/cache JS02145/CSS02096. Refresh, compact profile label, live status and contextual Helper choice now reside in channel picker; empty status collapses and standalone Chrome block is removed. Both explicit and legacy order paths have no local noon gate/copy. Actual-source picker and TH09:00 latest-day route reds→green, focused86/85/83/v70 pass, full canonical86→72 approved elevated98371 exit0, visible86/predeploy9PASS8WARN0FAIL/diff pass. Frozen15-file manifest/report in `.agents/reports/elon-v86-freeze-20260911.*`; no native/package/schema/OAuth changes or remote/Git mutation. Mark/Root review and rendered production/provider gates pending.
+
+- Event: PATCH_UPDATED — v0.20.86 moves the unique refresh/status/recovery controls into the connected-channel picker and removes the standalone Chrome heading/block. Removes client/server noon rejection for explicit/legacy order acquisition; exact past range<=90days, provider24-page behavior, breaker, scope, owner/date/lease/revision and atomic deletion guard unchanged. Actual DOM placement and TH09:00 latest-day route red→green. Focused/canonical verification and frozen review pending; no remote changes.
+
+# Delivered patch: truthful sold-products fetch and results
 
 - Event: PATCH_DELIVERED / USER RUNTIME GATE — v0.20.85 scoped commit `f0a8345f` pushed to `origin/main`; Cloudflare Production `ee220f31-978a-4f07-add3-3b36f2e3d96f` is Active from source `f0a8345`. Migration0101 was installed first at bookmark `000011fa-00000006-000050e3-5b71d8092afed359f4b9f7e0278cb78a`; remote exact-range lookup uses the composite primary-key index. Direct deployed Analyzer HTML/JS match committed bytes, custom JS matches and custom HTML carries v85/cache02144; unauth API remains401/private,no-store. Root focused85/delete-race pass and Mark revision2 reports0 findings. No authenticated provider fetch was performed; the selected user/channel must click the explicit order-fetch action and repeat only for partial pages before actual sold-data success can be claimed.
 

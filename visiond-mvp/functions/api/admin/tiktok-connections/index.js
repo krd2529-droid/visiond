@@ -97,7 +97,6 @@ async function onRequestPost(ctx) {
       const rangeUrl=new URL(ctx.request.url);rangeUrl.search=new URLSearchParams({date_from:body.date_from||'',date_to:body.date_to||''}).toString();
       const range=dateRange(rangeUrl);
       if(range.from!==body.date_from||range.to!==body.date_to)return json({error:'กรุณาเลือกช่วงวันที่ที่ผ่านมาไม่เกิน 90 วัน',order_sync:{status:'invalid_range'}},400,headers);
-      if(!range.availability.ready&&range.to===range.availability.latestDate)return json({error:'ยังไม่ถึงเวลาที่เปิดให้ดึงข้อมูลรายวัน กรุณาลองหลัง 12:00 น.',order_sync:{status:'provider_not_ready'}},409,headers);
       let result;try{result=await syncOrderPage(ctx.env,shop,range,body.request_id,{expectedRevision:body.revision,stillAuthorized:()=>vxRequestAccessStillCurrent(ctx,auth)})}catch{return json({error:'ระบบข้อมูลออเดอร์ยังไม่พร้อม กรุณาลองใหม่ภายหลัง'},503,headers)}
       return json({ok:['complete','partial','running'].includes(result.status),order_sync:result},200,headers);
     }
@@ -105,8 +104,6 @@ async function onRequestPost(ctx) {
       try {
         const maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(body.max_showcase) || 100)));
         const mode=['showcase','orders'].includes(body.mode)?body.mode:'all';
-        const availability=commissionAvailability();
-        if(mode!=='showcase'&&!availability.ready)return json({error:"ยอดเมื่อวานยังอยู่ระหว่างการประมวลผล กรุณารอ 12:00 น. เป็นต้นไป",code:'TIKTOK_DAILY_TOTALS_NOT_READY',latest_available_date:availability.latestDate,next_ready_at:availability.nextReadyAt},409,headers);
         return json({ ok: true, ...await syncTikTokShopCreator(ctx.env, shop, { days: Number(body.days) || 30, maxShowcase, syncShowcase:mode!=='orders', syncOrders:mode!=='showcase' }) }, 200, headers);
       } catch (error) {
         await ctx.env.DB.prepare("UPDATE tiktok_shop_creator_connections SET last_sync_error=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(clean(error.message, 300), id).run();
