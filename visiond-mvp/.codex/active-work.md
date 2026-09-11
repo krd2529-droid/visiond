@@ -1,4 +1,10 @@
-# Active patch: channel controls and provider-authoritative order availability
+# Active patch: one แสดงผล action exhausts the provider range
+
+- Event: PATCH_READY — v0.20.87/cache02146,13 scoped files. One exact idle แสดงผล button submits GET revision then sequential provider requests until complete; no manual page controls/no total-page cap. Actual renderer red2buttons→1; actual submit tests cover27page exhaustion, distinct IDs/revisions, failed-page resume after durable progress, complete refresh, duplicate coalescing, owner/date/page/form stale suppression and running/nonadvancing stop. Full canonical87→72 approved elevated40287 exit0; focused87/85/v70/visible87/predeploy9PASS8WARN0FAIL/diff PASS. Backend/native/schema unchanged; frozen report/manifest `.agents/reports/elon-v87-freeze-20260911.*`. Pending Mark/Root review and actual user/provider runtime; no commit/push/deploy/live changes.
+
+- Event: PATCH_UPDATED — v0.20.87/cache02146 replaces two-action/manual pagination with exactly one แสดงผล submit. Explicit submit GETs exact range/current revision then sequentially POSTs bounded internal pages to provider exhaustion, no total-page24 cap or passive fetch. Unique request IDs/revisions, whole-submit coalescing, checkpoint retry, complete-range refresh and owner/channel/date/page/form/workspace stale guards preserved. Actual-source two-button red→green and sequential27-page test pass; canonical/freeze pending. No backend/schema/native/provider/live changes.
+
+# Delivered patch: channel controls and provider-authoritative order availability
 
 - Event: PATCH_DELIVERED / USER PROVIDER GATE — v0.20.86 scoped commit `dbb66734` pushed `origin/main`; Cloudflare Production `0cf3c92b-fe1f-4146-87ed-4437b7a91da3` is Active from source `dbb6673`. Direct deployed Analyzer HTML/JS match frozen bytes; CSS matches after Cloudflare LF normalization, and custom JS/CSS carry the same code. Production shows version86 with JS02145/CSS02096, picker-owned refresh/status/recovery controls and no local12:00 gate/copy. Unauth API remains401/private,no-store. No authenticated provider request was performed; user hard-refresh plus one explicit order-fetch click is the remaining account-specific runtime gate.
 

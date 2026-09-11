@@ -443,10 +443,9 @@ function soldProductSummaryTable(products, orders) {
 }
 function shopRangeSummary(data, products, orders) {
   const sync=data.order_sync||{status:'never'},verified=sync.status==='complete'&&!sync.truncated;
-  const explanations={never:'ยังไม่ได้ดึงออเดอร์ในช่วงนี้ จึงยังสรุปยอดขายไม่ได้',failed:'ดึงออเดอร์ไม่สำเร็จ ข้อมูลเดิมยังอยู่ กรุณาลองใหม่',partial:'ดึงข้อมูลมาแล้วบางส่วน กดดึงหน้าถัดไปเพื่อให้ครบ',running:'กำลังดึงออเดอร์ กรุณากดแสดงผลเพื่อตรวจสถานะ',missing_scope:'บัญชีนี้ยังไม่ได้ให้สิทธิ์อ่านออเดอร์ creator.affiliate_collaboration.read',provider_not_ready:'TikTok ยังไม่พร้อมส่งข้อมูล กรุณาลองดึงอีกครั้ง',unavailable:'ไม่พบการเชื่อมต่อของช่องนี้',invalid_range:'กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน',complete:sync.truncated?'ผลลัพธ์มีมากกว่าขอบเขตที่แสดง กรุณาลดช่วงวันที่':'ดึงออเดอร์ครบช่วงวันที่แล้ว'};
+  const explanations={never:'กดแสดงผลเพื่อดึงออเดอร์ในช่วงวันที่นี้',failed:'ดึงออเดอร์ไม่สำเร็จ ข้อมูลเดิมยังอยู่ กดแสดงผลเพื่อลองใหม่',partial:'มีข้อมูลบางส่วน กดแสดงผลเพื่อทำต่อจนครบ',running:'กำลังดึงออเดอร์ กรุณากดแสดงผลเพื่อตรวจสถานะ',missing_scope:'บัญชีนี้ยังไม่ได้ให้สิทธิ์อ่านออเดอร์ creator.affiliate_collaboration.read',provider_not_ready:'TikTok ยังไม่พร้อมส่งข้อมูล กรุณาลองดึงอีกครั้ง',unavailable:'ไม่พบการเชื่อมต่อของช่องนี้',invalid_range:'กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน',complete:sync.truncated?'ผลลัพธ์มีมากกว่าขอบเขตที่แสดง กรุณาลดช่วงวันที่':'ดึงออเดอร์ครบช่วงวันที่แล้ว'};
   const syncText=explanations[sync.status]||'ยังยืนยันความครบถ้วนของข้อมูลไม่ได้';
-  const syncAction=sync.can_read_orders!==false&&sync.status!=='missing_scope'?`<button type="button" data-fetch-sold-orders ${sync.busy?'disabled':''}>${sync.status==='partial'?'ดึงออเดอร์หน้าถัดไป':sync.status==='failed'?'ลองดึงออเดอร์อีกครั้ง':'ดึงข้อมูลออเดอร์จาก TikTok'}</button>`:'';
-  const syncPanel=`<p class="hint" role="status">${escapeHtml(syncText)}</p>${syncAction}`;
+  const syncPanel=`<p class="hint" role="status">${escapeHtml(syncText)}</p>`;
   const range = data.date_range || { from: state.shopDateFrom, to: state.shopDateTo };
   const rangeLabel = `${displayDate(range.from)}–${displayDate(range.to)}`;
   const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = `เลือกดึงออเดอร์ย้อนหลังได้ถึง ${availability.latestDate} · ข้อมูลขึ้นอยู่กับผลตอบกลับจาก TikTok`;
@@ -1638,37 +1637,54 @@ $("#tiktokShopState").addEventListener("submit", async (event) => {
   }
 });
 const soldOrderRequests=new Map(),soldOrderAttempts=new Map();
-async function fetchSoldOrders(button){
-  const context=channelOwnership.capture(),connection=state.shopConnection;
-  if(!context||!connection||String(connection.channel_id)!==context.channelId)return;
-  if(state.orderSyncRange!==String(shopDateQuery(context.channelId))){message.textContent='กรุณารอแสดงผลช่วงวันที่ใหม่ก่อนดึงออเดอร์';return;}
-  const from=state.shopDateFrom,to=state.shopDateTo,key=JSON.stringify([connection.id,from,to]);
-  if(soldOrderRequests.has(key))return;
-  const attempt=soldOrderAttempts.get(key)||{id:crypto.randomUUID(),revision:state.orderSync?.revision||0},requestId=attempt.id,current=()=>channelOwnership.current(context)&&from===state.shopDateFrom&&to===state.shopDateTo;
-  soldOrderAttempts.set(key,attempt);
-  soldOrderRequests.set(key,requestId);button.disabled=true;button.setAttribute('aria-busy','true');
-  const original=button.textContent;button.textContent='กำลังดึงออเดอร์…';
-  try{
-    const result=await api('/api/admin/tiktok-connections',{method:'POST',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(45000),body:JSON.stringify({action:'shop_orders',id:connection.id,channel_id:context.channelId,date_from:from,date_to:to,request_id:requestId,revision:attempt.revision})});
-    if(result.order_sync?.status!=='running')soldOrderAttempts.delete(key);
-    if(!current())return;
-    await loadTikTokConnection(context.channelId,context);
-    if(current()&&result.order_sync?.status==='invalid_range')message.textContent='กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน';
-  }catch(error){if(current()){message.textContent=error.message;const note=document.createElement('p');note.setAttribute('role','status');note.textContent='ดึงออเดอร์ไม่สำเร็จ ข้อมูลเดิมยังอยู่: '+error.message;button.after(note)}}
-  finally{if(soldOrderRequests.get(key)===requestId)soldOrderRequests.delete(key);button.disabled=false;button.removeAttribute('aria-busy');button.textContent=original}
+async function showSoldOrderRange(form,context,from,to){
+  const connection=state.shopConnection,owner=pageViewerId,workspace=document.body?.classList.contains('workspace-output');
+  if(!connection||String(connection.channel_id)!==context.channelId)return;
+  const key=JSON.stringify([owner,connection.id,from,to]);
+  if(soldOrderRequests.has(key))return soldOrderRequests.get(key);
+  const button=form.querySelector('button[type="submit"]');
+  const current=()=>pageAuthorized&&launcherPageActive&&owner===pageViewerId&&channelOwnership.current(context)&&form.isConnected&&workspace===document.body?.classList.contains('workspace-output')&&from===state.shopDateFrom&&to===state.shopDateTo&&String(new FormData(form).get('date_from'))===from&&String(new FormData(form).get('date_to'))===to;
+  const request=(async()=>{
+    button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='กำลังแสดงผล…';
+    try{
+      const query=new URLSearchParams({channel_id:context.channelId,date_from:from,date_to:to});
+      const data=await api('/api/admin/tiktok-connections?'+query,{cache:'no-store',signal:AbortSignal.timeout(45000)});
+      if(!current())return;
+      if(data.date_range?.from!==from||data.date_range?.to!==to||data.shop_connections?.[0]?.id!==connection.id)throw new Error('ข้อมูลช่องหรือช่วงวันที่เปลี่ยน กรุณากดแสดงผลอีกครั้ง');
+      let sync=data.order_sync;
+      if(!sync?.can_read_orders)throw new Error('ยังไม่พร้อมอ่านออเดอร์ กรุณาตรวจสิทธิ์การเชื่อมต่อของช่องนี้');
+      if(sync.status==='complete')soldOrderAttempts.delete(key);
+      if(sync.status==='failed'&&sync.revision>(soldOrderAttempts.get(key)?.revision??-1))soldOrderAttempts.delete(key);
+      while(current()){
+        const attempt=soldOrderAttempts.get(key)||{id:crypto.randomUUID(),revision:sync.revision};
+        soldOrderAttempts.set(key,attempt);
+        const result=await api('/api/admin/tiktok-connections',{method:'POST',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(45000),body:JSON.stringify({action:'shop_orders',id:connection.id,channel_id:context.channelId,date_from:from,date_to:to,request_id:attempt.id,revision:attempt.revision})});
+        if(!current())return;
+        sync=result.order_sync;
+        if(sync?.status==='running')throw new Error('คำขอเดิมยังทำงานอยู่ กรุณากดแสดงผลอีกครั้งเพื่อตรวจและทำต่อ');
+        soldOrderAttempts.delete(key);
+        if(sync?.status==='complete')break;
+        if(sync?.status!=='partial')throw new Error(sync?.status==='invalid_range'?'กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน':'TikTok ยังส่งข้อมูลไม่สำเร็จ กดแสดงผลอีกครั้งเพื่อทำต่อ ข้อมูลเดิมยังอยู่');
+        if(!Number.isInteger(sync.revision)||sync.revision<=attempt.revision)throw new Error('สถานะคำขอเปลี่ยน กรุณากดแสดงผลอีกครั้งเพื่อทำต่อ');
+      }
+      if(current())await loadTikTokConnection(context.channelId,context);
+    }catch(error){
+      if(current()){message.textContent=error.message;await loadTikTokConnection(context.channelId,context).catch(()=>{});}
+    }finally{button.disabled=false;button.removeAttribute('aria-busy');button.textContent='แสดงผล'}
+  })();
+  soldOrderRequests.set(key,request);
+  try{return await request}finally{if(soldOrderRequests.get(key)===request)soldOrderRequests.delete(key)}
 }
 $("#soldProductsData").addEventListener("submit", async (event) => {
-  if (event.target.id !== "shopDateFilter") return;
+  if(event.target.id!=="shopDateFilter")return;
   event.preventDefault();
   const context=channelOwnership.capture();if(!context)return;
-  const data = new FormData(event.target), from = String(data.get("date_from") || ""), to = String(data.get("date_to") || "");
-  if (!from || !to || from > to) return showToast("วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด", "warning");
-  state.shopDateFrom = from; state.shopDateTo = to;
-  await loadTikTokConnection(context.channelId,context).catch(error => {if(channelOwnership.current(context))message.textContent = error.message});
+  const data=new FormData(event.target),from=String(data.get('date_from')||''),to=String(data.get('date_to')||'');
+  if(!from||!to||from>to)return showToast('วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด','warning');
+  state.shopDateFrom=from;state.shopDateTo=to;
+  await showSoldOrderRange(event.target,context,from,to);
 });
 $("#soldProductsData").addEventListener("click", (event) => {
-  const fetchButton=event.target.closest('[data-fetch-sold-orders]');
-  if(fetchButton){void fetchSoldOrders(fetchButton);return;}
   const button = event.target.closest("[data-select-sold-product]");
   if (button) addSoldProductToSelection(button);
 });

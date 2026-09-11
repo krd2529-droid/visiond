@@ -46,7 +46,7 @@ const ctx=vm.createContext({state:{},escapeHtml:String,displayDate:String,arrayV
 for(const status of ['never','failed','partial','running','missing_scope','provider_not_ready','complete']){
  const html=ctx.shopRangeSummary({date_range:range,commission_availability:{ready:true,latest_date:yesterday},order_sync:{status,can_read_orders:status!=='missing_scope'}},[],[]);
  assert.equal(html.includes('ช่วงวันที่นี้ยังไม่มีสินค้าที่ขายได้'),status==='complete',status+' zero classification');
- assert.equal(html.includes('data-fetch-sold-orders'),status!=='missing_scope');
+ assert.equal(html.includes('data-fetch-sold-orders'),false,'v87 uses the single submit for every state');
 }
 const callsByDate=[];let selectedDate='2026-08-12';
 const reads=vm.createContext({pageViewerId:'owner1',shopConnectionRequests:new Map(),shopDateQuery:id=>new URLSearchParams({channel_id:id,date_from:selectedDate,date_to:'2026-09-10'}),api:url=>{callsByDate.push(url);return new Promise(()=>{})}});
@@ -54,12 +54,5 @@ vm.runInContext(extract('function fetchTikTokConnectionData(','async function lo
 const august=reads.fetchTikTokConnectionData('a');assert.equal(reads.fetchTikTokConnectionData('a'),august);
 selectedDate='2026-09-01';assert.notEqual(reads.fetchTikTokConnectionData('a'),august);assert.equal(callsByDate.length,2);
 reads.pageViewerId='owner2';reads.fetchTikTokConnectionData('a');assert.equal(callsByDate.length,3,'owner-separated inflight reads');
-let resolveAction,posts=0,reloads=0;
-const button={textContent:'ดึงข้อมูลออเดอร์จาก TikTok',setAttribute(){},removeAttribute(){},after(){}};
-const action=vm.createContext({Map,JSON,crypto,AbortSignal,state:{shopDateFrom:'2026-08-12',shopDateTo:'2026-09-10',shopConnection:{id:'c',channel_id:'a'},orderSync:{revision:2}},channelOwnership:{capture:()=>({channelId:'a'}),current:()=>true},api:async(url,options)=>{posts++;assert.equal(JSON.parse(options.body).revision,2);assert.equal(options.headers['content-type'],'application/json');return new Promise(r=>resolveAction=r)},loadTikTokConnection:async()=>reloads++,message:{},document:{createElement:()=>({setAttribute(){}})}});
-action.shopDateQuery=()=>action.state.shopDateFrom+':'+action.state.shopDateTo;action.state.orderSyncRange=action.shopDateQuery();
-vm.runInContext(extract('const soldOrderRequests=', '$("#soldProductsData").addEventListener("submit"'),action);
-const first=action.fetchSoldOrders(button);await action.fetchSoldOrders(button);assert.equal(posts,1);action.state.shopDateTo='2026-09-09';resolveAction({order_sync:{status:'complete'}});await first;assert.equal(reloads,0,'late date response does not reload or overwrite current range');assert.equal(button.disabled,false);
-const submit=extract('$("#soldProductsData").addEventListener("submit"','$("#soldProductsData").addEventListener("click"');
-assert.doesNotMatch(submit,/shop_orders|fetchSoldOrders/,'date submit never triggers provider sync');
+// The removed two-action client contract is replaced by the actual submit orchestration matrix in test-v02087.mjs.
 console.log('PASS v85 actual order page SQL/provider seam, replay/concurrency/rollback/scope/range/index and renderer matrix');

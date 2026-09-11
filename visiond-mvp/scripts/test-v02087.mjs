@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import{readFileSync}from'node:fs';
+const src=readFileSync('public/tiktok-analyzer.js','utf8');
+const extract=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)));
+const render=vm.createContext({state:{},escapeHtml:String,displayDate:String,arrayValue:x=>x||[],safeJson:JSON.parse});vm.runInContext(extract('function soldProductSummaryTable(','function decorateSoldProductSelection('),render);
+const html=render.shopRangeSummary({date_range:{from:'2026-09-01',to:'2026-09-10'},commission_availability:{latest_date:'2026-09-10'},order_sync:{status:'partial',can_read_orders:true}},[],[]);
+assert.equal((html.match(/<button/g)||[]).length,1);assert.match(html,/<button[^>]*>แสดงผล<\/button>/);assert.doesNotMatch(src,/data-fetch-sold-orders|ดึงออเดอร์หน้าถัดไป/);
+function fixture(sequence=['partial','partial','complete'],initialStatus='partial'){
+ let handler,serial=0,posts=[],renders=0,reads=0,active=true;const pending=[];
+ const button={textContent:'แสดงผล',disabled:false,setAttribute(){},removeAttribute(){},after(){}};
+ const form={id:'shopDateFilter',isConnected:true,from:'2026-09-01',to:'2026-09-10',querySelector:()=>button};
+ const s={Map,JSON,URLSearchParams,AbortSignal,crypto:{randomUUID:()=>String(++serial)},pageViewerId:'1',pageAuthorized:true,launcherPageActive:true,state:{shopDateFrom:form.from,shopDateTo:form.to,shopConnection:{id:'c',channel_id:'a'}},channelOwnership:{capture:()=>({channelId:'a'}),current:()=>active},FormData:class{constructor(f){this.f=f}get(k){return k==='date_from'?this.f.from:this.f.to}},document:{createElement:()=>({setAttribute(){}})},message:{},showToast(){},$:()=>({addEventListener:(event,h)=>{if(event==='submit')handler=h}}),api:async(url,options)=>{if(options?.method==='POST'){const b=JSON.parse(options.body);posts.push(b);const next=sequence.shift();if(next==='hold')return new Promise(resolve=>pending.push(resolve));if(next==='error')throw new Error('fixture failure');return {order_sync:typeof next==='object'?next:{status:next,revision:b.revision+1}}}reads++;return{date_range:{from:form.from,to:form.to},shop_connections:[{id:'c',channel_id:'a'}],order_sync:{status:initialStatus,revision:s.revision??4,can_read_orders:true}}},loadTikTokConnection:async()=>renders++};
+ vm.runInNewContext(extract('const soldOrderRequests=', '$("#soldProductsData").addEventListener("click"'),s);
+ return{submit:()=>handler({target:form,preventDefault(){}}),posts,form,button,pending,s,stop:()=>{active=false},get renders(){return renders},get reads(){return reads}};
+}
+let f=fixture();await f.submit();assert.equal(f.posts.length,3);assert.deepEqual(f.posts.map(x=>x.revision),[4,5,6]);assert.equal(new Set(f.posts.map(x=>x.request_id)).size,3);assert.equal(f.renders,1);assert.equal(f.button.textContent,'แสดงผล');
+f=fixture(['hold']);const a=f.submit();while(!f.pending.length)await new Promise(r=>setImmediate(r));const duplicate=f.submit();assert.equal(f.posts.length,1);f.stop();f.pending[0]({order_sync:{status:'partial',revision:5}});await Promise.all([a,duplicate]);assert.equal(f.posts.length,1);assert.equal(f.renders,0);
+f=fixture(['error','complete']);await f.submit();await f.submit();assert.equal(f.posts.length,2);assert.equal(f.posts[0].request_id,f.posts[1].request_id,'ambiguous network retry keeps logical request id');assert.equal(f.button.disabled,false);
+f=fixture(['partial','error','complete']);await f.submit();f.s.revision=5;await f.submit();assert.deepEqual(f.posts.map(x=>x.revision),[4,5,5]);assert.equal(f.posts[1].request_id,f.posts[2].request_id,'next explicit click resumes failed page after durable earlier progress');
+f=fixture([...Array(26).fill('partial'),'complete']);await f.submit();assert.equal(f.posts.length,27,'no arbitrary total-page/result24 cap');assert.equal(f.renders,1);
+f=fixture(['partial','complete'],'complete');await f.submit();assert.equal(f.posts.length,2,'explicit previously-complete submit refreshes and exhausts again');
+for(const change of [f=>f.form.to='2026-09-09',f=>f.s.pageViewerId='2',f=>f.s.launcherPageActive=false,f=>f.form.isConnected=false]){f=fixture(['hold']);const p=f.submit();while(!f.pending.length)await new Promise(r=>setImmediate(r));change(f);f.pending[0]({order_sync:{status:'partial',revision:5}});await p;assert.equal(f.posts.length,1);assert.equal(f.renders,0)}
+for(const status of [{status:'running',revision:5},{status:'partial',revision:4},{status:'failed'}]){f=fixture([status]);await f.submit();assert.equal(f.posts.length,1,'no hot loop on running/failure/stalled revision');assert.equal(f.button.disabled,false)}
+console.log('PASS v87 actual single-button submit sequential exhaustion/IDs/revisions/dedup/stale stop/failure resume');
