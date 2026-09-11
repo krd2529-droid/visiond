@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import{readFileSync}from'node:fs';
+const src=readFileSync('public/tiktok-analyzer.js','utf8'),c={escapeHtml:String};
+vm.createContext(c);vm.runInContext(src.slice(src.indexOf('function cleanAiSearchQuery('),src.indexOf('async function searchAiRecommendation(')),c);
+const html=c.aiRecommendationTable([{name:'ครีมเด็ก',search_query:'ครีมเด็ก',evidence:'ยังไม่ยืนยัน'}]);
+const actions=[...html.matchAll(/<button\b([^>]*)>([^<]*)<\/button>/g)];
+assert.equal(actions.length,1);assert.equal(actions[0][2],'ค้นหาสินค้า');
+assert.match(actions[0][1],/class="vds-btn vds-btn--primary"/);assert.match(actions[0][1],/type="button" data-ai-marketplace-search/);
+assert.doesNotMatch(html,/เก็บแนวคิด E|data-inventory|data-product-grade|data-product-name/);
+assert.match(html,/data-ai-search-query/);assert.match(html,/data-ai-search-status role="status"/);
+let searched=0,saved=0;const event={target:{closest:s=>s==='[data-ai-marketplace-search]'?{}:null}};
+const start=src.indexOf('  const aiSearch=event.target.closest('),end=src.indexOf('\n});',start);
+vm.runInNewContext('(function(event){'+src.slice(start,end)+'})(event)',{event,searchAiRecommendation:()=>searched++,setProductInventory:()=>saved++});
+assert.equal(searched,1);assert.equal(saved,0);
+assert.match(src,/if \(button\) setProductInventory\(button\)/,'general inventory action retained');
+await import('./test-v02094.mjs');
+console.log('v96 actual E single search label/action/delegation and unchanged Marketplace behavior: PASS');
