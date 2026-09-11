@@ -5,7 +5,7 @@ const client = fs.readFileSync(new URL("../public/tiktok-analyzer.js", import.me
 const api = fs.readFileSync(new URL("../functions/api/admin/tiktok-analyzer/index.js", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../public/tiktok-analyzer.html", import.meta.url), "utf8");
 
-assert.match(client, /function decorateSoldProductSelection\(products = \[\]\)/);
+assert.match(client, /function decorateSoldProductSelection\(products = \[\], orders = \[\]\)/);
 assert.match(client, /sold-selection-heading">ลิสต์คัดสินค้า/);
 assert.match(client, /data-select-sold-product/);
 assert.match(client, /เพิ่มเข้าลิสต์คัดสินค้า/);
@@ -23,6 +23,6 @@ assert.match(api, /savedGrade=sourceKind==='sold_product_selection'/);
 assert.match(api, /sales>=30\?'A':sales>=16\?'B':sales>0\?'C':'D'/);
 assert.match(api, /source_kind='sold_product_selection'/);
 assert.match(api, /เกรด \$\{savedGrade\} ตามยอดขายจริง 30 วัน/);
-assert.match(html, /tiktok-analyzer\.js\?v=02129/);
+assert.match(html, /tiktok-analyzer\.js\?v=02150/);
 
 console.log("TikTok sold-products selection-list column and action: PASS");

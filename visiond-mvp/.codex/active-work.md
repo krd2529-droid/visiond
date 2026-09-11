@@ -1,4 +1,10 @@
-# Active patch: remove analysis-run history UI
+# Active patch: restore sold-product shortlist action
+
+- Event: PATCH_READY — v0.20.91/cache02150. Shared order+Showcase identity by ID enables named order-only rows with optional blank URL; placeholders remain unavailable. Actual render/decorate/click, grade/duplicate/no-passive-write/stale-owner focused91 and sold-selection/v70 PASS; canonical91→72 elevated65155 exit0; visible91/predeploy9PASS8existingWARN0FAIL/diff PASS. Extra historical monthly-grade test fails its unchanged-backend literal VALUES(...'D') assertion (not in canonical; no backend delta), recorded separately. Frozen14-file manifest/report `.agents/reports/elon-v91-freeze-20260911.*`; no live/backend/native/Git/release mutation. Mark/Root review pending.
+
+- Event: PATCH_STARTED — v0.20.91/cache02150. Shared product-by-ID resolution supplies order details to sold table and shortlist decorator. Real names with blank URLs are actionable; missing names/placeholders unavailable. Existing owner-scoped source/grade/duplicate path retained; no backend/schema/native changes. Focused/canonical verification pending.
+
+# Delivered patch: remove analysis-run history UI
 
 - Event: PATCH_DELIVERED — v0.20.90 exact13-file commit `0e8f77af` pushed `origin/main`; Cloudflare Production `967b499b-97ae-42c0-9bca-359117b93742` is Active from source `0e8f77a`. Direct/custom Analyzer HTML200 show v0.20.90/cache02149; served JS exact201,645 bytes/SHA `6C8EDD3646E84E13A9F4DC7C24540AA9D5E2F7F32F792435203E9F5CEB5242AD`, contains no history count/load-older/control tokens, and retains exact latest saved-or-empty result branch. Canonical90→72 elevated, focused90/89/70/v58-D1/visible/predeploy/diff and Mark0 findings. Stored/backend history unchanged; user hard-refresh is the remaining visual confirmation.
 

@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v02091": "node scripts/test-v02091.mjs && node scripts/test-tiktok-sold-product-selection-list.mjs && npm run test:v02090",
     "test:v02090": "node scripts/test-v02090.mjs && node scripts/test-v02058-d1-data-fetching.mjs && npm run test:v02089",
     "test:v02089": "node scripts/test-v02089.mjs && npm run test:v02088",
     "dev": "wrangler pages dev public --d1=DB --r2=FILES",

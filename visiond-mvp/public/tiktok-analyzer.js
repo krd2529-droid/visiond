@@ -426,11 +426,7 @@ function shopSalesGrade(sales) {
   return sold >= 30 ? "A" : sold >= 16 ? "B" : sold > 0 ? "C" : "";
 }
 function soldProductSummaryTable(products, orders) {
-  const byId = new Map(products.map((product) => [String(product.product_id), product])), sold = /* @__PURE__ */ new Map();
-  for (const order of orders) for (const detail of arrayValue(order.product_details)) {
-    const id = String(detail?.product_id || ""), current = byId.get(id);
-    if (id && (!current || (!current.name && detail.name))) byId.set(id, { ...current, ...detail, product_id: id, name: detail.name || current?.name || "" });
-  }
+  const byId = resolvedSoldProducts(products, orders), sold = /* @__PURE__ */ new Map();
   orders.forEach((order) => (safeJson(order.product_ids) || []).forEach((id) => {
     const key = String(id), row = sold.get(key) || { count: 0, last: 0 };
     row.count++;
@@ -440,6 +436,22 @@ function soldProductSummaryTable(products, orders) {
   const rows = [...sold.entries()].map(([id, metrics]) => ({ product: byId.get(id) || { product_id: id, name: "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32" }, ...metrics })).sort((a, b) => b.count - a.count || b.last - a.last);
   if (!rows.length) return orders.length?'<p class="hint">พบออเดอร์ แต่ยังไม่มีรายละเอียดสินค้าที่ใช้แสดงผล</p>':'<p class="shop-empty-range">ช่วงวันที่นี้ยังไม่มีสินค้าที่ขายได้</p>';
   return `<div class="shop-product-table-wrap"><table class="shop-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>เกรด</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49</th><th>\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</th><th>\u0E02\u0E32\u0E22\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th><th>ลิงก์สินค้า</th></tr></thead><tbody>${rows.map((row, index) => { const grade = shopSalesGrade(row.count); return `<tr><td>${index + 1}</td><td><span class="type-pill type-${grade}" title="เกรด ${grade} จาก ${row.count.toLocaleString()} ออเดอร์ในช่วงวันที่เลือก">${grade}</span></td><td><b>${escapeHtml(row.product.name || "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>เกรด ${grade} · คำนวณจาก ${row.count.toLocaleString()} ออเดอร์จริง</small></td><td><code>${escapeHtml(row.product.product_id || "\u2013")}</code></td><td>${row.count.toLocaleString()} \u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C</td><td>${new Date((row.last + 25200) * 1e3).toISOString().slice(0, 10)}</td><td>${productLinkControl(row.product.product_url)}</td></tr>`; }).join("")}</tbody></table></div><div class="shop-grade-note"><b>เกรดจากยอดขายจริงต่อเดือน</b><span>A = 30 ชิ้นขึ้นไป · สินค้าหลัก</span><span>B = 16–29 ชิ้น · สินค้ารอง</span><span>C = 1–15 ชิ้น · สินค้าที่ขายได้เล็กน้อย</span><span>ไม่มีเกรด = 0 ชิ้นในเดือนนี้</span><small>เกรดเปลี่ยนตามข้อมูลยอดขายของแต่ละเดือน ไม่ใช่คะแนนคุณภาพถาวรของสินค้า</small></div>`;
+}
+function soldProductName(value) {
+  const name = String(value || "").trim();
+  return ["ไม่พบรายละเอียดสินค้า", "ไม่พบชื่อสินค้า"].includes(name) ? "" : name;
+}
+function resolvedSoldProducts(products = [], orders = []) {
+  const byId = new Map();
+  for (const product of products) {
+    const id = String(product?.product_id || "").trim();
+    if (id) byId.set(id, { ...product, product_id: id, name: soldProductName(product.name) });
+  }
+  for (const order of orders) for (const detail of arrayValue(order.product_details)) {
+    const id = String(detail?.product_id || "").trim(), current = byId.get(id);
+    if (id && (!current || !current.name)) byId.set(id, { ...current, ...detail, product_id: id, name: soldProductName(detail?.name), product_url: detail?.product_url || current?.product_url || "" });
+  }
+  return byId;
 }
 function shopRangeSummary(data, products, orders) {
   const sync=data.order_sync||{status:'never'},verified=sync.status==='complete'&&!sync.truncated;
@@ -451,18 +463,18 @@ function shopRangeSummary(data, products, orders) {
   const serverAvailability = data.commission_availability, availability = serverAvailability ? { ready: Boolean(serverAvailability.ready), latestDate: serverAvailability.latest_date } : commissionAvailability(), availabilityText = `เลือกดึงออเดอร์ย้อนหลังได้ถึง ${availability.latestDate} · ข้อมูลขึ้นอยู่กับผลตอบกลับจาก TikTok`;
   return `<form id="shopDateFilter" class="shop-date-filter"><label>\u0E08\u0E32\u0E01\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_from" type="date" value="${escapeHtml(range.from)}" max="${availability.latestDate}" required></label><label>\u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48<input name="date_to" type="date" value="${escapeHtml(range.to)}" max="${availability.latestDate}" required></label><button type="submit">แสดงผล</button></form>${syncPanel}<p class="hint commission-availability-note">${escapeHtml(availabilityText)}</p><div class="shop-range-kpis"><span><small>\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49</small><b>${verified?orders.length.toLocaleString():'ยังไม่สรุป'}</b></span></div><h3 class="sold-products-heading">\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 ${escapeHtml(rangeLabel)}</h3>${orders.length||verified?soldProductSummaryTable(products, orders):''}`;
 }
-function decorateSoldProductSelection(products = []) {
+function decorateSoldProductSelection(products = [], orders = []) {
   const table = $("#soldProductsData .shop-product-table");
   if (!table) return;
   const header = table.querySelector("thead tr");
   if (header && !header.querySelector(".sold-selection-heading")) header.insertAdjacentHTML("beforeend", '<th class="sold-selection-heading">ลิสต์คัดสินค้า</th>');
-  const productsByName = new Map(products.map((product) => [normalizeProductName(product.name), product]));
+  const productsById = resolvedSoldProducts(products, orders);
   const selectedNames = new Set((state.inventoryProducts || []).filter((product) => product.inventory_status === "kept").map((product) => normalizeProductName(product.name)));
   table.querySelectorAll("tbody tr").forEach((row) => {
     if (row.querySelector("[data-select-sold-product]")) return;
-    const name = row.cells[2]?.querySelector("b")?.textContent?.trim() || "";
-    const product = productsByName.get(normalizeProductName(name));
-    if (!product) {
+    const product = productsById.get(row.cells[3]?.textContent?.trim() || "");
+    const name = product?.name || "";
+    if (!name) {
       row.insertAdjacentHTML("beforeend", '<td><button class="marketplace-row-add marketplace-selection-add" type="button" disabled>ข้อมูลไม่พร้อม</button></td>');
       return;
     }
@@ -1203,7 +1215,7 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   stampChannelOwnedActions($("#tiktokConnection"), context);
   stampChannelOwnedActions($("#channelShopAnalysis"), context);
   if (shopConnection) {
-    decorateSoldProductSelection(products);
+    decorateSoldProductSelection(products, orders);
     await syncSelectedSoldProductGrades(context);
     if (loadSeq !== state.connectionLoadSeq || !channelOwnership.current(context)) return null;
   }
