@@ -10,3 +10,15 @@ Login Kit and Shop continue sharing a channel pending lock to protect the same p
 Cancellation has its own labelled action and is available only on pending/waiting results. Backend claim/cancel serialization remains authoritative if the status changes. Errors retain uncertain work. Owner/channel revision and request-object guards prevent stale actions or responses from changing another selection.
 
 Helper is a loopback listener, not a background backend queue poller. This change does not assert liveness from helper registration or navigation, does not grant provider consent and does not change Login Kit v78 scope gating, Shop identity/state, native code or the installed package. Actual installed-helper/isolated Chrome callback testing remains a delivery gate.
+
+## Creator account eligibility preflight
+
+Before diagnosing Helper installation, Chrome profile launch, OAuth routing, keys, or callbacks, verify the intended development account in TikTok Shop Partner Center:
+
+1. Open **Development Kits -> Creator Accounts**.
+2. Confirm the exact TikTok username is listed in the app's target market (Thailand uses `TH`).
+3. If it is absent, do not treat Helper reinstall or route changes as a fix. The account has not passed the provider-side test-Creator prerequisite.
+4. Add only a dedicated test-only Creator account. Partner Center warns that linking permanently converts the TikTok account into a test account and unlinking will not restore it; never use an active business channel as a troubleshooting shortcut.
+5. Record the username, region, and added time, then run one end-to-end attempt and identify the first failed boundary: VisionD -> Helper -> isolated Chrome -> Login Kit callback -> Creator authorization -> Shop callback/token.
+
+For an already approved and active public app, real eligible Creators follow the normal authorization flow instead of being converted into development test accounts. Do not confuse Creator Accounts eligibility with Helper liveness or OAuth correctness.
