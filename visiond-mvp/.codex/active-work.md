@@ -1,6 +1,6 @@
-# Active patch: single E product search action
+# Delivered patch: single E product search action
 
-- Event: PATCH_READY — v0.20.96/JS02155/CSS02098 unchanged. E card has exactly one canonical primary ค้นหาสินค้า button; only E-card keep markup removed. Generic inventory handlers/data and all94 search behavior preserved. Original Mark RED→green; focused96/95/94/70 and full canonical96→72 elevated66705exit0; visible96/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen manifest/report .agents/reports/elon-v96-freeze-20260911.*; stopped for independent review/release. No backend/native/provider/live/Git mutation.
+- Event: PATCH_DELIVERED — v0.20.96/JS02155/CSS02098 exact17-file commit `50bfaf7e` pushed `origin/main`; Cloudflare Production `c3641ee1-ea79-4e4a-b93e-cd6033b493af` is Active from source `50bfaf7`. Direct/custom Analyzer HTML return200 with v0.20.96/cache02155/02098 and both JS copies exactly match the reviewed Git blob at200,974 bytes/SHA `5BB6FEAA2E0D59140659AED65A11E25CDA827E7302643908DE244C155C5E24D0`. E cards expose one canonical primary `ค้นหาสินค้า`, contain no `เก็บแนวคิด E`, and retain the direct search hook. Generic inventory handlers/data and all v94 Marketplace query/race behavior remain. Root original RED→green/focused/full elevated canonical96→72/visible/predeploy/diff pass; Mark frozen review found0 actionable issues. No CSS/backend/schema/native/provider/data mutation or authenticated Marketplace action. User Ctrl+F5 remains the account-specific refresh step.
 
 # Delivered patch: consistent E search controls
 
