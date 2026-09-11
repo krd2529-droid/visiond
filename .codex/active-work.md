@@ -1,12 +1,10 @@
-# Active patch: Restore sold-product shortlist action
+# Active patch: Remove channel-direction result card
 
-- Status: PATCH_DELIVERED — v0.20.91/cache02150, exact14-file commit `e88f9b4a` pushed to `origin/main`; Cloudflare Production `6cbafcde-fba4-4018-9493-065c43c5d39e` Active. Direct/custom Analyzer HTML200 and served JS exact202,131 bytes/SHA `826D0D1D9D3999C1E356CD84F6E42EB7DF366AA3B585F9DCC0D31C026B5F2AF3`.
-- Outcome: real sold-product rows with a usable product name/ID show `เพิ่มเข้าลิสต์คัดสินค้า` even when TikTok supplied no product URL.
-- Preserve: explicit click only; sales-derived A/B/C grade; duplicate handling; selected-channel ownership; blank URL remains truthful; one `แสดงผล` complete acquisition; existing OAuth/Helper/Showcase/Marketplace/analysis behavior.
-- Safety: an empty or unidentifiable product name remains `ข้อมูลไม่พร้อม`; never fabricate a link or add across channels.
-- Likely files: `visiond-mvp/public/tiktok-analyzer.js`, focused render/action regression, version/cache manifests and directly affected release tests.
-- Verification: deterministic RED→green actual render/click, owner/source/grade/duplicate/placeholder/no-passive-write; full elevated v91→72; manifest14/14; visible/predeploy/diff; Mark0 findings; exact production asset match. Broad patch gate separately hits the pre-existing mobile scanner's rejection of the intentional `visiond-profile://` Helper protocol; native Helper regression passes.
-- Next action: user hard-refreshes production, clicks `แสดงผล`, and verifies each named sold row now offers `เพิ่มเข้าลิสต์คัดสินค้า`; no production shortlist mutation was performed during delivery.
+- Status: PATCH_DELIVERED — v0.20.92/cache02151, exact18-file commit `ade55e48` pushed to `origin/main`; Cloudflare Production `ce8810cc-c6f0-41f4-ba18-f68ee3283c91` Active.
+- Outcome: the visible `ทิศทางช่อง` result card and its dead client/CSS references are removed.
+- Preserve: stored/generated channel_direction, strategy input/backend, summary, AI recommendations, shortlist, owner/race isolation, sold-product action and order/connection flows.
+- Verification: actual saved/empty render with no direction node; full elevated v92→v72; manifest18/18; visible/predeploy/diff; Mark0 findings; direct/custom production HTML/JS/CSS token and asset checks.
+- Next action: user hard-refreshes the Analyzer to see the card removed.
 
 ## Previous VX rights delivery
 
