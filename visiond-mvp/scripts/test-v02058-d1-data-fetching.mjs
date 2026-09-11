@@ -42,7 +42,7 @@ for(const source of [vision4,notes,trash,webhooks]){assert.match(source,/Math\.m
 assert.match(links,/\^\(\?:\[1-9\]\|1\\d\|2\[0-4\]\)\$/);assert.match(links,/LIMIT \?/);assert.doesNotMatch(links,/CREATE TABLE|ALTER TABLE/);
 assert.match(vision4Client,/data-v4-draft-next/);assert.match(vision4Client,/data-v4-pending-next/);assert.match(adminClient,/data-trash-more/);assert.match(webhookClient,/data-more/);
 assert.match(previews,/productLimit=24/);assert.match(previews,/id<\?/);assert.match(previews,/LIMIT \?/);assert.match(adminClient,/previewExportCursor/);
-assert.match(tiktokHtml,/tiktok-analyzer\.js\?v=02159/);assert.match(notesHtml,/work-notes\.js\?v=02058/);assert.match(linksHtml,/work-links\.js\?v=02067/);
+assert.match(tiktokHtml,/tiktok-analyzer\.js\?v=02160/);assert.match(notesHtml,/work-notes\.js\?v=02058/);assert.match(linksHtml,/work-links\.js\?v=02067/);
 for(const index of ['idx_tiktok_products_channel_seen','idx_tiktok_product_events_channel_page','idx_tiktok_runs_channel_page']){assert.ok(analyzerSchema.includes(index));assert.ok(migration.includes(index))}
 
 const db=new DatabaseSync(':memory:');

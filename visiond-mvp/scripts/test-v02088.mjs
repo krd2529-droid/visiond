@@ -9,7 +9,7 @@ for(const mode of ['product','shop']){
  vm.runInNewContext(render+';renderMarketplaceProducts({},'+JSON.stringify(mode)+');',context);
  const headings=[...box.innerHTML.matchAll(/<th>(.*?)<\/th>/g)].map(x=>x[1]);
  assert.equal(headings[1],mode==='shop'?'รูปและสินค้า':'สินค้า');
- assert.equal(headings.length,mode==='shop'?9:10);
+ assert.equal(headings.length,9);
  assert.doesNotMatch(box.innerHTML,/<th>สินค้า Open Collaboration<\/th>/);
 }
 assert.match(source,/กำลังค้นหาสินค้า Open Collaboration จาก TikTok/,'source semantics outside heading stay intact');

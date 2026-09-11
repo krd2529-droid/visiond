@@ -1,4 +1,8 @@
-# Ready patch: remove white connection-management button
+# Active patch: remove creator-density product-search column
+
+- Event: PATCH_READY — v0.20.102/JS02160/CSS02101 removes only the Open Collaboration creator-density header, row cell, renderer variable and exclusive CSS. Product and shop modes now render nine aligned headers/cells/empty colspan while selection, product/shop identity, sales, commission, growth, link, Showcase and shortlist actions remain. Provider normalization/API/snapshots are unchanged. Actual-render102, provider-retention, supported-columns, selection-list, v88 and standalone70 pass; full elevated canonical102→72 exits0; visible102, predeploy9PASS8existingWARN0FAIL and diff check pass. The v102 command directly invokes the v101 test before the unchanged v100 chain to stay below the Windows nested-npm PATH limit without omitting a suite. Frozen for Mark/Root review; no backend/schema/native/provider/data/Git/live mutation and no commit/push/deploy.
+
+# Delivered patch: remove white connection-management button
 
 - Event: PATCH_DELIVERED — v0.20.101 exact18-file code commit `41cbba1c` pushed to `origin/main`; Cloudflare Production `c71b591b-3c3b-4a77-a6a3-c23146dba0cb` serves source `41cbba1`. Direct deployment and custom domain return HTTP200 with v0.20.101/JS02159/CSS02100; served JS is exact and served CSS matches the Git LF-normalized bytes. The white `จัดการการเชื่อมต่อ` DOM/text/listener/helper/projection/resets/CSS are absent. Root elevated canonical101→72, focused, syntax, visible, predeploy and real-browser static render pass; Mark found 0 actionable issues. Tiffany `จัดการสินค้า`, disconnected current-channel CTA and provider/API/ownership guards remain. No backend/native/schema/provider/account/product/data mutation; user Ctrl+F5 and authenticated channel switching are the remaining user-side visual refresh.
 
