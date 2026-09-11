@@ -445,7 +445,8 @@
     "test:v02084": "npm run test:v02083 && node scripts/test-v02084.mjs",
     "test:v02085": "node scripts/test-v02085.mjs && npm run test:v02084",
     "test:v02086": "node scripts/test-v02086.mjs && npm run test:v02085",
-    "test:v02087": "node scripts/test-v02087.mjs && npm run test:v02086"
+    "test:v02087": "node scripts/test-v02087.mjs && npm run test:v02086",
+    "test:v02088": "node scripts/test-tiktok-marketplace-supported-columns.mjs && node scripts/test-v02088.mjs && npm run test:v02087"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

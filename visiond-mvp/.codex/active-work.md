@@ -1,4 +1,12 @@
-# Active patch: one แสดงผล action exhausts the provider range
+# Active patch: marketplace product heading
+
+- Event: PATCH_READY revision2 — directly affected evergreen supported-columns assertion now requires exact <th>สินค้า</th> and is included in test:v02088. App bytes unchanged from first freeze. Revised canonical88→72 approved elevated79199 exit0; evergreen/focused88/visible88/predeploy9PASS8WARN0FAIL/diff PASS.13-file manifest/report refreshed; no release/live mutation.
+
+- Event: PATCH_READY — v0.20.88/cache02147. Only non-shop table heading literal changes to สินค้า; actual render product/shop modes red→green, original shop/source semantics unchanged. Full canonical88→87→72 approved elevated62026 exit0; focused88/v70/visible88/predeploy9PASS8WARN0FAIL/diff PASS. Frozen12-file manifest/report `.agents/reports/elon-v88-freeze-20260911.*`. No backend/native/schema/provider/Git/release mutation; Mark/Root review pending.
+
+- Event: PATCH_STARTED — v0.20.88 changes only non-shop marketplace column heading to exactly สินค้า. Actual rendered test red old heading→green; shop รูปและสินค้า and external Open Collaboration copy preserved. Version/cache02147 and scoped regression fixtures updated; canonical/freeze pending. No backend/native/live changes.
+
+# Delivered patch: one แสดงผล action exhausts the provider range
 
 - Event: PATCH_DELIVERED / USER PROVIDER GATE — v0.20.87 exact13-file commit `9f9f9001` pushed `origin/main`; Cloudflare Production `88b02fa4-c3e0-42be-a1ac-b1c7664704d4` serves source `9f9f900`. Direct/custom Analyzer HTML show v87/cache02146 and served JS is exact204,046 bytes/SHA `2081D000D07E37AA4FF329E5A8CF04BC36FA6015092F836BD057B5C82A28D184`; unauth API remains401/private,no-store. One idle `แสดงผล` button now auto-exhausts every provider page with no manual pagination/no24-result cap. Root canonical elevated exit0 and Mark frozen review0 findings. No authenticated TikTok provider call was made; actual selected-channel/date result remains the user's runtime gate.
 
