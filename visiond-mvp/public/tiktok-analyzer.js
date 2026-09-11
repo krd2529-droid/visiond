@@ -77,6 +77,30 @@ const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Da
   const [y, m, d] = base.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - days * 864e5).toISOString().slice(0, 10);
 };
+const validCommissionDay = value => {if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;const parsed=new Date(`${value}T00:00:00Z`);return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===value};
+function partnerCommissionDefaults(now=Date.now()){
+  const today=new Date(now+252e5).toISOString().slice(0,10),latestDate=shiftThaiDate(today,-1),previousMonthEnd=shiftThaiDate(`${today.slice(0,7)}-01`,-1),month=previousMonthEnd.slice(0,7);
+  return{scope:"selected",mode:"month",month,day:latestDate,from:`${month}-01`,to:previousMonthEnd,latestDate,oldestDate:shiftThaiDate(today,-90)};
+}
+function resolvePartnerCommissionRange(values,now=Date.now()){
+  const limits=partnerCommissionDefaults(now),scope=values.scope==="all"?"all":"selected",mode=values.mode;
+  let from="",to="";
+  if(mode==="month"){
+    const month=String(values.month||"");
+    if(!/^\d{4}-\d{2}$/.test(month)||month>limits.month)return{ok:false,error:"เลือกได้เฉพาะเดือนที่สิ้นสุดแล้ว"};
+    const [year,number]=month.split("-").map(Number),first=`${month}-01`,next=new Date(Date.UTC(year,number,1)).toISOString().slice(0,10);
+    if(!validCommissionDay(first)||first.slice(0,7)!==month)return{ok:false,error:"เดือนที่เลือกไม่ถูกต้อง"};
+    from=first;to=shiftThaiDate(next,-1);
+  }else if(mode==="day")from=to=String(values.day||"");
+  else if(mode==="range"){from=String(values.from||"");to=String(values.to||"")}
+  else return{ok:false,error:"เลือกโหมดเวลาให้ถูกต้อง"};
+  if(!validCommissionDay(from)||!validCommissionDay(to))return{ok:false,error:"เลือกวันที่ให้ครบและถูกต้อง"};
+  const days=Math.floor((Date.parse(`${to}T00:00:00Z`)-Date.parse(`${from}T00:00:00Z`))/864e5)+1;
+  if(from>to)return{ok:false,error:"วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด"};
+  if(to>limits.latestDate)return{ok:false,error:"เลือกวันสิ้นสุดได้ไม่เกินเมื่อวาน"};
+  if(from<limits.oldestDate||days>90)return{ok:false,error:"เลือกช่วงวันที่ซิงก์ได้ย้อนหลังไม่เกิน 90 วัน"};
+  return{ok:true,scope,mode,from,to};
+}
 const savedUiValue = (key) => { try { return localStorage.getItem(key) || ""; } catch { return ""; } }, saveUiValue = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
 const pageParams = new URLSearchParams(location.search), requestedConnectMode = ["tiktok", "shop", "tiktok_new"].includes(pageParams.get("connect")) ? pageParams.get("connect") : "", handoffChannelId = requestedConnectMode && requestedConnectMode !== "tiktok_new" ? pageParams.get("channel_id") || "" : "";
 const requestedChannelId = handoffChannelId || pageParams.get("channel_id") || savedUiValue("visiond_tiktok_channel_id") || null;
@@ -95,6 +119,7 @@ const marketplaceQueryRequests=new Map(),marketplaceQueryCache=new Map(),marketp
 let marketplaceQueryTail=Promise.resolve(),marketplaceQuerySequence=0;
 const shortlistRequests = new Map(), shortlistCache = new Map();
 const partnerCommissionRequests = new Map(), partnerCommissionCache = new Map(), partnerCommissionRevisions = new Map(), PARTNER_COMMISSION_TTL_MS = 30000;
+let partnerCommissionUi={...partnerCommissionDefaults(),generation:0};
 const inventoryVersions = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02092";
@@ -171,7 +196,7 @@ function setChannelView(view) {
 $("#channelActionSwitch")?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-channel-view]");
   if (!button) return;
-  if (button.dataset.channelView === "partner-commission") loadBossPartnerCommission(button);
+  if (button.dataset.channelView === "partner-commission") openBossPartnerCommission();
   else tiktokShopNavigation.showTab(button.dataset.channelView);
 });
 setChannelView("products");
@@ -183,31 +208,47 @@ function enableBossPartnerCommissionTest(){
   return true;
 }
 function invalidatePartnerCommissionCache(channelId){
-  const owner=pageViewerId,channel=String(channelId||''),revisionKey=JSON.stringify([owner,channel]);
-  partnerCommissionRevisions.set(revisionKey,(partnerCommissionRevisions.get(revisionKey)||0)+1);
-  for(const [key,cached] of partnerCommissionCache)if(cached.owner===owner&&cached.channelId===channel)partnerCommissionCache.delete(key);
+  const owner=pageViewerId,channel=String(channelId||'');
+  for(const target of[channel,'all']){const revisionKey=JSON.stringify([owner,target]);partnerCommissionRevisions.set(revisionKey,(partnerCommissionRevisions.get(revisionKey)||0)+1)}
+  for(const [key,cached] of partnerCommissionCache)if(cached.owner===owner&&(cached.scope==='all'||cached.channelId===channel))partnerCommissionCache.delete(key);
 }
-function renderBossPartnerCommission(data){
-  const dashboard=$("#shopDashboard"),content=$("#shopCommissionDashboard"),heading=dashboard.querySelector(".result-head>div"),basisLabel={actual:"ยืนยันแล้ว",estimated:"ประมาณการ",unknown:"ไม่ระบุประเภท"};
-  dashboard.hidden=false;heading.querySelector("small").textContent="TIKTOK PARTNER API · BOSS TEST";heading.querySelector("h2").textContent="ค่าคอมจาก Partner order sync";heading.querySelector(".source-caption")?.remove();heading.insertAdjacentHTML("beforeend",'<p class="source-caption">อ่านเฉพาะออเดอร์จาก Partner API ที่ซิงก์ไว้ ไม่รวม Commission Center หรือ Google Cloud</p>');
-  dashboard.querySelector(".result-head>b").textContent=`${data.range?.from||state.shopDateFrom} ถึง ${data.range?.to||state.shopDateTo}`;
-  if(data.status==="missing_scope")content.innerHTML='<p class="hint">ช่องนี้ยังไม่มีสิทธิ์ creator.affiliate_collaboration.read จึงยังอ่านค่าคอมจาก Partner API ไม่ได้</p>';
-  else if(data.status==="no_synced_data")content.innerHTML='<p class="hint">ยังไม่มีออเดอร์ Partner ที่ซิงก์ในช่วงนี้ ใช้ปุ่ม “แสดงผล” ในส่วนสินค้าที่ขายได้ก่อน แล้วกลับมากดดูค่าคอมอีกครั้ง</p>';
-  else if(data.status==="no_commission_evidence")content.innerHTML='<p class="hint">พบออเดอร์ Partner แต่ยังไม่มีจำนวนค่าคอมที่ยืนยันรูปแบบได้ ระบบไม่แสดง 0 แทนค่าที่อ่านไม่ได้</p>';
-  else content.innerHTML=`<div class="commission-total-grid">${(data.totals||[]).map(total=>`<article><small>${escapeHtml(basisLabel[total.basis]||basisLabel.unknown)} · ${escapeHtml(total.currency)}</small><b>${Number(total.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(total.currency)}</b><span>${Number(total.orders)||0} ออเดอร์</span></article>`).join('')}</div>`;
-  if(data.status!=="missing_scope"&&data.sync?.status!=="complete")content.insertAdjacentHTML("beforeend",'<p class="hint">ช่วงนี้ยังซิงก์ออเดอร์ Partner ไม่ครบ ค่าที่แสดงอาจเป็นบางส่วน ใช้ปุ่ม “แสดงผล” ก่อนตรวจซ้ำ</p>');
-  content.insertAdjacentHTML("beforeend",`<p class="hint">ที่มา: ${escapeHtml(data.source?.endpoint||'TikTok Partner order sync')} · ออเดอร์ ${Number(data.coverage?.orders)||0} · จำนวนที่อ่านได้ ${Number(data.coverage?.valued_orders)||0}${Number(data.coverage?.unavailable_orders)?` · อ่านจำนวนไม่ได้ ${Number(data.coverage.unavailable_orders)}`:''} · ซิงกล่าสุด ${escapeHtml(data.sync?.synced_at||data.coverage?.last_synced_at||'ยังไม่ระบุ')}</p>`);
+function partnerCommissionControls(){
+  const limits=partnerCommissionDefaults(),ui=partnerCommissionUi;
+  return`<form id="partnerCommissionForm" class="partner-commission-form"><fieldset><legend>ขอบเขตช่อง</legend><label><input type="radio" name="commission_scope" value="selected" ${ui.scope==='selected'?'checked':''}>ช่องที่เลือก</label><label><input type="radio" name="commission_scope" value="all" ${ui.scope==='all'?'checked':''}>รวมทุกช่อง</label></fieldset><fieldset><legend>ช่วงเวลา</legend><label><input type="radio" name="commission_mode" value="month" ${ui.mode==='month'?'checked':''}>รายเดือน</label><label><input type="radio" name="commission_mode" value="day" ${ui.mode==='day'?'checked':''}>วันเดียว</label><label><input type="radio" name="commission_mode" value="range" ${ui.mode==='range'?'checked':''}>ช่วงวัน</label></fieldset><div class="partner-commission-dates" data-commission-dates="month"><label>เดือนที่สิ้นสุดแล้ว<input name="commission_month" type="month" value="${escapeHtml(ui.month)}" max="${limits.month}" required></label></div><div class="partner-commission-dates" data-commission-dates="day" hidden><label>วันที่<input name="commission_day" type="date" value="${escapeHtml(ui.day)}" min="${limits.oldestDate}" max="${limits.latestDate}" required></label></div><div class="partner-commission-dates partner-commission-range" data-commission-dates="range" hidden><label>จากวันที่<input name="commission_from" type="date" value="${escapeHtml(ui.from)}" min="${limits.oldestDate}" max="${limits.latestDate}" required></label><label>ถึงวันที่<input name="commission_to" type="date" value="${escapeHtml(ui.to)}" min="${limits.oldestDate}" max="${limits.latestDate}" required></label></div><button type="submit">แสดงค่าคอม</button><p class="partner-commission-form-status" data-partner-commission-status role="status" aria-live="polite"></p></form><div id="partnerCommissionResults"></div>`;
 }
-async function loadBossPartnerCommission(button){
+function syncPartnerCommissionFields(form){
+  const mode=new FormData(form).get('commission_mode');form.querySelectorAll('[data-commission-dates]').forEach(field=>{const inactive=field.dataset.commissionDates!==mode;field.hidden=inactive;field.querySelectorAll('input').forEach(input=>input.disabled=inactive)});
+}
+function openBossPartnerCommission(){
+  if(pageViewerRole!=="boss")return false;
+  partnerCommissionUi.generation+=1;setOutputScope("channel");setWorkspaceView("output");setChannelView("partner-commission");
+  const dashboard=$("#shopDashboard"),content=$("#shopCommissionDashboard"),heading=dashboard.querySelector(".result-head>div");
+  dashboard.hidden=false;heading.querySelector("small").textContent="TIKTOK PARTNER API · BOSS TEST";heading.querySelector("h2").textContent="ค่าคอมจาก Partner order sync";heading.querySelector(".source-caption")?.remove();heading.insertAdjacentHTML("beforeend",'<p class="source-caption">อ่านเฉพาะออเดอร์จาก Partner API ที่ซิงก์ไว้ ไม่รวม Commission Center หรือ Google Cloud</p>');dashboard.querySelector(".result-head>b").textContent="เลือกช่วงเวลา";content.innerHTML=partnerCommissionControls();syncPartnerCommissionFields($("#partnerCommissionForm"));return true;
+}
+const commissionTotalsHtml=(totals,basisLabel)=>totals.length?`<div class="commission-total-grid">${totals.map(total=>`<article><small>${escapeHtml(basisLabel[total.basis]||basisLabel.unknown)} · ${escapeHtml(total.currency)}</small><b>${Number(total.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(total.currency)}</b><span>${Number(total.orders)||0} ออเดอร์</span></article>`).join('')}</div>`:'<p class="hint">ไม่มีจำนวนค่าคอมที่อ่านรูปแบบได้ ระบบไม่แสดง 0 แทนค่าที่อ่านไม่ได้</p>';
+function renderBossPartnerCommission(data,query){
+  const results=$("#partnerCommissionResults"),dashboard=$("#shopDashboard"),basisLabel={actual:"ยืนยันแล้ว",estimated:"ประมาณการ",unknown:"ไม่ระบุประเภท"},statusLabel={missing_scope:"ขาดสิทธิ์อ่านออเดอร์",no_exact_sync:"ยังซิงก์ช่วงนี้ไม่ครบ",complete_no_orders:"ซิงก์ครบ · ไม่มีออเดอร์",no_commission_evidence:"มีออเดอร์ · จำนวนอ่านไม่ได้",ready:"พร้อม"};
+  if(!results)return;dashboard.querySelector(".result-head>b").textContent=`${data.range?.from||query.from} ถึง ${data.range?.to||query.to}`;
+  let body=data.status==='no_channels'?'<p class="hint">ไม่พบช่อง TikTok Shop ที่เชื่อมและใช้งานอยู่ในบัญชี Boss นี้</p>':commissionTotalsHtml(data.totals||[],basisLabel);
+  if(!data.complete&&data.incomplete_channels?.length){const names=data.incomplete_channels.map(channel=>escapeHtml(channel.channel_name||channel.channel_id)).join(', ');body+=`<p class="hint commission-incomplete">ยอดรวมนี้ยังไม่ครบทุกช่อง: ${names} · เลือกช่องดังกล่าว แล้วใช้ “แสดงผล” ในส่วนสินค้าที่ขายได้เพื่อซิงก์ช่วง ${escapeHtml(query.from)} ถึง ${escapeHtml(query.to)}</p>`}
+  if(data.status==='missing_scope')body='<p class="hint commission-incomplete">ช่องนี้ยังไม่มีสิทธิ์ creator.affiliate_collaboration.read จึงยังอ่านค่าคอมจาก Partner API ไม่ได้</p>';
+  if(data.status==='no_synced_data'&&data.scope==='selected')body+='<p class="hint">ช่วงนี้ยังไม่มีออเดอร์ Partner ที่ซิงก์ครบ ใช้ “แสดงผล” ในส่วนสินค้าที่ขายได้ แล้วกลับมาตรวจอีกครั้ง</p>';
+  if((data.channels||[]).length)body+=`<div class="commission-channel-table partner-commission-channels">${data.channels.map(channel=>`<div><span><b>${escapeHtml(channel.channel_name||channel.channel_id)}</b><small>${escapeHtml(statusLabel[channel.status]||channel.status)} · ออเดอร์ ${Number(channel.coverage?.orders)||0}${Number(channel.coverage?.unavailable_orders)?` · อ่านจำนวนไม่ได้ ${Number(channel.coverage.unavailable_orders)}`:''}</small></span><strong>${channel.totals?.length?channel.totals.map(total=>`${Number(total.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(total.currency)} (${escapeHtml(basisLabel[total.basis]||basisLabel.unknown)})`).join('<br>'):'—'}</strong></div>`).join('')}</div>`;
+  body+=`<p class="hint">ที่มา: ${escapeHtml(data.source?.endpoint||'TikTok Partner order sync')} · ออเดอร์ ${Number(data.coverage?.orders)||0} · จำนวนที่อ่านได้ ${Number(data.coverage?.valued_orders)||0}${Number(data.coverage?.unavailable_orders)?` · อ่านจำนวนไม่ได้ ${Number(data.coverage.unavailable_orders)}`:''} · ซิงกล่าสุด ${escapeHtml(data.sync?.synced_at||data.coverage?.last_synced_at||'ยังไม่ระบุ')}</p>`;results.innerHTML=body;
+}
+function handoffPartnerCommissionRange(range){
+  state.shopDateFrom=range.from;state.shopDateTo=range.to;const sold=$("#shopDateFilter");if(sold){const from=sold.querySelector('[name="date_from"]'),to=sold.querySelector('[name="date_to"]');if(from)from.value=range.from;if(to)to.value=range.to}
+}
+async function loadBossPartnerCommission(button,query){
   if(pageViewerRole!=="boss")return false;
   const context=channelOwnership.capture();if(!context)return showToast("กรุณาเลือกช่องก่อนดูค่าคอม", "warning");
-  const owner=pageViewerId,from=state.shopDateFrom,to=state.shopDateTo,revisionKey=JSON.stringify([owner,context.channelId]),revision=partnerCommissionRevisions.get(revisionKey)||0,key=JSON.stringify([owner,context.channelId,from,to,revision]),current=()=>pageAuthorized&&pageViewerRole==="boss"&&owner===pageViewerId&&channelOwnership.current(context)&&from===state.shopDateFrom&&to===state.shopDateTo&&(partnerCommissionRevisions.get(revisionKey)||0)===revision;
-  setOutputScope("channel");setWorkspaceView("output");setChannelView("partner-commission");
-  const cached=partnerCommissionCache.get(key);if(cached&&cached.expires>Date.now()){if(current())renderBossPartnerCommission(cached.data);return true}
-  if(partnerCommissionRequests.has(key))return partnerCommissionRequests.get(key);
-  const request=(async()=>{button.disabled=true;$("#shopDashboard").hidden=false;$("#shopCommissionDashboard").innerHTML='<p class="hint">กำลังอ่านค่าคอมจาก TikTok Partner order sync…</p>';try{const query=new URLSearchParams({channel_id:context.channelId,from,to}),data=await api(`/api/admin/tiktok-partner-commissions?${query}`,{cache:"no-store"});if(current()){partnerCommissionCache.set(key,{data,expires:Date.now()+PARTNER_COMMISSION_TTL_MS,owner,channelId:context.channelId});renderBossPartnerCommission(data)}return true}catch(error){if(current()){setChannelView("products");showToast(error.message,"error")}return false}finally{button.disabled=false}})();
-  partnerCommissionRequests.set(key,request);try{return await request}finally{if(partnerCommissionRequests.get(key)===request)partnerCommissionRequests.delete(key)}
+  const owner=pageViewerId,revisionTarget=query.scope==='all'?'all':context.channelId,revisionKey=JSON.stringify([owner,revisionTarget]),revision=partnerCommissionRevisions.get(revisionKey)||0,key=JSON.stringify([owner,query.scope,query.scope==='selected'?context.channelId:'',query.from,query.to,revision]),current=()=>pageAuthorized&&pageViewerRole==="boss"&&owner===pageViewerId&&channelOwnership.current(context)&&document.body.classList.contains('channel-view-commission')&&partnerCommissionUi.generation===query.generation&&query.scope===partnerCommissionUi.scope&&query.mode===partnerCommissionUi.mode&&query.from===state.shopDateFrom&&query.to===state.shopDateTo&&(partnerCommissionRevisions.get(revisionKey)||0)===revision;
+  const cached=partnerCommissionCache.get(key);if(cached&&cached.expires>Date.now()){if(current())renderBossPartnerCommission(cached.data,query);return true}
+  let request=partnerCommissionRequests.get(key),created=false;if(!request){created=true;const params=new URLSearchParams({scope:query.scope,from:query.from,to:query.to});if(query.scope==='selected')params.set('channel_id',context.channelId);request=api(`/api/admin/tiktok-partner-commissions?${params}`,{cache:"no-store"});partnerCommissionRequests.set(key,request)}
+  button.disabled=true;const results=$("#partnerCommissionResults");if(results)results.innerHTML='<p class="hint">กำลังอ่านค่าคอมจาก TikTok Partner order sync…</p>';try{const data=await request;if(current()){partnerCommissionCache.set(key,{data,expires:Date.now()+PARTNER_COMMISSION_TTL_MS,owner,scope:query.scope,channelId:query.scope==='selected'?context.channelId:''});renderBossPartnerCommission(data,query)}return true}catch(error){if(current()){const status=$("#partnerCommissionForm [data-partner-commission-status]");if(status)status.textContent=error.message;showToast(error.message,"error")}return false}finally{button.disabled=false;if(created&&partnerCommissionRequests.get(key)===request)partnerCommissionRequests.delete(key)}
 }
+$("#shopCommissionDashboard")?.addEventListener("input",event=>{const form=event.target.closest('#partnerCommissionForm');if(!form)return;syncPartnerCommissionFields(form);const data=new FormData(form);partnerCommissionUi={...partnerCommissionUi,scope:String(data.get('commission_scope')||'selected'),mode:String(data.get('commission_mode')||'month'),month:String(data.get('commission_month')||partnerCommissionUi.month),day:String(data.get('commission_day')||partnerCommissionUi.day),from:String(data.get('commission_from')||partnerCommissionUi.from),to:String(data.get('commission_to')||partnerCommissionUi.to),generation:partnerCommissionUi.generation+1};const results=$("#partnerCommissionResults"),status=form.querySelector('[data-partner-commission-status]');if(results)results.innerHTML='';if(status)status.textContent=''});
+$("#shopCommissionDashboard")?.addEventListener("submit",async event=>{if(event.target.id!=="partnerCommissionForm")return;event.preventDefault();const form=event.target,data=new FormData(form),values={scope:String(data.get('commission_scope')||''),mode:String(data.get('commission_mode')||''),month:String(data.get('commission_month')||''),day:String(data.get('commission_day')||''),from:String(data.get('commission_from')||''),to:String(data.get('commission_to')||'')},resolved=resolvePartnerCommissionRange(values),status=form.querySelector('[data-partner-commission-status]');if(!resolved.ok){status.textContent=resolved.error;return}status.textContent='';partnerCommissionUi={...partnerCommissionUi,...values,scope:resolved.scope,mode:resolved.mode,generation:partnerCommissionUi.generation+1};const query={...resolved,generation:partnerCommissionUi.generation};handoffPartnerCommissionRange(query);await loadBossPartnerCommission(form.querySelector('button[type="submit"]'),query)});
 $("#channelShopAnalysis .result-head")?.insertAdjacentHTML("afterend", '<section id="shopConnectionRequired" class="shop-connection-required" hidden><b>ช่องนี้ยังไม่ได้เชื่อมระบบ TikTok Shop</b><p>TikTok ใช้ข้อมูลโปรไฟล์และวิดีโอ ส่วนออเดอร์ Marketplace และ Showcase ต้องเชื่อมระบบ TikTok Shop แยกอีกครั้ง</p><button type="button" data-connect-selected-shop>เชื่อม TikTok Shop สำหรับช่องนี้</button></section>');
 $("#shopConnectionRequired [data-connect-selected-shop]")?.addEventListener("click", (event) => routeProfileConnection("shop",event.currentTarget));
 $("#connectTikTokShop")?.addEventListener("click", (event) => {

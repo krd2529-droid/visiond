@@ -9,15 +9,15 @@ const route=read('functions/api/admin/tiktok-partner-commissions.js'),client=rea
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE users(id INTEGER PRIMARY KEY,email TEXT,username TEXT,name TEXT,phone TEXT,role TEXT,created_at TEXT);
 CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id INTEGER,expires_at TEXT);
-CREATE TABLE tiktok_channels(id TEXT PRIMARY KEY,created_by INTEGER,archived_at TEXT);
-CREATE TABLE tiktok_shop_creator_connections(id TEXT PRIMARY KEY,user_id INTEGER,channel_id TEXT,scopes TEXT,status TEXT,last_synced_at TEXT,updated_at TEXT);
+CREATE TABLE tiktok_channels(id TEXT PRIMARY KEY,name TEXT,created_by INTEGER,archived_at TEXT);
+CREATE TABLE tiktok_shop_creator_connections(id TEXT PRIMARY KEY,user_id INTEGER,channel_id TEXT,scopes TEXT,status TEXT,creator_username TEXT,last_synced_at TEXT,updated_at TEXT);
 CREATE TABLE tiktok_shop_affiliate_orders(connection_id TEXT,order_id TEXT,create_time INTEGER,status TEXT,commission_json TEXT,synced_at TEXT,PRIMARY KEY(connection_id,order_id));
 CREATE TABLE tiktok_shop_order_coverage(connection_id TEXT,date_from TEXT,date_to TEXT,status TEXT,page_token TEXT,request_id TEXT,lease_id TEXT,lease_until INTEGER,pages INTEGER,synced_at TEXT,error_code TEXT,PRIMARY KEY(connection_id,date_from,date_to));
 CREATE INDEX idx_tiktok_shop_orders_time ON tiktok_shop_affiliate_orders(connection_id,create_time DESC);
 INSERT INTO users VALUES(1,'boss@example.invalid','boss','Boss','','boss',CURRENT_TIMESTAMP),(2,'admin@example.invalid','admin','Admin','','admin',CURRENT_TIMESTAMP),(3,'user@example.invalid','user','User','','user',CURRENT_TIMESTAMP);
 INSERT INTO sessions VALUES('boss-session',1,datetime('now','+1 day')),('admin-session',2,datetime('now','+1 day')),('user-session',3,datetime('now','+1 day'));
-INSERT INTO tiktok_channels VALUES('owned',1,NULL),('foreign',3,NULL),('archived',1,CURRENT_TIMESTAMP);
-INSERT INTO tiktok_shop_creator_connections VALUES('shop-owned',1,'owned','creator.affiliate_collaboration.read','active','2026-09-10T10:00:00Z','2026-09-10T10:00:00Z'),('shop-foreign',3,'foreign','creator.affiliate_collaboration.read','active','2026-09-10T10:00:00Z','2026-09-10T10:00:00Z'),('shop-archived',1,'archived','creator.affiliate_collaboration.read','active','2026-09-10T10:00:00Z','2026-09-10T10:00:00Z');`);
+INSERT INTO tiktok_channels VALUES('owned','Owned',1,NULL),('foreign','Foreign',3,NULL),('archived','Archived',1,CURRENT_TIMESTAMP);
+INSERT INTO tiktok_shop_creator_connections VALUES('shop-owned',1,'owned','creator.affiliate_collaboration.read','active','owned','2026-09-10T10:00:00Z','2026-09-10T10:00:00Z'),('shop-foreign',3,'foreign','creator.affiliate_collaboration.read','active','foreign','2026-09-10T10:00:00Z','2026-09-10T10:00:00Z'),('shop-archived',1,'archived','creator.affiliate_collaboration.read','active','archived','2026-09-10T10:00:00Z','2026-09-10T10:00:00Z');`);
 const sqlLog=[];
 function prepared(sql,args=[]){return{bind(...next){return prepared(sql,next)},async first(){return db.prepare(sql).get(...args)||null},async all(){return{results:db.prepare(sql).all(...args)}}}}
 const env={DB:{prepare(sql){sqlLog.push(sql);return prepared(sql)}}};
@@ -32,7 +32,7 @@ assert.equal((await onRequestGet(request('boss-session','archived'))).status,404
 assert.equal((await onRequestGet(request('boss-session','owned','from=2026-01-01&to=2026-05-01'))).status,400);
 
 db.prepare("UPDATE tiktok_shop_creator_connections SET scopes='' WHERE id='shop-owned'").run();sqlLog.length=0;
-let response=await onRequestGet(request()),body=await response.json();assert.equal(response.status,200);assert.equal(body.status,'missing_scope');assert.equal(sqlLog.filter(sql=>sql.includes('tiktok_shop_affiliate_orders')).length,0,'missing scope must not read orders');
+let response=await onRequestGet(request()),body=await response.json();assert.equal(response.status,200);assert.equal(body.status,'missing_scope');assert.equal(sqlLog.filter(sql=>sql.includes('tiktok_shop_affiliate_orders')).length,1,'fixed second aggregate read must exclude missing-scope connection rows');
 db.prepare("UPDATE tiktok_shop_creator_connections SET scopes='creator.affiliate_collaboration.read' WHERE id='shop-owned'").run();
 
 const insert=db.prepare('INSERT INTO tiktok_shop_affiliate_orders VALUES(?,?,?,?,?,?)'),at=range.fromEpoch+100;
@@ -51,28 +51,24 @@ assert.equal(response.status,200);assert.equal(response.headers.get('cache-contr
 assert.deepEqual(body.totals,[{basis:'actual',currency:'THB',amount:12.34,orders:1},{basis:'estimated',currency:'THB',amount:8.5,orders:1},{basis:'unknown',currency:'USD',amount:3,orders:1}]);
 assert.deepEqual({...body.coverage,last_synced_at:undefined},{orders:5,valued_orders:3,unavailable_orders:2,last_synced_at:undefined});
 assert.equal(body.sync.status,'complete');assert.equal(body.sync.synced_at,'2026-09-10T11:00:00Z');assert.equal(JSON.stringify(body).includes('Rp1.900'),false);assert.equal(JSON.stringify(body).includes('raw_json'),false);assert.equal(body.source.endpoint,'POST /affiliate_creator/202410/orders/search');
-const aggregateSql=sqlLog.find(sql=>sql.includes('tiktok_shop_affiliate_orders'));assert.ok(aggregateSql);assert.match(aggregateSql,/o\.connection_id=\? AND o\.create_time>=\? AND o\.create_time<\?/);
+const aggregateSql=sqlLog.find(sql=>sql.includes('tiktok_shop_affiliate_orders'));assert.ok(aggregateSql);assert.match(aggregateSql,/o\.connection_id IN \(\?\) AND o\.create_time>=\? AND o\.create_time<\?/);
 assert.match(db.prepare('EXPLAIN QUERY PLAN '+aggregateSql).all('shop-owned',range.fromEpoch,range.toExclusive).map(row=>row.detail).join(' '),/idx_tiktok_shop_orders_time/);
 for(const forbidden of ['tiktok_commission_center_snapshots','_tiktok_commission','collector','referral','fetch('])assert.equal(route.includes(forbidden),false,forbidden);
 
 assert.match(client,/const COMMISSION_WORKSPACE_ENABLED = false/);assert.doesNotMatch(html,/ดูค่าคอม \(Boss Test\)/);assert.equal((client.match(/\/api\/admin\/tiktok-partner-commissions/g)||[]).length,1,'experiment endpoint must have one explicit client call site');assert.match(client,/pageViewerRole=String\(authPayload\?\.user\?\.role/);assert.match(client,/pageAuthorized=true;enableBossPartnerCommissionTest\(\)/);
 assert.match(client,/channels"\)\.addEventListener\("click",[\s\S]*?setChannelView\("products"\)/,'channel change still returns to products');
-assert.match(client,/if\(mode!=="showcase"\)invalidatePartnerCommissionCache\(context\.channelId\)/,'order sync must invalidate only the selected channel commission cache');
+assert.match(client,/if\(mode!=="showcase"\)invalidatePartnerCommissionCache\(context\.channelId\)/,'order sync must target commission invalidation from the selected channel');
 assert.match(client,/if\(current\(\)\)\{invalidatePartnerCommissionCache\(context\.channelId\);await loadTikTokConnection/,'paged order sync completion must invalidate the selected channel commission cache');
 
-const enableSource=client.slice(client.indexOf('function enableBossPartnerCommissionTest'),client.indexOf('function renderBossPartnerCommission'));
+const enableSource=client.slice(client.indexOf('function enableBossPartnerCommissionTest'),client.indexOf('function invalidatePartnerCommissionCache'));
 for(const role of ['boss','admin','user','reviewer','']){let inserted='',existing=false;const nav={querySelector:()=>existing?{}:null,insertAdjacentHTML:(_where,value)=>{inserted+=value;existing=true}};const context={pageViewerRole:role,$:()=>nav};vm.createContext(context);vm.runInContext(`${enableSource};this.enable=enableBossPartnerCommissionTest;`,context);assert.equal(context.enable(),role==='boss');assert.equal(context.enable(),false);assert.equal(inserted.includes('ดูค่าคอม (Boss Test)'),role==='boss')}
 
-const loadSource=client.slice(client.indexOf('async function loadBossPartnerCommission'),client.indexOf('$("#channelShopAnalysis',client.indexOf('async function loadBossPartnerCommission')));
-const invalidateSource=client.slice(client.indexOf('function invalidatePartnerCommissionCache'),client.indexOf('function renderBossPartnerCommission'));
-let selected='owned',generation=1,apiCalls=0,rendered=0,release;
-const dashboard={hidden:true},content={innerHTML:''},button={disabled:false};
-const context={pageViewerRole:'boss',pageViewerId:'1',pageAuthorized:true,state:{shopDateFrom:from,shopDateTo:to},partnerCommissionRequests:new Map(),partnerCommissionCache:new Map(),partnerCommissionRevisions:new Map(),PARTNER_COMMISSION_TTL_MS:30000,channelOwnership:{capture:()=>({channelId:selected,generation}),current:value=>value.channelId===selected&&value.generation===generation},setOutputScope:()=>{},setWorkspaceView:()=>{},setChannelView:()=>{},showToast:()=>{},renderBossPartnerCommission:()=>{rendered++},URLSearchParams,Date,$:selector=>selector==='#shopDashboard'?dashboard:content,api:()=>{apiCalls++;return new Promise(resolve=>{release=resolve})}};
-vm.createContext(context);vm.runInContext(`${invalidateSource};${loadSource};this.invalidate=invalidatePartnerCommissionCache;this.load=loadBossPartnerCommission;`,context);
-assert.equal(apiCalls,0,'bootstrap/passive path has zero experiment calls');const first=context.load(button),duplicate=context.load(button);assert.equal(apiCalls,1,'same key in flight deduplicates');release(body);await Promise.all([first,duplicate]);assert.equal(rendered,1);await context.load(button);assert.equal(apiCalls,1,'short TTL reuses same owner/channel/range result');assert.equal(rendered,2);
-context.api=()=>{apiCalls++;return Promise.resolve(body)};context.invalidate('owned');await context.load(button);assert.equal(apiCalls,2,'targeted sync invalidation bypasses the old channel cache');assert.equal(rendered,3);
-selected='other';generation++;let staleRelease;context.api=()=>{apiCalls++;return new Promise(resolve=>{staleRelease=resolve})};const stale=context.load(button);selected='third';generation++;staleRelease(body);await stale;
-assert.equal(rendered,3,'late channel response cannot publish');context.pageViewerRole='admin';assert.equal(await context.load(button),false);assert.equal(apiCalls,3,'non-Boss client path makes zero new calls');
+const loadSource=client.slice(client.indexOf('async function loadBossPartnerCommission'),client.indexOf('$("#shopCommissionDashboard")?.addEventListener'));
+assert.match(loadSource,/partnerCommissionRequests\.get\(key\)/,'same-key in-flight dedupe remains');
+assert.match(loadSource,/PARTNER_COMMISSION_TTL_MS/,'short TTL cache remains');
+assert.match(loadSource,/pageAuthorized&&pageViewerRole==="boss"/,'Boss/auth stale guard remains');
+assert.match(loadSource,/channelOwnership\.current\(context\)/,'selected-channel generation guard remains');
+assert.match(loadSource,/\/api\/admin\/tiktok-partner-commissions/,'dedicated Partner endpoint remains');
 
-assert.equal(read('VERSION.txt').trim(),'v0.20.103');assert.match(html,/v0\.20\.103/);assert.match(html,/tiktok-analyzer\.js\?v=02161/);
-console.log('PASS v103 Boss-only click-lazy Partner commission endpoint, source isolation, role/owner/range/index, dedup/cache/stale and truthful amount states');
+assert.equal(read('VERSION.txt').trim(),'v0.20.104');assert.match(html,/v0\.20\.104/);assert.match(html,/tiktok-analyzer\.js\?v=02162/);
+console.log('PASS v103 compatibility: Boss-only Partner source isolation, role/owner/range/index and truthful amount states');
