@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v02089": "node scripts/test-v02089.mjs && npm run test:v02088",
     "dev": "wrangler pages dev public --d1=DB --r2=FILES",
     "deploy": "wrangler pages deploy public",
     "db:init": "wrangler d1 execute visiond-db --file=./migrations/0001_init.sql",

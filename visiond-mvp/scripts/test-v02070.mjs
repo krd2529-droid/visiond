@@ -152,7 +152,8 @@ function createSelectRuntime() {
   assert.equal(fixture.snapshot().summary, '', 'switching must clear the prior channel summary immediately');
   fixture.resolve('B', { channel: { id: 'B', name: 'B' }, products: [], runs: [] });
   await selectB;
-  assert.equal(fixture.snapshot().resultHidden, true, 'an empty B overview must not reveal the old A result');
+  assert.equal(fixture.snapshot().resultHidden, false, 'an empty B overview renders its own truthful scaffold');
+  assert.equal(fixture.snapshot().owner, 'B', 'empty scaffold must belong to B, never A');
   assert.equal(fixture.snapshot().summary, '');
 }
 {
@@ -183,7 +184,7 @@ function createSelectRuntime() {
   assert.equal(await pending, null, 'late A commission preparation must not publish into B');
 }
 
-assert.match(source, /renderOwnedResult\(data\.runs\[0\]\.result, context\)/);
+assert.ok(source.includes('renderOwnedResult(data.runs?.[0]?.result || {}, context)'));
 assert.match(source, /loadMoreRuns\(\)[^]*channelOwnership\.current\(context\)/);
 assert.match(source, /loadMoreInventoryResource\(resource\)[^]*channelOwnership\.current\(context\)/);
 assert.match(source, /syncSelectedSoldProductGrades\(context\)[^]*channelOwnership\.current\(context\)/);
@@ -192,7 +193,7 @@ assert.match(source, /payload\.set\("channel_id", operationChannelId\)/, 'all ba
 for (const token of ['state.preparedCommission = null', 'state.commissionCards = []', 'state.lastCommissionCard = null', 'URL.revokeObjectURL']) assert.ok(clearSource.includes(token), `channel switch must clear ${token}`);
 assert.match(source, /stampChannelOwnedActions\(\$\("#shopDashboard"\), context\)/, 'commission actions must be stamped with their channel owner');
 
-assert.equal(version.trim(), 'v0.20.88');
-assert.match(html, /<b>v0\.20\.88<\/b>/);
-assert.match(html, /tiktok-analyzer\.js\?v=02147/);
+assert.equal(version.trim(), 'v0.20.89');
+assert.match(html, /<b>v0\.20\.89<\/b>/);
+assert.match(html, /tiktok-analyzer\.js\?v=02148/);
 console.log('PASS v0.20.70 channel-owned analyzer view, async responses and mutations');

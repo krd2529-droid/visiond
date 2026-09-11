@@ -1,4 +1,10 @@
-# Active patch: marketplace product heading
+# Active patch: channel-owned empty result scaffold
+
+- Event: PATCH_READY — v0.20.89/cache02148. Actual-source empty B/C hidden red now renders truthful owner-stamped scaffold; saved A remains unchanged and late A cannot repaint B. Canonical89→72 elevated71641 exit0, focused89/v70/visible89/predeploy9PASS8existingWARN0FAIL/diff PASS. Twelve-file freeze `.agents/reports/elon-v89-freeze-20260911.*`; no backend/native/schema/CSS/provider/live changes, no commit/push/deploy. Mark/Root review pending.
+
+- Event: PATCH_STARTED — v0.20.89/cache02148. Every valid selected channel renders its own result scaffold, including runs=[]; existing saved result and truthful empty copy retained. Actual-source selection/render red B hidden→green, A→B/C→A and late A guard covered. No backend/native/schema/provider change; canonical/freeze pending.
+
+# Delivered patch: marketplace product heading
 
 - Event: PATCH_DELIVERED — v0.20.88 exact13-file commit `f384d729` pushed `origin/main`; Cloudflare Production `703ed006-fe84-4a21-8a43-151b8dd11706` serves source `f384d72`. Direct/custom Analyzer JS is exact204,027 bytes/SHA `D64065094547FB51FEDF6421F669579A8A039F6FCD7D0EBB91EDF5468050CAF2`; HTML shows v88/cache02147. The target marketplace header is exactly `สินค้า`, the old heading is absent, and Shop `รูปและสินค้า` plus all other Open Collaboration behavior/copy remain unchanged. Root elevated canonical88→72 and Mark revision2 review pass with0 findings.
 
