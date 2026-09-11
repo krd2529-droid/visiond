@@ -1,6 +1,6 @@
-# Active patch: remove sold-products link column
+# Delivered patch: remove sold-products link column
 
-- Event: PATCH_READY — v0.20.100/JS02158/CSS02099 unchanged. Sold-only final link header/cell removed; base6/decorated7 aligned with productIDcells3/ordercells4 unchanged. MissingURL shortlist payload/action, A/B/C/placeholder/duplicate/owner and global other-table links preserved. OriginalMarkREDgreen, focused100/v91/70, fullcanonical100→72 elevated53511exit0, visible100/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen manifest/report .agents/reports/elon-v100-freeze-20260911.*. No backend/CSS/native/provider/live/Git mutation; stopped for independent review.
+- Event: PATCH_DELIVERED — v0.20.100/JS02158 exact18-file code commit `03bef256` pushed `origin/main`; Cloudflare Production `944848f1-a892-49f4-a7bc-212bb90be91f` serves source `03bef25`. Direct/custom Analyzer HTML return200 with v100/cache02158; direct/custom JS exactly match local at201,458 bytes/SHA `5374C0618CAB29D73CBDB4BDC8760700D62F126CA1852FBA2B3C58BD10DE5095`. Sold-only link header/cell are absent while base6/decorated7, blankURL shortlist action, grades/placeholder/duplicate/owner and other-table link controls remain. Root canonical100→72/focused/visible/predeploy/diff pass; Mark found0 issues. No backend/CSS/native/provider/data mutation; user Ctrl+F5 is the remaining authenticated visual refresh.
 
 # Delivered patch / user install gate: enforce fixed Helper capability
 
