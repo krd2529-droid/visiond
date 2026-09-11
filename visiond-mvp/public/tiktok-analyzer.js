@@ -20,19 +20,13 @@ function createTikTokShopNavigation({ getState, setOutputScope, setWorkspaceView
       setChannelView(view);
       return true;
     },
-    showManagement() {
-      if (!connectUrl()) return false;
-      setOutputScope("channel");
-      setWorkspaceView("input");
-      return true;
-    }
   };
 }
 
 
 function tiktokShopActionVisibility({ loading = false, selectable = false, connected = false } = {}) {
   const ready = !loading && Boolean(selectable);
-  return { connect: ready && !connected, manage: ready && connected };
+  return { connect: ready && !connected };
 }
 
 function createTikTokChannelOwnership(getSelected) {
@@ -162,7 +156,7 @@ const safeJson = (value) => {
 const money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
 const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseHeading = $("#channelShopAnalysis .showcase-panel .showcase-heading");
 $(".workspace-switch")?.insertAdjacentHTML("afterend",'<section id="analysisChannelPicker" class="analysis-channel-picker" aria-labelledby="analysisChannelPickerTitle"><div><small>ช่องที่กำลังวิเคราะห์</small><h3 id="analysisChannelPickerTitle">เลือกช่องจากรายการที่เชื่อมแล้ว</h3><small data-browser-profile-label></small><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><div id="analysisChannelOptions" class="analysis-channel-options" role="listbox" aria-label="เลือกช่องที่ต้องการวิเคราะห์"></div><div id="browserProfilePanel" class="analysis-channel-status"><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></div></section>');
-$("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button>' + (COMMISSION_WORKSPACE_ENABLED ? '<button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button>' : '') + '</nav><button id="manageChannelConnections" class="manage-channel-connections" type="button" hidden>จัดการการเชื่อมต่อ</button>');
+$("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button>' + (COMMISSION_WORKSPACE_ENABLED ? '<button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button>' : '') + '</nav>');
 function setChannelView(view) {
   const commission = COMMISSION_WORKSPACE_ENABLED && view === "commission";
   document.body.classList.toggle("channel-view-products", !commission);
@@ -180,10 +174,6 @@ $("#channelActionSwitch")?.addEventListener("click", (event) => {
 setChannelView("products");
 $("#channelShopAnalysis .result-head")?.insertAdjacentHTML("afterend", '<section id="shopConnectionRequired" class="shop-connection-required" hidden><b>ช่องนี้ยังไม่ได้เชื่อมระบบ TikTok Shop</b><p>TikTok ใช้ข้อมูลโปรไฟล์และวิดีโอ ส่วนออเดอร์ Marketplace และ Showcase ต้องเชื่อมระบบ TikTok Shop แยกอีกครั้ง</p><button type="button" data-connect-selected-shop>เชื่อม TikTok Shop สำหรับช่องนี้</button></section>');
 $("#shopConnectionRequired [data-connect-selected-shop]")?.addEventListener("click", (event) => routeProfileConnection("shop",event.currentTarget));
-$("#manageChannelConnections")?.addEventListener("click", () => {
-  if (!tiktokShopNavigation.showManagement()) return;
-  $("#shopConnectionManagement")?.scrollIntoView({ behavior: "smooth", block: "center" });
-});
 $("#connectTikTokShop")?.addEventListener("click", (event) => {
   event.preventDefault();
   tiktokShopNavigation.connect();
@@ -962,7 +952,6 @@ function clearChannelOwnedView() {
     $("#angelCount").textContent = "";
   }
   if (connection) connection.hidden = true;
-  $("#manageChannelConnections").hidden = true;
   $("#shopConnectionRequired").hidden = true;
   if($("#syncTikTokShowcase"))$("#syncTikTokShowcase").hidden = true;
   if($("#syncTikTokShop"))$("#syncTikTokShop").hidden = true;
@@ -1230,12 +1219,10 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   if (!channelId) {
     box.hidden = true;
     $("#shopConnectionRequired").hidden = true;
-    $("#manageChannelConnections").hidden = true;
     $("#connectTikTokShop")?.removeAttribute("href");
     return null;
   }
   box.hidden = false;
-  $("#manageChannelConnections").hidden = true;
   const requestedChannelId=String(channelId),loadSeq=++state.connectionLoadSeq,requestedRange=String(shopDateQuery(requestedChannelId));
   const data = await fetchTikTokConnectionData(requestedChannelId);
   const connection = data.connections?.[0] || null, shopConnection = data.shop_connections?.[0] || null, videos = data.videos || [], products = data.shop_products || [], orders = data.shop_orders || [];
@@ -1245,7 +1232,6 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   state.orderSync=data.order_sync||{status:'never',revision:0};
   state.orderSyncRange=requestedRange;
   const shopActions = tiktokShopActionVisibility({ selectable: Boolean(tiktokShopNavigation.connectUrl()), connected: Boolean(shopConnection) });
-  $("#manageChannelConnections").hidden = !shopActions.manage;
   $("#channelShopAnalysis").classList.toggle("shop-connection-missing", !shopConnection);
   $("#shopConnectionRequired").hidden = !shopActions.connect;
   renderShowcasePermission();

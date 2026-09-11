@@ -98,7 +98,7 @@ server.listen(requestedPort, "127.0.0.1", async () => {
     const html = await page.text();
     assert.equal(page.status, 200);
     assert.match(html, /LOCAL PROFILE FIXTURE/);
-    assert.match(html, /tiktok-analyzer\.js\?v=02158/);
+    assert.match(html, /tiktok-analyzer\.js\?v=02159/);
     assert.equal((await fetch(`http://127.0.0.1:${port}/browser-profile-launcher.js?v=1`)).status, 200);
     const list = await (await fetch(`http://127.0.0.1:${port}/api/admin/tiktok-analyzer?limit=24`)).json();
     assert.deepEqual(list.channels.map((item) => item.id), [ids.A, ids.B]);

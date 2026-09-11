@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const src=readFileSync('public/tiktok-analyzer.js','utf8'),css=readFileSync('public/tiktok-analyzer.css','utf8');
+assert.doesNotMatch(src,/manageChannelConnections|showManagement|จัดการการเชื่อมต่อ|shopActions\.manage/);
+assert.doesNotMatch(css,/manage-channel-connections/);
+assert.match(src,/data-channel-view="products"[^>]*>จัดการสินค้า/);
+assert.match(src,/data-connect-selected-shop>เชื่อม TikTok Shop สำหรับช่องนี้/);
+const nodes=new Map();
+const $=q=>{if(q==='#manageChannelConnections')return null;if(!nodes.has(q))nodes.set(q,{hidden:true,classList:{toggle(){}},removeAttribute(){},insertAdjacentHTML(_,html){this.html=html;}});return nodes.get(q);};
+let selected='A',generation=0,range='same';
+const context=()=>({channelId:selected,generation});
+const c={$ ,COMMISSION_WORKSPACE_ENABLED:false,state:{connectionLoadSeq:0},channelOwnership:{capture:context,current:x=>x.channelId===selected&&x.generation===generation},shopDateQuery:x=>x+range,tiktokShopNavigation:{connectUrl:()=>selected?'/connect':''},fetchTikTokConnectionData:async()=>({shop_connections:[{id:'connected'}]})};vm.createContext(c);
+vm.runInContext(src.split('\n').find(x=>x.includes('insertAdjacentHTML')&&x.includes('id="channelActionSwitch"')),c);
+const visibility=src.slice(src.indexOf('function tiktokShopActionVisibility('),src.indexOf('\n}',src.indexOf('function tiktokShopActionVisibility('))+2),begin=src.indexOf('async function loadTikTokConnection('),end=src.indexOf('  renderShowcasePermission();',begin);
+vm.runInContext(visibility+src.slice(begin,end)+'\n}',c);
+const absent=()=>assert.equal($('#manageChannelConnections'),null);
+absent();
+await c.loadTikTokConnection('A',context());absent();assert.equal($('#shopConnectionRequired').hidden,true);
+selected='B';generation++;c.fetchTikTokConnectionData=async()=>({shop_connections:[]});await c.loadTikTokConnection('B',context());absent();assert.equal($('#shopConnectionRequired').hidden,false);
+selected='A';generation++;c.fetchTikTokConnectionData=async()=>({shop_connections:[{id:'A'}]});await c.loadTikTokConnection('A',context());absent();assert.equal($('#shopConnectionRequired').hidden,true);
+for(const lateConnected of [true,false]){
+ let resolve; c.fetchTikTokConnectionData=()=>new Promise(r=>resolve=r);const late=c.loadTikTokConnection('A',context());
+ selected='B';generation++;c.fetchTikTokConnectionData=async()=>({shop_connections:[]});await c.loadTikTokConnection('B',context());
+ resolve({shop_connections:lateConnected?[{id:'lateA'}]:[]});await late;absent();assert.equal($('#shopConnectionRequired').hidden,false);
+ selected='A';generation++;
+}
+let resolve;c.fetchTikTokConnectionData=()=>new Promise(r=>resolve=r);const lateRange=c.loadTikTokConnection('A',context());range='changed';resolve({shop_connections:[{id:'A'}]});await lateRange;assert.equal($('#shopConnectionRequired').hidden,false);
+await c.loadTikTokConnection('',context());assert.equal($('#shopConnectionRequired').hidden,true);absent();
+console.log('PASS v101 actual insertion/publication: no white node, A/B/A, stale connected/disconnected/range, current CTA retained');

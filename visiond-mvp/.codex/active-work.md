@@ -1,3 +1,7 @@
+# Ready patch: remove white connection-management button
+
+- Event: PATCH_READY — v0.20.101/JS02159/CSS02100. Removed exclusive white management DOM/text/listener/helper/projection/resets/CSS; Tiffany products navigation, disconnected current-channel CTA and owner/load-sequence/date guards retained. Actual-source101 A→B→A/null-node/stale connected/disconnected/date tests, v100/v91/70, full elevated canonical101→72 session45740 exit0, visible101/predeploy9PASS8existingWARN0FAIL/diff PASS. No backend/native/provider/data changes. Frozen for Mark/Root review; no commit/push/deploy.
+
 # Delivered patch: remove sold-products link column
 
 - Event: PATCH_DELIVERED — v0.20.100/JS02158 exact18-file code commit `03bef256` pushed `origin/main`; Cloudflare Production `944848f1-a892-49f4-a7bc-212bb90be91f` serves source `03bef25`. Direct/custom Analyzer HTML return200 with v100/cache02158; direct/custom JS exactly match local at201,458 bytes/SHA `5374C0618CAB29D73CBDB4BDC8760700D62F126CA1852FBA2B3C58BD10DE5095`. Sold-only link header/cell are absent while base6/decorated7, blankURL shortlist action, grades/placeholder/duplicate/owner and other-table link controls remain. Root canonical100→72/focused/visible/predeploy/diff pass; Mark found0 issues. No backend/CSS/native/provider/data mutation; user Ctrl+F5 is the remaining authenticated visual refresh.
