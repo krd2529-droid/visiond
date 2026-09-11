@@ -83,7 +83,7 @@ const requestedChannelId = handoffChannelId || pageParams.get("channel_id") || s
 const browserProfileUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,launcherProfileRequested=pageParams.get("launcher_profile")==="1",launcherMode=["new","existing"].includes(pageParams.get("launcher_mode"))?pageParams.get("launcher_mode"):"",launcherSlot=browserProfileUuid.test(pageParams.get("launcher_slot")||"")?pageParams.get("launcher_slot"):"",launcherChannelId=launcherMode==="existing"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"";
 const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launcherMode==="new"&&launcherSlot)||(launcherMode==="existing"&&launcherChannelId))?Object.freeze({mode:launcherMode,slotId:launcherSlot,channelId:launcherChannelId||(launcherMode==="new"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"")}):null;
 let launcherContext=launcherContextFromQuery;
-let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "";
+let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "", pageViewerRole = "";
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
@@ -94,6 +94,7 @@ const inventoryRequests = new Map();
 const marketplaceQueryRequests=new Map(),marketplaceQueryCache=new Map(),marketplaceLatest=new Map(),marketplaceSnapshots=new Map();
 let marketplaceQueryTail=Promise.resolve(),marketplaceQuerySequence=0;
 const shortlistRequests = new Map(), shortlistCache = new Map();
+const partnerCommissionRequests = new Map(), partnerCommissionCache = new Map(), partnerCommissionRevisions = new Map(), PARTNER_COMMISSION_TTL_MS = 30000;
 const inventoryVersions = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02092";
@@ -158,20 +159,55 @@ const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseH
 $(".workspace-switch")?.insertAdjacentHTML("afterend",'<section id="analysisChannelPicker" class="analysis-channel-picker" aria-labelledby="analysisChannelPickerTitle"><div><small>ช่องที่กำลังวิเคราะห์</small><h3 id="analysisChannelPickerTitle">เลือกช่องจากรายการที่เชื่อมแล้ว</h3><small data-browser-profile-label></small><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><div id="analysisChannelOptions" class="analysis-channel-options" role="listbox" aria-label="เลือกช่องที่ต้องการวิเคราะห์"></div><div id="browserProfilePanel" class="analysis-channel-status"><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></div></section>');
 $("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button>' + (COMMISSION_WORKSPACE_ENABLED ? '<button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button>' : '') + '</nav>');
 function setChannelView(view) {
-  const commission = COMMISSION_WORKSPACE_ENABLED && view === "commission";
-  document.body.classList.toggle("channel-view-products", !commission);
-  document.body.classList.toggle("channel-view-commission", commission);
+  const partnerCommission = typeof pageViewerRole!=="undefined" && pageViewerRole === "boss" && view === "partner-commission", commission = COMMISSION_WORKSPACE_ENABLED && view === "commission", activeView = partnerCommission ? "partner-commission" : commission ? "commission" : "products";
+  document.body.classList.toggle("channel-view-products", activeView === "products");
+  document.body.classList.toggle("channel-view-commission", activeView !== "products");
   $("#channelActionSwitch")?.querySelectorAll("[data-channel-view]").forEach((button) => {
-    const active = button.dataset.channelView === (commission ? "commission" : "products");
+    const active = button.dataset.channelView === activeView;
     button.classList.toggle("active", active);
     button.setAttribute("aria-current", active ? "page" : "false");
   });
 }
 $("#channelActionSwitch")?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-channel-view]");
-  if (button) tiktokShopNavigation.showTab(button.dataset.channelView);
+  if (!button) return;
+  if (button.dataset.channelView === "partner-commission") loadBossPartnerCommission(button);
+  else tiktokShopNavigation.showTab(button.dataset.channelView);
 });
 setChannelView("products");
+
+function enableBossPartnerCommissionTest(){
+  const nav=$("#channelActionSwitch");
+  if(pageViewerRole!=="boss"||!nav||nav.querySelector('[data-channel-view="partner-commission"]'))return false;
+  nav.insertAdjacentHTML("beforeend",'<button type="button" data-channel-view="partner-commission" aria-current="false">ดูค่าคอม (Boss Test)</button>');
+  return true;
+}
+function invalidatePartnerCommissionCache(channelId){
+  const owner=pageViewerId,channel=String(channelId||''),revisionKey=JSON.stringify([owner,channel]);
+  partnerCommissionRevisions.set(revisionKey,(partnerCommissionRevisions.get(revisionKey)||0)+1);
+  for(const [key,cached] of partnerCommissionCache)if(cached.owner===owner&&cached.channelId===channel)partnerCommissionCache.delete(key);
+}
+function renderBossPartnerCommission(data){
+  const dashboard=$("#shopDashboard"),content=$("#shopCommissionDashboard"),heading=dashboard.querySelector(".result-head>div"),basisLabel={actual:"ยืนยันแล้ว",estimated:"ประมาณการ",unknown:"ไม่ระบุประเภท"};
+  dashboard.hidden=false;heading.querySelector("small").textContent="TIKTOK PARTNER API · BOSS TEST";heading.querySelector("h2").textContent="ค่าคอมจาก Partner order sync";heading.querySelector(".source-caption")?.remove();heading.insertAdjacentHTML("beforeend",'<p class="source-caption">อ่านเฉพาะออเดอร์จาก Partner API ที่ซิงก์ไว้ ไม่รวม Commission Center หรือ Google Cloud</p>');
+  dashboard.querySelector(".result-head>b").textContent=`${data.range?.from||state.shopDateFrom} ถึง ${data.range?.to||state.shopDateTo}`;
+  if(data.status==="missing_scope")content.innerHTML='<p class="hint">ช่องนี้ยังไม่มีสิทธิ์ creator.affiliate_collaboration.read จึงยังอ่านค่าคอมจาก Partner API ไม่ได้</p>';
+  else if(data.status==="no_synced_data")content.innerHTML='<p class="hint">ยังไม่มีออเดอร์ Partner ที่ซิงก์ในช่วงนี้ ใช้ปุ่ม “แสดงผล” ในส่วนสินค้าที่ขายได้ก่อน แล้วกลับมากดดูค่าคอมอีกครั้ง</p>';
+  else if(data.status==="no_commission_evidence")content.innerHTML='<p class="hint">พบออเดอร์ Partner แต่ยังไม่มีจำนวนค่าคอมที่ยืนยันรูปแบบได้ ระบบไม่แสดง 0 แทนค่าที่อ่านไม่ได้</p>';
+  else content.innerHTML=`<div class="commission-total-grid">${(data.totals||[]).map(total=>`<article><small>${escapeHtml(basisLabel[total.basis]||basisLabel.unknown)} · ${escapeHtml(total.currency)}</small><b>${Number(total.amount).toLocaleString('th-TH',{maximumFractionDigits:2})} ${escapeHtml(total.currency)}</b><span>${Number(total.orders)||0} ออเดอร์</span></article>`).join('')}</div>`;
+  if(data.status!=="missing_scope"&&data.sync?.status!=="complete")content.insertAdjacentHTML("beforeend",'<p class="hint">ช่วงนี้ยังซิงก์ออเดอร์ Partner ไม่ครบ ค่าที่แสดงอาจเป็นบางส่วน ใช้ปุ่ม “แสดงผล” ก่อนตรวจซ้ำ</p>');
+  content.insertAdjacentHTML("beforeend",`<p class="hint">ที่มา: ${escapeHtml(data.source?.endpoint||'TikTok Partner order sync')} · ออเดอร์ ${Number(data.coverage?.orders)||0} · จำนวนที่อ่านได้ ${Number(data.coverage?.valued_orders)||0}${Number(data.coverage?.unavailable_orders)?` · อ่านจำนวนไม่ได้ ${Number(data.coverage.unavailable_orders)}`:''} · ซิงกล่าสุด ${escapeHtml(data.sync?.synced_at||data.coverage?.last_synced_at||'ยังไม่ระบุ')}</p>`);
+}
+async function loadBossPartnerCommission(button){
+  if(pageViewerRole!=="boss")return false;
+  const context=channelOwnership.capture();if(!context)return showToast("กรุณาเลือกช่องก่อนดูค่าคอม", "warning");
+  const owner=pageViewerId,from=state.shopDateFrom,to=state.shopDateTo,revisionKey=JSON.stringify([owner,context.channelId]),revision=partnerCommissionRevisions.get(revisionKey)||0,key=JSON.stringify([owner,context.channelId,from,to,revision]),current=()=>pageAuthorized&&pageViewerRole==="boss"&&owner===pageViewerId&&channelOwnership.current(context)&&from===state.shopDateFrom&&to===state.shopDateTo&&(partnerCommissionRevisions.get(revisionKey)||0)===revision;
+  setOutputScope("channel");setWorkspaceView("output");setChannelView("partner-commission");
+  const cached=partnerCommissionCache.get(key);if(cached&&cached.expires>Date.now()){if(current())renderBossPartnerCommission(cached.data);return true}
+  if(partnerCommissionRequests.has(key))return partnerCommissionRequests.get(key);
+  const request=(async()=>{button.disabled=true;$("#shopDashboard").hidden=false;$("#shopCommissionDashboard").innerHTML='<p class="hint">กำลังอ่านค่าคอมจาก TikTok Partner order sync…</p>';try{const query=new URLSearchParams({channel_id:context.channelId,from,to}),data=await api(`/api/admin/tiktok-partner-commissions?${query}`,{cache:"no-store"});if(current()){partnerCommissionCache.set(key,{data,expires:Date.now()+PARTNER_COMMISSION_TTL_MS,owner,channelId:context.channelId});renderBossPartnerCommission(data)}return true}catch(error){if(current()){setChannelView("products");showToast(error.message,"error")}return false}finally{button.disabled=false}})();
+  partnerCommissionRequests.set(key,request);try{return await request}finally{if(partnerCommissionRequests.get(key)===request)partnerCommissionRequests.delete(key)}
+}
 $("#channelShopAnalysis .result-head")?.insertAdjacentHTML("afterend", '<section id="shopConnectionRequired" class="shop-connection-required" hidden><b>ช่องนี้ยังไม่ได้เชื่อมระบบ TikTok Shop</b><p>TikTok ใช้ข้อมูลโปรไฟล์และวิดีโอ ส่วนออเดอร์ Marketplace และ Showcase ต้องเชื่อมระบบ TikTok Shop แยกอีกครั้ง</p><button type="button" data-connect-selected-shop>เชื่อม TikTok Shop สำหรับช่องนี้</button></section>');
 $("#shopConnectionRequired [data-connect-selected-shop]")?.addEventListener("click", (event) => routeProfileConnection("shop",event.currentTarget));
 $("#connectTikTokShop")?.addEventListener("click", (event) => {
@@ -1587,6 +1623,7 @@ async function syncTikTokShopData(mode) {
     const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_sync", id: shopConnection.id, channel_id: context.channelId, mode, days: 90, max_showcase: maxShowcase }) });
     if(!channelOwnership.current(context))return;
     message.textContent = mode==="showcase" ? `โหลดแล้ว ${result.showcaseCount} สินค้า Showcase` : `รีเฟรชแล้ว ${result.orderCount} ออเดอร์`;
+    if(mode!=="showcase")invalidatePartnerCommissionCache(context.channelId);
     await loadTikTokConnection(context.channelId,context);
   } catch (error) {
     if(channelOwnership.current(context))message.textContent = error.message;
@@ -1651,7 +1688,7 @@ async function showSoldOrderRange(form,context,from,to){
         if(sync?.status!=='partial')throw new Error(sync?.status==='invalid_range'?'กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน':'TikTok ยังส่งข้อมูลไม่สำเร็จ กดแสดงผลอีกครั้งเพื่อทำต่อ ข้อมูลเดิมยังอยู่');
         if(!Number.isInteger(sync.revision)||sync.revision<=attempt.revision)throw new Error('สถานะคำขอเปลี่ยน กรุณากดแสดงผลอีกครั้งเพื่อทำต่อ');
       }
-      if(current())await loadTikTokConnection(context.channelId,context);
+      if(current()){invalidatePartnerCommissionCache(context.channelId);await loadTikTokConnection(context.channelId,context)}
     }catch(error){
       if(current()){message.textContent=error.message;await loadTikTokConnection(context.channelId,context).catch(()=>{});}
     }finally{button.disabled=false;button.removeAttribute('aria-busy');button.textContent='แสดงผล'}
@@ -1876,13 +1913,13 @@ async function bootstrapReviewerAccess(){
       return;
     }
     if(!response.ok)throw new Error(response.status===503?'ระบบสมาชิกถึงขีดจำกัดชั่วคราว กรุณาลองใหม่หลังระบบรีเซ็ต':'ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ');
-    const authPayload=await response.json().catch(()=>({}));pageViewerId=String(authPayload?.user?.id||"");if(!/^\d+$/.test(pageViewerId))throw new Error('ตรวจสอบเจ้าของโปรไฟล์ไม่สำเร็จ');
+    const authPayload=await response.json().catch(()=>({}));pageViewerId=String(authPayload?.user?.id||"");pageViewerRole=String(authPayload?.user?.role||"");if(!/^\d+$/.test(pageViewerId))throw new Error('ตรวจสอบเจ้าของโปรไฟล์ไม่สำเร็จ');
     try{
       const key='visiond_browser_launcher_context';
       if(launcherContextFromQuery)sessionStorage.setItem(key,JSON.stringify({...launcherContextFromQuery,ownerId:pageViewerId}));
       else{const saved=JSON.parse(sessionStorage.getItem(key)||'null');launcherContext=saved&&String(saved.ownerId)===pageViewerId&&['new','existing'].includes(saved.mode)&&(!saved.slotId||browserProfileUuid.test(saved.slotId))&&(!saved.channelId||browserProfileUuid.test(saved.channelId))?Object.freeze({mode:saved.mode,slotId:saved.slotId||'',channelId:saved.channelId||''}):null}
     }catch{if(!launcherContextFromQuery)launcherContext=null}
-    pageAuthorized=true;
+    pageAuthorized=true;enableBossPartnerCommissionTest();
     await initializeLauncherReadiness();
     await loadChannels();
   }catch(error){

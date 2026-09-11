@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020103": "node scripts/test-v020103.mjs && node scripts/test-v020102.mjs && node scripts/test-tiktok-marketplace-creator-density.mjs && node scripts/test-tiktok-marketplace-selection-list.mjs && node scripts/test-v020101.mjs && npm run test:v020100",
     "test:v020102": "node scripts/test-v020102.mjs && node scripts/test-tiktok-marketplace-creator-density.mjs && node scripts/test-tiktok-marketplace-selection-list.mjs && node scripts/test-v020101.mjs && npm run test:v020100",
     "test:v020101": "node scripts/test-v020101.mjs && npm run test:v020100",
     "test:v020100": "node scripts/test-v020100.mjs && npm run test:v02099",
