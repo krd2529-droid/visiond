@@ -10,6 +10,7 @@ const nodes=[];const c={state:{selected:'A'},selectChannel:async()=>({runs:[{id:
 // Include any legacy renderer so this test remains RED on the original visible-history path.
 const legacyStart=src.indexOf('function renderRunHistory()');
 Object.assign(c,{renderChannels(){},saveUiValue(){}});
+Object.assign(c,{refreshOwnedShortlist:async()=>null});
 const legacy=legacyStart<0?'':src.slice(legacyStart,src.indexOf('async function loadMoreRuns()',legacyStart));
 vm.createContext(c);vm.runInContext(legacy+'\n'+src.slice(start,end)+'\nthis.run=selectChannel;',c);await c.run('A');
 assert.equal(nodes.length,0,'selected multirun channel must not append history DOM');

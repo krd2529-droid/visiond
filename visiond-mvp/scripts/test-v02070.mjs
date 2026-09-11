@@ -121,6 +121,7 @@ function createSelectRuntime() {
     function saveUiValue(){}
     function replaceInventory(data){return data}
     function renderInventoryState(){}
+    async function refreshOwnedShortlist(){}
     function renderRunHistory(){}
     function stampChannelOwnedActions(root,context){if(root&&context)root.dataset.channelOwner=context.channelId}
     function renderOwnedResult(value,context){if(!channelOwnership.current(context))return false;nodes.result.hidden=false;nodes.summary.textContent=value?.summary||'';nodes.result.dataset.channelOwner=context.channelId;return true}
@@ -193,7 +194,7 @@ assert.match(source, /payload\.set\("channel_id", operationChannelId\)/, 'all ba
 for (const token of ['state.preparedCommission = null', 'state.commissionCards = []', 'state.lastCommissionCard = null', 'URL.revokeObjectURL']) assert.ok(clearSource.includes(token), `channel switch must clear ${token}`);
 assert.match(source, /stampChannelOwnedActions\(\$\("#shopDashboard"\), context\)/, 'commission actions must be stamped with their channel owner');
 
-assert.equal(version.trim(), 'v0.20.92');
-assert.match(html, /<b>v0\.20\.92<\/b>/);
-assert.match(html, /tiktok-analyzer\.js\?v=02151/);
+assert.equal(version.trim(), 'v0.20.93');
+assert.match(html, /<b>v0\.20\.93<\/b>/);
+assert.match(html, /tiktok-analyzer\.js\?v=02152/);
 console.log('PASS v0.20.70 channel-owned analyzer view, async responses and mutations');

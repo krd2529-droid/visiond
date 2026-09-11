@@ -97,6 +97,7 @@ const commandLauncher=window.createVisionDCommandLauncher?.({cryptoApi:window.cr
 const channelOwnership = createTikTokChannelOwnership(() => state.selected);
 const shopConnectionRequests = new Map();
 const inventoryRequests = new Map();
+const shortlistRequests = new Map(), shortlistCache = new Map();
 const inventoryVersions = new Map();
 const commissionCardScript = document.createElement("script");
 commissionCardScript.src = "/tiktok-commission-card.js?v=02092";
@@ -858,7 +859,51 @@ function loadChannelInventory(channelId=state.selected){
 function invalidateChannelInventory(channelId=state.selected){const key=String(channelId||'');if(!key)return;inventoryVersions.set(key,(inventoryVersions.get(key)||0)+1);inventoryRequests.delete(key)}
 const mergeById=(current,next)=>{const seen=new Set(current.map(item=>String(item.id)));return current.concat((next||[]).filter(item=>!seen.has(String(item.id))))};
 function replaceInventory(data){state.inventoryProducts=data.products||[];state.inventoryEvents=data.product_events||[];state.inventoryCounts=data.inventory_counts||{};state.inventoryPagination=data.pagination||{};return data}
-function renderInventoryState(){renderPermanentInventory(state.inventoryProducts,state.inventoryEvents);reconcileProductPrepInventory(state.inventoryProducts);renderReviewSchedule(state.inventoryProducts,Boolean(state.shopConnection),state.inventoryEvents)}
+function renderInventoryState(){renderPermanentInventory(state.inventoryProducts,state.inventoryEvents);reconcileProductPrepInventory(state.shortlistProducts||[]);renderReviewSchedule(state.inventoryProducts,Boolean(state.shopConnection),state.inventoryEvents)}
+async function refreshOwnedShortlist(context) {
+  if (!context || !channelOwnership.current(context)) return null;
+  const owner=pageViewerId,channelId=context.channelId,key=`${owner}:${channelId}`,version=inventoryVersions.get(channelId)||0;
+  const valid=()=>owner===pageViewerId && channelOwnership.current(context) && (inventoryVersions.get(channelId)||0)===version;
+  const cached=shortlistCache.get(key);
+  let result=cached?.version===version&&Date.now()-cached.at<30000?cached.data:null;
+  if (!result) {
+    let pending=shortlistRequests.get(key);
+    if (!pending || pending.version!==version || pending.context.generation!==context.generation) {
+      const request=(async()=>{
+        let products=[],cursor='',truncated=false;
+        const seen=new Set();
+        do {
+          if (!valid()) return null;
+          const params=new URLSearchParams({channel_id:channelId,resource:'shortlist',limit:String(Math.min(24,40-products.length))});
+          if(cursor)params.set('product_cursor',cursor);
+          const data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});
+          if(!valid())return null;
+          if(String(data.channel_id)!==channelId)throw new Error('ข้อมูลลิสต์ไม่ตรงกับช่องที่เลือก');
+          const before=products.length;
+          for(const product of data.products||[])if(product.inventory_status==='kept'&&!seen.has(String(product.id))){seen.add(String(product.id));products.push(product)}
+          const page=data.pagination?.products||{};truncated=Boolean(page.has_more);
+          const next=page.next_cursor||'';
+          if(truncated&&(!next||next===cursor||products.length===before))throw new Error('โหลดลิสต์คัดสินค้าไม่ครบ กรุณารีเฟรช');
+          cursor=next;
+        } while(truncated&&products.length<40);
+        return {products:products.slice(0,40),truncated};
+      })();
+      pending={version,context,request};shortlistRequests.set(key,pending);
+      request.finally(()=>{if(shortlistRequests.get(key)===pending)shortlistRequests.delete(key)}).catch(()=>{});
+    }
+    try { result=await pending.request; } catch(error) {
+      if(valid()){state.shortlistError=error.message||'โหลดลิสต์ไม่สำเร็จ';reconcileProductPrepInventory(state.shortlistProducts||[])}
+      return null;
+    }
+    if(!result||!valid())return null;
+    if(shortlistCache.size>=32)shortlistCache.delete(shortlistCache.keys().next().value);
+    shortlistCache.set(key,{version,at:Date.now(),data:result});
+  }
+  if(!valid())return null;
+  state.shortlistProducts=result.products;state.shortlistTruncated=result.truncated;state.shortlistError='';
+  reconcileProductPrepInventory(result.products);stampChannelOwnedActions($("#result"),context);
+  return result;
+}
 function channelContextFor(element) {
   const context = channelOwnership.capture();
   if (!context) return null;
@@ -875,6 +920,9 @@ function clearChannelOwnedView() {
   state.connection = null;
   state.shopConnection = null;
   state.inventoryProducts = [];
+  state.shortlistProducts = [];
+  state.shortlistTruncated = false;
+  state.shortlistError = '';
   state.inventoryEvents = [];
   state.inventoryCounts = {};
   state.inventoryPagination = {};
@@ -930,6 +978,8 @@ async function refreshOwnedInventory(context) {
   const latest = await loadChannelInventory(context.channelId);
   if (!channelOwnership.current(context)) return null;
   replaceInventory(latest);
+  await refreshOwnedShortlist(context);
+  if (!channelOwnership.current(context)) return null;
   renderInventoryState();
   stampChannelOwnedActions($("#angelInventory"), context);
   stampChannelOwnedActions($("#result"), context);
@@ -1073,41 +1123,8 @@ function renderResult(result = {}) {
   $('[data-list="ai-recommendations"]').innerHTML = resultProductTable(aiRecommendations, "fit_score");
   $('[data-list="candidates"]').innerHTML = resultProductTable(result.next_product_candidates, "fit_score");
   upgradeLegacyProductLinkCells($("#result"));
-  const rawDailyProducts = Array.isArray(result.daily_product_list) ? result.daily_product_list : result.posting_plan || [], seenProductNames = /* @__PURE__ */ new Set(), dailyProducts = rawDailyProducts.filter((item) => {
-    const name = normalizeProductName(typeof item === "string" ? item : item?.product_identity || item?.product || "");
-    if (!name || seenProductNames.has(name)) return false;
-    seenProductNames.add(name);
-    return true;
-  }).slice(0, 40), knownProducts = [...result.winner_products || [], ...result.next_product_candidates || [], ...result.avoid_products || []], gradeByName = new Map(knownProducts.map((x) => [normalizeProductName(x.name), String(x.product_type || "").toUpperCase()])), monthlyGrade = (x) => {
-    if (!x || typeof x !== "object") return "";
-    const text = [x.ranking_reason, x.evidence, x.decision, textValue(x.reasons)].filter(Boolean).join(" "), match = text.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)\s*(\d[\d,]*)\s*ชิ้น(?=[^\n]{0,30}30\s*วัน)/i);
-    if (!match) return "";
-    const sold = Number(match[1].replace(/,/g, ""));
-    return sold >= 30 ? "A" : sold >= 16 ? "B" : sold >= 1 ? "C" : "";
-  }, gradeOf = (x) => {
-    const monthly = monthlyGrade(x);
-    if (monthly && !["D", "E"].includes(String(x?.product_type || "").toUpperCase())) return monthly;
-    const explicit = typeof x === "object" && x ? String(x.product_type || x.grade || "").toUpperCase() : "";
-    if (/^[A-F]$/.test(explicit)) return explicit;
-    const name = typeof x === "string" ? x : x?.product || "";
-    const matched = gradeByName.get(normalizeProductName(name)) || "";
-    return /^[A-F]$/.test(matched) ? matched : "";
-  }, gradeCounts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, unknown: 0 }, gradeOrder = { A: 0, B: 1, C: 2, D: 3, F: 4, unknown: 5, E: 6 };
-  dailyProducts.sort((a, b) => {
-    const gradeA = gradeOf(a) || "unknown", gradeB = gradeOf(b) || "unknown", order = gradeOrder[gradeA] - gradeOrder[gradeB];
-    if (order) return order;
-    const scoreA = Number(a?.ranking_score), scoreB = Number(b?.ranking_score);
-    return (Number.isFinite(scoreB) ? scoreB : -1) - (Number.isFinite(scoreA) ? scoreA : -1);
-  });
-  dailyProducts.forEach((x) => {
-    const grade = gradeOf(x);
-    gradeCounts[grade || "unknown"]++;
-  });
-  $("#productPrepSummary").innerHTML = `<span class="total">\u0E23\u0E27\u0E21 <b>${dailyProducts.length}/40</b> \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</span>${["A", "B", "C", "D", "E", "F"].map((grade) => `<span><i class="grade-dot grade-${grade}">${grade}</i><b>${gradeCounts[grade]}</b> \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</span>`).join("")}${gradeCounts.unknown ? `<span class="unknown">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38\u0E40\u0E01\u0E23\u0E14 <b>${gradeCounts.unknown}</b></span>` : ""}`;
-  $('[data-list="plan"]').innerHTML = list(dailyProducts, (x, index) => {
-    const grade = gradeOf(x), backup = index >= 30, rank = index + 1, hasScore = x && typeof x === "object" && x.ranking_score !== null && x.ranking_score !== void 0 && x.ranking_score !== "" && Number.isFinite(Number(x.ranking_score)), score = hasScore ? Math.max(0, Math.min(100, Number(x.ranking_score))) : null, reason = x && typeof x === "object" ? x.ranking_reason || "" : "";
-    return `<div class="product-prep-item ranked${backup ? " backup" : ""}"><span>${rank}</span><div class="product-ranking-copy"><b>${escapeHtml(typeof x === "string" ? x : x.product || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32")}</b><small>${reason ? escapeHtml(reason) : "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E40\u0E14\u0E34\u0E21 \xB7 \u0E01\u0E14\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E2A\u0E23\u0E49\u0E32\u0E07 Ranking"}${backup ? " \xB7 \u0E15\u0E31\u0E27\u0E2A\u0E33\u0E23\u0E2D\u0E07" : ""}</small></div><strong class="ranking-score ${score === null ? "pending" : ""}">${score === null ? "\u2014" : `${score}/100`}</strong><i class="product-prep-grade ${grade ? `grade-${grade}` : "unknown"}">${grade || "?"}</i></div>`;
-  });
+  $("#productPrepSummary").innerHTML = '<span class="total">รวม <b>0/40</b> สินค้าที่เลือกไว้</span>';
+  $('[data-list="plan"]').innerHTML = '<p class="hint">ยังไม่มีข้อมูลพอ — ยังไม่มีสินค้าที่เลือกไว้</p>';
   $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function renderOwnedResult(result, context = channelOwnership.capture()) {
@@ -1119,11 +1136,7 @@ function renderOwnedResult(result, context = channelOwnership.capture()) {
 const renderResultBase = renderResult;
 renderResult = function(result = {}) {
   renderResultBase(result);
-  $('[data-list="plan"]').querySelectorAll(".product-prep-item").forEach((item) => {
-    const name = item.querySelector(".product-ranking-copy b")?.textContent?.trim() || "", grade = item.querySelector(".product-prep-grade")?.textContent?.trim() || "C", score = (item.querySelector(".ranking-score")?.textContent || "").replace(/\D/g, "") || "0", evidence = item.querySelector(".product-ranking-copy small")?.textContent?.trim() || "";
-    if (!name) return;
-    item.insertAdjacentHTML("beforeend", `<div class="inventory-actions product-prep-actions"><button type="button" data-inventory="kept" data-product-name="${escapeHtml(name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${escapeHtml(score)}" data-product-evidence="${escapeHtml(evidence)}">\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49</button><button type="button" class="danger" data-inventory="discarded" data-product-name="${escapeHtml(name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${escapeHtml(score)}" data-product-evidence="${escapeHtml(evidence)}">\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01</button></div>`);
-  });
+  reconcileProductPrepInventory(state.shortlistProducts || []);
 };
 $("#analyzeAiRecommendations")?.addEventListener("click", async (event) => {
   const context = channelContextFor(event.currentTarget);
@@ -1236,45 +1249,7 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   $("#tiktokVideoSummary").innerHTML = granted.includes("video.list") ? `<p>รายการคลิปที่บันทึกไว้ ${videos.length} คลิป</p>` : "<p>ยังไม่ได้รับสิทธิ์วิดีโอ — บัญชีพื้นฐานยังเชื่อมอยู่ และจะไม่นำคลิปเก่ามาใช้วิเคราะห์</p>";
   return shopConnection;
 }
-const renderResultMonthlyCorrectionBase = renderResult;
-renderResult = function(result = {}) {
-  renderResultMonthlyCorrectionBase(result);
-  const counts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
-  $('[data-list="plan"]').querySelectorAll(".product-prep-item").forEach((item) => {
-    const reason = item.querySelector(".product-ranking-copy small")?.textContent || "", after = reason.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)\s*(\d[\d,]*)\s*ชิ้น(?=[^\n]{0,30}30\s*วัน)/i), before = reason.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)[^\n]{0,20}30\s*วัน[^\d\n]{0,20}(\d[\d,]*)\s*ชิ้น/i), value = after?.[1] ?? before?.[1], badge = item.querySelector(".product-prep-grade");
-    if (value && badge && !["D", "E"].includes(badge.textContent.trim())) {
-      const sold = Number(value.replace(/,/g, "")), grade2 = sold >= 30 ? "A" : sold >= 16 ? "B" : sold >= 1 ? "C" : "";
-      badge.className = `product-prep-grade grade-${grade2 || "unknown"}`;
-      badge.textContent = grade2 || "ไม่มีเกรด";
-    }
-    const grade = badge?.textContent.trim();
-    if (counts[grade] !== void 0) counts[grade]++;
-  });
-  $("#productPrepSummary").querySelectorAll(".grade-dot").forEach((dot) => {
-    const grade = dot.textContent.trim(), value = dot.nextElementSibling;
-    if (value && counts[grade] !== void 0) value.textContent = counts[grade];
-  });
-};
-const renderResultTextGradeBase = renderResult;
-renderResult = function(result = {}) {
-  renderResultTextGradeBase(result);
-  const period = Number(result.attachment_period_days) || 30, counts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
-  $('[data-list="plan"]').querySelectorAll(".product-prep-item").forEach((item) => {
-    const reason = item.querySelector(".product-ranking-copy small")?.textContent || "", after = reason.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)[ \t]*([0-9][0-9,]*)[ \t]*ชิ้น(?=[^\r\n]{0,30}30[ \t]*วัน)/i), before = reason.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)[^\r\n]{0,20}30[ \t]*วัน[^0-9\r\n]{0,20}([0-9][0-9,]*)[ \t]*ชิ้น/i), loose = reason.match(/(?:ยอดขาย|ขาย(?:ได้|ดี)?)[ \t]*([0-9][0-9,]*)[ \t]*ชิ้น/i), value = after?.[1] ?? before?.[1] ?? loose?.[1], badge = item.querySelector(".product-prep-grade");
-    if (value && badge && !["D", "E"].includes(badge.textContent.trim())) {
-      const sold = Number(value.replace(/,/g, "")), grade2 = period === 3 ? sold > 0 ? "C" : "" : period === 7 ? sold >= 7 ? "A" : sold >= 4 ? "B" : sold >= 1 ? "C" : "" : sold >= 30 ? "A" : sold >= 16 ? "B" : sold >= 1 ? "C" : "";
-      badge.className = `product-prep-grade grade-${grade2 || "unknown"}`;
-      badge.textContent = grade2 || "ไม่มีเกรด";
-      item.querySelectorAll("[data-product-grade]").forEach((button) => button.dataset.productGrade = grade2);
-    }
-    const grade = badge?.textContent.trim();
-    if (counts[grade] !== void 0) counts[grade]++;
-  });
-  $("#productPrepSummary").querySelectorAll(".grade-dot").forEach((dot) => {
-    const grade = dot.textContent.trim(), value = dot.nextElementSibling;
-    if (value && counts[grade] !== void 0) value.textContent = counts[grade];
-  });
-};
+
 function renderPermanentInventory(products = [], events = []) {
   const kept = products.filter((x) => x.inventory_status === "kept"), discarded = products.filter((x) => x.inventory_status === "discarded"), eventLabels = { analyzed: "\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E08\u0E32\u0E01\u0E23\u0E39\u0E1B", review_scheduled: "\u0E19\u0E31\u0E14\u0E15\u0E23\u0E27\u0E08", kept: "\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49", discarded: "\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01", manual_fail: "\u0E01\u0E14\u0E44\u0E21\u0E48\u0E1C\u0E48\u0E32\u0E19" }, format = (value) => value ? new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(/* @__PURE__ */ new Date(`${value.replace(" ", "T")}Z`)) : "-", timeline = (name) => events.filter((event) => normalizeProductName(event.product_name) === normalizeProductName(name)).slice(0, 5).map((event) => `<div class="timeline-event"><time>${format(event.event_at)}</time><b>${escapeHtml(eventLabels[event.event_type] || event.event_type)}</b><span>${event.product_type ? `\u0E40\u0E01\u0E23\u0E14 ${escapeHtml(event.product_type)} \xB7 ` : ""}${escapeHtml(event.detail || "")}</span></div>`).join("") || '<span class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E1B\u0E23\u0E30\u0E27\u0E31\u0E15\u0E34\u0E40\u0E2B\u0E15\u0E38\u0E01\u0E32\u0E23\u0E13\u0E4C</span>', rows = (items, status) => items.length ? `<div class="product-table-wrap"><table class="product-table permanent-product-table"><thead><tr><th>\u0E25\u0E33\u0E14\u0E31\u0E1A</th><th>\u0E40\u0E01\u0E23\u0E14</th><th>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</th><th>\u0E04\u0E30\u0E41\u0E19\u0E19</th><th>\u0E40\u0E2B\u0E15\u0E38\u0E1C\u0E25\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14</th><th>\u0E40\u0E27\u0E25\u0E32\u0E41\u0E25\u0E30\u0E40\u0E2B\u0E15\u0E38\u0E01\u0E32\u0E23\u0E13\u0E4C</th><th>\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E2A\u0E16\u0E32\u0E19\u0E30</th></tr></thead><tbody>${items.map((x, index) => `<tr><td><span class="inventory-order">${index + 1}</span></td><td><span class="type-pill type-${escapeHtml(x.product_type || "C")}">${escapeHtml(x.product_type || "C")}</span></td><td class="product-full-name">${escapeHtml(x.name)}</td><td>${Number(x.score) || 0}/100</td><td>${escapeHtml(x.evidence || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E40\u0E2B\u0E15\u0E38\u0E1C\u0E25\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E15\u0E34\u0E21")}</td><td class="product-timeline">${timeline(x.name)}</td><td><button type="button" data-inventory="${status === "kept" ? "discarded" : "kept"}" data-product-name="${escapeHtml(x.name)}" data-product-grade="${escapeHtml(x.product_type || "C")}" data-product-score="${Number(x.score) || 0}" data-product-evidence="${escapeHtml(x.evidence || "")}">${status === "kept" ? "\u0E22\u0E49\u0E32\u0E22\u0E44\u0E1B\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" : "\u0E19\u0E33\u0E01\u0E25\u0E31\u0E1A\u0E21\u0E32\u0E40\u0E01\u0E47\u0E1A"}</button></td></tr>`).join("")}</tbody></table></div>` : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32</p>';
   const remaining = Math.max(0, 30 - kept.length);
@@ -1282,43 +1257,15 @@ function renderPermanentInventory(products = [], events = []) {
   $("#angelProducts").innerHTML = `<section class="permanent-list kept"><h3>\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49 <small>${kept.length}/30 \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23</small></h3>${rows(kept, "kept")}</section><section class="permanent-list discarded"><h3>\u0E1B\u0E23\u0E30\u0E27\u0E31\u0E15\u0E34\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01 <small>${discarded.length} \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23</small></h3>${rows(discarded, "discarded")}</section>`;
 }
 function reconcileProductPrepInventory(products = []) {
-  const discarded = new Set(products.filter((product) => product.inventory_status === "discarded").map((product) => normalizeProductName(product.name)));
-  const list = $('[data-list="plan"]');
-  if (!list) return;
-  const kept = products.filter((product) => product.inventory_status === "kept");
-  for (const product of kept) {
-    const key = normalizeProductName(product.name);
-    if (!key) continue;
-    let item = [...list.querySelectorAll(".product-prep-item")].find((row) => normalizeProductName(row.querySelector(".product-ranking-copy b")?.textContent) === key);
+  const target = $('[data-list="plan"]');
+  if (!target) return;
+  const kept = products.filter(product => product.inventory_status === "kept").slice(0,40);
+  target.innerHTML = kept.length ? kept.map((product,index) => {
     const grade = /^[A-F]$/.test(product.product_type) ? product.product_type : "";
-    if (!item) {
-      const actionData = `data-product-name="${escapeHtml(product.name)}" data-product-grade="${grade}" data-product-score="${Number(product.score) || 0}" data-product-evidence="${escapeHtml(product.evidence || "")}"`;
-      list.insertAdjacentHTML("beforeend", `<div class="product-prep-item ranked"><span></span><div class="product-ranking-copy"><b>${escapeHtml(product.name)}</b><small>${escapeHtml(product.evidence || "เพิ่มเข้าลิสต์คัดสินค้าแล้ว")}</small></div><strong class="ranking-score pending">—</strong><i class="product-prep-grade"></i><div class="inventory-actions product-prep-actions"><button type="button" data-inventory="kept" ${actionData}>เก็บไว้</button><button type="button" class="danger" data-inventory="discarded" ${actionData}>คัดออก</button></div></div>`);
-      item = list.lastElementChild;
-    }
-    const badge = item.querySelector(".product-prep-grade");
-    if (badge) { badge.textContent = grade || "ไม่มีเกรด"; badge.className = `product-prep-grade grade-${grade || "unknown"}`; }
-    item.querySelectorAll("[data-product-grade]").forEach((button) => button.dataset.productGrade = grade);
-  }
-  if (kept.length) $("#result").hidden = false;
-  if (!$("#productPrepSummary .total")) $("#productPrepSummary").innerHTML = `<span class="total">รวม <b>0/40</b> สินค้า</span>${Object.keys(typeLabels).map((grade) => `<span><i class="grade-dot grade-${grade}">${grade}</i><b>0</b> สินค้า</span>`).join("")}`;
-  list.querySelectorAll(".product-prep-item").forEach((item) => {
-    const name = item.querySelector(".product-ranking-copy b")?.textContent?.trim() || "";
-    if (discarded.has(normalizeProductName(name))) item.remove();
-  });
-  const counts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
-  list.querySelectorAll(".product-prep-item").forEach((item, index) => {
-    const order = item.querySelector(":scope > span:first-child"), grade = item.querySelector(".product-prep-grade")?.textContent?.trim();
-    if (order) order.textContent = String(index + 1);
-    if (counts[grade] !== void 0) counts[grade]++;
-  });
-  const visibleCount = list.querySelectorAll(".product-prep-item").length;
-  const total = $("#productPrepSummary .total b");
-  if (total) total.textContent = `${visibleCount}/40`;
-  $("#productPrepSummary")?.querySelectorAll(".grade-dot").forEach((dot) => {
-    const value = dot.nextElementSibling, grade = dot.textContent.trim();
-    if (value && counts[grade] !== void 0) value.textContent = counts[grade];
-  });
+    return `<div class="product-prep-item ranked"><span>${index+1}</span><div class="product-ranking-copy"><b>${escapeHtml(product.name)}</b><small>${escapeHtml(product.evidence||"เพิ่มเข้าลิสต์คัดสินค้าแล้ว")}</small></div><i class="product-prep-grade grade-${grade||"unknown"}">${grade||"ไม่มีเกรด"}</i><div class="inventory-actions product-prep-actions"><button type="button" class="danger" data-inventory="discarded" data-product-name="${escapeHtml(product.name)}" data-product-grade="${grade}">คัดออก</button></div></div>`;
+  }).join("") : '<p class="hint">ยังไม่มีข้อมูลพอ — ยังไม่มีสินค้าที่เลือกไว้</p>';
+  $("#productPrepSummary").innerHTML = `<span class="total">รวม <b>${kept.length}/40</b> สินค้าที่เลือกไว้</span>${["A","B","C","D","E","F"].map(grade=>`<span><i class="grade-dot grade-${grade}">${grade}</i><b>${kept.filter(product=>product.product_type===grade).length}</b> สินค้า</span>`).join("")}${state.shortlistTruncated?'<span>แสดง 40 รายการล่าสุดที่เลือกไว้</span>':""}`;
+  if(state.shortlistError)target.innerHTML=`<p class="hint">${escapeHtml(state.shortlistError)} — เลือกช่องนี้อีกครั้งเพื่อลองใหม่</p>`+target.innerHTML;
 }
 function renderReviewSchedule(products = [], apiReady = false) {
   const scheduled = products.filter((x) => x.inventory_status === "kept" && ["A", "B", "C", "D"].includes(x.product_type)), now = Date.now(), format = (value) => value ? new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(/* @__PURE__ */ new Date(`${value.replace(" ", "T")}Z`)) : "-", sourceText = apiReady ? "\u0E15\u0E23\u0E27\u0E08\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34\u0E08\u0E32\u0E01 TikTok Shop API \xB7 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48" : "API \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E1E\u0E23\u0E49\u0E2D\u0E21 \xB7 \u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E16\u0E36\u0E07\u0E23\u0E2D\u0E1A\u0E15\u0E23\u0E27\u0E08", rows = scheduled.sort((a, b) => String(a.next_review_at || "9999").localeCompare(String(b.next_review_at || "9999"))).map((x) => {
@@ -1540,6 +1487,8 @@ selectChannel = async function(id) {
   if(inventory.channel&&!state.channels.some(channel=>String(channel.id)===context.channelId)){state.channels.unshift(inventory.channel);renderChannels()}
   saveUiValue("visiond_tiktok_channel_id", context.channelId);
   replaceInventory(inventory);renderInventoryState();stampChannelOwnedActions($("#angelInventory"),context);stampChannelOwnedActions($("#result"),context);
+  await refreshOwnedShortlist(context);
+  if(!channelOwnership.current(context))return null;
   await loadTikTokConnection(context.channelId,context);
   if(!channelOwnership.current(context))return null;
   document.body.classList.toggle("shop-connected", Boolean(state.shopConnection));

@@ -70,6 +70,7 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_images_run ON tiktok_analysis_images(run_id,sort_order)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_products_channel ON tiktok_channel_products(channel_id,score DESC,last_seen_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_products_channel_seen ON tiktok_channel_products(channel_id,last_seen_at DESC,id DESC)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_products_channel_kept ON tiktok_channel_products(channel_id,inventory_status,last_seen_at DESC,id DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_product_events_channel ON tiktok_product_events(channel_id,event_at DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_product_events_channel_page ON tiktok_product_events(channel_id,event_at DESC,id DESC)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tiktok_runs_channel_page ON tiktok_analysis_runs(channel_id,created_at DESC,id DESC)'),
