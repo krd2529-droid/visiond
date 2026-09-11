@@ -1,4 +1,10 @@
-# Active patch: restore sold-product shortlist action
+# Active patch: remove channel-direction result card
+
+- Event: PATCH_READY — v0.20.92, JS02151/CSS02097. Removed only direction result DOM/client clear/render/CSS selector; stored/generated channel_direction and strategy input/backend unchanged. Focused92 actual saved/empty/late-owner render, related AI/layout/v70 PASS; canonical92→72 elevated97005 exit0; visible92/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen18-file manifest/report `.agents/reports/elon-v92-freeze-20260911.*`; no backend/schema/native/live/Git/release mutation. Mark/Root review pending.
+
+- Event: PATCH_STARTED — remove only the visible `ทิศทางช่อง` result card and dead client/CSS references. Preserve channel_direction data, strategy input/backend, summary, AI recommendations, shortlist, saved/empty result ownership, v91 sold-product action and all connection/order flows. Target v0.20.92/cache02151; implementation/testing/release pending.
+
+# Delivered patch: restore sold-product shortlist action
 
 - Event: PATCH_DELIVERED — v0.20.91/cache02150 exact14-file commit `e88f9b4a` pushed `origin/main`; Cloudflare Production `6cbafcde-fba4-4018-9493-065c43c5d39e` Active from source `e88f9b4`. Direct/custom Analyzer HTML200 and JS exact202,131 bytes/SHA `826D0D1D9D3999C1E356CD84F6E42EB7DF366AA3B585F9DCC0D31C026B5F2AF3`. Named order-only rows with blank URL are actionable; placeholders remain unavailable. Root full elevated91→72, focused RED→green, manifest14/14, visible/predeploy/diff and Mark0 findings. No backend/schema/CSS/native/provider/data mutation; user hard-refresh/visual click remains.
 

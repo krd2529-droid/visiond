@@ -889,7 +889,7 @@ function clearChannelOwnedView() {
   if (result) {
     result.hidden = true;
     delete result.dataset.channelOwner;
-    result.querySelectorAll('[data-field="summary"],[data-field="direction"]').forEach((node) => { node.textContent = ""; });
+    result.querySelectorAll('[data-field="summary"]').forEach((node) => { node.textContent = ""; });
     result.querySelectorAll('[data-list]').forEach((node) => { node.innerHTML = ""; });
   }
   if (inventory) {
@@ -1069,8 +1069,6 @@ function renderResult(result = {}) {
   $('[data-field="summary"]').textContent = result.summary || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E23\u0E38\u0E1B";
   if (!$("#gradeMeaningNote")) $('[data-field="summary"]').insertAdjacentHTML("afterend", '<p id="gradeMeaningNote" class="marketplace-shop-search-note"><b>แยกให้ชัด:</b> F = สินค้าที่กดคัดออกหรือกดไม่ผ่านแล้ว · ไม่มีเกรด = ยอดขาย 0 หรือข้อมูลยังไม่พอ</p>');
   $('[data-list="winners"]').innerHTML = resultProductTable(result.winner_products, "score");
-  const d = result.channel_direction || {};
-  $('[data-field="direction"]').innerHTML = `<b>${escapeHtml(d.recommended || "\u0E22\u0E31\u0E07\u0E2A\u0E23\u0E38\u0E1B\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49")}</b>${list(arrayValue(d.reasons), (x) => `<p>\u2022 ${escapeHtml(x)}</p>`)}`;
   const aiRecommendations = [...result.next_product_candidates || [], ...result.daily_product_list || []].filter((item) => String(item?.product_type || item?.grade || "").toUpperCase() === "E").map((item) => ({ ...item, name: item.name || item.product || "", evidence: item.evidence || item.ranking_reason || textValue(item.reasons), fit_score: item.fit_score ?? item.ranking_score })).filter((item, index, rows) => item.name && rows.findIndex((candidate) => normalizeProductName(candidate.name) === normalizeProductName(item.name)) === index);
   $('[data-list="ai-recommendations"]').innerHTML = resultProductTable(aiRecommendations, "fit_score");
   $('[data-list="candidates"]').innerHTML = resultProductTable(result.next_product_candidates, "fit_score");
