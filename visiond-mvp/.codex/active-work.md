@@ -1,4 +1,8 @@
-# Active patch: enforce fixed Helper capability
+# Active patch: remove sold-products link column
+
+- Event: PATCH_READY — v0.20.100/JS02158/CSS02099 unchanged. Sold-only final link header/cell removed; base6/decorated7 aligned with productIDcells3/ordercells4 unchanged. MissingURL shortlist payload/action, A/B/C/placeholder/duplicate/owner and global other-table links preserved. OriginalMarkREDgreen, focused100/v91/70, fullcanonical100→72 elevated53511exit0, visible100/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen manifest/report .agents/reports/elon-v100-freeze-20260911.*. No backend/CSS/native/provider/live/Git mutation; stopped for independent review.
+
+# Delivered patch / user install gate: enforce fixed Helper capability
 
 - Event: PATCH_DELIVERED / USER INSTALL GATE — exact36-file commit `1d7f441b` pushed `origin/main`; migration0103 installed first on production D1 at bookmark `00001222-00000006-000050e3-529086fbac75dee5506901208be9a0a5`; Cloudflare Production `1d2c65b7-ae37-4c59-ac56-7355b344094d` serves source `1d7f441`. Direct/custom Analyzer and Setup return200 with WEB99/JS02157/Helper78, HELPER_UPDATE_REQUIRED recovery, and exact47,104-byte EXE SHA `AD1898E402BE306F1CF4E7F8B71BF5860B7725CCBAFCB0F78C80E36E8FA92C8A`. Root focused/security/native-fixture/package/visible/predeploy/diff PASS; Mark0 findings. Old74–77 cannot receive ticket or reach Process.Start and are directed to update. Actual machine remains on74 because executing the new Setup artifact requires explicit user approval; post-upgrade fresh/initialized/authenticated one-window confirmation remains pending and is not claimed.
 

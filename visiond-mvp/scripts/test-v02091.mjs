@@ -18,7 +18,8 @@ function rowFixture({name='Order only name',sales=1,showcase=false,kept=false,id
   return{html,markup,button:{dataset,owner:'A',disabled:false}};
 }
 for(const sales of [1,16,30]){
-  const {html,markup,button}=rowFixture({sales});assert.match(html,/Order only name/);assert.match(html,/ไม่มีลิงก์/);assert.match(markup,/เพิ่มเข้าลิสต์คัดสินค้า/);assert.doesNotMatch(markup,/disabled/);
+  const {html,markup,button}=rowFixture({sales});assert.match(html,/Order only name/);assert.doesNotMatch(html,/ลิงก์สินค้า|ไม่มีลิงก์/);assert.match(markup,/เพิ่มเข้าลิสต์คัดสินค้า/);assert.doesNotMatch(markup,/disabled/);
+  assert.equal((html.match(/<th>/g)||[]).length,6);assert.equal((html.match(/<td>/g)||[]).length,6);assert.equal((markup.match(/<td>/g)||[]).length,1,'decorator adds seventh aligned shortlist cell');
   const before=posts.length;assert.equal(refreshes,before,'render makes no write/refresh');await c.addSoldProductToSelection(button);assert.equal(posts.length,before+1);assert.equal(refreshes,before+1);
   assert.deepEqual(posts.at(-1),{action:'set_product_c',channel_id:'A',product_name:'Order only name',score:'0',evidence:`ยอดขาย 30 วัน ${sales} ออเดอร์ · เกรด ${sales>=30?'A':sales>=16?'B':'C'}`,product_url:'',source_kind:'sold_product_selection',requested_grade:sales>=30?'A':sales>=16?'B':'C'});assert.equal(button.disabled,true);
 }
