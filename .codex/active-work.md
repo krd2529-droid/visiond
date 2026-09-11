@@ -1,20 +1,12 @@
-# Active patch: Consolidate VBot programs into Vtools
+# Active patch: Restore sold-product shortlist action
 
-- Status: PATCH_READY — shared navigation cache advanced from `014407` to `014591` across all storefront pages. Browser regression verifies the homepage renders one Vtools link and zero VBot navigation links; Vtools catalog/access/cart and mobile tests pass. Missing-program fallback now interpolates the Vtools return URL correctly.
-- Design split: VX uses its own analytics/network artwork from `vx-banner-master-v014589.png`; the digital-products banner retains shopping imagery from `vx-paired-banner-master-v014585.png` without VX branding.
-- Visual QA: first frames confirm identical edge artwork and background color; browser desktop/mobile placement, equal rendered height, prices, links and automatic movement pass.
-- Verified: old and VX GIF both 1600x260; VX regenerated at mean RGB 13/88/85 versus former 7/32/33, 24 frames looping at 90 ms; desktop rendered heights differ by <=2px, central frame target 980px, automatic highlights and mobile fit pass.
-- Root cause: old GIF is 1600x260 (6.15:1, mean RGB 72/121/120); VX GIF is 1200x400 (3:1, mean RGB 7/32/33). The live frame also targets 1190px instead of the old artwork's roughly 980px center.
-- Correction: regenerate VX at 1600x260 with brighter teal grading and align its frame/content width to the old GIF.
-- Delivery: blog/VX UI revision 32175a9a and supplied-logo GIF revision 406e534e pushed to origin main. Production homepage, blog and 1.77 MB GIF return 200; v014583 reference, angel-product copy and removal of motion button verified live.
-- GIF update: generated from the supplied VX logo reference with imagegen, then encoded as a 24-frame looping GIF (1.77 MB) with moving sheen/glints. Live HTML copy/prices remain selectable and accessible. Browser banner/blog tests still pass.
-- Verified: VX browser animation changes highlight automatically after two seconds with no button; old-GIF visual treatment, placement, prices, links, “ค้นหาสินค้านางฟ้า”, and mobile fit pass. Blog storefront header/footer, hero, three live article links, VX CTA, desktop/mobile layout pass. Diff check clean.
-- Added: match the existing teal promo GIF, animate automatically without a control, add “ค้นหาสินค้านางฟ้า”, and redesign `/blog` with the full storefront shell and editorial cards.
-- Added: use the supplied VX logo as the identity reference for a real animated GIF background while keeping prices and links as accessible HTML.
-- Verified: browser placement directly above original GIF, prices/links, desktop/mobile screenshots, pause/resume and reduced-motion. Diff check passed; 486cbfe5 pushed to origin main. Production homepage returns 200 with vx-home-banner.css?v=014581 and multi-channel commission copy.
-- Outcome: animated VX feature/price banner immediately above existing homepage bundle GIF; preserve GIF, checkout and rights.
-- Copy: multi-channel management, combined/per-channel commission dashboard, product search, A–F and Showcase. Prices 10/490, 20/980, 30/1290 THB for 30 days.
-- Implementation: scoped HTML/CSS motion with pause and reduced-motion support, link to Vtools plans; desktop/mobile visual and placement/link tests, scoped commit/push and live check.
+- Status: PATCH_DELIVERED — v0.20.91/cache02150, exact14-file commit `e88f9b4a` pushed to `origin/main`; Cloudflare Production `6cbafcde-fba4-4018-9493-065c43c5d39e` Active. Direct/custom Analyzer HTML200 and served JS exact202,131 bytes/SHA `826D0D1D9D3999C1E356CD84F6E42EB7DF366AA3B585F9DCC0D31C026B5F2AF3`.
+- Outcome: real sold-product rows with a usable product name/ID show `เพิ่มเข้าลิสต์คัดสินค้า` even when TikTok supplied no product URL.
+- Preserve: explicit click only; sales-derived A/B/C grade; duplicate handling; selected-channel ownership; blank URL remains truthful; one `แสดงผล` complete acquisition; existing OAuth/Helper/Showcase/Marketplace/analysis behavior.
+- Safety: an empty or unidentifiable product name remains `ข้อมูลไม่พร้อม`; never fabricate a link or add across channels.
+- Likely files: `visiond-mvp/public/tiktok-analyzer.js`, focused render/action regression, version/cache manifests and directly affected release tests.
+- Verification: deterministic RED→green actual render/click, owner/source/grade/duplicate/placeholder/no-passive-write; full elevated v91→72; manifest14/14; visible/predeploy/diff; Mark0 findings; exact production asset match. Broad patch gate separately hits the pre-existing mobile scanner's rejection of the intentional `visiond-profile://` Helper protocol; native Helper regression passes.
+- Next action: user hard-refreshes production, clicks `แสดงผล`, and verifies each named sold row now offers `เพิ่มเข้าลิสต์คัดสินค้า`; no production shortlist mutation was performed during delivery.
 
 ## Previous VX rights delivery
 
