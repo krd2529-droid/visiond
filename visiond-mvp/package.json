@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v02095": "node scripts/test-v02095.mjs && npm run test:v02094",
     "test:v02094": "node scripts/test-v02094.mjs && npm run test:v02093",
     "test:v02093": "node scripts/test-v02093.mjs && npm run test:v02092",
     "test:v02092": "node scripts/test-v02092.mjs && node scripts/test-tiktok-ai-e-recommendations.mjs && node scripts/test-tiktok-direction-card-width.mjs && npm run test:v02091",

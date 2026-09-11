@@ -26,5 +26,5 @@ for(const [name,expected] of [['AGate Organic Baby Cream ครีมออร�
   const result=await analyzeTikTok({name:'openai',key:'fixture',model:'fixture'},{channel:{name:'fixture'},images:[]},async(url,opt)=>{assert.match(JSON.parse(opt.body).instructions,/search_query/);return {ok:true,json:async()=>({output_text:JSON.stringify({next_product_candidates:[{name,product_type:'E',search_query:42}]})})}});
   assert.equal(result.next_product_candidates[0].search_query,expected);
 }
-assert.match(html,/<label>คำค้นสินค้า<input data-ai-search-query/,'implicit accessible label');
+assert.match(html,/<label(?: class="ai-concept-query")?>คำค้นสินค้า<input data-ai-search-query/,'implicit accessible label');
 console.log('v94 actual E render→query→Marketplace; explicit retry, dedup, immutable pagination, serial latest query, owner stale, no passive writes: PASS');
