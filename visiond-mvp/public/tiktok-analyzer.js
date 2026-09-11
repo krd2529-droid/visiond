@@ -97,6 +97,8 @@ const commandLauncher=window.createVisionDCommandLauncher?.({cryptoApi:window.cr
 const channelOwnership = createTikTokChannelOwnership(() => state.selected);
 const shopConnectionRequests = new Map();
 const inventoryRequests = new Map();
+const marketplaceQueryRequests=new Map(),marketplaceQueryCache=new Map(),marketplaceLatest=new Map(),marketplaceSnapshots=new Map();
+let marketplaceQueryTail=Promise.resolve(),marketplaceQuerySequence=0;
 const shortlistRequests = new Map(), shortlistCache = new Map();
 const inventoryVersions = new Map();
 const commissionCardScript = document.createElement("script");
@@ -780,35 +782,46 @@ function renderMarketplaceProducts(data = null, mode = "product") {
   const context=channelOwnership.capture();if(context){stampChannelOwnedActions(box,context);addButton.dataset.channelOwner=context.channelId}
 }
 async function searchMarketplace(mode = "product", pageToken = "", expectedContext = null) {
-  if (mode !== "product" && mode !== "shop") {
-    pageToken = mode;
-    mode = "product";
-  }
-  const context = expectedContext || channelOwnership.capture(), requestedChannelId = context?.channelId || "";
-  if (!context) throw new Error("เปลี่ยนช่องแล้ว กรุณากดค้นหาอีกครั้ง");
-  let shopConnection = state.shopConnection && String(state.shopConnection.channel_id) === requestedChannelId ? state.shopConnection : null;
-  if (!shopConnection) shopConnection = await loadTikTokConnection(requestedChannelId, context);
-  if (!channelOwnership.current(context)) throw new Error("เปลี่ยนช่องแล้ว กรุณากดค้นหาอีกครั้ง");
-  if (!shopConnection) throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
-  const view = marketplaceView(mode), buttons = view.form.querySelectorAll(".marketplace-search-button"), nextButton = $(mode === "shop" ? "#marketplaceShopNext" : "#marketplaceNext"), shopMode = mode === "shop";
-  buttons.forEach(button => button.disabled = true);
-  if (nextButton) nextButton.disabled = true;
+  if(mode!=="product"&&mode!=="shop"){pageToken=mode;mode="product"}
+  const context=expectedContext||channelOwnership.capture(),owner=pageViewerId,requestedChannelId=context?.channelId||"";
+  if(!context)throw new Error("เปลี่ยนช่องแล้ว กรุณากดค้นหาอีกครั้ง");
+  const shopMode=mode==="shop",previous=marketplaceSnapshots.get(mode);
+  const values=pageToken&&previous?.owner===owner&&previous?.channelId===requestedChannelId?previous.values:shopMode?{keyword:"",shop_keyword:$("#marketplaceShopKeyword").value.trim(),sort_field:"units_sold",sort_order:"DESC",result_limit:20}:{keyword:$("#marketplaceKeyword").value.trim(),shop_keyword:"",sort_field:$("#marketplaceSort").value,sort_order:$("#marketplaceOrder").value,result_limit:Number($("#marketplaceLimit").value)||20,price_min:$("#marketplacePriceMin").value,price_max:$("#marketplacePriceMax").value,category_id:$("#marketplaceCategory").value.trim(),commission_percent_min:$("#marketplaceCommissionMin").value,commission_percent_max:$("#marketplaceCommissionMax").value,comparison_days:Number($("#marketplaceComparisonDays").value)||3};
+  const snapshot=Object.freeze({...values}),sequence=++marketplaceQuerySequence;
+  marketplaceLatest.set(mode,sequence);
+  const owned=()=>pageViewerId===owner&&channelOwnership.current(context),current=()=>owned()&&marketplaceLatest.get(mode)===sequence;
+  let shopConnection=state.shopConnection&&String(state.shopConnection.channel_id)===requestedChannelId?state.shopConnection:null;
+  if(!shopConnection)shopConnection=await loadTikTokConnection(requestedChannelId,context);
+  if(!current())return null;
+  if(!shopConnection)throw new Error("กรุณาเชื่อม TikTok Shop ก่อนค้นหา Marketplace");
+  const view=marketplaceView(mode),buttons=view.form.querySelectorAll(".marketplace-search-button"),nextButton=$(shopMode?"#marketplaceShopNext":"#marketplaceNext");
+  buttons.forEach(button=>button.disabled=true);if(nextButton)nextButton.disabled=true;
   try {
-    const data = await api("/api/admin/tiktok-connections/marketplace", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(shopMode ? { connection_id: shopConnection.id, channel_id: requestedChannelId, keyword: "", shop_keyword: $("#marketplaceShopKeyword").value.trim(), sort_field: "units_sold", sort_order: "DESC", result_limit: 20, page_token: pageToken } : { connection_id: shopConnection.id, channel_id: requestedChannelId, keyword: $("#marketplaceKeyword").value.trim(), shop_keyword: "", sort_field: $("#marketplaceSort").value, sort_order: $("#marketplaceOrder").value, result_limit: Number($("#marketplaceLimit").value) || 20, page_token: pageToken, price_min: $("#marketplacePriceMin").value, price_max: $("#marketplacePriceMax").value, category_id: $("#marketplaceCategory").value.trim(), commission_percent_min: $("#marketplaceCommissionMin").value, commission_percent_max: $("#marketplaceCommissionMax").value, comparison_days: Number($("#marketplaceComparisonDays").value) || 3 }) });
-    if (!channelOwnership.current(context)) return;
-    const prefix = shopMode ? "shopMarketplace" : "marketplace";
-    state[`${prefix}Products`] = data.products || [];
-    state[`${prefix}NextToken`] = data.next_page_token || "";
-    state[`${prefix}SearchedAt`] = new Date().toISOString();
-    state[`${prefix}ComparisonDays`] = Number(data.comparison_days) || 7;
-    if (!shopMode) renderMarketplaceCategories(data.categories || []);
-    renderMarketplaceProducts(data, mode);
-  } catch (error) {
-    if (channelOwnership.current(context)) throw error;
-  } finally {
-    buttons.forEach(button => button.disabled = false);
-    if (nextButton) nextButton.disabled = false;
-  }
+    const body=Object.freeze({connection_id:shopConnection.id,channel_id:requestedChannelId,...snapshot,page_token:pageToken});
+    const key=JSON.stringify([owner,context.generation,mode,body]),cached=marketplaceQueryCache.get(key);
+    let data=cached&&Date.now()-cached.at<30000?cached.data:null;
+    if(!data){
+      let request=marketplaceQueryRequests.get(key);
+      if(!request){
+        request=marketplaceQueryTail.catch(()=>{}).then(async()=>{
+          if(!owned())return null;
+          const result=await api("/api/admin/tiktok-connections/marketplace",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+          if(owned()){if(marketplaceQueryCache.size>=24)marketplaceQueryCache.delete(marketplaceQueryCache.keys().next().value);marketplaceQueryCache.set(key,{at:Date.now(),data:result})}
+          return result;
+        });
+        marketplaceQueryRequests.set(key,request);marketplaceQueryTail=request;
+        request.finally(()=>{if(marketplaceQueryRequests.get(key)===request)marketplaceQueryRequests.delete(key)}).catch(()=>{});
+      }
+      data=await request;
+    }
+    if(!data||!current())return null;
+    const prefix=shopMode?"shopMarketplace":"marketplace";
+    state[`${prefix}Products`]=data.products||[];state[`${prefix}NextToken`]=data.next_page_token||"";state[`${prefix}SearchedAt`]=new Date().toISOString();state[`${prefix}ComparisonDays`]=Number(data.comparison_days)||7;
+    marketplaceSnapshots.set(mode,{owner,channelId:requestedChannelId,values:snapshot});
+    if(!shopMode)renderMarketplaceCategories(data.categories||[]);
+    renderMarketplaceProducts(data,mode);return data;
+  }catch(error){if(current())throw error;return null}
+  finally{if(current()){buttons.forEach(button=>button.disabled=false);if(nextButton)nextButton.disabled=false}}
 }
 function renderShopDashboard(data, shopConnection) {
   const box = $("#shopDashboard"), portfolio = data.shop_portfolio || {}, commissions = portfolio.commission || [], products = data.shop_products || [], orders = data.shop_orders || [];
@@ -1114,13 +1127,46 @@ function resultProductTable(rows = [], scoreKey = "score") {
     return `<tr><td><span class="type-pill type-${escapeHtml(grade || "unknown")}">${escapeHtml(gradeLabel)}</span></td><td class="product-full-name">${escapeHtml(x.name)}</td><td>${escapeHtml(x.customer_gender || "\u0E22\u0E31\u0E07\u0E23\u0E30\u0E1A\u0E38\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49")}</td><td>${escapeHtml(x.customer_age_range || "\u0E22\u0E31\u0E07\u0E23\u0E30\u0E1A\u0E38\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49")}</td><td class="score-cell">${score === null ? "—" : `${score}/100`}</td><td>${escapeHtml(evidence)}</td><td>${x.product_url ? `<a href="${escapeHtml(x.product_url)}" target="_blank" rel="noopener noreferrer">\u0E40\u0E1B\u0E34\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u2197</a>` : "<em>\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E25\u0E34\u0E07\u0E01\u0E4C</em>"}</td><td><div class="inventory-actions"><button type="button" data-inventory="kept" data-product-name="${escapeHtml(x.name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${score ?? 0}" data-product-evidence="${escapeHtml(evidence)}">\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49</button><button type="button" class="danger" data-inventory="discarded" data-product-name="${escapeHtml(x.name)}" data-product-grade="${escapeHtml(grade)}" data-product-score="${score ?? 0}" data-product-evidence="${escapeHtml(evidence)}">\u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01</button></div></td></tr>`;
   }).join("")}</tbody></table></div>` : '<p class="hint">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E1E\u0E2D</p>';
 }
+function cleanAiSearchQuery(value) {
+  if(typeof value!=="string")return "";
+  return value.normalize("NFKC").replace(/https?:\/\/\S+/gi," ").replace(/\([^)]*\)|\[[^\]]*\]/g," ").replace(/[<>"'`]/g," ").replace(/พรีเมียม|รุ่นใหม่สุด|รุ่นใหม่|อัจฉริยะ|สุดคุ้ม/g," ").replace(/\b[A-Za-z]+[0-9][A-Za-z0-9-]*\b/g," ").trim().split(/\s+/).filter(Boolean).slice(0,4).join(" ").slice(0,80).trim();
+}
+function aiRecommendationSearchQuery(item) {
+  const explicit=cleanAiSearchQuery(item?.search_query);
+  if(explicit)return explicit;
+  let name=String(item?.name||item?.product||"");
+  if(/[ก-๙]/.test(name))name=name.replace(/^(?:[A-Za-z0-9-]+\s+)+(?=[ก-๙])/,"");
+  // Recognized product intents only; unknown concepts retain editable conservative text.
+  for(const [pattern,intent] of [[/ครีม.*(?:เด็ก|ทารก)/,'ครีมเด็ก'],[/น้ำมันรำข้าว/,'น้ำมันรำข้าว'],[/ยางกัด/,'ยางกัดเด็ก'],[/ของเล่น.*(?:เด็ก|ทารก)/,'ของเล่นเด็ก'],[/ผ้าอ้อม/,'ผ้าอ้อมเด็ก']])if(pattern.test(name))return intent;
+  return cleanAiSearchQuery(name);
+}
+function aiRecommendationTable(items) {
+  if(!items.length)return '<p class="hint">ยังไม่มีข้อมูลพอ</p>';
+  return `<p class="hint">แนวคิดจาก AI ยังไม่ได้ยืนยันว่ามีสินค้านี้ใน Marketplace — คำค้นแก้ไขได้ ผลจาก TikTok เท่านั้นที่เป็นรายการสินค้าจริง</p>${items.map(item=>`<article data-ai-concept><b>${escapeHtml(item.name)}</b><p>${escapeHtml(item.evidence||"")}</p><label>คำค้นสินค้า<input data-ai-search-query maxlength="80" value="${escapeHtml(aiRecommendationSearchQuery(item))}"></label><button type="button" data-ai-marketplace-search>ค้นหาใน Marketplace</button><button type="button" data-inventory="kept" data-product-name="${escapeHtml(item.name)}" data-product-grade="E">เก็บแนวคิด E</button><p data-ai-search-status role="status"></p></article>`).join("")}`;
+}
+async function searchAiRecommendation(button) {
+  const context=channelContextFor(button),row=button.closest('[data-ai-concept]');
+  if(!context||!row)return;
+  const input=row.querySelector('[data-ai-search-query]'),status=row.querySelector('[data-ai-search-status]'),query=cleanAiSearchQuery(input?.value);
+  if(!query){status.textContent='กรุณาใส่คำค้นประเภทสินค้า เช่น แปรงขนแมว';return}
+  input.value=query;$('#marketplaceKeyword').value=query;
+  status.textContent='กำลังค้นหาแนวคิดนี้ใน Marketplace โดยใช้ตัวกรองปัจจุบัน…';
+  const owner=pageViewerId,attempt={};row.aiSearchAttempt=attempt;
+  try{
+    const data=await searchMarketplace('product','',context);
+    if(owner!==pageViewerId||!channelOwnership.current(context)||!row.isConnected||row.aiSearchAttempt!==attempt)return;
+    if(!data){status.textContent='มีคำค้นใหม่แล้ว ดูผลล่าสุดใน Marketplace หรือกดค้นหาแนวคิดนี้อีกครั้ง';return}
+    status.textContent=data.products?.length?'พบรายการจาก TikTok แล้ว โปรดตรวจรายละเอียดก่อนเลือกสินค้า':'ไม่พบสินค้าตามคำค้นและตัวกรองนี้ — ลองแก้เป็นประเภทสินค้าที่กว้างขึ้น แล้วกดค้นหาอีกครั้ง';
+    $('#marketplaceResults')?.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(error){if(owner===pageViewerId&&channelOwnership.current(context)&&row.isConnected&&row.aiSearchAttempt===attempt)status.textContent=marketplaceErrorMessage(error)}
+}
 function renderResult(result = {}) {
   $("#result").hidden = false;
   $('[data-field="summary"]').textContent = result.summary || "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E23\u0E38\u0E1B";
   if (!$("#gradeMeaningNote")) $('[data-field="summary"]').insertAdjacentHTML("afterend", '<p id="gradeMeaningNote" class="marketplace-shop-search-note"><b>แยกให้ชัด:</b> F = สินค้าที่กดคัดออกหรือกดไม่ผ่านแล้ว · ไม่มีเกรด = ยอดขาย 0 หรือข้อมูลยังไม่พอ</p>');
   $('[data-list="winners"]').innerHTML = resultProductTable(result.winner_products, "score");
   const aiRecommendations = [...result.next_product_candidates || [], ...result.daily_product_list || []].filter((item) => String(item?.product_type || item?.grade || "").toUpperCase() === "E").map((item) => ({ ...item, name: item.name || item.product || "", evidence: item.evidence || item.ranking_reason || textValue(item.reasons), fit_score: item.fit_score ?? item.ranking_score })).filter((item, index, rows) => item.name && rows.findIndex((candidate) => normalizeProductName(candidate.name) === normalizeProductName(item.name)) === index);
-  $('[data-list="ai-recommendations"]').innerHTML = resultProductTable(aiRecommendations, "fit_score");
+  $('[data-list="ai-recommendations"]').innerHTML = aiRecommendationTable(aiRecommendations);
   $('[data-list="candidates"]').innerHTML = resultProductTable(result.next_product_candidates, "fit_score");
   upgradeLegacyProductLinkCells($("#result"));
   $("#productPrepSummary").innerHTML = '<span class="total">รวม <b>0/40</b> สินค้าที่เลือกไว้</span>';
@@ -1462,6 +1508,8 @@ $("#manualCForm").addEventListener("submit", async (event) => {
   if (saved) input.value = "";
 });
 $("#result").addEventListener("click", (event) => {
+  const aiSearch=event.target.closest('[data-ai-marketplace-search]');
+  if(aiSearch){searchAiRecommendation(aiSearch);return}
   const button = event.target.closest("[data-inventory]");
   if (button) setProductInventory(button);
 });

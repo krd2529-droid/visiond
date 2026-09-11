@@ -113,6 +113,21 @@ const reviewSourcePrompt=`แหล่งข้อมูลสำหรับร
 const failedProductHistoryPrompt=`กฎประวัติสินค้า F: ห้ามลบข้อมูลสินค้า F แม้ไม่ผ่าน ให้เก็บเป็นประวัติของช่อง หากสินค้าเดิมถูกเลือกกลับมาทดลองเป็น C เพราะกระแส ฤดูกาล ราคา หรือสถานการณ์เปลี่ยน ให้แจ้งชัดว่าสินค้านี้เคยทดสอบแล้ว เคยเป็น F และกำลังเริ่มรอบ C ใหม่ ห้ามซ่อนผลรอบเก่า และให้ประเมินรอบใหม่จากหลักฐานใหม่โดยไม่ถือว่าผลเดิมต้องล้มเหลวเสมอ`;
 const noClipTrafficPrompt=`ไม่ต้องสร้างผลวิเคราะห์ทราฟฟิกรายคลิปในฟีเจอร์นี้ ให้คืน traffic_summary เป็น object ว่างและ clip_performance เป็น array ว่าง เพื่อลดเวลาและค่าใช้จ่าย AI โดยเน้นวิเคราะห์สินค้าและจัดเกรดเท่านั้น`;
 
+function cleanAiSearchQuery(value) {
+  if(typeof value!=="string")return "";
+  return value.normalize("NFKC").replace(/https?:\/\/\S+/gi," ").replace(/\([^)]*\)|\[[^\]]*\]/g," ").replace(/[<>"'`]/g," ").replace(/พรีเมียม|รุ่นใหม่สุด|รุ่นใหม่|อัจฉริยะ|สุดคุ้ม/g," ").replace(/\b[A-Za-z]+[0-9][A-Za-z0-9-]*\b/g," ").trim().split(/\s+/).filter(Boolean).slice(0,4).join(" ").slice(0,80).trim();
+}
+function aiRecommendationSearchQuery(item) {
+  const explicit=cleanAiSearchQuery(item?.search_query);
+  if(explicit)return explicit;
+  let name=String(item?.name||item?.product||"");
+  if(/[ก-๙]/.test(name))name=name.replace(/^(?:[A-Za-z0-9-]+\s+)+(?=[ก-๙])/,"");
+  // Recognized product intents only; unknown concepts retain editable conservative text.
+  for(const [pattern,intent] of [[/ครีม.*(?:เด็ก|ทารก)/,'ครีมเด็ก'],[/น้ำมันรำข้าว/,'น้ำมันรำข้าว'],[/ยางกัด/,'ยางกัดเด็ก'],[/ของเล่น.*(?:เด็ก|ทารก)/,'ของเล่นเด็ก'],[/ผ้าอ้อม/,'ผ้าอ้อมเด็ก']])if(pattern.test(name))return intent;
+  return cleanAiSearchQuery(name);
+}
+
+const aiSearchIntentPrompt = 'สำหรับสินค้าเกรด E เพิ่ม search_query เป็นคำค้นประเภทสินค้าทั่วไปสั้น 1–4 คำ ไม่เกิน 80 ตัวอักษร แยกจากชื่อแนวคิดและเหตุผล ห้ามประดิษฐ์แบรนด์ รุ่น รหัสสินค้า หรืออ้างว่ามีใน Marketplace คำค้นเป็นเพียงแนวทาง ยังไม่ใช่ผลจากแคตตาล็อก';
 export async function analyzeTikTok(provider,{channel,notes,candidates,strategy,dateRange,lookbackDays,attachmentPeriodDays=30,clipsPerDay=40,images},fetchImpl=fetch){
   if(!provider)throw new Error('AI_NOT_CONFIGURED');
   const prompt=`ช่อง: ${channel.name}\nลิงก์: ${channel.channel_url||'-'}\nช่วงข้อมูลในภาพ: ${dateRange||'-'}\nรูปที่ผู้ใช้แนบเป็นข้อมูลย้อนหลัง: ${attachmentPeriodDays} วัน (ผู้ใช้เลือกค่านี้โดยตรง ให้ยึดเป็นหลักโดยไม่ต้องเดาจากข้อความในรูป)\nให้ไล่ดูคลิปย้อนหลัง: ${lookbackDays||30} วัน\nจำนวนสินค้าที่ต้องเตรียมสำหรับทำคลิปในหนึ่งวัน: สูงสุด ${clipsPerDay} รายการ\nแนวทางที่เจ้าของสนใจ: ${strategy||'-'}\nข้อมูลประกอบ: ${notes||'-'}\nสินค้าที่อยากประเมินต่อ: ${candidates||'-'}\nวิเคราะห์คลิปย้อนหลังทีละคลิป หาคลิปวิวต่ำ/ไม่มีทราฟฟิก สินค้านางฟ้า สูตรคลิป สินค้าใกล้เคียง และสร้าง daily_product_list เป็น Ranking สินค้าพร้อมคะแนนและเหตุผล สูงสุด ${clipsPerDay} รายการ`;
@@ -120,9 +135,9 @@ export async function analyzeTikTok(provider,{channel,notes,candidates,strategy,
   let response;
   if(provider.name==='openai'){
     const content=[{type:'input_text',text:prompt},...images.map(x=>({type:'input_image',image_url:`data:${x.type};base64,${x.base64}`}))];
-    response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},body:JSON.stringify({model:provider.model,instructions:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+dailyProductListPrompt+'\n'+activeProductPrompt+'\n'+weeklySalesGradePrompt+'\n'+monthlyAttachmentGradePrompt+'\n'+selectionRatioPrompt+'\n'+reviewSchedulePrompt+'\n'+reviewSourcePrompt+'\n'+failedProductHistoryPrompt+'\n'+noClipTrafficPrompt+'\n'+finalGradeMeaningPrompt+'\n'+unifiedMonthlyGradePrompt,input:[{role:'user',content}],max_output_tokens:10000,store:false}),signal});
+    response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},body:JSON.stringify({model:provider.model,instructions:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+dailyProductListPrompt+'\n'+activeProductPrompt+'\n'+weeklySalesGradePrompt+'\n'+monthlyAttachmentGradePrompt+'\n'+selectionRatioPrompt+'\n'+reviewSchedulePrompt+'\n'+reviewSourcePrompt+'\n'+failedProductHistoryPrompt+'\n'+noClipTrafficPrompt+'\n'+finalGradeMeaningPrompt+'\n'+unifiedMonthlyGradePrompt+'\n'+aiSearchIntentPrompt,input:[{role:'user',content}],max_output_tokens:10000,store:false}),signal});
   }else{
-    const parts=[{text:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+dailyProductListPrompt+'\n'+activeProductPrompt+'\n'+weeklySalesGradePrompt+'\n'+monthlyAttachmentGradePrompt+'\n'+selectionRatioPrompt+'\n'+reviewSchedulePrompt+'\n'+reviewSourcePrompt+'\n'+failedProductHistoryPrompt+'\n'+noClipTrafficPrompt+'\n'+finalGradeMeaningPrompt+'\n'+unifiedMonthlyGradePrompt+'\n\n'+prompt},...images.map(x=>({inlineData:{mimeType:x.type,data:x.base64}}))];
+    const parts=[{text:systemPrompt+'\n'+productNamingAndAudiencePrompt+'\n'+dailyProductListPrompt+'\n'+activeProductPrompt+'\n'+weeklySalesGradePrompt+'\n'+monthlyAttachmentGradePrompt+'\n'+selectionRatioPrompt+'\n'+reviewSchedulePrompt+'\n'+reviewSourcePrompt+'\n'+failedProductHistoryPrompt+'\n'+noClipTrafficPrompt+'\n'+finalGradeMeaningPrompt+'\n'+unifiedMonthlyGradePrompt+'\n'+aiSearchIntentPrompt+'\n\n'+prompt},...images.map(x=>({inlineData:{mimeType:x.type,data:x.base64}}))];
     response=await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:generateContent`,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':provider.key},body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:10000,temperature:.2}}),signal});
   }
   if(!response.ok)throw new Error(`${provider.name.toUpperCase()}_HTTP_${response.status}`);
@@ -141,6 +156,7 @@ export async function analyzeTikTok(provider,{channel,notes,candidates,strategy,
         result.data_gaps=[...new Set([...(Array.isArray(result.data_gaps)?result.data_gaps:[]),'ข้อมูลยอดขายยังไม่ครบ 30 วัน จึงยังไม่จัดเกรด A/B/C'])];
       }
     }
+    for(const items of [result.winner_products,result.next_product_candidates,result.daily_product_list])for(const item of Array.isArray(items)?items:[])if(item&&String(item.product_type||item.grade||'').toUpperCase()==='E')item.search_query=aiRecommendationSearchQuery(item);
     return result;
   }catch{throw new Error('AI_INVALID_JSON')}
 }

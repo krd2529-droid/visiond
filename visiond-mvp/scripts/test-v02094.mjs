@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const src=readFileSync('public/tiktok-analyzer.js','utf8');
+const cut=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)));
+const nodes=new Map(),$=q=>{if(!nodes.has(q))nodes.set(q,{value:'',innerHTML:'',dataset:{},querySelectorAll:()=>[],scrollIntoView(){},insertAdjacentHTML(){}});return nodes.get(q)};
+const calls=[],renders=[];let generation=1,respond=async body=>({products:body.keyword==='แปรงขนแมว'?[{id:'catalog-real'}]:[]});
+const c={$ ,pageViewerId:'owner-A',state:{shopConnection:{id:'connection-A',channel_id:'A'}},escapeHtml:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),arrayValue:x=>Array.isArray(x)?x:[],textValue:String,normalizeProductName:String,upgradeLegacyProductLinkCells(){},channelOwnership:{capture:()=>({channelId:'A',generation}),current:x=>x.generation===generation},channelContextFor:()=>({channelId:'A',generation}),marketplaceView:()=>({form:{querySelectorAll:()=>[]}}),renderMarketplaceCategories(){},renderMarketplaceProducts:d=>renders.push(d),marketplaceErrorMessage:e=>e.message,loadTikTokConnection:async()=>null,api:async(url,opt)=>{assert.equal(url,'/api/admin/tiktok-connections/marketplace');const body=JSON.parse(opt.body);calls.push(body);return respond(body)}};
+vm.createContext(c);vm.runInContext('const marketplaceQueryRequests=new Map(),marketplaceQueryCache=new Map(),marketplaceLatest=new Map(),marketplaceSnapshots=new Map();let marketplaceQueryTail=Promise.resolve(),marketplaceQuerySequence=0;'+cut('function list(values, render)','function renderOwnedResult(')+cut('async function searchMarketplace(','function renderShopDashboard('),c);
+for(const [name,expected] of [['PawWonder X900 แปรงขนแมว พรีเมียม อัจฉริยะ รุ่นใหม่สุด','แปรงขนแมว'],['BabySoft X900 ครีมเด็ก พรีเมียม','ครีมเด็ก'],['BabySoft X900 ออยล์เด็ก อัจฉริยะ','ออยล์เด็ก'],['BabySoft X900 ของเล่นเด็ก รุ่นใหม่สุด','ของเล่นเด็ก'],['BabySoft X900 ผ้าอ้อมเด็ก พรีเมียม','ผ้าอ้อมเด็ก']])assert.equal(c.aiRecommendationSearchQuery({name}),expected);
+c.renderResult({next_product_candidates:[{name:'<script> ครีมเด็ก',product_type:'E',search_query:'ครีมเด็ก',evidence:'unverified'}]});
+const html=$('[data-list="ai-recommendations"]').innerHTML;
+assert.match(html,/data-ai-marketplace-search/);assert.match(html,/ยังไม่ได้ยืนยัน/);assert.match(html,/&lt;script>/);assert.equal(calls.length,0);
+const input={value:c.aiRecommendationSearchQuery({name:'PawWonder X900 แปรงขนแมว พรีเมียม'})},status={textContent:''},row={isConnected:true,querySelector:s=>s.includes('query')?input:status},button={closest:()=>row};
+await c.searchAiRecommendation(button);assert.equal(calls.length,1);assert.equal(calls[0].keyword,'แปรงขนแมว');assert.equal(calls[0].channel_id,'A');assert.equal(calls[0].connection_id,'connection-A');assert.match(status.textContent,/พบรายการจาก TikTok/);
+input.value='ไม่มีผล';await c.searchAiRecommendation(button);assert.match(status.textContent,/ลองแก้/);assert.equal(calls.length,2);input.value='แก้คำค้น';await c.searchAiRecommendation(button);assert.equal(calls.length,3);
+let release;respond=()=>new Promise(r=>release=r);$('#marketplaceKeyword').value='same';const a=c.searchMarketplace(),b=c.searchMarketplace();await new Promise(r=>setTimeout(r,0));assert.equal(calls.length,4);release({products:[{id:'same'}],next_page_token:'next'});await Promise.all([a,b]);assert.equal(renders.filter(d=>d.products[0]?.id==='same').length,1);
+$('#marketplaceKeyword').value='edited-not-page-query';respond=async()=>({products:[]});await c.searchMarketplace('product','next');assert.equal(calls.at(-1).keyword,'same');assert.equal(calls.at(-1).page_token,'next');
+respond=()=>new Promise(r=>release=r);$('#marketplaceKeyword').value='old';const old=c.searchMarketplace();await new Promise(r=>setTimeout(r,0));$('#marketplaceKeyword').value='new';const newer=c.searchMarketplace();const count=calls.length;release({products:[{id:'old'}]});await old;await new Promise(r=>setTimeout(r,0));assert.equal(calls.length,count+1);release({products:[{id:'new'}]});await newer;assert.equal(renders.some(d=>d.products[0]?.id==='old'),false);assert.equal(renders.at(-1).products[0].id,'new');
+$('#marketplaceKeyword').value='stale';const stale=c.searchMarketplace();await new Promise(r=>setTimeout(r,0));generation++;release({products:[{id:'stale'}]});await stale;assert.equal(renders.some(d=>d.products[0]?.id==='stale'),false);
+c.state.shopConnection=null;await assert.rejects(c.searchMarketplace(),/เชื่อม TikTok Shop/);
+const server=readFileSync('functions/_tiktok_analyzer.js','utf8');assert.match(server,/aiSearchIntentPrompt/);assert.equal((server.match(/\+aiSearchIntentPrompt/g)||[]).length,2);assert.match(server,/item.search_query=aiRecommendationSearchQuery\(item\)/);
+const {analyzeTikTok}=await import('../functions/_tiktok_analyzer.js');
+for(const [name,expected] of [['AGate Organic Baby Cream ครีมออร์แกนิกสำหรับเด็กทารก','ครีมเด็ก'],['น้ำมันรำข้าวออร์แกนิกเนเจอร์พลัส ขนาด 250 ml','น้ำมันรำข้าว'],['ของเล่นเสริมพัฒนาการเด็ก ยางกัดเด็กวัยหัดเดิน','ยางกัดเด็ก'],['ผ้าอ้อมเด็กกลางวัน-กลางคืน รุ่น Soft & Dry','ผ้าอ้อมเด็ก']]){
+  assert.equal(c.aiRecommendationSearchQuery({name}),expected);
+  const result=await analyzeTikTok({name:'openai',key:'fixture',model:'fixture'},{channel:{name:'fixture'},images:[]},async(url,opt)=>{assert.match(JSON.parse(opt.body).instructions,/search_query/);return {ok:true,json:async()=>({output_text:JSON.stringify({next_product_candidates:[{name,product_type:'E',search_query:42}]})})}});
+  assert.equal(result.next_product_candidates[0].search_query,expected);
+}
+assert.match(html,/<label>คำค้นสินค้า<input data-ai-search-query/,'implicit accessible label');
+console.log('v94 actual E render→query→Marketplace; explicit retry, dedup, immutable pagination, serial latest query, owner stale, no passive writes: PASS');

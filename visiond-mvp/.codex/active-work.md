@@ -1,4 +1,8 @@
-# Active patch: authoritative shortlist and sales grades
+# Active patch: searchable AI grade-E concepts
+
+- Event: PATCH_READY — v0.20.94/JS02153. Grade E is explicitly an unverified concept with a concise editable query and direct Marketplace action; screenshot-shaped cream/oil/teether/diaper legacy fallback uses narrow product-intent patterns. Both AI providers receive the structured query contract and output normalization. Shared Marketplace requests capture owner/channel/query/filter/cursor, coalesce identical requests, serialize provider calls, cache bounded results for30s and suppress stale responses. Empty results require explicit edit/retry; no passive search or automatic selection. Actual-flow94 and canonical94→72 elevated23809 PASS; visible94/predeploy9PASS8existingWARN0FAIL/diff PASS. No schema/native/provider/live mutation. Frozen manifest/report in .agents/reports/elon-v94-freeze-20260911.*; independent Mark review and Root release pending.
+
+# Delivered patch: authoritative shortlist and sales grades
 
 - Event: PATCH_DELIVERED — v0.20.93 exact23-file commit `658b0246` pushed `origin/main`; Cloudflare Production `4b8d9607-cd18-4e91-b4a1-e0b7e746b75d` Active from source `658b024`. Migration0102 installed first on production D1 at bookmark `0000120f-00000006-000050e3-854c613f3c3343d5617b7c8be19ee091`; remote EXPLAIN uses covering `idx_tiktok_products_channel_kept`. Direct/custom Analyzer HTML200 show v0.20.93/cache02152 and both serve exact195,446-byte JS SHA `1FD12C332BAF1883AE4A9DFBCA9406E2AAE506E64C0F51EC5577D18667682E3C`; unauth shortlist API is401/private,no-store. Root actual RED→green/focused/independent/visible/predeploy and elevated canonical93→72 PASS; Mark frozen review0 findings. Rendered production page confirmed version/result/AI surfaces. No production product/provider mutation; user Ctrl+F5 and selecting `สัตว์โลกพิศวง` is the remaining account-specific visual confirmation.
 
