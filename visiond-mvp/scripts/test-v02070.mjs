@@ -185,7 +185,7 @@ function createSelectRuntime() {
 }
 
 assert.ok(source.includes('renderOwnedResult(data.runs?.[0]?.result || {}, context)'));
-assert.match(source, /loadMoreRuns\(\)[^]*channelOwnership\.current\(context\)/);
+assert.ok(!source.includes('data-load-more-runs'),'retired history controls cannot issue late requests');
 assert.match(source, /loadMoreInventoryResource\(resource\)[^]*channelOwnership\.current\(context\)/);
 assert.match(source, /syncSelectedSoldProductGrades\(context\)[^]*channelOwnership\.current\(context\)/);
 assert.match(source, /baseEntries=\[\.\.\.new FormData\(form\)\.entries\(\)\]/, 'batch analysis must snapshot inputs once');
@@ -193,7 +193,7 @@ assert.match(source, /payload\.set\("channel_id", operationChannelId\)/, 'all ba
 for (const token of ['state.preparedCommission = null', 'state.commissionCards = []', 'state.lastCommissionCard = null', 'URL.revokeObjectURL']) assert.ok(clearSource.includes(token), `channel switch must clear ${token}`);
 assert.match(source, /stampChannelOwnedActions\(\$\("#shopDashboard"\), context\)/, 'commission actions must be stamped with their channel owner');
 
-assert.equal(version.trim(), 'v0.20.89');
-assert.match(html, /<b>v0\.20\.89<\/b>/);
-assert.match(html, /tiktok-analyzer\.js\?v=02148/);
+assert.equal(version.trim(), 'v0.20.90');
+assert.match(html, /<b>v0\.20\.90<\/b>/);
+assert.match(html, /tiktok-analyzer\.js\?v=02149/);
 console.log('PASS v0.20.70 channel-owned analyzer view, async responses and mutations');

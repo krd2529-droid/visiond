@@ -1,4 +1,10 @@
-# Active patch: channel-owned empty result scaffold
+# Active patch: remove analysis-run history UI
+
+- Event: PATCH_READY — v0.20.90/cache02149 removes generated history DOM/count/buttons/load older and dead client state/actions only. Latest saved result and v89 truthful empty/owner/late-response behavior retained; backend history and inventory/channel pagination unchanged. Focused90/v89/v70/v58 PASS; canonical90→72 elevated65140 exit0; visible90/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen13-file manifest/report `.agents/reports/elon-v90-freeze-20260911.*`; no live/backend/native/Git/release changes. Mark/Root review pending.
+
+- Event: PATCH_STARTED — remove only the visible `รอบวิเคราะห์ที่โหลดแล้ว`, historical run buttons and `โหลดรอบวิเคราะห์ก่อนหน้า` block. Preserve latest saved result, v0.20.89 empty-channel scaffold and owner/race isolation; retain stored history/backend data. Target v0.20.90/cache02149; implementation/testing/release pending.
+
+# Delivered patch: channel-owned empty result scaffold
 
 - Event: PATCH_DELIVERED — v0.20.89 exact12-file commit `655bb4ad` pushed `origin/main`; Cloudflare Production `297863c1-86ee-4b6f-b93c-1369b5f95f9a` serves source `655bb4a`. Direct deployment and `visiondonline.com` Analyzer HTML return200 with v0.20.89/cache02148; both served JS files are exact204,018 bytes/SHA `47FD5D4795414D3E7F23C9156EB78B8BB2F073AB6B7674BF55F1CB2405DAB80D` and contain the reviewed unconditional owner-guarded saved-or-empty render branch. Root focused/visible/predeploy checks and Mark independent review pass with0 findings. No backend/CSS/native/schema/provider/data change; authenticated user hard-refresh/runtime selection remains the only external UI confirmation.
 

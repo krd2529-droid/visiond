@@ -90,7 +90,7 @@ const browserProfileUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-
 const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launcherMode==="new"&&launcherSlot)||(launcherMode==="existing"&&launcherChannelId))?Object.freeze({mode:launcherMode,slotId:launcherSlot,channelId:launcherChannelId||(launcherMode==="new"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"")}):null;
 let launcherContext=launcherContextFromQuery;
 let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "";
-let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, analysisRuns: [], runPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
 const commandLauncher=window.createVisionDCommandLauncher?.({cryptoApi:window.crypto,openWindow:(...args)=>window.open(...args)})||null;
@@ -866,8 +866,6 @@ function clearChannelOwnedView() {
   state.inventoryEvents = [];
   state.inventoryCounts = {};
   state.inventoryPagination = {};
-  state.analysisRuns = [];
-  state.runPagination = {};
   state.marketplaceProducts = [];
   state.shopMarketplaceProducts = [];
   (state.commissionPreviewUrls || []).forEach((url) => { try { URL.revokeObjectURL(url); } catch {} });
@@ -879,7 +877,6 @@ function clearChannelOwnedView() {
   if (result) {
     result.hidden = true;
     delete result.dataset.channelOwner;
-    result.querySelector('#analysisRunHistory')?.remove();
     result.querySelectorAll('[data-field="summary"],[data-field="direction"]').forEach((node) => { node.textContent = ""; });
     result.querySelectorAll('[data-list]').forEach((node) => { node.innerHTML = ""; });
   }
@@ -927,8 +924,6 @@ async function refreshOwnedInventory(context) {
   return latest;
 }
 async function loadMoreInventoryResource(resource){const context=channelOwnership.capture(),page=state.inventoryPagination?.[resource],cursor=page?.next_cursor;if(!context||!cursor)return;const key=resource==='products'?'product_cursor':'event_cursor',params=new URLSearchParams({channel_id:context.channelId,resource,limit:'24',[key]:cursor}),data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});if(!channelOwnership.current(context))return;if(resource==='products'){state.inventoryProducts=mergeById(state.inventoryProducts,data.products);state.inventoryCounts=data.inventory_counts||state.inventoryCounts}else state.inventoryEvents=mergeById(state.inventoryEvents,data.product_events);state.inventoryPagination[resource]=data.pagination?.[resource]||{};renderInventoryState();stampChannelOwnedActions($("#angelInventory"),context);stampChannelOwnedActions($("#result"),context)}
-function renderRunHistory(){const old=document.querySelector('#analysisRunHistory');old?.remove();if(!state.analysisRuns.length)return;const section=document.createElement('section');section.id='analysisRunHistory';section.className='hint';section.innerHTML=`<b>รอบวิเคราะห์ที่โหลดแล้ว ${state.analysisRuns.length.toLocaleString('th-TH')} รอบ</b><div>${state.analysisRuns.map(run=>`<button type="button" data-analysis-run="${escapeHtml(run.id)}">${escapeHtml(run.title||run.created_at)}</button>`).join('')}</div>${state.runPagination?.has_more?'<button type="button" data-load-more-runs>โหลดรอบวิเคราะห์ก่อนหน้า</button>':''}`;$('#result').append(section)}
-async function loadMoreRuns(){const context=channelOwnership.capture(),cursor=state.runPagination?.next_cursor;if(!context||!cursor)return;const params=new URLSearchParams({channel_id:context.channelId,resource:'runs',limit:'24',run_cursor:cursor}),data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});if(!channelOwnership.current(context))return;state.analysisRuns=mergeById(state.analysisRuns,data.runs);state.runPagination=data.pagination?.runs||{};renderRunHistory();stampChannelOwnedActions($("#result"),context)}
 function marketplaceErrorMessage(error) {
   const detail = String(error?.detail || "").trim(), requestId = String(error?.requestId || "").trim();
   return `${error?.message || "ค้นหาไม่สำเร็จ"}${detail && !String(error?.message || "").includes(detail) ? ` · TikTok: ${detail}` : ""}${requestId ? ` · Request ID: ${requestId}` : ""}`;
@@ -1510,9 +1505,6 @@ $("#manualCForm").addEventListener("submit", async (event) => {
   if (saved) input.value = "";
 });
 $("#result").addEventListener("click", (event) => {
-  const runButton=event.target.closest('[data-analysis-run]'),moreRuns=event.target.closest('[data-load-more-runs]');
-  if(runButton){const context=channelContextFor(runButton);if(!context)return;api(`/api/admin/tiktok-analyzer?run_id=${encodeURIComponent(runButton.dataset.analysisRun)}`,{cache:'no-store'}).then(data=>{if(channelOwnership.current(context)&&String(data.run?.channel_id||context.channelId)===context.channelId)renderOwnedResult(data.run?.result||{},context)}).catch(error=>{if(channelOwnership.current(context))showToast(error.message,'error')});return}
-  if(moreRuns){const context=channelContextFor(moreRuns);if(!context)return;moreRuns.disabled=true;loadMoreRuns().catch(error=>{if(channelOwnership.current(context))showToast(error.message,'error')}).finally(()=>moreRuns.disabled=false);return}
   const button = event.target.closest("[data-inventory]");
   if (button) setProductInventory(button);
 });
@@ -1537,7 +1529,7 @@ selectChannel = async function(id) {
   if(!inventory||!channelOwnership.current(context))return null;
   if(inventory.channel&&!state.channels.some(channel=>String(channel.id)===context.channelId)){state.channels.unshift(inventory.channel);renderChannels()}
   saveUiValue("visiond_tiktok_channel_id", context.channelId);
-  replaceInventory(inventory);state.analysisRuns=inventory.runs||[];state.runPagination=inventory.pagination?.runs||{};renderInventoryState();renderRunHistory();stampChannelOwnedActions($("#angelInventory"),context);stampChannelOwnedActions($("#result"),context);
+  replaceInventory(inventory);renderInventoryState();stampChannelOwnedActions($("#angelInventory"),context);stampChannelOwnedActions($("#result"),context);
   await loadTikTokConnection(context.channelId,context);
   if(!channelOwnership.current(context))return null;
   document.body.classList.toggle("shop-connected", Boolean(state.shopConnection));
