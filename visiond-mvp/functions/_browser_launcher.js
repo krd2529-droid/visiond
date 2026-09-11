@@ -65,7 +65,7 @@ export async function launcherRoute(ctx){
   }
   if(action==='status'){
    const id=url.searchParams.get('command_id');if(!uuid(id))return fail();
-   const row=await ctx.env.DB.prepare(`SELECT c.id command_id,h.port,c.status,c.expires_at,c.intent,f.id handoff_id,f.slot_id,f.status oauth_status,CASE WHEN f.provider IN ('tiktok','shop') THEN f.provider ELSE NULL END oauth_provider,CASE WHEN f.continuation IN ('shop','') THEN f.continuation ELSE NULL END oauth_continuation,CASE WHEN f.status='complete' THEN b.channel_id ELSE '' END channel_id,
+   const row=await ctx.env.DB.prepare(`SELECT c.id command_id,h.port,c.status,c.error_code,c.expires_at,c.intent,f.id handoff_id,f.slot_id,f.status oauth_status,CASE WHEN f.provider IN ('tiktok','shop') THEN f.provider ELSE NULL END oauth_provider,CASE WHEN f.continuation IN ('shop','') THEN f.continuation ELSE NULL END oauth_continuation,CASE WHEN f.status='complete' THEN b.channel_id ELSE '' END channel_id,
     CASE WHEN c.expires_at<=CURRENT_TIMESTAMP THEN 1 ELSE 0 END expired
     FROM browser_launcher_commands c JOIN browser_launcher_helpers h ON h.id=c.helper_id AND h.user_id=c.user_id AND h.status='active' LEFT JOIN tiktok_oauth_handoffs f ON f.id=c.handoff_id LEFT JOIN tiktok_browser_profile_bindings b ON b.slot_id=f.slot_id AND b.user_id=c.user_id
     WHERE c.id=? AND c.user_id=? AND c.session_id=?`).bind(id,auth.user.id,session(request)).first();
@@ -146,7 +146,7 @@ export async function launcherRoute(ctx){
   const n=await ctx.env.DB.prepare('SELECT id,expires_at FROM browser_launcher_nonces WHERE helper_id=? AND command_id=? AND purpose=?').bind(body.helper_id,c.id,body.purpose).first();return reply({nonce:n.id,expires_at:n.expires_at});
  }
  if(action==='claim'||action==='status'||action==='pair-state'){
-  if(request.headers.has('origin')||!exact(body,['helper_id','key_version','command_id','nonce','expires_at','payload','mac'])||body.key_version!==1||!uuid(body.helper_id)||!uuid(body.command_id)||!launcherHex(body.nonce)||!launcherHex(body.mac)||typeof body.payload!=='string'||!['','process_started','failed','unknown'].includes(body.payload)||action==='claim'&&body.payload!=='')return fail();
+  if(request.headers.has('origin')||!exact(body,['helper_id','key_version','command_id','nonce','expires_at','payload','mac'])||body.key_version!==1||!uuid(body.helper_id)||!uuid(body.command_id)||!launcherHex(body.nonce)||!launcherHex(body.mac)||typeof body.payload!=='string'||!(action==='claim'?['','launcher/0.20.78;no-first-run=1']:['','process_started','failed','unknown']).includes(body.payload))return fail();
   const n=await ctx.env.DB.prepare('SELECT * FROM browser_launcher_nonces WHERE id=? AND helper_id=? AND command_id=? AND purpose=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP').bind(body.nonce,body.helper_id,body.command_id,action,body.expires_at).first();if(!n)return fail(409);
   const h=await ctx.env.DB.prepare("SELECT * FROM browser_launcher_helpers WHERE id=? AND (status='active' OR (?='pair-state' AND status IN ('staged','prepared') AND expires_at>CURRENT_TIMESTAMP))").bind(body.helper_id,action).first();if(!h)return fail(409);
   const digest=await sha256(body.payload),canonical=launcherCanonical(action,h.id,body.key_version,body.command_id,n.id,n.expires_at,digest),mac=await launcherMac(await secretFor(ctx.env,h),canonical);if(h.key_version!==body.key_version||!equalLauncherMac(mac,body.mac))return fail(403);
@@ -158,9 +158,11 @@ export async function launcherRoute(ctx){
   let c=await ctx.env.DB.prepare(`SELECT c.*,COALESCE(f.slot_id,c.slot_id) resolved_slot,COALESCE(f.profile_kind,c.profile_kind) resolved_kind,f.status oauth_status FROM browser_launcher_commands c LEFT JOIN tiktok_oauth_handoffs f ON f.id=c.handoff_id WHERE c.id=? AND c.helper_id=? AND c.key_version=? AND c.expires_at>CURRENT_TIMESTAMP AND ${liveCommand}`).bind(body.command_id,h.id,h.key_version).first();if(!c)return fail(409);
   if(action==='claim'&&!['pending','claimed'].includes(c.status))return reply({status:c.status});
   if(action==='status'&&(!['claimed','process_started','failed','unknown'].includes(c.status)||!body.payload||c.status!=='claimed'&&c.status!==body.payload))return fail(409);
-  const ticket=action==='claim'&&c.intent==='oauth'?await openLauncher(ctx.env,c.ticket_cipher,commandAAD(c)):'';
+  const needsUpdate=action==='claim'&&body.payload==='';
+  const ticket=action==='claim'&&!needsUpdate&&c.intent==='oauth'?await openLauncher(ctx.env,c.ticket_cipher,commandAAD(c)):'';
   const guard=ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT c.id FROM browser_launcher_commands c WHERE c.id=? AND c.helper_id=? AND c.status=? AND c.expires_at>CURRENT_TIMESTAMP AND ${liveCommand} AND EXISTS(SELECT 1 FROM browser_launcher_nonces n WHERE n.id=? AND n.expires_at>CURRENT_TIMESTAMP AND (n.used_hash IS NULL OR n.used_hash=?))))`).bind(c.id,h.id,c.status,n.id,requestHash);
-  await ctx.env.DB.batch([guard,ctx.env.DB.prepare('UPDATE browser_launcher_nonces SET used_hash=? WHERE id=?').bind(requestHash,n.id),ctx.env.DB.prepare("UPDATE browser_launcher_commands SET status=?,claimed_at=COALESCE(claimed_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(action==='claim'?'claimed':body.payload,c.id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(c.id)]);
+  await ctx.env.DB.batch([guard,ctx.env.DB.prepare('UPDATE browser_launcher_nonces SET used_hash=? WHERE id=?').bind(requestHash,n.id),ctx.env.DB.prepare("UPDATE browser_launcher_commands SET status=?,error_code=?,claimed_at=COALESCE(claimed_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(needsUpdate?'failed':action==='claim'?'claimed':body.payload,needsUpdate?'HELPER_UPDATE_REQUIRED':null,c.id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(c.id)]);
+  if(needsUpdate)return reply({status:'failed',error_code:'HELPER_UPDATE_REQUIRED'});
   return action==='claim'?reply({id:c.handoff_id||c.id,slot_id:c.resolved_slot,profile_kind:c.resolved_kind,ticket,intent:c.intent,expires_at:c.expires_at,status:'claimed'}):reply({status:body.payload});
  }
  return fail(404);

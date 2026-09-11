@@ -4,7 +4,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync,spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
-const root='public/downloads/visiond-helper/0.20.77/',manifest=JSON.parse(readFileSync(root+'release.json')),sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
+const root='public/downloads/visiond-helper/0.20.78/',manifest=JSON.parse(readFileSync(root+'release.json')),sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 for(const entry of [manifest.executable,manifest.source_archive])assert.equal(sha(root+entry.file),entry.sha256);
 for(const entry of manifest.sources)assert.equal(sha(entry.file==='LICENSE'?'LICENSE':'tools/browser-launcher/'+entry.file),entry.sha256,'source archive provenance '+entry.file);
 assert.ok(manifest.sources.some(s=>s.file==='LICENSE'));assert.equal(manifest.signature_status,'NotSigned');

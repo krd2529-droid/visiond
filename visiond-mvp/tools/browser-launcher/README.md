@@ -1,5 +1,9 @@
 # VisionD Browser Launcher
 
+## Compatibility enforcement (v0.20.78)
+
+Every claim now sends the exact HMAC-bound capability launcher/0.20.78;no-first-run=1. Legacy helpers74–77 send an empty claim and receive failed/HELPER_UPDATE_REQUIRED without any ticket or Chrome launch. Install the current downloaded Setup to update the executing service; downloading alone is not installation. Normal owned upgrade preserves DPAPI pairing, port and Profiles. Migration0103 must precede server deployment. Native post-upgrade window-count verification remains necessary.
+
 ## Single useful startup tab (v0.20.77)
 
 The owned launch adds fixed `--no-first-run` before `--new-window` and its single URL. This skips Chrome's first-run onboarding in the isolated profile without copying cookies or changing global/default-browser settings. A disposable Chrome152 local fixture produced one useful tab for clean and established profiles; without this flag clean profiles stopped at chrome://intro. Existing user tabs are not closed or deleted, and provider consent remains user-controlled. Run the explicitly opt-in `single-tab-probe.mjs --gui-probe` for local non-provider tab-count verification; it creates only disposable profiles.

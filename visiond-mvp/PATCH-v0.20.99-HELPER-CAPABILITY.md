@@ -1,0 +1,7 @@
+# v0.20.99 — Enforce fixed Helper capability
+
+Old executing Helper74 lacked --no-first-run even though newer web/source had it. A paired row is not executable compatibility. New Helper78 sends exact launcher/0.20.78;no-first-run=1 in the existing signed claim payload. Server validates MAC/live command/nonce and final atomic guard before ticket release. Legacy empty claims record failed/HELPER_UPDATE_REQUIRED with no ticket; RunCommand returns without Process.Start. Altering payload without recomputing valid MAC is rejected.
+
+Install migration0103 before web/server deployment. It adds nullable error_code to command rows; existing owner/status index path remains, no runtime DDL. Setup/download version78 is pinned and unsigned; normal downloaded Setup upgrade replaces executing owned service while preserving pairing/config/Profiles. Every old74–77 install must update, not merely download. Future compatible native releases must retain this exact protocol capability until a versioned protocol change is coordinated.
+
+Tests cover exact74 frozen EXE hash/flag absence,78 flag and capability, actual signed backend legacy denial/status, forged MAC, existing replay/final auth guards and native RunCommand denied-result launch0. Canonical99→72/package/HTTP/header/hash/visible/predeploy/diff pass. Native real installation and actual one-window fresh-profile verification remain Root gates; no provider consent or account action performed.

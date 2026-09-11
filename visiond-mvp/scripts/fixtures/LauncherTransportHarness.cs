@@ -30,6 +30,7 @@ internal static class LauncherTransportHarness
   string ambiguous="cccccccc-cccc-4ccc-8ccc-cccccccccccc";File.WriteAllText(Path.Combine(root,ambiguous+".journal"),"unknown");
   LocalHelper.RunCommand(root,ambiguous,claim,launch,delegate(string state){last=state;});Check(last=="unknown"&&launched==1&&claimed==1,"restart reservation never relaunches");
   string denied="dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  LocalHelper.RunCommand(root,denied,delegate{return new Dictionary<string,object>{{"status","failed"},{"error_code","HELPER_UPDATE_REQUIRED"}};},launch,delegate(string state){last=state;});Check(launched==1&&!File.Exists(Path.Combine(root,denied+".journal")),"legacy update-required never launches or reserves profile");
   LocalHelper.RunCommand(root,denied,delegate{return new Dictionary<string,object>{{"status","process_started"}};},launch,delegate(string state){last=state;});Check(launched==1,"terminal backend does not launch");
   Console.WriteLine("PASS native actual HTTP strict parsing, no reflection, durable journal/idempotence/ambiguous crash and exact profile");return 0;
  }

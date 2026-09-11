@@ -12,6 +12,7 @@ CREATE INDEX binding_test ON tiktok_browser_profile_bindings(slot_id,user_id);
 INSERT INTO browser_launcher_helpers VALUES('helper',1,'active',55000);
 INSERT INTO tiktok_oauth_handoffs VALUES('flow','slot','redeemed','tiktok','shop');
 INSERT INTO browser_launcher_commands VALUES('command','helper',1,'session','process_started','2099-01-01','oauth','flow');`);
+db.exec(readFileSync('migrations/0103_browser_launcher_capability.sql','utf8'));
 const read=()=>db.prepare(sql).get('command',1,'session');
 assert.equal(read().oauth_provider,'tiktok','actual status SELECT must identify LoginKit prerequisite');
 assert.equal(read().oauth_continuation,'shop');

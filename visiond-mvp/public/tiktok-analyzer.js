@@ -286,6 +286,7 @@ function clearProfileCommand(pending){
  profileOAuthPendingKeys.delete(pending.key);profileHandoffRequests.delete(pending.key);profileOAuthPending=profileHandoffRequests.size>0;return true;
 }
 function launcherOAuthStage(result){
+ if(result.error_code==='HELPER_UPDATE_REQUIRED')return 'ต้องอัปเดต Helper เป็น v0.20.78 ก่อนเปิด Chrome ดาวน์โหลดและติดตั้งรุ่นใหม่จากหน้าตั้งค่า โปรไฟล์และการผูกเดิมยังคงอยู่';
  if(result.oauth_status==='complete')return (result.oauth_provider==='shop'?'บันทึกการอนุญาต TikTok Shop แล้ว':result.oauth_provider==='tiktok'?'บันทึกการอนุญาต TikTok Login Kit แล้ว':'บันทึกการอนุญาตแล้ว')+' สถานะสิทธิ์ API แสดงแยกตามช่อง';
  if(result.expired)return 'คำขอหมดอายุแล้ว';
  if(['failed','cancelled'].includes(result.status))return 'คำขอเปิดสิ้นสุดแล้ว ยังไม่ยืนยันการอนุญาต API';
@@ -303,7 +304,7 @@ async function reconcileProfileCommand(mode,control,pending){
   if(!response.ok||result.command_id&&result.command_id!==pending.commandId)throw new Error('อ่านสถานะคำขอเดิมไม่ได้ ยังไม่เปิดคำขอซ้ำ');
   const terminal=result.oauth_status==='complete'||result.expired||['failed','cancelled'].includes(result.status);
   if(result.oauth_status==='complete'&&pending.key==='new'&&typeof refreshProfileStatus==='function'){await refreshProfileStatus();return false}
-  if(terminal){clearProfileCommand(pending);connectionActionStatus(control,launcherOAuthStage(result));
+  if(terminal){clearProfileCommand(pending);if(result.error_code==='HELPER_UPDATE_REQUIRED')helperRecoveryStatus(control,launcherOAuthStage(result));else connectionActionStatus(control,launcherOAuthStage(result));
    return false}
   connectionActionStatus(control,launcherOAuthStage(result)+' · ยังเก็บคำขอเดิมไว้ ไม่สร้าง OAuth ซ้ำ');
   const node=control?.parentElement?.querySelector('[data-connection-action-status]');
@@ -1581,7 +1582,7 @@ const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return
    profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key);
    setBrowserProfileStatus(launcherOAuthStage(result));
    if(browserProfileUuid.test(result.channel_id)&&channelOwnership.unchanged(request.revision)){state.selected=result.channel_id;selected=String(result.channel_id);browserLauncher?.clearPending(request.slotId);await loadChannels()}
-  }else if(result.expired||['failed','cancelled'].includes(result.status)){clearProfileCommand(request);setBrowserProfileStatus(launcherOAuthStage(result))}
+  }else if(result.expired||['failed','cancelled'].includes(result.status)){clearProfileCommand(request);if(result.error_code==='HELPER_UPDATE_REQUIRED')helperRecoveryStatus(null,launcherOAuthStage(result));else setBrowserProfileStatus(launcherOAuthStage(result))}
   else if(result.status==='process_started'){setBrowserProfileStatus(launcherOAuthStage(result));if(result.intent==='view'){profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key)}}
   else setBrowserProfileStatus(launcherOAuthStage(result));
  }));

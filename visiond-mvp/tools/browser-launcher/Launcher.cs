@@ -375,7 +375,7 @@ namespace VisionDBrowserLauncher
             lock(WorkLock)
             {
                 Load();
-                RunCommand(Root,command,delegate{return Signed("claim",command,"");},Program.Launch,delegate(string state){Signed("status",command,state);});
+                RunCommand(Root,command,delegate{return Signed("claim",command,"launcher/0.20.78;no-first-run=1");},Program.Launch,delegate(string state){Signed("status",command,state);});
             }
         }
         internal static void RunCommand(string journalRoot,string command,Func<Dictionary<string,object>> claimAction,Func<LaunchRequest,int> launchAction,Action<string> reportAction)

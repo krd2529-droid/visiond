@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';import vm from 'node:vm';
+const old=readFileSync('public/downloads/visiond-helper/0.20.74/VisionD-Helper-Setup.exe'),current=readFileSync('public/downloads/visiond-helper/0.20.78/VisionD-Helper-Setup.exe');
+assert.equal(createHash('sha256').update(old).digest('hex').toUpperCase(),'AF670306906C95B508F53F2076E34E5589CA417850066B0C83F156305F75186E');
+assert.equal(old.includes(Buffer.from('--no-first-run','utf16le')),false);assert.ok(current.includes(Buffer.from('--no-first-run','utf16le')));
+const native=readFileSync('tools/browser-launcher/Launcher.cs','utf8'),client=readFileSync('public/tiktok-analyzer.js','utf8'),setup=readFileSync('public/launcher-setup.html','utf8');
+assert.match(native,/Signed\("claim",command,"launcher\/0.20.78;no-first-run=1"\)/);assert.match(native,/if\(Field\(claim,"status"\)!="claimed"\)return/);
+assert.match(setup,/ต่ำกว่า 0.20.78 ต้องดาวน์โหลดและติดตั้งอัปเดต/);assert.doesNotMatch(setup,/เครื่อง v0.20.74.*ไม่ต้องผูกซ้ำ/);
+const scope={};vm.createContext(scope);vm.runInContext(client.slice(client.indexOf('function launcherOAuthStage('),client.indexOf('async function reconcileProfileCommand(')),scope);
+assert.match(scope.launcherOAuthStage({status:'failed',error_code:'HELPER_UPDATE_REQUIRED'}),/อัปเดต Helper เป็น v0.20.78/);
+await import('./test-browser-launcher-transport.mjs');
+console.log('v99 exact legacy74 binary lacks fix, current78 capability+flag, signed legacy denial/update UI and existing transport security: PASS');
