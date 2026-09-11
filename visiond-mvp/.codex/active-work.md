@@ -1,5 +1,7 @@
 # Ready patch: remove white connection-management button
 
+- Event: PATCH_DELIVERED — v0.20.101 exact18-file code commit `41cbba1c` pushed to `origin/main`; Cloudflare Production `c71b591b-3c3b-4a77-a6a3-c23146dba0cb` serves source `41cbba1`. Direct deployment and custom domain return HTTP200 with v0.20.101/JS02159/CSS02100; served JS is exact and served CSS matches the Git LF-normalized bytes. The white `จัดการการเชื่อมต่อ` DOM/text/listener/helper/projection/resets/CSS are absent. Root elevated canonical101→72, focused, syntax, visible, predeploy and real-browser static render pass; Mark found 0 actionable issues. Tiffany `จัดการสินค้า`, disconnected current-channel CTA and provider/API/ownership guards remain. No backend/native/schema/provider/account/product/data mutation; user Ctrl+F5 and authenticated channel switching are the remaining user-side visual refresh.
+
 - Event: PATCH_READY — v0.20.101/JS02159/CSS02100. Removed exclusive white management DOM/text/listener/helper/projection/resets/CSS; Tiffany products navigation, disconnected current-channel CTA and owner/load-sequence/date guards retained. Actual-source101 A→B→A/null-node/stale connected/disconnected/date tests, v100/v91/70, full elevated canonical101→72 session45740 exit0, visible101/predeploy9PASS8existingWARN0FAIL/diff PASS. No backend/native/provider/data changes. Frozen for Mark/Root review; no commit/push/deploy.
 
 # Delivered patch: remove sold-products link column
