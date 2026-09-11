@@ -66,9 +66,10 @@ for(const role of ['boss','admin','user','reviewer','']){let inserted='',existin
 const loadSource=client.slice(client.indexOf('async function loadBossPartnerCommission'),client.indexOf('$("#shopCommissionDashboard")?.addEventListener'));
 assert.match(loadSource,/partnerCommissionRequests\.get\(key\)/,'same-key in-flight dedupe remains');
 assert.match(loadSource,/PARTNER_COMMISSION_TTL_MS/,'short TTL cache remains');
-assert.match(loadSource,/pageAuthorized&&pageViewerRole==="boss"/,'Boss/auth stale guard remains');
+assert.match(loadSource,/isBossPartnerCommissionView\(\)/,'Boss/auth/view stale guard remains');
+assert.match(client,/function isBossPartnerCommissionView\(\)\{return pageAuthorized&&pageViewerRole==="boss"/,'active Partner view remains exact-auth Boss-only');
 assert.match(loadSource,/channelOwnership\.current\(context\)/,'selected-channel generation guard remains');
 assert.match(loadSource,/\/api\/admin\/tiktok-partner-commissions/,'dedicated Partner endpoint remains');
 
-assert.equal(read('VERSION.txt').trim(),'v0.20.104');assert.match(html,/v0\.20\.104/);assert.match(html,/tiktok-analyzer\.js\?v=02162/);
+assert.equal(read('VERSION.txt').trim(),'v0.20.105');assert.match(html,/v0\.20\.105/);assert.match(html,/tiktok-analyzer\.js\?v=02163/);
 console.log('PASS v103 compatibility: Boss-only Partner source isolation, role/owner/range/index and truthful amount states');
