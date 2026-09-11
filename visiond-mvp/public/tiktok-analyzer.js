@@ -1171,7 +1171,6 @@ function renderResult(result = {}) {
   upgradeLegacyProductLinkCells($("#result"));
   $("#productPrepSummary").innerHTML = '<span class="total">รวม <b>0/40</b> สินค้าที่เลือกไว้</span>';
   $('[data-list="plan"]').innerHTML = '<p class="hint">ยังไม่มีข้อมูลพอ — ยังไม่มีสินค้าที่เลือกไว้</p>';
-  $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function renderOwnedResult(result, context = channelOwnership.capture()) {
   if (!context || !channelOwnership.current(context)) return false;
@@ -1845,7 +1844,7 @@ form.addEventListener("submit", async (event) => {
       results.push(data.result);
     }
     if(!publishContext||!channelOwnership.current(publishContext))return;
-    renderOwnedResult(mergeAnalysisResults(results),publishContext);
+    if(renderOwnedResult(mergeAnalysisResults(results),publishContext)) $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
     message.textContent = "\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E0A\u0E48\u0E2D\u0E07\u0E41\u0E25\u0E30\u0E1C\u0E25\u0E27\u0E34\u0E40\u0E04\u0E23\u0E32\u0E30\u0E2B\u0E4C\u0E41\u0E25\u0E49\u0E27";
     await loadChannels();
   } catch (error) {
