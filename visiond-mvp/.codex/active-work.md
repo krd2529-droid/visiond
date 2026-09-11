@@ -1,3 +1,7 @@
+# Active patch: Tiffany AI analyze action
+
+- Event: PATCH_READY — v0.20.98/CSS02099/JS02156 unchanged. Same AI analyze ID/type/label now adjacent to h3 in compact title/action row, canonical Tiffany primary, hint below. Removed scoped purple/disabled overrides; mobile<=650 fullwidth/wrap, outer violet E card/badge preserved. No JavaScript changes. Original Mark REDgreen, focused98/97/95/70, full canonical98→72 elevated66850exit0, visible98/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen manifest/report .agents/reports/elon-v98-freeze-20260911.*; independent rendered desktop/mobile review and release pending. No provider/live/Git mutation.
+
 # Delivered patch: stop passive refresh scrolling
 
 - Event: PATCH_DELIVERED — v0.20.97 code commit a3340791; Cloudflare Production 97a8adc8-41cd-4dfa-973f-181999243310 Active from source a334079. Direct/custom HTML200 show v97/JS02156; local/direct/custom JS exactly200,975 bytes SHA482BBD30C8E85AAA1A8010BE775DA919446DEB9437E0DA9682F76CE3C5C2C278. Passive rendering is viewport-pure; explicit current-owner analysis retains one guarded scroll and AI/Marketplace explicit navigation remains. Root full/focused/visible/predeploy/diff PASS; Mark0 findings. Account-specific authenticated browser refresh was not run because no session/credential was available; user Ctrl+F5 remains final visual confirmation.

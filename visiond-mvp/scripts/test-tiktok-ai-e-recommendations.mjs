@@ -13,6 +13,6 @@ assert.match(client, /String\(item\?\.product_type \|\| item\?\.grade \|\| ""\)\
 assert.match(client, /aiRecommendationTable\(aiRecommendations\)/);
 assert.match(css, /\.result-grid>\.ai-recommendations/);
 assert.match(html, /tiktok-analyzer\.js\?v=02156/);
-assert.match(html, /tiktok-analyzer\.css\?v=02098/);
+assert.match(html, /tiktok-analyzer\.css\?v=02099/);
 
 console.log("TikTok AI grade-E recommendations table: PASS");

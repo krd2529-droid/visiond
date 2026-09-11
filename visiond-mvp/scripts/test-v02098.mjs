@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const html=readFileSync('public/tiktok-analyzer.html','utf8'),css=readFileSync('public/tiktok-analyzer.css','utf8'),buttons=readFileSync('public/visiond-button-system.css','utf8');
+assert.match(html,/<div class="ai-recommendations-title-row"><h3>สินค้าแนะนำจาก AI<\/h3><button id="analyzeAiRecommendations" class="vds-btn vds-btn--primary" type="button">ให้ AI วิเคราะห์สินค้าแนะนำ<\/button><\/div><p class="hint">/);
+assert.equal((html.match(/id="analyzeAiRecommendations"/g)||[]).length,1);
+assert.match(css,/\.ai-recommendations-title-row\{[^}]*justify-content:flex-start;flex-wrap:wrap/);
+assert.match(css,/\.ai-recommendations-title-row h3\{[^}]*min-width:0;overflow-wrap:anywhere/);
+assert.match(css,/@media\(max-width:650px\)\{\.ai-recommendations-title-row\{[^}]*flex-direction:column\}\.ai-recommendations-title-row button\{width:100%\}/);
+assert.doesNotMatch(css,/\.ai-recommendations-head button(?::disabled)?\{/);
+for(const selector of ['--vdb-primary:#0abab5','.vds-btn--primary{','.vds-btn--primary:hover','.vds-btn:focus-visible','.vds-btn:disabled'])assert.ok(buttons.includes(selector));
+assert.match(css,/\.ai-recommendations\{border-color:#c7b8ec/);assert.match(css,/\.ai-recommendations h3:before\{[^}]*background:#7657c8/);
+assert.match(html,/tiktok-analyzer\.js\?v=02156/);assert.match(html,/tiktok-analyzer\.css\?v=02099/);
+console.log('v98 adjacent heading/action, exact accessible control, canonical Tiffany states, mobile wrap/fullwidth, violet E preserved: PASS');
