@@ -1,4 +1,6 @@
-# Active patch: stop passive refresh scrolling
+# Delivered patch: stop passive refresh scrolling
+
+- Event: PATCH_DELIVERED — v0.20.97 code commit a3340791; Cloudflare Production 97a8adc8-41cd-4dfa-973f-181999243310 Active from source a334079. Direct/custom HTML200 show v97/JS02156; local/direct/custom JS exactly200,975 bytes SHA482BBD30C8E85AAA1A8010BE775DA919446DEB9437E0DA9682F76CE3C5C2C278. Passive rendering is viewport-pure; explicit current-owner analysis retains one guarded scroll and AI/Marketplace explicit navigation remains. Root full/focused/visible/predeploy/diff PASS; Mark0 findings. Account-specific authenticated browser refresh was not run because no session/credential was available; user Ctrl+F5 remains final visual confirmation.
 
 - Event: PATCH_READY — v0.20.97/JS02156/CSS02098 unchanged. Shared renderResult has no scroll side effect; explicit current-owner channel analysis scrolls result exactly once after successful owned publication. Passive saved/empty restore and follow-up loadChannels do not scroll; stale/failure0. AI recommendation/Marketplace explicit scrolls unchanged. Original Mark REDgreen, focused97/v89/70, full canonical97→72 elevated90959exit0, visible97/predeploy9PASS8existingWARN0FAIL/diff PASS. Frozen manifest/report .agents/reports/elon-v97-freeze-20260911.*; stopped for independent review. No backend/native/provider/live/Git changes.
 
