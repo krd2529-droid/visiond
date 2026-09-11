@@ -1,6 +1,10 @@
 # VisionD Browser Launcher
 
-## Durable occupied-port recovery (v0.20.76)
+## Single useful startup tab (v0.20.77)
+
+The owned launch adds fixed `--no-first-run` before `--new-window` and its single URL. This skips Chrome's first-run onboarding in the isolated profile without copying cookies or changing global/default-browser settings. A disposable Chrome152 local fixture produced one useful tab for clean and established profiles; without this flag clean profiles stopped at chrome://intro. Existing user tabs are not closed or deleted, and provider consent remains user-controlled. Run the explicitly opt-in `single-tab-probe.mjs --gui-probe` for local non-provider tab-count verification; it creates only disposable profiles.
+
+## Durable occupied-port recovery (retained)
 
 An owned upgrade may retain the verified new executable and owned registration in a **degraded/not-ready** state only when its child exits48 (bind-address-in-use), the configured literal loopback port remains occupied, and no owned service remains. It never kills or takes over the port owner. Exit0/2/32 and unproved failures remain failures/rollback, with exit-specific diagnostics. Readiness requires exactly the configured port under the returned process PID, not any listener.
 
@@ -63,7 +67,7 @@ Old `?connect=` links still resolve the exact owned channel and display a notice
 
 Deployment is migration-first: install `0095_tiktok_browser_profile_bindings.sql`, `0096_tiktok_oauth_handoffs.sql`, `0097_tiktok_direct_profile_login.sql`, then `0098_browser_launcher_transport.sql` and index-only `0099_browser_launcher_pair_code.sql` before serving matching website code. Migrations use tracking and must not be applied on requests. Release remains gated on actual already-running Chrome popup/loopback behavior, owned install/listener verification and explicit human pairing; synthetic tests alone do not prove delivery.
 
-Windows/browser protocol prompts do not reliably prove which website initiated a valid custom-scheme request. Close unexpected prompts. Valid requests only open fixed destinations in app-owned profiles. The fixed `--no-default-browser-check` launch flag suppresses Chromium's default-browser check without changing the system default or browser settings; actual dialog disappearance still requires runtime verification. It does not suppress first-run setup or provider consent.
+Windows/browser protocol prompts do not reliably prove which website initiated a valid custom-scheme request. Close unexpected prompts. Valid requests only open fixed destinations in app-owned profiles. The fixed `--no-default-browser-check` launch flag suppresses Chromium's default-browser check without changing the system default or browser settings; actual dialog disappearance still requires runtime verification. The separate fixed --no-first-run flag skips Chrome onboarding only; provider login and consent are never suppressed.
 
 ## Same-browser pairing (v0.20.75)
 

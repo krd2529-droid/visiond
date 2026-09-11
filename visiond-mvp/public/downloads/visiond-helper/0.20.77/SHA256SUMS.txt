@@ -1,0 +1,2 @@
+da730c64607f39adde96fde1caa4de1de0df83ff5beab47fcb6b870cece59909  VisionD-Helper-Setup.exe
+20aadd726a886a1d978bab2e4fa09b2a05fca906d7d470bc1715b8bc77df226a  VisionD-Helper-Source.zip

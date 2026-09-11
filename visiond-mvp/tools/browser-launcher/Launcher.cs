@@ -92,6 +92,7 @@ namespace VisionDBrowserLauncher
                 start.CreateNoWindow = true;
                 start.Arguments = QuoteArgument("--user-data-dir=" + profileDirectory)
                     + " " + QuoteArgument("--no-default-browser-check")
+                    + " " + QuoteArgument("--no-first-run")
                     + " " + QuoteArgument("--new-window")
                     + " " + QuoteArgument(target);
                 Process.Start(start);

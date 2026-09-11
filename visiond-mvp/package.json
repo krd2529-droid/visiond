@@ -441,7 +441,8 @@
     "test:v02080": "npm run test:v02079 && node scripts/test-v02080.mjs",
     "test:v02081": "npm run test:v02080 && node scripts/test-v02081.mjs",
     "test:v02082": "npm run test:v02081 && node scripts/test-v02082.mjs",
-    "test:v02083": "npm run test:v02082 && node scripts/test-v02083.mjs"
+    "test:v02083": "npm run test:v02082 && node scripts/test-v02083.mjs",
+    "test:v02084": "npm run test:v02083 && node scripts/test-v02084.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.864.0",

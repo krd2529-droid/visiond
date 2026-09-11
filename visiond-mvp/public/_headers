@@ -29,6 +29,16 @@
   Content-Disposition: attachment; filename="VisionD-Helper-Setup-0.20.76.exe"
   X-Content-Type-Options: nosniff
 
+/downloads/visiond-helper/0.20.77/VisionD-Helper-Setup.exe
+  Content-Type: application/octet-stream
+  Content-Disposition: attachment; filename="VisionD-Helper-Setup-0.20.77.exe"
+  X-Content-Type-Options: nosniff
+
+/downloads/visiond-helper/0.20.77/VisionD-Helper-Source.zip
+  Content-Type: application/zip
+  Content-Disposition: attachment; filename="VisionD-Helper-Source-0.20.77.zip"
+  X-Content-Type-Options: nosniff
+
 /downloads/visiond-helper/0.20.76/VisionD-Helper-Source.zip
   Content-Type: application/zip
   Content-Disposition: attachment; filename="VisionD-Helper-Source-0.20.76.zip"

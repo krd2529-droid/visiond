@@ -85,7 +85,9 @@ try {
 
   assert.match(launcherSource, /UseShellExecute = false/);
   assert.match(launcherSource, /QuoteArgument\("--no-default-browser-check"\)/);
-  assert.doesNotMatch(launcherSource, /--no-first-run/);
+  assert.match(launcherSource, /QuoteArgument\("--no-first-run"\)/);
+  assert.match(launcherSource, /QuoteArgument\("--no-default-browser-check"\)[\s\S]*?QuoteArgument\("--no-first-run"\)[\s\S]*?QuoteArgument\("--new-window"\)[\s\S]*?QuoteArgument\(target\)/);
+  assert.equal((launcherSource.match(/QuoteArgument\(target\)/g)||[]).length,1,'one positional target only');
   assert.match(launcherSource, /QuoteArgument\("--user-data-dir=" \+ profileDirectory\)/);
   assert.match(launcherSource, /private const string TikTokLoginUrl = "https:\/\/www\.tiktok\.com\/login"/);
   assert.match(launcherSource, /https:\/\/visiondonline\.com\/tiktok-analyzer/);
