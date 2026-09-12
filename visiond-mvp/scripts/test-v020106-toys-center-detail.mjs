@@ -82,8 +82,8 @@ for(const token of ['.store-image-stage{','[hidden]{display:none!important}','.s
 assert.match(css,/\.store-image-stage img\{[^}]*width:100%;height:auto;aspect-ratio:1\/1;object-fit:scale-down/,'a definite square image box constrains both stage axes while its pixels are never cropped or unnecessarily enlarged');
 assert.doesNotMatch(css,/\.store-image-stage img\{[^}]*(?:width:auto|height:100%|max-height:100%)/,'intrinsic or unresolved percentage height must not let portrait images escape the fixed stage');
 assert.doesNotMatch(css,/\.store-product img\{[^}]*object-fit:cover/,'public cards no longer crop images');
-assert.match(html,/toys-center\.css\?v=020113/);assert.match(html,/toyscenter\.js\?v=020113/);
+assert.match(html,/toys-center\.css\?v=020114/);assert.match(html,/toyscenter\.js\?v=020114/);
 assert.match(source,/doc\.createElement\('a'\)/);assert.match(source,/createProductDetail\(data\.item,doc,request\)/);assert.doesNotMatch(source,/cart|ติดต่อผู้ขาย/i);
-assert.equal(read('VERSION.txt').trim(),'v0.20.113');assert.match(read('public/index.html'),/WEB v0\.20\.113/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.113/);
+assert.equal(read('VERSION.txt').trim(),'v0.20.114');assert.match(read('public/index.html'),/WEB v0\.20\.114/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.114/);
 
 console.log('PASS v0.20.106 Toys Center semantic cards, focused published detail, current public image contract, truthful errors and preserved 24-item/Meta contracts');

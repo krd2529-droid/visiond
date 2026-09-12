@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020114": "node scripts/test-v020114-toys-oversize.mjs && node scripts/test-v020114-toys-oversize-browser.mjs && npm run test:v020113",
     "test:v020113": "node scripts/test-v020113-toys-cover.mjs && node scripts/test-v020113-toys-cover-browser.mjs && npm run test:v020112",
     "test:v020112": "node scripts/test-v020112-toys-cost.mjs && node scripts/test-v020112-toys-cost-browser.mjs && npm run test:v020111",
     "test:v020111": "node scripts/test-v020111-toys-gallery.mjs && node scripts/test-v020111-toys-gallery-browser.mjs && npm run test:v020110",

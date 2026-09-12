@@ -21,8 +21,9 @@ for(const candidate of[
 
 let decodeCount=0;
 const decoder={isHeic:async()=>true,heicTo:async()=>{decodeCount++;return new Blob([jpegBytes],{type:'image/jpeg'})}};
+const decodeForTest=async()=>({source:{},width:640,height:480,close(){}});
 const created=[],revoked=[];
-const pipeline=createToyImagePipeline({loadDecoder:async()=>decoder,createObjectURL:value=>{created.push(value);return `blob:${created.length}`},revokeObjectURL:url=>revoked.push(url)});
+const pipeline=createToyImagePipeline({loadDecoder:async()=>decoder,decodeImage:decodeForTest,createObjectURL:value=>{created.push(value);return `blob:${created.length}`},revokeObjectURL:url=>revoked.push(url)});
 const source=file(heicBytes,'IMG_0042.HEIC','image/heic');
 const input={files:[source]},form={elements:{image_1:input,image_2:{files:[]}}},img={hidden:true,removeAttribute(name){if(name==='src')delete this.src}};
 const [previewed,resolved]=await Promise.all([pipeline.preview('image_1',img,source),pipeline.resolveFile(source,'image_1')]);
@@ -42,14 +43,14 @@ pipeline.reset('image_1');assert.deepEqual(revoked,['blob:1','blob:2']);
 
 let releaseFirst;
 const lateA=new Promise(resolve=>{releaseFirst=resolve});
-const racePipeline=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async({blob})=>blob.name==='A.heic'?lateA:new Blob([jpegBytes],{type:'image/jpeg'})}),createObjectURL:value=>`blob:${value.name}`,revokeObjectURL(){}});
+const racePipeline=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async({blob})=>blob.name==='A.heic'?lateA:new Blob([jpegBytes],{type:'image/jpeg'})}),decodeImage:decodeForTest,createObjectURL:value=>`blob:${value.name}`,revokeObjectURL(){}});
 const raceImg={hidden:true,removeAttribute(name){if(name==='src')delete this.src}};
 const a=file(heicBytes,'A.heic','image/heic'),b=file(heicBytes,'B.heic','image/heic');
 const latePreview=racePipeline.preview('image_1',raceImg,a);await racePipeline.preview('image_1',raceImg,b);releaseFirst(new Blob([jpegBytes],{type:'image/jpeg'}));
 assert.equal(await latePreview,null);assert.equal(raceImg.src,'blob:B.jpg');
 
 let releaseSecond;
-const slowSecond=new Promise(resolve=>{releaseSecond=resolve}),submitPipeline=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async({blob})=>blob.name==='slow.heic'?slowSecond:new Blob([jpegBytes],{type:'image/jpeg'})})});
+const slowSecond=new Promise(resolve=>{releaseSecond=resolve}),submitPipeline=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async({blob})=>blob.name==='slow.heic'?slowSecond:new Blob([jpegBytes],{type:'image/jpeg'})}),decodeImage:decodeForTest});
 const firstInput={files:[file(heicBytes,'first.heic','image/heic')]},secondInput={files:[file(heicBytes,'slow.heic','image/heic')]},submitForm={elements:{image_1:firstInput,image_2:secondInput}};
 const pendingSubmit=submitPipeline.appendSelected(submitForm,new FormData());await new Promise(resolve=>setImmediate(resolve));firstInput.files=[file(heicBytes,'changed.heic','image/heic')];submitPipeline.select('image_1',firstInput.files[0]);releaseSecond(new Blob([jpegBytes],{type:'image/jpeg'}));await assert.rejects(pendingSubmit,/รูป VisionD ถูกเปลี่ยน/);
 
@@ -58,7 +59,7 @@ for(const [output,pattern]of[
   [new Blob([jpegBytes],{type:'image/png'}),/แปลงรูป VisionD/],
   [new Blob([jpegBytes,new Uint8Array(TOY_IMAGE_MAX_BYTES+1-jpegBytes.length)],{type:'image/jpeg'}),/เกิน 5 MB/]
 ]){
-  const failing=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async()=>output})});
+  const failing=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async()=>output}),decodeImage:decodeForTest,encodeImage:async()=>output});
   await assert.rejects(failing.resolveFile(source,'image_1'),pattern);
 }
 await assert.rejects(createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>false,heicTo:async()=>null})}).resolveFile(source,'image_2'),/แปลงรูป Meta/);
@@ -116,7 +117,7 @@ for(const raw of[rawHonest,rawSpoof]){
 }
 
 const html=fs.readFileSync(new URL('../public/toys-center-admin.html',import.meta.url),'utf8');
-assert.equal((html.match(/\.heic,\.heif/g)||[]).length,2);assert.match(html,/toys-center-admin\.js\?v=020113/);assert.match(html,/toys-center\.css\?v=020113/);assert.match(html,/v0\.20\.113/);
+assert.equal((html.match(/\.heic,\.heif/g)||[]).length,2);assert.match(html,/toys-center-admin\.js\?v=020114/);assert.match(html,/toys-center\.css\?v=020114/);assert.match(html,/v0\.20\.114/);
 assert.match(fs.readFileSync(new URL('../functions/_middleware.js',import.meta.url),'utf8'),/worker-src 'self' blob:/);
-assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.113');
+assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.114');
 console.log('PASS v0.20.107 Toys Center HEIC pipeline, cache/race/errors, server magic parity, no partial writes and edit preservation');
