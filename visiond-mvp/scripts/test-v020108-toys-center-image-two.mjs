@@ -61,8 +61,8 @@ try{
   const source=read('public/toyscenter.js'),css=read('public/toys-center.css'),html=read('public/toyscenter.html'),feed=read('functions/api/toys-center/feed.csv.js'),adminHtml=read('public/toys-center-admin.html'),adminJs=read('public/toys-center-admin.js');
   assert.match(source,/visiond_image_urls/);assert.doesNotMatch(source,/image_2_url/,'public renderer has no Meta source path');
   assert.match(css,/\.store-detail-gallery\{[^}]*grid-template-columns:repeat\(2/);assert.match(css,/\.store-image-stage img\{[^}]*object-fit:scale-down/);
-  assert.match(html,/toys-center\.css\?v=020112/);assert.match(html,/toyscenter\.js\?v=020112/);assert.match(feed,/mediaUrl\(origin,r\.id,2\)/,'Meta remains on image 2');
-  assert.match(adminHtml,/name="image_1"[^>]*multiple/);assert.match(adminHtml,/name="image_2"/);assert.match(adminHtml,/toys-center\.css\?v=020112/);assert.match(adminHtml,/toys-center-admin\.js\?v=020112/);assert.equal((adminHtml.match(/\.heic,\.heif/g)||[]).length,2,'both admin HEIC roles remain');assert.match(adminJs,/form\.image_1/);assert.match(adminJs,/form\.image_2/);
-  assert.equal(read('VERSION.txt').trim(),'v0.20.112');assert.match(read('public/index.html'),/WEB v0\.20\.112/);
+  assert.match(html,/toys-center\.css\?v=020113/);assert.match(html,/toyscenter\.js\?v=020113/);assert.match(feed,/mediaUrl\(origin,r\.id,2\)/,'Meta remains on image 2');
+  assert.match(adminHtml,/name="image_1"[^>]*multiple/);assert.match(adminHtml,/name="image_2"/);assert.match(adminHtml,/toys-center\.css\?v=020113/);assert.match(adminHtml,/toys-center-admin\.js\?v=020113/);assert.equal((adminHtml.match(/\.heic,\.heif/g)||[]).length,2,'both admin HEIC roles remain');assert.match(adminJs,/form\.image_1/);assert.match(adminJs,/form\.image_2/);
+  assert.equal(read('VERSION.txt').trim(),'v0.20.113');assert.match(read('public/index.html'),/WEB v0\.20\.113/);
   console.log('PASS v0.20.108 preservation: public Toys Center requests VisionD primary only and Meta remains image 2');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
