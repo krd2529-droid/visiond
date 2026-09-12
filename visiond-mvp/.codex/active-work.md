@@ -1,3 +1,7 @@
+# Delivered patch: correct Toys Center product-line and series examples
+
+- Event: PATCH_DELIVERED — commit `f8540355` is pushed non-force to `origin/main`, and Cloudflare Production deployment `c9366fbe-9720-4d68-a2c8-086685d65794` is Active from that source. The only UI change swaps the two placeholder examples while retaining the original field names/data contract: `ไลน์สินค้า` now shows `เช่น Studio Series`; `ซีรีส์` now shows `เช่น Transformers Generations`. Installed-Chrome metadata, cost/non-disclosure, gallery/Meta/HEIC, visible-version and predeploy gates pass. A fresh custom-domain response returns HTTP 200 with both exact placeholders, `max-age=0,must-revalidate` and Cloudflare DYNAMIC. No API, schema, D1 migration or live-data mutation.
+
 # Delivered patch: Toys Center product line, private cost price and series
 
 - Event: PATCH_DELIVERED — v0.20.112 exact 27-file code commit `a8e321ee` is pushed non-force to `origin/main`. Migration0107 was installed first on production D1 at bookmark `00001281-00000006-000050e4-78f4d2e97aaf02f3d642cdb92835ab2a`; all 3 existing products retain unknown/NULL cost. Cloudflare Production `a0fb8999-740e-4ed6-b566-9a36c6fd14ba` is Active from source `a8e321e`. Fresh navigation and Ctrl+R show exactly one `ไลน์สินค้า`, `ราคาทุน (บาท)`, and `ซีรีส์`; public list/detail/checkout and Meta feed expose no cost while gallery, Meta image2 and Buy remain intact. No product/order/customer/payment/R2 value was created or edited during smoke.
