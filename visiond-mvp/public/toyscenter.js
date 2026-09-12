@@ -1,126 +1,48 @@
 const PAGE_SIZE=24;
-
 const formatPrice=value=>`${Number(value).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})} บาท`;
-const availabilityText=value=>value==='in stock'?'พร้อมขาย':'สินค้าหมด';
+const formatCents=value=>formatPrice(Number(value)/100);
+const availabilityText=item=>item.availability==='in stock'&&Number(item.quantity)>0?'พร้อมขาย':'สินค้าหมด';
 const conditionText=value=>value==='new'?'สภาพใหม่':'มือสอง';
+const productPath=item=>`/toyscenter?product=${encodeURIComponent(item.slug)}`;
 
-function productPath(item){return `/toyscenter?product=${encodeURIComponent(item.slug)}`}
+function productImageStage(item,doc){const stage=doc.createElement('div'),image=doc.createElement('img');stage.className='store-image-stage';image.src=item.image_2_url;image.alt=`${item.title} — รูปสินค้า`;image.loading='eager';image.decoding='async';stage.append(image);return stage}
+export function createProductCard(item,doc=globalThis.document){const link=doc.createElement('a'),body=doc.createElement('div'),title=doc.createElement('h2'),price=doc.createElement('p'),availability=doc.createElement('p');link.className='store-product';link.href=productPath(item);link.setAttribute('aria-label',`ดูรายละเอียด ${item.title}`);title.textContent=item.title;price.className='price';price.textContent=formatPrice(item.price);availability.className='availability';availability.textContent=availabilityText(item);body.className='store-product-body';body.append(title,price,availability);link.append(productImageStage(item,doc),body);return link}
+function detailRow(label,value,doc){const row=doc.createElement('div'),term=doc.createElement('dt'),description=doc.createElement('dd');row.className='store-detail-row';term.textContent=label;description.textContent=String(value);row.append(term,description);return row}
+function detailFigure(item,doc){const figure=doc.createElement('figure'),caption=doc.createElement('figcaption');figure.className='store-detail-figure';caption.textContent='รูปสินค้า';figure.append(productImageStage(item,doc),caption);return figure}
+function labelled(doc,text,input){const label=doc.createElement('label'),span=doc.createElement('span');span.textContent=text;label.append(span,input);return label}
 
-function productImageStage(item,doc){
-  const stage=doc.createElement('div'),image=doc.createElement('img');
-  stage.className='store-image-stage';
-  image.src=item.image_2_url;
-  image.alt=`${item.title} — รูปสินค้า`;
-  image.loading='eager';
-  image.decoding='async';
-  stage.append(image);
-  return stage;
+async function responseJson(response){try{return await response.json()}catch{return{error:'ระบบส่งข้อมูลสินค้าที่อ่านไม่ได้'}}}
+
+function createCheckout(item,doc,request){
+  const stock=Math.max(0,Number(item.quantity)||0),available=item.availability==='in stock'&&stock>0;let purchasable=available;
+  const panel=doc.createElement('section'),quantity=doc.createElement('input'),buy=doc.createElement('button'),hint=doc.createElement('p');panel.className='toy-purchase';quantity.type='number';quantity.min='1';quantity.max=String(Math.max(1,stock));quantity.step='1';quantity.value='1';quantity.inputMode='numeric';quantity.disabled=!available;quantity.setAttribute('aria-label','จำนวนสินค้า');buy.type='button';buy.className='vds-btn vds-btn--primary';buy.textContent='ซื้อสินค้า';buy.disabled=!available;hint.className='toy-stock';hint.textContent=available?`เลือกได้ 1–${stock.toLocaleString('th-TH')} ชิ้น`:'สินค้าหมด ไม่สามารถสั่งซื้อได้';panel.append(labelled(doc,'จำนวน',quantity),buy,hint);
+  const dialog=doc.createElement('dialog'),heading=doc.createElement('h2'),description=doc.createElement('p'),close=doc.createElement('button'),form=doc.createElement('form'),summary=doc.createElement('section'),productLine=doc.createElement('strong'),priceLine=doc.createElement('p'),paymentLine=doc.createElement('p'),qr=doc.createElement('img'),name=doc.createElement('input'),phone=doc.createElement('input'),address=doc.createElement('textarea'),note=doc.createElement('textarea'),privacy=doc.createElement('a'),submit=doc.createElement('button'),checkoutStatus=doc.createElement('p'),receipt=doc.createElement('section'),receiptTitle=doc.createElement('h3'),receiptText=doc.createElement('p'),copy=doc.createElement('button'),line=doc.createElement('a');
+  dialog.className='toy-checkout';heading.id=`toyCheckoutTitle-${item.id}`;heading.textContent='สรุปคำสั่งซื้อ';description.id=`toyCheckoutDescription-${item.id}`;description.textContent='ตรวจสอบสินค้าและกรอกข้อมูลจัดส่ง ระบบจะบันทึกออเดอร์เพื่อรอการชำระเงิน';dialog.setAttribute('aria-labelledby',heading.id);dialog.setAttribute('aria-describedby',description.id);close.type='button';close.className='toy-checkout-close vds-btn vds-btn--text';close.textContent='ปิด';
+  form.className='toy-checkout-form';summary.className='toy-checkout-summary';productLine.textContent=item.title;priceLine.textContent='กำลังตรวจสอบราคาและจำนวนคงเหลือ…';paymentLine.className='toy-payment';paymentLine.textContent='กำลังโหลดข้อมูลการชำระเงินของ VisionD…';qr.className='toy-payment-qr';qr.alt='QR สำหรับชำระเงินให้ VisionD';qr.hidden=true;summary.append(productLine,priceLine,paymentLine,qr);
+  name.name='customer_name';name.maxLength=120;name.required=true;name.autocomplete='name';name.placeholder='ชื่อและนามสกุลผู้รับ';phone.name='phone';phone.maxLength=30;phone.required=true;phone.inputMode='tel';phone.autocomplete='tel';phone.placeholder='เช่น 0812345678';address.name='shipping_address';address.maxLength=1000;address.minLength=10;address.required=true;address.rows=4;address.autocomplete='street-address';address.placeholder='บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์';note.name='note';note.maxLength=500;note.rows=3;note.placeholder='รายละเอียดเพิ่มเติม (ถ้ามี)';privacy.href='/privacy.html';privacy.target='_blank';privacy.rel='noopener noreferrer';privacy.textContent='อ่านนโยบายความเป็นส่วนตัวของ VisionD';submit.type='submit';submit.className='vds-btn vds-btn--primary';submit.textContent='ยืนยันสร้างออเดอร์';submit.disabled=true;checkoutStatus.className='toy-checkout-status';checkoutStatus.setAttribute('role','status');checkoutStatus.setAttribute('aria-live','polite');form.append(summary,labelled(doc,'ชื่อผู้รับ *',name),labelled(doc,'เบอร์โทรศัพท์ *',phone),labelled(doc,'ที่อยู่จัดส่ง *',address),labelled(doc,'หมายเหตุ',note),privacy,submit,checkoutStatus);
+  receipt.className='toy-order-receipt';receipt.hidden=true;receiptTitle.tabIndex=-1;receiptTitle.textContent='สร้างออเดอร์แล้ว';copy.type='button';copy.className='vds-btn vds-btn--secondary';copy.textContent='คัดลอกสรุปออเดอร์';line.className='vds-btn vds-btn--primary';line.target='_blank';line.rel='noopener noreferrer';line.textContent='ส่งหลักฐานทาง LINE VisionD';receipt.append(receiptTitle,receiptText,copy,line);dialog.append(close,heading,description,form,receipt);
+  let context=null,contextLoadedAt=0,contextPromise=null,clientToken=null,copyText='';
+  const setTotal=()=>{if(!context)return;const count=Math.max(1,Math.min(Number(context.product.quantity),Number(quantity.value)||1));quantity.value=String(count);priceLine.textContent=`${count.toLocaleString('th-TH')} × ${formatCents(context.product.unit_price_cents)} = ${formatCents(context.product.unit_price_cents*count)}`};
+  quantity.addEventListener('input',()=>{setTotal();clientToken=null});form.addEventListener('input',event=>{if(event.target!==quantity)clientToken=null});
+  const loadContext=async()=>{if(context&&Date.now()-contextLoadedAt<30000)return context;const response=await request(`/api/toys-center/checkout?product_id=${encodeURIComponent(item.id)}`,{cache:'no-store'}),data=await responseJson(response);if(!response.ok)throw new Error(data.error||'ตรวจสอบสินค้าไม่สำเร็จ');context=data;contextLoadedAt=Date.now();return data};
+  buy.addEventListener('click',async()=>{
+    if(!available||contextPromise)return;dialog.showModal();checkoutStatus.textContent='กำลังตรวจสอบราคา จำนวน และข้อมูลชำระเงิน…';submit.disabled=true;buy.disabled=true;contextPromise=loadContext();
+    try{const data=await contextPromise;if(!dialog.isConnected||new URL(doc.defaultView.location.href).searchParams.get('product')!==item.slug)return;context=data;const currentStock=Math.max(0,Number(data.product.quantity)||0);purchasable=data.payment.accepting_orders&&data.product.availability==='in stock'&&currentStock>0;quantity.max=String(Math.max(1,currentStock));quantity.value=String(Math.min(Number(quantity.value)||1,currentStock||1));quantity.disabled=!purchasable;hint.textContent=purchasable?`เลือกได้ 1–${currentStock.toLocaleString('th-TH')} ชิ้น`:'สินค้าหมดหรือพักรับคำสั่งซื้อ';productLine.textContent=data.product.title;setTotal();paymentLine.textContent=`โอน ${data.payment.bank_name} · ${data.payment.account_name} · ${data.payment.account_number}`;if(data.payment.qr_url){qr.src=data.payment.qr_url;qr.hidden=false}else{qr.hidden=true;qr.removeAttribute('src')}if(!purchasable)throw new Error(data.payment.accepting_orders?'สินค้าหมด ไม่สามารถสั่งซื้อได้':'ขณะนี้ VisionD พักรับคำสั่งซื้อชั่วคราว');checkoutStatus.textContent='ตรวจสอบข้อมูลแล้ว กรุณากรอกข้อมูลจัดส่ง';submit.disabled=false;name.focus()}catch(error){checkoutStatus.textContent=error instanceof Error?error.message:'ตรวจสอบสินค้าไม่สำเร็จ'}finally{contextPromise=null;buy.disabled=!purchasable}
+  });
+  close.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});dialog.addEventListener('close',()=>setTimeout(()=>buy.focus({preventScroll:true}),0));
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();if(!context||submit.disabled||!form.reportValidity())return;submit.disabled=true;checkoutStatus.textContent='กำลังสร้างออเดอร์…';clientToken||=crypto.randomUUID();const body={product_id:context.product.id,quantity:Number(quantity.value),client_token:clientToken,customer_name:name.value,phone:phone.value,shipping_address:address.value,note:note.value};
+    try{const response=await request('/api/toys-center/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),cache:'no-store'}),data=await responseJson(response);if(!response.ok)throw new Error(data.error||'สร้างออเดอร์ไม่สำเร็จ');const order=data.order;copyText=[`ออเดอร์ ${order.order_no}`,order.product.title,`จำนวน ${order.product.quantity}`,`รวม ${formatCents(order.product.total_cents)}`,`${order.payment.bank_name} ${order.payment.account_name} ${order.payment.account_number}`].join('\n');receiptText.textContent=copyText;line.href=order.line_url;form.hidden=true;receipt.hidden=false;receiptTitle.focus()}catch(error){checkoutStatus.textContent=error instanceof Error?error.message:'สร้างออเดอร์ไม่สำเร็จ';submit.disabled=false}
+  });
+  copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(copyText);copy.textContent='คัดลอกแล้ว'}catch{copy.textContent='คัดลอกไม่สำเร็จ'}});
+  return{panel,dialog};
 }
 
-export function createProductCard(item,doc=globalThis.document){
-  const link=doc.createElement('a'),body=doc.createElement('div'),title=doc.createElement('h2'),price=doc.createElement('p'),availability=doc.createElement('p');
-  link.className='store-product';
-  link.href=productPath(item);
-  link.setAttribute('aria-label',`ดูรายละเอียด ${item.title}`);
-  title.textContent=item.title;
-  price.className='price';
-  price.textContent=formatPrice(item.price);
-  availability.className='availability';
-  availability.textContent=availabilityText(item.availability);
-  body.className='store-product-body';
-  body.append(title,price,availability);
-  link.append(productImageStage(item,doc),body);
-  return link;
-}
-
-function detailRow(label,value,doc){
-  const row=doc.createElement('div'),term=doc.createElement('dt'),description=doc.createElement('dd');
-  row.className='store-detail-row';
-  term.textContent=label;
-  description.textContent=String(value);
-  row.append(term,description);
-  return row;
-}
-
-function detailFigure(item,doc){
-  const figure=doc.createElement('figure'),caption=doc.createElement('figcaption');
-  figure.className='store-detail-figure';
-  caption.textContent='รูปสินค้า';
-  figure.append(productImageStage(item,doc),caption);
-  return figure;
-}
-
-export function createProductDetail(item,doc=globalThis.document){
-  const article=doc.createElement('article'),back=doc.createElement('a'),layout=doc.createElement('div'),gallery=doc.createElement('div'),information=doc.createElement('div'),title=doc.createElement('h2'),price=doc.createElement('p'),availability=doc.createElement('p'),descriptionTitle=doc.createElement('h3'),description=doc.createElement('p'),details=doc.createElement('dl');
-  article.className='store-detail';
-  back.className='store-back-link';
-  back.href='/toyscenter';
-  back.textContent='← กลับไปดูสินค้าทั้งหมด';
-  layout.className='store-detail-layout';
-  gallery.className='store-detail-gallery';
-  gallery.setAttribute('aria-label','รูปสินค้า');
-  gallery.append(detailFigure(item,doc));
-  information.className='store-detail-information';
-  title.textContent=item.title;
-  price.className='price';
-  price.textContent=formatPrice(item.price);
-  availability.className='store-detail-availability';
-  availability.textContent=availabilityText(item.availability);
-  descriptionTitle.textContent='รายละเอียดสินค้า';
-  description.className='store-detail-description';
-  description.textContent=item.description||'';
-  details.className='store-detail-facts';
-  details.append(detailRow('สภาพสินค้า',conditionText(item.condition),doc));
-  if(String(item.brand||'').trim())details.append(detailRow('แบรนด์',item.brand,doc));
-  if(item.quantity!==null&&item.quantity!==undefined&&item.quantity!=='')details.append(detailRow('จำนวน',Number(item.quantity).toLocaleString('th-TH'),doc));
-  information.append(title,price,availability,descriptionTitle,description,details);
-  layout.append(gallery,information);
-  article.append(back,layout);
-  return article;
-}
-
-async function responseJson(response){
-  try{return await response.json()}catch{return{error:'ระบบส่งข้อมูลสินค้าที่อ่านไม่ได้'}}
-}
+export function createProductDetail(item,doc=globalThis.document,request=globalThis.fetch){const article=doc.createElement('article'),back=doc.createElement('a'),layout=doc.createElement('div'),gallery=doc.createElement('div'),information=doc.createElement('div'),title=doc.createElement('h2'),price=doc.createElement('p'),availability=doc.createElement('p'),descriptionTitle=doc.createElement('h3'),description=doc.createElement('p'),details=doc.createElement('dl');article.className='store-detail';back.className='store-back-link';back.href='/toyscenter';back.textContent='← กลับไปดูสินค้าทั้งหมด';layout.className='store-detail-layout';gallery.className='store-detail-gallery';gallery.setAttribute('aria-label','รูปสินค้า');gallery.append(detailFigure(item,doc));information.className='store-detail-information';title.textContent=item.title;price.className='price';price.textContent=formatPrice(item.price);availability.className='store-detail-availability';availability.textContent=availabilityText(item);descriptionTitle.textContent='รายละเอียดสินค้า';description.className='store-detail-description';description.textContent=item.description||'';details.className='store-detail-facts';details.append(detailRow('สภาพสินค้า',conditionText(item.condition),doc));if(String(item.brand||'').trim())details.append(detailRow('แบรนด์',item.brand,doc));if(item.quantity!==null&&item.quantity!==undefined&&item.quantity!=='')details.append(detailRow('จำนวน',Number(item.quantity).toLocaleString('th-TH'),doc));const checkout=createCheckout(item,doc,request);information.append(title,price,availability,descriptionTitle,description,details,checkout.panel);layout.append(gallery,information);article.append(back,layout,checkout.dialog);return article}
 
 export function startStorefront(doc=globalThis.document,win=globalThis.window,request=globalThis.fetch){
-  const root=doc.querySelector('#storeProducts'),status=doc.querySelector('#storeStatus'),pageText=doc.querySelector('#storePage'),pager=doc.querySelector('.pager'),previous=doc.querySelector('#storePrev'),next=doc.querySelector('#storeNext'),robots=doc.querySelector('#robotsMeta');
-  let page=1,total=0;
-  async function load(){
-    const wanted=(new URL(win.location.href).searchParams.get('product')||'').trim(),detailMode=Boolean(wanted);
-    status.textContent='กำลังโหลดสินค้า…';
-    status.removeAttribute('data-state');
-    pager.hidden=detailMode;
-    root.classList.toggle('store-grid--detail',detailMode);
-    try{
-      const response=await request(detailMode?`/api/toys-center/products?slug=${encodeURIComponent(wanted)}`:`/api/toys-center/products?page=${page}`),data=await responseJson(response);
-      if(!response.ok)throw new Error(data.error||'โหลดข้อมูลสินค้าไม่สำเร็จ');
-      root.replaceChildren();
-      if(detailMode){
-        if(!data.item)throw new Error('ไม่พบสินค้า');
-        root.append(createProductDetail(data.item,doc));
-        doc.title=`${data.item.title} | Toys Center | VisionD`;
-        status.textContent='';
-        return;
-      }
-      const items=Array.isArray(data.items)?data.items:[];
-      items.forEach(item=>root.append(createProductCard(item,doc)));
-      total=Number(data.pagination?.total||0);
-      robots.content=data.storefront_mode==='public'?'index,follow':'noindex,follow';
-      pageText.textContent=`หน้า ${page} / ${Math.max(1,Math.ceil(total/PAGE_SIZE))}`;
-      previous.disabled=page<=1;
-      next.disabled=page*PAGE_SIZE>=total;
-      status.textContent=items.length?'':'ยังไม่มีสินค้าที่เผยแพร่';
-    }catch(error){
-      root.replaceChildren();
-      status.dataset.state='error';
-      status.textContent=error instanceof Error?error.message:'โหลดข้อมูลสินค้าไม่สำเร็จ';
-    }
-  }
-  previous.addEventListener('click',()=>{if(page>1){page-=1;load()}});
-  next.addEventListener('click',()=>{if(page*PAGE_SIZE<total){page+=1;load()}});
-  const ready=load();
-  return{load,ready};
+  const root=doc.querySelector('#storeProducts'),status=doc.querySelector('#storeStatus'),pageText=doc.querySelector('#storePage'),pager=doc.querySelector('.pager'),previous=doc.querySelector('#storePrev'),next=doc.querySelector('#storeNext'),robots=doc.querySelector('#robotsMeta');let page=1,total=0;
+  async function load(){const wanted=(new URL(win.location.href).searchParams.get('product')||'').trim(),detailMode=Boolean(wanted);status.textContent='กำลังโหลดสินค้า…';status.removeAttribute('data-state');pager.hidden=detailMode;root.classList.toggle('store-grid--detail',detailMode);try{const response=await request(detailMode?`/api/toys-center/products?slug=${encodeURIComponent(wanted)}`:`/api/toys-center/products?page=${page}`),data=await responseJson(response);if(!response.ok)throw new Error(data.error||'โหลดข้อมูลสินค้าไม่สำเร็จ');root.replaceChildren();if(detailMode){if(!data.item)throw new Error('ไม่พบสินค้า');root.append(createProductDetail(data.item,doc,request));doc.title=`${data.item.title} | Toys Center | VisionD`;status.textContent='';return}const items=Array.isArray(data.items)?data.items:[];items.forEach(item=>root.append(createProductCard(item,doc)));total=Number(data.pagination?.total||0);robots.content=data.storefront_mode==='public'?'index,follow':'noindex,follow';pageText.textContent=`หน้า ${page} / ${Math.max(1,Math.ceil(total/PAGE_SIZE))}`;previous.disabled=page<=1;next.disabled=page*PAGE_SIZE>=total;status.textContent=items.length?'':'ยังไม่มีสินค้าที่เผยแพร่'}catch(error){root.replaceChildren();status.dataset.state='error';status.textContent=error instanceof Error?error.message:'โหลดข้อมูลสินค้าไม่สำเร็จ'}}
+  previous.addEventListener('click',()=>{if(page>1){page-=1;load()}});next.addEventListener('click',()=>{if(page*PAGE_SIZE<total){page+=1;load()}});const ready=load();return{load,ready};
 }
-
 if(typeof document!=='undefined'&&typeof window!=='undefined')startStorefront();

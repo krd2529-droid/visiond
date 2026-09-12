@@ -37,11 +37,12 @@ assert.equal(card.attributes['aria-label'],'ดูรายละเอียด
 assert.equal(descendants(card).filter(node=>node.tagName==='IMG').length,1,'list loads only its preview image');
 assert.equal(descendants(card).find(node=>node.tagName==='IMG').src,row.image_2_url);
 
-const detail=createProductDetail(row,doc),detailImages=descendants(detail).filter(node=>node.tagName==='IMG');
+const detail=createProductDetail(row,doc),detailGallery=detail.children[1].children[0],detailImages=descendants(detailGallery).filter(node=>node.tagName==='IMG');
 assert.equal(detail.tagName,'ARTICLE');
 assert.equal(detail.children[0].tagName,'A');assert.equal(detail.children[0].href,'/toyscenter');
 assert.deepEqual(detailImages.map(image=>image.src),[row.image_2_url]);
 for(const expected of [row.title,row.description,'1,850.00 บาท','พร้อมขาย','มือสอง',row.brand,'2','กลับไปดูสินค้าทั้งหมด'])assert.ok(text(detail).includes(expected),expected);
+const zeroStockDetail=createProductDetail({...row,quantity:0,availability:'in stock'},doc);assert.ok(text(zeroStockDetail).includes('สินค้าหมด'));assert.equal(text(zeroStockDetail).includes('พร้อมขาย'),false);
 
 const listDoc=makeDocument(),listUrls=[];
 let app=startStorefront(listDoc,{location:{href:'https://fixture.invalid/toyscenter'}},async url=>{listUrls.push(url);return new Response(JSON.stringify({storefront_mode:'public',items:[row],pagination:{page:1,limit:24,total:25}}),{status:200,headers:{'content-type':'application/json'}})});
@@ -81,8 +82,8 @@ for(const token of ['.store-image-stage{','[hidden]{display:none!important}','.s
 assert.match(css,/\.store-image-stage img\{[^}]*width:100%;height:auto;aspect-ratio:1\/1;object-fit:scale-down/,'a definite square image box constrains both stage axes while its pixels are never cropped or unnecessarily enlarged');
 assert.doesNotMatch(css,/\.store-image-stage img\{[^}]*(?:width:auto|height:100%|max-height:100%)/,'intrinsic or unresolved percentage height must not let portrait images escape the fixed stage');
 assert.doesNotMatch(css,/\.store-product img\{[^}]*object-fit:cover/,'public cards no longer crop images');
-assert.match(html,/toys-center\.css\?v=020108/);assert.match(html,/toyscenter\.js\?v=020108/);
-assert.match(source,/doc\.createElement\('a'\)/);assert.match(source,/createProductDetail\(data\.item,doc\)/);assert.doesNotMatch(source,/cart|checkout|payment|ติดต่อผู้ขาย/i);
-assert.equal(read('VERSION.txt').trim(),'v0.20.108');assert.match(read('public/index.html'),/WEB v0\.20\.108/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.108/);
+assert.match(html,/toys-center\.css\?v=020109/);assert.match(html,/toyscenter\.js\?v=020109/);
+assert.match(source,/doc\.createElement\('a'\)/);assert.match(source,/createProductDetail\(data\.item,doc,request\)/);assert.doesNotMatch(source,/cart|ติดต่อผู้ขาย/i);
+assert.equal(read('VERSION.txt').trim(),'v0.20.109');assert.match(read('public/index.html'),/WEB v0\.20\.109/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.109/);
 
 console.log('PASS v0.20.106 Toys Center semantic cards, focused published detail, current public image contract, truthful errors and preserved 24-item/Meta contracts');
