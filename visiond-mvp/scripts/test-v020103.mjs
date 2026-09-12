@@ -71,5 +71,5 @@ assert.match(client,/function isBossPartnerCommissionView\(\)\{return pageAuthor
 assert.match(loadSource,/channelOwnership\.current\(context\)/,'selected-channel generation guard remains');
 assert.match(loadSource,/\/api\/admin\/tiktok-partner-commissions/,'dedicated Partner endpoint remains');
 
-assert.equal(read('VERSION.txt').trim(),'v0.20.107');assert.match(html,/v0\.20\.107/);assert.match(html,/tiktok-analyzer\.js\?v=02163/);
+assert.equal(read('VERSION.txt').trim(),'v0.20.108');assert.match(html,/v0\.20\.108/);assert.match(html,/tiktok-analyzer\.js\?v=02163/);
 console.log('PASS v103 compatibility: Boss-only Partner source isolation, role/owner/range/index and truthful amount states');

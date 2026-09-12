@@ -6,12 +6,12 @@ const conditionText=value=>value==='new'?'สภาพใหม่':'มือ�
 
 function productPath(item){return `/toyscenter?product=${encodeURIComponent(item.slug)}`}
 
-function productImageStage(item,slot,doc){
+function productImageStage(item,doc){
   const stage=doc.createElement('div'),image=doc.createElement('img');
   stage.className='store-image-stage';
-  image.src=item[`image_${slot}_url`];
-  image.alt=`${item.title} — รูปสินค้า ${slot}`;
-  image.loading=slot===1?'eager':'lazy';
+  image.src=item.image_2_url;
+  image.alt=`${item.title} — รูปสินค้า`;
+  image.loading='eager';
   image.decoding='async';
   stage.append(image);
   return stage;
@@ -29,7 +29,7 @@ export function createProductCard(item,doc=globalThis.document){
   availability.textContent=availabilityText(item.availability);
   body.className='store-product-body';
   body.append(title,price,availability);
-  link.append(productImageStage(item,1,doc),body);
+  link.append(productImageStage(item,doc),body);
   return link;
 }
 
@@ -42,11 +42,11 @@ function detailRow(label,value,doc){
   return row;
 }
 
-function detailFigure(item,slot,doc){
+function detailFigure(item,doc){
   const figure=doc.createElement('figure'),caption=doc.createElement('figcaption');
   figure.className='store-detail-figure';
-  caption.textContent=`รูปสินค้า ${slot}`;
-  figure.append(productImageStage(item,slot,doc),caption);
+  caption.textContent='รูปสินค้า';
+  figure.append(productImageStage(item,doc),caption);
   return figure;
 }
 
@@ -59,7 +59,7 @@ export function createProductDetail(item,doc=globalThis.document){
   layout.className='store-detail-layout';
   gallery.className='store-detail-gallery';
   gallery.setAttribute('aria-label','รูปสินค้า');
-  gallery.append(detailFigure(item,1,doc),detailFigure(item,2,doc));
+  gallery.append(detailFigure(item,doc));
   information.className='store-detail-information';
   title.textContent=item.title;
   price.className='price';

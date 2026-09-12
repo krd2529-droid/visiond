@@ -116,7 +116,7 @@ for(const raw of[rawHonest,rawSpoof]){
 }
 
 const html=fs.readFileSync(new URL('../public/toys-center-admin.html',import.meta.url),'utf8');
-assert.equal((html.match(/\.heic,\.heif/g)||[]).length,2);assert.match(html,/toys-center-admin\.js\?v=020107/);assert.match(html,/v0\.20\.107/);
+assert.equal((html.match(/\.heic,\.heif/g)||[]).length,2);assert.match(html,/toys-center-admin\.js\?v=020107/);assert.match(html,/toys-center\.css\?v=020108/);assert.match(html,/v0\.20\.108/);
 assert.match(fs.readFileSync(new URL('../functions/_middleware.js',import.meta.url),'utf8'),/worker-src 'self' blob:/);
-assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.107');
+assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.108');
 console.log('PASS v0.20.107 Toys Center HEIC pipeline, cache/race/errors, server magic parity, no partial writes and edit preservation');
