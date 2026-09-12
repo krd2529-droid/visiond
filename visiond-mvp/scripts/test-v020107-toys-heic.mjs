@@ -51,17 +51,17 @@ assert.equal(await latePreview,null);assert.equal(raceImg.src,'blob:B.jpg');
 let releaseSecond;
 const slowSecond=new Promise(resolve=>{releaseSecond=resolve}),submitPipeline=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async({blob})=>blob.name==='slow.heic'?slowSecond:new Blob([jpegBytes],{type:'image/jpeg'})})});
 const firstInput={files:[file(heicBytes,'first.heic','image/heic')]},secondInput={files:[file(heicBytes,'slow.heic','image/heic')]},submitForm={elements:{image_1:firstInput,image_2:secondInput}};
-const pendingSubmit=submitPipeline.appendSelected(submitForm,new FormData());await new Promise(resolve=>setImmediate(resolve));firstInput.files=[file(heicBytes,'changed.heic','image/heic')];submitPipeline.select('image_1',firstInput.files[0]);releaseSecond(new Blob([jpegBytes],{type:'image/jpeg'}));await assert.rejects(pendingSubmit,/รูป 1 ถูกเปลี่ยน/);
+const pendingSubmit=submitPipeline.appendSelected(submitForm,new FormData());await new Promise(resolve=>setImmediate(resolve));firstInput.files=[file(heicBytes,'changed.heic','image/heic')];submitPipeline.select('image_1',firstInput.files[0]);releaseSecond(new Blob([jpegBytes],{type:'image/jpeg'}));await assert.rejects(pendingSubmit,/รูป VisionD ถูกเปลี่ยน/);
 
 for(const [output,pattern]of[
-  [new Blob([new Uint8Array([1,2,3])],{type:'image/jpeg'}),/แปลงรูป 1/],
-  [new Blob([jpegBytes],{type:'image/png'}),/แปลงรูป 1/],
+  [new Blob([new Uint8Array([1,2,3])],{type:'image/jpeg'}),/แปลงรูป VisionD/],
+  [new Blob([jpegBytes],{type:'image/png'}),/แปลงรูป VisionD/],
   [new Blob([jpegBytes,new Uint8Array(TOY_IMAGE_MAX_BYTES+1-jpegBytes.length)],{type:'image/jpeg'}),/เกิน 5 MB/]
 ]){
   const failing=createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>true,heicTo:async()=>output})});
   await assert.rejects(failing.resolveFile(source,'image_1'),pattern);
 }
-await assert.rejects(createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>false,heicTo:async()=>null})}).resolveFile(source,'image_2'),/แปลงรูป 2/);
+await assert.rejects(createToyImagePipeline({loadDecoder:async()=>({isHeic:async()=>false,heicTo:async()=>null})}).resolveFile(source,'image_2'),/แปลงรูป Meta/);
 
 for(const valid of[file(jpegBytes,'x.jpg','image/jpeg'),file(pngBytes,'x.png','image/png'),file(webpBytes,'x.webp','image/webp')])assert.equal((await readToyImage(valid,1)).type,valid.type);
 for(const spoof of[file(heicBytes,'spoof.jpg','image/jpeg'),file(heicBytes,'spoof.png','image/png'),file(heicBytes,'spoof.webp','image/webp')])await assert.rejects(readToyImage(spoof,1),/JPG, PNG หรือ WEBP/);
@@ -74,7 +74,7 @@ function mockEnv({oldRow=old,storedObject=null}={}){
   const env={
     GEMINI_API_KEY:'test-key',
     FILES:{put:async(...args)=>stats.puts.push(args),delete:async key=>stats.deletes.push(key),get:async()=>storedObject},
-    DB:{prepare(sql){return{
+    DB:{batch:async statements=>Promise.all(statements.map(statement=>statement.run())),prepare(sql){return{
       bind(...args){return{
         first:async()=>sql.includes('FROM sessions')?boss:sql.includes('FROM toys_center_products')?oldRow:null,
         run:async()=>{stats.runs.push({sql,args});return{meta:{last_row_id:101}}},
@@ -99,7 +99,7 @@ for(const raw of[rawHonest,rawSpoof]){
 }
 {
   const{env,stats}=mockEnv();const response=await createProduct({request:requestFor('https://example.test/api/admin/toys-center','POST',productForm(goodJpeg,goodJpeg)),env});
-  assert.equal(response.status,201);assert.equal(stats.puts.length,2);assert.equal(stats.runs.length,1);for(const[,buffer,metadata]of stats.puts){assert.deepEqual([...new Uint8Array(buffer).slice(0,3)],[0xff,0xd8,0xff]);assert.equal(metadata.httpMetadata.contentType,'image/jpeg')}
+  assert.equal(response.status,201);assert.equal(stats.puts.length,2);assert.equal(stats.runs.length,2);for(const[,buffer,metadata]of stats.puts){assert.deepEqual([...new Uint8Array(buffer).slice(0,3)],[0xff,0xd8,0xff]);assert.equal(metadata.httpMetadata.contentType,'image/jpeg')}
 }
 {
   const{env,stats}=mockEnv();const response=await updateProduct({request:requestFor('https://example.test/api/admin/toys-center/9','PUT',productForm()),env,params:{id:'9'}});
@@ -116,7 +116,7 @@ for(const raw of[rawHonest,rawSpoof]){
 }
 
 const html=fs.readFileSync(new URL('../public/toys-center-admin.html',import.meta.url),'utf8');
-assert.equal((html.match(/\.heic,\.heif/g)||[]).length,2);assert.match(html,/toys-center-admin\.js\?v=020110/);assert.match(html,/toys-center\.css\?v=020109/);assert.match(html,/v0\.20\.110/);
+assert.equal((html.match(/\.heic,\.heif/g)||[]).length,2);assert.match(html,/toys-center-admin\.js\?v=020111/);assert.match(html,/toys-center\.css\?v=020111/);assert.match(html,/v0\.20\.111/);
 assert.match(fs.readFileSync(new URL('../functions/_middleware.js',import.meta.url),'utf8'),/worker-src 'self' blob:/);
-assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.110');
+assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.111');
 console.log('PASS v0.20.107 Toys Center HEIC pipeline, cache/race/errors, server magic parity, no partial writes and edit preservation');

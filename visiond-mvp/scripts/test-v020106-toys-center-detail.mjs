@@ -28,19 +28,19 @@ const makeDocument=()=>{
 const descendants=node=>[node,...node.children.flatMap(descendants)];
 const text=node=>descendants(node).map(child=>child.textContent).filter(Boolean).join(' ');
 
-const row={id:7,meta_id:'TOY-0007',slug:'หุ่น-สะสม-7',title:'หุ่นสะสมรุ่น 7',description:'รายละเอียดจริง\nครบสองบรรทัด',availability:'in stock',condition:'used',price_cents:185000,price:1850,currency:'THB',brand:'Vision Toy',quantity:2,image_1_key:'one.jpg',image_2_key:'two.jpg',image_1_url:'https://fixture.invalid/api/toys-center/images/7/1',image_2_url:'https://fixture.invalid/api/toys-center/images/7/2',status:'published'};
+const row={id:7,meta_id:'TOY-0007',slug:'หุ่น-สะสม-7',title:'หุ่นสะสมรุ่น 7',description:'รายละเอียดจริง\nครบสองบรรทัด',availability:'in stock',condition:'used',price_cents:185000,price:1850,currency:'THB',brand:'Vision Toy',quantity:2,image_1_key:'one.jpg',image_2_key:'two.jpg',visiond_image_urls:['https://fixture.invalid/api/toys-center/gallery/7/0?v=1'],image_1_url:'https://fixture.invalid/api/toys-center/gallery/7/0?v=1',image_2_url:'https://fixture.invalid/api/toys-center/images/7/2',status:'published'};
 
 const doc=makeDocument(),card=createProductCard(row,doc);
 assert.equal(card.tagName,'A','list card is a native keyboard-accessible link');
 assert.equal(card.href,'/toyscenter?product=%E0%B8%AB%E0%B8%B8%E0%B9%88%E0%B8%99-%E0%B8%AA%E0%B8%B0%E0%B8%AA%E0%B8%A1-7');
 assert.equal(card.attributes['aria-label'],'ดูรายละเอียด หุ่นสะสมรุ่น 7');
 assert.equal(descendants(card).filter(node=>node.tagName==='IMG').length,1,'list loads only its preview image');
-assert.equal(descendants(card).find(node=>node.tagName==='IMG').src,row.image_2_url);
+assert.equal(descendants(card).find(node=>node.tagName==='IMG').src,row.visiond_image_urls[0]);
 
 const detail=createProductDetail(row,doc),detailGallery=detail.children[1].children[0],detailImages=descendants(detailGallery).filter(node=>node.tagName==='IMG');
 assert.equal(detail.tagName,'ARTICLE');
 assert.equal(detail.children[0].tagName,'A');assert.equal(detail.children[0].href,'/toyscenter');
-assert.deepEqual(detailImages.map(image=>image.src),[row.image_2_url]);
+assert.deepEqual(detailImages.map(image=>image.src),row.visiond_image_urls);
 for(const expected of [row.title,row.description,'1,850.00 บาท','พร้อมขาย','มือสอง',row.brand,'2','กลับไปดูสินค้าทั้งหมด'])assert.ok(text(detail).includes(expected),expected);
 const zeroStockDetail=createProductDetail({...row,quantity:0,availability:'in stock'},doc);assert.ok(text(zeroStockDetail).includes('สินค้าหมด'));assert.equal(text(zeroStockDetail).includes('พร้อมขาย'),false);
 
@@ -68,13 +68,13 @@ assert.equal(missingDoc.nodes['#storeStatus'].dataset.state,'error');
 assert.equal(missingDoc.nodes['#storeProducts'].children.length,0);assert.equal(missingDoc.nodes['.pager'].hidden,true);
 
 const calls=[];
-const env={DB:{prepare(sql){const statement={args:[],bind(...args){this.args=args;return this},async first(){calls.push({sql,args:this.args});if(sql.includes('WHERE slug=?'))return this.args[0]===row.slug?row:null;if(sql.includes('toys_center_settings'))return{storefront_mode:'public'};if(sql.includes('COUNT(*)'))return{total:25};return null},async all(){calls.push({sql,args:this.args});return{results:[row]}}};return statement}}};
+const env={DB:{prepare(sql){const statement={args:[],bind(...args){this.args=args;return this},async first(){calls.push({sql,args:this.args});if(sql.includes('p.slug=?'))return this.args[0]===row.slug?{...row,primary_image_id:1}:null;if(sql.includes('toys_center_settings'))return{storefront_mode:'public'};if(sql.includes('COUNT(*)'))return{total:25};return null},async all(){calls.push({sql,args:this.args});return{results:sql.includes('SELECT id,position FROM toys_center_product_images')?[{id:1,position:0}]:[row]}}};return statement}}};
 let response=await onRequestGet({request:new Request(`https://fixture.invalid/api/toys-center/products?slug=${encodeURIComponent(row.slug)}`),env});
-assert.equal(response.status,200);let body=await response.json();assert.equal(body.item.slug,row.slug);assert.equal(body.item.image_2_url,row.image_2_url);
+assert.equal(response.status,200);let body=await response.json();assert.equal(body.item.slug,row.slug);assert.equal(body.item.visiond_image_urls.length,1);assert.equal('image_2_url' in body.item,false);
 response=await onRequestGet({request:new Request('https://fixture.invalid/api/toys-center/products?slug=missing'),env});assert.equal(response.status,404);assert.deepEqual(await response.json(),{error:'ไม่พบสินค้า'});
 response=await onRequestGet({request:new Request('https://fixture.invalid/api/toys-center/products?page=2'),env});assert.equal(response.status,200);body=await response.json();assert.deepEqual(body.pagination,{page:2,limit:24,total:25});
 assert.ok(calls.some(call=>call.sql.includes('LIMIT ? OFFSET ?')&&call.args[0]===24&&call.args[1]===24),'24-item list query remains bounded');
-assert.match(api,/WHERE slug=\? AND status='published'/,'detail remains published-only indexed slug lookup');
+assert.match(api,/p\.slug=\? AND p\.status='published'/,'detail remains published-only indexed slug lookup');
 assert.match(feed,/\$\{origin\}\/toyscenter\?product=\$\{encodeURIComponent\(r\.slug\)\}/,'Meta deep link remains unchanged');
 assert.match(feed,/mediaUrl\(origin,r\.id,2\)/,'Meta image slot remains unchanged');
 
@@ -82,8 +82,8 @@ for(const token of ['.store-image-stage{','[hidden]{display:none!important}','.s
 assert.match(css,/\.store-image-stage img\{[^}]*width:100%;height:auto;aspect-ratio:1\/1;object-fit:scale-down/,'a definite square image box constrains both stage axes while its pixels are never cropped or unnecessarily enlarged');
 assert.doesNotMatch(css,/\.store-image-stage img\{[^}]*(?:width:auto|height:100%|max-height:100%)/,'intrinsic or unresolved percentage height must not let portrait images escape the fixed stage');
 assert.doesNotMatch(css,/\.store-product img\{[^}]*object-fit:cover/,'public cards no longer crop images');
-assert.match(html,/toys-center\.css\?v=020109/);assert.match(html,/toyscenter\.js\?v=020110/);
+assert.match(html,/toys-center\.css\?v=020111/);assert.match(html,/toyscenter\.js\?v=020111/);
 assert.match(source,/doc\.createElement\('a'\)/);assert.match(source,/createProductDetail\(data\.item,doc,request\)/);assert.doesNotMatch(source,/cart|ติดต่อผู้ขาย/i);
-assert.equal(read('VERSION.txt').trim(),'v0.20.110');assert.match(read('public/index.html'),/WEB v0\.20\.110/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.110/);
+assert.equal(read('VERSION.txt').trim(),'v0.20.111');assert.match(read('public/index.html'),/WEB v0\.20\.111/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.111/);
 
 console.log('PASS v0.20.106 Toys Center semantic cards, focused published detail, current public image contract, truthful errors and preserved 24-item/Meta contracts');

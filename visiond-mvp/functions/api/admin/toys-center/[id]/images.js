@@ -1,0 +1,3 @@
+import {json,requireAdmin} from '../../../../_lib.js';
+const headers={'cache-control':'no-store'};
+export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const rows=(await ctx.env.DB.prepare('SELECT id,position FROM toys_center_product_images WHERE product_id=? ORDER BY position LIMIT 10').bind(ctx.params.id).all()).results||[],origin=new URL(ctx.request.url).origin;return json({items:rows.map(row=>({position:row.position,url:`${origin}/api/admin/toys-center/${encodeURIComponent(ctx.params.id)}/images/${row.position}?v=${row.id}`}))},200,headers)}
