@@ -60,8 +60,8 @@ try{
   const source=read('public/toyscenter.js'),css=read('public/toys-center.css'),html=read('public/toyscenter.html'),feed=read('functions/api/toys-center/feed.csv.js'),adminHtml=read('public/toys-center-admin.html'),adminJs=read('public/toys-center-admin.js');
   assert.doesNotMatch(source,/image_1_url|productImageStage\(item,1/,'public renderer has no slot-1 source path');assert.match(source,/image_2_url/);
   assert.match(css,/\.store-detail-gallery\{[^}]*grid-template-columns:1fr/,'detail gallery deliberately has one full-width column');assert.match(css,/\.store-image-stage img\{[^}]*object-fit:scale-down/);
-  assert.match(html,/toys-center\.css\?v=020109/);assert.match(html,/toyscenter\.js\?v=020109/);assert.match(feed,/mediaUrl\(origin,r\.id,2\)/,'Meta remains on image 2');
-  assert.match(adminHtml,/name="image_1"/);assert.match(adminHtml,/name="image_2"/);assert.match(adminHtml,/toys-center\.css\?v=020109/);assert.match(adminHtml,/toys-center-admin\.js\?v=020109/);assert.equal((adminHtml.match(/\.heic,\.heif/g)||[]).length,2,'both admin HEIC slots remain');assert.match(adminJs,/form\.image_1/);assert.match(adminJs,/form\.image_2/);
-  assert.equal(read('VERSION.txt').trim(),'v0.20.109');assert.match(read('public/index.html'),/WEB v0\.20\.109/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.109/);
+  assert.match(html,/toys-center\.css\?v=020109/);assert.match(html,/toyscenter\.js\?v=020110/);assert.match(feed,/mediaUrl\(origin,r\.id,2\)/,'Meta remains on image 2');
+  assert.match(adminHtml,/name="image_1"/);assert.match(adminHtml,/name="image_2"/);assert.match(adminHtml,/toys-center\.css\?v=020109/);assert.match(adminHtml,/toys-center-admin\.js\?v=020110/);assert.equal((adminHtml.match(/\.heic,\.heif/g)||[]).length,2,'both admin HEIC slots remain');assert.match(adminJs,/form\.image_1/);assert.match(adminJs,/form\.image_2/);
+  assert.equal(read('VERSION.txt').trim(),'v0.20.110');assert.match(read('public/index.html'),/WEB v0\.20\.110/);assert.match(read('public/admin.html'),/ADMIN v0\.20\.110/);
   console.log('PASS v0.20.108 public Toys Center renders and requests only image 2 with single-image desktop/mobile detail layout');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
