@@ -10,6 +10,7 @@ const read=path=>fs.readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const baseMigration=await read('migrations/0071_toys_center.sql');
 const migration=await read('migrations/0105_toys_center_product_line_series.sql');
 const galleryMigration=await read('migrations/0106_toys_center_product_images.sql');
+const costMigration=await read('migrations/0107_toys_center_product_cost.sql');
 const sqlite=new DatabaseSync(':memory:');
 sqlite.exec('PRAGMA foreign_keys=ON');
 sqlite.exec(`CREATE TABLE users(id INTEGER PRIMARY KEY,email TEXT,username TEXT,name TEXT,phone TEXT,role TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id INTEGER,expires_at TEXT);CREATE TABLE entitlements(id INTEGER PRIMARY KEY,user_id INTEGER,product_id INTEGER,active INTEGER);CREATE TABLE products(id INTEGER PRIMARY KEY,category TEXT);CREATE TABLE courses(product_id INTEGER,course_type TEXT);CREATE TABLE course_right_credits(id INTEGER PRIMARY KEY,user_id INTEGER,product_id INTEGER);`);
@@ -17,6 +18,7 @@ sqlite.exec(baseMigration);
 sqlite.prepare(`INSERT INTO toys_center_products(meta_id,slug,title,description,brand,image_1_key,image_2_key) VALUES('LEGACY','legacy','สินค้าเดิม','รายละเอียด','VisionD','one.jpg','two.jpg')`).run();
 sqlite.exec(migration);
 sqlite.exec(galleryMigration);
+sqlite.exec(costMigration);
 const legacyDefaults=sqlite.prepare(`SELECT product_line,series FROM toys_center_products WHERE meta_id='LEGACY'`).get();assert.equal(legacyDefaults.product_line,'','migration default preserves existing product line');assert.equal(legacyDefaults.series,'','migration default preserves existing series');
 assert.throws(()=>sqlite.prepare(`UPDATE toys_center_products SET product_line=? WHERE meta_id='LEGACY'`).run('x'.repeat(121)),/CHECK/);
 sqlite.prepare(`UPDATE toys_center_products SET product_line='  Legacy   Line  ',series='  Series  Zero  ' WHERE meta_id='LEGACY'`).run();
@@ -38,6 +40,6 @@ response=await updateProduct({env,params:{id:String(created.id)},request:request
 
 const html=await read('public/toys-center-admin.html'),adminSource=await read('public/toys-center-admin.js'),publicSource=await read('public/toyscenter.js'),feed=await read('functions/api/toys-center/feed.csv.js');
 assert.match(html,/name="product_line"[^>]*maxlength="120"/);assert.match(html,/name="series"[^>]*maxlength="120"/);assert.match(adminSource,/['"]product_line['"]/);assert.match(adminSource,/['"]series['"]/);assert.match(publicSource,/detailRow\('ไลน์สินค้า'/);assert.match(publicSource,/detailRow\('ซีรีส์'/);assert.doesNotMatch(feed,/product_line|series/,'Meta feed remains unchanged');
-assert.equal((await read('VERSION.txt')).trim(),'v0.20.111');assert.match(html,/v0\.20\.111/);assert.match(html,/toys-center-admin\.js\?v=020111/);assert.match(await read('public/toyscenter.html'),/toyscenter\.js\?v=020111/);
+assert.equal((await read('VERSION.txt')).trim(),'v0.20.112');assert.match(html,/v0\.20\.112/);assert.match(html,/toys-center-admin\.js\?v=020112/);assert.match(await read('public/toyscenter.html'),/toyscenter\.js\?v=020112/);
 sqlite.close();
 console.log('PASS v0.20.110 Toys Center product line/series migration, normalization, create/update/read and preservation');
