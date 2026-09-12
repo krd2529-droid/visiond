@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020107": "node scripts/test-v020107-toys-heic.mjs && node scripts/test-v020107-toys-heic-browser.mjs && npm run test:v020106",
+    "test:v020107:browser": "node scripts/test-v020107-toys-heic-browser.mjs",
     "test:v020106": "node scripts/test-v020106-toys-center-detail.mjs && npm run test:v020105",
     "test:v020105": "node scripts/test-v020105.mjs && node scripts/test-v020104.mjs && node scripts/test-v020103.mjs && node scripts/test-v020102.mjs && node scripts/test-tiktok-marketplace-creator-density.mjs && node scripts/test-tiktok-marketplace-selection-list.mjs && node scripts/test-v020101.mjs && npm run test:v020100",
     "test:v020104": "node scripts/test-v020104.mjs && node scripts/test-v020103.mjs && node scripts/test-v020102.mjs && node scripts/test-tiktok-marketplace-creator-density.mjs && node scripts/test-tiktok-marketplace-selection-list.mjs && node scripts/test-v020101.mjs && npm run test:v020100",
