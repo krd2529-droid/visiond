@@ -17,26 +17,39 @@ assert.doesNotMatch(native.match(/string nonce=RandomHex\(\),html=.*;/)?.[0]||''
 assert.match(readFileSync('tools/browser-launcher/install.ps1','utf8'),/\/target:winexe/);
 console.log('PASS explicit pair confirmation, blocked-storage success, constant owned-tab close and hidden native subsystem');
 const bootstrap=readFileSync('public/launcher-open.js','utf8');
-for(const hash of ['#command_id='+id+'&provider=tiktok&intent=new&channel_id=','#command_id='+id]){
- let requests=0,navigations=0;const tasks=[];
- const ctx={URLSearchParams,Date,AbortController,document:{getElementById:()=>({textContent:''})},history:{replaceState(){}},location:{hash,pathname:'/launcher-open.html',replace(){navigations++}},window:{addEventListener(){},close(){}},setTimeout:(fn,ms)=>{const t={fn,ms};tasks.push(t);return t},clearTimeout:t=>{const i=tasks.indexOf(t);if(i>=0)tasks.splice(i,1)},fetch:async(url,options)=>{requests++;assert.match(url,/^\/api\/launcher\/status\?/);assert.equal(options.method,undefined);return {ok:true,json:async()=>({status:'waiting'})}}};
- vm.runInNewContext(bootstrap,ctx);for(let i=0;i<10;i++){await new Promise(resolve=>setImmediate(resolve));const task=tasks.shift();if(task)task.fn()}
- assert.equal(navigations,0,'hostile standalone fragment cannot dispatch');assert.ok(requests<=8,'read-only bounded lookup never issues');
-}
-console.log('PASS hostile legacy/random bootstrap fragments cannot create or dispatch commands');
-for(const bodyHung of [false,true]){
- const tasks=[],message={textContent:''};let aborted=false,navigations=0;
- const ctx={URLSearchParams,Date,AbortController,document:{getElementById:()=>message},history:{replaceState(){}},location:{hash:'#command_id='+id,pathname:'/launcher-open.html',replace(){navigations++}},window:{addEventListener(){},close(){}},setTimeout:(fn,ms)=>{const t={fn,ms};tasks.push(t);return t},clearTimeout:t=>{const i=tasks.indexOf(t);if(i>=0)tasks.splice(i,1)},fetch:async(url,{signal})=>{signal.addEventListener('abort',()=>aborted=true);return bodyHung?{ok:true,json:()=>new Promise(()=>{})}:new Promise(()=>{})}};
- vm.runInNewContext(bootstrap,ctx);await new Promise(resolve=>setImmediate(resolve));assert.equal(tasks[0].ms,5000);tasks.shift().fn();await new Promise(resolve=>setImmediate(resolve));assert.equal(aborted,true);assert.equal(navigations,0);assert.match(message.textContent,/หมดเวลา/);
-}
-console.log('PASS bootstrap hung headers/body abort at a hard deadline without dispatch');
-for(const readyAt of [9000,Infinity]){
- const tasks=[],destinations=[],readTimes=[],message={textContent:''};let now=0;
- const ctx={URLSearchParams,AbortController,Date:{now:()=>now},document:{getElementById:()=>message},history:{replaceState(){}},location:{hash:'#command_id='+id,pathname:'/launcher-open.html',replace:url=>destinations.push(url)},window:{addEventListener(){},close(){}},setTimeout:(fn,ms)=>{const task={fn,at:now+ms};tasks.push(task);return task},clearTimeout:task=>{const index=tasks.indexOf(task);if(index>=0)tasks.splice(index,1)},fetch:async(url,options)=>{assert.match(url,/^\/api\/launcher\/status\?/);assert.equal(options.method,undefined);readTimes.push(now);return{ok:true,json:async()=>now<readyAt?{status:'waiting'}:{status:'pending',command_id:id,port:53179,expired:0}}}};
+assert.match(readFileSync('public/launcher-open.html','utf8'),/>ติดตั้ง\/ซ่อมตัวช่วยเครื่องนี้<\/a>/);
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+function bootstrapFixture({hash='#command_id='+id,replies=[],open=true,hung=false}={}){
+ let now=0,reads=0,closed=0,focused=0,aborted=0;const tasks=[],topNavigations=[],localNavigations=[],opens=[],events={},nodeMap=new Map();
+ const element=name=>{if(!nodeMap.has(name))nodeMap.set(name,{textContent:'',hidden:false,disabled:false,href:'',dataset:{},events:{},addEventListener(type,fn){this.events[type]=fn}});return nodeMap.get(name)};
+ const popup={closed:false};
+ const ctx={URLSearchParams,AbortController,Date:{now:()=>now},document:{getElementById:element},history:{replaceState(){}},location:{hash,pathname:'/launcher-open.html',replace:url=>topNavigations.push(url)},window:{addEventListener:(type,fn)=>events[type]=fn,open:(...args)=>{opens.push(args);if(open)localNavigations.push(args[0]);return null},close(){closed++},focus(){focused++}},setTimeout:(fn,ms)=>{const task={fn,at:now+ms,ms};tasks.push(task);return task},clearTimeout:task=>{const index=tasks.indexOf(task);if(index>=0)tasks.splice(index,1)},fetch:async(url,{signal})=>{reads++;assert.match(url,/^\/api\/launcher\/status\?command_id=/);signal.addEventListener('abort',()=>aborted++);if(hung)return new Promise(()=>{});const body=replies[Math.min(reads-1,replies.length-1)]||{status:'waiting'};return{ok:true,json:async()=>body}}};
  vm.runInNewContext(bootstrap,ctx);
- for(let step=0;step<24;step++){await new Promise(resolve=>setImmediate(resolve));tasks.sort((a,b)=>a.at-b.at);const task=tasks.shift();if(!task)break;now=task.at;task.fn()}
- assert.ok(readTimes.length<=8);assert.ok(readTimes.every(time=>time<25000));
- if(readyAt===9000){assert.deepEqual(destinations,['http://127.0.0.1:53179/launch?command_id='+id]);assert.equal(readTimes.at(-1),10000,'valid 4.5s helper + 4.5s issue result dispatches on next bounded read');assert.equal(message.textContent,'')}
- else{assert.equal(readTimes.length,8);assert.equal(destinations.length,0);assert.match(message.textContent,/ไม่พบคำขอ/)}
+ return {ctx,tasks,topNavigations,localNavigations,opens,events,popup,element,get reads(){return reads},get closed(){return closed},get focused(){return focused},get aborted(){return aborted},async flush(){await flush();await flush()},async drain(limit=40){for(let i=0;i<limit;i++){await this.flush();tasks.sort((a,b)=>a.at-b.at);const task=tasks.shift();if(!task)break;now=task.at;task.fn()}await this.flush()}};
 }
-console.log('PASS virtual-clock 9s authorized command dispatches once; absent command stops within eight reads/25s');
+{
+ const f=bootstrapFixture({hash:'#command_id='+id+'&provider=tiktok'});await f.flush();assert.equal(f.reads,0);assert.equal(f.topNavigations.length,0);assert.match(f.element('status').textContent,/TikTok Analyzer/);assert.match(f.element('launcher-setup').href,/state=new/);
+}
+console.log('PASS hostile bootstrap fragments never read status or dispatch localhost');
+{
+ const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending,{status:'process_started',command_id:id,port:53179}]});await f.flush();
+ assert.equal(f.topNavigations.length,0,'pending must retain the VisionD foreground');assert.equal(f.element('launcher-dispatch').hidden,false);assert.equal(f.element('launcher-dispatch').textContent,'เปิด Helper เครื่องนี้');
+ await f.element('launcher-dispatch').events.click();assert.deepEqual(f.opens,[['http://127.0.0.1:53179/launch?command_id='+id,'_blank','noopener,noreferrer,popup,width=460,height=260']]);assert.deepEqual(f.localNavigations,['http://127.0.0.1:53179/launch?command_id='+id]);assert.equal(f.topNavigations.length,0);assert.match(f.element('status').textContent,/เริ่ม Chrome/);assert.ok(f.focused>=1);
+}
+console.log('PASS pending command uses one user-activated command-id-only auxiliary and keeps VisionD foreground');
+{
+ const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending]});await f.flush();const run=f.element('launcher-dispatch').events.click();await f.drain();await run;
+ assert.ok(f.reads<=9,'initial readiness plus dispatch polling stay bounded');assert.equal(f.localNavigations.length,1);assert.equal(f.topNavigations.length,0);assert.equal(f.element('launcher-dispatch').disabled,false);assert.match(f.element('launcher-dispatch').textContent,/คำขอเดิม/);assert.match(f.element('status').textContent,/ยังไม่ตอบจากเครื่องนี้/);assert.match(f.element('launcher-setup').href,/state=not-running/);
+}
+console.log('PASS absent/stopped/other-machine timeout retains same-command retry and setup recovery');
+{
+ const pending={status:'pending',command_id:id,port:53179,expired:0},outdated={status:'failed',command_id:id,error_code:'HELPER_UPDATE_REQUIRED'},f=bootstrapFixture({replies:[pending,outdated]});await f.flush();await f.element('launcher-dispatch').events.click();assert.match(f.element('status').textContent,/รุ่นเก่า.*อัปเดต/);assert.match(f.element('launcher-setup').href,/state=outdated/);assert.equal(f.element('launcher-dispatch').hidden,true);
+}
+console.log('PASS signed legacy status gives authoritative update guidance without retrying a terminal command');
+{
+ const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending],open:false});await f.flush();const run=f.element('launcher-dispatch').events.click();await f.drain();await run;assert.equal(f.localNavigations.length,0);assert.match(f.element('status').textContent,/ยังไม่ตอบจากเครื่องนี้/);assert.match(f.element('launcher-dispatch').textContent,/คำขอเดิม/);
+}
+for(const bodyHung of [false,true]){
+ const f=bootstrapFixture({hung:true});await f.flush();assert.equal(f.tasks[0].ms,5000);f.tasks.shift().fn();await f.flush();assert.equal(f.aborted,1);assert.equal(f.topNavigations.length,0);assert.match(f.element('status').textContent,/หมดเวลา/);
+}
+console.log('PASS blocked auxiliary outcome and hung status remain recoverable without foreground localhost navigation');

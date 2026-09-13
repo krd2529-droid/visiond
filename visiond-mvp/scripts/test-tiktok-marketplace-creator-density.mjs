@@ -22,7 +22,7 @@ assert.ok(render, "Marketplace renderer must exist");
 assert.doesNotMatch(render, /ความหนาแน่นครีเอเตอร์|creatorDensity|content_creator_count|showcase_creator_count/);
 assert.doesNotMatch(css, /\.creator-density/);
 assert.match(render, /const columnCount = 9/);
-assert.match(html, /tiktok-analyzer\.js\?v=02163/);
+assert.match(html, /tiktok-analyzer\.js\?v=02164/);
 assert.match(html, /tiktok-analyzer\.css\?v=02102/);
 
 console.log("TikTok Marketplace provider density retained and presentation removed: PASS");

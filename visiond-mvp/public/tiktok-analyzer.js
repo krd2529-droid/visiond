@@ -322,9 +322,9 @@ function connectionActionStatus(control,text,type=''){
   if(node){node.textContent=text;node.dataset.type=type}else setBrowserProfileStatus(text,type);
   return node;
 }
-function helperRecoveryStatus(control,text){
+function helperRecoveryStatus(control,text,state='not-running'){
  const node=connectionActionStatus(control,text+' หากยังไม่ติดตั้งหรือ Helper ไม่ทำงาน ให้เปิดขั้นตอนติดตั้งด้านล่าง โดยยังเก็บคำขอเดิมไว้','error')||$('[data-browser-profile-status]');
- if(node?.appendChild){const link=document.createElement('a');link.href='/launcher-setup';link.textContent='ดาวน์โหลด / ติดตั้ง / แก้ไข Helper';link.className='vds-btn vds-btn--secondary';link.dataset.helperRecovery='';node.appendChild(document.createElement('br'));node.appendChild(link)}
+ if(node?.appendChild){(node.querySelectorAll?.('[data-helper-recovery]')||[]).forEach(link=>link.remove());const link=document.createElement('a');link.href='/launcher-setup?state='+state;link.textContent='ติดตั้ง/ซ่อมตัวช่วยเครื่องนี้';link.className='vds-btn vds-btn--primary';link.dataset.helperRecovery='';node.appendChild(document.createElement('br'));node.appendChild(link)}
 }
 function routeProfileConnection(mode,control){return issueProfileOAuth(mode,control||$(mode==='tiktok_new'?'#newChannel':mode==='shop'?'#connectTikTokShop':'#connectTikTok'))}
 function consumeLegacyConnectionHint(){handoffOpened=true;setBrowserProfileStatus(requestedConnectMode==='tiktok_new'?'กด + ช่องใหม่ เพื่อเข้าสู่ TikTok ในโปรไฟล์ใหม่':'เปิดช่องที่ระบุแล้ว กดปุ่มเชื่อม TikTok ของช่องนี้เพื่อดำเนินการ')}
@@ -347,7 +347,7 @@ function renderLauncherChoices(){
  if(!launcherReadiness.helper&&launcherReadiness.items?.length){const label=document.createElement('label');label.textContent='เลือก Helper ที่ผูกกับบัญชีนี้ ';const select=document.createElement('select'),empty=document.createElement('option');empty.value='';empty.textContent='เลือกเครื่อง…';select.appendChild(empty);for(const h of launcherReadiness.items){const option=document.createElement('option');option.value=h.id;option.textContent='Helper '+h.id.slice(-8)+' · '+(h.created_at||'');select.appendChild(option)}select.addEventListener('change',()=>{const helper=launcherReadiness.items.find(h=>h.id===select.value);if(!helper||launcherReadiness.owner!==pageViewerId)return;launcherReadiness.helper=helper;try{localStorage.setItem('visiond_launcher_helper',helper.id)}catch{}renderLauncherChoices();setBrowserProfileStatus('เลือกตัวช่วยที่ผูกกับบัญชีแล้ว กดเชื่อมช่องเพื่อตรวจการตอบรับจากเครื่อง')});label.appendChild(select);box.appendChild(label)}
  if(launcherReadiness.hasMore){const more=document.createElement('button');more.type='button';more.textContent='ดู Helper เพิ่ม';more.addEventListener('click',()=>prepareLauncherReadiness(true,launcherReadiness.nextCursor).catch(e=>setBrowserProfileStatus(e.message,'error')));box.appendChild(more)}
 }
-function launcherRegisteredMessage(){return launcherReadiness.helper?'พบ Helper ที่ผูกกับบัญชีแล้ว กดเชื่อมช่องเพื่อตรวจการตอบรับจริงจากเครื่อง':launcherReadiness.items?.length?'บัญชีนี้มี Helper ที่ผูกแล้ว โปรดเลือกเครื่องด้านบน':'ไม่พบ Helper ที่ผูกกับบัญชี VisionD ที่เข้าสู่ระบบนี้ ตรวจบัญชีหรือไปตั้งค่า Helper';}
+function launcherRegisteredMessage(){return launcherReadiness.helper?'พบรายการ Helper ที่ผูกกับบัญชี แต่ยังไม่ยืนยันว่า Helper เครื่องนี้ติดตั้งหรือกำลังทำงาน กดเชื่อมเพื่อตรวจเครื่องนี้':launcherReadiness.items?.length?'บัญชีนี้มีรายการ Helper ที่ผูกแล้ว แต่ยังไม่ยืนยันว่าเป็นเครื่องนี้ โปรดเลือกเครื่องด้านบน':'บัญชีนี้ยังไม่มี Helper ที่ผูก เตรียมและยืนยัน Helper บนเครื่องนี้ก่อน';}
 async function prepareLauncherReadiness(force=false,after=''){
  const owner=pageViewerId,key=owner+':'+after;if(launcherReadinessRequest?.key===key)return launcherReadinessRequest.promise;
  if(!force&&launcherReadiness.owner===owner&&launcherReadiness.expires>Date.now()&&launcherReadiness.after===after)return launcherReadiness.helper;
@@ -388,7 +388,7 @@ async function reconcileProfileCommand(mode,control,pending){
   if(!response.ok||result.command_id&&result.command_id!==pending.commandId)throw new Error('อ่านสถานะคำขอเดิมไม่ได้ ยังไม่เปิดคำขอซ้ำ');
   const terminal=result.oauth_status==='complete'||result.expired||['failed','cancelled'].includes(result.status);
   if(result.oauth_status==='complete'&&pending.key==='new'&&typeof refreshProfileStatus==='function'){await refreshProfileStatus();return false}
-  if(terminal){clearProfileCommand(pending);if(result.error_code==='HELPER_UPDATE_REQUIRED')helperRecoveryStatus(control,launcherOAuthStage(result));else connectionActionStatus(control,launcherOAuthStage(result));
+  if(terminal){clearProfileCommand(pending);if(result.error_code==='HELPER_UPDATE_REQUIRED')helperRecoveryStatus(control,launcherOAuthStage(result),'outdated');else connectionActionStatus(control,launcherOAuthStage(result));
    return false}
   connectionActionStatus(control,launcherOAuthStage(result)+' · ยังเก็บคำขอเดิมไว้ ไม่สร้าง OAuth ซ้ำ');
   const node=control?.parentElement?.querySelector('[data-connection-action-status]');
@@ -1667,7 +1667,7 @@ const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return
    profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key);
    setBrowserProfileStatus(launcherOAuthStage(result));
    if(browserProfileUuid.test(result.channel_id)&&channelOwnership.unchanged(request.revision)){state.selected=result.channel_id;selected=String(result.channel_id);browserLauncher?.clearPending(request.slotId);await loadChannels()}
-  }else if(result.expired||['failed','cancelled'].includes(result.status)){clearProfileCommand(request);if(result.error_code==='HELPER_UPDATE_REQUIRED')helperRecoveryStatus(null,launcherOAuthStage(result));else setBrowserProfileStatus(launcherOAuthStage(result))}
+  }else if(result.expired||['failed','cancelled'].includes(result.status)){clearProfileCommand(request);if(result.error_code==='HELPER_UPDATE_REQUIRED')helperRecoveryStatus(null,launcherOAuthStage(result),'outdated');else setBrowserProfileStatus(launcherOAuthStage(result))}
   else if(result.status==='process_started'){setBrowserProfileStatus(launcherOAuthStage(result));if(result.intent==='view'){profileOAuthPendingKeys.delete(request.key);profileHandoffRequests.delete(request.key)}}
   else setBrowserProfileStatus(launcherOAuthStage(result));
  }));

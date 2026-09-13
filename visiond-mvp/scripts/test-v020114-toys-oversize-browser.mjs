@@ -69,5 +69,5 @@ try{
   await page.click('#aiFillProduct');await page.click('#saveProduct');await page.waitForTimeout(100);assert.equal(writes.length,beforeFailure,'invalid oversized input sends zero AI/save request');assert.match(await page.locator('#formStatus').textContent(),/ไฟล์ไม่ตรงกับชนิด/);await page.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
 
-console.log('PASS v0.20.114 installed Chrome genuine oversized JPEG/PNG/WEBP/HEIC orientation, alpha, exact AI/save cache, cover, concurrency2, stale queue and zero-request failure');
+console.log('PASS v0.20.115 installed Chrome genuine oversized JPEG/PNG/WEBP/HEIC orientation, alpha, exact AI/save cache, cover, concurrency2, stale queue and zero-request failure');
 console.log(JSON.stringify(results));

@@ -102,6 +102,6 @@ for(const [type,name] of [['image/jpeg','raw.jpg'],['image/png','raw.png'],['ima
   await assert.rejects(readToyImage(raw,1),/ไม่เกิน 5 MB/);assert.equal(buffered,0,'server rejects raw oversized bypass before buffering');
 }
 const adminSource=fs.readFileSync(new URL('../public/toys-center-admin.js',import.meta.url),'utf8'),adminHtml=fs.readFileSync(new URL('../public/toys-center-admin.html',import.meta.url),'utf8');
-assert.match(adminSource,/toys-center-image\.js\?v=020114/);assert.match(adminSource,/ปรับรูป VisionD.*MB →.*MB/);assert.match(adminHtml,/toys-center-admin\.js\?v=020114/);assert.match(adminHtml,/toys-center\.css\?v=020114/);assert.match(adminHtml,/v0\.20\.114/);assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.114');
+assert.match(adminSource,/toys-center-image\.js\?v=020114/);assert.match(adminSource,/ปรับรูป VisionD.*MB →.*MB/);assert.match(adminHtml,/toys-center-admin\.js\?v=020114/);assert.match(adminHtml,/toys-center\.css\?v=020114/);assert.match(adminHtml,/v0\.20\.115/);assert.equal(fs.readFileSync(new URL('../VERSION.txt',import.meta.url),'utf8').trim(),'v0.20.115');
 
-console.log('PASS v0.20.114 bounded VisionD optimizer identity, MIME/magic, aspect/no-upscale, cache, order, stale queue, resource guards and server bypass');
+console.log('PASS v0.20.115 bounded VisionD optimizer identity, MIME/magic, aspect/no-upscale, cache, order, stale queue, resource guards and server bypass');

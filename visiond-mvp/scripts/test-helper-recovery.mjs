@@ -25,6 +25,6 @@ console.log('PASS pair auth-first, login/refresh hint, explicit checkbox, expiry
 const setup=readFileSync('public/launcher-setup.js','utf8'),html=readFileSync('public/launcher-setup.html','utf8');assert.doesNotMatch(html.match(/<a id="download"[^>]+>/)[0],/href=/);
 for(const valid of [false,true]){
  const nodes=new Map(),timers=[];const node=k=>{if(!nodes.has(k))nodes.set(k,{removeAttribute(){}});return nodes.get(k)};
- vm.runInNewContext(setup,{AbortController,document:{getElementById:node},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.78':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'ad1898e402be306f1cf4e7f8b71bf5860b7725ccbafcb0f78c80e36e8fa92c8a'}})});await flush();assert.equal(!!node('download').href,valid);
+ vm.runInNewContext(setup,{URLSearchParams,AbortController,document:{getElementById:node},location:{search:'?state=outdated'},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.78':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'ad1898e402be306f1cf4e7f8b71bf5860b7725ccbafcb0f78c80e36e8fa92c8a'}})});await flush();assert.equal(!!node('download').href,valid);assert.equal(node('setup-state').value,'outdated');
 }
 console.log('PASS download remains unavailable until exact version/file/hash/signature manifest validation');

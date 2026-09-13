@@ -40,6 +40,6 @@ response=await updateProduct({env,params:{id:String(created.id)},request:request
 
 const html=await read('public/toys-center-admin.html'),adminSource=await read('public/toys-center-admin.js'),publicSource=await read('public/toyscenter.js'),feed=await read('functions/api/toys-center/feed.csv.js');
 assert.match(html,/name="product_line"[^>]*maxlength="120"/);assert.match(html,/name="series"[^>]*maxlength="120"/);assert.match(adminSource,/['"]product_line['"]/);assert.match(adminSource,/['"]series['"]/);assert.match(publicSource,/detailRow\('ไลน์สินค้า'/);assert.match(publicSource,/detailRow\('ซีรีส์'/);assert.doesNotMatch(feed,/product_line|series/,'Meta feed remains unchanged');
-assert.equal((await read('VERSION.txt')).trim(),'v0.20.114');assert.match(html,/v0\.20\.114/);assert.match(html,/toys-center-admin\.js\?v=020114/);assert.match(await read('public/toyscenter.html'),/toyscenter\.js\?v=020114/);
+assert.equal((await read('VERSION.txt')).trim(),'v0.20.115');assert.match(html,/v0\.20\.115/);assert.match(html,/toys-center-admin\.js\?v=020114/);assert.match(await read('public/toyscenter.html'),/toyscenter\.js\?v=020114/);
 sqlite.close();
 console.log('PASS v0.20.110 Toys Center product line/series migration, normalization, create/update/read and preservation');
