@@ -29,15 +29,15 @@ assert.match(callback,/fetchTikTokProfile\(token.access_token,fetch,token.scope\
 const analyzer=readFileSync('functions/api/admin/tiktok-analyzer/index.js','utf8');
 const raw=analyzer.match(/`(WITH scoped AS[^`]+)`/)[1],sql=raw.replace('${channelWhere}','');
 const db=new DatabaseSync(':memory:');db.exec(`CREATE TABLE tiktok_channels(id TEXT PRIMARY KEY,name TEXT,created_by INTEGER,archived_at TEXT,updated_at TEXT);
-CREATE TABLE tiktok_connections(id TEXT,user_id INTEGER,channel_id TEXT,status TEXT,updated_at TEXT,scopes TEXT,avatar_url TEXT,follower_count INTEGER,likes_count INTEGER,video_count INTEGER);
+CREATE TABLE tiktok_connections(id TEXT,user_id INTEGER,channel_id TEXT,status TEXT,updated_at TEXT,scopes TEXT,avatar_url TEXT,avatar_revision TEXT,follower_count INTEGER,likes_count INTEGER,video_count INTEGER);
 CREATE INDEX idx_test_connections ON tiktok_connections(channel_id,user_id,status,updated_at DESC);
 CREATE TABLE tiktok_browser_profile_bindings(slot_id TEXT,user_id INTEGER,channel_id TEXT,profile_kind TEXT);
 CREATE INDEX idx_test_bindings ON tiktok_browser_profile_bindings(channel_id,user_id);
 CREATE TABLE tiktok_analysis_runs(channel_id TEXT,result_json TEXT,created_at TEXT);
 CREATE INDEX idx_test_runs ON tiktok_analysis_runs(channel_id,created_at DESC);`);
 for(let i=0;i<26;i++)db.prepare('INSERT INTO tiktok_channels VALUES(?,?,1,NULL,?)').run(String(i).padStart(2,'0'),'Fixture','2026-09-10');
-db.prepare('INSERT INTO tiktok_connections VALUES(?,1,?,?,?, ?,?,100,20,10)').run('fixture','25','active','2026-09-10',basic,'avatar');
-db.prepare('INSERT INTO tiktok_connections VALUES(?,2,?,?,?, ?,?,999,999,999)').run('foreign','24','active','2026-09-10',full,'foreign');
+db.prepare('INSERT INTO tiktok_connections VALUES(?,1,?,?,?, ?,?,?,100,20,10)').run('fixture','25','active','2026-09-10',basic,'avatar','');
+db.prepare('INSERT INTO tiktok_connections VALUES(?,2,?,?,?, ?,?,?,999,999,999)').run('foreign','24','active','2026-09-10',full,'foreign','');
 const rows=db.prepare(sql).all(1,25);assert.equal(rows.length,25);assert.equal(rows[0].tiktok_scopes,basic);assert.equal(rows[1].tiktok_scopes,null);
 const projection=analyzer.match(/const channelView=row=>([^;]+);/)[1],view=new Function('row','tikTokVisibleProfile','tikTokCapabilities','parse','return '+projection)(rows[0],tikTokVisibleProfile,tikTokCapabilities,JSON.parse);
 assert.equal(view.tiktok_connected,true);assert.equal(view.follower_count,null);

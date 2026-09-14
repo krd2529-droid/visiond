@@ -70,7 +70,7 @@ const server = http.createServer(async (request, response) => {
   try {
     let body = await readFile(target);
     if (relative === "tiktok-analyzer.html") {
-      const html = body.toString("utf8").replace("<body>", '<body><aside style="position:sticky;top:0;z-index:9999;padding:10px 16px;background:#5b2c83;color:#fff;font:700 14px system-ui;text-align:center">LOCAL PROFILE FIXTURE · ข้อมูลช่องเป็นข้อมูลสังเคราะห์ · ไม่ส่ง OAuth หรือ production mutation อัตโนมัติ</aside>');
+      const html = body.toString("utf8").replace(/<body([^>]*)>/, '<body$1><aside style="position:sticky;top:0;z-index:9999;padding:10px 16px;background:#5b2c83;color:#fff;font:700 14px system-ui;text-align:center">LOCAL PROFILE FIXTURE · ข้อมูลช่องเป็นข้อมูลสังเคราะห์ · ไม่ส่ง OAuth หรือ production mutation อัตโนมัติ</aside>');
       body = Buffer.from(html);
     }
     response.writeHead(200, { "content-type": mime[path.extname(target)] || "application/octet-stream", "cache-control": "no-store" });
@@ -98,7 +98,7 @@ server.listen(requestedPort, "127.0.0.1", async () => {
     const html = await page.text();
     assert.equal(page.status, 200);
     assert.match(html, /LOCAL PROFILE FIXTURE/);
-    assert.match(html, /tiktok-analyzer\.js\?v=02164/);
+    assert.match(html, /tiktok-analyzer\.js\?v=02165/);
     assert.equal((await fetch(`http://127.0.0.1:${port}/browser-profile-launcher.js?v=1`)).status, 200);
     const list = await (await fetch(`http://127.0.0.1:${port}/api/admin/tiktok-analyzer?limit=24`)).json();
     assert.deepEqual(list.channels.map((item) => item.id), [ids.A, ids.B]);

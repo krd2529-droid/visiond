@@ -16,7 +16,7 @@ let calls=0;
 const from=apiSource.indexOf("if(action==='shop_orders'){"),to=apiSource.indexOf('if (action === "shop_sync")',from),branch=apiSource.slice(from,to);
 const ctx={request:{url:'https://visiondonline.com/api/admin/tiktok-connections'},env:{}};
 const body={date_from:'2026-09-10',date_to:'2026-09-10',request_id:'fixture',revision:0};
-const sandbox={ctx,body,auth:{},shop:{id:'selected'},action:'shop_orders',URL,URLSearchParams,headers:{},dateRange:url=>dateRange(url,Date.parse('2026-09-11T02:00:00Z')),json:(data,status)=>({data,status}),syncOrderPage:async(env,connection,range)=>{calls++;assert.equal(connection.id,'selected');assert.equal(range.availability.ready,false);return{status:'complete'}},vxRequestAccessStillCurrent:async()=>true};
+const sandbox={ctx,body,auth:{},delegated:false,shop:{id:'selected'},action:'shop_orders',URL,URLSearchParams,headers:{},dateRange:url=>dateRange(url,Date.parse('2026-09-11T02:00:00Z')),json:(data,status)=>({data,status}),syncOrderPage:async(env,connection,range)=>{calls++;assert.equal(connection.id,'selected');assert.equal(range.availability.ready,false);return{status:'complete'}},vxWorkspaceAccessStillCurrent:async()=>true};
 const result=await vm.runInNewContext('(async()=>{'+branch+'})()',sandbox);
 assert.equal(calls,1,'09:00 Thai latest-day POST reaches authoritative sync/provider seam');assert.equal(result.status,200);
 assert.doesNotMatch(source,/12:00/,'no local wait-until-noon copy remains');assert.doesNotMatch(apiSource,/TIKTOK_DAILY_TOTALS_NOT_READY|!range\.availability\.ready|!availability\.ready/);

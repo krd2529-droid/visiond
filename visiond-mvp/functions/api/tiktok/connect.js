@@ -1,11 +1,12 @@
 import {json} from '../../_lib.js';
 import {requireVxUser} from '../../_vx_access.js';
+import {denyActiveVxWorkspaceDelegate} from '../../_vx_workspace.js';
 import {ensureDatabase} from '../../_schema.js';
 import {ensureTikTokAnalyzerSchema} from '../../_tiktok_analyzer.js';
 import {canonicalTikTokProfileSlot,createTikTokState,tikTokAuthorizeUrl,tikTokOAuthConfig} from '../../_tiktok_oauth.js';
 
 export async function onRequestGet(ctx){
-  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
+  await ensureDatabase(ctx.env);await ensureTikTokAnalyzerSchema(ctx.env);const delegate=await denyActiveVxWorkspaceDelegate(ctx,'บัญชีผู้ปฏิบัติงาน VX ต้องเชื่อมช่อง Boss ผ่าน TikTok Helper ในศูนย์ปฏิบัติการ VX');if(delegate.error)return delegate.error;const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
   const config=tikTokOAuthConfig(ctx.env);if(!config.configured)return json({error:'ยังไม่ได้ตั้งค่า TikTok Client key และ Client secret',code:'TIKTOK_OAUTH_NOT_CONFIGURED'},503);
   const url=new URL(ctx.request.url),channelId=String(url.searchParams.get('channel_id')||'').trim().slice(0,80),createNew=url.searchParams.get('create')==='1',slotInput=url.searchParams.get('profile_slot_id'),profileSlotId=canonicalTikTokProfileSlot(slotInput);
   if(channelId&&createNew)return json({error:'เลือกได้อย่างใดอย่างหนึ่งระหว่างช่องเดิมหรือช่องใหม่'},400);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';import vm from 'node:vm';import{readFileSync}from'node:fs';
 const src=readFileSync('public/tiktok-analyzer.js','utf8');
 const extract=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)));
-const render=vm.createContext({state:{},escapeHtml:String,displayDate:String,arrayValue:x=>x||[],safeJson:JSON.parse});vm.runInContext(extract('function soldProductSummaryTable(','function decorateSoldProductSelection('),render);
+const render=vm.createContext({state:{},pageWorkspaceDelegated:false,escapeHtml:String,displayDate:String,arrayValue:x=>x||[],safeJson:JSON.parse});vm.runInContext(extract('function soldProductSummaryTable(','function decorateSoldProductSelection('),render);
 const html=render.shopRangeSummary({date_range:{from:'2026-09-01',to:'2026-09-10'},commission_availability:{latest_date:'2026-09-10'},order_sync:{status:'partial',can_read_orders:true}},[],[]);
 assert.equal((html.match(/<button/g)||[]).length,1);assert.match(html,/<button[^>]*>แสดงผล<\/button>/);assert.doesNotMatch(src,/data-fetch-sold-orders|ดึงออเดอร์หน้าถัดไป/);
 function fixture(sequence=['partial','partial','complete'],initialStatus='partial'){

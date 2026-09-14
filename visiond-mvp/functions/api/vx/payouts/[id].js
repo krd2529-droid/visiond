@@ -1,11 +1,13 @@
 import { json, requireUser } from '../../../_lib.js';
 import { ensureDatabase } from '../../../_schema.js';
 import { ensureVxReferralSchema } from '../../../_vx_referrals.js';
+import { denyActiveVxWorkspaceDelegate } from '../../../_vx_workspace.js';
 
 const headers = { 'cache-control': 'private, no-store' };
 const cleanId = value => String(value || '').trim().slice(0, 80);
 
 export async function onRequestGet(ctx) {
+  const delegate=await denyActiveVxWorkspaceDelegate(ctx);if(delegate.error)return delegate.error;
   await ensureDatabase(ctx.env);
   await ensureVxReferralSchema(ctx.env);
   const auth = await requireUser(ctx);

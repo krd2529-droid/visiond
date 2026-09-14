@@ -1,5 +1,5 @@
-import {cookie,json,sha256,requireUser} from './_lib.js';
-import {requireVxUser} from './_vx_access.js';
+import {cookie,json,sha256} from './_lib.js';
+import {requireVxWorkspaceUser,vxWorkspaceOwnerId,isVxWorkspaceDelegate} from './_vx_workspace.js';
 import {rateLimit,requestIp} from './_security.js';
 import {issueHandoff,handoffLiveSql} from './_tiktok_handoff.js';
 import {canonicalTikTokProfileSlot as uuid} from './_tiktok_oauth.js';
@@ -19,27 +19,28 @@ async function allowPairCode(env,request,userId){
  }
  return true;
 }
-const pairLive=`EXISTS(SELECT 1 FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.id=? AND u.id=? AND s.expires_at>CURRENT_TIMESTAMP AND ((?='admin' AND u.role IN ('boss','admin')) OR (?='paid' AND EXISTS(SELECT 1 FROM vx_access_grants g JOIN orders o ON o.id=g.order_id WHERE g.order_id=? AND g.user_id=u.id AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR (?='review' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_review_access_grants g WHERE g.id=? AND g.user_id=u.id AND g.scope='tiktok_app_review' AND g.revoked_at IS NULL AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP))))`;
-const pairLiveArgs=(request,auth)=>{const source=auth.vx.admin?'admin':auth.vx.access_source;return[session(request),auth.user.id,source,source,auth.vx.order_id||null,source,auth.vx.id||null]};
-const liveView=`EXISTS(SELECT 1 FROM sessions s WHERE s.id=c.session_id AND s.user_id=c.user_id AND s.expires_at>CURRENT_TIMESTAMP) AND EXISTS(SELECT 1 FROM tiktok_channels ch WHERE ch.id=c.channel_id AND ch.created_by=c.user_id AND ch.archived_at IS NULL)
- AND EXISTS(SELECT 1 FROM users u WHERE u.id=c.user_id AND ((c.access_source='admin' AND u.role IN ('boss','admin')) OR (c.access_source='paid' AND EXISTS(SELECT 1 FROM vx_access_grants g JOIN orders o ON o.id=g.order_id WHERE g.order_id=c.access_id AND g.user_id=u.id AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR (c.access_source='review' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_review_access_grants g WHERE g.id=c.access_id AND g.user_id=u.id AND g.revoked_at IS NULL AND g.scope='tiktok_app_review' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP))))
- AND NOT EXISTS(SELECT 1 FROM tiktok_browser_profile_bindings b WHERE b.channel_id=c.channel_id AND (b.user_id<>c.user_id OR b.slot_id<>c.slot_id OR b.profile_kind<>c.profile_kind))`;
-const liveCommand=`EXISTS(SELECT 1 FROM browser_launcher_helpers h WHERE h.id=c.helper_id AND h.user_id=c.user_id AND h.key_version=c.key_version AND h.status='active') AND ((c.intent='view' AND ${liveView}) OR (c.intent='oauth' AND EXISTS(SELECT 1 FROM tiktok_oauth_handoffs f WHERE f.id=c.handoff_id AND f.user_id=c.user_id AND f.session_id=c.session_id AND f.status IN ('issued','redeemed','processing','complete') AND f.expires_at>CURRENT_TIMESTAMP AND ${handoffLiveSql})))`;
+const pairLive=`EXISTS(SELECT 1 FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.id=? AND u.id=? AND s.expires_at>CURRENT_TIMESTAMP AND ((?='admin' AND u.role IN ('boss','admin')) OR (?='paid' AND EXISTS(SELECT 1 FROM vx_access_grants g JOIN orders o ON o.id=g.order_id WHERE g.order_id=? AND g.user_id=u.id AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR (?='review' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_review_access_grants g WHERE g.id=? AND g.user_id=u.id AND g.scope='tiktok_app_review' AND g.revoked_at IS NULL AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR (?='workspace_delegation' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_workspace_delegations d JOIN users owner ON owner.id=d.owner_user_id AND owner.role='boss' WHERE d.id=? AND d.delegate_user_id=u.id AND d.scope='boss_tiktok_channel_operator' AND d.revoked_at IS NULL))))`;
+const pairLiveArgs=(request,auth)=>{const source=auth.vx.admin?'admin':auth.vx.access_source;return[session(request),auth.user.id,source,source,auth.vx.order_id||null,source,auth.vx.id||null,source,auth.vx.id||null]};
+const liveView=`EXISTS(SELECT 1 FROM sessions s WHERE s.id=c.session_id AND s.user_id=COALESCE(c.actor_user_id,c.user_id) AND s.expires_at>CURRENT_TIMESTAMP) AND EXISTS(SELECT 1 FROM tiktok_channels ch WHERE ch.id=c.channel_id AND ch.created_by=COALESCE(c.workspace_owner_user_id,c.user_id) AND ch.archived_at IS NULL)
+ AND EXISTS(SELECT 1 FROM users u WHERE u.id=COALESCE(c.actor_user_id,c.user_id) AND ((c.access_source='admin' AND u.role IN ('boss','admin')) OR (c.access_source='paid' AND EXISTS(SELECT 1 FROM vx_access_grants g JOIN orders o ON o.id=g.order_id WHERE g.order_id=c.access_id AND g.user_id=u.id AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR (c.access_source='review' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_review_access_grants g WHERE g.id=c.access_id AND g.user_id=u.id AND g.revoked_at IS NULL AND g.scope='tiktok_app_review' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR (c.access_source='workspace_delegation' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_workspace_delegations d JOIN users owner ON owner.id=d.owner_user_id AND owner.role='boss' WHERE d.id=c.access_id AND d.delegate_user_id=u.id AND d.owner_user_id=COALESCE(c.workspace_owner_user_id,c.user_id) AND d.scope='boss_tiktok_channel_operator' AND d.revoked_at IS NULL))))
+ AND NOT EXISTS(SELECT 1 FROM tiktok_browser_profile_bindings b WHERE b.channel_id=c.channel_id AND (b.user_id<>COALESCE(c.workspace_owner_user_id,c.user_id) OR b.slot_id<>c.slot_id OR b.profile_kind<>c.profile_kind))`;
+const liveCommand=`EXISTS(SELECT 1 FROM browser_launcher_helpers h WHERE h.id=c.helper_id AND h.user_id=COALESCE(c.actor_user_id,c.user_id) AND h.key_version=c.key_version AND h.status='active') AND ((c.intent='view' AND ${liveView}) OR (c.intent='oauth' AND EXISTS(SELECT 1 FROM tiktok_oauth_handoffs f WHERE f.id=c.handoff_id AND COALESCE(f.actor_user_id,f.user_id)=COALESCE(c.actor_user_id,c.user_id) AND COALESCE(f.workspace_owner_user_id,f.user_id)=COALESCE(c.workspace_owner_user_id,c.user_id) AND f.session_id=c.session_id AND f.status IN ('issued','redeemed','processing','complete') AND f.expires_at>CURRENT_TIMESTAMP AND ${handoffLiveSql})))`;
 export async function launcherIssue(ctx){
  if(!origin(ctx.request))return fail(403);
- const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
+ const auth=await requireVxWorkspaceUser(ctx);if(auth.error)return auth.error;const ownerId=vxWorkspaceOwnerId(auth),delegated=isVxWorkspaceDelegate(auth);
  const body=await ctx.request.json().catch(()=>null);
  if(!exact(body,['helper_id','command_id','provider','intent','channel_id'])||!uuid(body.helper_id)||!uuid(body.command_id)||!['new','reconnect','view'].includes(body.intent))return fail();
+ if(delegated&&body.intent==='new')return fail(403);
  const requestHash=await sha256(JSON.stringify([body.helper_id,body.provider,body.intent,body.channel_id]));
  if(await ctx.env.DB.prepare('SELECT id FROM browser_launcher_cancelled WHERE id=?').bind(body.command_id).first())return fail(409,'LAUNCHER_COMMAND_CANCELLED');
- const old=await ctx.env.DB.prepare('SELECT id,status,request_hash FROM browser_launcher_commands WHERE id=? AND user_id=? AND session_id=?').bind(body.command_id,auth.user.id,session(ctx.request)).first();
+ const old=await ctx.env.DB.prepare('SELECT id,status,request_hash FROM browser_launcher_commands WHERE id=? AND COALESCE(actor_user_id,user_id)=? AND session_id=?').bind(body.command_id,auth.user.id,session(ctx.request)).first();
  if(old)return old.request_hash===requestHash?reply({command_id:old.id,status:old.status}):fail(409,'LAUNCHER_REQUEST_CONFLICT');
  const helper=await ctx.env.DB.prepare("SELECT id,key_version,port FROM browser_launcher_helpers WHERE id=? AND user_id=? AND status='active'").bind(body.helper_id,auth.user.id).first();if(!helper)return fail(409,'LAUNCHER_PAIRING_REQUIRED');
  if(body.intent==='view'){
   if(!uuid(body.channel_id))return fail();
-  const channel=await ctx.env.DB.prepare('SELECT ch.id,b.slot_id,b.profile_kind,b.user_id FROM tiktok_channels ch LEFT JOIN tiktok_browser_profile_bindings b ON b.channel_id=ch.id WHERE ch.id=? AND ch.created_by=? AND ch.archived_at IS NULL').bind(body.channel_id,auth.user.id).first();if(!channel||channel.user_id!=null&&Number(channel.user_id)!==Number(auth.user.id))return fail(404);
-  const source=auth.vx.admin?'admin':auth.vx.access_source;
-  await ctx.env.DB.batch([ctx.env.DB.prepare("INSERT INTO browser_launcher_commands(id,helper_id,key_version,user_id,session_id,request_hash,intent,ticket_cipher,channel_id,slot_id,profile_kind,access_source,access_id,expires_at) VALUES(?,?,?,?,?,?,'view','',?,?,?,?,?,datetime('now','+2 minutes'))").bind(body.command_id,helper.id,helper.key_version,auth.user.id,session(ctx.request),requestHash,channel.id,channel.slot_id||channel.id,channel.profile_kind||'channel',source,auth.vx.order_id||auth.vx.id||null),ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT c.id FROM browser_launcher_commands c WHERE c.id=? AND ${liveCommand}))`).bind(body.command_id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(body.command_id)]);
+  const channel=await ctx.env.DB.prepare('SELECT ch.id,b.slot_id,b.profile_kind,b.user_id FROM tiktok_channels ch LEFT JOIN tiktok_browser_profile_bindings b ON b.channel_id=ch.id WHERE ch.id=? AND ch.created_by=? AND ch.archived_at IS NULL').bind(body.channel_id,ownerId).first();if(!channel||channel.user_id!=null&&Number(channel.user_id)!==Number(ownerId))return fail(404);
+  const source=delegated?'workspace_delegation':auth.vx.admin?'admin':auth.vx.access_source;
+  await ctx.env.DB.batch([ctx.env.DB.prepare("INSERT INTO browser_launcher_commands(id,helper_id,key_version,user_id,session_id,request_hash,intent,ticket_cipher,channel_id,slot_id,profile_kind,access_source,access_id,expires_at,actor_user_id,workspace_owner_user_id) VALUES(?,?,?,?,?,?,'view','',?,?,?,?,?,datetime('now','+2 minutes'),?,?)").bind(body.command_id,helper.id,helper.key_version,auth.user.id,session(ctx.request),requestHash,channel.id,channel.slot_id||channel.id,channel.profile_kind||'channel',source,auth.vx.order_id||auth.vx.id||null,auth.user.id,ownerId),ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT c.id FROM browser_launcher_commands c WHERE c.id=? AND ${liveCommand}))`).bind(body.command_id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(body.command_id)]);
   return reply({command_id:body.command_id,port:helper.port,status:'pending'});
  }
  const handoffRequest=new Request(ctx.request.url,{method:'POST',headers:ctx.request.headers,body:JSON.stringify({provider:body.provider,intent:body.intent==='view'?'reconnect':body.intent,channel_id:body.channel_id})});
@@ -47,18 +48,21 @@ export async function launcherIssue(ctx){
  if(!handoffResponse.ok)return handoffResponse;
  const flow=await handoffResponse.json(),command={id:body.command_id,user_id:auth.user.id,helper_id:helper.id,key_version:helper.key_version};
  const cipher=await sealLauncher(ctx.env,flow.ticket,commandAAD(command));
- const statements=[ctx.env.DB.prepare(`INSERT INTO browser_launcher_commands(id,helper_id,key_version,user_id,session_id,request_hash,handoff_id,intent,ticket_cipher,expires_at)
- SELECT ?,?,?,?,?,?,?,?,?,datetime('now','+2 minutes') WHERE EXISTS(SELECT 1 FROM browser_launcher_helpers h WHERE h.id=? AND h.user_id=? AND h.key_version=? AND h.status='active') AND EXISTS(SELECT 1 FROM tiktok_oauth_handoffs f WHERE f.id=? AND f.status='issued' AND ${handoffLiveSql})`).bind(command.id,helper.id,helper.key_version,auth.user.id,session(ctx.request),requestHash,flow.id,'oauth',cipher,helper.id,auth.user.id,helper.key_version,flow.id),
+ const statements=[ctx.env.DB.prepare(`INSERT INTO browser_launcher_commands(id,helper_id,key_version,user_id,session_id,request_hash,handoff_id,intent,ticket_cipher,expires_at,actor_user_id,workspace_owner_user_id)
+ SELECT ?,?,?,?,?,?,?,?,?,datetime('now','+2 minutes'),?,? WHERE EXISTS(SELECT 1 FROM browser_launcher_helpers h WHERE h.id=? AND h.user_id=? AND h.key_version=? AND h.status='active') AND EXISTS(SELECT 1 FROM tiktok_oauth_handoffs f WHERE f.id=? AND f.status='issued' AND ${handoffLiveSql})`).bind(command.id,helper.id,helper.key_version,auth.user.id,session(ctx.request),requestHash,flow.id,'oauth',cipher,auth.user.id,ownerId,helper.id,auth.user.id,helper.key_version,flow.id),
  ctx.env.DB.prepare("DELETE FROM browser_launcher_commands WHERE id IN (SELECT id FROM browser_launcher_commands WHERE expires_at<datetime('now','-1 day') ORDER BY expires_at,id LIMIT 24)"),
  ctx.env.DB.prepare("DELETE FROM browser_launcher_nonces WHERE id IN (SELECT id FROM browser_launcher_nonces WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,id LIMIT 24)")];
  const result=await ctx.env.DB.batch(statements);if(result[0].meta?.changes!==1)return fail(409);
  return reply({command_id:command.id,port:helper.port,status:'pending'});
 }
-async function userContext(ctx){if(!origin(ctx.request))return {error:fail(403)};return requireVxUser(ctx)}
+async function userContext(ctx){
+ if(!origin(ctx.request))return {error:fail(403)};
+ return requireVxWorkspaceUser(ctx);
+}
 export async function launcherRoute(ctx){
  const action=ctx.params.action,request=ctx.request,url=new URL(request.url);
  if(request.method==='GET'){
-  const auth=await requireUser(ctx,{includeCourseOwner:false});if(auth.error)return auth.error;
+  const auth=await requireVxWorkspaceUser(ctx);if(auth.error)return auth.error;const ownerId=vxWorkspaceOwnerId(auth);
   if(action==='helpers'){
    const after=url.searchParams.get('after')||'';if(after&&!uuid(after))return fail();
    const rows=await ctx.env.DB.prepare("SELECT id,port,key_version,created_at FROM browser_launcher_helpers WHERE user_id=? AND status='active' AND id>? ORDER BY id LIMIT 25").bind(auth.user.id,after).all(),items=(rows.results||[]).slice(0,24),has_more=(rows.results||[]).length>24;return reply({items,has_more,next_cursor:has_more?items.at(-1).id:null});
@@ -67,8 +71,8 @@ export async function launcherRoute(ctx){
    const id=url.searchParams.get('command_id');if(!uuid(id))return fail();
    const row=await ctx.env.DB.prepare(`SELECT c.id command_id,h.port,c.status,c.error_code,c.expires_at,c.intent,f.id handoff_id,f.slot_id,f.status oauth_status,CASE WHEN f.provider IN ('tiktok','shop') THEN f.provider ELSE NULL END oauth_provider,CASE WHEN f.continuation IN ('shop','') THEN f.continuation ELSE NULL END oauth_continuation,CASE WHEN f.status='complete' THEN b.channel_id ELSE '' END channel_id,
     CASE WHEN c.expires_at<=CURRENT_TIMESTAMP THEN 1 ELSE 0 END expired
-    FROM browser_launcher_commands c JOIN browser_launcher_helpers h ON h.id=c.helper_id AND h.user_id=c.user_id AND h.status='active' LEFT JOIN tiktok_oauth_handoffs f ON f.id=c.handoff_id LEFT JOIN tiktok_browser_profile_bindings b ON b.slot_id=f.slot_id AND b.user_id=c.user_id
-    WHERE c.id=? AND c.user_id=? AND c.session_id=?`).bind(id,auth.user.id,session(request)).first();
+    FROM browser_launcher_commands c JOIN browser_launcher_helpers h ON h.id=c.helper_id AND h.user_id=COALESCE(c.actor_user_id,c.user_id) AND h.status='active' LEFT JOIN tiktok_oauth_handoffs f ON f.id=c.handoff_id LEFT JOIN tiktok_browser_profile_bindings b ON b.slot_id=f.slot_id AND b.user_id=COALESCE(c.workspace_owner_user_id,c.user_id)
+    WHERE c.id=? AND COALESCE(c.actor_user_id,c.user_id)=? AND COALESCE(c.workspace_owner_user_id,c.user_id)=? AND c.session_id=?`).bind(id,auth.user.id,ownerId,session(request)).first();
    return reply(row||{status:'waiting',oauth_provider:null,oauth_continuation:null});
   }
   return fail(404);
@@ -76,14 +80,15 @@ export async function launcherRoute(ctx){
  if(request.method!=='POST'||request.headers.get('content-type')?.split(';')[0]!=='application/json')return fail(405);
  const raw=await request.text();if(raw.length>4096)return fail(413);let body;try{body=JSON.parse(raw)}catch{return fail()}
  if(action==='cancel'){
-  const auth=await userContext(ctx);if(auth.error)return auth.error;
+  if(!origin(request))return fail(403);
+  const auth=await requireVxWorkspaceUser(ctx);if(auth.error)return auth.error;
   if(!exact(body,['command_id'])||!uuid(body.command_id))return fail();
   // A tombstone also cancels a slow bootstrap that has not inserted its command yet.
   // Insert and claim serialize in SQLite; an acknowledged/ambiguous launch is never cancelled.
   await ctx.env.DB.batch([
-   ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT ? WHERE NOT EXISTS(SELECT 1 FROM browser_launcher_commands c WHERE c.id=? AND (c.user_id<>? OR c.session_id<>? OR (c.status NOT IN ('pending','failed','cancelled') AND c.expires_at>CURRENT_TIMESTAMP)))))`).bind(body.command_id,body.command_id,auth.user.id,session(request)),
+   ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT ? WHERE NOT EXISTS(SELECT 1 FROM browser_launcher_commands c WHERE c.id=? AND (COALESCE(c.actor_user_id,c.user_id)<>? OR c.session_id<>? OR (c.status NOT IN ('pending','failed','cancelled') AND c.expires_at>CURRENT_TIMESTAMP)))))`).bind(body.command_id,body.command_id,auth.user.id,session(request)),
    ctx.env.DB.prepare('INSERT INTO browser_launcher_cancelled(id,user_id,session_id) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING').bind(body.command_id,auth.user.id,session(request)),
-   ctx.env.DB.prepare("UPDATE browser_launcher_commands SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=? AND session_id=?").bind(body.command_id,auth.user.id,session(request)),
+   ctx.env.DB.prepare("UPDATE browser_launcher_commands SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id=? AND COALESCE(actor_user_id,user_id)=? AND session_id=?").bind(body.command_id,auth.user.id,session(request)),
    ctx.env.DB.prepare("DELETE FROM browser_launcher_cancelled WHERE id IN (SELECT id FROM browser_launcher_cancelled WHERE created_at<datetime('now','-1 day') ORDER BY created_at,id LIMIT 24)"),
    ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(body.command_id)
   ]);

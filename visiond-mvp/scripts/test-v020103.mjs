@@ -55,7 +55,7 @@ const aggregateSql=sqlLog.find(sql=>sql.includes('tiktok_shop_affiliate_orders')
 assert.match(db.prepare('EXPLAIN QUERY PLAN '+aggregateSql).all('shop-owned',range.fromEpoch,range.toExclusive).map(row=>row.detail).join(' '),/idx_tiktok_shop_orders_time/);
 for(const forbidden of ['tiktok_commission_center_snapshots','_tiktok_commission','collector','referral','fetch('])assert.equal(route.includes(forbidden),false,forbidden);
 
-assert.match(client,/const COMMISSION_WORKSPACE_ENABLED = false/);assert.doesNotMatch(html,/ดูค่าคอม \(Boss Test\)/);assert.equal((client.match(/\/api\/admin\/tiktok-partner-commissions/g)||[]).length,1,'experiment endpoint must have one explicit client call site');assert.match(client,/pageViewerRole=String\(authPayload\?\.user\?\.role/);assert.match(client,/pageAuthorized=true;enableBossPartnerCommissionTest\(\)/);
+assert.match(client,/const COMMISSION_WORKSPACE_ENABLED = false/);assert.doesNotMatch(html,/ดูค่าคอม \(Boss Test\)/);assert.equal((client.match(/\/api\/admin\/tiktok-partner-commissions/g)||[]).length,1,'experiment endpoint must have one explicit client call site');assert.match(client,/pageViewerRole=String\(authPayload\?\.user\?\.role/);assert.match(client,/pageAuthorized=true;[\s\S]{0,200}enableBossPartnerCommissionTest\(\)/);
 assert.match(client,/channels"\)\.addEventListener\("click",[\s\S]*?setChannelView\("products"\)/,'channel change still returns to products');
 assert.match(client,/if\(mode!=="showcase"\)invalidatePartnerCommissionCache\(context\.channelId\)/,'order sync must target commission invalidation from the selected channel');
 assert.match(client,/if\(current\(\)\)\{invalidatePartnerCommissionCache\(context\.channelId\);await loadTikTokConnection/,'paged order sync completion must invalidate the selected channel commission cache');
@@ -71,5 +71,5 @@ assert.match(client,/function isBossPartnerCommissionView\(\)\{return pageAuthor
 assert.match(loadSource,/channelOwnership\.current\(context\)/,'selected-channel generation guard remains');
 assert.match(loadSource,/\/api\/admin\/tiktok-partner-commissions/,'dedicated Partner endpoint remains');
 
-assert.equal(read('VERSION.txt').trim(),'v0.20.116');assert.match(html,/v0\.20\.116/);assert.match(html,/tiktok-analyzer\.js\?v=02164/);
+assert.equal(read('VERSION.txt').trim(),'v0.20.117');assert.match(html,/v0\.20\.117/);assert.match(html,/tiktok-analyzer\.js\?v=02165/);
 console.log('PASS v103 compatibility: Boss-only Partner source isolation, role/owner/range/index and truthful amount states');

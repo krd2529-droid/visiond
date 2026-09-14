@@ -110,7 +110,7 @@ const callbackCase = async ({ atLimit = false, current = () => true } = {}) => {
   const handler = loadCallback({
     handoffGuardStatements: () => [],
     requireVxUser: async () => ({ user: { id: 1 }, vx: { active: true, admin: false, account_limit: 1, access_source: "paid", order_id: 1 } }),
-    vxRequestAccessStillCurrent: async () => current(), vxChannelInsert, vxChannelRestore,
+    vxWorkspaceOwnerId: (auth) => auth.user.id, vxWorkspaceAccessStillCurrent: async () => current(), activeVxWorkspaceDelegation: async () => null, vxChannelInsert, vxChannelRestore,
     ensureDatabase: async () => {}, ensureTikTokAnalyzerSchema: async () => {},
     consumeTikTokState: async () => ({ channel_id: "", profile_slot_id: SLOT }),
     exchangeTikTokCode: async () => { providerCalls += 1; return { access_token: "opaque" }; },
@@ -118,7 +118,7 @@ const callbackCase = async ({ atLimit = false, current = () => true } = {}) => {
     prepareTikTokConnection: async (env, userId, channelId) => ({ id: "connection-new", openId: "provider-new",
       statement: env.DB.prepare("INSERT INTO tiktok_connections(id,user_id,channel_id,open_id,status) SELECT 'connection-new',?,?,?,'active' WHERE EXISTS(SELECT 1 FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL) ON CONFLICT(user_id,open_id) DO UPDATE SET channel_id=excluded.channel_id,status='active'")
         .bind(userId, channelId, "provider-new", channelId, userId) }),
-    syncTikTokConnection: async () => { throw new Error("quota-deferred"); }, tikTokOAuthConfig: () => ({ configured: true }),
+    syncTikTokConnection: async () => { throw new Error("quota-deferred"); }, mirrorTikTokAvatar: async () => ({ mirrored: false }), tikTokOAuthConfig: () => ({ configured: true }),
     tikTokProfileBindingStatement, requireD1DataFetchAvailable: async () => new Response("blocked", { status: 503 })
   });
   const response = await handler({ env: { DB }, request: new Request("https://visiond.test/api/tiktok/callback?state=opaque&code=opaque") });

@@ -1,5 +1,6 @@
 import {cookie,json,sha256} from './_lib.js';
-import {requireVxUser,vxAccess} from './_vx_access.js';
+import {vxAccess} from './_vx_access.js';
+import {requireVxWorkspaceUser,vxWorkspaceOwnerId,isVxWorkspaceDelegate} from './_vx_workspace.js';
 import {canonicalTikTokProfileSlot,tikTokAuthorizeUrl,tikTokOAuthConfig} from './_tiktok_oauth.js';
 import {tikTokShopCreatorAuthorizeUrl,tikTokShopOAuthConfig} from './_tiktok_shop_oauth.js';
 
@@ -11,39 +12,41 @@ const nonceName=id=>`__Host-vd_oauth_${id}`;
 const sameOrigin=request=>request.headers.get('origin')===new URL(request.url).origin&&['same-origin',null].includes(request.headers.get('sec-fetch-site'))&&request.headers.get('content-type')?.split(';')[0]==='application/json';
 
 // All predicates are also evaluated inside the final D1 batch, after provider awaits.
-export const handoffLiveSql=`EXISTS(SELECT 1 FROM tiktok_oauth_handoff_heads h WHERE h.slot_id=f.slot_id AND h.user_id=f.user_id AND h.handoff_id=f.id)
- AND EXISTS(SELECT 1 FROM sessions s WHERE s.id=f.session_id AND s.user_id=f.user_id AND s.expires_at>datetime('now'))
- AND EXISTS(SELECT 1 FROM users u WHERE u.id=f.user_id AND (
+export const handoffLiveSql=`EXISTS(SELECT 1 FROM tiktok_oauth_handoff_heads h WHERE h.slot_id=f.slot_id AND h.user_id=COALESCE(f.workspace_owner_user_id,f.user_id) AND h.handoff_id=f.id)
+ AND EXISTS(SELECT 1 FROM sessions s WHERE s.id=f.session_id AND s.user_id=COALESCE(f.actor_user_id,f.user_id) AND s.expires_at>datetime('now'))
+ AND EXISTS(SELECT 1 FROM users u WHERE u.id=COALESCE(f.actor_user_id,f.user_id) AND (
  (f.access_source='admin' AND u.role IN ('boss','admin')) OR
  (f.access_source='paid' AND EXISTS(SELECT 1 FROM vx_access_grants g JOIN orders o ON o.id=g.order_id WHERE g.order_id=f.access_id AND g.user_id=u.id AND o.status='paid' AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR
- (f.access_source='review' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_review_access_grants g WHERE g.id=f.access_id AND g.user_id=u.id AND g.scope='tiktok_app_review' AND g.revoked_at IS NULL AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP))))
- AND (f.channel_id='' OR EXISTS(SELECT 1 FROM tiktok_channels ch WHERE ch.id=f.channel_id AND ch.created_by=f.user_id AND ch.archived_at IS NULL))
- AND (f.account_limit IS NULL OR (SELECT COUNT(*) FROM tiktok_channels ch WHERE ch.created_by=f.user_id AND ch.archived_at IS NULL)<=f.account_limit)
- AND NOT EXISTS(SELECT 1 FROM tiktok_browser_profile_bindings b WHERE b.slot_id=f.slot_id AND (b.user_id<>f.user_id OR b.channel_id<>f.channel_id OR b.profile_kind<>f.profile_kind))
- AND (f.provider<>'shop' OR EXISTS(SELECT 1 FROM tiktok_browser_profile_bindings b WHERE b.slot_id=f.slot_id AND b.user_id=f.user_id AND b.channel_id=f.channel_id AND b.profile_kind=f.profile_kind))`;
+ (f.access_source='review' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_review_access_grants g WHERE g.id=f.access_id AND g.user_id=u.id AND g.scope='tiktok_app_review' AND g.revoked_at IS NULL AND g.starts_at<=CURRENT_TIMESTAMP AND g.expires_at>CURRENT_TIMESTAMP)) OR
+ (f.access_source='workspace_delegation' AND u.role='user' AND COALESCE(u.is_test_user,0)=0 AND EXISTS(SELECT 1 FROM vx_workspace_delegations d JOIN users owner ON owner.id=d.owner_user_id AND owner.role='boss' WHERE d.id=f.access_id AND d.delegate_user_id=u.id AND d.owner_user_id=COALESCE(f.workspace_owner_user_id,f.user_id) AND d.scope='boss_tiktok_channel_operator' AND d.revoked_at IS NULL))))
+ AND (f.channel_id='' OR EXISTS(SELECT 1 FROM tiktok_channels ch WHERE ch.id=f.channel_id AND ch.created_by=COALESCE(f.workspace_owner_user_id,f.user_id) AND ch.archived_at IS NULL))
+ AND (f.account_limit IS NULL OR (SELECT COUNT(*) FROM tiktok_channels ch WHERE ch.created_by=COALESCE(f.workspace_owner_user_id,f.user_id) AND ch.archived_at IS NULL)<=f.account_limit)
+ AND NOT EXISTS(SELECT 1 FROM tiktok_browser_profile_bindings b WHERE b.slot_id=f.slot_id AND (b.user_id<>COALESCE(f.workspace_owner_user_id,f.user_id) OR b.channel_id<>f.channel_id OR b.profile_kind<>f.profile_kind))
+ AND (f.provider<>'shop' OR EXISTS(SELECT 1 FROM tiktok_browser_profile_bindings b WHERE b.slot_id=f.slot_id AND b.user_id=COALESCE(f.workspace_owner_user_id,f.user_id) AND b.channel_id=f.channel_id AND b.profile_kind=f.profile_kind))`;
 
 export async function issueHandoff(ctx){
  if(!sameOrigin(ctx.request))return fail(403);
- const auth=await requireVxUser(ctx);if(auth.error)return auth.error;
+ const auth=await requireVxWorkspaceUser(ctx);if(auth.error)return auth.error;const ownerId=vxWorkspaceOwnerId(auth),delegated=isVxWorkspaceDelegate(auth);
  const body=await ctx.request.json().catch(()=>null);if(!body)return fail();
  const {provider,intent}=body,channelId=body.channel_id||'';
  if(!['tiktok','shop'].includes(provider)||!['new','reconnect'].includes(intent)||
    (intent==='new'&&(channelId||provider!=='tiktok'))||(intent==='reconnect'&&!canonicalTikTokProfileSlot(channelId)))return fail();
+ if(delegated&&intent==='new')return fail(403);
  const config=provider==='tiktok'?tikTokOAuthConfig(ctx.env):tikTokShopOAuthConfig(ctx.env);if(!config.configured)return fail(503);
- if(channelId&&!await ctx.env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL').bind(channelId,auth.user.id).first())return fail(404);
+ if(channelId&&!await ctx.env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL').bind(channelId,ownerId).first())return fail(404);
  const binding=channelId?await ctx.env.DB.prepare('SELECT slot_id,user_id,profile_kind FROM tiktok_browser_profile_bindings WHERE channel_id=?').bind(channelId).first():null;
- if(binding&&Number(binding.user_id)!==Number(auth.user.id))return fail(409);
+ if(binding&&Number(binding.user_id)!==Number(ownerId))return fail(409);
  const slotId=binding?.slot_id||(channelId||(body.slot_id?canonicalTikTokProfileSlot(body.slot_id):crypto.randomUUID())),profileKind=binding?.profile_kind||(channelId?'channel':'slot');
  if(!slotId||body.slot_id&&body.slot_id!==slotId||body.profile_kind&&body.profile_kind!==profileKind)return fail(409);
  const occupied=await ctx.env.DB.prepare('SELECT user_id,channel_id,profile_kind FROM tiktok_browser_profile_bindings WHERE slot_id=?').bind(slotId).first();
- if(occupied&&(Number(occupied.user_id)!==Number(auth.user.id)||occupied.channel_id!==channelId||occupied.profile_kind!==profileKind))return fail(409);
+ if(occupied&&(Number(occupied.user_id)!==Number(ownerId)||occupied.channel_id!==channelId||occupied.profile_kind!==profileKind))return fail(409);
  const continuation=provider==='shop'&&!binding?'shop':'',initialProvider=continuation?'tiktok':provider;
  if(continuation&&!tikTokOAuthConfig(ctx.env).configured)return fail(503);
- const id=crypto.randomUUID(),ticket=random(),source=auth.vx.admin?'admin':auth.vx.access_source;
+ const id=crypto.randomUUID(),ticket=random(),source=delegated?'workspace_delegation':auth.vx.admin?'admin':auth.vx.access_source;
  let results;try{results=await ctx.env.DB.batch([
  ctx.env.DB.prepare("DELETE FROM tiktok_oauth_handoffs WHERE id IN (SELECT id FROM tiktok_oauth_handoffs WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,id LIMIT 24)"),
- ctx.env.DB.prepare(`INSERT INTO tiktok_oauth_handoffs(id,ticket_hash,user_id,session_id,slot_id,channel_id,provider,intent,access_source,access_id,account_limit,expires_at,profile_kind,continuation) VALUES(?,?,?,?,?,?,?,?,?,?,?,datetime('now','+10 minutes'),?,?)`).bind(id,await sha256(ticket),auth.user.id,cookie(ctx.request,'vd_session'),slotId,channelId,initialProvider,intent,source,auth.vx.order_id||auth.vx.id||null,auth.vx.account_limit,profileKind,continuation),
- ctx.env.DB.prepare(`INSERT INTO tiktok_oauth_handoff_heads(slot_id,user_id,handoff_id) VALUES(?,?,?) ON CONFLICT(slot_id) DO UPDATE SET handoff_id=excluded.handoff_id,user_id=excluded.user_id`).bind(slotId,auth.user.id,id)
+  ctx.env.DB.prepare(`INSERT INTO tiktok_oauth_handoffs(id,ticket_hash,user_id,session_id,slot_id,channel_id,provider,intent,access_source,access_id,account_limit,expires_at,profile_kind,continuation,actor_user_id,workspace_owner_user_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,datetime('now','+10 minutes'),?,?,?,?)`).bind(id,await sha256(ticket),auth.user.id,cookie(ctx.request,'vd_session'),slotId,channelId,initialProvider,intent,source,auth.vx.order_id||auth.vx.id||null,auth.vx.account_limit,profileKind,continuation,auth.user.id,ownerId),
+  ctx.env.DB.prepare(`INSERT INTO tiktok_oauth_handoff_heads(slot_id,user_id,handoff_id) VALUES(?,?,?) ON CONFLICT(slot_id) DO UPDATE SET handoff_id=excluded.handoff_id,user_id=excluded.user_id`).bind(slotId,ownerId,id)
  ]);}catch(error){if(String(error?.message).includes('HANDOFF_OWNER_CONFLICT'))return fail(409);throw error}
  if(results[2]?.meta?.changes!==1)return fail(409);
  return json({id,ticket,slot_id:slotId,profile_kind:profileKind},200,privateHeaders);
@@ -65,9 +68,13 @@ export async function consumeHandoff(ctx,state,provider){
  const row=await ctx.env.DB.prepare(`SELECT f.* FROM tiktok_oauth_handoffs f WHERE f.state_hash=? AND f.provider=? AND f.status='redeemed' AND f.expires_at>CURRENT_TIMESTAMP AND ${handoffLiveSql}`).bind(await sha256(state),provider).first();
  if(!row)return null;const nonce=cookie(ctx.request,nonceName(row.id));if(!hex(nonce)||await sha256(nonce)!==row.nonce_hash)return null;
  const changed=await ctx.env.DB.prepare(`UPDATE tiktok_oauth_handoffs AS f SET status='processing' WHERE id=? AND status='redeemed' AND expires_at>CURRENT_TIMESTAMP AND ${handoffLiveSql}`).bind(row.id).run();if(changed.meta?.changes!==1)return null;
- const user=await ctx.env.DB.prepare('SELECT id,role FROM users WHERE id=?').bind(row.user_id).first();
- if(!user)return null;const vx=await vxAccess(ctx.env,user);if(!vx.active)return null;
- return {auth:{user,vx,handoff:row},stateRow:{channel_id:row.channel_id,profile_slot_id:row.slot_id}};
+  const actorId=Number(row.actor_user_id||row.user_id),ownerId=Number(row.workspace_owner_user_id||row.user_id),user=await ctx.env.DB.prepare('SELECT id,role FROM users WHERE id=?').bind(actorId).first();
+ if(!user)return null;
+ let vx,workspace;if(row.access_source==='workspace_delegation'){
+   const delegation=await ctx.env.DB.prepare("SELECT id,owner_user_id,scope FROM vx_workspace_delegations WHERE id=? AND delegate_user_id=? AND owner_user_id=? AND scope='boss_tiktok_channel_operator' AND revoked_at IS NULL").bind(row.access_id,actorId,ownerId).first();
+   if(!delegation)return null;vx={active:true,admin:false,account_limit:null,access_source:'workspace_delegation',id:delegation.id};workspace={delegated:true,owner_user_id:ownerId,scope:delegation.scope,delegation_id:delegation.id};
+ }else{vx=await vxAccess(ctx.env,user);if(!vx.active)return null;workspace={delegated:false,owner_user_id:Number(user.id),scope:'self',delegation_id:null}}
+ return {auth:{user,vx,workspace,handoff:row},stateRow:{channel_id:row.channel_id,profile_slot_id:row.slot_id}};
 }
 export async function handoffStillCurrent(ctx,auth){
  return Boolean(await ctx.env.DB.prepare(`SELECT f.id FROM tiktok_oauth_handoffs f WHERE f.id=? AND f.status='processing' AND f.expires_at>CURRENT_TIMESTAMP AND ${handoffLiveSql}`).bind(auth.handoff.id).first());

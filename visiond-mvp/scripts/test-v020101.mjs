@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const src=readFileSync('public/tiktok-analyzer.js','utf8'),css=readFileSync('public/tiktok-analyzer.css','utf8');
-assert.doesNotMatch(src,/manageChannelConnections|showManagement|จัดการการเชื่อมต่อ|shopActions\.manage/);
+assert.doesNotMatch(src,/manageChannelConnections|showManagement|shopActions\.manage/);
 assert.doesNotMatch(css,/manage-channel-connections/);
 assert.match(src,/data-channel-view="products"[^>]*>จัดการสินค้า/);
 assert.match(src,/data-connect-selected-shop>เชื่อม TikTok Shop สำหรับช่องนี้/);

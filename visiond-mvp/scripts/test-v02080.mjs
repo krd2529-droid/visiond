@@ -3,30 +3,30 @@ import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import vm from 'node:vm';
 import {fixture} from './test-v02072.mjs';
-const server=readFileSync('functions/_browser_launcher.js','utf8'),sql=server.match(/`(SELECT c.id command_id[\s\S]+?WHERE c.id=\? AND c.user_id=\? AND c.session_id=\?)`/)[1];
-const db=new DatabaseSync(':memory:');db.exec(`CREATE TABLE browser_launcher_commands(id TEXT PRIMARY KEY,helper_id TEXT,user_id INTEGER,session_id TEXT,status TEXT,expires_at TEXT,intent TEXT,handoff_id TEXT);
+const server=readFileSync('functions/_browser_launcher.js','utf8'),sql=server.match(/`(SELECT c.id command_id[\s\S]+?WHERE c.id=\? AND COALESCE\(c.actor_user_id,c.user_id\)=\? AND COALESCE\(c.workspace_owner_user_id,c.user_id\)=\? AND c.session_id=\?)`/)[1];
+const db=new DatabaseSync(':memory:');db.exec(`CREATE TABLE browser_launcher_commands(id TEXT PRIMARY KEY,helper_id TEXT,user_id INTEGER,session_id TEXT,status TEXT,expires_at TEXT,intent TEXT,handoff_id TEXT,actor_user_id INTEGER,workspace_owner_user_id INTEGER);
 CREATE TABLE browser_launcher_helpers(id TEXT PRIMARY KEY,user_id INTEGER,status TEXT,port INTEGER);
-CREATE TABLE tiktok_oauth_handoffs(id TEXT PRIMARY KEY,slot_id TEXT,status TEXT,provider TEXT,continuation TEXT);
+CREATE TABLE tiktok_oauth_handoffs(id TEXT PRIMARY KEY,slot_id TEXT,status TEXT,provider TEXT,continuation TEXT,actor_user_id INTEGER,workspace_owner_user_id INTEGER);
 CREATE TABLE tiktok_browser_profile_bindings(slot_id TEXT,user_id INTEGER,channel_id TEXT);
 CREATE INDEX binding_test ON tiktok_browser_profile_bindings(slot_id,user_id);
 INSERT INTO browser_launcher_helpers VALUES('helper',1,'active',55000);
-INSERT INTO tiktok_oauth_handoffs VALUES('flow','slot','redeemed','tiktok','shop');
-INSERT INTO browser_launcher_commands VALUES('command','helper',1,'session','process_started','2099-01-01','oauth','flow');`);
+INSERT INTO tiktok_oauth_handoffs VALUES('flow','slot','redeemed','tiktok','shop',1,1);
+INSERT INTO browser_launcher_commands VALUES('command','helper',1,'session','process_started','2099-01-01','oauth','flow',1,1);`);
 db.exec(readFileSync('migrations/0103_browser_launcher_capability.sql','utf8'));
-const read=()=>db.prepare(sql).get('command',1,'session');
+const read=()=>db.prepare(sql).get('command',1,1,'session');
 assert.equal(read().oauth_provider,'tiktok','actual status SELECT must identify LoginKit prerequisite');
 assert.equal(read().oauth_continuation,'shop');
-assert.equal(db.prepare(sql).get('command',2,'session'),undefined);assert.equal(db.prepare(sql).get('command',1,'foreign'),undefined);
+assert.equal(db.prepare(sql).get('command',2,1,'session'),undefined);assert.equal(db.prepare(sql).get('command',1,2,'session'),undefined);assert.equal(db.prepare(sql).get('command',1,1,'foreign'),undefined);
 for(const provider of ['shop','invalid']){db.prepare('UPDATE tiktok_oauth_handoffs SET provider=?,continuation=?').run(provider,provider==='shop'?'':'invalid');const row=read();assert.equal(row.oauth_provider,provider==='shop'?'shop':null);assert.equal(row.oauth_continuation,provider==='shop'?'':null)}
 db.exec("UPDATE browser_launcher_commands SET handoff_id=NULL");assert.equal(read().oauth_provider,null);assert.equal(read().oauth_continuation,null);
 assert.ok(Object.keys(read()).every(k=>!['ticket','nonce','state','token','open_id','provider_open_id','secret'].includes(k)));
-assert.match(db.prepare('EXPLAIN QUERY PLAN '+sql).all('command',1,'session').map(x=>x.detail).join('\n'),/SEARCH c USING INDEX sqlite_autoindex_browser_launcher_commands/);db.close();
+assert.match(db.prepare('EXPLAIN QUERY PLAN '+sql).all('command',1,1,'session').map(x=>x.detail).join('\n'),/SEARCH c USING INDEX sqlite_autoindex_browser_launcher_commands/);db.close();
 for(const [provider,continuation,expected]of [['tiktok','shop',/Login Kit.*TikTok Shop/],['shop','',/TikTok Shop/],[null,null,/Chrome/]]){
  const f=fixture(),run=f.s.run('shop');await new Promise(r=>setImmediate(r));f.reply(f.pending[0],{status:'process_started',oauth_provider:provider,oauth_continuation:continuation});await run;assert.match(f.statuses.at(-1)[0],expected,'actual click status must use authoritative provider');
 }
 // Execute the actual GET route prefix: missing command remains safe null categories.
 const routeSource=server.slice(server.indexOf('export async function launcherRoute'),server.indexOf(" if(request.method!=='POST'",server.indexOf('export async function launcherRoute'))).replace('export ','')+'}\nreturn launcherRoute;';
-let reads=0;const route=new Function('requireUser','uuid','session','reply','fail',routeSource)(async()=>({user:{id:1}}),()=>true,()=> 'session',body=>Response.json(body),()=>Response.json({error:true}));
+let reads=0;const route=new Function('requireVxWorkspaceUser','vxWorkspaceOwnerId','uuid','session','reply','fail',routeSource)(async()=>({user:{id:1},workspace:{delegated:false,owner_user_id:1}}),auth=>auth.workspace.owner_user_id,()=>true,()=> 'session',body=>Response.json(body),()=>Response.json({error:true}));
 const waiting=await route({params:{action:'status'},request:new Request('https://visiondonline.com/api/launcher/status?command_id=fixture'),env:{DB:{prepare:()=>({bind:()=>({first:async()=>{reads++;return null}})})}}});assert.deepEqual(await waiting.json(),{status:'waiting',oauth_provider:null,oauth_continuation:null});assert.equal(reads,1);
 const client=readFileSync('public/tiktok-analyzer.js','utf8'),stageSource=client.slice(client.indexOf('function launcherOAuthStage('),client.indexOf('async function reconcileProfileCommand('));const stage=new Function(stageSource+';return launcherOAuthStage')();
 assert.match(stage({status:'process_started',expired:true,oauth_provider:'tiktok',oauth_continuation:'shop'}),/หมดอายุ/);

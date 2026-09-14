@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020117": "node scripts/test-v020117-vx-boss-channel-operator.mjs && node scripts/test-v020117-vx-operator-routes.mjs && node scripts/test-v020117-tiktok-avatar.mjs && node scripts/test-v020117-vx-boss-channel-operator-browser.mjs && node scripts/test-v020117-tiktok-avatar-browser.mjs && npm run test:v020116",
     "test:v020116": "node scripts/test-v020116-account-vault.mjs && node scripts/test-v020116-account-vault-browser.mjs && npm run test:v020115",
     "test:v020115": "node scripts/test-v020115-helper-fallback.mjs && node scripts/test-v020115-helper-fallback-browser.mjs && npm run test:v020114",
     "test:v020114": "node scripts/test-v020114-toys-oversize.mjs && node scripts/test-v020114-toys-oversize-browser.mjs && npm run test:v020113",

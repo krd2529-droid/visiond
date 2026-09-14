@@ -42,7 +42,7 @@ const revoked=await syncOrderPage(env,c,range,crypto.randomUUID(),{fetchImpl:asy
 assert.match(db.prepare('EXPLAIN QUERY PLAN SELECT status FROM tiktok_shop_order_coverage WHERE connection_id=? AND date_from=? AND date_to=?').all(c.id,range.from,range.to).map(x=>x.detail).join(' '),/INDEX/);
 assert.match(db.prepare('EXPLAIN QUERY PLAN SELECT order_id FROM tiktok_shop_affiliate_orders WHERE connection_id=? AND create_time>=? AND create_time<? ORDER BY create_time DESC LIMIT 24').all(c.id,range.fromEpoch,range.toExclusive).map(x=>x.detail).join(' '),/idx_tiktok_shop_orders_time/);
 const src=readFileSync('public/tiktok-analyzer.js','utf8'),extract=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)));
-const ctx=vm.createContext({state:{},escapeHtml:String,displayDate:String,arrayValue:x=>x||[],safeJson:x=>typeof x==='string'?JSON.parse(x):x});vm.runInContext(extract('function soldProductSummaryTable(','function decorateSoldProductSelection('),ctx);
+const ctx=vm.createContext({state:{},pageWorkspaceDelegated:false,escapeHtml:String,displayDate:String,arrayValue:x=>x||[],safeJson:x=>typeof x==='string'?JSON.parse(x):x});vm.runInContext(extract('function soldProductSummaryTable(','function decorateSoldProductSelection('),ctx);
 for(const status of ['never','failed','partial','running','missing_scope','provider_not_ready','complete']){
  const html=ctx.shopRangeSummary({date_range:range,commission_availability:{ready:true,latest_date:yesterday},order_sync:{status,can_read_orders:status!=='missing_scope'}},[],[]);
  assert.equal(html.includes('ช่วงวันที่นี้ยังไม่มีสินค้าที่ขายได้'),status==='complete',status+' zero classification');

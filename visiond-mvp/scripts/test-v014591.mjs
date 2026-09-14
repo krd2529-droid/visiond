@@ -9,7 +9,7 @@ const cryptoSource=read('functions/_account_vault_crypto.js');
 const legacyMigration=read('migrations/0076_account_vault.sql');
 const socialMigration=read('migrations/0108_account_vault_social_hint.sql');
 const admin=read('public/admin.html');
-assert.equal(read('VERSION.txt').trim(),'v0.20.116');
+assert.equal(read('VERSION.txt').trim(),'v0.20.117');
 assert.match(html,/บัญชีโซเชียล/);
 assert.doesNotMatch(html,/name="password"|name="login_id"/);
 for(const token of['record_kind','encryption_context','password_hint_ciphertext','idx_admin_account_vault_owner_kind_id'])assert.ok(socialMigration.includes(token),token);
@@ -22,4 +22,4 @@ const env={ACCOUNT_VAULT_ENCRYPTION_KEY:'test-key-that-is-at-least-thirty-two-ch
 const cipher=await encryptAccountVaultValue(env,'legacy-secret','7:password');
 assert.equal(await decryptAccountVaultValue(env,cipher,'7:password'),'legacy-secret');
 await assert.rejects(()=>decryptAccountVaultValue(env,cipher,'social:7:password-hint'));
-console.log('PASS legacy account-vault AES-GCM compatibility and v0.20.116 social-hint isolation');
+console.log('PASS legacy account-vault AES-GCM compatibility and v0.20.117 social-hint isolation');

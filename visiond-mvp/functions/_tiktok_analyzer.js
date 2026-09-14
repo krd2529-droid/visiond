@@ -55,6 +55,7 @@ export async function ensureTikTokAnalyzerSchema(env){
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS tiktok_connections(
       id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,channel_id TEXT NOT NULL DEFAULT '',open_id TEXT NOT NULL,
       union_id TEXT NOT NULL DEFAULT '',display_name TEXT NOT NULL DEFAULT '',avatar_url TEXT NOT NULL DEFAULT '',
+      avatar_object_key TEXT NOT NULL DEFAULT '',avatar_mime_type TEXT NOT NULL DEFAULT '',avatar_file_size INTEGER NOT NULL DEFAULT 0 CHECK(avatar_file_size>=0 AND avatar_file_size<=2097152),avatar_revision TEXT NOT NULL DEFAULT '',avatar_mirrored_at TEXT,avatar_sync_generation INTEGER NOT NULL DEFAULT 0 CHECK(avatar_sync_generation>=0),
       profile_url TEXT NOT NULL DEFAULT '',bio TEXT NOT NULL DEFAULT '',is_verified INTEGER NOT NULL DEFAULT 0,
       follower_count INTEGER NOT NULL DEFAULT 0,following_count INTEGER NOT NULL DEFAULT 0,likes_count INTEGER NOT NULL DEFAULT 0,video_count INTEGER NOT NULL DEFAULT 0,
       access_token_ciphertext TEXT NOT NULL,refresh_token_ciphertext TEXT NOT NULL,scopes TEXT NOT NULL DEFAULT '',

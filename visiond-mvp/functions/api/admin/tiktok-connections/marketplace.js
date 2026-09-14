@@ -1,5 +1,5 @@
 import {json} from '../../../_lib.js';
-import {requireVxUser} from '../../../_vx_access.js';
+import {requireVxWorkspaceUser,vxWorkspaceOwnerId,isVxWorkspaceDelegate,vxWorkspaceAccessStillCurrent} from '../../../_vx_workspace.js';
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureTikTokAnalyzerSchema } from "../../../_tiktok_analyzer.js";
 import { normalizeTikTokMarketplaceProduct, searchTikTokShopOpenCollaborationProducts, tikTokMarketplaceGrowth } from "../../../_tiktok_shop_api.js";
@@ -30,11 +30,11 @@ export const classifyMarketplaceError = error => {
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   const body = await ctx.request.clone().json().catch(() => ({})),guarded=body.categories_only!==true;
-  const auth = await requireVxUser(ctx,{bootstrap:!guarded}); if (auth.error) return auth.error;
-  const connectionId = clean(body.connection_id, 100), channelId=clean(body.channel_id,80);
+  const auth = await requireVxWorkspaceUser(ctx,{bootstrap:!guarded}); if (auth.error) return auth.error;
+  const connectionId = clean(body.connection_id, 100), channelId=clean(body.channel_id,80),delegated=isVxWorkspaceDelegate(auth);
   if(guarded){const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_marketplace_search');if(blocked)return blocked}
   await ensureTikTokAnalyzerSchema(ctx.env);
-  const connection = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(connectionId, auth.user.id, channelId).first();
+  const connection = await ctx.env.DB.prepare("SELECT * FROM tiktok_shop_creator_connections WHERE id=? AND user_id=? AND channel_id=? AND status='active'").bind(connectionId, vxWorkspaceOwnerId(auth), channelId).first();
   if (!connection) return json({ error: "ไม่พบบัญชี TikTok Shop Creator ที่เชื่อมอยู่" }, 404, headers);
   if (body.categories_only === true) {
     const rows = (await ctx.env.DB.prepare("SELECT raw_json FROM tiktok_shop_marketplace_snapshots WHERE connection_id=? UNION ALL SELECT raw_json FROM tiktok_shop_showcase_products WHERE connection_id=? LIMIT 4000").bind(connection.id, connection.id).all()).results || [];
@@ -42,19 +42,23 @@ export async function onRequestPost(ctx) {
   }
   const keywords = Array.isArray(body.keywords) ? body.keywords : clean(body.keyword) ? clean(body.keyword).split(/\s+/) : [];
   const priceMin = optionalNumber(body.price_min), priceMax = optionalNumber(body.price_max), commissionMin = optionalNumber(body.commission_percent_min), commissionMax = optionalNumber(body.commission_percent_max);
+  if(delegated&&(commissionMin!==null||commissionMax!==null||['commission','commission_rate'].includes(clean(body.sort_field,40))))return json({error:'บัญชีผู้ปฏิบัติงาน VX ไม่มีสิทธิ์ค้นหาหรือเรียงด้วยข้อมูลค่าคอมมิชชัน'},403,headers);
   if ([priceMin, priceMax].some(value => value !== null && (!Number.isFinite(value) || value < 0)) || (priceMin !== null && priceMax !== null && priceMin > priceMax)) return json({ error: "ช่วงราคาสินค้าไม่ถูกต้อง กรุณาตรวจราคาต่ำสุดและสูงสุด" }, 400, headers);
   if ([commissionMin, commissionMax].some(value => value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) || (commissionMin !== null && commissionMax !== null && commissionMin > commissionMax)) return json({ error: "ช่วงค่าคอมต้องอยู่ระหว่าง 0–100% และค่าต่ำสุดต้องไม่เกินค่าสูงสุด" }, 400, headers);
   try {
     const shopKeyword=clean(body.shop_keyword,300),shopSearch=Boolean(shopKeyword),comparisonDays = [3, 7, 14, 30].includes(Number(body.comparison_days)) ? Number(body.comparison_days) : 7;
     const result = await searchTikTokShopOpenCollaborationProducts(ctx.env, connection, { keywords, shopKeyword, resultLimit: body.result_limit, pageToken: body.page_token, sortField: clean(body.sort_field, 40), sortOrder: clean(body.sort_order, 10), priceMin, priceMax, categoryId: body.category_id, commissionPercentMin: commissionMin, commissionPercentMax: commissionMax });
-    if(shopSearch)return json({ok:true,source:"open_collaboration_shop_products",...result},200,headers);
+    if(!await vxWorkspaceAccessStillCurrent(ctx,auth))return json({error:'สิทธิ์ใช้งานพื้นที่ช่อง VX สิ้นสุดแล้ว กรุณาเข้าสู่ระบบใหม่'},403,headers);
+    const visibleProducts=products=>delegated?products.map(({commission_rate,raw_json,...product})=>product):products;
+    if(shopSearch)return json({ok:true,source:"open_collaboration_shop_products",...result,products:visibleProducts(result.products||[])},200,headers);
     const ids = result.products.map(product => product.product_id), previous = new Map();
     if (ids.length) {
       const targetModifier = `-${comparisonDays} days`, rows = (await ctx.env.DB.prepare(`SELECT s.product_id,s.units_sold,s.captured_at FROM tiktok_shop_marketplace_snapshots s WHERE s.connection_id=? AND s.product_id IN (${ids.map(() => "?").join(",")}) AND s.id=(SELECT prior.id FROM tiktok_shop_marketplace_snapshots prior WHERE prior.connection_id=s.connection_id AND prior.product_id=s.product_id AND prior.snapshot_date<=date('now',?) ORDER BY prior.snapshot_date DESC,prior.captured_at DESC,prior.id DESC LIMIT 1)`).bind(connection.id, ...ids, targetModifier).all()).results || [];
       rows.forEach(row => previous.set(String(row.product_id), row));
+      if(!await vxWorkspaceAccessStillCurrent(ctx,auth))return json({error:'สิทธิ์ใช้งานพื้นที่ช่อง VX สิ้นสุดแล้ว กรุณาเข้าสู่ระบบใหม่'},403,headers);
       await ctx.env.DB.batch(result.products.map(product => ctx.env.DB.prepare("INSERT INTO tiktok_shop_marketplace_snapshots(id,connection_id,product_id,units_sold,commission_rate,raw_json,snapshot_date,captured_at) VALUES(?,?,?,?,?,?,date('now'),CURRENT_TIMESTAMP) ON CONFLICT(connection_id,product_id,snapshot_date) DO UPDATE SET units_sold=excluded.units_sold,commission_rate=excluded.commission_rate,raw_json=excluded.raw_json,captured_at=CURRENT_TIMESTAMP").bind(crypto.randomUUID(), connection.id, product.product_id, product.units_sold, product.commission_rate, product.raw_json)));
     }
-    return json({ ok: true, source: "open_collaboration_marketplace", comparison_days: comparisonDays, ...result, products: result.products.map(product => { const prior = previous.get(product.product_id); return { ...product, growth: tikTokMarketplaceGrowth(product.units_sold, prior?.units_sold), previous_snapshot_at: prior?.captured_at || null }; }) }, 200, headers);
+    return json({ ok: true, source: "open_collaboration_marketplace", comparison_days: comparisonDays, ...result, products: visibleProducts(result.products.map(product => { const prior = previous.get(product.product_id); return { ...product, growth: tikTokMarketplaceGrowth(product.units_sold, prior?.units_sold), previous_snapshot_at: prior?.captured_at || null }; })) }, 200, headers);
   } catch (error) {
     const classified = classifyMarketplaceError(error), detail = clean(error?.providerMessage || error?.message, 240);
     return json({ error: classified.error, detail, code: error?.code ?? null, request_id: clean(error?.requestId, 120), reconnect_required: Boolean(classified.reconnect_required) }, classified.status, headers);

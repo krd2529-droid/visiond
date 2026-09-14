@@ -225,7 +225,7 @@ exit 0
   assert.equal(race.readPending(), slot, "rapid +new must preserve the slot that was actually invoked");
   assert.equal(raceSlots.length, 1, "the locked call must not consume a UUID");
 
-  assert.match(analyzerSource, /requestNewBrowserProfile\(\)\{return routeProfileConnection\('tiktok_new'/, "+new must issue a real fresh server-authorized LoginKit flow");
+  assert.match(analyzerSource, /requestNewBrowserProfile\(\)\{return pageWorkspaceDelegated\?false:routeProfileConnection\('tiktok_new',\$\('#newChannel'\)\)/, "+new must issue a real fresh server-authorized LoginKit flow while delegates cannot create channels");
   assert.doesNotMatch(analyzerSource, /data-continue-pending|data-restore-profile|createTikTokConnectionPreflight/);
   assert.match(analyzerSource, /commandLauncher\.openCommand\(/);
   assert.doesNotMatch(analyzerSource, /navigate: \(url\) => location.assign\(url\)/);

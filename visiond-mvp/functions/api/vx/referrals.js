@@ -1,9 +1,11 @@
 import { json, requireUser } from '../../_lib.js';
 import { ensureDatabase } from '../../_schema.js';
 import { ensureReferralCode, ensureVxReferralSchema } from '../../_vx_referrals.js';
+import { denyActiveVxWorkspaceDelegate } from '../../_vx_workspace.js';
 export const affiliateBasketDestination = (basket) => `/vtools?plan=${encodeURIComponent(basket?.slug || '')}#plans`;
 export const affiliateBasketLink = (code, basket, origin = 'https://visiondonline.com') => `${origin}/r/${encodeURIComponent(code)}?next=${encodeURIComponent(affiliateBasketDestination(basket))}`;
 export async function onRequestGet(ctx) {
+  const delegate=await denyActiveVxWorkspaceDelegate(ctx);if(delegate.error)return delegate.error;
   await ensureDatabase(ctx.env); await ensureVxReferralSchema(ctx.env);
   const auth = await requireUser(ctx); if (auth.error) return auth.error;
   const [code, summary, clicks, signups, adjustment, payouts] = await Promise.all([

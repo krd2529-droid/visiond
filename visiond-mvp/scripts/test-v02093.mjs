@@ -33,14 +33,14 @@ for(const status of ['kept','discarded']){
  db.prepare(upsert).run('new','A','P10','p10','','B','candidate','','',99,'AI evidence','run','+3 days','+3 days',3,'scheduled');
  assert.deepEqual(db.prepare("SELECT product_type,source_kind,score,evidence,review_started_at,next_review_at,review_cycle_days,review_status,last_seen_at FROM tiktok_channel_products WHERE id='010'").get(),before);
 }
-const post={ctx:{env:{DB:adapter}},auth:{user:{id:1}},headers:{},crypto:{randomUUID:()=>crypto.randomUUID()},json:(body,status)=>({body,status})};
+const post={ctx:{env:{DB:adapter}},auth:{user:{id:1}},ownerId:1,delegated:false,headers:{},crypto:{randomUUID:()=>crypto.randomUUID()},json:(body,status)=>({body,status})};
 vm.createContext(post);vm.runInContext(cut(endpoint,'const text=','const PAGE_SIZE=24;')+`async function run(form,existingId){${cut(endpoint,"  if(action==='set_product_inventory'){","  if(action==='delete_channel'){").replace("if(action==='set_product_inventory')","if(true)")}}this.run=run;`,post);
 for(const [id,type,kind,expected] of [['011','B','candidate','D'],['012','E','candidate','E'],['013','A','sold_product_selection','A']]){
  db.prepare("UPDATE tiktok_channel_products SET inventory_status='analyzed',product_type=?,source_kind=? WHERE id=?").run(type,kind,id);
  const out=await post.run(new Map([['product_name','P'+Number(id)],['product_type','A'],['inventory_status','kept']]),'A');assert.equal(out.status,200);assert.equal(db.prepare('SELECT product_type FROM tiktok_channel_products WHERE id=?').get(id).product_type,expected);
 }
 const denied=await post.run(new Map([['product_name','P11'],['inventory_status','kept']]),'B');assert.equal(denied.status,404);
-const authQueries=[];const get={URL,ensureDatabase:async()=>{},ensureTikTokAnalyzerSchema:async()=>{},requireVxUser:async()=>({user:{id:1}}),headers:{'cache-control':'private, no-store'},text:x=>String(x||''),json:(body,status,headers)=>({body,status,headers})};
+const authQueries=[];const get={URL,ensureDatabase:async()=>{},ensureTikTokAnalyzerSchema:async()=>{},requireVxWorkspaceUser:async()=>({user:{id:1},workspace:{owner_user_id:1}}),vxWorkspaceOwnerId:auth=>auth.workspace.owner_user_id,headers:{'cache-control':'private, no-store'},text:x=>String(x||''),json:(body,status,headers)=>({body,status,headers})};
 vm.createContext(get);vm.runInContext(cut(endpoint,'export async function onRequestGet','export async function onRequestPost').replace('export ',''),get);
 const rejected=await get.onRequestGet({request:{url:'https://test/api/admin/tiktok-analyzer?channel_id=B&resource=shortlist'},env:{DB:{prepare:sql=>({bind:(...args)=>({first:async()=>{authQueries.push({sql,args});return null}})})}}});assert.equal(rejected.status,404);assert.equal(authQueries.length,1);assert.deepEqual(authQueries[0].args,['B',1]);assert.match(authQueries[0].sql,/c.created_by=\?/);assert.equal(rejected.headers['cache-control'],'private, no-store');
 db.close();

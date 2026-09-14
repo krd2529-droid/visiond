@@ -65,6 +65,8 @@ function createTikTokChannelOwnership(getSelected) {
 }
 
 const $ = (selector) => document.querySelector(selector), escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[c]);
+const channelInitial=value=>Array.from(String(value||'').trim())[0]?.toLocaleUpperCase()||'T';
+const channelAvatar=value=>{const name=String(value?.name||value?.display_name||'TikTok'),url=String(value?.avatar_url||''),safe=/^\/api\/admin\/tiktok-avatar\/[0-9a-f-]{36}\?v=[0-9a-f]{64}$/i.test(url)?url:'';return`<span class="channel-avatar" role="img" aria-label="รูปช่อง ${escapeHtml(name)}"><span class="channel-avatar-fallback" aria-hidden="true">${escapeHtml(channelInitial(name))}</span>${safe?`<img data-channel-avatar src="${escapeHtml(safe)}" alt="">`:''}</span>`};
 const normalizeProductName = (value) => String(value ?? "").normalize("NFKC").toLocaleLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const arrayValue = (value) => Array.isArray(value) ? value : value === null || value === void 0 || value === "" ? [] : [value], textValue = (value) => Array.isArray(value) ? value.join(" \xB7 ") : String(value ?? "");
 const form = $("#analysisForm"), message = $("#message"), thaiNow = () => new Date(Date.now() + 252e5).toISOString(), thaiToday = () => thaiNow().slice(0, 10), shiftThaiDate = (date, days) => {
@@ -107,7 +109,7 @@ const requestedChannelId = handoffChannelId || pageParams.get("channel_id") || s
 const browserProfileUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,launcherProfileRequested=pageParams.get("launcher_profile")==="1",launcherMode=["new","existing"].includes(pageParams.get("launcher_mode"))?pageParams.get("launcher_mode"):"",launcherSlot=browserProfileUuid.test(pageParams.get("launcher_slot")||"")?pageParams.get("launcher_slot"):"",launcherChannelId=launcherMode==="existing"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"";
 const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launcherMode==="new"&&launcherSlot)||(launcherMode==="existing"&&launcherChannelId))?Object.freeze({mode:launcherMode,slotId:launcherSlot,channelId:launcherChannelId||(launcherMode==="new"&&browserProfileUuid.test(pageParams.get("channel_id")||"")?pageParams.get("channel_id"):"")}):null;
 let launcherContext=launcherContextFromQuery;
-let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "", pageViewerRole = "";
+let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "", pageViewerRole = "", pageWorkspaceDelegated = false;
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
@@ -182,6 +184,7 @@ const safeJson = (value) => {
 const money = (value) => `\u0E3F${Number(value || 0).toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, gradeAdvice = { A: "\u0E02\u0E32\u0E22\u0E14\u0E35 \xB7 \u0E25\u0E07\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", B: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E23\u0E2D\u0E07 \xB7 \u0E17\u0E33\u0E15\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07", C: "\u0E1E\u0E2D\u0E02\u0E32\u0E22\u0E44\u0E14\u0E49 \xB7 \u0E40\u0E1D\u0E49\u0E32\u0E14\u0E39\u0E15\u0E48\u0E2D", D: "\u0E17\u0E33\u0E15\u0E32\u0E21\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E1B\u0E23\u0E42\u0E21\u0E0A\u0E31\u0E48\u0E19", E: "\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E17\u0E14\u0E25\u0E2D\u0E07", F: "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C \xB7 \u0E04\u0E31\u0E14\u0E2D\u0E2D\u0E01" };
 const marketplacePanel = $("#channelShopAnalysis .marketplace-panel"), showcaseHeading = $("#channelShopAnalysis .showcase-panel .showcase-heading");
 $(".workspace-switch")?.insertAdjacentHTML("afterend",'<section id="analysisChannelPicker" class="analysis-channel-picker" aria-labelledby="analysisChannelPickerTitle"><div><small>ช่องที่กำลังวิเคราะห์</small><h3 id="analysisChannelPickerTitle">เลือกช่องจากรายการที่เชื่อมแล้ว</h3><small data-browser-profile-label></small><button class="vds-btn vds-btn--secondary" type="button" data-refresh-profile>รีเฟรชสถานะช่อง</button></div><div id="analysisChannelOptions" class="analysis-channel-options" role="listbox" aria-label="เลือกช่องที่ต้องการวิเคราะห์"></div><div id="browserProfilePanel" class="analysis-channel-status"><p class="browser-profile-status" data-browser-profile-status role="status" aria-live="polite"></p></div></section>');
+$("#analysisChannelPicker")?.insertAdjacentHTML("afterend",'<div class="tiktok-profile-sync"><button id="syncTikTokProfile" class="vds-btn vds-btn--secondary" type="button" hidden>อัปเดตรูปและข้อมูล TikTok</button><p id="tiktokProfileSyncStatus" role="status" aria-live="polite"></p></div>');
 $("#analysisChannelPicker")?.insertAdjacentHTML("afterend", '<nav id="channelActionSwitch" class="channel-action-switch" aria-label="เลือกข้อมูลของช่อง"><button class="active" type="button" data-channel-view="products" aria-current="page">จัดการสินค้า</button>' + (COMMISSION_WORKSPACE_ENABLED ? '<button type="button" data-channel-view="commission" aria-current="false">ดูค่าคอม</button>' : '') + '</nav>');
 const CHANNEL_ACTION_SESSION_KEY="visiond_tiktok_channel_action";
 let channelActionView="products";
@@ -542,6 +545,7 @@ function resolvedSoldProducts(products = [], orders = []) {
   return byId;
 }
 function shopRangeSummary(data, products, orders) {
+  if(pageWorkspaceDelegated)return '<p class="hint">บัญชีผู้ปฏิบัติงาน VX จัดการการเชื่อมต่อและ Showcase ของช่อง Boss ได้ โดยระบบไม่โหลดออเดอร์หรือข้อมูลค่าคอมมิชชัน</p>';
   const sync=data.order_sync||{status:'never'},verified=sync.status==='complete'&&!sync.truncated;
   const explanations={never:'กดแสดงผลเพื่อดึงออเดอร์ในช่วงวันที่นี้',failed:'ดึงออเดอร์ไม่สำเร็จ ข้อมูลเดิมยังอยู่ กดแสดงผลเพื่อลองใหม่',partial:'มีข้อมูลบางส่วน กดแสดงผลเพื่อทำต่อจนครบ',running:'กำลังดึงออเดอร์ กรุณากดแสดงผลเพื่อตรวจสถานะ',missing_scope:'บัญชีนี้ยังไม่ได้ให้สิทธิ์อ่านออเดอร์ creator.affiliate_collaboration.read',provider_not_ready:'TikTok ยังไม่พร้อมส่งข้อมูล กรุณาลองดึงอีกครั้ง',unavailable:'ไม่พบการเชื่อมต่อของช่องนี้',invalid_range:'กรุณาเลือกวันที่ผ่านมาไม่เกิน 90 วัน',complete:sync.truncated?'ผลลัพธ์มีมากกว่าขอบเขตที่แสดง กรุณาลดช่วงวันที่':'ดึงออเดอร์ครบช่วงวันที่แล้ว'};
   const syncText=explanations[sync.status]||'ยังยืนยันความครบถ้วนของข้อมูลไม่ได้';
@@ -909,6 +913,7 @@ async function searchMarketplace(mode = "product", pageToken = "", expectedConte
 }
 function renderShopDashboard(data, shopConnection) {
   const box = $("#shopDashboard"), portfolio = data.shop_portfolio || {}, commissions = portfolio.commission || [], products = data.shop_products || [], orders = data.shop_orders || [];
+  if(pageWorkspaceDelegated){box.hidden=true;$("#shopCommissionDashboard").innerHTML="";return}
   box.hidden = !shopConnection && !commissions.length;
   if (box.hidden) return;
   const commission = commissions[0], daily = commission?.daily || [], maxDaily = Math.max(1, ...daily.map((day) => Number(day.amount) || 0)), total = Number(commission?.total ?? commission?.total_30) || 0, channels = commission?.channels || [];
@@ -919,6 +924,7 @@ function renderShopDashboard(data, shopConnection) {
 }
 const renderLiveShopDashboard = renderShopDashboard;
 renderShopDashboard = function(data, shopConnection) {
+  if(pageWorkspaceDelegated){$("#shopDashboard").hidden=true;$("#shopCommissionDashboard").innerHTML="";return}
   if(isBossPartnerCommissionView()){
     renderShowcaseProducts(data?.shop_products||[],data?.shop_orders||[],false,data?.shop_growth_orders||data?.shop_orders||[]);
     return;
@@ -1125,6 +1131,7 @@ $("#shopCommissionDashboard").addEventListener("click", async (event) => {
 async function loadChannels() {
   try {
     const data = await api("/api/admin/tiktok-analyzer");
+    state.workspace=data.workspace||{delegated:false};
     state.channels = data.channels || [];
     state.channelPagination=data.pagination||{};
     const aiState = $("#aiState");
@@ -1161,15 +1168,16 @@ async function loadChannels() {
   }
 }
 function renderChannels() {
-  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${x.avatar_url ? `<img class="channel-card-avatar" src="${escapeHtml(x.avatar_url)}" alt="">` : ""}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? (x.tiktok_connected ? "เชื่อมข้อมูลพื้นฐาน · ยังไม่มีสิทธิ์สถิติ" : "ยังไม่เชื่อม TikTok") : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button><button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button></div>`).join("")+(state.channelPagination?.has_more?'<button type="button" data-load-more-channels>โหลดช่องเพิ่มเติม</button>':'') : '<p class="hint">ยังไม่มีช่อง กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
+  $("#channels").innerHTML = state.channels.length ? state.channels.map((x) => `<div class="channel-card ${x.id === state.selected ? "active" : ""}" role="option" aria-selected="${x.id === state.selected}"><button class="channel" data-id="${escapeHtml(x.id)}">${channelAvatar(x)}<span><b>${escapeHtml(x.name)}</b><small>${x.follower_count === null || x.follower_count === void 0 ? (x.tiktok_connected ? "เชื่อมข้อมูลพื้นฐาน · ยังไม่มีสิทธิ์สถิติ" : "ยังไม่เชื่อม TikTok") : `${Number(x.follower_count).toLocaleString()} ผู้ติดตาม · ${Number(x.likes_count).toLocaleString()} ไลก์ · ${Number(x.video_count).toLocaleString()} วิดีโอ`} · วิเคราะห์ ${x.analysis_count} รอบ</small></span></button>${pageWorkspaceDelegated?'':`<button class="delete-channel" type="button" data-delete-id="${escapeHtml(x.id)}" data-delete-name="${escapeHtml(x.name)}" aria-label="ลบช่อง ${escapeHtml(x.name)}">ลบ</button>`}</div>`).join("")+(state.channelPagination?.has_more?'<button type="button" data-load-more-channels>โหลดช่องเพิ่มเติม</button>':'') : `<p class="hint">${pageWorkspaceDelegated?'ยังไม่มีช่อง Boss ที่เชื่อมและมอบหมาย':'ยังไม่มีช่อง กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก'}</p>`;
   renderAnalysisChannelPicker();
   updateBrowserProfilePanel();
 }
 function renderAnalysisChannelPicker(){
   const box=$("#analysisChannelOptions"),connected=state.channels.filter(channel=>channel.tiktok_connected ?? (channel.follower_count!==null&&channel.follower_count!==void 0));
   if(!box)return;
-  box.innerHTML=connected.length?connected.map(channel=>`<button type="button" class="analysis-channel-option ${channel.id===state.selected?"active":""}" data-analysis-channel="${escapeHtml(channel.id)}" role="option" aria-selected="${channel.id===state.selected}">${channel.avatar_url?`<img src="${escapeHtml(channel.avatar_url)}" alt="">`:""}<span><b>${escapeHtml(channel.name)}</b><small>${channel.id===state.selected?"กำลังดูช่องนี้":"เลือกดูช่องนี้"}</small></span></button>`).join(""):'<p class="hint">ยังไม่มีช่องที่เชื่อม TikTok กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
+  box.innerHTML=connected.length?connected.map(channel=>`<button type="button" class="analysis-channel-option ${channel.id===state.selected?"active":""}" data-analysis-channel="${escapeHtml(channel.id)}" role="option" aria-selected="${channel.id===state.selected}">${channelAvatar(channel)}<span><b>${escapeHtml(channel.name)}</b><small>${channel.id===state.selected?"กำลังดูช่องนี้":"เลือกดูช่องนี้"}</small></span></button>`).join(""):'<p class="hint">ยังไม่มีช่องที่เชื่อม TikTok กด “+ ช่องใหม่” เพื่อเพิ่มและเชื่อมช่องแรก</p>';
 }
+for(const selector of['#channels','#analysisChannelOptions'])$(selector)?.addEventListener('error',event=>{const image=event.target.closest?.('img[data-channel-avatar]');if(image)image.remove()},true);
 $("#analysisChannelOptions")?.addEventListener("click",async event=>{const button=event.target.closest("[data-analysis-channel]");if(!button||button.dataset.analysisChannel===state.selected)return;setOutputScope("channel");setWorkspaceView("output");if(!isBossPartnerCommissionView())setChannelView("products");await selectChannel(button.dataset.analysisChannel).catch(()=>{})});
 async function selectChannel(id, context) {
   state.selected = String(id);
@@ -1194,6 +1202,7 @@ async function selectChannel(id, context) {
   return data;
 }
 function newChannel() {
+  if(pageWorkspaceDelegated)return false;
   channelOwnership.clear();
   state.selected = null;
   clearChannelOwnedView();
@@ -1343,6 +1352,7 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
     stampChannelOwnedActions($("#shopDashboard"), context);
   }
   $("#connectTikTok").hidden = false;
+  $("#syncTikTokProfile").hidden = !connection;
   $("#connectTikTokShop").hidden = Boolean(shopConnection?.capabilities?.showcase_ready);
   $("#syncTikTokShowcase").hidden = !shopConnection;
   $("#showcaseSyncLimitField").hidden = !shopConnection;
@@ -1633,6 +1643,7 @@ $("#channels").addEventListener("click", async (event) => {
   const moreChannels=event.target.closest('[data-load-more-channels]');if(moreChannels){const cursor=state.channelPagination?.next_cursor;if(!cursor)return;moreChannels.disabled=true;try{const params=new URLSearchParams({limit:'24',cursor}),data=await api(`/api/admin/tiktok-analyzer?${params}`,{cache:'no-store'});state.channels=mergeById(state.channels,data.channels);state.channelPagination=data.pagination||{};renderChannels()}catch(error){showToast(error.message,'error')}return}
   const deleteButton = event.target.closest("[data-delete-id]"), button = event.target.closest("[data-id]");
   if (deleteButton) {
+    if(pageWorkspaceDelegated)return;
     const name = deleteButton.dataset.deleteName;
     if (!confirm(`\u0E19\u0E33\u0E0A\u0E48\u0E2D\u0E07 \u201C${name}\u201D \u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21? \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E40\u0E14\u0E34\u0E21\u0E08\u0E30\u0E22\u0E31\u0E07\u0E16\u0E39\u0E01\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E27\u0E49\u0E41\u0E25\u0E30\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E44\u0E14\u0E49`)) return;
     deleteButton.disabled = true;
@@ -1652,7 +1663,7 @@ $("#channels").addEventListener("click", async (event) => {
   }
   if (button) { resetMarketplaceView(); selectChannel(button.dataset.id).catch(()=>{}); }
 });
-function requestNewBrowserProfile(){return routeProfileConnection('tiktok_new',$('#newChannel'))}
+function requestNewBrowserProfile(){return pageWorkspaceDelegated?false:routeProfileConnection('tiktok_new',$('#newChannel'))}
 $("#newChannel").addEventListener("click",requestNewBrowserProfile);
 $("[data-open-channel-profile]")?.addEventListener("click",event=>issueProfileOAuth('view',event.currentTarget));
 let profileRefreshRequest=null;
@@ -1675,6 +1686,15 @@ const refreshProfileStatus=()=>{if(!pageAuthorized||profileRefreshRequest)return
 })().catch(error=>{if(current())helperRecoveryStatus(null,error.message)}).finally(()=>{profileRefreshRequest=null});return profileRefreshRequest};
 $("[data-refresh-profile]")?.addEventListener('click',refreshProfileStatus);
 window.addEventListener('focus',()=>{if(profileOAuthPending)refreshProfileStatus()});
+$("#syncTikTokProfile")?.addEventListener('click',async event=>{
+ const button=event.currentTarget,context=channelOwnership.capture(),connection=context&&state.connection&&String(state.connection.channel_id)===context.channelId?state.connection:null,status=$("#tiktokProfileSyncStatus");if(!connection||!context)return;
+ button.disabled=true;status.dataset.type='';status.textContent='กำลังอัปเดตรูปและข้อมูล TikTok…';
+ try{
+  const result=await api('/api/admin/tiktok-connections',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'sync',id:connection.id,channel_id:context.channelId})});if(!channelOwnership.current(context))return;
+  state.connection=result.connection;const channel=state.channels.find(item=>String(item.id)===context.channelId);if(channel)Object.assign(channel,{avatar_url:result.connection.avatar_url,display_name:result.connection.display_name,follower_count:result.connection.follower_count,following_count:result.connection.following_count,likes_count:result.connection.likes_count,video_count:result.connection.video_count,tiktok_connected:true});renderChannels();
+  const avatar=result.avatar_update||{};status.textContent=avatar.mirrored?(avatar.reason==='unchanged'?'ข้อมูลเป็นปัจจุบันแล้ว และรูปเดิมยังใช้งานได้':'อัปเดตรูปและข้อมูล TikTok แล้ว'):avatar.preserved?'อัปเดตข้อมูลแล้ว แต่ดาวน์โหลดรูปใหม่ไม่สำเร็จ ระบบยังใช้รูปเดิม กรุณาลองอีกครั้ง':'อัปเดตข้อมูลแล้ว แต่ยังไม่มีรูปที่ใช้ได้ ระบบแสดงอักษรย่อ กรุณาลองอีกครั้ง';status.dataset.type=avatar.mirrored?'success':'error';
+ }catch(error){if(channelOwnership.current(context)){status.textContent=`อัปเดตรูปและข้อมูล TikTok ไม่สำเร็จ: ${error.message||'กรุณาลองอีกครั้ง'}`;status.dataset.type='error'}}finally{button.disabled=false}
+});
 async function syncTikTokShopData(mode) {
   const context=channelOwnership.capture(),shopConnection=context&&state.shopConnection&&String(state.shopConnection.channel_id)===context.channelId?state.shopConnection:null;
   if (!context||!shopConnection) return;
@@ -1977,20 +1997,23 @@ async function bootstrapReviewerAccess(){
       return;
     }
     if(!response.ok)throw new Error(response.status===503?'ระบบสมาชิกถึงขีดจำกัดชั่วคราว กรุณาลองใหม่หลังระบบรีเซ็ต':'ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ');
-    const authPayload=await response.json().catch(()=>({}));pageViewerId=String(authPayload?.user?.id||"");pageViewerRole=String(authPayload?.user?.role||"");if(!/^\d+$/.test(pageViewerId))throw new Error('ตรวจสอบเจ้าของโปรไฟล์ไม่สำเร็จ');
+    const authPayload=await response.json().catch(()=>({}));pageViewerId=String(authPayload?.user?.id||"");pageViewerRole=String(authPayload?.user?.role||"");pageWorkspaceDelegated=authPayload?.vx_workspace?.delegated===true;if(!/^\d+$/.test(pageViewerId))throw new Error('ตรวจสอบเจ้าของโปรไฟล์ไม่สำเร็จ');
+    if(pageWorkspaceDelegated){document.body.classList.add('vx-workspace-delegate');const back=$('#workspaceBackLink');if(back){back.href='/dashboard.html';back.textContent='← ศูนย์ผู้ปฏิบัติงาน VX'}const title=$('#workspaceChannelTitle');if(title)title.textContent='ช่องที่ Boss มอบหมาย';for(const id of['marketplaceCommissionMin','marketplaceCommissionMax'])$("#"+id)?.closest('label')?.setAttribute('hidden','');for(const value of['commission','commission_rate'])$("#marketplaceSort option[value='"+value+"']")?.remove();}
+    else{const accessScript=document.createElement('script');accessScript.src='/vx-access-status.js?v=014579';document.body.append(accessScript)}
     try{
       const key='visiond_browser_launcher_context';
       if(launcherContextFromQuery)sessionStorage.setItem(key,JSON.stringify({...launcherContextFromQuery,ownerId:pageViewerId}));
       else{const saved=JSON.parse(sessionStorage.getItem(key)||'null');launcherContext=saved&&String(saved.ownerId)===pageViewerId&&['new','existing'].includes(saved.mode)&&(!saved.slotId||browserProfileUuid.test(saved.slotId))&&(!saved.channelId||browserProfileUuid.test(saved.channelId))?Object.freeze({mode:saved.mode,slotId:saved.slotId||'',channelId:saved.channelId||''}):null}
     }catch{if(!launcherContextFromQuery)launcherContext=null}
-    pageAuthorized=true;enableBossPartnerCommissionTest();
+    pageAuthorized=true;document.body.classList.remove('access-pending');enableBossPartnerCommissionTest();
     await initializeLauncherReadiness();
     await loadChannels();
     restoreChannelActionView();
   }catch(error){
+    const gate=$('#vxAccessGate');if(gate)gate.innerHTML=`<b>ไม่สามารถเปิดศูนย์ปฏิบัติการ VX</b><p>${escapeHtml(error.message||'ตรวจสอบสิทธิ์ไม่สำเร็จ')}</p><a href="/dashboard.html">กลับหน้าบัญชี</a>`;
     $('#channels').innerHTML=`<p class="shop-error">${escapeHtml(error.message||'เปิดระบบ VX ไม่สำเร็จ')}</p><button type="button" onclick="location.reload()">ลองใหม่</button>`;
   }finally{
-    $('#newChannel').disabled=false;$('#newChannel').removeAttribute('aria-busy');$('#newChannel').textContent='+ ช่องใหม่';
+    if(!pageWorkspaceDelegated){$('#newChannel').disabled=false;$('#newChannel').removeAttribute('aria-busy');$('#newChannel').textContent='+ ช่องใหม่'}
   }
 }
 bootstrapReviewerAccess();

@@ -1,5 +1,6 @@
-import('/facebook-chat.js?v=02057');
 document.querySelector('.hub-nav .hub-nav-group:last-of-type')?.insertAdjacentHTML('beforeend','<a class="hub-affiliate-link" href="/vx-affiliate.html">แนะนำเพื่อน · รับค่าคอม 20%</a>');
+let memberHubLoaded=false;
+function loadMemberHub(){if(memberHubLoaded)return;memberHubLoaded=true;for(const src of['/my-hub.js?v=014572','/facebook-chat.js?v=02057','/elon-chat.js?v=014407','/mobile-storefront.js?v=014407','/visiond-design-system.js?v=014407','/header-shell.js?v=014578','/visiond-button-system.js?v=014407']){const script=document.createElement('script');script.src=src;script.defer=true;document.body.append(script)}}
 const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,profile:dashProfile,settings:dashSettings,createdCourses:dashCreatedCourses,learning:dashLearning,baskets:dashBaskets,sales:dashSales,notifications:dashNotifications,help:dashHelp};
 const roleLabel={boss:'Boss · เจ้าของระบบ',admin:'Admin · ผู้ดูแลระบบ',user:'User · สมาชิกทั่วไป',customer:'User · สมาชิกทั่วไป'};
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
@@ -11,10 +12,13 @@ let loadedOrders=[],ordersCursor=null,ordersHasMore=false,currentBank={},current
 async function load(reset=true){
   if(reset){loadedOrders=[];ordersCursor=null;dashboardOrders.innerHTML='<div class="dashboard-card"><p>กำลังโหลดคำสั่งซื้อ…</p></div>'}
   const orderUrl='/api/orders?limit=30'+(!reset&&ordersCursor?`&cursor=${encodeURIComponent(ordersCursor)}`:'');
-  const [authResult,orderResult]=await Promise.allSettled([fetch('/api/auth/me',{cache:'no-store'}),fetch(orderUrl,{cache:'no-store'})]);
+  const authResult=await Promise.resolve(fetch('/api/auth/me',{cache:'no-store'})).then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}));
   if(authResult.status==='rejected')return showOrderLoadError('เชื่อมต่อบัญชีไม่สำเร็จ');
   const r=authResult.value;if(r.status===401){location.href='/login.html';return}if(!r.ok)return showOrderLoadError('โหลดข้อมูลบัญชีไม่สำเร็จ');
-  const {user}=await r.json();currentUser=user;const isStaff=['boss','admin'].includes(user.role);
+  const {user,vx_workspace:workspace}=await r.json();currentUser=user;const isStaff=['boss','admin'].includes(user.role),isVxOperator=workspace?.delegated===true;
+  if(isVxOperator){document.body.classList.add('vx-operator-dashboard');dashName.textContent=user.name||user.username;dashIdentity.textContent='VX Operator · ช่องของ Boss';vxOperatorLink.hidden=false;dashboardGuide.innerHTML='<h2>ศูนย์ปฏิบัติการ VX</h2><p>บัญชีนี้ใช้งานได้เฉพาะการวิเคราะห์และเชื่อมช่อง TikTok ที่ Boss มอบหมาย ไม่มีสิทธิ์ดูค่าคอมมิชชันหรือ Control Center</p><a class="primary-button" href="/tiktok-analyzer.html">เปิดศูนย์ปฏิบัติการ VX</a>';showSection('overview');return}
+  loadMemberHub();
+  const orderResult=await Promise.resolve(fetch(orderUrl,{cache:'no-store'})).then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}));
   document.body.classList.toggle('staff-dashboard',isStaff);
   if(isStaff){hubMenuToggle.hidden=true;hubMenuBackdrop.hidden=true;hubSidebar.hidden=true;hubSellerStats.hidden=true;dashNotifications.hidden=true;document.querySelector('[data-dash="notifications"]')?.remove();if(location.hash==='#notifications')history.replaceState(null,'','#overview')}
   dashName.textContent=user.name||user.username;dashIdentity.textContent=roleLabel[user.role]||user.role;profileName.value=user.name||'';profileUsername.value=user.username||'';profileEmail.value=user.email||'';profilePhone.value=user.phone||'ไม่ได้ระบุ';profileRole.value=roleLabel[user.role]||user.role;controlCenterLink.hidden=!isStaff;

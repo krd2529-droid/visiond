@@ -24,7 +24,7 @@ async function tikTokShopRequest(config, accessToken, { path, method = "GET", qu
   }
   return payload.data || {};
 }
-async function activeTikTokShopToken(env, connection, fetchImpl = fetch) {
+async function activeTikTokShopToken(env, connection, fetchImpl = fetch, {stillAuthorized} = {}) {
   const config = tikTokShopOAuthConfig(env);
   if (!config.configured) throw new Error("TIKTOK_SHOP_NOT_CONFIGURED");
   let access = await decryptChannelValue(env, connection.access_token_ciphertext), expires = Date.parse(connection.access_expires_at), now = Date.now();
@@ -32,6 +32,7 @@ async function activeTikTokShopToken(env, connection, fetchImpl = fetch) {
   const refresh = await decryptChannelValue(env, connection.refresh_token_ciphertext), token = await refreshTikTokShopToken(config, refresh, fetchImpl);
   access = token.access_token;
   const refreshedScopes = token.granted_scopes === undefined ? connection.scopes : Array.isArray(token.granted_scopes) ? token.granted_scopes.join(",") : clean(token.granted_scopes, 2000);
+  if(stillAuthorized&&!await stillAuthorized())throw new Error('VX_WORKSPACE_ACCESS_REVOKED');
   await env.DB.prepare(`UPDATE tiktok_shop_creator_connections SET access_token_ciphertext=?,refresh_token_ciphertext=?,scopes=?,access_expires_at=?,refresh_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(await encryptChannelValue(env, access), await encryptChannelValue(env, token.refresh_token || refresh), refreshedScopes, expiryIso(token.access_token_expire_in), expiryIso(token.refresh_token_expire_in), connection.id).run();
   return { config, access };
 }
@@ -78,9 +79,9 @@ export function prepareTikTokOrderWrite(env,connectionId,order){
   const commission=value?{...value,_visiond_basis:actual?'actual':estimated?'estimated':'unknown'}:null;
   return env.DB.prepare(`INSERT INTO tiktok_shop_affiliate_orders(connection_id,order_id,create_time,product_ids,status,gmv_json,commission_json,raw_json,synced_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(connection_id,order_id) DO UPDATE SET create_time=excluded.create_time,product_ids=excluded.product_ids,status=excluded.status,gmv_json=excluded.gmv_json,commission_json=excluded.commission_json,raw_json=excluded.raw_json,synced_at=CURRENT_TIMESTAMP`).bind(connectionId,clean(order.order_id||order.id,100),Number(order.create_time),JSON.stringify(ids),clean(order.status,80),JSON.stringify(gmv),JSON.stringify(commission),JSON.stringify(order));
 }
-async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase = 100, maxOrders = 500, syncShowcase = true, syncOrders = true } = {}, fetchImpl = fetch) {
+async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase = 100, maxOrders = 500, syncShowcase = true, syncOrders = true, stillAuthorized } = {}, fetchImpl = fetch) {
   maxShowcase = Math.min(2000, Math.max(1, Math.floor(Number(maxShowcase) || 100)));
-  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), call = (options) => tikTokShopRequest(config, access, options, fetchImpl), profile = await call({ path: "/affiliate_creator/202508/profiles" });
+  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl,{stillAuthorized}), call = async(options) => {const data=await tikTokShopRequest(config, access, options, fetchImpl);if(stillAuthorized&&!await stillAuthorized())throw new Error('VX_WORKSPACE_ACCESS_REVOKED');return data}, profile = await call({ path: "/affiliate_creator/202508/profiles" });
   let showcase = [], pageToken = "";
   while (syncShowcase && showcase.length < maxShowcase) {
     const data = await call({ path: "/affiliate_creator/202405/showcases/products", query: { page_size: String(Math.min(20, maxShowcase - showcase.length)), origin: "SHOWCASE", ...pageToken ? { page_token: pageToken } : {} } });
@@ -135,24 +136,26 @@ async function syncTikTokShopCreator(env, connection, { days = 30, maxShowcase =
     const uniqueIds = [...new Set(ids)], resolvedProducts = uniqueIds.map((id) => orderProductsById.get(id)).filter(Boolean);
     return env.DB.prepare(`INSERT INTO tiktok_shop_affiliate_orders(connection_id,order_id,create_time,product_ids,status,gmv_json,commission_json,raw_json,synced_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(connection_id,order_id) DO UPDATE SET create_time=excluded.create_time,product_ids=excluded.product_ids,status=excluded.status,gmv_json=excluded.gmv_json,commission_json=excluded.commission_json,raw_json=excluded.raw_json,synced_at=CURRENT_TIMESTAMP`).bind(connection.id, clean(o.order_id || o.id, 100), Number(o.create_time) || 0, JSON.stringify(uniqueIds), clean(o.status, 80), JSON.stringify(gmv), JSON.stringify(commission), JSON.stringify({ ...o, _visiond_products: resolvedProducts }));
   })];
-  for (let i = 0; i < statements.length; i += 50) await env.DB.batch(statements.slice(i, i + 50));
+  for (let i = 0; i < statements.length; i += 50){if(stillAuthorized&&!await stillAuthorized())throw new Error('VX_WORKSPACE_ACCESS_REVOKED');await env.DB.batch(statements.slice(i, i + 50))}
   return { profile, showcaseCount: showcase.length, orderCount: orders.length, days: Math.min(90, Math.max(1, Number(days) || 30)) };
 }
-async function removeTikTokShopShowcaseProducts(env, connection, productIds, fetchImpl = fetch) {
+async function removeTikTokShopShowcaseProducts(env, connection, productIds, fetchImpl = fetch, {stillAuthorized} = {}) {
   const ids = [...new Set(productIds.map((x) => clean(x, 100)).filter(Boolean))].slice(0, 200);
   if (!ids.length) throw new Error("TIKTOK_SHOP_PRODUCTS_REQUIRED");
   if (!canWriteShowcase(connection)) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
-  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202409/showcases/products", method: "DELETE", body: { product_ids: ids } }, fetchImpl);
+  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl,{stillAuthorized}), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202409/showcases/products", method: "DELETE", body: { product_ids: ids } }, fetchImpl);
+  if(stillAuthorized&&!await stillAuthorized())throw new Error('VX_WORKSPACE_ACCESS_REVOKED');
   await env.DB.prepare(`DELETE FROM tiktok_shop_showcase_products WHERE connection_id=? AND product_id IN (${ids.map(() => "?").join(",")})`).bind(connection.id, ...ids).run();
   return { removed: ids.length, data };
 }
-async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchImpl = fetch) {
+async function addTikTokShopShowcaseProducts(env, connection, productIds, fetchImpl = fetch, {stillAuthorized} = {}) {
   const ids = [...new Set(productIds.map((x) => clean(x, 100)).filter(Boolean))].slice(0, 200);
   if (!ids.length) throw new Error("TIKTOK_SHOP_PRODUCTS_REQUIRED");
   if (!canWriteShowcase(connection)) throw new Error("TIKTOK_SHOP_SCOPE_CREATOR_SHOWCASE_WRITE_REQUIRED");
-  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl), batches = [], errors = [];
+  const { config, access } = await activeTikTokShopToken(env, connection, fetchImpl,{stillAuthorized}), batches = [], errors = [];
   for (let index = 0; index < ids.length; index += 20) {
     const productIdsBatch = ids.slice(index, index + 20), data = await tikTokShopRequest(config, access, { path: "/affiliate_creator/202405/showcases/products/add", method: "POST", body: { add_type: "PRODUCT_ID", product_ids: productIdsBatch } }, fetchImpl);
+    if(stillAuthorized&&!await stillAuthorized())throw new Error('VX_WORKSPACE_ACCESS_REVOKED');
     batches.push(data);
     if (Array.isArray(data?.errors)) errors.push(...data.errors.map(error => ({ ...error, batch: Math.floor(index / 20) + 1 })));
   }
