@@ -1,7 +1,33 @@
-import {json,requireAdmin} from '../../../_lib.js';import {accountVaultEncryptionReady,encryptAccountVaultValue} from '../../../_account_vault_crypto.js';
-const headers={'cache-control':'private, no-store'},clean=(value,max)=>String(value??'').trim().slice(0,max),mask=value=>value?`••••${value}`:'••••';
-async function ready(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth;await ctx.env.DB.prepare("CREATE TABLE IF NOT EXISTS admin_account_vault(id INTEGER PRIMARY KEY AUTOINCREMENT,owner_user_id INTEGER NOT NULL,platform TEXT NOT NULL,account_name TEXT NOT NULL,login_url TEXT NOT NULL,login_id_ciphertext TEXT NOT NULL,login_id_last4 TEXT NOT NULL DEFAULT '',email_ciphertext TEXT NOT NULL DEFAULT '',email_hint TEXT NOT NULL DEFAULT '',phone_ciphertext TEXT NOT NULL DEFAULT '',phone_last4 TEXT NOT NULL DEFAULT '',password_ciphertext TEXT NOT NULL,password_last4 TEXT NOT NULL DEFAULT '',note TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(owner_user_id) REFERENCES users(id) ON DELETE CASCADE)").run();return auth}
-async function list(ctx,userId){const rows=(await ctx.env.DB.prepare('SELECT id,platform,account_name,login_url,login_id_last4,email_hint,phone_last4,password_last4,note,created_at,updated_at FROM admin_account_vault WHERE owner_user_id=? ORDER BY updated_at DESC,id DESC').bind(userId).all()).results||[];return rows.map(row=>({...row,login_id_masked:mask(row.login_id_last4),email_masked:row.email_hint||'',phone_masked:row.phone_last4?mask(row.phone_last4):'',password_masked:mask(row.password_last4)}))}
-function values(body){const platform=clean(body.platform,80),accountName=clean(body.account_name,160),loginUrl=clean(body.login_url,1000),loginId=clean(body.login_id,500),email=clean(body.email,320),phone=clean(body.phone,80),password=String(body.password??'').slice(0,1000),note=clean(body.note,3000);let url;try{url=new URL(loginUrl)}catch{}if(!platform||!accountName||!loginId||!password||!url||!['https:','http:'].includes(url.protocol))throw new Error('กรุณากรอกแพลตฟอร์ม ชื่อบัญชี/ช่อง ลิงก์ ไอดี และรหัสผ่านให้ครบ');if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('รูปแบบอีเมลไม่ถูกต้อง');return{platform,accountName,loginUrl:url.href,loginId,email,phone,password,note}}
-export async function onRequestGet(ctx){const auth=await ready(ctx);if(auth.error)return auth.error;return json({encryption_ready:accountVaultEncryptionReady(ctx.env),items:await list(ctx,auth.user.id)},200,headers)}
-export async function onRequestPost(ctx){const auth=await ready(ctx);if(auth.error)return auth.error;if(!accountVaultEncryptionReady(ctx.env))return json({error:'ยังไม่ได้ตั้ง ACCOUNT_VAULT_ENCRYPTION_KEY ใน Cloudflare'},503,headers);try{const value=values(await ctx.request.json()),temporary=crypto.randomUUID(),result=await ctx.env.DB.prepare('INSERT INTO admin_account_vault(owner_user_id,platform,account_name,login_url,login_id_ciphertext,login_id_last4,email_ciphertext,email_hint,phone_ciphertext,phone_last4,password_ciphertext,password_last4,note) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id').bind(auth.user.id,value.platform,value.accountName,value.loginUrl,await encryptAccountVaultValue(ctx.env,value.loginId,`${temporary}:login`),value.loginId.slice(-4),value.email?await encryptAccountVaultValue(ctx.env,value.email,`${temporary}:email`):'',value.email?`${value.email.slice(0,2)}•••@${value.email.split('@')[1]}`:'',value.phone?await encryptAccountVaultValue(ctx.env,value.phone,`${temporary}:phone`):'',value.phone.slice(-4),await encryptAccountVaultValue(ctx.env,value.password,`${temporary}:password`),value.password.slice(-4),value.note).first();await ctx.env.DB.prepare('UPDATE admin_account_vault SET login_id_ciphertext=?,email_ciphertext=?,phone_ciphertext=?,password_ciphertext=? WHERE id=?').bind(await encryptAccountVaultValue(ctx.env,value.loginId,`${result.id}:login`),value.email?await encryptAccountVaultValue(ctx.env,value.email,`${result.id}:email`):'',value.phone?await encryptAccountVaultValue(ctx.env,value.phone,`${result.id}:phone`):'',await encryptAccountVaultValue(ctx.env,value.password,`${result.id}:password`),result.id).run();return json({ok:true,items:await list(ctx,auth.user.id)},201,headers)}catch(error){return json({error:error.message||'บันทึกบัญชีไม่สำเร็จ'},400,headers)}}
+import {json,requireBoss} from '../../../_lib.js';
+import {accountVaultEncryptionReady,encryptAccountVaultValue} from '../../../_account_vault_crypto.js';
+import {SOCIAL_ACCOUNT_KIND,decodeSocialAccountCursor,encodeSocialAccountCursor,maskedSocialAccount,privateVaultResponse,socialAccountLimit,socialAccountPurpose,socialAccountValues} from '../../../_account_vault_social.js';
+
+const headers={'cache-control':'private, no-store'};
+async function authorize(ctx){const auth=await requireBoss(ctx);return auth.error?{error:privateVaultResponse(auth.error)}:auth}
+async function list(ctx,userId,requestUrl){
+  const url=new URL(requestUrl),limit=socialAccountLimit(url.searchParams.get('limit')),cursor=decodeSocialAccountCursor(url.searchParams.get('cursor'));
+  const select="SELECT id,platform,account_name,login_url,note,created_at,updated_at,email_ciphertext<>'' has_email,phone_ciphertext<>'' has_phone,password_hint_ciphertext<>'' has_password_hint FROM admin_account_vault WHERE owner_user_id=? AND record_kind=?";
+  const statement=cursor?ctx.env.DB.prepare(select+' AND id<? ORDER BY id DESC LIMIT ?').bind(userId,SOCIAL_ACCOUNT_KIND,cursor,limit+1):ctx.env.DB.prepare(select+' ORDER BY id DESC LIMIT ?').bind(userId,SOCIAL_ACCOUNT_KIND,limit+1);
+  const rows=(await statement.all()).results||[],hasMore=rows.length>limit,items=rows.slice(0,limit).map(maskedSocialAccount),last=items.at(-1);
+  return{items,pagination:{limit,has_more:hasMore,next_cursor:hasMore&&last?encodeSocialAccountCursor(last.id):null}};
+}
+
+export async function onRequestGet(ctx){
+  const auth=await authorize(ctx);if(auth.error)return auth.error;
+  try{return json({encryption_ready:accountVaultEncryptionReady(ctx.env),...await list(ctx,auth.user.id,ctx.request.url)},200,headers)}catch(error){return json({error:error?.message==='CURSOR_INVALID'?'cursor ไม่ถูกต้อง':'โหลดบัญชีโซเชียลไม่สำเร็จ'},400,headers)}
+}
+
+export async function onRequestPost(ctx){
+  const auth=await authorize(ctx);if(auth.error)return auth.error;
+  if(!accountVaultEncryptionReady(ctx.env))return json({error:'ยังไม่ได้ตั้ง ACCOUNT_VAULT_ENCRYPTION_KEY ใน Cloudflare'},503,headers);
+  try{
+    const value=socialAccountValues(await ctx.request.json().catch(()=>null)),context=crypto.randomUUID();
+    const [emailCiphertext,phoneCiphertext,passwordHintCiphertext]=await Promise.all([
+      value.email?encryptAccountVaultValue(ctx.env,value.email,socialAccountPurpose(context,'email')):'',
+      value.phone?encryptAccountVaultValue(ctx.env,value.phone,socialAccountPurpose(context,'phone')):'',
+      encryptAccountVaultValue(ctx.env,value.passwordHint,socialAccountPurpose(context,'password-hint')),
+    ]);
+    const row=await ctx.env.DB.prepare("INSERT INTO admin_account_vault(owner_user_id,platform,account_name,login_url,login_id_ciphertext,login_id_last4,email_ciphertext,email_hint,phone_ciphertext,phone_last4,password_ciphertext,password_last4,note,record_kind,encryption_context,password_hint_ciphertext) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id,platform,account_name,login_url,note,created_at,updated_at").bind(auth.user.id,value.platform,value.accountName,value.loginUrl,'','',emailCiphertext,'',phoneCiphertext,'','','',value.note,SOCIAL_ACCOUNT_KIND,context,passwordHintCiphertext).first();
+    return json({ok:true,item:maskedSocialAccount(row,{hasEmail:Boolean(value.email),hasPhone:Boolean(value.phone),hasPasswordHint:true})},201,headers);
+  }catch(error){return json({error:error?.message||'บันทึกบัญชีโซเชียลไม่สำเร็จ'},400,headers)}
+}

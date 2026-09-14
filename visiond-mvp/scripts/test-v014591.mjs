@@ -1,1 +1,25 @@
-import assert from'node:assert/strict';import fs from'node:fs';import{encryptAccountVaultValue,decryptAccountVaultValue}from'../functions/_account_vault_crypto.js';const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');const html=read('public/account-vault.html'),ui=read('public/account-vault.js'),api=read('functions/api/admin/account-vault/index.js'),item=read('functions/api/admin/account-vault/[id].js'),crypto=read('functions/_account_vault_crypto.js'),migration=read('migrations/0076_account_vault.sql'),admin=read('public/admin.html');assert.equal(read('VERSION.txt').trim(),'v0.14.591');for(const token of['ชื่อบัญชีหรือชื่อช่อง','login_url','login_id','password','email','phone'])assert.ok(html.includes(token),token);for(const token of['owner_user_id','email_ciphertext','phone_ciphertext','password_ciphertext'])assert.ok(api.includes(token)||item.includes(token)||migration.includes(token),token);assert.match(crypto,/AES-GCM/);assert.match(crypto,/ACCOUNT_VAULT_ENCRYPTION_KEY/);assert.match(api,/accountVaultEncryptionReady/);assert.match(ui,/60000/);assert.match(admin,/ACCOUNT-VAULT-001/);const env={ACCOUNT_VAULT_ENCRYPTION_KEY:'test-key-that-is-at-least-thirty-two-characters'};const cipher=await encryptAccountVaultValue(env,'secret-value','7:password');assert.notEqual(cipher,'secret-value');assert.equal(await decryptAccountVaultValue(env,cipher,'7:password'),'secret-value');await assert.rejects(()=>decryptAccountVaultValue(env,cipher,'8:password'));console.log('v0.14.591 encrypted personal account vault checks passed');
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {encryptAccountVaultValue,decryptAccountVaultValue} from '../functions/_account_vault_crypto.js';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const html=read('public/account-vault.html');
+const indexApi=read('functions/api/admin/account-vault/index.js');
+const itemApi=read('functions/api/admin/account-vault/[id].js');
+const cryptoSource=read('functions/_account_vault_crypto.js');
+const legacyMigration=read('migrations/0076_account_vault.sql');
+const socialMigration=read('migrations/0108_account_vault_social_hint.sql');
+const admin=read('public/admin.html');
+assert.equal(read('VERSION.txt').trim(),'v0.20.116');
+assert.match(html,/บัญชีโซเชียล/);
+assert.doesNotMatch(html,/name="password"|name="login_id"/);
+for(const token of['record_kind','encryption_context','password_hint_ciphertext','idx_admin_account_vault_owner_kind_id'])assert.ok(socialMigration.includes(token),token);
+for(const source of[indexApi,itemApi]){assert.match(source,/requireBoss/);assert.doesNotMatch(source,/requireAdmin|CREATE TABLE/)}
+assert.match(cryptoSource,/AES-GCM/);
+assert.match(cryptoSource,/ACCOUNT_VAULT_ENCRYPTION_KEY/);
+assert.match(legacyMigration,/password_ciphertext/);
+assert.equal((admin.match(/ACCOUNT-VAULT-001/g)||[]).length,1);
+const env={ACCOUNT_VAULT_ENCRYPTION_KEY:'test-key-that-is-at-least-thirty-two-characters'};
+const cipher=await encryptAccountVaultValue(env,'legacy-secret','7:password');
+assert.equal(await decryptAccountVaultValue(env,cipher,'7:password'),'legacy-secret');
+await assert.rejects(()=>decryptAccountVaultValue(env,cipher,'social:7:password-hint'));
+console.log('PASS legacy account-vault AES-GCM compatibility and v0.20.116 social-hint isolation');

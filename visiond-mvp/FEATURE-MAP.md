@@ -1127,15 +1127,15 @@
 - รหัส UI: เมนูหลังบ้านใช้ `data-feature="WORK-NOTES-001"`; ปุ่มใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v014588.mjs`; สร้างและ render ไฟล์ PPTX ภาษาไทย 2 สไลด์ พร้อมตรวจ overflow ผ่าน
 
-## ACCOUNT-VAULT-001 — คลังบัญชีส่วนตัวแบบเข้ารหัส
+## ACCOUNT-VAULT-001 — บัญชีโซเชียลแบบเข้ารหัสสำหรับ Boss
 
-- ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนู “คลังบัญชีส่วนตัว” ในหลังบ้าน → `/account-vault.html`; แต่ละคนเห็นเฉพาะรายการที่ตนเองสร้าง
-- เป้าหมาย: เก็บแพลตฟอร์ม ชื่อบัญชี/ชื่อช่อง ลิงก์เข้าสู่ระบบ ไอดี อีเมล เบอร์โทร รหัสผ่าน และหมายเหตุ
-- ความปลอดภัย: ไอดี อีเมล เบอร์โทร และรหัสผ่านเข้ารหัส AES-GCM ด้วย `ACCOUNT_VAULT_ENCRYPTION_KEY` (fallback `VISIOND_CHANNEL_ENCRYPTION_KEY`); รายการปกติแสดงข้อมูลปิดบังและซ่อนข้อมูลที่ถอดรหัสให้อัตโนมัติ
-- Data/API: `admin_account_vault`; CRUD ที่ `functions/api/admin/account-vault/index.js` และ `functions/api/admin/account-vault/[id].js`; crypto ที่ `functions/_account_vault_crypto.js`; ใช้ `requireAdmin` และกรองด้วย `owner_user_id`
-- หน้า/ไฟล์: `public/account-vault.html`, `public/account-vault.css`, `public/account-vault.js`, `migrations/0076_account_vault.sql`
+- ผู้ใช้/ทางเข้า: เฉพาะ Boss ที่ยืนยันผ่าน `/api/auth/me` เห็นปุ่มหลัก “บัญชีโซเชียล” และเปิด `/account-vault.html`; Admin/User/guest ไม่เห็นปุ่มและหน้า direct-access ไม่เรียก vault list
+- เป้าหมาย: เก็บแพลตฟอร์ม ชื่อบัญชี ลิงก์เข้าสู่ระบบที่ canonical เป็น HTTPS เบอร์โทรหรืออีเมล คำใบ้รหัสผ่านแบบสั้นไม่เกิน 64 ตัวอักษร และหมายเหตุ โดยห้ามเก็บรหัสผ่านจริงหรือไอดีล็อกอิน; รับโดเมน/พาธเปล่าแล้วเติม HTTPS แต่ปฏิเสธ scheme อื่นและ URL ที่ฝัง user-info
+- ความปลอดภัย: อีเมล เบอร์โทร และคำใบ้เข้ารหัส AES-GCM ด้วย context แยกราย record/purpose; list คืนเฉพาะสถานะปิดบัง Detail ถอดรหัสเมื่อ Boss กด reveal/edit หรือคัดลอกอีเมลโดยชัดแจ้ง และล้างใน 60 วินาทีหรือเมื่อซ่อนหน้า; การ์ดมีเฉพาะคัดลอกลิงก์และคัดลอกอีเมลเมื่อมีอีเมล
+- Data/API: `admin_account_vault`; migration 0108 แยก `social_password_hint` จาก legacy full-password bytes และเพิ่ม index `(owner_user_id,record_kind,id DESC)`; ทุก CRUD ใช้ `requireBoss`, owner+kind binding, private/no-store และ list keysetสูงสุด 24
+- หน้า/ไฟล์: `public/account-vault.html`, `public/account-vault.css`, `public/account-vault.js`, `functions/_account_vault_social.js`, `migrations/0076_account_vault.sql`, `migrations/0108_account_vault_social_hint.sql`
 - รหัส UI: เมนูหลังบ้านใช้ `data-feature="ACCOUNT-VAULT-001"`
-- การทดสอบ: `scripts/test-v014591.mjs`
+- การทดสอบ: `scripts/test-v020116-account-vault.mjs`
 
 ## BASKET-VISIBILITY-001 — เปิด–ปิดตะกร้าสินค้า VisionD
 
