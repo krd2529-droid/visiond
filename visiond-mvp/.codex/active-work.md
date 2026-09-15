@@ -1,4 +1,10 @@
-# Active patch: Testervx Boss-channel VX operator
+# Active patch: add Shopee to Boss social-account platform
+
+PATCH_STARTED (2026-09-15): add `Shopee` to the existing Boss-only social-account short-hint vault datalist and add/edit/list flow. Keep the six existing suggestions, arbitrary custom platform text and stored records unchanged; preserve Boss authorization/encryption/max24 keyset behavior, add real route/browser regression coverage, and freeze locally for Mark/Root without commit, push, deploy or production access.
+
+PATCH_READY (2026-09-15): v0.20.118 adds `Shopee` only to the existing UI platform suggestions; the server retains its prior bounded free-text platform validation so custom/legacy platform values continue to create and edit normally. Real Boss Shopee add/edit/list, custom-value preservation, non-Boss pre-query denial, one-query max24 list, bare-domain normalization, encryption/isolation, installed-Chrome 390 px CRUD/cache behavior, Testervx/Boss route security, visible-version parity, syntax, predeploy, diff and secret scan are green. No migration, commit, push, deploy, production access or live-data mutation occurred. Exact local freeze: `.agents/reports/elon-v118-shopee-social-vault-freeze-20260915.md` plus `.sha256`.
+
+# Delivered patch: Testervx Boss-channel VX operator
 
 PATCH_STARTED (2026-09-14): restrict the existing `Testervx` / `testervx@gmail.com` account to a dedicated VX/TikTok channel-analysis backend. It may see, select and control Boss-owned connected channels for that workflow without becoming Admin/Boss or changing channel ownership. It must not see or call commission UI/API and must be denied from unrelated backend/Boss data. Implement server-authoritative exact-user delegation, additive/indexed/idempotent production assignment, full role/route matrix, desktop/mobile UI, migration-before-code release and non-destructive production verification.
 
