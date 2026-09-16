@@ -66,5 +66,5 @@ for(const token of["if(delegated&&!channelId)","if(action==='shop_orders')","syn
 assert.match(sources.marketplace,/ไม่มีสิทธิ์ค้นหาหรือเรียงด้วยข้อมูลค่าคอมมิชชัน/);assert.match(sources.marketplace,/\{commission_rate,raw_json,\.\.\.product\}/);
 assert.ok(sources.dashboard.indexOf("fetch('/api/auth/me'")<sources.dashboard.indexOf("fetch(orderUrl"));assert.ok(sources.dashboard.indexOf('if(isVxOperator)')<sources.dashboard.indexOf('\n  loadMemberHub();'));
 assert.match(sources.analyzer,/pageWorkspaceDelegated=authPayload\?\.vx_workspace\?\.delegated===true/);assert.match(sources.analyzer,/pageWorkspaceDelegated\?false:routeProfileConnection/);assert.match(sources.analyzer,/if\(pageWorkspaceDelegated\)\{box.hidden=true/);assert.doesNotMatch(await read('public/tiktok-analyzer.html'),/src="\/vx-access-status\.js/);
-assert.equal((await read('VERSION.txt')).trim(),'v0.20.118');
-db.close();console.log('PASS v0.20.118 exact Testervx delegation, indexed migration, role matrix, actor Helper/Boss workspace command-handoff, revocation, direct OAuth and all commission denials');
+assert.equal((await read('VERSION.txt')).trim(),'v0.20.119');
+db.close();console.log('PASS v0.20.119 exact Testervx delegation, indexed migration, role matrix, actor Helper/Boss workspace command-handoff, revocation, direct OAuth and all commission denials');

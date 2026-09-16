@@ -82,4 +82,4 @@ const wrongKey='tiktok-avatars/20/33333333-3333-4333-8333-333333333333/'+row().a
 sqlite.prepare('UPDATE tiktok_channels SET archived_at=CURRENT_TIMESTAMP WHERE id=?').run(channelId);response=await avatarGet(ctx('boss'));assert.equal(response.status,404,'archived owner channel stops serving its mirror immediately');
 
 sqlite.close();
-console.log('PASS v0.20.118 bounded/abort-safe TikTok avatar mirror, same-digest/CAS/race preservation, strict R2 metadata binding, no secret projection, and Boss/Testervx/non-owner authenticated media matrix');
+console.log('PASS v0.20.119 bounded/abort-safe TikTok avatar mirror, same-digest/CAS/race preservation, strict R2 metadata binding, no secret projection, and Boss/Testervx/non-owner authenticated media matrix');

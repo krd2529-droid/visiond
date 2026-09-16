@@ -70,4 +70,4 @@ try{
  await exercise({delegated:true,viewport:{width:390,height:844}});
  await exercise({delegated:true,viewport:{width:390,height:844},broken:true,syncFails:true});
 }finally{await browser.close()}
-console.log('PASS v0.20.118 installed Chrome Boss/Testervx avatar mirror, both-card sync, broken-image fallback, truthful failure and 390px layout');
+console.log('PASS v0.20.119 installed Chrome Boss/Testervx avatar mirror, both-card sync, broken-image fallback, truthful failure and 390px layout');

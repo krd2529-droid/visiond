@@ -136,4 +136,4 @@ response=await connectionsPost(request('testervx-session','/api/admin/tiktok-con
 assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM tiktok_shop_creator_connections WHERE id=?').get(shopId).n,1,'revoked actor cannot delete Boss Shop row');
 
 sqlite.close();
-console.log('PASS v0.20.118 real analyzer/connections routes, Boss effective-owner mutation, ordinary-user isolation, zero delegated financial SQL/R2/request-time DDL, and analyzer/profile/shop/add/remove/disconnect provider-race write denial');
+console.log('PASS v0.20.119 real analyzer/connections routes, Boss effective-owner mutation, ordinary-user isolation, zero delegated financial SQL/R2/request-time DDL, and analyzer/profile/shop/add/remove/disconnect provider-race write denial');
