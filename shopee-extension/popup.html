@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VisionD Shopee Product Fill</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <span class="eyebrow">VISIOND · SHOPEE</span>
+      <h1>Product Fill</h1>
+      <p>นำเข้า JSON ที่ดาวน์โหลดจาก Toys Center แล้วกรอกหน้าปัจจุบันอย่างปลอดภัย</p>
+    </header>
+
+    <section class="card import-card" aria-labelledby="importTitle">
+      <div class="section-heading">
+        <span class="step">1</span>
+        <div><h2 id="importTitle">นำเข้า JSON v1</h2><p>ไฟล์อยู่ในเครื่องและตรวจสอบก่อนใช้งาน</p></div>
+      </div>
+      <label class="file-picker">
+        <input id="jsonFile" type="file" accept="application/json,.json">
+        <span>เลือกไฟล์ VisionD Shopee JSON</span>
+      </label>
+      <div id="importStatus" class="status muted" role="status">ยังไม่ได้เลือกไฟล์</div>
+    </section>
+
+    <section id="preview" class="card" aria-labelledby="previewTitle" hidden>
+      <div class="section-heading">
+        <span class="step">2</span>
+        <div><h2 id="previewTitle">ตรวจสอบสินค้า</h2><p id="productId"></p></div>
+      </div>
+      <dl class="summary">
+        <div><dt>ชื่อ</dt><dd id="productName"></dd></div>
+        <div><dt>SKU</dt><dd id="productSku"></dd></div>
+        <div><dt>GTIN</dt><dd id="productGtin"></dd></div>
+        <div><dt>ราคา / สต็อก</dt><dd id="productSales"></dd></div>
+        <div><dt>ขนส่ง</dt><dd id="productShipping"></dd></div>
+      </dl>
+      <div class="image-summary"><strong id="imageCount"></strong><ol id="imageList"></ol></div>
+    </section>
+
+    <section class="card action-card" aria-labelledby="fillTitle">
+      <div class="section-heading">
+        <span class="step">3</span>
+        <div><h2 id="fillTitle">กรอกหน้าปัจจุบัน</h2><p>ต้องเปิดหน้าสร้างสินค้า Shopee แล้วกดเองทุกหน้า</p></div>
+      </div>
+      <button id="fillButton" class="primary" type="button" disabled>กรอกหน้าที่เปิดอยู่</button>
+      <button id="clearButton" class="secondary" type="button" disabled>ล้างไฟล์จาก Extension</button>
+      <div id="fillStatus" class="status muted" role="status">Extension จะไม่กด ขั้นตอนต่อไป / บันทึก / เผยแพร่</div>
+      <ul id="fieldResults" class="field-results" hidden></ul>
+    </section>
+
+    <footer>ตรวจสอบข้อมูลบน Shopee ทุกครั้งก่อนบันทึกหรือเผยแพร่</footer>
+  </main>
+  <script src="src/core.js"></script>
+  <script src="src/popup.js"></script>
+</body>
+</html>

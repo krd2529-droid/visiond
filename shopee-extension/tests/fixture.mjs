@@ -1,0 +1,6 @@
+export const makeHandoff=(count=3)=>({
+  schema:'visiond.shopee-product-handoff',version:1,
+  product:{visiond_product_id:7,page_1:{images:Array.from({length:count},(_,index)=>({url:`https://visiondonline.com/api/toys-center/gallery/7/${index}?v=${100+index}`,cover:index===0})),name:'ของสะสม "พิเศษ" 🚀',sku:'TOY-007',gtin:'8851234567890'},page_2:{category_path:['งานอดิเรกและของสะสม','ของสะสม','อื่นๆ'],brand:'VisionD',description:'บรรทัดหนึ่ง\r\nบรรทัดสอง \\ ทดสอบ',sales:{currency:'THB',price_minor:185000,stock:3},shipping:{weight_g:500,width_mm:120,length_mm:200,height_mm:80}}},
+  validation:{complete:true,missing:[]}
+});
+export const clone=value=>structuredClone(value);

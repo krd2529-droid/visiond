@@ -1,0 +1,10 @@
+{
+  "name": "visiond-shopee-product-fill-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/core.test.mjs && node tests/background.test.mjs && node tests/dom.test.mjs && node tests/popup.test.mjs && node tests/package.test.mjs",
+    "package": "node scripts/package.mjs"
+  }
+}
