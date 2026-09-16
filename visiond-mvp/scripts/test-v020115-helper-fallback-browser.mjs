@@ -52,4 +52,4 @@ try{
  assert.equal(mobilePage.url(),'https://visiondonline.com/launcher-open.html');assert.equal(await mobilePage.evaluate(()=>document.hasFocus()),true);assert.equal(await mobilePage.locator('#launcher-setup').textContent(),'ติดตั้ง/ซ่อมตัวช่วยเครื่องนี้');assert.equal(await mobilePage.locator('#launcher-setup').getAttribute('href'),'/launcher-setup?state=not-running');assert.match(await mobilePage.locator('#status').textContent(),/อ่านคำขอไม่ได้/);assert.ok(await mobilePage.locator('body').evaluate(body=>body.scrollWidth<=innerWidth),'mobile recovery must not overflow');assert.equal(missingPopup.url(),'chrome-error://chromewebdata/');assert.ok(failed.some(item=>item.url===`http://127.0.0.1:${missingPort}/launch?command_id=${id}`&&/ERR_CONNECTION_REFUSED/.test(item.error)));await mobile.close();
 }finally{await browser.close();await closeServer(helper)}
 
-console.log('PASS v0.20.119 installed Chrome strict-loopback success plus absent-listener desktop/mobile recovery without a raw localhost final page');
+console.log('PASS v0.20.120 installed Chrome strict-loopback success plus absent-listener desktop/mobile recovery without a raw localhost final page');

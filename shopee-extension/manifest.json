@@ -1,25 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "VisionD Shopee Product Fill",
-  "version": "0.1.0",
-  "version_name": "0.1.0 · VisionD handoff v1",
-  "description": "ตรวจสอบไฟล์ VisionD Shopee JSON และช่วยกรอกแบบฟอร์มสินค้า Shopee ทีละหน้าโดยไม่กดบันทึกหรือเผยแพร่",
+  "name": "VisionD Marketplace Product Fill",
+  "version": "0.2.0",
+  "version_name": "0.2.0 · Shopee + Thai Mart handoff v1",
+  "description": "ตรวจสอบไฟล์ VisionD Shopee/Thai Mart JSON และช่วยกรอกแบบฟอร์มสินค้าโดยไม่กดบันทึกหรือเผยแพร่",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://seller.shopee.co.th/*",
+    "https://seller.thaimart.com/products/create*",
     "https://visiondonline.com/*"
   ],
   "background": {
     "service_worker": "src/background.js"
   },
   "action": {
-    "default_title": "VisionD Shopee Product Fill",
+    "default_title": "VisionD Marketplace Product Fill",
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
       "matches": ["https://seller.shopee.co.th/portal/product/new*"],
       "js": ["src/core.js", "src/selector-config.js", "src/content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://seller.thaimart.com/products/create*"],
+      "js": ["src/thaimart-core.js", "src/thaimart-selector-config.js", "src/thaimart-content.js"],
       "run_at": "document_idle"
     }
   ]

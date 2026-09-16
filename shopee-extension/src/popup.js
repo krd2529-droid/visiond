@@ -1,98 +1,41 @@
 (function installPopup(scope){
   'use strict';
 
-  const Core=scope.VisionDShopeeCore,STORAGE_KEY='visiondShopeeHandoffV1',MAX_JSON_BYTES=256*1024;
-  const elements={
-    jsonFile:document.querySelector('#jsonFile'),importStatus:document.querySelector('#importStatus'),preview:document.querySelector('#preview'),
-    productId:document.querySelector('#productId'),productName:document.querySelector('#productName'),productSku:document.querySelector('#productSku'),productGtin:document.querySelector('#productGtin'),
-    productSales:document.querySelector('#productSales'),productShipping:document.querySelector('#productShipping'),imageCount:document.querySelector('#imageCount'),imageList:document.querySelector('#imageList'),
-    fillButton:document.querySelector('#fillButton'),clearButton:document.querySelector('#clearButton'),fillStatus:document.querySelector('#fillStatus'),fieldResults:document.querySelector('#fieldResults')
+  const ACTIVE_KEY='visiondActiveHandoffPlatform',MAX_JSON_BYTES=256*1024;
+  const platforms={
+    shopee:{id:'shopee',name:'Shopee',core:scope.VisionDShopeeCore,storageKey:'visiondShopeeHandoffV1',host:'seller.shopee.co.th',path:'/portal/product/new',message:'VISIOND_SHOPEE_FILL_CURRENT'},
+    thaimart:{id:'thaimart',name:'Thai Mart',core:scope.VisionDThaiMartCore,storageKey:'visiondThaiMartHandoffV1',host:'seller.thaimart.com',path:'/products/create',message:'VISIOND_THAIMART_FILL_CURRENT'}
   };
-  let handoff=null;
+  const elements={jsonFile:document.querySelector('#jsonFile'),importStatus:document.querySelector('#importStatus'),preview:document.querySelector('#preview'),platformEyebrow:document.querySelector('#platformEyebrow'),productId:document.querySelector('#productId'),productName:document.querySelector('#productName'),productSku:document.querySelector('#productSku'),productGtin:document.querySelector('#productGtin'),gtinRow:document.querySelector('#gtinRow'),productCategory:document.querySelector('#productCategory'),productSales:document.querySelector('#productSales'),productShipping:document.querySelector('#productShipping'),imageCount:document.querySelector('#imageCount'),imageList:document.querySelector('#imageList'),fillTitleText:document.querySelector('#fillTitleText'),fillHint:document.querySelector('#fillHint'),fillButton:document.querySelector('#fillButton'),clearButton:document.querySelector('#clearButton'),fillStatus:document.querySelector('#fillStatus'),fieldResults:document.querySelector('#fieldResults')};
+  let handoff=null,activePlatform=null;
   const setStatus=(element,text,kind='muted')=>{element.textContent=text;element.className=`status ${kind}`};
-  const storageGet=key=>new Promise(resolve=>chrome.storage.session.get(key,resolve));
-  const storageSet=value=>new Promise(resolve=>chrome.storage.session.set(value,resolve));
-  const storageRemove=key=>new Promise(resolve=>chrome.storage.session.remove(key,resolve));
+  const storageGet=key=>new Promise(resolve=>chrome.storage.session.get(key,value=>resolve(chrome.runtime.lastError?null:value)));
+  const storageSet=value=>new Promise(resolve=>chrome.storage.session.set(value,()=>resolve(!chrome.runtime.lastError)));
+  const storageRemove=key=>new Promise(resolve=>chrome.storage.session.remove(key,()=>resolve(!chrome.runtime.lastError)));
+  const configFor=value=>value?.schema===platforms.shopee.core?.SCHEMA?platforms.shopee:value?.schema===platforms.thaimart.core?.SCHEMA?platforms.thaimart:null;
 
-  function firstErrorMessage(errors){
-    const error=errors[0];
-    if(!error)return'ไฟล์ไม่ถูกต้อง';
-    const labels={wrong_schema:'schema ไม่ถูกต้อง',wrong_version:'version ไม่รองรับ',incomplete:'ข้อมูลใน VisionD ยังไม่ครบ',private_field:'พบฟิลด์ส่วนตัวที่ไม่อนุญาต',unexpected_shape:'โครงสร้างไฟล์ไม่ตรงกับ v1',invalid_image_count:'จำนวนรูปไม่ถูกต้อง',untrusted_image_origin:'URL รูปไม่ใช่ VisionD'};
-    return `${labels[error.code]||error.message} · ${error.path}`;
+  function firstErrorMessage(errors){const error=errors[0];if(!error)return'ไฟล์ไม่ถูกต้อง';const labels={wrong_schema:'schema ไม่ถูกต้อง',wrong_version:'version ไม่รองรับ',wrong_platform:'platform ไม่ถูกต้อง',incomplete:'ข้อมูลใน VisionD ยังไม่ครบ',private_field:'พบฟิลด์ส่วนตัวที่ไม่อนุญาต',unexpected_shape:'โครงสร้างไฟล์ไม่ตรงกับ v1',invalid_image_count:'จำนวนรูปไม่ถูกต้อง',untrusted_image_origin:'URL รูปไม่ใช่ VisionD'};return`${labels[error.code]||error.message} · ${error.path}`}
+  function render(value,config){
+    const product=value.product,isThai=config.id==='thaimart',images=isThai?product.images:product.page_1.images;
+    elements.platformEyebrow.textContent=`VISIOND · ${config.name.toUpperCase()}`;elements.productId.textContent=`VisionD product #${product.visiond_product_id}`;
+    elements.productName.textContent=isThai?product.name:product.page_1.name;elements.productSku.textContent=(isThai?product.sku:product.page_1.sku)||'—';elements.gtinRow.hidden=isThai;elements.productGtin.textContent=isThai?'':product.page_1.gtin;
+    if(isThai){const dimensions=product.shipping.dimensions_cm;elements.productCategory.textContent=product.category_path.join(' › ');elements.productSales.textContent=`${product.sales.price_thb} THB · ${product.sales.stock} ชิ้น`;elements.productShipping.textContent=dimensions?`${product.shipping.weight_g} g · ${dimensions.width_cm} × ${dimensions.length_cm} × ${dimensions.height_cm} cm`:`${product.shipping.weight_g} g · ไม่ใช้ขนาดพัสดุ`;elements.fillTitleText.textContent='กรอกหน้า Thai Mart';elements.fillHint.textContent='ต้องเปิดหน้าสร้างสินค้า Thai Mart ที่ตรงกับ contract แล้วกดเอง'}else{const fields=config.core.page2FieldValues(value);elements.productCategory.textContent=product.page_2.category_path.join(' › ');elements.productSales.textContent=`${fields.price} THB · ${fields.stock} ชิ้น`;elements.productShipping.textContent=`${fields.weight} kg · ${fields.width} × ${fields.length} × ${fields.height} cm`;elements.fillTitleText.textContent='กรอกหน้า Shopee';elements.fillHint.textContent='ต้องเปิดหน้าสร้างสินค้า Shopee แล้วกดเองทุกหน้า'}
+    elements.imageCount.textContent=`รูป ${images.length} รูป · รูปแรกเป็นปก`;elements.imageList.replaceChildren(...images.map((image,index)=>{const item=document.createElement('li'),url=new URL(image.url);item.textContent=`${index===0?'ปก · ':''}${url.hostname}${url.pathname}`;return item}));elements.preview.hidden=false;elements.fillButton.disabled=false;elements.clearButton.disabled=false;
   }
-
-  function render(value){
-    const product=value.product,page1=product.page_1,page2=product.page_2,fields=Core.page2FieldValues(value);
-    elements.productId.textContent=`VisionD product #${product.visiond_product_id}`;
-    elements.productName.textContent=page1.name;
-    elements.productSku.textContent=page1.sku;
-    elements.productGtin.textContent=page1.gtin;
-    elements.productSales.textContent=`${fields.price} THB · ${fields.stock} ชิ้น`;
-    elements.productShipping.textContent=`${fields.weight} kg · ${fields.width} × ${fields.length} × ${fields.height} cm`;
-    elements.imageCount.textContent=`รูป ${page1.images.length} รูป · รูปแรกเป็นปก`;
-    elements.imageList.replaceChildren(...page1.images.map((image,index)=>{const item=document.createElement('li'),url=new URL(image.url);item.textContent=`${index===0?'ปก · ':''}${url.hostname}${url.pathname}`;return item}));
-    elements.preview.hidden=false;
-    elements.fillButton.disabled=false;
-    elements.clearButton.disabled=false;
-  }
-
-  function resetView(){
-    handoff=null;elements.preview.hidden=true;elements.fillButton.disabled=true;elements.clearButton.disabled=true;elements.imageList.replaceChildren();elements.fieldResults.hidden=true;elements.fieldResults.replaceChildren();
-  }
-
+  function resetView(){handoff=null;activePlatform=null;elements.preview.hidden=true;elements.fillButton.disabled=true;elements.clearButton.disabled=true;elements.imageList.replaceChildren();elements.fieldResults.hidden=true;elements.fieldResults.replaceChildren();elements.gtinRow.hidden=false}
   async function accept(raw,{persist=true}={}){
-    const checked=Core.validateHandoff(raw);
-    if(!checked.ok){resetView();setStatus(elements.importStatus,firstErrorMessage(checked.errors),'error');return false}
-    handoff=checked.value;
-    if(persist)await storageSet({[STORAGE_KEY]:handoff});
-    render(handoff);
-    setStatus(elements.importStatus,'JSON v1 ถูกต้องและข้อมูลครบ พร้อมกรอก Shopee','success');
-    setStatus(elements.fillStatus,'เปิดหน้าสร้างสินค้า Shopee แล้วกด “กรอกหน้าที่เปิดอยู่”','muted');
-    return true;
+    const config=configFor(raw);if(!config){resetView();setStatus(elements.importStatus,'schema ไม่ใช่ Shopee หรือ Thai Mart handoff v1','error');return false}
+    const checked=config.core.validateHandoff(raw);if(!checked.ok){resetView();setStatus(elements.importStatus,firstErrorMessage(checked.errors),'error');return false}
+    if(persist){const other=Object.values(platforms).find(item=>item.id!==config.id);if(!await storageSet({[config.storageKey]:checked.value,[ACTIVE_KEY]:config.id})||!await storageRemove(other.storageKey)){resetView();setStatus(elements.importStatus,'บันทึก JSON ใน session storage ไม่สำเร็จ','error');return false}}
+    handoff=checked.value;activePlatform=config;render(handoff,config);setStatus(elements.importStatus,`JSON ${config.name} v1 ถูกต้องและข้อมูลครบ พร้อมกรอก`,'success');setStatus(elements.fillStatus,`เปิดหน้าสร้างสินค้า ${config.name} แล้วกด “กรอกหน้าที่เปิดอยู่”`,'muted');return true;
   }
-
-  async function importFile(file){
-    if(!file)return;
-    if(file.size>MAX_JSON_BYTES){resetView();setStatus(elements.importStatus,'ไฟล์ JSON ใหญ่เกิน 256 KB','error');return}
-    let raw;
-    try{raw=JSON.parse(await file.text())}catch{resetView();setStatus(elements.importStatus,'อ่าน JSON ไม่ได้ กรุณาดาวน์โหลดใหม่จาก VisionD','error');return}
-    await accept(raw);
-  }
-
+  async function importFile(file){if(!file)return;if(file.size>MAX_JSON_BYTES){resetView();setStatus(elements.importStatus,'ไฟล์ JSON ใหญ่เกิน 256 KB','error');return}let raw;try{raw=JSON.parse(await file.text())}catch{resetView();setStatus(elements.importStatus,'อ่าน JSON ไม่ได้ กรุณาดาวน์โหลดใหม่จาก VisionD','error');return}await accept(raw)}
   const activeTab=()=>new Promise(resolve=>chrome.tabs.query({active:true,currentWindow:true},tabs=>resolve(tabs[0]||null)));
-  const sendToTab=(tabId,payload)=>new Promise(resolve=>chrome.tabs.sendMessage(tabId,payload,response=>{
-    if(chrome.runtime.lastError)return resolve({ok:false,code:'extension_unavailable',message:chrome.runtime.lastError.message});
-    resolve(response||{ok:false,code:'extension_unavailable'});
-  }));
-
-  function showFieldResults(results=[]){
-    elements.fieldResults.replaceChildren(...results.map(result=>{const item=document.createElement('li');item.textContent=`${result.field}: ${result.status}${result.message?` · ${result.message}`:''}`;return item}));
-    elements.fieldResults.hidden=!results.length;
-  }
-
-  async function fill(){
-    if(!handoff)return;
-    elements.fillButton.disabled=true;
-    setStatus(elements.fillStatus,'กำลังตรวจหน้าและกรอกข้อมูล…','muted');
-    const tab=await activeTab();
-    let target=false;
-    try{const url=new URL(tab?.url||'');target=url.hostname==='seller.shopee.co.th'&&url.pathname==='/portal/product/new'}catch{}
-    if(!tab||!target){setStatus(elements.fillStatus,'ต้องเปิดหน้าสร้างสินค้า Shopee ที่กำหนดก่อน','error');elements.fillButton.disabled=false;return}
-    const response=await sendToTab(tab.id,{type:'VISIOND_SHOPEE_FILL_CURRENT',handoff});
-    showFieldResults(response.fields);
-    const kind=response.ok?'success':response.code==='image_capacity'?'warning':'error';
-    setStatus(elements.fillStatus,response.message||`กรอกไม่สำเร็จ (${response.code||'unknown'})`,kind);
-    elements.fillButton.disabled=false;
-  }
-
-  async function clear(){
-    await storageRemove(STORAGE_KEY);resetView();elements.jsonFile.value='';setStatus(elements.importStatus,'ล้าง JSON จาก Extension แล้ว','muted');setStatus(elements.fillStatus,'Extension จะไม่กด ขั้นตอนต่อไป / บันทึก / เผยแพร่','muted');
-  }
-
-  elements.jsonFile.addEventListener('change',()=>importFile(elements.jsonFile.files?.[0]));
-  elements.fillButton.addEventListener('click',fill);
-  elements.clearButton.addEventListener('click',clear);
-  storageGet(STORAGE_KEY).then(stored=>stored?.[STORAGE_KEY]?accept(stored[STORAGE_KEY],{persist:false}):null);
-
-  scope.VisionDShopeePopupTest=Object.freeze({accept,clear,fill,importFile});
+  const sendToTab=(tabId,payload)=>new Promise(resolve=>chrome.tabs.sendMessage(tabId,payload,response=>{if(chrome.runtime.lastError)return resolve({ok:false,code:'extension_unavailable',message:chrome.runtime.lastError.message});resolve(response||{ok:false,code:'extension_unavailable'})}));
+  function showFieldResults(results=[]){elements.fieldResults.replaceChildren(...results.map(result=>{const item=document.createElement('li');item.textContent=`${result.field}: ${result.status}${result.message?` · ${result.message}`:''}`;return item}));elements.fieldResults.hidden=!results.length}
+  async function fill(){if(!handoff||!activePlatform)return;elements.fillButton.disabled=true;setStatus(elements.fillStatus,'กำลังตรวจหน้าและกรอกข้อมูล…','muted');const tab=await activeTab();let target=false;try{const url=new URL(tab?.url||'');target=url.protocol==='https:'&&url.host===activePlatform.host&&url.pathname===activePlatform.path}catch{}if(!tab||!target){setStatus(elements.fillStatus,`ต้องเปิดหน้าสร้างสินค้า ${activePlatform.name} ที่กำหนดก่อน`,'error');elements.fillButton.disabled=false;return}const response=await sendToTab(tab.id,{type:activePlatform.message,handoff});showFieldResults(response.fields);const kind=response.ok?'success':response.code==='image_capacity'?'warning':'error';setStatus(elements.fillStatus,response.message||`กรอกไม่สำเร็จ (${response.code||'unknown'})`,kind);elements.fillButton.disabled=false}
+  async function clear(){await Promise.all([storageRemove(platforms.shopee.storageKey),storageRemove(platforms.thaimart.storageKey),storageRemove(ACTIVE_KEY)]);resetView();elements.jsonFile.value='';setStatus(elements.importStatus,'ล้าง JSON จาก Extension แล้ว','muted');setStatus(elements.fillStatus,'Extension จะไม่กด บันทึก / ยกเลิก / เผยแพร่ / ยืนยัน','muted')}
+  async function restore(){const active=await storageGet(ACTIVE_KEY),preferred=platforms[active?.[ACTIVE_KEY]];if(preferred){const stored=await storageGet(preferred.storageKey);if(stored?.[preferred.storageKey])return accept(stored[preferred.storageKey],{persist:false})}for(const config of Object.values(platforms)){const stored=await storageGet(config.storageKey);if(stored?.[config.storageKey])return accept(stored[config.storageKey],{persist:false})}}
+  elements.jsonFile.addEventListener('change',()=>importFile(elements.jsonFile.files?.[0]));elements.fillButton.addEventListener('click',fill);elements.clearButton.addEventListener('click',clear);restore();
+  const testApi=Object.freeze({accept,clear,fill,importFile,configFor});scope.VisionDShopeePopupTest=testApi;scope.VisionDMarketplacePopupTest=testApi;
 })(globalThis);

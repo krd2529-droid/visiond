@@ -57,4 +57,4 @@ seen.length=0;response=await createAccount(ctx('https://fixture.test/api/admin/a
 seen.length=0;response=await updateAccount(ctx('https://fixture.test/api/admin/account-vault/'+customId,{method:'PATCH',body:{...custom,account_name:'Existing Custom Platform Updated'}},customId));assert.equal(response.status,200);data=await response.json();assert.equal(data.item.platform,'Custom Marketplace');assert.equal(data.item.account_name,'Existing Custom Platform Updated');assert.equal(seen.filter(sql=>/^UPDATE admin_account_vault/.test(sql)).length,1);
 
 sqlite.close();
-console.log('PASS v0.20.119 Shopee Boss vault add/edit/list, custom platform preservation, role denial and bounded list');
+console.log('PASS v0.20.120 Shopee Boss vault add/edit/list, custom platform preservation, role denial and bounded list');

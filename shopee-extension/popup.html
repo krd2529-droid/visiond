@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>VisionD Shopee Product Fill</title>
+  <title>VisionD Marketplace Product Fill</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main>
     <header>
-      <span class="eyebrow">VISIOND · SHOPEE</span>
-      <h1>Product Fill</h1>
-      <p>นำเข้า JSON ที่ดาวน์โหลดจาก Toys Center แล้วกรอกหน้าปัจจุบันอย่างปลอดภัย</p>
+      <span id="platformEyebrow" class="eyebrow">VISIOND · MARKETPLACE</span>
+      <h1>Marketplace Product Fill</h1>
+      <p>นำเข้า JSON Shopee หรือ Thai Mart ที่ดาวน์โหลดจาก Toys Center แล้วกรอกหน้าปัจจุบันอย่างปลอดภัย</p>
     </header>
 
     <section class="card import-card" aria-labelledby="importTitle">
@@ -21,7 +21,7 @@
       </div>
       <label class="file-picker">
         <input id="jsonFile" type="file" accept="application/json,.json">
-        <span>เลือกไฟล์ VisionD Shopee JSON</span>
+        <span>เลือกไฟล์ VisionD Marketplace JSON</span>
       </label>
       <div id="importStatus" class="status muted" role="status">ยังไม่ได้เลือกไฟล์</div>
     </section>
@@ -34,7 +34,8 @@
       <dl class="summary">
         <div><dt>ชื่อ</dt><dd id="productName"></dd></div>
         <div><dt>SKU</dt><dd id="productSku"></dd></div>
-        <div><dt>GTIN</dt><dd id="productGtin"></dd></div>
+        <div id="gtinRow"><dt>GTIN</dt><dd id="productGtin"></dd></div>
+        <div><dt>หมวดหมู่</dt><dd id="productCategory"></dd></div>
         <div><dt>ราคา / สต็อก</dt><dd id="productSales"></dd></div>
         <div><dt>ขนส่ง</dt><dd id="productShipping"></dd></div>
       </dl>
@@ -44,17 +45,18 @@
     <section class="card action-card" aria-labelledby="fillTitle">
       <div class="section-heading">
         <span class="step">3</span>
-        <div><h2 id="fillTitle">กรอกหน้าปัจจุบัน</h2><p>ต้องเปิดหน้าสร้างสินค้า Shopee แล้วกดเองทุกหน้า</p></div>
+        <div><h2 id="fillTitle"><span id="fillTitleText">กรอกหน้าปัจจุบัน</span></h2><p id="fillHint">ต้องเปิดหน้าสร้างสินค้าที่ตรงกับ JSON แล้วกดเอง</p></div>
       </div>
       <button id="fillButton" class="primary" type="button" disabled>กรอกหน้าที่เปิดอยู่</button>
       <button id="clearButton" class="secondary" type="button" disabled>ล้างไฟล์จาก Extension</button>
-      <div id="fillStatus" class="status muted" role="status">Extension จะไม่กด ขั้นตอนต่อไป / บันทึก / เผยแพร่</div>
+      <div id="fillStatus" class="status muted" role="status">Extension จะไม่กด บันทึก / ยกเลิก / เผยแพร่ / ยืนยัน</div>
       <ul id="fieldResults" class="field-results" hidden></ul>
     </section>
 
-    <footer>ตรวจสอบข้อมูลบน Shopee ทุกครั้งก่อนบันทึกหรือเผยแพร่</footer>
+    <footer>ตรวจสอบข้อมูลบน Marketplace ทุกครั้งก่อนบันทึกหรือเผยแพร่</footer>
   </main>
   <script src="src/core.js"></script>
+  <script src="src/thaimart-core.js"></script>
   <script src="src/popup.js"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020120": "node scripts/test-v020120-toys-thaimart.mjs && node scripts/test-v020120-toys-thaimart-browser.mjs && npm run test:v020119",
     "test:v020119": "node scripts/test-v020119-toys-shopee.mjs && node scripts/test-v020119-toys-shopee-browser.mjs && npm run test:v020118",
     "test:v020118": "node scripts/test-v020118.mjs && npm run test:v020117",
     "test:v020117": "node scripts/test-v020117-vx-boss-channel-operator.mjs && node scripts/test-v020117-vx-operator-routes.mjs && node scripts/test-v020117-tiktok-avatar.mjs && node scripts/test-v020117-vx-boss-channel-operator-browser.mjs && node scripts/test-v020117-tiktok-avatar-browser.mjs && npm run test:v020116",

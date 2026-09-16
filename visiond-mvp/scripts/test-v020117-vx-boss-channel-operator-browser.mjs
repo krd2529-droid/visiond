@@ -42,4 +42,4 @@ try{
  assert.ok(await page.locator('body').evaluate(body=>body.scrollWidth<=innerWidth),'390px analyzer must not overflow');assert.deepEqual(pageErrors,[]);
  await context.close();
 }finally{await browser.close()}
-console.log('PASS v0.20.119 installed Chrome restricted Testervx landing/analyzer at desktop and 390px with no unrelated or commission requests');
+console.log('PASS v0.20.120 installed Chrome restricted Testervx landing/analyzer at desktop and 390px with no unrelated or commission requests');

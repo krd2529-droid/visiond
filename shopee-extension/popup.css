@@ -1,5 +1,6 @@
 :root{color-scheme:light;font-family:Inter,"Noto Sans Thai",system-ui,sans-serif;color:#17233a;background:#f5f8fb}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;width:390px;min-height:560px;background:linear-gradient(145deg,#f7fbfd 0%,#eef6f7 54%,#f9f4ee 100%)}
 main{padding:18px;display:grid;gap:14px}
 header{padding:6px 4px 0}

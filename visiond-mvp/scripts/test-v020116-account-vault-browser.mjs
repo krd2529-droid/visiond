@@ -61,4 +61,4 @@ try{
   page.once('dialog',dialog=>dialog.accept());await page.locator('.account-row').filter({hasText:'Updated Channel'}).getByRole('button',{name:'ลบ'}).click();await page.waitForFunction(()=>!document.body.textContent.includes('Updated Channel'));
   assert.equal(calls.delete,1);assert.equal(calls.list,listBeforeMutation,'delete updates and invalidates locally without list reload');assert.ok(await page.locator('body').evaluate(()=>document.body.scrollWidth<=innerWidth),'390px page with copy controls must not overflow');await context.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
-console.log('PASS v0.20.119 installed Chrome Boss-only vault, HTTPS normalization, exact link/email copy, lazy detail dedupe, cache/clear/CRUD and 390px layout');
+console.log('PASS v0.20.120 installed Chrome Boss-only vault, HTTPS normalization, exact link/email copy, lazy detail dedupe, cache/clear/CRUD and 390px layout');
