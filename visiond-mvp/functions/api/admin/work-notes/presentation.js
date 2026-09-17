@@ -44,11 +44,15 @@ export const normalizeDeck = (result, title, theme, attachmentCount, content) =>
     if (!numbers.length) continue;
     authoritative.push({ text: clean(line.replace(/\s*\[รูป\s*\d+\]\s*/g, ' '), 180) || 'รูปประกอบจากโน้ตต้นฉบับ', attachment_numbers: [...new Set(numbers)] });
   }
-  const authoritativeNumbers = new Set(authoritative.flatMap(entry => entry.attachment_numbers));
-  slides.forEach(slide => slide.bullets.forEach(bullet => { bullet.attachment_numbers = bullet.attachment_numbers.filter(number => !authoritativeNumbers.has(number)); }));
+  const available = new Map();
+  slides.forEach(slide => slide.bullets.forEach(bullet => {
+    const key = canonical(bullet.text), matches = available.get(key) || [];
+    matches.push(bullet); available.set(key, matches);
+    bullet.attachment_numbers = [];
+  }));
   const unmatched = [];
   for (const entry of authoritative) {
-    const match = slides.flatMap(slide => slide.bullets).find(bullet => canonical(bullet.text) === canonical(entry.text));
+    const match = available.get(canonical(entry.text))?.shift();
     if (match) match.attachment_numbers = [...new Set([...match.attachment_numbers, ...entry.attachment_numbers])];
     else unmatched.push(entry);
   }

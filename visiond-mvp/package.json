@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020121": "node scripts/test-v020121-powerpoint-semantic.mjs && node scripts/test-v020121-powerpoint-semantic-browser.mjs && node scripts/test-v02027.mjs && node scripts/test-v02026.mjs && node scripts/test-v02024.mjs",
     "test:v020120": "node scripts/test-v020120-toys-thaimart.mjs && node scripts/test-v020120-toys-thaimart-browser.mjs && npm run test:v020119",
     "test:v020119": "node scripts/test-v020119-toys-shopee.mjs && node scripts/test-v020119-toys-shopee-browser.mjs && npm run test:v020118",
     "test:v020118": "node scripts/test-v020118.mjs && npm run test:v020117",

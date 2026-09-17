@@ -23,7 +23,7 @@ assert.match(client, /imageBox\(image,x,2\.25,w,4\.05\)/);
 assert.match(client, /hyperlink:link/);
 assert.match(client, /กดที่รูปหรือข้อความนี้เพื่อดูรูปใหญ่/);
 assert.match(client, /failedNumbers\.length/);
-assert.match(html, /work-notes\.js\?v=02026/);
-assert.equal(version.trim(), 'v0.20.49');
+assert.match(html, /work-notes\.js\?v=020121/);
+assert.equal(version.trim(), 'v0.20.121');
 
 console.log('v0.20.24 authoritative image mapping and large-link layout checks passed');
