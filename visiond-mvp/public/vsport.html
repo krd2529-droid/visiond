@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>vSport | VisionD Control</title>
+  <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
+  <link rel="stylesheet" href="/vsport.css?v=020122">
+</head>
+<body>
+  <header class="sport-toolbar">
+    <a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a>
+    <div><small>VISIOND CONTROL · VSPORT-001</small><h1>vSport ห้องผลิตข่าวฟุตบอลรายวัน</h1><p>ค้นข่าวจริง → ตรวจเรื่อง → เขียนบท → เก็บรูป → วางไทม์ไลน์ → เรนเดอร์ในเครื่อง</p></div>
+  </header>
+  <main class="sport-shell" data-feature="VSPORT-001">
+    <section class="vds-card vds-card--feature project-create">
+      <div class="section-head"><div><small>เริ่มโปรเจกต์</small><h2>เลือกข่าวของวันและขอบเขตทีม</h2></div><span class="privacy-pill">ส่วนตัว · ไม่ใช้ public cache</span></div>
+      <form id="projectForm" class="project-form">
+        <label class="vds-field">ชื่อโปรเจกต์<input id="projectTitle" maxlength="180" placeholder="เช่น ข่าวลิเวอร์พูล 18 ก.ย."></label>
+        <label class="vds-field">วันที่ข่าว<input id="newsDate" type="date" required></label>
+        <fieldset class="scope-field"><legend>โหมดค้นข่าว</legend><label><input type="radio" name="scopeMode" value="specific_team" checked> ทีมที่ระบุ</label><label><input type="radio" name="scopeMode" value="all_teams_for_day"> ทุกทีมที่มีข่าวในวันนั้น</label></fieldset>
+        <label id="teamField" class="vds-field">ชื่อทีม<input id="teamName" maxlength="120" value="Liverpool FC" required></label>
+        <label class="vds-field">เป้าหมายเสียง<select id="targetMinutes"><option value="25">25 นาที</option><option value="30" selected>30 นาที</option><option value="35">35 นาที</option></select></label>
+        <button id="createProject" class="vds-btn vds-btn--primary vds-btn--large" type="submit">สร้างโปรเจกต์ vSport</button>
+      </form>
+      <p id="createStatus" class="status-line" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="vds-card recent-card">
+      <div class="section-head"><div><small>กลับมาทำต่อได้</small><h2>โปรเจกต์ล่าสุด</h2></div><label class="vds-field compact">ค้นหาชื่อขึ้นต้น<input id="projectSearch" type="search" maxlength="120"></label></div>
+      <div id="projectList" class="project-list" aria-live="polite"></div>
+      <button id="loadMoreProjects" class="vds-btn vds-btn--secondary" type="button" hidden>โหลดเพิ่ม</button>
+    </section>
+
+    <section id="workspace" class="workspace" hidden>
+      <header class="workspace-head vds-card"><div><small id="projectScope"></small><h2 id="workspaceTitle">โปรเจกต์ vSport</h2><p id="projectMeta"></p></div><button id="refreshProject" class="vds-btn vds-btn--secondary" type="button">รีเฟรช</button></header>
+      <nav class="step-nav" aria-label="ขั้นตอนผลิต"><a href="#storiesStep">1 ข่าว</a><a href="#scriptStep">2 บท</a><a href="#mediaStep">3 รูปและเวลา</a><a href="#renderStep">4 วิดีโอ</a><a href="#thumbnailStep">5 ปก</a></nav>
+
+      <section id="storiesStep" class="vds-card step-card">
+        <div class="section-head"><div><small>ขั้นที่ 1</small><h2>ข่าวประจำวันพร้อมแหล่งอ้างอิง</h2></div><button id="discoverStories" class="vds-btn vds-btn--primary" type="button">ค้นข่าววันนี้</button></div>
+        <p class="help">ข่าวมาจากฟีด Google News ฝั่งเซิร์ฟเวอร์ กรองตามวันที่ ตัดข่าวซ้ำ และโหมดทุกทีมจำกัดไม่เกิน 3 ข่าวต่อกลุ่มในรอบแรก</p>
+        <div id="storyList" class="story-list"></div><p id="storyStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="scriptStep" class="vds-card step-card">
+        <div class="section-head"><div><small>ขั้นที่ 2</small><h2>บทพูดภาษาไทย 25–35 นาที</h2></div><div class="actions"><button id="saveReview" class="vds-btn vds-btn--secondary" type="button">บันทึกเรื่องที่เลือก</button><button id="generateScript" class="vds-btn vds-btn--primary" type="button">ให้ AI ร่างบทจากข่าวที่เลือก</button></div></div>
+        <label class="vds-field">บทพูดที่ตรวจและแก้ไขได้<textarea id="narrationScript" rows="18" maxlength="60000" placeholder="เลือกข่าวก่อน แล้วให้ AI ร่างบท หรือวางบทของคุณเอง"></textarea></label>
+        <div class="actions"><button id="saveScript" class="vds-btn vds-btn--secondary" type="button">บันทึกบทที่แก้แล้ว</button><button id="copyScript" class="vds-btn vds-btn--text" type="button">คัดลอกไปสร้างเสียงภายนอก</button></div>
+        <p id="scriptStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="mediaStep" class="vds-card step-card">
+        <div class="section-head"><div><small>ขั้นที่ 3</small><h2>เสียง รูปที่เก็บถาวร และไทม์ไลน์</h2></div><button id="discoverImages" class="vds-btn vds-btn--primary" type="button">หารูปจากข่าวที่เลือก</button></div>
+        <div class="media-inputs"><label class="vds-field">ระยะเวลาเสียงจริง (วินาที)<input id="targetSeconds" type="number" min="1" max="21600" step="0.001" placeholder="เช่น 1832.448"></label><label class="vds-field">ไฟล์เสียงพากย์<input id="audioFile" type="file" accept="audio/*"></label><button id="useAudioDuration" class="vds-btn vds-btn--secondary" type="button" disabled>ใช้ความยาวจากไฟล์เสียง</button></div>
+        <p id="audioStatus" class="status-line">ยังไม่ได้เลือกไฟล์เสียง</p>
+        <div class="manual-image"><label class="vds-field">เรื่องที่รูปนี้เกี่ยวข้อง<select id="manualStory"></select></label><label class="vds-field">URL รูปโดยตรง (HTTPS)<input id="manualImageUrl" type="url" placeholder="https://..."></label><button id="ingestManualImage" class="vds-btn vds-btn--secondary" type="button">ตรวจและเก็บรูปนี้</button></div>
+        <h3>รูปที่พบ — ยังไม่แสดงภาพจนกว่าจะตรวจและเก็บสำเนา</h3><div id="candidateList" class="candidate-list"></div>
+        <h3>รูปพร้อมใช้จากคลังส่วนตัว</h3><div id="assetList" class="asset-list"></div>
+        <div class="timeline-head"><h3>ไทม์ไลน์สไลด์</h3><button id="planTimeline" class="vds-btn vds-btn--secondary" type="button">คำนวณให้ตรงระยะเวลา</button></div><div id="timelineList" class="timeline-list"></div>
+        <p id="mediaStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="renderStep" class="vds-card step-card">
+        <div class="section-head"><div><small>ขั้นที่ 4</small><h2>คิวเรนเดอร์ในเครื่องทีละงาน</h2></div><span id="resourceStatus" class="privacy-pill">กำลังตรวจพื้นที่เครื่อง…</span></div>
+        <div class="actions"><button id="enqueueRender" class="vds-btn vds-btn--primary" type="button">เพิ่มเข้าคิว</button><button id="startQueue" class="vds-btn vds-btn--secondary" type="button">เริ่มงานถัดไป</button><button id="pauseRender" class="vds-btn vds-btn--tonal" type="button" disabled>พัก</button><button id="cancelRender" class="vds-btn vds-btn--danger" type="button" disabled>ยกเลิกงานปัจจุบัน</button></div>
+        <div id="renderQueue" class="render-queue"></div><progress id="renderProgress" value="0" max="100"></progress><p id="renderStatus" class="status-line" role="status" aria-live="polite"></p>
+        <canvas id="videoCanvas" width="1280" height="720" aria-label="ตัวอย่างเฟรมวิดีโอ"></canvas><div id="silentOutput" class="output-box"></div>
+        <h3>รวมวิดีโอเงียบกับเสียงภายนอก</h3><div class="merge-grid"><label class="vds-field">วิดีโอเงียบ<input id="silentVideoFile" type="file" accept="video/webm,video/mp4,video/*"></label><label class="vds-field">เสียงพากย์<input id="mergeAudioFile" type="file" accept="audio/*"></label></div><label class="confirm-line"><input id="acceptMismatch" type="checkbox"> ยืนยันให้ตัดตามไฟล์ที่สั้นกว่า หากความยาวต่างกันเกิน 0.5 วินาที</label><button id="mergeMedia" class="vds-btn vds-btn--primary" type="button">รวมเป็นวิดีโอสุดท้าย</button><p id="mergeStatus" class="status-line" role="status" aria-live="polite"></p><div id="finalOutput" class="output-box"></div>
+      </section>
+
+      <section id="thumbnailStep" class="vds-card step-card">
+        <div class="section-head"><div><small>ขั้นที่ 5</small><h2>ปกวิดีโอ 16:9 ที่แก้ไขได้</h2></div><span class="privacy-pill">1280 × 720 px</span></div>
+        <div class="thumbnail-controls"><label class="vds-field">หัวข่าว<input id="thumbHeadline" maxlength="180" placeholder="สรุปข่าวเด่นวันนี้"></label><label class="vds-field">ข้อความรอง<input id="thumbSubheadline" maxlength="240" placeholder="ประเด็นสำคัญที่ผู้ชมจะได้ฟัง"></label><label class="vds-field">ทีม / นักเตะ / ผู้จัดการที่ต้องการเน้น<input id="thumbFocusText" maxlength="120" placeholder="เช่น Liverpool · ผู้จัดการทีม"></label><label class="vds-field">รูปเด่น<select id="thumbFocusAsset"><option value="">เลือกอัตโนมัติ</option></select></label><label class="vds-field">โทนสี<select id="thumbPalette"><option value="red-yellow">แดง–เหลือง Breaking</option><option value="blue-white">น้ำเงิน–ขาว</option><option value="black-gold">ดำ–ทอง</option></select></label></div>
+        <div class="concepts" role="group" aria-label="เลือกแนวจัดวาง"><button class="vds-btn vds-btn--secondary" type="button" data-layout="split" aria-pressed="true">คอนเซปต์ 1 · แบ่งภาพ</button><button class="vds-btn vds-btn--secondary" type="button" data-layout="stack" aria-pressed="false">คอนเซปต์ 2 · ซ้อนพาดหัว</button><button class="vds-btn vds-btn--secondary" type="button" data-layout="spotlight" aria-pressed="false">คอนเซปต์ 3 · ภาพเด่น</button></div>
+        <p class="help">กรอบประในพรีวิวคือ safe area; ไฟล์ส่งออกจะไม่มีกรอบนี้</p><canvas id="thumbnailCanvas" width="1280" height="720" aria-label="ตัวอย่างปก vSport"></canvas><div class="actions"><button id="previewThumbnail" class="vds-btn vds-btn--secondary" type="button">อัปเดตตัวอย่าง</button><button id="saveThumbnail" class="vds-btn vds-btn--secondary" type="button">บันทึกข้อความปก</button><button id="exportThumbnail" class="vds-btn vds-btn--primary" type="button">ส่งออก PNG</button></div><p id="thumbnailStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+    </section>
+  </main>
+  <script src="/vsport.js?v=020122" type="module"></script>
+  <script src="/visiond-button-system.js?v=014407" defer></script>
+</body>
+</html>

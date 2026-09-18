@@ -1,0 +1,12 @@
+{
+  "version": "v0.20.122",
+  "feature": "VSPORT-001",
+  "status": "verified_ready_for_release",
+  "scope": "Admin-only staged football-news video workflow with sourced discovery, Thai script, stable image ingest, local render/merge and thumbnail export.",
+  "files": ["public/vsport.html","public/vsport.css","public/vsport.js","functions/_vsport.js","functions/api/admin/vsport.js","functions/api/admin/vsport-assets/[id].js","migrations/0111_vsport.sql","scripts/test-v020122.mjs"],
+  "verification": {
+    "focused": "pass: real Chrome workflow/render/merge/thumbnail, keyset/index plans, cached image decode, stale-job recovery and strict sequential queue",
+    "patch_gate": "pass: syntax and visible-version checks; predeploy PASS 9 / WARN 8 / FAIL 0; git diff --check clean",
+    "independent": "pass: Mark P0=0, P1=0, P2=0, P3=0"
+  }
+}

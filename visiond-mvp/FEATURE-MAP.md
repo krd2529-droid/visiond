@@ -1127,6 +1127,18 @@
 - รหัส UI: เมนูหลังบ้านใช้ `data-feature="WORK-NOTES-001"`; ปุ่มใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v014588.mjs`; สร้างและ render ไฟล์ PPTX ภาษาไทย 2 สไลด์ พร้อมตรวจ overflow ผ่าน
 
+## VSPORT-001 — ผลิตวิดีโอข่าวฟุตบอลรายวัน
+
+- สถานะ: `IMPLEMENTED` ใน v0.20.122 เป็น vertical slice ตั้งแต่ค้นข่าวถึงส่งออกวิดีโอ/ปก โดยการสร้างเสียงยังทำภายนอกตามขอบเขตผลิตภัณฑ์
+- หน้า/ไฟล์: `public/vsport.html`, `public/vsport.css`, `public/vsport.js`, `functions/_vsport.js`, `functions/api/admin/vsport.js`, `functions/api/admin/vsport-assets/[id].js`, `migrations/0111_vsport.sql`
+- สิทธิ์/ข้อมูล: ทุก API ใช้ `requireAdmin`; โปรเจกต์ งาน ข่าว รูป และไฟล์ R2 ผูก owner/project; response เป็น `private, no-store`; รายการใช้ keyset cursor สูงสุด 24 รายการ และ client cache/request dedupe แยกตาม viewer ID + role
+- ข่าวและบท: ค้น Google News RSS ฝั่ง server ตามวันและทีม, ตัดซ้ำ, โหมดทุกทีมกระจายไม่เกิน 3 เรื่องต่อกลุ่มและแสดงแยกกลุ่ม, เก็บชื่อสำนักข่าว/URL/วันเผยแพร่/วันดึง; บทไทยสร้างจากข่าวที่เลือกเท่านั้นและใส่ source mapping
+- รูป: ดึง candidate จากหน้าแหล่งข่าวโดยไม่ hotlink preview, ตรวจ HTTPS/redirect ทุก hop, MIME/ขนาด/signature/dimensions ก่อนเก็บ R2, ป้องกัน ingest ซ้ำด้วย claim + unique candidate; browser ต้อง `img.decode()` สำเร็จก่อนเข้า timeline และมีสถานะแทนที่เมื่อเปิดไม่ได้
+- วิดีโอ/ปก: browser วางไทม์ไลน์ motion หลายแบบให้จบตรงวินาทีเป้าหมาย, คิวที่แยกตาม viewer สูงสุด 5 งานและทำทีละงานพร้อม pause/recover/retry/cancel/skip, reject render ที่คลาดเกิน 1 วินาที, รวมวิดีโอเงียบกับเสียงโดยแจ้ง mismatch; ปกมี 3 layout, headline/subheadline, palette, focus ทีม/บุคคล/รูป และส่งออก PNG 1280×720 พร้อม safe-area preview
+- งานยาว: `vsport_jobs` มี idempotency key/checkpoint, UI กู้ job หลัง reload และหมุน operation key เมื่อสำเร็จเพื่อให้ rerun งานที่แก้ input แล้วได้; D1 indexes ครอบคลุม project/story/candidate/asset/job hot paths
+- รหัส UI: `main[data-feature="VSPORT-001"]` และเมนูหลังบ้านใช้ `data-feature="VSPORT-001"`; ปุ่มทั้งหมดใช้ canonical `.vds-btn`
+- การทดสอบ: `scripts/test-v020122.mjs`
+
 ## ACCOUNT-VAULT-001 — บัญชีโซเชียลแบบเข้ารหัสสำหรับ Boss
 
 - ผู้ใช้/ทางเข้า: เฉพาะ Boss ที่ยืนยันผ่าน `/api/auth/me` เห็นปุ่มหลัก “บัญชีโซเชียล” และเปิด `/account-vault.html`; Admin/User/guest ไม่เห็นปุ่มและหน้า direct-access ไม่เรียก vault list
