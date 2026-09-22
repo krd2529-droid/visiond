@@ -1,0 +1,36 @@
+{
+  "version": "v0.20.124",
+  "feature": "VSPORT-001",
+  "status": "ready_for_commit_push",
+  "base_commit": "573c15162f31500c9bf9f41a956dfc56922a9956",
+  "scope": "Harden vSport daily discovery against a temporary Google News outage with bounded retries, an independent Bing News RSS fallback, strict selected-day parsing, real publisher attribution and idempotent cross-provider deduplication.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_vsport.js",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.124.json",
+    "public/admin.html",
+    "public/index.html",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020124-vsport-news.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: node scripts/test-v020124-vsport-news.mjs",
+    "vsport_regression": "PASS: node scripts/test-v020122.mjs, including installed-Chrome render coverage",
+    "live_center_regression": "PASS: node scripts/test-v020123.mjs, including installed-Chrome desktop/mobile/opener coverage",
+    "syntax": "PASS: node --check for _vsport.js, admin/vsport.js and test-v020124-vsport-news.mjs",
+    "visible_version": "PASS: WEB v0.20.124 / ADMIN v0.20.124",
+    "predeploy": "PASS 9 / WARN 8 / FAIL 0; warnings are existing deployment placeholders and legacy migration alias",
+    "independent": "PASS: Mark frozen-tree review reports P0=0, P1=0, P2=0 and P3=0; focused v0.20.124 exits 0 and all fallback, attribution, URL safety, date, dedupe, outage, timeout and retryability contracts are verified"
+  },
+  "release": {
+    "status": "ready_for_commit_push",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

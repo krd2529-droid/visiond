@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020124": "node scripts/test-v020124-vsport-news.mjs && npm run test:v020123",
     "test:v020123": "node scripts/test-v020123.mjs && npm run test:v020122",
     "test:v020122": "node scripts/test-v020122.mjs",
     "test:v020121": "node scripts/test-v020121-powerpoint-semantic.mjs && node scripts/test-v020121-powerpoint-semantic-browser.mjs && node scripts/test-v02027.mjs && node scripts/test-v02026.mjs && node scripts/test-v02024.mjs",

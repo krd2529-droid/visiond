@@ -1,5 +1,5 @@
 import {json,requireAdmin} from '../../_lib.js';
-import {balanceStories,escapeLike,extractImageUrls,imageDimensions,isSafeRemoteUrl,newsRssUrl,parseCursor,parseNewsRss} from '../../_vsport.js';
+import {balanceStories,bingNewsRssUrl,escapeLike,extractImageUrls,imageDimensions,isSafeRemoteUrl,newsRssUrl,parseCursor,parseNewsRss} from '../../_vsport.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
@@ -8,6 +8,9 @@ const integer=(value,min,max)=>{const number=Number(value);return Number.isInteg
 const projectFields='id,title,news_date,scope_mode,team_name,target_minutes,target_seconds,status,thumbnail_headline,thumbnail_subheadline,thumbnail_focus_text,thumbnail_focus_asset_id,thumbnail_palette,thumbnail_layout,created_at,updated_at';
 const jobFields='id,project_id,job_type,idempotency_key,status,checkpoint,error_text,created_at,updated_at';
 const JOB_LEASE_MS=120000;
+const NEWS_FETCH_TIMEOUT_MS=4500;
+const NEWS_FETCH_ATTEMPTS=2;
+const NEWS_MAX_BYTES=2*1024*1024;
 
 async function ownedProject(env,id,ownerId,{withScript=false}={}){
   return env.DB.prepare(`SELECT ${projectFields}${withScript?',narration_script':''} FROM vsport_projects WHERE id=? AND owner_id=?`).bind(id,ownerId).first();
@@ -57,15 +60,45 @@ async function newJob(ctx,auth,project,type,key){
 }
 const finishJob=(env,id,status,checkpoint='',error='')=>env.DB.prepare('UPDATE vsport_jobs SET status=?,checkpoint=?,error_text=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(status,clean(checkpoint,400),clean(error,500),id).run();
 
+const newsError=(code,message)=>Object.assign(new Error(message),{code});
+const sleep=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
+
+async function readNewsResponse(response){
+  const expected=Number(response.headers.get('content-length')||0);if(expected>NEWS_MAX_BYTES)throw new Error('NEWS_RESPONSE_TOO_LARGE');
+  const bytes=await response.arrayBuffer();if(bytes.byteLength>NEWS_MAX_BYTES)throw new Error('NEWS_RESPONSE_TOO_LARGE');
+  return new TextDecoder().decode(bytes);
+}
+
+export async function discoverNews(project,{fetchImpl=fetch,timeoutMs=NEWS_FETCH_TIMEOUT_MS,retryDelayMs=250,sleepImpl=sleep,onAttempt=async()=>{}}={}){
+  const providers=[{id:'google',url:newsRssUrl(project.news_date,project.scope_mode,project.team_name)},{id:'bing',url:bingNewsRssUrl(project.news_date,project.scope_mode,project.team_name)}];
+  let hadSuccessfulResponse=false;
+  for(const provider of providers){
+    for(let attempt=1;attempt<=NEWS_FETCH_ATTEMPTS;attempt++){
+      await onAttempt({provider:provider.id,attempt,maxAttempts:NEWS_FETCH_ATTEMPTS});
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),Math.max(1,timeoutMs));let response;
+      try{
+        response=await fetchImpl(provider.url,{headers:{'user-agent':'VisionD-vSport/1.0','accept':'application/rss+xml, application/xml, text/xml'},signal:controller.signal});
+        if(!response.ok)throw new Error(`NEWS_PROVIDER_HTTP_${response.status}`);
+        hadSuccessfulResponse=true;
+        const stories=parseNewsRss(await readNewsResponse(response),{newsDate:project.news_date,scopeMode:project.scope_mode,teamName:project.team_name,limit:24});
+        if(stories.length)return{stories,provider:provider.id,attempt};
+        break;
+      }catch{
+        if(attempt<NEWS_FETCH_ATTEMPTS)await sleepImpl(Math.max(0,retryDelayMs)*attempt);
+      }finally{clearTimeout(timer)}
+    }
+  }
+  if(hadSuccessfulResponse)throw newsError('NEWS_NOT_FOUND',`ไม่พบข่าววันที่ ${project.news_date} ที่มีชื่อสำนักข่าวและลิงก์ต้นทาง กรุณาตรวจวันที่หรือทีม แล้วกด “ค้นข่าววันนี้” อีกครั้ง`);
+  throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าว Google News และ Bing News ไม่พร้อมใช้งานชั่วคราว กรุณารอ 1–2 นาที แล้วกด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ');
+}
+
 async function runDiscovery(env,jobId,project){
   try{
     await finishJob(env,jobId,'running','fetch_news');
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000),response=await fetch(newsRssUrl(project.news_date,project.scope_mode,project.team_name),{headers:{'user-agent':'VisionD-vSport/1.0'},signal:controller.signal}).finally(()=>clearTimeout(timer));
-    if(!response.ok)throw new Error(`NEWS_HTTP_${response.status}`);
-    const stories=parseNewsRss(await response.text(),{newsDate:project.news_date,scopeMode:project.scope_mode,teamName:project.team_name,limit:24});if(!stories.length)throw new Error('NO_RELIABLE_NEWS');
+    const discovery=await discoverNews(project,{onAttempt:({provider,attempt,maxAttempts})=>finishJob(env,jobId,'running',`fetch_news:${provider}:${attempt}/${maxAttempts}`)}),stories=discovery.stories;
     const statements=stories.map((story,index)=>env.DB.prepare(`INSERT INTO vsport_stories(project_id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,fingerprint,selected,sort_order) VALUES(?,?,?,?,?,?,?,?,?,1,?) ON CONFLICT(project_id,fingerprint) DO UPDATE SET headline=excluded.headline,summary=excluded.summary,team_name=excluded.team_name,publisher=excluded.publisher,source_url=excluded.source_url,published_at=excluded.published_at,retrieved_at=excluded.retrieved_at,sort_order=excluded.sort_order`).bind(project.id,story.headline,story.summary,story.team_name,story.publisher,story.source_url,story.published_at,story.retrieved_at,story.fingerprint,index*10));
-    statements.push(env.DB.prepare("UPDATE vsport_projects SET status='stories_ready',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(project.id));await env.DB.batch(statements);await finishJob(env,jobId,'completed',`stories:${stories.length}`);
-  }catch(error){await finishJob(env,jobId,'failed','',error?.name==='AbortError'?'NEWS_TIMEOUT':error?.message||'DISCOVERY_FAILED')}
+    statements.push(env.DB.prepare("UPDATE vsport_projects SET status='stories_ready',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(project.id));await env.DB.batch(statements);await finishJob(env,jobId,'completed',`stories:${stories.length}:${discovery.provider}`);
+  }catch(error){await finishJob(env,jobId,'failed','',error?.message||'ค้นข่าวไม่สำเร็จ กรุณาลองอีกครั้ง')}
 }
 
 const scriptPrompt=(project,stories)=>`คุณเป็นบรรณาธิการข่าวฟุตบอลภาษาไทย จงเขียนสคริปต์เสียงแบบฟังต่อเนื่อง ความยาวเป้าหมาย ${project.target_minutes} นาที (ประมาณ ${project.target_minutes*125}-${project.target_minutes*150} คำภาษาไทย) จากรายการข่าวที่ให้เท่านั้น ห้ามเติมข้อเท็จจริง ตัวเลข คำพูด หรือข่าวอื่นที่ไม่มีในรายการ แยกเป็นบทนำ หัวข้อข่าวแต่ละเรื่อง และบทสรุป ทุกหัวข้อต้องลงท้ายบรรทัด [แหล่งข่าว: ชื่อสำนักข่าว | URL] ข้อความเชื่อมเชิงบรรณาธิการต้องใช้ถ้อยคำชัดว่าเป็นการวิเคราะห์หรือบริบท ไม่ใช่ข้อเท็จจริง หากข้อมูลไม่พอให้บอกตรง ๆ ว่าแหล่งข่าวยังไม่มีรายละเอียด ตอบเป็นภาษาไทยล้วนแบบข้อความธรรมดา

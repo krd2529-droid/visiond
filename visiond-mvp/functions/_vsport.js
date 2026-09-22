@@ -11,7 +11,7 @@ export function decodeXml(value=''){
   });
 }
 
-const firstTag=(xml,name)=>decodeXml(xml.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`,'i'))?.[1]||'');
+const firstTag=(xml,name)=>decodeXml(xml.match(new RegExp(`<(?:[\\w.-]+:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?${name}>`,'i'))?.[1]||'');
 const stripHtml=value=>cleanText(decodeXml(String(value||'').replace(/<script\b[\s\S]*?<\/script>/gi,' ').replace(/<style\b[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ')));
 const isoDay=value=>{const date=new Date(value);return Number.isNaN(date.valueOf())?'':date.toISOString().slice(0,10)};
 
@@ -28,7 +28,8 @@ export function detectTeam(headline,scopeMode='all_teams_for_day',requestedTeam=
 }
 
 export function storyFingerprint(story){
-  const input=`${cleanText(story.publisher).toLowerCase()}|${cleanText(story.headline).toLowerCase()}`;
+  const publisher=cleanText(story.publisher).toLowerCase(),escapedPublisher=publisher.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),headline=cleanText(story.headline).toLowerCase().replace(new RegExp(`\\s+-\\s+${escapedPublisher}$`,'i'),'');
+  const input=`${publisher}|${headline}`;
   let hash=2166136261;
   for(let i=0;i<input.length;i++){hash^=input.charCodeAt(i);hash=Math.imul(hash,16777619)}
   return (hash>>>0).toString(16).padStart(8,'0');
@@ -52,7 +53,7 @@ export function balanceStories(items,{limit=24,maxPerTeam=3}={}){
 export function parseNewsRss(xml,{newsDate,scopeMode='all_teams_for_day',teamName='',limit=24,retrievedAt=new Date().toISOString()}={}){
   const seen=new Set(),stories=[];
   for(const match of String(xml||'').matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)){
-    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),sourceMatch=item.match(/<source(?:\s[^>]*)?>([\s\S]*?)<\/source>/i),publisher=cleanText(decodeXml(sourceMatch?.[1]||'')).slice(0,180),sourceUrl=cleanText(firstTag(item,'link')).slice(0,2000),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedDay=isoDay(publishedRaw);
+    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedDay=isoDay(publishedRaw);
     if(!headline||!publisher||!/^https:\/\//i.test(sourceUrl)||publishedDay!==newsDate)continue;
     if(scopeMode==='specific_team'&&teamName&&!headline.toLocaleLowerCase('en').includes(cleanText(teamName).toLocaleLowerCase('en').replace(/\s+fc$/,'')))continue;
     const story={headline,summary:stripHtml(firstTag(item,'description')).slice(0,1600),team_name:detectTeam(headline,scopeMode,teamName),publisher,source_url:sourceUrl,published_at:new Date(publishedRaw).toISOString(),retrieved_at:retrievedAt};
@@ -67,6 +68,22 @@ export function newsRssUrl(newsDate,scopeMode='all_teams_for_day',teamName=''){
   const start=new Date(`${newsDate}T00:00:00Z`);if(Number.isNaN(start.valueOf()))throw new Error('INVALID_NEWS_DATE');
   const next=new Date(start.valueOf()+86400000).toISOString().slice(0,10),subject=scopeMode==='specific_team'?`"${cleanText(teamName).slice(0,120)}" football`:'football (Premier League OR Champions League OR transfer OR manager OR player)';
   return `https://news.google.com/rss/search?q=${encodeURIComponent(`${subject} after:${newsDate} before:${next}`)}&hl=en-GB&gl=GB&ceid=GB:en`;
+}
+
+export function bingNewsRssUrl(newsDate,scopeMode='all_teams_for_day',teamName=''){
+  const start=new Date(`${newsDate}T00:00:00Z`);if(Number.isNaN(start.valueOf()))throw new Error('INVALID_NEWS_DATE');
+  const subject=scopeMode==='specific_team'?`"${cleanText(teamName).slice(0,120)}" football`:'football (Premier League OR Champions League OR transfer OR manager OR player)',params=new URLSearchParams({q:`${subject} ${newsDate}`,format:'rss',setlang:'en-GB',qft:'sortbydate="1"'});
+  return `https://www.bing.com/news/search?${params}`;
+}
+
+export function normalizeNewsSourceUrl(value){
+  try{
+    const url=new URL(cleanText(value));
+    if(/^https?:$/.test(url.protocol)&&/(^|\.)bing\.com$/i.test(url.hostname)&&url.pathname.toLowerCase()==='/news/apiclick.aspx'){
+      const target=new URL(url.searchParams.get('url')||'');return isSafeRemoteUrl(target.href)?target.href:'';
+    }
+    return isSafeRemoteUrl(url.href)?url.href:'';
+  }catch{return''}
 }
 
 export function isSafeRemoteUrl(value){
