@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>เปิดแพ็กเกจ VisionD Live</title>
+  <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
+  <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
+  <link rel="stylesheet" href="/live-center.css?v=020123">
+</head>
+<body>
+  <header class="live-toolbar"><a class="vds-btn vds-btn--text" href="/live-center.html">← Live Center</a><div class="live-title"><small>LOCAL PACKAGE VALIDATOR</small><h1>เปิดไฟล์ .visiondlive</h1><p>ตรวจโครงสร้าง ลายเซ็นรูป และเปิดฉากจากไฟล์ในเครื่องโดยไม่ส่งไฟล์ออกจาก Browser</p></div></header>
+  <main class="live-shell package-opener" data-feature="LIVE-CENTER-001">
+    <section class="vds-card show-form">
+      <label class="vds-field">เลือกไฟล์ .visiondlive<input id="packageFile" type="file" accept=".visiondlive,application/vnd.visiond.live"></label>
+      <p class="help">ตัวเปิดไฟล์อ่านเฉพาะข้อมูลและรูปที่ฝังอยู่ในแพ็กเกจ ไม่เรียก API, D1, R2 หรือแพลตฟอร์มไลฟ์ระหว่างเล่นฉาก</p>
+      <p id="openStatus" class="status-line" role="status" aria-live="polite">ยังไม่ได้เลือกไฟล์</p>
+    </section>
+    <section id="packageWorkspace" class="vds-card package-card" hidden>
+      <div class="section-head"><div><small id="packageVersion"></small><h2 id="packageTitle"></h2></div><span id="packageDigest" class="privacy-pill"></span></div>
+      <p id="packageMeta"></p>
+      <article class="scene-item opener-scene">
+        <div id="openPosition" class="scene-position">1</div>
+        <div class="scene-product"><img id="openImage" alt="รูปสินค้าที่ฝังในแพ็กเกจ"><h3 id="openProduct"></h3><p id="openPrice"></p></div>
+        <div><p id="openScript"></p><p id="openCue"></p><div class="scene-actions"><button id="previousScene" class="vds-btn vds-btn--secondary" type="button">← ก่อนหน้า</button><button id="nextScene" class="vds-btn vds-btn--primary" type="button">ถัดไป →</button></div></div>
+      </article>
+    </section>
+  </main>
+  <script src="/live-package-open.js?v=020123" type="module"></script>
+  <script src="/visiond-button-system.js?v=014407" defer></script>
+</body>
+</html>

@@ -1139,6 +1139,19 @@
 - รหัส UI: `main[data-feature="VSPORT-001"]` และเมนูหลังบ้านใช้ `data-feature="VSPORT-001"`; ปุ่มทั้งหมดใช้ canonical `.vds-btn`
 - การทดสอบ: `scripts/test-v020122.mjs`
 
+## LIVE-CENTER-001 — VisionD Live Center และแพ็กเกจพกพา
+
+- ผู้ใช้/ทางเข้า: Boss หรือ Admin ผ่านเมนูหลังบ้าน → `/live-center.html`; middleware และทุก API/ดาวน์โหลดตรวจ `requireAdmin` ฝั่งเซิร์ฟเวอร์ก่อนอ่าน D1/R2
+- Catalog: เลือกเฉพาะสินค้า physical Toys Center ที่ `published`, `in stock` และจำนวนมากกว่า 0 ผ่าน prefix search/keyset สูงสุด 24 รายการ; รูปตัวอย่างใช้ normalized gallery row ที่ตรง `image_1_key` แล้วจึง fallback position 0
+- Show: บันทึก metadata, ลำดับสินค้า, snapshot ชื่อ/ราคา/สกุลเงิน/สต็อก และ baseline ของ normalized cover (row/key/position/MIME/size/ETag), บทและ cue ในตาราง normalized; save ใช้ revision แบบ compare-and-set ป้องกัน stale overwrite และปฏิเสธฟิลด์ลับ/ฟิลด์นอก allowlist
+- Version: สร้าง immutable version ด้วย Idempotency-Key + request hash และ `asset_count` ที่ตรวจครบทุก replay; สินค้าหาย/ปิดขายตอบ `LIVE_PRODUCT_UNAVAILABLE` ส่วน metadata/cover drift ตอบ `LIVE_PRODUCT_CHANGED` ให้ re-save ก่อนคัดลอกรูปหลักเป็น R2 object ของเวอร์ชัน พร้อม indexed D1 pointer
+- Package: `.visiondlive` เป็น binary container รวมทั้งหมดไม่เกิน 32 MiB ประกอบด้วย magic, canonical JSON envelope และรูป JPEG/PNG/WEBP ที่ฝังในไฟล์; reference เป็น `visiondlive://assets/{opaque-id}` พร้อม offset/length/MIME/SHA-256 และสแกน credential ทั้ง manifest กับ raw image bytes โดยไม่มีการเริ่มไลฟ์จริง
+- Local opener: `/live-package-open.html` ตรวจ canonical schema, exact key tree, offsets, one-to-one scene/assets, MIME magic และ digest ก่อนสร้าง local in-memory playback; หลังโหลดไฟล์แล้วไม่เรียก D1/R2/API ต่อฉาก
+- Data/API: `live_shows`, `live_show_scenes`, `live_show_versions`, `live_show_version_assets`; migration `0112_visiond_live_center.sql`; API ใต้ `/api/admin/live-center/**`; package/admin responses เป็น `private, no-store`
+- หน้า/ไฟล์: `public/live-center.{html,css,js}`, `public/live-center-package.js`, `public/live-package-open.{html,js}`, `functions/_live_center.js`
+- รหัส UI: `main[data-feature="LIVE-CENTER-001"]` และเมนูหลังบ้านใช้ `data-feature="LIVE-CENTER-001"`; ปุ่มใช้ canonical `.vds-btn`
+- การทดสอบ: `scripts/test-v020123.mjs` เรียก focused route/parser/store/SQLite/R2 suite และ real-Chrome desktop/390 ใน `scripts/test-v020123-live-center.mjs`; `npm run test:v020123` ต่อ regression v0.20.122
+
 ## ACCOUNT-VAULT-001 — บัญชีโซเชียลแบบเข้ารหัสสำหรับ Boss
 
 - ผู้ใช้/ทางเข้า: เฉพาะ Boss ที่ยืนยันผ่าน `/api/auth/me` เห็นปุ่มหลัก “บัญชีโซเชียล” และเปิด `/account-vault.html`; Admin/User/guest ไม่เห็นปุ่มและหน้า direct-access ไม่เรียก vault list

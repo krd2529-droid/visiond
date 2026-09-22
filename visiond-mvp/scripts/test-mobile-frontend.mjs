@@ -13,7 +13,7 @@ for(const file of htmlFiles){
   const source=read(file);
   for(const match of source.matchAll(/href=["']([^"'#?]+)(?:[?#][^"']*)?["']/gi)){
     const href=match[1];
-    if(/^(?:https?:|mailto:|tel:|\/\/)/i.test(href))continue;
+    if(/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href))continue;
     const target=href.startsWith('/')?join(root,'public',href.slice(1)):join(root,dirname(file),href);
     assert.ok(existsSync(target)||existsSync(target+'.html')||existsSync(join(target,'index.html')),`${file} has broken local href ${href}`);
   }

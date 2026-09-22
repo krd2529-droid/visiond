@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>VisionD Live Center</title>
+  <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
+  <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
+  <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
+  <link rel="stylesheet" href="/live-center.css?v=020123">
+</head>
+<body>
+  <header class="live-toolbar">
+    <a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a>
+    <div class="live-title">
+      <small>VISIOND CONTROL · LIVE-CENTER-001</small>
+      <h1>VisionD Live Center</h1>
+      <p>จัดลำดับสินค้าและบทพูด แล้วสร้างแพ็กเกจสำหรับเปิดบนเครื่องไลฟ์</p>
+    </div>
+    <a class="vds-btn vds-btn--secondary" href="/live-package-open.html">เปิดไฟล์ .visiondlive</a>
+  </header>
+
+  <main class="live-shell" data-feature="LIVE-CENTER-001">
+    <aside class="live-sidebar vds-card">
+      <div class="section-head">
+        <div><small>รายการล่าสุด</small><h2>รายการไลฟ์</h2></div>
+        <button id="newShow" class="vds-btn vds-btn--primary" type="button">+ สร้างใหม่</button>
+      </div>
+      <div id="showList" class="show-list" aria-live="polite"><p class="empty">กำลังโหลดรายการ…</p></div>
+      <button id="loadMoreShows" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดรายการเพิ่ม</button>
+    </aside>
+
+    <section class="live-workspace">
+      <form id="showForm" class="vds-card show-form">
+        <div class="section-head">
+          <div><small id="showRevision">รายการใหม่</small><h2 id="editorTitle">สร้างรายการไลฟ์</h2></div>
+          <span class="privacy-pill">Boss/Admin · private</span>
+        </div>
+        <div class="show-fields">
+          <label class="vds-field">ชื่อรายการ<input id="showTitle" maxlength="160" required placeholder="เช่น ไลฟ์ของเล่นสะสมวันเสาร์"></label>
+          <label class="vds-field">รูปแบบภาพ<select id="outputProfile"><option value="landscape-1080p">แนวนอน 1080p</option><option value="portrait-1080p">แนวตั้ง 1080p</option><option value="square-1080p">จัตุรัส 1080p</option></select></label>
+          <label class="vds-field">ผู้นำเสนอ<select id="avatarPreset"><option value="visiond-default">VisionD เริ่มต้น</option><option value="presenter-placeholder">Presenter placeholder</option><option value="none">ไม่ใช้ Avatar</option></select></label>
+        </div>
+        <label class="vds-field">คำอธิบาย<textarea id="showDescription" rows="3" maxlength="2000" placeholder="โน้ตภายในของรายการ"></textarea></label>
+        <div class="actions">
+          <button id="saveShow" class="vds-btn vds-btn--primary" type="submit">บันทึกร่าง</button>
+          <button id="refreshShow" class="vds-btn vds-btn--secondary" type="button" disabled>โหลดข้อมูลล่าสุด</button>
+        </div>
+        <p id="showStatus" class="status-line" role="status" aria-live="polite">เลือกหรือสร้างรายการเพื่อเริ่มทำงาน</p>
+      </form>
+
+      <section class="vds-card product-picker">
+        <div class="section-head">
+          <div><small>สินค้า Toys Center ที่พร้อมขาย</small><h2>เลือกสินค้าเข้าฉาก</h2></div>
+          <span id="sceneCount" class="count-pill">0 / 24 ฉาก</span>
+        </div>
+        <div class="search-row">
+          <label class="vds-field">ค้นหาชื่อขึ้นต้น<input id="productSearch" type="search" maxlength="200" placeholder="พิมพ์ชื่อสินค้า"></label>
+          <button id="searchProducts" class="vds-btn vds-btn--secondary" type="button">ค้นหา</button>
+        </div>
+        <div id="productList" class="product-grid" aria-live="polite"><p class="empty">กำลังโหลดสินค้า…</p></div>
+        <button id="loadMoreProducts" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดสินค้าเพิ่ม</button>
+        <p id="productStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="vds-card scene-card">
+        <div class="section-head"><div><small>ลำดับการนำเสนอ</small><h2>ฉากและบทพูด</h2></div><span>ลากไม่จำเป็น · ใช้ปุ่มขึ้น/ลง</span></div>
+        <div id="sceneList" class="scene-list" aria-live="polite"><p class="empty">ยังไม่มีฉาก เลือกสินค้าด้านบนได้เลย</p></div>
+      </section>
+
+      <section class="vds-card package-card">
+        <div class="section-head">
+          <div><small>เวอร์ชันอ่านอย่างเดียว</small><h2>แพ็กเกจสำหรับเครื่องไลฟ์</h2></div>
+          <button id="createVersion" class="vds-btn vds-btn--primary" type="button" disabled>สร้างเวอร์ชัน</button>
+        </div>
+        <p class="help">ไฟล์มีรูปหลักฝังอยู่ในตัว เปิดและตรวจได้โดยไม่ใช้รหัสผ่าน Token หรืออินเทอร์เน็ต และยังไม่เริ่มไลฟ์จริง</p>
+        <div id="versionList" class="version-list" aria-live="polite"><p class="empty">บันทึกรายการก่อนจึงจะสร้างเวอร์ชันได้</p></div>
+        <button id="loadMoreVersions" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดเวอร์ชันเพิ่ม</button>
+        <p id="versionStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+    </section>
+  </main>
+  <script src="/live-center.js?v=020123" type="module"></script>
+  <script src="/visiond-button-system.js?v=014407" defer></script>
+</body>
+</html>

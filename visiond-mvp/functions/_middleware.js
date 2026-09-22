@@ -1,4 +1,5 @@
 import {onRequestGet as renderSitemap} from './sitemap.xml.js';
+import {requireAdmin} from './_lib.js';
 const securityHeaders={
   'x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin',
   'permissions-policy':'camera=(), microphone=(), geolocation=()',
@@ -9,6 +10,7 @@ export const VISION7_ADMIN_ENTRY='<a class="admin-tab-link vision7-key-link" hre
 export const ADS_CENTER_ADMIN_ENTRY='<a class="admin-tab-link ads-center-link" href="/ads-center.html" data-ads-center-admin-entry><span class="admin-tab-icon" aria-hidden="true">📣</span><span>ศูนย์<br>โฆษณา</span></a>';
 export const isAdminHtmlPath=pathname=>pathname==='/admin'||pathname==='/admin.html';
 export const isVision7AdminHtmlPath=pathname=>pathname==='/vision7-admin'||pathname==='/vision7-admin.html';
+export const isLiveCenterHtmlPath=pathname=>['/live-center','/live-center.html','/live-package-open','/live-package-open.html'].includes(String(pathname||'').replace(/\/+$/,'')||'/');
 const trustedMobileOrigins=new Set(['null','capacitor://localhost','http://localhost']);
 const mobileMutationPaths=['/api/vision7/auth/veasy-activate','/api/vision7/auth/logout','/api/vision7/auth/veasy-device','/api/vision7/shops/','/api/vision7/runtime/'];
 const isScopedMobileMutation=(pathname,origin)=>trustedMobileOrigins.has(origin||'')&&mobileMutationPaths.some(path=>pathname===path||pathname.startsWith(path));
@@ -30,7 +32,12 @@ export async function onRequest(ctx){
       if(originUrl!==url.origin)return new Response(JSON.stringify({error:'คำขอจากเว็บไซต์อื่นถูกปฏิเสธ'}),{status:403,headers:{'content-type':'application/json'}});
     }
   }
-  let response=method==='GET'&&url.pathname==='/sitemap.xml'?await renderSitemap(ctx):await ctx.next();
+  let response;
+  if(['GET','HEAD'].includes(method)&&isLiveCenterHtmlPath(url.pathname)){
+    const auth=await requireAdmin(ctx,{includeCourseOwner:false});
+    if(auth.error)response=new Response(method==='HEAD'?null:'<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>เข้า VisionD Live Center ไม่ได้</title></head><body><main><h1>เข้า VisionD Live Center ไม่ได้</h1><p>กรุณาเข้าสู่ระบบด้วยบัญชี Boss หรือ Admin</p><a href="/login.html">ไปหน้าเข้าสู่ระบบ</a></main></body></html>',{status:auth.error.status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'private, no-store'}});
+  }
+  if(!response)response=method==='GET'&&url.pathname==='/sitemap.xml'?await renderSitemap(ctx):await ctx.next();
   const responseType=String(response.headers.get('content-type')||'').toLowerCase();
   if(method==='GET'&&isAdminHtmlPath(url.pathname)&&responseType.includes('text/html')){
     response=new HTMLRewriter().on('.admin-tabs',{element(element){element.append(VISION7_ADMIN_ENTRY+ADS_CENTER_ADMIN_ENTRY,{html:true})}}).transform(response);
@@ -41,6 +48,10 @@ export async function onRequest(ctx){
   const headers=new Headers(response.headers);
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
   headers.set('x-frame-options','SAMEORIGIN');
+  if(isLiveCenterHtmlPath(url.pathname)){
+    headers.set('referrer-policy','no-referrer');headers.set('x-frame-options','DENY');headers.set('cache-control','private, no-store');
+    headers.set('content-security-policy',"default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+  }
   if(['/launcher-open','/launcher-open.html','/launcher-pair','/launcher-pair.html','/launcher-setup','/launcher-setup.html'].includes(url.pathname)){
     headers.set('referrer-policy','no-referrer');headers.set('x-frame-options','DENY');headers.set('cache-control','private, no-store');
     headers.set('content-security-policy',"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");

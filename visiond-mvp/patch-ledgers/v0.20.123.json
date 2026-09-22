@@ -1,0 +1,47 @@
+{
+  "version": "v0.20.123",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready_local_freeze",
+  "base_commit": "cb103706038dc39bb5b74b91bbebf42f9c62d470",
+  "scope": "Boss/Admin Live Center using the physical Toys Center catalog, immutable self-contained .visiondlive packages and a zero-network local validator/opener. No platform credential, external platform call, livestream launch or model installation is included.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_middleware.js",
+    "functions/_live_center.js",
+    "functions/api/admin/live-center/products.js",
+    "functions/api/admin/live-center/shows/index.js",
+    "functions/api/admin/live-center/shows/[id].js",
+    "functions/api/admin/live-center/shows/[id]/versions.js",
+    "functions/api/admin/live-center/shows/[id]/versions/[versionId]/package.js",
+    "migrations/0112_visiond_live_center.sql",
+    "package.json",
+    "patch-ledgers/v0.20.123.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center-package.js",
+    "public/live-center.css",
+    "public/live-center.html",
+    "public/live-center.js",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "scripts/test-mobile-frontend.mjs",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020123.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: node scripts/test-v020123.mjs; route/parser/store/SQLite/R2 and installed-Chrome desktop/mobile/opener coverage",
+    "chained": "PASS: npm run test:v020123, including the v0.20.122 vSport regression gate",
+    "test_harness": "PASS: node scripts/test-mobile-frontend.mjs; generic URI schemes are excluded from local-file resolution while 76-page local-link coverage remains active",
+    "production_plan_remediation": "PASS: exact shipped default and prefix selector SQL force idx_toys_center_live_inventory/idx_toys_center_live_title; competing production legacy indexes remain in the fixture and page 1/page 2 EXPLAIN must be SEARCH with no SCAN or TEMP B-TREE",
+    "independent": "Mark owns exact refreeze verification; authoritative result is recorded in .agents/WORKBOARD.md",
+    "patch_gate": "Run npm run patch:gate against this exact 24-file staged manifest; authoritative result is recorded in .agents/WORKBOARD.md before release"
+  },
+  "release": {
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "installed by Root at bookmark 00001481-00000008-000050ee-a006eb9bb3100bbc36e58d675fc10c83; no migration action by Elon",
+    "deploy": "not performed"
+  }
+}
