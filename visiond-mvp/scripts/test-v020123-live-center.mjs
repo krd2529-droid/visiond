@@ -13,11 +13,16 @@ import {
   downloadLivePackage,
   encodeLiveCursor,
   getLiveShow,
+  liveHeadFromGet,
   listLiveProducts,
   listLiveShows,
   listLiveVersions,
   updateLiveShow,
 } from '../functions/_live_center.js';
+import { onRequestHead as headLiveProducts } from '../functions/api/admin/live-center/products.js';
+import { onRequestHead as headLiveShows } from '../functions/api/admin/live-center/shows/index.js';
+import { onRequestHead as headLiveShow } from '../functions/api/admin/live-center/shows/[id].js';
+import { onRequestHead as headLiveVersions } from '../functions/api/admin/live-center/shows/[id]/versions.js';
 import { isLiveCenterHtmlPath, onRequest as middleware } from '../functions/_middleware.js';
 import {
   LIVE_PACKAGE_MAGIC_TEXT,
@@ -502,6 +507,54 @@ const otherShowId = (await json(secondCreate)).item.id;
 response = await createLiveVersion(ctx(`/api/admin/live-center/shows/${otherShowId}/versions`, { method: 'POST', body: { expected_revision: 1 }, headers: { 'idempotency-key': 'version.empty.0001' }, params: { id: otherShowId } }));
 assert.equal(response.status, 422);
 assert.equal((await json(response)).code, 'LIVE_EMPTY_SHOW');
+
+const syntheticHead = await liveHeadFromGet(ctx('/api/admin/live-center/products', { method: 'HEAD' }), async () => new Response('must be stripped', {
+  status: 418,
+  statusText: 'Live Head Test',
+  headers: { 'content-type': 'application/json; charset=utf-8', 'x-live-head-test': 'preserved' },
+}));
+assert.equal(syntheticHead.status, 418);
+assert.equal(syntheticHead.statusText, 'Live Head Test');
+assert.equal(syntheticHead.headers.get('x-live-head-test'), 'preserved');
+assert.equal((await syntheticHead.arrayBuffer()).byteLength, 0, 'shared HEAD helper strips the GET body');
+
+const liveReadHeadCases = [
+  ['products HEAD', headLiveProducts, '/api/admin/live-center/products?limit=1', {}],
+  ['shows HEAD', headLiveShows, '/api/admin/live-center/shows?limit=1', {}],
+  ['show detail HEAD', headLiveShow, `/api/admin/live-center/shows/${showId}`, { id: showId }],
+  ['versions HEAD', headLiveVersions, `/api/admin/live-center/shows/${showId}/versions?limit=1`, { id: showId }],
+];
+for (const [session, expected] of [['', 401], ['member-session', 403]]) {
+  for (const [label, handler, pathname, params] of liveReadHeadCases) {
+    d1.queries.length = 0;
+    const r2Before = [r2.getCalls, r2.headCalls, r2.putCalls, r2.deleteCalls];
+    const denied = await handler(ctx(pathname, { method: 'HEAD', session, params }));
+    assert.equal(denied.status, expected, `${label} auth status`);
+    assert.equal(denied.headers.get('cache-control'), 'private, no-store', `${label} denial is private`);
+    assert.match(denied.headers.get('content-type') || '', /^application\/json\b/, `${label} denial keeps JSON content type`);
+    assert.equal((await denied.arrayBuffer()).byteLength, 0, `${label} denial has no body`);
+    assert.equal(d1.queries.some(sql => /toys_center|live_show/i.test(sql)), false, `${label} denies before sensitive SQL`);
+    assert.deepEqual([r2.getCalls, r2.headCalls, r2.putCalls, r2.deleteCalls], r2Before, `${label} denies before R2`);
+  }
+}
+for (const [label, handler, pathname, params] of liveReadHeadCases) {
+  const allowed = await handler(ctx(pathname, { method: 'HEAD', session: 'boss-session', params }));
+  assert.equal(allowed.status, 200, `Boss ${label} succeeds`);
+  assert.equal(allowed.headers.get('cache-control'), 'private, no-store', `${label} success is private`);
+  assert.match(allowed.headers.get('content-type') || '', /^application\/json\b/, `${label} success keeps JSON content type`);
+  assert.equal((await allowed.arrayBuffer()).byteLength, 0, `${label} success has no body`);
+}
+const missingHeadShowId = 'live_00000000000000000000000000000000';
+for (const [label, handler, pathname] of [
+  ['show detail HEAD', headLiveShow, `/api/admin/live-center/shows/${missingHeadShowId}`],
+  ['versions HEAD', headLiveVersions, `/api/admin/live-center/shows/${missingHeadShowId}/versions?limit=1`],
+]) {
+  const missing = await handler(ctx(pathname, { method: 'HEAD', session: 'boss-session', params: { id: missingHeadShowId } }));
+  assert.equal(missing.status, 404, `${label} preserves authorized not-found status`);
+  assert.equal(missing.headers.get('cache-control'), 'private, no-store');
+  assert.match(missing.headers.get('content-type') || '', /^application\/json\b/);
+  assert.equal((await missing.arrayBuffer()).byteLength, 0, `${label} not-found has no body`);
+}
 
 const authFirstCases = [
   ['products', session => listLiveProducts(ctx('/api/admin/live-center/products?limit=24', { session }))],

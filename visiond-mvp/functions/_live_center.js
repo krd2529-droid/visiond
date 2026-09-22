@@ -68,6 +68,7 @@ export function decodeLiveCursor(value){if(!value)return null;try{return JSON.pa
 export function livePrefixUpperBound(prefix){const points=Array.from(String(prefix));for(let index=points.length-1;index>=0;index--){const point=points[index].codePointAt(0);if(point<0x10ffff)return points.slice(0,index).join('')+String.fromCodePoint(point+1)}return null}
 
 export function privateLiveResponse(response){const headers=new Headers(response.headers);headers.set('cache-control','private, no-store');return new Response(response.body,{status:response.status,statusText:response.statusText,headers})}
+export async function liveHeadFromGet(ctx,getHandler){const response=await getHandler(ctx);return new Response(null,{status:response.status,statusText:response.statusText,headers:response.headers})}
 export const liveJson=(data,status=200,headers={})=>json(data,status,{...LIVE_PRIVATE_HEADERS,...headers});
 async function liveAdmin(ctx){const auth=await requireAdmin(ctx,{includeCourseOwner:false});return auth.error?{error:privateLiveResponse(auth.error)}:auth}
 
