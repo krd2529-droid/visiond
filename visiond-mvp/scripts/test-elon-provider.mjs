@@ -28,7 +28,20 @@ const response=(payload,status=200)=>({ok:status>=200&&status<300,status,json:as
   assert.ok(!request.options.body.includes('gemini-secondary'));
   assert.deepEqual(body.systemInstruction,{parts:[{text:'VisionD only'}]});
   assert.deepEqual(body.contents.map(item=>item.role),['user','model','user']);
+  assert.deepEqual(body.generationConfig,{maxOutputTokens:900,temperature:0.35},'unrelated provider callers retain the exact default Gemini payload');
   assert.equal(extractProviderText(provider.name,result.payload),'คำตอบ Gemini');
+}
+
+{
+  const schema={type:'object',properties:{schema:{type:'string'}},required:['schema'],additionalProperties:false};
+  const bodies=[];
+  const fetchImpl=async(_url,options)=>(bodies.push(JSON.parse(options.body)),response({candidates:[]}));
+  await requestElonProvider({name:'gemini',key:'secret',model:'gemini-2.5-flash'},{...input,responseJsonSchema:schema,geminiThinkingBudget:0},{fetchImpl,signalFactory:()=>null});
+  for(const model of ['gemini-custom','gemini-2.5-pro','gemini-2.5-flash-image'])await requestElonProvider({name:'gemini',key:'secret',model},{...input,responseJsonSchema:schema,geminiThinkingBudget:0},{fetchImpl,signalFactory:()=>null});
+  assert.equal(bodies[0].generationConfig.responseMimeType,'application/json');
+  assert.deepEqual(bodies[0].generationConfig.responseJsonSchema,schema);
+  assert.deepEqual(bodies[0].generationConfig.thinkingConfig,{thinkingBudget:0});
+  for(const body of bodies.slice(1)){assert.equal(body.generationConfig.responseMimeType,'application/json');assert.equal(body.generationConfig.thinkingConfig,undefined,'custom, Pro and image Gemini models are not sent a text-Flash-only thinking control')}
 }
 
 assert.equal(extractProviderText('gemini',{candidates:[]}), '');

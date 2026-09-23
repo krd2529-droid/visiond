@@ -1,0 +1,39 @@
+{
+  "version": "v0.20.126",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "df0c682a1b1d3497fda78be7b35c47977f289842",
+  "scope": "Repair the Live Center AI production 502 boundary with opt-in Gemini structured JSON, supported text-Flash thinking control, strict whitespace-tolerant plan validation, finish-reason checks, authoritative description-quote provenance, duration-safe advertised segments, stable JSON auth failures, and localized non-JSON transport fallback without changing vSport bytes or business data.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_elon-provider.js",
+    "functions/_live_center.js",
+    "package.json",
+    "patch-ledgers/v0.20.126.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.html",
+    "public/live-center.js",
+    "scripts/test-elon-provider.mjs",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020125-live-center-ai.mjs",
+    "scripts/test-v020126.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: node scripts/test-v020126.mjs (SQLite/provider/store, strict compact/pretty/tab/LF/CRLF Gemini plans, finish reasons, duration-safe advertised IDs, transport fallbacks, and installed-Chrome desktop/390)",
+    "provider_regression": "PASS: node scripts/test-elon-provider.mjs; unrelated payload remains exactly maxOutputTokens 900 + temperature 0.35, while structured schema is opt-in and zero thinking is limited to supported Gemini 2.5 text Flash IDs",
+    "live_center_regression": "PASS: node scripts/test-v020123.mjs, including package/API/store/R2 and installed-Chrome desktop/390/opener coverage",
+    "release_chain": "PASS: npm run test:v020126; v0.20.126 focused includes the v0.20.125 Live Center suite, byte-pins the released vSport migration/runtime/UI/v0.20.124 test, and chains v0.20.123/v0.20.122 without editing vSport bytes",
+    "syntax_and_diff": "PASS: node --check for every changed/new JavaScript file; git diff --check; WEB/ADMIN v0.20.126 parity",
+    "independent": "PENDING: Mark exact frozen-patch verification"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

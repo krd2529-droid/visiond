@@ -19,12 +19,12 @@ export function selectElonProvider(env={}){
 
 const boundedOutputTokens=value=>value===undefined?DEFAULT_MAX_OUTPUT_TOKENS:Math.min(MAX_OUTPUT_TOKENS,Math.max(64,Number.isFinite(Number(value))?Math.trunc(Number(value)):DEFAULT_MAX_OUTPUT_TOKENS));
 
-export async function requestElonProvider(provider,{systemPrompt,history,message,maxOutputTokens},{fetchImpl=fetch,signalFactory=()=>AbortSignal.timeout(TIMEOUT_MS)}={}){
+export async function requestElonProvider(provider,{systemPrompt,history,message,maxOutputTokens,responseJsonSchema,geminiThinkingBudget},{fetchImpl=fetch,signalFactory=()=>AbortSignal.timeout(TIMEOUT_MS)}={}){
   if(!provider)throw new Error('AI_NOT_CONFIGURED');
   const outputTokens=boundedOutputTokens(maxOutputTokens);
   return provider.name==='openai'
     ? requestOpenAI(provider,{systemPrompt,history,message},outputTokens,fetchImpl,signalFactory)
-    : requestGemini(provider,{systemPrompt,history,message},outputTokens,fetchImpl,signalFactory);
+    : requestGemini(provider,{systemPrompt,history,message,responseJsonSchema,geminiThinkingBudget},outputTokens,fetchImpl,signalFactory);
 }
 
 async function requestOpenAI(provider,input,maxOutputTokens,fetchImpl,signalFactory){
@@ -50,7 +50,12 @@ async function requestGemini(provider,input,maxOutputTokens,fetchImpl,signalFact
     body:JSON.stringify({
       systemInstruction:{parts:[{text:input.systemPrompt}]},
       contents,
-      generationConfig:{maxOutputTokens,temperature:0.35}
+      generationConfig:{
+        maxOutputTokens,
+        temperature:0.35,
+        ...(input.responseJsonSchema?{responseMimeType:'application/json',responseJsonSchema:input.responseJsonSchema}:{}),
+        ...(input.geminiThinkingBudget===0&&/^gemini-2\.5-flash(?:-lite)?(?:-(?:preview(?:-[a-z0-9]+)*|\d{3}))?$/i.test(provider.model)?{thinkingConfig:{thinkingBudget:0}}:{}),
+      }
     }),
     signal:signalFactory()
   });

@@ -66,14 +66,18 @@ export function createLiveCenterStore({ fetchImpl = globalThis.fetch?.bind(globa
           ...(options.headers || {}),
         },
       });
-      const payload = await response.json().catch(() => ({}));
+      let payload = null;
+      try { payload = await response.json(); } catch { payload = null; }
       if (!response.ok) {
-        throw new LiveCenterApiError(payload.error || `HTTP ${response.status}`, {
+        const isAiScript = /\/api\/admin\/live-center\/script$/.test(String(url).split(/[?#]/, 1)[0]);
+        const transportFailure = isAiScript && response.status >= 500 && (!payload || typeof payload.error !== 'string' || !payload.error.trim());
+        throw new LiveCenterApiError(transportFailure ? 'การเชื่อมต่อ AI ขัดข้อง กรุณาลองใหม่' : payload?.error || `HTTP ${response.status}`, {
           status: response.status,
-          code: payload.code || '',
-          payload,
+          code: transportFailure ? 'LIVE_AI_TRANSPORT_FAILED' : payload?.code || '',
+          payload: payload || {},
         });
       }
+      if (!payload || typeof payload !== 'object') throw new LiveCenterApiError('คำตอบจากเซิร์ฟเวอร์ไม่ถูกต้อง', { status: response.status, code: 'LIVE_RESPONSE_INVALID', payload: {} });
       const responseViewer = payload.viewer_id === undefined || payload.viewer_id === null ? '' : String(payload.viewer_id);
       if (!responseViewer) throw new LiveCenterApiError('คำตอบไม่ระบุผู้ดูที่ได้รับอนุญาต', { status: 409, code: 'LIVE_VIEWER_UNVERIFIED', payload });
       {
