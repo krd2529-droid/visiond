@@ -108,6 +108,16 @@ export function createLiveCenterStore({ fetchImpl = globalThis.fetch?.bind(globa
 
 export const liveIdempotencyKey = prefix => `${prefix}.${crypto.randomUUID().replaceAll('-', '')}`;
 
+let sceneSequence = 0;
+const withSceneUi = scene => ({
+  ...scene,
+  client_id: `live-scene-${++sceneSequence}`,
+  aiBusy: null,
+  aiGeneration: 0,
+  aiStatus: 'AI รองรับฉาก 5–180 วินาที',
+  aiStatusType: '',
+});
+
 const state = {
   viewer: '',
   show: null,
@@ -179,6 +189,25 @@ function markDirty() {
   setStatus('#showStatus', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
 }
 
+function invalidatePendingSceneAi(message = 'ยกเลิกผล AI เพราะรายการเปลี่ยนระหว่างรอ') {
+  let changed = false;
+  for (const scene of state.scenes) {
+    if (!scene.aiBusy) continue;
+    scene.aiGeneration = Number(scene.aiGeneration || 0) + 1;
+    scene.aiBusy = null;
+    scene.aiStatus = message;
+    scene.aiStatusType = '';
+    changed = true;
+  }
+  if (changed) renderScenes();
+}
+
+function advanceEditorEpoch() {
+  state.openTicket += 1;
+  invalidatePendingSceneAi();
+  return state.openTicket;
+}
+
 function renderShows() {
   const list = $('#showList');
   list.replaceChildren();
@@ -220,7 +249,7 @@ async function loadShows({ append = false } = {}) {
 }
 
 function freshShow() {
-  state.openTicket += 1;
+  advanceEditorEpoch();
   state.show = null;
   state.scenes = [];
   state.selectedProducts.clear();
@@ -241,7 +270,7 @@ function freshShow() {
 
 function hydrateShow(item) {
   state.show = item;
-  state.scenes = item.scenes.map(scene => ({
+  state.scenes = item.scenes.map(scene => withSceneUi({
     product_id: scene.product_id,
     product: {
       id: scene.product_id,
@@ -271,7 +300,7 @@ function hydrateShow(item) {
 }
 
 async function openShow(id, { refresh = false } = {}) {
-  const ticket = ++state.openTicket;
+  const ticket = advanceEditorEpoch();
   setStatus('#showStatus', 'กำลังเปิดรายการ…');
   try {
     if (refresh) store.invalidate([`show:${id}`]);
@@ -307,7 +336,7 @@ async function saveShow(event) {
   state.saveBusy = busyToken;
   const originalShowId = state.show?.id || null;
   const originalRevision = state.show?.revision || null;
-  const operationTicket = ++state.openTicket;
+  const operationTicket = advanceEditorEpoch();
   const editorStillOriginal = () => state.openTicket === operationTicket
     && (originalShowId
       ? state.show?.id === originalShowId && state.show?.revision === originalRevision
@@ -412,12 +441,12 @@ async function loadProducts({ append = false } = {}) {
 function addProduct(product) {
   if (state.scenes.length >= 24 || state.scenes.some(scene => scene.product_id === product.id)) return;
   state.selectedProducts.set(product.id, product);
-  state.scenes.push({
+  state.scenes.push(withSceneUi({
     product_id: product.id,
     product,
     script: '',
     cue: { label: '', duration_seconds: 60, transition: 'cut' },
-  });
+  }));
   markDirty();
   renderScenes();
   renderProducts();
@@ -439,6 +468,63 @@ function removeScene(index) {
   renderProducts();
 }
 
+async function generateSceneScript(scene) {
+  if (scene.aiBusy || !state.scenes.includes(scene)) return;
+  const previousScript = scene.script;
+  if (previousScript !== '' && !globalThis.confirm('AI จะเขียนทับบทพูดเดิมของฉากนี้ ต้องการดำเนินการต่อหรือไม่?')) return;
+  const productId = scene.product_id;
+  const durationSeconds = Number(scene.cue.duration_seconds);
+  const editorTicket = state.openTicket;
+  const generation = Number(scene.aiGeneration || 0) + 1;
+  const busyToken = {};
+  scene.aiGeneration = generation;
+  scene.aiBusy = busyToken;
+  scene.aiStatus = 'AI กำลังคิดบทพูด…';
+  scene.aiStatusType = '';
+  renderScenes();
+  const ownsResult = () => state.openTicket === editorTicket
+    && state.scenes.includes(scene)
+    && scene.aiBusy === busyToken
+    && scene.aiGeneration === generation;
+  const ownsBusyToken = () => scene.aiBusy === busyToken && scene.aiGeneration === generation;
+  const inputUnchanged = () => scene.product_id === productId
+    && Number(scene.cue.duration_seconds) === durationSeconds
+    && scene.script === previousScript;
+  try {
+    const data = await store.request(`${API_ROOT}/script`, {
+      method: 'POST',
+      headers: { 'idempotency-key': liveIdempotencyKey(`script${productId}`) },
+      body: JSON.stringify({ product_id: productId, duration_seconds: durationSeconds }),
+    }, { cacheable: false });
+    if (!ownsResult()) return;
+    if (!inputUnchanged()) {
+      scene.aiStatus = 'ฉากเปลี่ยนระหว่างรอ AI จึงไม่ได้นำบทพูดมาใส่';
+      scene.aiStatusType = 'error';
+      return;
+    }
+    if (typeof data.script !== 'string' || !data.script) throw new LiveCenterApiError('AI ไม่ได้ส่งบทพูดที่ใช้งานได้', { status: 502, code: 'LIVE_AI_OUTPUT_INVALID' });
+    scene.script = data.script;
+    scene.aiStatus = 'AI ร่างบทพูดแล้ว กรุณาตรวจทานและกดบันทึกร่าง';
+    scene.aiStatusType = 'success';
+    markDirty();
+  } catch (error) {
+    if (ownsResult()) {
+      scene.aiStatus = error.message || 'AI ยังสร้างบทพูดไม่สำเร็จ กรุณาลองใหม่';
+      scene.aiStatusType = 'error';
+    }
+  } finally {
+    if (ownsBusyToken()) {
+      const staleEditor = !ownsResult() && state.scenes.includes(scene);
+      if (staleEditor) {
+        scene.aiStatus = 'ยกเลิกผล AI เพราะรายการเปลี่ยนระหว่างรอ';
+        scene.aiStatusType = '';
+      }
+      scene.aiBusy = null;
+      if (state.scenes.includes(scene)) renderScenes();
+    }
+  }
+}
+
 function renderScenes() {
   const list = $('#sceneList');
   list.replaceChildren();
@@ -449,13 +535,31 @@ function renderScenes() {
     product.append(element('h3', '', scene.product.title), element('p', '', `${money(scene.product.price_minor, scene.product.currency)} · snapshot stock ${scene.product.stock}`));
     if (scene.product.available === false) product.append(element('p', 'status-line error', 'สินค้านี้ไม่พร้อมขาย ต้องเลือกใหม่ก่อนสร้างเวอร์ชัน'));
     const fields = element('div', 'scene-controls');
-    const scriptLabel = element('label', 'vds-field script-field', 'บทพูด');
+    const scriptField = element('div', 'vds-field script-field');
+    const scriptHead = element('div', 'script-field-head');
+    const scriptId = `${scene.client_id}-script`;
+    const statusId = `${scene.client_id}-ai-status`;
+    const scriptLabel = element('label', '', 'บทพูด');
+    scriptLabel.htmlFor = scriptId;
+    const aiButton = element('button', 'vds-btn vds-btn--secondary scene-ai-button', scene.aiBusy ? 'AI กำลังคิด…' : 'AI คิดบทพูด');
+    aiButton.type = 'button';
+    aiButton.disabled = Boolean(scene.aiBusy);
+    aiButton.setAttribute('aria-busy', String(Boolean(scene.aiBusy)));
+    aiButton.setAttribute('aria-describedby', statusId);
+    aiButton.setAttribute('aria-label', `AI คิดบทพูดสำหรับ ${scene.product.title}`);
+    aiButton.addEventListener('click', () => generateSceneScript(scene));
+    scriptHead.append(scriptLabel, aiButton);
     const script = element('textarea');
+    script.id = scriptId;
     script.rows = 4;
     script.maxLength = 12000;
     script.value = scene.script;
     script.addEventListener('input', () => { scene.script = script.value; markDirty(); });
-    scriptLabel.append(script);
+    const aiStatus = element('p', `scene-ai-status${scene.aiStatusType ? ` ${scene.aiStatusType}` : ''}`, scene.aiStatus || 'AI รองรับฉาก 5–180 วินาที');
+    aiStatus.id = statusId;
+    aiStatus.setAttribute('role', 'status');
+    aiStatus.setAttribute('aria-live', 'polite');
+    scriptField.append(scriptHead, script, aiStatus);
     const cueLabel = element('label', 'vds-field', 'ชื่อคิว');
     const cueInput = element('input');
     cueInput.maxLength = 120;
@@ -491,7 +595,7 @@ function renderScenes() {
     down.addEventListener('click', () => moveScene(index, 1));
     remove.addEventListener('click', () => removeScene(index));
     actions.append(up, down, remove);
-    fields.append(scriptLabel, cueLabel, durationLabel, transitionLabel, actions);
+    fields.append(scriptField, cueLabel, durationLabel, transitionLabel, actions);
     row.append(product, fields);
     list.append(row);
   });
@@ -556,7 +660,7 @@ async function createVersion() {
   state.versionBusy = busyToken;
   const showId = state.show.id;
   const revision = state.show.revision;
-  const operationTicket = ++state.openTicket;
+  const operationTicket = advanceEditorEpoch();
   const editorStillOriginal = () => state.openTicket === operationTicket && state.show?.id === showId && state.show?.revision === revision;
   setBusy(button, true, 'กำลังสร้างแพ็กเกจ…');
   const payload = { expected_revision: revision };

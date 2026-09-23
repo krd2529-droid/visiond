@@ -1,0 +1,42 @@
+{
+  "version": "v0.20.125",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "8861a4ea0a751fbb5a96f93c74823e295540d6f7",
+  "scope": "Add an explicit per-scene AI sales-script draft action to VisionD Live Center with authoritative Toys Center facts, Boss/Admin authorization, atomic per-user throttling, a strict ID-only provider plan with server-rendered factual utterances, and stale-editor isolation.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_elon-provider.js",
+    "functions/_live_center.js",
+    "functions/_middleware.js",
+    "functions/_security.js",
+    "functions/api/admin/live-center/script.js",
+    "package.json",
+    "patch-ledgers/v0.20.125.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.css",
+    "public/live-center.html",
+    "public/live-center.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020125-live-center-ai.mjs",
+    "scripts/test-v020125.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: node scripts/test-v020125-live-center-ai.mjs (SQLite/provider/store, canonical structured-plan abuse matrix, and installed-Chrome desktop/390)",
+    "provider_regression": "PASS: node scripts/test-elon-provider.mjs; existing default remains 900 and Live Center override clamps at 1600",
+    "live_center_regression": "PASS: node scripts/test-v020123.mjs, including package/API/store/R2 and installed-Chrome desktop/390/opener coverage",
+    "release_chain": "PASS: npm run test:v020125, chaining exact v0.20.124, v0.20.123 and v0.20.122 gates",
+    "syntax_and_diff": "PASS: node --check for every changed/new JavaScript file; git diff --check; WEB/ADMIN v0.20.125 parity; predeploy 9 PASS / 8 known WARN / 0 FAIL",
+    "independent": "PASS checkpoint: Mark official focused/Chrome, four grounding/generalization harnesses, and structured-plan route abuse harness; final exact-freeze hash verification pending"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

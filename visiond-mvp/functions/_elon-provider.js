@@ -1,5 +1,7 @@
 const MODEL_PATTERN=/^[a-zA-Z0-9._:-]{1,100}$/;
 const TIMEOUT_MS=25000;
+const DEFAULT_MAX_OUTPUT_TOKENS=900;
+const MAX_OUTPUT_TOKENS=1600;
 
 const cleanModel=(value,fallback)=>MODEL_PATTERN.test(String(value||''))?String(value):fallback;
 const secret=value=>String(value||'').trim();
@@ -15,18 +17,21 @@ export function selectElonProvider(env={}){
   return null;
 }
 
-export async function requestElonProvider(provider,{systemPrompt,history,message},{fetchImpl=fetch,signalFactory=()=>AbortSignal.timeout(TIMEOUT_MS)}={}){
+const boundedOutputTokens=value=>value===undefined?DEFAULT_MAX_OUTPUT_TOKENS:Math.min(MAX_OUTPUT_TOKENS,Math.max(64,Number.isFinite(Number(value))?Math.trunc(Number(value)):DEFAULT_MAX_OUTPUT_TOKENS));
+
+export async function requestElonProvider(provider,{systemPrompt,history,message,maxOutputTokens},{fetchImpl=fetch,signalFactory=()=>AbortSignal.timeout(TIMEOUT_MS)}={}){
   if(!provider)throw new Error('AI_NOT_CONFIGURED');
+  const outputTokens=boundedOutputTokens(maxOutputTokens);
   return provider.name==='openai'
-    ? requestOpenAI(provider,{systemPrompt,history,message},fetchImpl,signalFactory)
-    : requestGemini(provider,{systemPrompt,history,message},fetchImpl,signalFactory);
+    ? requestOpenAI(provider,{systemPrompt,history,message},outputTokens,fetchImpl,signalFactory)
+    : requestGemini(provider,{systemPrompt,history,message},outputTokens,fetchImpl,signalFactory);
 }
 
-async function requestOpenAI(provider,input,fetchImpl,signalFactory){
+async function requestOpenAI(provider,input,maxOutputTokens,fetchImpl,signalFactory){
   const response=await fetchImpl('https://api.openai.com/v1/responses',{
     method:'POST',
     headers:{authorization:`Bearer ${provider.key}`,'content-type':'application/json'},
-    body:JSON.stringify({model:provider.model,instructions:input.systemPrompt,input:[...input.history,{role:'user',content:input.message}],max_output_tokens:900,store:false}),
+    body:JSON.stringify({model:provider.model,instructions:input.systemPrompt,input:[...input.history,{role:'user',content:input.message}],max_output_tokens:maxOutputTokens,store:false}),
     signal:signalFactory()
   });
   if(!response.ok)throw new Error(`OPENAI_HTTP_${response.status}`);
@@ -34,7 +39,7 @@ async function requestOpenAI(provider,input,fetchImpl,signalFactory){
   return {payload,usage:payload?.usage||null};
 }
 
-async function requestGemini(provider,input,fetchImpl,signalFactory){
+async function requestGemini(provider,input,maxOutputTokens,fetchImpl,signalFactory){
   const contents=[...input.history,{role:'user',content:input.message}].map(item=>({
     role:item.role==='assistant'?'model':'user',
     parts:[{text:String(item.content||'')}]
@@ -45,7 +50,7 @@ async function requestGemini(provider,input,fetchImpl,signalFactory){
     body:JSON.stringify({
       systemInstruction:{parts:[{text:input.systemPrompt}]},
       contents,
-      generationConfig:{maxOutputTokens:900,temperature:0.35}
+      generationConfig:{maxOutputTokens,temperature:0.35}
     }),
     signal:signalFactory()
   });

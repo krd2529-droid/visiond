@@ -33,6 +33,35 @@ export async function rateLimitIdentity(env,request,action,identity,limit,window
   await env.DB.prepare('UPDATE security_rate_limits SET hits=? WHERE rate_key=?').bind(hits,key).run();return {ok:true};
 }
 
+// One indexed write decides and records the whole window so concurrent requests
+// cannot both pass between a separate SELECT and UPDATE.
+export async function rateLimitIdentityAtomic(env,action,identity,{limit=6,windowMinutes=1,blockMinutes=1}={}){
+  const normalized=String(identity||'').normalize('NFKC').trim().toLowerCase();
+  if(!normalized)return {ok:true};
+  if(!Number.isSafeInteger(limit)||limit<1||!Number.isSafeInteger(windowMinutes)||windowMinutes<1||!Number.isSafeInteger(blockMinutes)||blockMinutes<1)throw new Error('INVALID_ATOMIC_RATE_LIMIT');
+  const fingerprint=(await sha256(normalized)).slice(0,32),key=`${action}:identity:${fingerprint}`,windowModifier=`+${windowMinutes} minutes`,blockModifier=`+${blockMinutes} minutes`;
+  const row=await env.DB.prepare(`INSERT INTO security_rate_limits(rate_key,hits,window_start,blocked_until)
+    VALUES(?,1,CURRENT_TIMESTAMP,NULL)
+    ON CONFLICT(rate_key) DO UPDATE SET
+      hits=CASE
+        WHEN security_rate_limits.blocked_until IS NOT NULL AND security_rate_limits.blocked_until>CURRENT_TIMESTAMP THEN security_rate_limits.hits+1
+        WHEN datetime(security_rate_limits.window_start,?)<=CURRENT_TIMESTAMP THEN 1
+        ELSE security_rate_limits.hits+1
+      END,
+      window_start=CASE
+        WHEN (security_rate_limits.blocked_until IS NULL OR security_rate_limits.blocked_until<=CURRENT_TIMESTAMP) AND datetime(security_rate_limits.window_start,?)<=CURRENT_TIMESTAMP THEN CURRENT_TIMESTAMP
+        ELSE security_rate_limits.window_start
+      END,
+      blocked_until=CASE
+        WHEN security_rate_limits.blocked_until IS NOT NULL AND security_rate_limits.blocked_until>CURRENT_TIMESTAMP THEN security_rate_limits.blocked_until
+        WHEN datetime(security_rate_limits.window_start,?)<=CURRENT_TIMESTAMP THEN NULL
+        WHEN security_rate_limits.hits+1>? THEN datetime(CURRENT_TIMESTAMP,?)
+        ELSE NULL
+      END
+    RETURNING hits,blocked_until,(blocked_until IS NULL AND hits<=?) allowed`).bind(key,windowModifier,windowModifier,windowModifier,limit,blockModifier,limit).first();
+  return Number(row?.allowed)===1?{ok:true}:{error:true,retryAfter:blockMinutes*60};
+}
+
 export async function verifyTurnstile(env,request,token){
   if(!env.TURNSTILE_SECRET_KEY)return {ok:true,disabled:true};
   if(!token)return {error:json({error:'กรุณายืนยันว่าไม่ใช่โปรแกรมอัตโนมัติ'},400)};

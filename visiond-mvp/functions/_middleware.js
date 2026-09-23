@@ -29,7 +29,7 @@ export async function onRequest(ctx){
     const origin=request.headers.get('origin');
     if(origin&&!isScopedMobileMutation(url.pathname,origin)){
       let originUrl=null;try{originUrl=new URL(origin).origin}catch{}
-      if(originUrl!==url.origin)return new Response(JSON.stringify({error:'คำขอจากเว็บไซต์อื่นถูกปฏิเสธ'}),{status:403,headers:{'content-type':'application/json'}});
+      if(originUrl!==url.origin)return new Response(JSON.stringify({error:'คำขอจากเว็บไซต์อื่นถูกปฏิเสธ'}),{status:403,headers:{'content-type':'application/json','cache-control':'private, no-store','x-content-type-options':'nosniff'}});
     }
   }
   let response;
