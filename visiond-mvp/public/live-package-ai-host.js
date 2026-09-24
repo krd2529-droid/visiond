@@ -87,7 +87,7 @@ export function createLiveAiSpeechNarrator(scope = globalThis) {
       active = null;
       try { synthesis?.cancel?.(); } catch {}
     },
-    speak(text, { onEnd = () => {}, onError = () => {} } = {}) {
+    speak(text, { onStart = () => {}, onEnd = () => {}, onError = () => {} } = {}) {
       if (typeof text !== 'string' || !text.trim()) return 'empty';
       if (!synthesis?.speak || typeof Utterance !== 'function') return 'unavailable';
       try {
@@ -99,6 +99,10 @@ export function createLiveAiSpeechNarrator(scope = globalThis) {
         utterance.lang = thaiVoice?.lang || 'th-TH';
         if (thaiVoice) utterance.voice = thaiVoice;
         active = utterance;
+        utterance.onstart = () => {
+          if (active !== utterance) return;
+          onStart();
+        };
         utterance.onend = () => {
           if (active !== utterance) return;
           active = null;
@@ -213,8 +217,20 @@ export function createLiveAiHostController(scenes, options = {}) {
   };
 
   let launchRequest;
+  const handleSpeechStart = (token, status, turn, reason) => {
+    if (destroyed || activeSpeech !== token || token.epoch !== epoch || token.productPosition !== productPosition || token.started) return;
+    token.started = true;
+    speechStatus = status;
+    onNarration({ status, text: turn.text, productPosition, reason });
+    emitState('speech-started');
+    launchRequest('prefetch');
+  };
   const handleSpeechEnd = token => {
     if (destroyed || activeSpeech !== token || token.epoch !== epoch || token.productPosition !== productPosition) return;
+    if (!token.started) {
+      fail(new LiveAiHostError('เสียงพูดของอุปกรณ์จบก่อนเริ่มทำงาน กรุณากดลองใหม่', 'LIVE_HOST_SPEECH_FAILED'), 'speech-ended-before-start');
+      return;
+    }
     activeSpeech = null;
     speechStatus = 'idle';
     if (prefetchedTurn) {
@@ -244,15 +260,24 @@ export function createLiveAiHostController(scenes, options = {}) {
     authoritativeProduct = turn.product;
     errorState = null;
     recentTurns = [...recentTurns, turn.text].slice(-LIVE_HOST_CONTEXT_LIMIT);
-    const token = Object.freeze({ epoch, productPosition, serial: ++speechSerial });
+    const token = { epoch, productPosition, serial: ++speechSerial, started: false };
     activeSpeech = token;
     phase = 'speaking';
     speechStatus = 'starting';
     onTurn({ ...turn, source: 'ai-live', productPosition, reason });
     emitState(reason);
-    let status;
+    let status = '';
+    let startPending = false;
+    const startSpeech = () => {
+      if (!status) {
+        startPending = true;
+        return;
+      }
+      handleSpeechStart(token, status, turn, reason);
+    };
     try {
       status = narrator.speak?.(turn.text, {
+        onStart: startSpeech,
         onEnd: () => handleSpeechEnd(token),
         onError: event => handleSpeechError(token, event),
       }) || 'unavailable';
@@ -264,10 +289,7 @@ export function createLiveAiHostController(scenes, options = {}) {
       fail(new LiveAiHostError('อุปกรณ์นี้ไม่พร้อมพูดด้วย Web Speech กรุณาตรวจเสียงแล้วกดลองใหม่', 'LIVE_HOST_SPEECH_UNAVAILABLE'), 'speech-unavailable');
       return;
     }
-    speechStatus = status;
-    onNarration({ status, text: turn.text, productPosition, reason });
-    emitState('speech-started');
-    launchRequest('prefetch');
+    if (startPending) handleSpeechStart(token, status, turn, reason);
   };
   launchRequest = reason => {
     if (destroyed || activeRequest || prefetchedTurn || !['generating', 'speaking'].includes(phase)) return false;

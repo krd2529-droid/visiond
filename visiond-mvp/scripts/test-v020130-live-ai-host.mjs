@@ -287,7 +287,7 @@ const scenes = [101, 102, 103].map((id, position) => ({
 }));
 const liveTurn = (id, suffix) => ({ text: `บทสด ${id} ${suffix}`, product: { id, title: `สินค้าสด ${id}`, price_minor: id * 100, currency: 'THB', stock: id - 90 } });
 
-function controllerHarness({ narratorStatus = 'thai', cancelEndsSpeech = false, requestImpl = null } = {}) {
+function controllerHarness({ narratorStatus = 'thai', cancelEndsSpeech = false, autoStart = true, requestImpl = null } = {}) {
   const calls = [];
   const utterances = [];
   const events = [];
@@ -311,6 +311,7 @@ function controllerHarness({ narratorStatus = 'thai', cancelEndsSpeech = false, 
       events.push(`speak:${text}`);
       if (narratorStatus === 'throw') throw new Error('TTS constructor failed');
       utterances.push({ text, handlers });
+      if (autoStart && ['thai', 'default'].includes(narratorStatus)) handlers.onStart();
       return narratorStatus;
     },
   };
@@ -480,6 +481,72 @@ for (const narratorStatus of ['unavailable', 'throw']) {
 }
 
 {
+  const queued = controllerHarness({ autoStart: false });
+  queued.controller.start();
+  await flush();
+  queued.calls[0].pending.resolve(liveTurn(101, 'รอ onstart'));
+  await flush();
+  assert.equal(queued.controller.snapshot().phase, 'speaking');
+  assert.equal(queued.controller.snapshot().speechStatus, 'starting');
+  assert.equal(queued.calls.length, 1, 'queued-but-not-started speech cannot prefetch');
+  assert.equal(queued.events.some(event => event.startsWith('narration:')), false);
+  queued.utterances[0].handlers.onStart();
+  queued.utterances[0].handlers.onStart();
+  await flush();
+  assert.equal(queued.controller.snapshot().speechStatus, 'thai');
+  assert.equal(queued.events.filter(event => event === 'narration:thai').length, 1, 'duplicate onstart is consumed once');
+  assert.equal(queued.calls.length, 2, 'prefetch starts only after genuine speech onstart');
+  queued.controller.destroy();
+}
+
+{
+  const stale = controllerHarness({ autoStart: false });
+  stale.controller.start();
+  await flush();
+  stale.calls[0].pending.resolve(liveTurn(101, 'พักก่อนเริ่ม'));
+  await flush();
+  const pausedStart = stale.utterances[0].handlers.onStart;
+  stale.controller.pause();
+  pausedStart();
+  assert.equal(stale.controller.snapshot().phase, 'paused');
+  assert.equal(stale.events.some(event => event.startsWith('narration:')), false, 'late onstart after pause is stale');
+  stale.controller.start();
+  await flush();
+  stale.calls.at(-1).pending.resolve(liveTurn(101, 'error ก่อนเริ่ม'));
+  await flush();
+  const failedSpeech = stale.utterances.at(-1);
+  failedSpeech.handlers.onError({ error: 'synthetic-before-start' });
+  failedSpeech.handlers.onStart();
+  assert.equal(stale.controller.snapshot().phase, 'error');
+  assert.equal(stale.events.some(event => event === 'narration:thai'), false, 'onerror-before-onstart never starts narration');
+  stale.controller.destroy();
+}
+
+{
+  const stopped = controllerHarness({ autoStart: false });
+  stopped.controller.start();
+  await flush();
+  stopped.calls[0].pending.resolve(liveTurn(101, 'หยุดก่อนเริ่ม'));
+  await flush();
+  const stoppedStart = stopped.utterances[0].handlers.onStart;
+  stopped.controller.stop();
+  stoppedStart();
+  assert.equal(stopped.controller.snapshot().phase, 'stopped');
+  assert.equal(stopped.events.some(event => event.startsWith('narration:')), false, 'late onstart after stop is stale');
+  stopped.controller.destroy();
+
+  const ended = controllerHarness({ autoStart: false });
+  ended.controller.start();
+  await flush();
+  ended.calls[0].pending.resolve(liveTurn(101, 'จบก่อนเริ่ม'));
+  await flush();
+  ended.utterances[0].handlers.onEnd();
+  assert.equal(ended.controller.snapshot().phase, 'error', 'onend-before-onstart fails visibly instead of looping silently');
+  assert.equal(ended.calls.length, 1);
+  ended.controller.destroy();
+}
+
+{
   const first = controllerHarness();
   first.controller.start();
   await flush();
@@ -514,10 +581,15 @@ for (const narratorStatus of ['unavailable', 'throw']) {
   class Utterance { constructor(text) { this.text = text; } }
   const narrator = createLiveAiSpeechNarrator({ SpeechSynthesisUtterance: Utterance, speechSynthesis: { getVoices: () => [{ lang: 'th-TH', name: 'Thai' }], speak: value => utterances.push(value), cancel: () => { cancellations += 1; } } });
   let ended = 0;
-  assert.equal(narrator.speak('บทสดภาษาไทย', { onEnd: () => { ended += 1; } }), 'thai');
+  let started = 0;
+  assert.equal(narrator.speak('บทสดภาษาไทย', { onStart: () => { started += 1; }, onEnd: () => { ended += 1; } }), 'thai');
   assert.equal(utterances[0].lang, 'th-TH');
+  utterances[0].onstart();
+  assert.equal(started, 1);
   narrator.cancel();
+  utterances[0].onstart();
   utterances[0].onend();
+  assert.equal(started, 1, 'late onstart after cancel is detached');
   assert.equal(ended, 0, 'late onend after cancel is detached');
   assert.equal(cancellations, 1);
 }

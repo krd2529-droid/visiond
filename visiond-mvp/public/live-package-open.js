@@ -1,5 +1,6 @@
 import { createLocalLivePlayback, parseVisionDLivePackage } from './live-center-package.js';
 import { createLiveAiHostController, createLiveAiSpeechNarrator, requestLiveHostTurn } from './live-package-ai-host.js';
+import { createLiveHumanPresenter, mountLiveHumanPresenter } from './live-package-presenter.js';
 import { createLocalLivePlayer, createLocalSpeechNarrator } from './live-package-player.js';
 
 const $ = selector => document.querySelector(selector);
@@ -7,6 +8,7 @@ let playback = null;
 let player = null;
 let openedPackage = null;
 let aiHost = null;
+let presenter = null;
 let aiModeActive = false;
 let offlinePhase = 'ready';
 let assetUrl = '';
@@ -14,6 +16,17 @@ let openTicket = 0;
 let obsActive = false;
 let obsEpoch = 0;
 let pendingFullscreenExit = null;
+
+const PRESENTER_STATE_COPY = Object.freeze({
+  idle: 'พร้อมเริ่ม',
+  thinking: 'กำลังคิดและฟัง',
+  talk: 'กำลังพูดกับผู้ชม',
+  present: 'กำลังนำเสนอสินค้า',
+  open: 'กำลังเน้นด้วยท่ามือเปิด',
+  cheer: 'กำลังชวนตัดสินใจ',
+  paused: 'พักในท่าสงบ',
+  error: 'หยุดอย่างปลอดภัย',
+});
 
 const setStatus = (message, type = '') => {
   $('#openStatus').textContent = message;
@@ -26,6 +39,35 @@ const countdownText = milliseconds => {
   const seconds = (tenths - (minutes * 60)).toFixed(1).padStart(4, '0');
   return `${String(minutes).padStart(2, '0')}:${seconds}`;
 };
+
+function renderPresenterState({ state = 'idle', preset = 'none', visible = false, reason = '' }) {
+  const label = PRESENTER_STATE_COPY[state] || PRESENTER_STATE_COPY.idle;
+  const variant = preset === 'presenter-placeholder' ? 'พิธีกรเสมือนแบบย่อ' : 'พิธีกรเสมือน VisionD';
+  for (const root of [$('#aiPresenterPreview'), $('#obsPresenter')]) {
+    if (!root) continue;
+    root.dataset.presenterState = state;
+    root.dataset.presenterPreset = preset;
+    root.dataset.presenterReason = reason;
+    root.hidden = !visible;
+    root.setAttribute('aria-label', visible ? `${variant} · ${label}` : 'ซ่อนพิธีกรเสมือนตามแพ็กเกจ');
+  }
+  $('#aiPresenterPreview')?.parentElement?.setAttribute('data-presenter-visible', String(visible));
+  $('#obsAiHost')?.setAttribute('data-presenter-visible', String(visible));
+  $('#aiPresenterStateLabel').textContent = visible ? label : 'แพ็กเกจนี้ซ่อนพิธีกร';
+  if (visible) $('#obsAiState').textContent = label;
+}
+
+function mountPresenterSurfaces() {
+  for (const root of [$('#aiPresenterPreview'), $('#obsPresenter')]) {
+    if (root && !root.querySelector('svg')) mountLiveHumanPresenter(root);
+  }
+}
+
+function createPresenter(preset) {
+  presenter?.destroy();
+  const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  presenter = createLiveHumanPresenter({ preset, reducedMotion, onState: renderPresenterState });
+}
 
 function syncModeControls() {
   const scene = playback?.currentScene?.();
@@ -56,6 +98,7 @@ function resetAiSurface() {
   $('#obsAiHost').dataset.aiHostState = 'idle';
   $('#obsAiState').textContent = 'พร้อมเริ่ม';
   $('#obsLiveCaption').textContent = 'รอบทสดจาก AI';
+  renderPresenterState({ state: 'idle', preset: 'none', visible: false, reason: 'reset' });
   syncModeControls();
 }
 
@@ -159,6 +202,11 @@ function renderAiTurn({ text, product, productPosition }) {
   $('#obsLiveCaption').textContent = text;
 }
 
+function renderAiNarration({ status, text, productPosition }) {
+  if (!['thai', 'default'].includes(status)) return;
+  presenter?.startSpeaking(`${openTicket}:${productPosition}:${text}`);
+}
+
 function restoreOfflineScene() {
   const scene = playback?.currentScene?.();
   const asset = playback?.currentAsset?.();
@@ -166,7 +214,7 @@ function restoreOfflineScene() {
 }
 
 function renderAiState(state) {
-  const { phase, productPosition = 0, productCount = 0, requestPending, hasPrefetch, loopProducts, error } = state;
+  const { phase, productPosition = 0, productCount = 0, requestPending, hasPrefetch, loopProducts, error, speechStatus, reason } = state;
   const active = ['generating', 'speaking', 'paused', 'error'].includes(phase);
   const running = phase === 'generating' || phase === 'speaking';
   aiModeActive = active;
@@ -187,9 +235,12 @@ function renderAiState(state) {
     obsState = 'กำลังคิดบทสด';
     visualState = 'thinking';
   } else if (phase === 'speaking') {
-    status = requestPending ? 'กำลังพูดบทสด · กำลังเตรียมบทถัดไป 1 รายการ' : hasPrefetch ? 'กำลังพูดบทสด · บทถัดไปพร้อมแล้ว' : 'กำลังพูดบทสด';
-    obsState = 'กำลังพูดสด';
-    visualState = 'speaking';
+    const speechStarted = ['thai', 'default'].includes(speechStatus);
+    status = speechStarted
+      ? requestPending ? 'กำลังพูดบทสด · กำลังเตรียมบทถัดไป 1 รายการ' : hasPrefetch ? 'กำลังพูดบทสด · บทถัดไปพร้อมแล้ว' : 'กำลังพูดบทสด'
+      : 'บทสดพร้อมแล้ว กำลังรออุปกรณ์เริ่มเสียง…';
+    obsState = speechStarted ? 'กำลังพูดสด' : 'รอเสียงเริ่ม';
+    visualState = speechStarted ? 'speaking' : 'thinking';
   } else if (phase === 'paused') {
     status = 'พัก AI แล้ว สินค้าปัจจุบันยังคงอยู่ กดเล่นต่อเพื่อสร้างบทใหม่';
     obsState = 'พักการพูด';
@@ -206,6 +257,12 @@ function renderAiState(state) {
   $('#obsAiHost').hidden = !active;
   $('#obsAiHost').dataset.aiHostState = visualState;
   $('#obsAiState').textContent = obsState;
+  if (phase === 'generating') presenter?.setState('thinking', reason || 'generating');
+  else if (phase === 'speaking' && !['thai', 'default'].includes(speechStatus)) presenter?.setState('thinking', 'speech-starting');
+  else if (phase === 'paused') presenter?.setState('paused', 'paused');
+  else if (phase === 'error') presenter?.setState('error', 'error');
+  else if (phase === 'stopped') presenter?.setState('idle', 'stopped');
+  else if (phase === 'ready') presenter?.setState('idle', 'ready');
   if (phase === 'stopped') restoreOfflineScene();
   syncModeControls();
 }
@@ -264,6 +321,8 @@ async function enterObsMode() {
 function disposeCurrentPackage() {
   aiHost?.destroy();
   aiHost = null;
+  presenter?.destroy();
+  presenter = null;
   aiModeActive = false;
   player?.destroy();
   player = null;
@@ -294,6 +353,7 @@ async function openPackage(file) {
     $('#packageMeta').textContent = `${manifest.scenes.length} ฉาก · สร้าง ${new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(manifest.created.at))} · ${manifest.show.output.profile}`;
     $('#obsShow').textContent = manifest.show.title;
     $('#obsStage').dataset.profile = manifest.show.output.profile;
+    createPresenter(manifest.show.avatar.preset);
     player = createLocalLivePlayer(playback, {
       narrator: createLocalSpeechNarrator(window),
       onScene: renderScene,
@@ -307,6 +367,7 @@ async function openPackage(file) {
       onProduct: renderAiProduct,
       onTurn: renderAiTurn,
       onState: renderAiState,
+      onNarration: renderAiNarration,
     });
     renderAiState({ ...aiHost.snapshot(), reason: 'open' });
     $('#packageWorkspace').hidden = false;
@@ -338,6 +399,7 @@ function startAiMode() {
 }
 
 if (typeof document !== 'undefined') {
+  mountPresenterSurfaces();
   $('#packageFile').addEventListener('change', event => {
     const file = event.target.files?.[0];
     if (file) openPackage(file);

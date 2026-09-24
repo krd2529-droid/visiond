@@ -78,6 +78,7 @@ await context.addInitScript(() => {
       window.__aiBrowser.spoken.push(utterance.text);
       window.__aiBrowser.utterances.push(utterance);
       window.__aiBrowser.speakSnapshots.push({ caption: document.querySelector('#aiLiveCaption')?.textContent || '', obsCaption: document.querySelector('#obsLiveCaption')?.textContent || '' });
+      utterance.onstart?.();
     },
     cancel: () => { window.__aiBrowser.cancels += 1; },
   } });

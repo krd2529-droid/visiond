@@ -1,0 +1,50 @@
+{
+  "version": "v0.20.131",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "3331574a",
+  "scope": "Replace the v0.20.130 decorative AI orb with a self-contained code-native half-body human sales presenter shared by operator preview and clean OBS. Bind its bounded idle/thinking/talk/present/open/cheer/paused/error state machine to guarded genuine Web Speech onstart, preserve caption-before-speech and one-prefetch behavior, make pause/stop/error/reopen/offline teardown race-safe, honor full/simplified/hidden package avatar presets and reduced motion, and retain schema v1, livestream_launch=false, offline zero-network playback, host API, platform state and vSport bytes.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.131.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.css",
+    "public/live-center.html",
+    "public/live-package-ai-host.js",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "public/live-package-presenter.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129-live-player.mjs",
+    "scripts/test-v020129.mjs",
+    "scripts/test-v020130-live-ai-host-browser.mjs",
+    "scripts/test-v020130-live-ai-host.mjs",
+    "scripts/test-v020130.mjs",
+    "scripts/test-v020131-human-presenter-browser.mjs",
+    "scripts/test-v020131-human-presenter.mjs",
+    "scripts/test-v020131.mjs"
+  ],
+  "verification": {
+    "red": "PASS: released v0.20.130 pinned RED exposes one small animated orb, no articulated human, no eight-state presenter, no operator preview, no avatar-preset semantics and no genuine-speech gesture boundary while offline/network/mobile preservation baselines pass",
+    "focused_unit": "PASS: deterministic presenter state/timer/preset/reduced-motion teardown and AI-host queued/onstart/duplicate/late/error/end-before-start fixtures pass",
+    "focused_browser": "PASS: real Chrome desktop/390 covers recognizable human anatomy, product plus presenter, preview/OBS state parity, all presets including one-column hidden layout, genuine onstart gestures, stale teardown, reduced motion, offline zero-host and no extra network",
+    "independent": "WIP PASS: Mark's extended genuine-speech, pure presenter and real-Chrome desktop/390 adversarial harnesses pass with no product blocker; final immutable exact-stage verdict remains pending",
+    "release_chain": "PASS: npm run test:v020131; focused unit/browser plus v0.20.130 AI host, v0.20.129 local player, v0.20.128 AI/direct-name, v0.20.123 package/API/store/R2/browser and v0.20.122 vSport/Tha1 gates",
+    "regressions": "PASS: npm run test:regression-all; 10/10 forward-compatible contracts",
+    "predeploy": "PASS: npm run predeploy:check; 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: node --check on 14 changed/new JavaScript files, npm run test:visible-version and git diff --check; exact staged patch gate remains before immutable handoff",
+    "preservation": "PASS: public/live-center-package.js SHA-256 remains 0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35 and public/live-package-player.js remains 1EF48EB00CAC02ABF925F49618DABCF782C1D816A5BE0DF12289A416E3665D9C; schema_version=1, runtime.livestream_launch=false and pinned vSport bytes remain under release-chain tests"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

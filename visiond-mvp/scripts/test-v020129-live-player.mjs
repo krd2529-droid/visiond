@@ -28,7 +28,7 @@ function concat(parts) {
   return output;
 }
 
-export async function representativePackage(title = 'รายการทดสอบสามฉาก') {
+export async function representativePackage(title = 'รายการทดสอบสามฉาก', { avatarPreset = 'visiond-default' } = {}) {
   const digest = await livePackageSha256(imageBytes);
   let offset = 0;
   const transitions = ['cut', 'fade', 'cut'];
@@ -78,7 +78,7 @@ export async function representativePackage(title = 'รายการทดส
       title,
       description: 'แพ็กเกจจริงสำหรับทดสอบ local player',
       revision: 3,
-      avatar: { preset: 'visiond-default' },
+      avatar: { preset: avatarPreset },
       output: { profile: 'landscape-1080p' },
     },
     version: { id: `livev_${'2'.repeat(32)}`, number: 4 },

@@ -9,18 +9,18 @@ const read = path => readFile(new URL(path, root));
 const text = async path => (await read(path)).toString('utf8');
 const sha256 = async path => createHash('sha256').update(await read(path)).digest('hex').toUpperCase();
 
-assert.equal((await text('VERSION.txt')).trim(), 'v0.20.130');
-assert.match(await text('public/index.html'), /WEB v0\.20\.130/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.130/);
-assert.match(await text('public/live-center.html'), /live-center\.css\?v=020130/);
-assert.match(await text('public/live-center.html'), /live-center\.js\?v=020130/);
+assert.ok(['v0.20.130', 'v0.20.131'].includes((await text('VERSION.txt')).trim()));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:130|131)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:130|131)/);
+assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:130|131)/);
+assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:130|131)/);
 
 const openerHtml = await text('public/live-package-open.html');
 const openerSource = await text('public/live-package-open.js');
 const hostSource = await text('public/live-package-ai-host.js');
 const serverSource = await text('functions/_live_center.js');
-assert.match(openerHtml, /live-center\.css\?v=020130/);
-assert.match(openerHtml, /live-package-open\.js\?v=020130/);
+assert.match(openerHtml, /live-center\.css\?v=020(?:130|131)/);
+assert.match(openerHtml, /live-package-open\.js\?v=020(?:130|131)/);
 for (const id of ['aiHostPanel', 'startAiHost', 'pauseAiHost', 'stopAiHost', 'skipAiProduct', 'retryAiHost', 'aiHostCue', 'aiLoopProducts', 'aiLiveCaption', 'obsAiHost', 'obsLiveCaption']) assert.match(openerHtml, new RegExp(`id="${id}"`));
 assert.match(openerHtml, /AI พิธีกรสด/);
 assert.match(openerHtml, /บทสดจาก VisionD AI · ไม่ใช่บทที่บันทึกในแพ็กเกจ/);
@@ -38,8 +38,8 @@ assert.match(serverSource, /SELECT id,title,description,brand,product_line,serie
 assert.equal((await text('functions/api/admin/live-center/host-turn.js')).trim(), "import {generateLiveHostTurn} from '../../../_live_center.js';\n\nexport const onRequestPost=generateLiveHostTurn;");
 
 const css = await text('public/live-center.css');
-assert.match(css, /\.obs-ai-host\[data-ai-host-state="thinking"\]/);
-assert.match(css, /\.obs-ai-host\[data-ai-host-state="speaking"\]/);
+assert.match(css, /(?:\.obs-ai-host\[data-ai-host-state="thinking"\]|\.live-presenter-surface\[data-presenter-state="thinking"\])/);
+assert.match(css, /(?:\.obs-ai-host\[data-ai-host-state="speaking"\]|\.live-presenter-surface\[data-presenter-state="talk"\])/);
 assert.match(css, /@media\(max-width:520px\)[\s\S]*\.ai-host-actions/);
 const featureMap = await text('FEATURE-MAP.md');
 assert.match(featureMap, /AI พิธีกรสด/);

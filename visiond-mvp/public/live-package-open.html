@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/live-center.css?v=020130">
+  <link rel="stylesheet" href="/live-center.css?v=020131">
 </head>
 <body>
   <header class="live-toolbar"><a class="vds-btn vds-btn--text" href="/live-center.html">← Live Center</a><div class="live-title"><small>LOCAL PACKAGE PLAYER</small><h1>เปิดไฟล์ .visiondlive</h1><p>ตรวจแพ็กเกจและเล่นฉากพร้อมเสียงจากอุปกรณ์นี้ โดยไม่ส่งไฟล์ออกจาก Browser</p></div></header>
@@ -35,6 +35,10 @@
       <section id="aiHostPanel" class="ai-host-panel" aria-labelledby="aiHostTitle" data-ai-host-state="ready">
         <div class="section-head"><div><span class="mode-badge online">VISIOND AI · ONLINE</span><h2 id="aiHostTitle">AI พิธีกรสด</h2></div><span id="aiHostProduct">รอเปิดแพ็กเกจ</span></div>
         <p class="help">สร้างบทขายใหม่ทีละช่วงจากข้อมูลสินค้าปัจจุบันของ VisionD แล้วพูดด้วยเสียงจากอุปกรณ์นี้ ต้องกดเริ่มเอง และไม่ใช่การเริ่มไลฟ์บน Facebook/TikTok</p>
+        <div class="ai-presenter-preview" aria-label="ตัวอย่างพิธีกรเสมือนก่อนเข้าโหมด OBS">
+          <div id="aiPresenterPreview" class="live-presenter-surface" data-presenter-state="idle" data-presenter-preset="none" role="img" aria-label="ซ่อนพิธีกรเสมือนตามแพ็กเกจ" hidden></div>
+          <div class="ai-presenter-preview-copy"><small>HUMAN PRESENTER PREVIEW</small><strong id="aiPresenterStateLabel">พร้อมเริ่ม</strong><p>ภาพเดียวกับที่แสดงใน OBS · กราฟิก 2D ไม่ใช้กล้องหรือไมโครโฟน</p></div>
+        </div>
         <div class="ai-host-fields">
           <label class="vds-field">คิวสั้นให้พิธีกร (ไม่บังคับ)<input id="aiHostCue" maxlength="160" placeholder="เช่น เล่าให้กระชับ หรือเน้นชื่อรุ่น" disabled></label>
           <label class="ai-loop-option"><input id="aiLoopProducts" type="checkbox" disabled> วนกลับสินค้าแรกเมื่อกดข้ามจากสินค้าสุดท้าย</label>
@@ -58,15 +62,15 @@
         <div class="obs-visual"><img id="obsImage" alt="รูปสินค้าที่ฝังในแพ็กเกจ"></div>
         <div class="obs-overlay">
           <section id="obsAiHost" class="obs-ai-host" data-ai-host-state="idle" hidden aria-label="สถานะ VisionD AI พิธีกรสด">
-            <div class="obs-ai-identity"><span class="obs-ai-orb" aria-hidden="true"></span><div><small>VISIOND AI HOST · ONLINE</small><strong id="obsAiState">พร้อมเริ่ม</strong></div></div>
-            <p id="obsLiveCaption" class="obs-live-caption">รอบทสดจาก AI</p>
+            <div id="obsPresenter" class="live-presenter-surface obs-presenter" data-presenter-state="idle" data-presenter-preset="none" role="img" aria-label="ซ่อนพิธีกรเสมือนตามแพ็กเกจ" hidden></div>
+            <div class="obs-ai-copy"><div class="obs-ai-identity"><div><small>VISIOND AI HOST · ONLINE · HUMAN PRESENTER</small><strong id="obsAiState">พร้อมเริ่ม</strong></div></div><p id="obsLiveCaption" class="obs-live-caption">รอบทสดจาก AI</p></div>
           </section>
           <small id="obsShow"></small><h2 id="obsProduct"></h2><p id="obsPrice"></p><span id="obsPosition"></span>
         </div>
       </section>
     </section>
   </main>
-  <script src="/live-package-open.js?v=020130" type="module"></script>
+  <script src="/live-package-open.js?v=020131" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>
