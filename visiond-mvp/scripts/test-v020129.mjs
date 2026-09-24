@@ -9,14 +9,14 @@ const read = path => readFile(new URL(path, root));
 const text = async path => (await read(path)).toString('utf8');
 const sha256 = async path => createHash('sha256').update(await read(path)).digest('hex').toUpperCase();
 
-assert.equal((await text('VERSION.txt')).trim(), 'v0.20.129');
-assert.match(await text('public/index.html'), /WEB v0\.20\.129/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.129/);
-assert.match(await text('public/live-center.html'), /live-center\.css\?v=020129/);
-assert.match(await text('public/live-center.html'), /live-center\.js\?v=020129/);
+assert.ok(['v0.20.129','v0.20.130'].includes((await text('VERSION.txt')).trim()));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:129|130)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:129|130)/);
+assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:129|130)/);
+assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:129|130)/);
 const openerHtml = await text('public/live-package-open.html');
-assert.match(openerHtml, /live-center\.css\?v=020129/);
-assert.match(openerHtml, /live-package-open\.js\?v=020129/);
+assert.match(openerHtml, /live-center\.css\?v=020(?:129|130)/);
+assert.match(openerHtml, /live-package-open\.js\?v=020(?:129|130)/);
 for (const id of ['startPlayback', 'stopPlayback', 'restartPlayback', 'openCountdown', 'obsMode', 'obsStage']) {
   assert.match(openerHtml, new RegExp(`id="${id}"`));
 }

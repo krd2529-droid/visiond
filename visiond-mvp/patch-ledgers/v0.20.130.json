@@ -1,0 +1,47 @@
+{
+  "version": "v0.20.130",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "53e5128e",
+  "scope": "Add a separate explicit-click online AI presenter to the validated schema-v1 package opener: generate one fresh short grounded Thai sales turn at a time from the current authoritative sellable product, speak it with device Web Speech while holding at most one prefetched turn, expose clean OBS thinking/speaking/caption state, and make pause/stop/skip/reopen/auth/failure cancellation race-safe without changing package schema, parser, offline player, livestream_launch=false, platform state, or vSport.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_live_center.js",
+    "functions/api/admin/live-center/host-turn.js",
+    "package.json",
+    "patch-ledgers/v0.20.130.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.css",
+    "public/live-center.html",
+    "public/live-package-ai-host.js",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129.mjs",
+    "scripts/test-v020130-live-ai-host-browser.mjs",
+    "scripts/test-v020130-live-ai-host.mjs",
+    "scripts/test-v020130.mjs"
+  ],
+  "verification": {
+    "red": "PASS: released v0.20.129 pinned RED proves ten host capabilities absent while schema-v1/auth/CSP/offline desktop+390 baselines pass; saved package script is the only spoken text and package open/Start has zero API requests",
+    "focused_server_client": "PASS: private host route auth/origin/config/input/secret ordering, atomic 120-of-121 per-user limiter, one indexed primary-key product lookup, finite grounded structured variation and repeat rejection, Gemini/OpenAI/provider failure privacy, limiter-only writes, plus deterministic one-request/one-prefetch/TTS/abort/pause/resume/skip/reopen/auth/error races",
+    "focused_browser": "PASS: real Chrome desktop/390 covers offline zero-network saved speech, explicit AI generation/prefetch, caption before speech, authoritative snapshot, mutual mode exclusion, pause/resume/skip/Fade, clean AI OBS/fullscreen fallback/Escape, provider retry, valid-to-valid/invalid reopen abort and direct-provider/platform request audit",
+    "independent": "WIP GREEN: Mark server, 13-part controller and real-Chrome desktop/390 adversarial harnesses all pass against one candidate; final immutable exact-stage byte review remains pending",
+    "release_chain": "PASS: npm run test:v020130; focused server/client/browser plus v0.20.129 local player, v0.20.128 AI/direct-name, v0.20.123 package/API/store/R2/browser and v0.20.122 vSport/Tha1 gates",
+    "regressions": "PASS: npm run test:regression-all; 10/10 forward-compatible contracts",
+    "predeploy": "PASS: npm run predeploy:check; 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: node --check on 11 changed/new JavaScript files, npm run test:visible-version, git diff --check and exact 20-file staged npm run patch:gate; immutable Git-index freeze remains before handoff",
+    "preservation": "PASS: public/live-center-package.js SHA-256 remains 0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35 and public/live-package-player.js remains 1EF48EB00CAC02ABF925F49618DABCF782C1D816A5BE0DF12289A416E3665D9C; schema_version=1, runtime.livestream_launch=false and pinned vSport bytes remain under release-chain tests"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}
