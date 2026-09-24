@@ -1,0 +1,44 @@
+{
+  "version": "v0.20.129",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "ffbe451c",
+  "scope": "Turn the validated schema-v1 .visiondlive package opener into an explicit-click local presentation player with monotonic saved-duration countdown and auto-advance, local Thai-preferred Web Speech narration, real Cut/Fade transitions, replay/manual synchronization, cleanup on reopen, and a script/control-free fullscreen OBS capture surface, without changing package bytes/schema/parser, adding network/platform behavior, or touching vSport.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.129.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.css",
+    "public/live-center.html",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "public/live-package-player.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129-live-player-browser.mjs",
+    "scripts/test-v020129-live-player.mjs",
+    "scripts/test-v020129.mjs"
+  ],
+  "verification": {
+    "red": "PASS: released v0.20.128 real-package/source gate has only manual Previous/Next and exits 1 for missing start/stop/countdown/replay/TTS/deadline/fullscreen/OBS/Fade capabilities while parser/manual/local-only controls pass",
+    "focused_unit": "PASS: real parsed three-scene schema-v1 package with injected clock covers non-autoplay, monotonic 5/6/7-second deadlines, auto Cut/Fade, exactly-once narration, cancellation, stop/resume, paused/playing navigation, final stop/replay, boundary no-op, throttled deadline reconciliation, no-Web-Speech fallback and Thai voice preference",
+    "focused_browser": "PASS: installed Chrome desktop/390 covers real package input, visible countdown/automatic scene change, exact local TTS, Fade CSS, clean OBS surface, fullscreen rejection fallback, Escape/fullscreenchange, URL/speech/timer cleanup, deferred fullscreen request/exit plus reopen races, zero post-selection/platform requests and no console/page errors",
+    "release_chain": "PASS: npm run test:v020129; focused unit/browser plus v0.20.128 AI/direct-name, v0.20.123 package/API/store/R2/browser and v0.20.122 vSport/Tha1 gates",
+    "regressions": "PASS: node scripts/test-all-regressions.mjs; 10/10 forward-compatible contracts",
+    "predeploy": "PASS: npm run predeploy:check; 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: changed JavaScript node --check, npm run test:visible-version, git diff --check and exact 17-file staged npm run patch:gate; immutable Git-index freeze remains before handoff",
+    "independent": "WIP: Root independently reran the focused browser gate PASS; Mark final immutable-stage verification remains pending",
+    "preservation": "PASS: public/live-center-package.js SHA-256 remains 0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35; schema_version=1 and runtime.livestream_launch=false; pinned eight-file vSport bytes unchanged"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

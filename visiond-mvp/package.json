@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020129": "node scripts/test-v020129.mjs && npm run test:v020128",
     "test:v020128": "node scripts/test-v020128.mjs && npm run test:v020123",
     "test:v020127": "node scripts/test-v020127.mjs && npm run test:v020123",
     "test:v020126": "node scripts/test-v020126.mjs && npm run test:v020123",

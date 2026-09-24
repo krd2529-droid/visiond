@@ -12,10 +12,11 @@ const sha256=async path=>createHash('sha256').update(await read(path)).digest('h
 const plan=segmentIds=>JSON.stringify({schema:LIVE_AI_PLAN_SCHEMA,segment_ids:segmentIds});
 const forbidden=['สวัสดีค่ะ วันนี้ขอแนะนำสินค้าจาก VisionD','สินค้าที่นำเสนอคือ'];
 
-assert.equal((await text('VERSION.txt')).trim(),'v0.20.128');
-assert.match(await text('public/index.html'),/WEB v0\.20\.128/);
-assert.match(await text('public/admin.html'),/ADMIN v0\.20\.128/);
-assert.match(await text('public/live-center.html'),/live-center\.js\?v=020128/);
+const visibleVersion=(await text('VERSION.txt')).trim();
+assert.ok(['v0.20.128','v0.20.129'].includes(visibleVersion));
+assert.ok((await text('public/index.html')).includes(`WEB ${visibleVersion}`));
+assert.ok((await text('public/admin.html')).includes(`ADMIN ${visibleVersion}`));
+assert.match(await text('public/live-center.html'),/live-center\.js\?v=02012[89]/);
 assert.match(await text('FEATURE-MAP.md'),/ไม่โฆษณา opening สำเร็จรูป/);
 assert.equal(JSON.parse(await text('patch-ledgers/v0.20.128.json')).version,'v0.20.128');
 

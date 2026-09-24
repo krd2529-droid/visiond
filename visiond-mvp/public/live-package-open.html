@@ -8,10 +8,10 @@
   <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/live-center.css?v=020123">
+  <link rel="stylesheet" href="/live-center.css?v=020129">
 </head>
 <body>
-  <header class="live-toolbar"><a class="vds-btn vds-btn--text" href="/live-center.html">← Live Center</a><div class="live-title"><small>LOCAL PACKAGE VALIDATOR</small><h1>เปิดไฟล์ .visiondlive</h1><p>ตรวจโครงสร้าง ลายเซ็นรูป และเปิดฉากจากไฟล์ในเครื่องโดยไม่ส่งไฟล์ออกจาก Browser</p></div></header>
+  <header class="live-toolbar"><a class="vds-btn vds-btn--text" href="/live-center.html">← Live Center</a><div class="live-title"><small>LOCAL PACKAGE PLAYER</small><h1>เปิดไฟล์ .visiondlive</h1><p>ตรวจแพ็กเกจและเล่นฉากพร้อมเสียงจากอุปกรณ์นี้ โดยไม่ส่งไฟล์ออกจาก Browser</p></div></header>
   <main class="live-shell package-opener" data-feature="LIVE-CENTER-001">
     <section class="vds-card show-form">
       <label class="vds-field">เลือกไฟล์ .visiondlive<input id="packageFile" type="file" accept=".visiondlive,application/vnd.visiond.live"></label>
@@ -21,14 +21,28 @@
     <section id="packageWorkspace" class="vds-card package-card" hidden>
       <div class="section-head"><div><small id="packageVersion"></small><h2 id="packageTitle"></h2></div><span id="packageDigest" class="privacy-pill"></span></div>
       <p id="packageMeta"></p>
-      <article class="scene-item opener-scene">
+      <div class="opener-player-bar" aria-label="ตัวควบคุมการเล่นในเครื่อง">
+        <div class="opener-player-actions">
+          <button id="startPlayback" class="vds-btn vds-btn--primary" type="button" disabled>เริ่มเล่น</button>
+          <button id="stopPlayback" class="vds-btn vds-btn--secondary" type="button" disabled>หยุด</button>
+          <button id="restartPlayback" class="vds-btn vds-btn--secondary" type="button" disabled>เริ่มฉาก 1 ใหม่</button>
+          <button id="obsMode" class="vds-btn vds-btn--secondary" type="button" disabled>โหมด OBS เต็มจอ</button>
+        </div>
+        <div class="opener-clock"><small>เวลาที่เหลือ</small><output id="openCountdown" aria-live="off">00:00.0</output></div>
+        <div class="opener-player-copy"><p id="openPlaybackStatus">เลือกแพ็กเกจก่อนเริ่มเล่น</p><p id="openNarrationStatus">เสียงจะเริ่มหลังผู้ใช้กดเล่นเท่านั้น</p></div>
+      </div>
+      <article id="openerScene" class="scene-item opener-scene" data-transition="cut">
         <div id="openPosition" class="scene-position">1</div>
-        <div class="scene-product"><img id="openImage" alt="รูปสินค้าที่ฝังในแพ็กเกจ"><h3 id="openProduct"></h3><p id="openPrice"></p></div>
+        <div class="scene-product"><div class="opener-image-frame"><img id="openImage" alt="รูปสินค้าที่ฝังในแพ็กเกจ"></div><h3 id="openProduct"></h3><p id="openPrice"></p></div>
         <div><p id="openScript"></p><p id="openCue"></p><div class="scene-actions"><button id="previousScene" class="vds-btn vds-btn--secondary" type="button">← ก่อนหน้า</button><button id="nextScene" class="vds-btn vds-btn--primary" type="button">ถัดไป →</button></div></div>
       </article>
+      <section id="obsStage" class="obs-stage" data-transition="cut" hidden aria-label="พื้นผิวนำเสนอสะอาดสำหรับ OBS">
+        <div class="obs-visual"><img id="obsImage" alt="รูปสินค้าที่ฝังในแพ็กเกจ"></div>
+        <div class="obs-overlay"><small id="obsShow"></small><h2 id="obsProduct"></h2><p id="obsPrice"></p><span id="obsPosition"></span></div>
+      </section>
     </section>
   </main>
-  <script src="/live-package-open.js?v=020123" type="module"></script>
+  <script src="/live-package-open.js?v=020129" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>
