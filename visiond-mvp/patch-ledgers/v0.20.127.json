@@ -1,0 +1,39 @@
+{
+  "version": "v0.20.127",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "520bb2de",
+  "scope": "Repair the Live Center product-plan schema/renderer mismatch by canonicalizing only already-selected structural IDs while preserving explicit mandatory name/current-price-stock selection, strict current-ID validation, grounding, transport containment, editor-race protections, and byte-identical vSport behavior.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_live_center.js",
+    "package.json",
+    "patch-ledgers/v0.20.127.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.html",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020125-live-center-ai.mjs",
+    "scripts/test-v020127.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: node scripts/test-v020127.mjs; exact Blastrain product 2 at 60 seconds, all 120 structural permutations of its natural selected IDs, passing Flame Wingman product 1, representative duplicate-line/series shape, strict invalid-plan/provider/transport paths, and installed-Chrome desktop/390",
+    "independent": "PASS: Mark exhaustive WIP harness enumerated all 299,584 product-2 schema-valid sequences; exactly all 13,598 unique+mandatory current-ID selections render in canonical structural order and all 285,986 missing/duplicate/invalid selections fail closed; auth-first, one PK query plus EXPLAIN, privacy, provider failures, client transports, exact product 1/2, representative shape, 5/60/180, Chrome desktop/390, and vSport hashes pass",
+    "provider_regression": "PASS: node scripts/test-elon-provider.mjs; shared provider defaults and Live Center structured-output/thinking boundaries remain green",
+    "release_chain": "PASS: npm run test:v020127; focused suite plus v0.20.123 Live Center package/API/store/R2/browser and v0.20.122 vSport/Tha1 gates",
+    "regressions": "PASS: node scripts/test-all-regressions.mjs; 10/10 forward-compatible contracts",
+    "predeploy": "PASS: npm run predeploy:check; 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: node --check for changed/new JavaScript; npm run test:visible-version; git diff --check; WEB/ADMIN v0.20.127 parity",
+    "vsport_identity": "PASS: scripts/test-v020127.mjs pins the eight released vSport migration/runtime/API/UI/v0.20.124-test SHA-256 values"
+  },
+  "evidence_limit": "The exact failed Production raw provider plan/status/body/Content-Type is unavailable. The reproduced schema/renderer mismatch is the earliest deterministic defect and matches the product-specific non-timeout path, but is not claimed as a byte-for-byte capture of the Production response.",
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}
