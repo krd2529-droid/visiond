@@ -1,0 +1,39 @@
+{
+  "version": "v0.20.128",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "daa083de",
+  "scope": "Remove the two server-owned canned Live Center AI intro phrases so newly generated unsaved drafts begin with the exact authoritative product name, while preserving mandatory current name/price/stock selection, strict plan validation, grounding, privacy, one indexed product lookup, atomic rate limiting, editor race protections, and byte-identical vSport behavior.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_live_center.js",
+    "package.json",
+    "patch-ledgers/v0.20.128.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.html",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020125-live-center-ai.mjs",
+    "scripts/test-v020128.mjs"
+  ],
+  "verification": {
+    "red": "PASS: released v0.20.127 directly reproduced both prohibited phrases for authoritative Production product ids 4 and 3 at 60 seconds; provider enum/message advertised the opening and rendered output did not start with the exact name",
+    "focused": "PASS: node scripts/test-v020128.mjs; exact authoritative Production product ids 4 and 3 at 60 seconds begin with the exact current name, retain current price/stock, omit both prohibited phrases, do not advertise template.opening, and reject a stale opening ID; installed Chrome desktop/390 passes",
+    "independent": "WIP PASS: Mark reran the frozen RED harness unchanged and all 27/27 intro + preservation groups pass, including exact ids 4/3, stale-opening rejection, 31-way limiter race, indexed lookup, auth/provider/transport privacy and no non-limiter mutation; final immutable-stage review remains pending",
+    "provider_regression": "PASS: node scripts/test-elon-provider.mjs; shared provider behavior remains green",
+    "release_chain": "PASS: npm run test:v020128; focused suite plus v0.20.123 Live Center package/API/store/R2/browser and v0.20.122 vSport/Tha1 gates",
+    "regressions": "PASS: node scripts/test-all-regressions.mjs; 10/10 forward-compatible contracts",
+    "predeploy": "PASS: npm run predeploy:check; 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: node --check for changed/new JavaScript, npm run test:visible-version, git diff --check, WEB/ADMIN v0.20.128 parity, scoped diff audit and npm run patch:gate against exactly the 12 ledger-declared staged files; Git-index SHA-256 freeze is recorded separately",
+    "vsport_identity": "PASS: scripts/test-v020128.mjs pins the eight released vSport migration/runtime/API/UI/v0.20.124-test SHA-256 values"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

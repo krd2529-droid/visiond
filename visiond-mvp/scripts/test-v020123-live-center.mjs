@@ -68,7 +68,7 @@ const [
   'VERSION.txt',
 ].map(read));
 
-assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127'].includes(versionText.trim()));
+assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128'].includes(versionText.trim()));
 assert.ok(homeHtml.includes(`WEB ${versionText.trim()}`));
 assert.ok(adminHtml.includes(`ADMIN ${versionText.trim()}`));
 assert.match(adminHtml, /href="\/live-center\.html"[^>]+data-feature="LIVE-CENTER-001"/);
