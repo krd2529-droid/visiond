@@ -1,7 +1,8 @@
 import { createLocalLivePlayback, parseVisionDLivePackage } from './live-center-package.js';
 import { createLiveAiHostController, createLiveAiSpeechNarrator, requestLiveHostTurn } from './live-package-ai-host.js';
-import { createLiveHumanPresenter, mountLiveHumanPresenter } from './live-package-presenter.js';
+import { createLiveHumanPresenter, mountLiveHumanPresenter, resolveLiveAiPresenterPreset } from './live-package-presenter.js';
 import { createLocalLivePlayer, createLocalSpeechNarrator } from './live-package-player.js';
+import { THAI_VOICE_MISSING_MESSAGE } from './live-package-thai-speech.js';
 
 const $ = selector => document.querySelector(selector);
 let playback = null;
@@ -175,8 +176,9 @@ function renderPlayerState({ phase }) {
 
 function renderNarration({ status }) {
   const narration = $('#openNarrationStatus');
-  if (status === 'thai') narration.textContent = 'กำลังใช้เสียงภาษาไทยจากอุปกรณ์นี้';
-  else if (status === 'default') narration.textContent = 'ไม่พบเสียงไทย จึงใช้เสียงเริ่มต้นของอุปกรณ์';
+  if (status === 'voice-loading') narration.textContent = 'กำลังค้นหาเสียงภาษาไทย (th-TH) ในอุปกรณ์นี้…';
+  else if (status === 'thai') narration.textContent = 'กำลังใช้เสียงภาษาไทย (th-TH) จากอุปกรณ์นี้';
+  else if (status === 'thai-unavailable') narration.textContent = THAI_VOICE_MISSING_MESSAGE;
   else if (status === 'unavailable') narration.textContent = 'อุปกรณ์นี้ไม่มี Web Speech จึงเล่นต่อแบบไม่มีเสียง';
   else if (status === 'empty') narration.textContent = 'ฉากนี้ไม่มีบทพูด จึงไม่มีเสียงบรรยาย';
   else if (status === 'cancelled') narration.textContent = 'เสียงหยุดแล้ว';
@@ -203,7 +205,7 @@ function renderAiTurn({ text, product, productPosition }) {
 }
 
 function renderAiNarration({ status, text, productPosition }) {
-  if (!['thai', 'default'].includes(status)) return;
+  if (status !== 'thai') return;
   presenter?.startSpeaking(`${openTicket}:${productPosition}:${text}`);
 }
 
@@ -235,11 +237,11 @@ function renderAiState(state) {
     obsState = 'กำลังคิดบทสด';
     visualState = 'thinking';
   } else if (phase === 'speaking') {
-    const speechStarted = ['thai', 'default'].includes(speechStatus);
+    const speechStarted = speechStatus === 'thai';
     status = speechStarted
       ? requestPending ? 'กำลังพูดบทสด · กำลังเตรียมบทถัดไป 1 รายการ' : hasPrefetch ? 'กำลังพูดบทสด · บทถัดไปพร้อมแล้ว' : 'กำลังพูดบทสด'
-      : 'บทสดพร้อมแล้ว กำลังรออุปกรณ์เริ่มเสียง…';
-    obsState = speechStarted ? 'กำลังพูดสด' : 'รอเสียงเริ่ม';
+      : speechStatus === 'voice-loading' ? 'บทสดพร้อมแล้ว กำลังค้นหาเสียงภาษาไทย (th-TH)…' : 'บทสดพร้อมแล้ว กำลังรออุปกรณ์เริ่มเสียง…';
+    obsState = speechStarted ? 'กำลังพูดสด' : speechStatus === 'voice-loading' ? 'กำลังค้นหาเสียงไทย' : 'รอเสียงเริ่ม';
     visualState = speechStarted ? 'speaking' : 'thinking';
   } else if (phase === 'paused') {
     status = 'พัก AI แล้ว สินค้าปัจจุบันยังคงอยู่ กดเล่นต่อเพื่อสร้างบทใหม่';
@@ -258,7 +260,7 @@ function renderAiState(state) {
   $('#obsAiHost').dataset.aiHostState = visualState;
   $('#obsAiState').textContent = obsState;
   if (phase === 'generating') presenter?.setState('thinking', reason || 'generating');
-  else if (phase === 'speaking' && !['thai', 'default'].includes(speechStatus)) presenter?.setState('thinking', 'speech-starting');
+  else if (phase === 'speaking' && speechStatus !== 'thai') presenter?.setState('thinking', speechStatus === 'voice-loading' ? 'voice-loading' : 'speech-starting');
   else if (phase === 'paused') presenter?.setState('paused', 'paused');
   else if (phase === 'error') presenter?.setState('error', 'error');
   else if (phase === 'stopped') presenter?.setState('idle', 'stopped');
@@ -353,7 +355,7 @@ async function openPackage(file) {
     $('#packageMeta').textContent = `${manifest.scenes.length} ฉาก · สร้าง ${new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(manifest.created.at))} · ${manifest.show.output.profile}`;
     $('#obsShow').textContent = manifest.show.title;
     $('#obsStage').dataset.profile = manifest.show.output.profile;
-    createPresenter(manifest.show.avatar.preset);
+    createPresenter(resolveLiveAiPresenterPreset(manifest.show.avatar.preset));
     player = createLocalLivePlayer(playback, {
       narrator: createLocalSpeechNarrator(window),
       onScene: renderScene,

@@ -1,3 +1,5 @@
+import { THAI_VOICE_MISSING_STATUS, createThaiSpeechNarrator } from './live-package-thai-speech.js';
+
 const PLAYER_PHASES = new Set(['ready', 'playing', 'paused', 'ended']);
 
 const defaultNow = () => {
@@ -11,31 +13,8 @@ const positiveDuration = scene => {
   return seconds * 1000;
 };
 
-export function createLocalSpeechNarrator(scope = globalThis) {
-  const synthesis = scope?.speechSynthesis;
-  const Utterance = scope?.SpeechSynthesisUtterance;
-  return Object.freeze({
-    cancel() {
-      try { synthesis?.cancel?.(); } catch {}
-    },
-    speak(script) {
-      if (typeof script !== 'string' || script.length === 0) return 'empty';
-      if (!synthesis?.speak || typeof Utterance !== 'function') return 'unavailable';
-      try {
-        const utterance = new Utterance(script);
-        const voices = typeof synthesis.getVoices === 'function' ? synthesis.getVoices() : [];
-        const thaiVoice = Array.isArray(voices)
-          ? voices.find(voice => /^th(?:-|$)/i.test(String(voice?.lang || '')))
-          : null;
-        utterance.lang = thaiVoice?.lang || 'th-TH';
-        if (thaiVoice) utterance.voice = thaiVoice;
-        synthesis.speak(utterance);
-        return thaiVoice ? 'thai' : 'default';
-      } catch {
-        return 'unavailable';
-      }
-    },
-  });
+export function createLocalSpeechNarrator(scope = globalThis, options = {}) {
+  return createThaiSpeechNarrator(scope, options);
 }
 
 export function createLocalLivePlayer(playback, options = {}) {
@@ -64,6 +43,8 @@ export function createLocalLivePlayer(playback, options = {}) {
   let timerEpoch = 0;
   let entryEpoch = 1;
   let spokenEntryEpoch = 0;
+  let narrationEpoch = 0;
+  let pendingNarrationEntryEpoch = 0;
   let destroyed = false;
   let lastCountdownMs = remainingMs;
 
@@ -99,6 +80,9 @@ export function createLocalLivePlayer(playback, options = {}) {
     });
   };
   const cancelNarration = reason => {
+    narrationEpoch += 1;
+    if (pendingNarrationEntryEpoch === entryEpoch) spokenEntryEpoch = 0;
+    pendingNarrationEntryEpoch = 0;
     narrator.cancel?.();
     onNarration({ status: 'cancelled', reason, scenePosition: currentScene()?.position ?? null });
   };
@@ -106,8 +90,27 @@ export function createLocalLivePlayer(playback, options = {}) {
     if (spokenEntryEpoch === entryEpoch) return;
     spokenEntryEpoch = entryEpoch;
     const scene = currentScene();
-    const status = narrator.speak?.(scene?.script || '') || 'unavailable';
-    onNarration({ status, reason, script: scene?.script || '', scenePosition: scene?.position ?? null });
+    const expectedEntryEpoch = entryEpoch;
+    const expectedNarrationEpoch = ++narrationEpoch;
+    pendingNarrationEntryEpoch = expectedEntryEpoch;
+    onNarration({ status: 'voice-loading', reason, script: scene?.script || '', scenePosition: scene?.position ?? null });
+    let result;
+    try { result = narrator.speak?.(scene?.script || '') || 'unavailable'; } catch { result = 'unavailable'; }
+    const settle = status => {
+      if (destroyed || expectedEntryEpoch !== entryEpoch || expectedNarrationEpoch !== narrationEpoch) return;
+      pendingNarrationEntryEpoch = 0;
+      if (status === 'cancelled') return;
+      if (status === THAI_VOICE_MISSING_STATUS || status === 'unavailable') spokenEntryEpoch = 0;
+      onNarration({ status, reason, script: scene?.script || '', scenePosition: scene?.position ?? null });
+    };
+    const reject = () => {
+      if (destroyed || expectedEntryEpoch !== entryEpoch || expectedNarrationEpoch !== narrationEpoch) return;
+      pendingNarrationEntryEpoch = 0;
+      spokenEntryEpoch = 0;
+      onNarration({ status: 'unavailable', reason, script: scene?.script || '', scenePosition: scene?.position ?? null });
+    };
+    if (result && typeof result.then === 'function') result.then(settle, reject);
+    else settle(result);
   };
   const clearScheduled = () => {
     timerEpoch += 1;

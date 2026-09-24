@@ -268,7 +268,7 @@ assert.equal(parsed.assets.size, 3);
   player.destroy();
 }
 
-assert.equal(createLocalSpeechNarrator({}).speak('บทพูดแบบไม่มี Web Speech'), 'unavailable');
+assert.equal(await createLocalSpeechNarrator({}).speak('บทพูดแบบไม่มี Web Speech'), 'unavailable');
 {
   const utterances = [];
   let cancellations = 0;
@@ -282,7 +282,7 @@ assert.equal(createLocalSpeechNarrator({}).speak('บทพูดแบบไม
       cancel: () => { cancellations += 1; },
     },
   });
-  assert.equal(narrator.speak('บทพูดตรงจากแพ็กเกจ'), 'thai');
+  assert.equal(await narrator.speak('บทพูดตรงจากแพ็กเกจ'), 'thai');
   assert.equal(utterances.length, 1);
   assert.equal(utterances[0].text, 'บทพูดตรงจากแพ็กเกจ');
   assert.equal(utterances[0].voice, thai);

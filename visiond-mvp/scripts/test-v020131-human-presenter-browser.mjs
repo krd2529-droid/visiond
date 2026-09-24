@@ -20,6 +20,8 @@ const packages = {
   placeholder: await representativePackage('Human presenter simple', { avatarPreset: 'presenter-placeholder' }),
   none: await representativePackage('Human presenter hidden', { avatarPreset: 'none' }),
 };
+const openerSource = await readFile(new URL('../public/live-package-open.js', import.meta.url), 'utf8');
+const legacyNoneUsesAiPresenter = /resolveLiveAiPresenterPreset\(manifest\.show\.avatar\.preset\)/.test(openerSource);
 const publicRoot = fileURLToPath(new URL('../public/', import.meta.url));
 const mimeTypes = new Map([['.html', 'text/html; charset=utf-8'], ['.js', 'text/javascript; charset=utf-8'], ['.css', 'text/css; charset=utf-8'], ['.svg', 'image/svg+xml']]);
 const requests = [];
@@ -210,10 +212,11 @@ try {
   await page.waitForFunction(() => document.querySelector('#packageTitle')?.textContent === 'Human presenter hidden');
   await page.evaluate(index => window.__humanPresenter.utterances[index].onstart(), stalePlaceholderIndex);
   await page.waitForTimeout(1_550);
-  assert.equal(await page.locator('#aiPresenterPreview').isHidden(), true, '`none` hides the presenter instead of substituting a human');
-  assert.equal(await page.locator('.ai-presenter-preview').getAttribute('data-presenter-visible'), 'false');
-  assert.equal((await page.locator('.ai-presenter-preview').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)), 1, 'hidden preview collapses to one content column');
-  assert.match(await page.locator('#aiPresenterStateLabel').textContent(), /ซ่อนพิธีกร/);
+  assert.equal(await page.locator('#aiPresenterPreview').isVisible(), legacyNoneUsesAiPresenter, '`none` follows the active release compatibility policy');
+  assert.equal(await page.locator('#aiPresenterPreview').getAttribute('data-presenter-preset'), legacyNoneUsesAiPresenter ? 'visiond-default' : 'none');
+  assert.equal(await page.locator('.ai-presenter-preview').getAttribute('data-presenter-visible'), legacyNoneUsesAiPresenter ? 'true' : 'false');
+  assert.equal((await page.locator('.ai-presenter-preview').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)), legacyNoneUsesAiPresenter ? 2 : 1, 'preview layout follows presenter visibility');
+  assert.match(await page.locator('#aiPresenterStateLabel').textContent(), legacyNoneUsesAiPresenter ? /พร้อมเริ่ม/ : /ซ่อนพิธีกร/);
 
   const beforeNone = hostRequests.length;
   await page.click('#startAiHost');
@@ -223,13 +226,13 @@ try {
   await page.waitForFunction(expected => window.__humanPresenter.utterances.length > expected, utterancesBeforeNone);
   await page.evaluate(() => window.__humanPresenter.utterances.at(-1).onstart());
   await page.waitForFunction(() => document.querySelector('#aiHostPanel')?.dataset.aiHostState === 'speaking' && document.querySelector('#obsLiveCaption')?.textContent.startsWith('บทพิธีกรมนุษย์'));
-  assert.equal(await page.locator('#aiPresenterPreview').isHidden(), true);
+  assert.equal(await page.locator('#aiPresenterPreview').isVisible(), legacyNoneUsesAiPresenter);
   await page.click('#obsMode');
   await page.waitForFunction(() => document.body.classList.contains('obs-mode'));
   assert.equal(await page.locator('#obsAiHost').isVisible(), true, 'AI caption/status remains in OBS when presenter preset is none');
-  assert.equal(await page.locator('#obsPresenter').isHidden(), true);
-  assert.equal(await page.locator('#obsAiHost').getAttribute('data-presenter-visible'), 'false');
-  assert.equal((await page.locator('#obsAiHost').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)), 1, 'hidden OBS presenter collapses to one content column');
+  assert.equal(await page.locator('#obsPresenter').isVisible(), legacyNoneUsesAiPresenter);
+  assert.equal(await page.locator('#obsAiHost').getAttribute('data-presenter-visible'), legacyNoneUsesAiPresenter ? 'true' : 'false');
+  assert.equal((await page.locator('#obsAiHost').evaluate(element => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length)), legacyNoneUsesAiPresenter ? 2 : 1, 'OBS layout follows presenter visibility');
   assert.match(await page.locator('#obsLiveCaption').textContent(), /^บทพิธีกรมนุษย์/);
   await page.keyboard.press('Escape');
   await page.close();

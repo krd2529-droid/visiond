@@ -1,3 +1,9 @@
+import {
+  THAI_VOICE_MISSING_MESSAGE,
+  THAI_VOICE_MISSING_STATUS,
+  createThaiSpeechNarrator,
+} from './live-package-thai-speech.js';
+
 export const LIVE_HOST_ENDPOINT = '/api/admin/live-center/host-turn';
 export const LIVE_HOST_CONTEXT_LIMIT = 4;
 export const LIVE_HOST_TURN_CHAR_LIMIT = 600;
@@ -78,49 +84,8 @@ export async function requestLiveHostTurn({ productId, recentTurns = [], operato
   });
 }
 
-export function createLiveAiSpeechNarrator(scope = globalThis) {
-  const synthesis = scope?.speechSynthesis;
-  const Utterance = scope?.SpeechSynthesisUtterance;
-  let active = null;
-  return Object.freeze({
-    cancel() {
-      active = null;
-      try { synthesis?.cancel?.(); } catch {}
-    },
-    speak(text, { onStart = () => {}, onEnd = () => {}, onError = () => {} } = {}) {
-      if (typeof text !== 'string' || !text.trim()) return 'empty';
-      if (!synthesis?.speak || typeof Utterance !== 'function') return 'unavailable';
-      try {
-        const utterance = new Utterance(text);
-        const voices = typeof synthesis.getVoices === 'function' ? synthesis.getVoices() : [];
-        const thaiVoice = Array.isArray(voices)
-          ? voices.find(voice => /^th(?:-|$)/i.test(String(voice?.lang || '')))
-          : null;
-        utterance.lang = thaiVoice?.lang || 'th-TH';
-        if (thaiVoice) utterance.voice = thaiVoice;
-        active = utterance;
-        utterance.onstart = () => {
-          if (active !== utterance) return;
-          onStart();
-        };
-        utterance.onend = () => {
-          if (active !== utterance) return;
-          active = null;
-          onEnd();
-        };
-        utterance.onerror = event => {
-          if (active !== utterance) return;
-          active = null;
-          onError(event);
-        };
-        synthesis.speak(utterance);
-        return thaiVoice ? 'thai' : 'default';
-      } catch {
-        active = null;
-        return 'unavailable';
-      }
-    },
-  });
+export function createLiveAiSpeechNarrator(scope = globalThis, options = {}) {
+  return createThaiSpeechNarrator(scope, options);
 }
 
 export function createLiveAiHostController(scenes, options = {}) {
@@ -263,33 +228,44 @@ export function createLiveAiHostController(scenes, options = {}) {
     const token = { epoch, productPosition, serial: ++speechSerial, started: false };
     activeSpeech = token;
     phase = 'speaking';
-    speechStatus = 'starting';
+    speechStatus = 'voice-loading';
     onTurn({ ...turn, source: 'ai-live', productPosition, reason });
     emitState(reason);
-    let status = '';
     let startPending = false;
     const startSpeech = () => {
-      if (!status) {
+      if (speechStatus !== 'starting') {
         startPending = true;
         return;
       }
-      handleSpeechStart(token, status, turn, reason);
+      handleSpeechStart(token, 'thai', turn, reason);
     };
+    let result;
     try {
-      status = narrator.speak?.(turn.text, {
+      result = narrator.speak?.(turn.text, {
         onStart: startSpeech,
         onEnd: () => handleSpeechEnd(token),
         onError: event => handleSpeechError(token, event),
       }) || 'unavailable';
     } catch {
-      status = 'unavailable';
+      result = 'unavailable';
     }
-    if (activeSpeech !== token || token.epoch !== epoch) return;
-    if (!['thai', 'default'].includes(status)) {
+    Promise.resolve(result).then(status => {
+      if (destroyed || activeSpeech !== token || token.epoch !== epoch || token.productPosition !== productPosition) return;
+      if (status !== 'thai') {
+        const missingThai = status === THAI_VOICE_MISSING_STATUS;
+        fail(new LiveAiHostError(
+          missingThai ? THAI_VOICE_MISSING_MESSAGE : 'อุปกรณ์นี้ไม่พร้อมพูดด้วย Web Speech กรุณาตรวจเสียงแล้วกดลองใหม่',
+          missingThai ? 'LIVE_HOST_THAI_VOICE_MISSING' : 'LIVE_HOST_SPEECH_UNAVAILABLE',
+        ), missingThai ? 'thai-voice-missing' : 'speech-unavailable');
+        return;
+      }
+      speechStatus = 'starting';
+      emitState('speech-queued');
+      if (startPending) handleSpeechStart(token, 'thai', turn, reason);
+    }).catch(() => {
+      if (destroyed || activeSpeech !== token || token.epoch !== epoch || token.productPosition !== productPosition) return;
       fail(new LiveAiHostError('อุปกรณ์นี้ไม่พร้อมพูดด้วย Web Speech กรุณาตรวจเสียงแล้วกดลองใหม่', 'LIVE_HOST_SPEECH_UNAVAILABLE'), 'speech-unavailable');
-      return;
-    }
-    if (startPending) handleSpeechStart(token, status, turn, reason);
+    });
   };
   launchRequest = reason => {
     if (destroyed || activeRequest || prefetchedTurn || !['generating', 'speaking'].includes(phase)) return false;

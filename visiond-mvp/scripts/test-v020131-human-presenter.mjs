@@ -9,6 +9,9 @@ const presenterPath = path.join(root, 'public/live-package-presenter.js');
 const html = read('public/live-package-open.html');
 const opener = read('public/live-package-open.js');
 const hostSource = read('public/live-package-ai-host.js');
+const thaiSpeechSource = fs.existsSync(path.join(root, 'public/live-package-thai-speech.js'))
+  ? read('public/live-package-thai-speech.js')
+  : hostSource;
 const css = read('public/live-center.css');
 
 const requiredStates = ['idle', 'thinking', 'talk', 'present', 'open', 'cheer', 'paused', 'error'];
@@ -26,7 +29,7 @@ const capabilities = {
   speechConnected: /startSpeaking/.test(opener)
     && /onNarration/.test(opener)
     && /onStart/.test(hostSource)
-    && /utterance\.onstart/.test(hostSource),
+    && /utterance\.onstart/.test(thaiSpeechSource),
 };
 
 console.log(JSON.stringify({ releasedVersion: read('VERSION.txt').trim(), capabilities }, null, 2));
@@ -37,8 +40,8 @@ assert.equal(capabilities.articulatedHuman, true, 'presenter must expose face, m
 assert.equal(capabilities.boundedStates, true, 'all eight bounded presenter states must be represented');
 assert.equal(capabilities.avatarPresetConnected, true, 'validated package avatar preset must control presenter visibility/variant');
 assert.equal(capabilities.speechConnected, true, 'gesture scheduling must begin only from genuine narration start');
-assert.match(hostSource, /utterance\.onstart\s*=\s*\(\)\s*=>/);
-assert.match(hostSource, /if \(active !== utterance\) return;\s*onStart\(\);/);
+assert.match(thaiSpeechSource, /utterance\.onstart\s*=\s*\(\)\s*=>/);
+assert.match(thaiSpeechSource, /if \(activeUtterance !== utterance \|\| ticket !== generation\) return;\s*onStart\(\);/);
 
 const presenterSource = read('public/live-package-presenter.js');
 assert.doesNotMatch(presenterSource, /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b|https?:\/\//, 'presenter must be code-native and network-free');

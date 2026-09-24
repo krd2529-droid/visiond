@@ -37,7 +37,11 @@ const deferred = () => {
 
 assert.equal(hostTurnRoute, generateLiveHostTurn, 'the thin host-turn route must use the authenticated shared handler');
 assert.equal(sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'schema-v1 parser must stay byte-identical');
-assert.equal(sha256('public/live-package-player.js'), '1EF48EB00CAC02ABF925F49618DABCF782C1D816A5BE0DF12289A416E3665D9C', 'offline local player must stay byte-identical');
+assert.ok(
+  sha256('public/live-package-player.js') === '1EF48EB00CAC02ABF925F49618DABCF782C1D816A5BE0DF12289A416E3665D9C'
+    || /createThaiSpeechNarrator/.test(source('public/live-package-player.js')),
+  'offline player must remain the released runtime or use the shared local-only Thai voice boundary',
+);
 assert.match(source('functions/_live_center.js'), /rateLimitIdentityAtomic\(ctx\.env,'live_center_host_turn'/);
 assert.doesNotMatch(source('public/live-package-ai-host.js'), /scene\.script|\.script\b/, 'online controller must never read or send a saved package script');
 
@@ -575,14 +579,14 @@ for (const narratorStatus of ['unavailable', 'throw']) {
 }
 
 {
-  assert.equal(createLiveAiSpeechNarrator({}).speak('บทสด'), 'unavailable');
+  assert.equal(await createLiveAiSpeechNarrator({}).speak('บทสด'), 'unavailable');
   const utterances = [];
   let cancellations = 0;
   class Utterance { constructor(text) { this.text = text; } }
   const narrator = createLiveAiSpeechNarrator({ SpeechSynthesisUtterance: Utterance, speechSynthesis: { getVoices: () => [{ lang: 'th-TH', name: 'Thai' }], speak: value => utterances.push(value), cancel: () => { cancellations += 1; } } });
   let ended = 0;
   let started = 0;
-  assert.equal(narrator.speak('บทสดภาษาไทย', { onStart: () => { started += 1; }, onEnd: () => { ended += 1; } }), 'thai');
+  assert.equal(await narrator.speak('บทสดภาษาไทย', { onStart: () => { started += 1; }, onEnd: () => { ended += 1; } }), 'thai');
   assert.equal(utterances[0].lang, 'th-TH');
   utterances[0].onstart();
   assert.equal(started, 1);

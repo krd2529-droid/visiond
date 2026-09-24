@@ -9,18 +9,18 @@ const read = path => readFile(new URL(path, root));
 const text = async path => (await read(path)).toString('utf8');
 const sha256 = async path => createHash('sha256').update(await read(path)).digest('hex').toUpperCase();
 
-assert.ok(['v0.20.130', 'v0.20.131'].includes((await text('VERSION.txt')).trim()));
-assert.match(await text('public/index.html'), /WEB v0\.20\.(?:130|131)/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:130|131)/);
-assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:130|131)/);
-assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:130|131)/);
+assert.ok(['v0.20.130', 'v0.20.131', 'v0.20.132'].includes((await text('VERSION.txt')).trim()));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:130|131|132)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:130|131|132)/);
+assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:130|131|132)/);
+assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:130|131|132)/);
 
 const openerHtml = await text('public/live-package-open.html');
 const openerSource = await text('public/live-package-open.js');
 const hostSource = await text('public/live-package-ai-host.js');
 const serverSource = await text('functions/_live_center.js');
-assert.match(openerHtml, /live-center\.css\?v=020(?:130|131)/);
-assert.match(openerHtml, /live-package-open\.js\?v=020(?:130|131)/);
+assert.match(openerHtml, /live-center\.css\?v=020(?:130|131|132)/);
+assert.match(openerHtml, /live-package-open\.js\?v=020(?:130|131|132)/);
 for (const id of ['aiHostPanel', 'startAiHost', 'pauseAiHost', 'stopAiHost', 'skipAiProduct', 'retryAiHost', 'aiHostCue', 'aiLoopProducts', 'aiLiveCaption', 'obsAiHost', 'obsLiveCaption']) assert.match(openerHtml, new RegExp(`id="${id}"`));
 assert.match(openerHtml, /AI พิธีกรสด/);
 assert.match(openerHtml, /บทสดจาก VisionD AI · ไม่ใช่บทที่บันทึกในแพ็กเกจ/);
@@ -49,6 +49,8 @@ assert.equal(JSON.parse(await text('patch-ledgers/v0.20.130.json')).version, 'v0
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020130'], 'node scripts/test-v020130.mjs && npm run test:v020129');
 
 assert.equal(await sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'schema-v1 parser must remain byte-identical');
-assert.equal(await sha256('public/live-package-player.js'), '1EF48EB00CAC02ABF925F49618DABCF782C1D816A5BE0DF12289A416E3665D9C', 'offline local player must remain byte-identical');
+const playerSource = await text('public/live-package-player.js');
+assert.ok(await sha256('public/live-package-player.js') === '1EF48EB00CAC02ABF925F49618DABCF782C1D816A5BE0DF12289A416E3665D9C'
+  || (/createThaiSpeechNarrator/.test(playerSource) && !/\bfetch\s*\(|XMLHttpRequest|WebSocket/.test(playerSource)), 'offline local player may change only for the network-free shared Thai narrator');
 
 console.log('v0.20.130 visible version, private AI-host surface, release ledger and offline byte-identity checks passed');

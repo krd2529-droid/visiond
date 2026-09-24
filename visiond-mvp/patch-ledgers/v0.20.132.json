@@ -1,0 +1,53 @@
+{
+  "version": "v0.20.132",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "319cca67",
+  "scope": "Make legacy valid packages whose immutable avatar preset is none show the full VisionD online AI presenter in preview and clean OBS without mutating package metadata or schema. Route saved-script and live-AI Web Speech through one cancellable asynchronous Thai-only voice selector that prefers exact th-TH, waits for Chrome voiceschanged, fails closed with an actionable Thai message when no Thai voice exists, and preserves the genuine utterance.onstart presenter/prefetch boundary plus stop, pause, skip, reopen and destroy stale-work guards.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.132.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.html",
+    "public/live-package-ai-host.js",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "public/live-package-player.js",
+    "public/live-package-presenter.js",
+    "public/live-package-thai-speech.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129-live-player.mjs",
+    "scripts/test-v020129.mjs",
+    "scripts/test-v020130-live-ai-host.mjs",
+    "scripts/test-v020130.mjs",
+    "scripts/test-v020131-human-presenter-browser.mjs",
+    "scripts/test-v020131-human-presenter.mjs",
+    "scripts/test-v020131.mjs",
+    "scripts/test-v020132-legacy-thai-voice-browser.mjs",
+    "scripts/test-v020132-legacy-thai-voice.mjs",
+    "scripts/test-v020132.mjs"
+  ],
+  "verification": {
+    "red": "PASS: released v0.20.131 maps legacy package avatar none directly to a hidden presenter, selects generic th before exact th-TH, speaks through the browser default when voices are initially empty or English-only, and allows English onstart to trigger AI gestures/prefetch",
+    "focused_unit": "PASS: shared Thai selector and local/AI deterministic races cover exact th-TH ordering, generic Thai fallback, asynchronous voiceschanged, zero-wait timeout cleanup, missing Thai fail-closed, stop/manual/pause/skip/destroy stale cancellation, genuine onstart and one prefetch",
+    "focused_browser": "PASS: real Chrome desktop/390 covers legacy none preflight/OBS visibility, late Thai voice discovery, exact th-TH binding, offline Stop and AI reopen cancellation, English-only actionable errors, no fake gestures/prefetch, clean OBS, no overflow and zero extra network",
+    "independent": "WIP PASS: Mark report 3BAD5B7930E98353BAF15C212389008E3CF65B83BA8870FFA342C712BFD98373 records the independent 13-scenario Thai core matrix and VERSION 1/revision 2 real-Chrome desktop/390 integration GREEN with no blocker; immutable exact-stage verdict remains pending",
+    "release_chain": "PASS: npm run test:v020132 through v0.20.131, v0.20.130, v0.20.129, v0.20.128, v0.20.123 and v0.20.122",
+    "regressions": "PASS: npm run test:regression-all; 10/10 forward-compatible contracts",
+    "predeploy": "PASS: npm run predeploy:check; 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: node --check on 18 changed/new JavaScript files, npm run test:visible-version, working/staged git diff --check and exact 26-file staged npm run patch:gate",
+    "preservation": "PASS: schema-v1 parser, private host-turn server/provider/D1 implementation and vSport client remain byte-identical; package metadata is not rewritten and offline playback adds no network transport"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}

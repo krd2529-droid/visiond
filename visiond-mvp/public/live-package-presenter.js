@@ -73,6 +73,11 @@ export function normalizeLivePresenterPreset(value) {
   return PRESENTER_PRESETS.has(preset) ? preset : 'none';
 }
 
+export function resolveLiveAiPresenterPreset(value) {
+  const preset = normalizeLivePresenterPreset(value);
+  return preset === 'none' ? 'visiond-default' : preset;
+}
+
 export function mountLiveHumanPresenter(root) {
   if (!root || typeof root !== 'object' || !('innerHTML' in root)) return false;
   root.innerHTML = LIVE_HUMAN_PRESENTER_SVG;
