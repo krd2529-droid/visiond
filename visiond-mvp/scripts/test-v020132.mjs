@@ -10,11 +10,11 @@ const read = path => readFile(new URL(path, root));
 const text = async path => (await read(path)).toString('utf8');
 const sha256 = async path => createHash('sha256').update(await read(path)).digest('hex').toUpperCase();
 
-assert.equal((await text('VERSION.txt')).trim(), 'v0.20.132');
-assert.match(await text('public/index.html'), /WEB v0\.20\.132/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.132/);
-assert.match(await text('public/live-center.html'), /live-center\.css\?v=020132/);
-assert.match(await text('public/live-center.html'), /live-center\.js\?v=020132/);
+assert.ok(['v0.20.132', 'v0.20.133'].includes((await text('VERSION.txt')).trim()));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:132|133)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:132|133)/);
+assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:132|133)/);
+assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:132|133)/);
 
 const openerHtml = await text('public/live-package-open.html');
 const openerSource = await text('public/live-package-open.js');
@@ -22,8 +22,8 @@ const playerSource = await text('public/live-package-player.js');
 const hostSource = await text('public/live-package-ai-host.js');
 const presenterSource = await text('public/live-package-presenter.js');
 const thaiSpeechSource = await text('public/live-package-thai-speech.js');
-assert.match(openerHtml, /live-center\.css\?v=020132/);
-assert.match(openerHtml, /live-package-open\.js\?v=020132/);
+assert.match(openerHtml, /live-center\.css\?v=020(?:132|133)/);
+assert.match(openerHtml, /live-package-open\.js\?v=020(?:132|133)/);
 assert.match(openerSource, /resolveLiveAiPresenterPreset\(manifest\.show\.avatar\.preset\)/);
 assert.match(presenterSource, /preset === 'none' \? 'visiond-default' : preset/);
 assert.match(playerSource, /createThaiSpeechNarrator/);

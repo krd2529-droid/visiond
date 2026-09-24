@@ -1,0 +1,47 @@
+{
+  "version": "v0.20.133",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "09cb1d30",
+  "scope": "Prevent returning browsers from linking a new Live package opener against stale unversioned ESM dependencies. Apply one v0.20.133 query cache key to the HTML entry, all five direct opener imports and both nested AI-host/player imports of the shared Thai narrator; preserve v0.20.132 package, presenter, narration, API, privacy, offline and platform behavior.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.133.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.html",
+    "public/live-package-ai-host.js",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "public/live-package-player.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129.mjs",
+    "scripts/test-v020130.mjs",
+    "scripts/test-v020131.mjs",
+    "scripts/test-v020132.mjs",
+    "scripts/test-v020133-live-esm-cache.mjs",
+    "scripts/test-v020133.mjs"
+  ],
+  "verification": {
+    "red": "PASS: installed Chrome reuses exact cached v0.20.131 presenter at the unversioned URL while loading v0.20.132 entry, throws the Production missing-export error before package parsing and leaves the selected package unopened",
+    "focused_browser": "PASS: the identical stale-cache fixture loads the complete v0.20.133 graph under a shared query key, produces no console/page error and opens the existing package",
+    "preservation": "PASS: normalized opener, AI host and player sources differ from v0.20.132 only by query keys; parser, presenter, Thai narrator, private server and vSport bytes remain exact",
+    "release_chain": "PASS: npm run test:v020133 covers the focused stale-cache Chrome regression and the complete v0.20.132 through v0.20.122 connected chain",
+    "regressions": "PASS: npm run test:regression-all reports 10/10 evergreen contracts; npm run test:visible-version reports WEB/ADMIN v0.20.133",
+    "predeploy": "PASS: 9 PASS / 8 established configuration WARN / 0 FAIL",
+    "syntax_and_diff": "PASS: node --check on all 12 changed/new JavaScript modules and tests; git diff --check has no error",
+    "staged_patch_gate": "PASS: exact 20-file stage equals the ledger with no task overlay; focused Chrome, visible version, regressions 10/10 and predeploy 9 PASS / 8 established WARN / 0 FAIL",
+    "independent": "WIP PASS: Mark all-stale, five selective-stale and warm-cache Chrome matrix plus v0.20.132 Thai/race/OBS/offline/security preservation are GREEN; final verdict pending exact immutable stage"
+  },
+  "release": {
+    "status": "patch_ready",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "deploy": "not performed"
+  }
+}
