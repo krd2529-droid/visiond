@@ -1,8 +1,9 @@
-import { createLocalLivePlayback, parseVisionDLivePackage } from './live-center-package.js?v=020133';
-import { createLiveAiHostController, createLiveAiSpeechNarrator, requestLiveHostTurn } from './live-package-ai-host.js?v=020133';
-import { createLiveHumanPresenter, mountLiveHumanPresenter, resolveLiveAiPresenterPreset } from './live-package-presenter.js?v=020133';
-import { createLocalLivePlayer, createLocalSpeechNarrator } from './live-package-player.js?v=020133';
-import { THAI_VOICE_MISSING_MESSAGE } from './live-package-thai-speech.js?v=020133';
+import { createLocalLivePlayback, parseVisionDLivePackage } from './live-center-package.js?v=020134';
+import { createLiveAiHostController, createLiveAiSpeechNarrator, requestLiveHostTurn } from './live-package-ai-host.js?v=020134';
+import { createLiveHumanPresenter, mountLiveHumanPresenter, resolveLiveAiPresenterPreset } from './live-package-presenter.js?v=020134';
+import { createLocalLivePlayer, createLocalSpeechNarrator } from './live-package-player.js?v=020134';
+import { THAI_VOICE_MISSING_MESSAGE } from './live-package-thai-speech.js?v=020134';
+import { createExactAudioAvatarController } from './live-photo-avatar.js?v=020134';
 
 const $ = selector => document.querySelector(selector);
 let playback = null;
@@ -17,6 +18,13 @@ let openTicket = 0;
 let obsActive = false;
 let obsEpoch = 0;
 let pendingFullscreenExit = null;
+let photoAvatar = null;
+let photoAvatarRequested = false;
+let photoAvatarRequest = null;
+let photoAvatarSession = null;
+let photoAvatarAttempt = null;
+let photoAvatarMessage = '';
+const LIVE_PHOTO_PRIVATE_TIMEOUT_MS = 15_000;
 
 const PRESENTER_STATE_COPY = Object.freeze({
   idle: 'พร้อมเริ่ม',
@@ -42,6 +50,7 @@ const countdownText = milliseconds => {
 };
 
 function renderPresenterState({ state = 'idle', preset = 'none', visible = false, reason = '' }) {
+  visible = Boolean(visible && !photoAvatarRequested);
   const label = PRESENTER_STATE_COPY[state] || PRESENTER_STATE_COPY.idle;
   const variant = preset === 'presenter-placeholder' ? 'พิธีกรเสมือนแบบย่อ' : 'พิธีกรเสมือน VisionD';
   for (const root of [$('#aiPresenterPreview'), $('#obsPresenter')]) {
@@ -70,15 +79,185 @@ function createPresenter(preset) {
   presenter = createLiveHumanPresenter({ preset, reducedMotion, onState: renderPresenterState });
 }
 
+function renderPhotoAvatarState(snapshot = photoAvatar?.snapshot?.() || { phase: 'disconnected', reason: 'load', speaking: false }) {
+  const phase = snapshot.phase || 'disconnected';
+  const connected = phase === 'ready' || phase === 'speaking';
+  const label = phase === 'connecting' ? 'กำลังตรวจการเชื่อมต่อ…'
+    : phase === 'speaking' ? 'กำลังพูดจากสัญญาณเสียงจริง'
+      : phase === 'ready' ? 'เชื่อมต่อแล้ว · รอสัญญาณเสียง'
+        : phase === 'error' ? photoAvatarMessage || 'ยังไม่ได้เชื่อมต่อ'
+          : phase === 'stopped' ? 'หยุด Photo Avatar แล้ว'
+            : 'ยังไม่ได้เชื่อมต่อ';
+  $('#photoAvatarPanel').dataset.photoMode = String(photoAvatarRequested);
+  $('#photoAvatarPanel').dataset.photoState = phase;
+  $('#photoAvatarState').textContent = label;
+  $('#photoAvatarPreviewFallback').hidden = connected;
+  $('#photoAvatarPreviewFallback').querySelector('span').textContent = label;
+  $('#obsPhotoAvatarFallback').hidden = connected;
+  $('#obsPhotoAvatarFallback').querySelector('span').textContent = label;
+  $('#obsPhotoAvatarSlot').hidden = !photoAvatarRequested;
+  $('.ai-presenter-preview').hidden = photoAvatarRequested;
+  $('#useLegacyPresenter').hidden = !photoAvatarRequested;
+  $('#activatePhotoAvatar').disabled = !playback || phase === 'connecting';
+  if (photoAvatarRequested) {
+    $('#aiPresenterPreview').hidden = true;
+    $('#obsPresenter').hidden = true;
+    $('#aiPresenterPreview').parentElement.setAttribute('data-presenter-visible', 'false');
+    $('#obsAiHost').setAttribute('data-presenter-visible', 'true');
+    $('#obsAiHost').hidden = false;
+  }
+  syncModeControls();
+}
+
+function createPhotoAvatarSurface() {
+  photoAvatar?.destroy();
+  photoAvatar = createExactAudioAvatarController({
+    previewVideo: $('#photoAvatarPreviewVideo'),
+    obsVideo: $('#obsPhotoAvatarVideo'),
+    onState: renderPhotoAvatarState,
+  });
+  renderPhotoAvatarState(photoAvatar.snapshot());
+}
+
+async function photoPrivateRequest(url, options = {}, signal = undefined) {
+  const headers = new Headers(options.headers || {});
+  headers.set('accept', 'application/json');
+  if (typeof options.body === 'string' && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  const requestController = new AbortController();
+  let timedOut = false;
+  const abortFromCaller = () => requestController.abort(signal?.reason);
+  if (signal?.aborted) abortFromCaller();
+  else signal?.addEventListener?.('abort', abortFromCaller, { once: true });
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    requestController.abort();
+  }, LIVE_PHOTO_PRIVATE_TIMEOUT_MS);
+  let response;
+  let payload;
+  try {
+    response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers, signal: requestController.signal });
+    try {
+      payload = await response.json();
+    } catch (error) {
+      if (requestController.signal.aborted) throw error;
+      payload = null;
+    }
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    const failure = new Error(timedOut
+      ? 'การเชื่อมต่อ Photo Avatar ใช้เวลานานเกินไป กรุณาลองใหม่'
+      : 'เชื่อมต่อ Photo Avatar ไม่สำเร็จ กรุณาลองใหม่');
+    failure.code = timedOut ? 'LIVE_PHOTO_TIMEOUT' : 'LIVE_PHOTO_NETWORK_FAILED';
+    throw failure;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener?.('abort', abortFromCaller);
+  }
+  if (!response.ok) {
+    const failure = new Error(payload?.error || 'เชื่อมต่อ Photo Avatar ไม่สำเร็จ กรุณาลองใหม่');
+    failure.code = payload?.code || 'LIVE_PHOTO_FAILED';
+    failure.status = response.status;
+    throw failure;
+  }
+  if (!Number.isSafeInteger(payload?.viewer_id)) {
+    const failure = new Error('คำตอบ Photo Avatar ไม่ถูกต้อง');
+    failure.code = 'LIVE_PHOTO_RESPONSE_INVALID';
+    throw failure;
+  }
+  return payload;
+}
+
+function stopPhotoSessionInBackground(session = photoAvatarSession) {
+  const showId = openedPackage?.manifest?.show?.id;
+  if (!showId || !session?.id) return;
+  void fetch(`/api/admin/live-center/shows/${showId}/avatar-session`, {
+    method: 'DELETE', credentials: 'same-origin', cache: 'no-store', keepalive: true,
+    headers: { 'content-type': 'application/json', accept: 'application/json', 'idempotency-key': session.stopKey || `photo-stop.${crypto.randomUUID().replaceAll('-', '')}` },
+    body: JSON.stringify({ session_id: session.id }),
+  }).catch(() => undefined);
+}
+
+function stopPhotoAvatar(reason = 'operator-stop', { keepMode = true } = {}) {
+  photoAvatarRequest?.controller.abort();
+  photoAvatarRequest = null;
+  stopPhotoSessionInBackground();
+  photoAvatarSession = null;
+  photoAvatarAttempt = null;
+  photoAvatarMessage = '';
+  photoAvatar?.stop(reason);
+  photoAvatarRequested = keepMode;
+  renderPhotoAvatarState(photoAvatar?.snapshot());
+}
+
+async function activatePhotoAvatar() {
+  if (!playback || !openedPackage || photoAvatarRequest) return;
+  if (offlinePhase === 'playing') player?.stop();
+  const aiPhase = aiHost?.snapshot?.().phase;
+  if (aiPhase && !['ready', 'stopped'].includes(aiPhase)) aiHost.stop();
+  photoAvatarRequested = true;
+  photoAvatarMessage = '';
+  photoAvatar?.setConnecting('session-request');
+  const ticket = openTicket;
+  const controller = new AbortController();
+  photoAvatarRequest = { controller, ticket };
+  renderPhotoAvatarState(photoAvatar.snapshot());
+  try {
+    const showId = openedPackage.manifest.show.id;
+    const [health, portraits] = await Promise.all([
+      photoPrivateRequest('/api/admin/live-center/integration-health', {}, controller.signal),
+      photoPrivateRequest(`/api/admin/live-center/shows/${showId}/presenter?limit=1`, {}, controller.signal),
+    ]);
+    if (ticket !== openTicket || photoAvatarRequest?.controller !== controller) return;
+    const selected = portraits.items?.find(item => item.id === portraits.binding?.active_id && item.status === 'active');
+    if (!selected) throw Object.assign(new Error('ยังไม่ได้เลือกรูป Photo Avatar ใน Live Center'), { code: 'LIVE_PORTRAIT_SELECTION_REQUIRED' });
+    if (!health.avatar?.connected || !health.avatar?.provisioning_contract_verified || !health.avatar?.session_contract_verified || !health.thai_voice?.connected) {
+      throw Object.assign(new Error('ยังไม่ได้เชื่อมต่อ D-ID Agent/session และ Azure เสียงไทยกับเซิร์ฟเวอร์'), { code: 'LIVE_AVATAR_NOT_CONNECTED' });
+    }
+    const signature = `${showId}:${selected.id}:${portraits.binding.revision}`;
+    if (photoAvatarAttempt?.signature !== signature) photoAvatarAttempt = { signature, key: `photo-session.${crypto.randomUUID().replaceAll('-', '')}` };
+    const sessionPayload = await photoPrivateRequest(`/api/admin/live-center/shows/${showId}/avatar-session`, {
+      method: 'POST', headers: { 'idempotency-key': photoAvatarAttempt.key },
+      body: JSON.stringify({ portrait_id: selected.id, expected_binding_revision: Number(portraits.binding.revision) }),
+    }, controller.signal);
+    if (ticket !== openTicket || photoAvatarRequest?.controller !== controller) return;
+    if (sessionPayload?.session?.id) {
+      photoAvatarSession = { id: sessionPayload.session.id, stopKey: `photo-stop.${crypto.randomUUID().replaceAll('-', '')}` };
+      stopPhotoSessionInBackground(photoAvatarSession);
+      photoAvatarSession = null;
+    }
+    throw Object.assign(new Error('เซิร์ฟเวอร์ยังไม่ส่งสัญญา WebRTC ที่ผ่านการยืนยัน จึงไม่เปิดวิดีโอ'), { code: 'LIVE_AVATAR_SESSION_CONTRACT_UNAVAILABLE' });
+  } catch (error) {
+    if (error?.name === 'AbortError' || ticket !== openTicket || photoAvatarRequest?.controller !== controller) return;
+    controller.abort();
+    photoAvatarMessage = error.message || 'ยังไม่ได้เชื่อมต่อ';
+    photoAvatar?.fail(error.code || 'session-failed');
+  } finally {
+    if (photoAvatarRequest?.controller === controller) photoAvatarRequest = null;
+    renderPhotoAvatarState(photoAvatar?.snapshot());
+  }
+}
+
+function useLegacyPresenter() {
+  stopPhotoAvatar('legacy-selected', { keepMode: false });
+  const preset = openedPackage ? resolveLiveAiPresenterPreset(openedPackage.manifest.show.avatar.preset) : 'none';
+  const snapshot = aiHost?.snapshot?.();
+  createPresenter(preset);
+  if (snapshot) renderAiState({ ...snapshot, reason: 'legacy-selected' });
+  else renderPresenterState({ state: 'idle', preset, visible: preset !== 'none', reason: 'legacy-selected' });
+}
+
 function syncModeControls() {
   const scene = playback?.currentScene?.();
   const offlineLocked = aiModeActive;
+  const aiPhase = aiHost?.snapshot?.().phase;
+  const aiRunning = aiPhase === 'generating' || aiPhase === 'speaking';
   $('#startPlayback').disabled = !playback || offlineLocked || offlinePhase === 'playing';
   $('#stopPlayback').disabled = !playback || offlineLocked || offlinePhase !== 'playing';
   $('#restartPlayback').disabled = !playback || offlineLocked;
   $('#previousScene').disabled = !playback || offlineLocked || scene?.position === 0;
   $('#nextScene').disabled = !playback || offlineLocked || scene?.position === playback?.sceneCount - 1;
   $('#obsMode').disabled = !playback;
+  $('#startAiHost').disabled = !aiHost || aiRunning || aiPhase === 'error' || photoAvatarRequested;
 }
 
 function resetAiSurface() {
@@ -205,7 +384,7 @@ function renderAiTurn({ text, product, productPosition }) {
 }
 
 function renderAiNarration({ status, text, productPosition }) {
-  if (status !== 'thai') return;
+  if (status !== 'thai' || photoAvatarRequested) return;
   presenter?.startSpeaking(`${openTicket}:${productPosition}:${text}`);
 }
 
@@ -221,7 +400,7 @@ function renderAiState(state) {
   const running = phase === 'generating' || phase === 'speaking';
   aiModeActive = active;
   $('#aiHostPanel').dataset.aiHostState = phase;
-  $('#startAiHost').disabled = !aiHost || running || phase === 'error';
+  $('#startAiHost').disabled = !aiHost || running || phase === 'error' || photoAvatarRequested;
   $('#startAiHost').textContent = phase === 'paused' ? 'เล่น AI ต่อด้วยบทใหม่' : 'เริ่ม AI พิธีกรสด';
   $('#pauseAiHost').disabled = !running;
   $('#stopAiHost').disabled = !active;
@@ -256,7 +435,7 @@ function renderAiState(state) {
   }
   $('#aiHostStatus').textContent = status;
   $('#aiHostStatus').className = `ai-host-status${phase === 'error' ? ' error' : ''}`;
-  $('#obsAiHost').hidden = !active;
+  $('#obsAiHost').hidden = !active && !photoAvatarRequested;
   $('#obsAiHost').dataset.aiHostState = visualState;
   $('#obsAiState').textContent = obsState;
   if (phase === 'generating') presenter?.setState('thinking', reason || 'generating');
@@ -266,6 +445,7 @@ function renderAiState(state) {
   else if (phase === 'stopped') presenter?.setState('idle', 'stopped');
   else if (phase === 'ready') presenter?.setState('idle', 'ready');
   if (phase === 'stopped') restoreOfflineScene();
+  if (photoAvatarRequested) renderPhotoAvatarState(photoAvatar?.snapshot());
   syncModeControls();
 }
 
@@ -321,6 +501,15 @@ async function enterObsMode() {
 }
 
 function disposeCurrentPackage() {
+  photoAvatarRequest?.controller.abort();
+  photoAvatarRequest = null;
+  stopPhotoSessionInBackground();
+  photoAvatarSession = null;
+  photoAvatarAttempt = null;
+  photoAvatarMessage = '';
+  photoAvatarRequested = false;
+  photoAvatar?.destroy();
+  photoAvatar = null;
   aiHost?.destroy();
   aiHost = null;
   presenter?.destroy();
@@ -356,6 +545,7 @@ async function openPackage(file) {
     $('#obsShow').textContent = manifest.show.title;
     $('#obsStage').dataset.profile = manifest.show.output.profile;
     createPresenter(resolveLiveAiPresenterPreset(manifest.show.avatar.preset));
+    createPhotoAvatarSurface();
     player = createLocalLivePlayer(playback, {
       narrator: createLocalSpeechNarrator(window),
       onScene: renderScene,
@@ -384,10 +574,16 @@ async function openPackage(file) {
 function stopAiBeforeOfflineAction() {
   const phase = aiHost?.snapshot().phase;
   if (phase && !['ready', 'stopped'].includes(phase)) aiHost.stop();
+  if (photoAvatarRequested) stopPhotoAvatar('offline-playback', { keepMode: true });
 }
 
 function startAiMode() {
   if (!aiHost || !playback) return;
+  if (photoAvatarRequested) {
+    photoAvatarMessage = 'Photo Avatar ยังไม่ได้เชื่อม exact-audio session จึงไม่เริ่มเสียงหรือใช้การ์ตูนแทน';
+    photoAvatar?.fail('exact-audio-not-connected');
+    return;
+  }
   const state = aiHost.snapshot();
   if (state.phase === 'generating' || state.phase === 'speaking') return;
   if (offlinePhase === 'playing') player?.stop();
@@ -418,6 +614,8 @@ if (typeof document !== 'undefined') {
   $('#retryAiHost').addEventListener('click', () => aiHost?.retry());
   $('#aiHostCue').addEventListener('input', event => aiHost?.setOperatorCue(event.target.value));
   $('#aiLoopProducts').addEventListener('change', event => aiHost?.setLoopProducts(event.target.checked));
+  $('#activatePhotoAvatar').addEventListener('click', () => { void activatePhotoAvatar(); });
+  $('#useLegacyPresenter').addEventListener('click', useLegacyPresenter);
   $('#obsMode').addEventListener('click', () => { void enterObsMode(); });
   document.addEventListener('fullscreenchange', () => {
     const stage = $('#obsStage');

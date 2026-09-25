@@ -104,13 +104,15 @@ const openerHtml = await readFile(new URL('../public/live-package-open.html', im
 const openerSource = await readFile(new URL('../public/live-package-open.js', import.meta.url), 'utf8');
 const hostSource = await readFile(new URL('../public/live-package-ai-host.js', import.meta.url), 'utf8');
 const playerSource = await readFile(new URL('../public/live-package-player.js', import.meta.url), 'utf8');
-const expectedVersion = '020133';
+const releasedVersion = (await readFile(new URL('../VERSION.txt', import.meta.url), 'utf8')).trim();
+const expectedVersion = releasedVersion === 'v0.20.134' ? '020134' : '020133';
 const expectedEdges = [
   'live-center-package.js',
   'live-package-ai-host.js',
   'live-package-presenter.js',
   'live-package-player.js',
   'live-package-thai-speech.js',
+  ...(expectedVersion === '020134' ? ['live-photo-avatar.js'] : []),
 ];
 const versionedEntry = openerHtml.includes(`/live-package-open.js?v=${expectedVersion}`);
 const versionedOpenerEdges = expectedEdges.every(file => openerSource.includes(`./${file}?v=${expectedVersion}`));
@@ -129,10 +131,10 @@ console.log(JSON.stringify({
 }, null, 2));
 
 assert.equal(staleUnversionedWasReused, true, 'fixture must faithfully reuse the cached v0.20.131 unversioned presenter');
-assert.equal(versionedEntry, true, 'HTML must version the v0.20.133 module entry');
-assert.equal(versionedOpenerEdges, true, 'every opener dependency edge must use the v0.20.133 cache key');
-assert.equal(versionedNestedEdges, true, 'nested AI/player Thai-speech edges must use the same v0.20.133 cache key');
+assert.equal(versionedEntry, true, 'HTML must version the current module entry');
+assert.equal(versionedOpenerEdges, true, 'every opener dependency edge must use the current cache key');
+assert.equal(versionedNestedEdges, true, 'nested AI/player Thai-speech edges must use the same current cache key');
 assert.deepEqual(errors, [], 'a returning browser must not hit an ESM missing-export error');
 assert.equal(packageOpened, true, 'the existing package must open after a stale v0.20.131 dependency was cached');
 
-console.log('v0.20.133 returning-browser ESM dependency cache-bust regression passed');
+console.log(`${releasedVersion} returning-browser ESM dependency cache-bust regression passed`);

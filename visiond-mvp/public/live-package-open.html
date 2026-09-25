@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/live-center.css?v=020133">
+  <link rel="stylesheet" href="/live-center.css?v=020134">
 </head>
 <body>
   <header class="live-toolbar"><a class="vds-btn vds-btn--text" href="/live-center.html">← Live Center</a><div class="live-title"><small>LOCAL PACKAGE PLAYER</small><h1>เปิดไฟล์ .visiondlive</h1><p>ตรวจแพ็กเกจและเล่นฉากพร้อมเสียงจากอุปกรณ์นี้ โดยไม่ส่งไฟล์ออกจาก Browser</p></div></header>
@@ -35,9 +35,24 @@
       <section id="aiHostPanel" class="ai-host-panel" aria-labelledby="aiHostTitle" data-ai-host-state="ready">
         <div class="section-head"><div><span class="mode-badge online">VISIOND AI · ONLINE</span><h2 id="aiHostTitle">AI พิธีกรสด</h2></div><span id="aiHostProduct">รอเปิดแพ็กเกจ</span></div>
         <p class="help">สร้างบทขายใหม่ทีละช่วงจากข้อมูลสินค้าปัจจุบันของ VisionD แล้วพูดด้วยเสียงจากอุปกรณ์นี้ ต้องกดเริ่มเอง และไม่ใช่การเริ่มไลฟ์บน Facebook/TikTok</p>
+        <div id="photoAvatarPanel" class="photo-avatar-panel" data-photo-mode="false" data-photo-state="disconnected">
+          <div class="photo-avatar-video-slot" aria-label="ตัวอย่างวิดีโอ Photo Avatar ก่อนเข้าโหมด OBS">
+            <video id="photoAvatarPreviewVideo" autoplay playsinline muted hidden></video>
+            <div id="photoAvatarPreviewFallback" class="photo-avatar-fallback"><strong>PHOTO AVATAR</strong><span>ยังไม่ได้เชื่อมต่อ</span></div>
+          </div>
+          <div class="photo-avatar-copy">
+            <small>PRIVATE PHOTO AVATAR · ONLINE ONLY</small>
+            <strong id="photoAvatarState">ยังไม่ได้เชื่อมต่อ</strong>
+            <p>ใช้เฉพาะรูปส่วนตัวที่เลือกไว้กับรายการนี้ วิดีโอจะแสดงเมื่อได้รับ stream ที่มีเสียงและภาพจริงเท่านั้น ไม่ใช้การ์ตูนแทน</p>
+            <div class="actions">
+              <button id="activatePhotoAvatar" class="vds-btn vds-btn--primary" type="button" disabled>ตรวจและเชื่อม Photo Avatar</button>
+              <button id="useLegacyPresenter" class="vds-btn vds-btn--secondary" type="button" hidden>กลับไปใช้พิธีกรในแพ็กเกจ</button>
+            </div>
+          </div>
+        </div>
         <div class="ai-presenter-preview" aria-label="ตัวอย่างพิธีกรเสมือนก่อนเข้าโหมด OBS">
           <div id="aiPresenterPreview" class="live-presenter-surface" data-presenter-state="idle" data-presenter-preset="none" role="img" aria-label="ซ่อนพิธีกรเสมือนตามแพ็กเกจ" hidden></div>
-          <div class="ai-presenter-preview-copy"><small>HUMAN PRESENTER PREVIEW</small><strong id="aiPresenterStateLabel">พร้อมเริ่ม</strong><p>ภาพเดียวกับที่แสดงใน OBS · กราฟิก 2D ไม่ใช้กล้องหรือไมโครโฟน</p></div>
+          <div class="ai-presenter-preview-copy"><small>LEGACY PRESENTER PREVIEW</small><strong id="aiPresenterStateLabel">พร้อมเริ่ม</strong><p>พิธีกรกราฟิกในแพ็กเกจเดิม · แสดงเฉพาะเมื่อไม่ได้เลือกโหมด Photo Avatar</p></div>
         </div>
         <div class="ai-host-fields">
           <label class="vds-field">คิวสั้นให้พิธีกร (ไม่บังคับ)<input id="aiHostCue" maxlength="160" placeholder="เช่น เล่าให้กระชับ หรือเน้นชื่อรุ่น" disabled></label>
@@ -62,6 +77,10 @@
         <div class="obs-visual"><img id="obsImage" alt="รูปสินค้าที่ฝังในแพ็กเกจ"></div>
         <div class="obs-overlay">
           <section id="obsAiHost" class="obs-ai-host" data-ai-host-state="idle" hidden aria-label="สถานะ VisionD AI พิธีกรสด">
+            <div id="obsPhotoAvatarSlot" class="obs-photo-avatar-slot" hidden>
+              <video id="obsPhotoAvatarVideo" autoplay playsinline hidden aria-label="วิดีโอ Photo Avatar ที่เชื่อมต่อแล้ว"></video>
+              <div id="obsPhotoAvatarFallback" class="photo-avatar-fallback"><strong>PHOTO AVATAR</strong><span>ยังไม่ได้เชื่อมต่อ</span></div>
+            </div>
             <div id="obsPresenter" class="live-presenter-surface obs-presenter" data-presenter-state="idle" data-presenter-preset="none" role="img" aria-label="ซ่อนพิธีกรเสมือนตามแพ็กเกจ" hidden></div>
             <div class="obs-ai-copy"><div class="obs-ai-identity"><div><small>VISIOND AI HOST · ONLINE · HUMAN PRESENTER</small><strong id="obsAiState">พร้อมเริ่ม</strong></div></div><p id="obsLiveCaption" class="obs-live-caption">รอบทสดจาก AI</p></div>
           </section>
@@ -70,7 +89,7 @@
       </section>
     </section>
   </main>
-  <script src="/live-package-open.js?v=020133" type="module"></script>
+  <script src="/live-package-open.js?v=020134" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>

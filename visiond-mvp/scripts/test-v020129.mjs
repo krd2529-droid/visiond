@@ -9,14 +9,14 @@ const read = path => readFile(new URL(path, root));
 const text = async path => (await read(path)).toString('utf8');
 const sha256 = async path => createHash('sha256').update(await read(path)).digest('hex').toUpperCase();
 
-assert.ok(['v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133'].includes((await text('VERSION.txt')).trim()));
-assert.match(await text('public/index.html'), /WEB v0\.20\.(?:129|130|131|132|133)/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:129|130|131|132|133)/);
-assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:129|130|131|132|133)/);
-assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:129|130|131|132|133)/);
+assert.ok(['v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134'].includes((await text('VERSION.txt')).trim()));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:129|130|131|132|133|134)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:129|130|131|132|133|134)/);
+assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:129|130|131|132|133|134)/);
+assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:129|130|131|132|133|134)/);
 const openerHtml = await text('public/live-package-open.html');
-assert.match(openerHtml, /live-center\.css\?v=020(?:129|130|131|132|133)/);
-assert.match(openerHtml, /live-package-open\.js\?v=020(?:129|130|131|132|133)/);
+assert.match(openerHtml, /live-center\.css\?v=020(?:129|130|131|132|133|134)/);
+assert.match(openerHtml, /live-package-open\.js\?v=020(?:129|130|131|132|133|134)/);
 for (const id of ['startPlayback', 'stopPlayback', 'restartPlayback', 'openCountdown', 'obsMode', 'obsStage']) {
   assert.match(openerHtml, new RegExp(`id="${id}"`));
 }
@@ -28,7 +28,8 @@ assert.match(openerSource, /createLocalSpeechNarrator\(window\)/);
 assert.match(openerSource, /pendingFullscreenExit/);
 assert.match(playerSource, /globalThis\.performance\?\.now/);
 assert.match(playerSource, /stop-expired/);
-assert.doesNotMatch(`${openerSource}\n${playerSource}`, /\bfetch\s*\(|XMLHttpRequest|WebSocket/, 'local player runtime must not add network transports');
+assert.doesNotMatch(playerSource, /\bfetch\s*\(|XMLHttpRequest|WebSocket/, 'offline player runtime must remain network-free');
+assert.match(openerSource, /photoPrivateRequest/);
 const css = await text('public/live-center.css');
 assert.match(css, /@keyframes live-scene-fade/);
 assert.match(css, /\.obs-stage:fullscreen/);

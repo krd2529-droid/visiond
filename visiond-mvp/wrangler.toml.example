@@ -21,6 +21,14 @@ database_id = "REPLACE_WITH_ELON_V7_D1_DATABASE_ID"
 binding = "FILES"
 bucket_name = "visiond-files"
 
+[[services]]
+binding = "PORTRAIT_SANITIZER"
+service = "visiond-live-portrait-sanitizer"
+
+# Deploy the sibling workers/live-portrait-sanitizer Worker first. Pages does
+# not support a direct [images] binding; this Service binding is the only
+# supported portrait pixel-normalization path and upload fails closed without it.
+
 [vars]
 COMPANY_NAME = "VisionD Online"
 OPENAI_MODEL = "gpt-4.1-mini"
@@ -29,6 +37,15 @@ BANK_ACCOUNT_NAME = "ตั้งค่าใน Cloudflare"
 BANK_ACCOUNT_NUMBER = "ตั้งค่าใน Cloudflare"
 ADMIN_EMAIL = "admin@example.com"
 TURNSTILE_SITE_KEY = ""
+LIVE_CENTER_LOCAL_TEST_ENABLED = "1" # visibly labelled Boss/Admin simulator; never a platform event
+# Live Center external integration contract (names only; never commit credential values):
+# Secret: LIVE_CENTER_PROVIDER_ENCRYPTION_KEY (stable random key for private provider references)
+# Secret: DID_BASIC_AUTHORIZATION (D-ID Basic authorization header)
+# Vars: AZURE_SPEECH_RESOURCE_NAME and AZURE_SPEECH_VOICE (an allowlisted th-TH-* neural voice)
+# Secret: AZURE_SPEECH_KEY
+# Vars: FACEBOOK_PAGE_ID and FACEBOOK_APP_ID
+# Secrets: FACEBOOK_PAGE_ACCESS_TOKEN, FACEBOOK_APP_SECRET and FACEBOOK_WEBHOOK_VERIFY_TOKEN
+# D-ID Agent/WebRTC provisioning remains fail-closed until its authenticated contract and entitlement are verified.
 ELON_MEMBER_DAILY_LIMIT = "100"
 ELON_GLOBAL_DAILY_LIMIT = "1000"
 PASSWORD_RESET_EMAIL_PROVIDER = "resend"

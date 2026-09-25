@@ -68,7 +68,7 @@ const [
   'VERSION.txt',
 ].map(read));
 
-assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133'].includes(versionText.trim()));
+assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134'].includes(versionText.trim()));
 assert.ok(homeHtml.includes(`WEB ${versionText.trim()}`));
 assert.ok(adminHtml.includes(`ADMIN ${versionText.trim()}`));
 assert.match(adminHtml, /href="\/live-center\.html"[^>]+data-feature="LIVE-CENTER-001"/);
@@ -1398,6 +1398,15 @@ const browserServer = http.createServer(async (req, res) => {
       browserVersions.set(versionsMatch[1], [item]);
       return jsonReply(res, { viewer_id: 8, ok: true, item }, 201);
     }
+    if (pathname === '/api/admin/live-center/integration-health' && req.method === 'GET') {
+      return jsonReply(res, { viewer_id: 8, status: 'not_connected', portrait_storage: false, server_pixel_reencode: false, avatar: { connected: false }, thai_voice: { connected: false }, facebook: { connected: false, live_start: false }, local_test: false, platform_live_start: false });
+    }
+    if (/^\/api\/admin\/live-center\/shows\/live_[a-f0-9]{32}\/presenter$/.test(pathname) && req.method === 'GET') {
+      return jsonReply(res, { viewer_id: 8, items: [], binding: { active_id: null, revision: 0 }, pagination: { limit: 24, has_more: false, next_cursor: null } });
+    }
+    if (/^\/api\/admin\/live-center\/shows\/live_[a-f0-9]{32}\/facebook-connector$/.test(pathname) && req.method === 'GET') {
+      return jsonReply(res, { viewer_id: 8, status: 'not_connected', label: 'ยังไม่ได้เชื่อมต่อ', capabilities: { connected: false, live_start: false }, platform_live_start: false });
+    }
     if (/^\/api\/admin\/live-center\/shows\/live_[a-f0-9]{32}\/versions\/livev_[a-f0-9]{32}\/package$/.test(pathname)) {
       res.writeHead(200, { 'content-type': 'application/vnd.visiond.live', 'cache-control': 'private, no-store', 'content-length': packageBytes.byteLength });
       return req.method === 'HEAD' ? res.end() : res.end(Buffer.from(packageBytes));
@@ -1420,6 +1429,23 @@ const browser = await chromium.launch({ headless: true, channel: process.env.PLA
 const browserErrors = [];
 const handledBrowserHttpErrors = [];
 const platformRequests = [];
+const connectorBoundaryRequests = [];
+const capturePlatformRequest = request => {
+  const url = new URL(request.url());
+  const isFacebookConfigRead = /^\/api\/admin\/live-center\/shows\/live_[a-f0-9]{32}\/facebook-connector$/.test(url.pathname)
+    && request.method() === 'GET'
+    && url.origin === browserBase;
+  if (isFacebookConfigRead) {
+    connectorBoundaryRequests.push({ method: request.method(), origin: url.origin, pathname: url.pathname });
+    return;
+  }
+  if (/facebook|tiktok|shopee/i.test(`${url.hostname}${url.pathname}`)) platformRequests.push(`${request.method()} ${request.url()}`);
+};
+capturePlatformRequest({ method: () => 'POST', url: () => `${browserBase}/api/admin/live-center/shows/live_${'a'.repeat(32)}/facebook-connector` });
+capturePlatformRequest({ method: () => 'POST', url: () => `${browserBase}/api/facebook/live/start` });
+capturePlatformRequest({ method: () => 'GET', url: () => 'https://graph.facebook.com/comments' });
+assert.equal(platformRequests.length, 3, 'network audit detects same-origin connector mutations, same-origin platform paths and external platform hosts');
+platformRequests.length = 0;
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, locale: 'th-TH' });
   page.on('console', message => {
@@ -1428,7 +1454,7 @@ try {
     else browserErrors.push(message.text());
   });
   page.on('pageerror', error => browserErrors.push(error.message));
-  page.on('request', request => { if (/facebook|tiktok|shopee/i.test(request.url())) platformRequests.push(request.url()); });
+  page.on('request', capturePlatformRequest);
   await page.goto(`${browserBase}/live-center.html`);
   await page.locator('.product-item').nth(23).waitFor();
   await page.locator('.product-item button').first().evaluate(button => { button.click(); button.click(); });
@@ -1528,7 +1554,7 @@ try {
     else browserErrors.push(message.text());
   });
   opener.on('pageerror', error => browserErrors.push(error.message));
-  opener.on('request', request => { if (/facebook|tiktok|shopee/i.test(request.url())) platformRequests.push(request.url()); });
+  opener.on('request', capturePlatformRequest);
   await opener.addInitScript(() => {
     const original = Blob.prototype.arrayBuffer;
     Blob.prototype.arrayBuffer = function patchedArrayBuffer() {
@@ -1567,6 +1593,8 @@ try {
   assert.equal(await mobile.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1), true, '390px Live Center has no horizontal overflow');
   assert.equal(await mobile.locator('#saveShow').isVisible(), true);
   assert.deepEqual(platformRequests, [], 'Live Center and local opener make no platform API requests');
+  assert.ok(connectorBoundaryRequests.length > 0, 'saved-show editor lazily reads the private Facebook configuration boundary');
+  assert.equal(connectorBoundaryRequests.every(item => item.method === 'GET' && item.origin === browserBase), true, 'the Facebook boundary remains same-origin read-only with zero platform mutation');
   assert.equal(handledBrowserHttpErrors.length, 3, 'only the intentionally exercised search/stale/drift error responses reach the browser console');
   assert.deepEqual(browserErrors, [], 'desktop, opener and 390px browser runs have no console/page errors');
 } finally {

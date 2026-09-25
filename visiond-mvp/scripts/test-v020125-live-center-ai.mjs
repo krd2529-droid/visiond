@@ -226,6 +226,9 @@ const browserServer=http.createServer(async(req,res)=>{try{
     if(control.mode==='html')return reply(res,{viewer_id:8,script:'<img src=x onerror="window.__liveXss=1">'});
     return reply(res,{viewer_id:8,script:body.product_id===201?'AI Browser Toy สินค้านี้ราคา 129 บาท มีสินค้า 7 ชิ้น':'AI Browser Toy Two สินค้านี้ราคา 259 บาท มีสินค้า 3 ชิ้น'});
   }
+  if(pathname==='/api/admin/live-center/integration-health'&&req.method==='GET')return reply(res,{viewer_id:8,status:'not_connected',portrait_storage:false,server_pixel_reencode:false,avatar:{connected:false},thai_voice:{connected:false},facebook:{connected:false,live_start:false},local_test:false,platform_live_start:false});
+  if(/^\/api\/admin\/live-center\/shows\/live_[a-f0-9]{32}\/presenter$/.test(pathname)&&req.method==='GET')return reply(res,{viewer_id:8,items:[],binding:{active_id:null,revision:0},pagination:{limit:24,has_more:false,next_cursor:null}});
+  if(/^\/api\/admin\/live-center\/shows\/live_[a-f0-9]{32}\/facebook-connector$/.test(pathname)&&req.method==='GET')return reply(res,{viewer_id:8,status:'not_connected',label:'ยังไม่ได้เชื่อมต่อ',capabilities:{connected:false,live_start:false},platform_live_start:false});
   if(/facebook|tiktok|shopee|\/package/.test(pathname)){if(/\/package/.test(pathname))metrics.downloads+=1;else metrics.platformCalls+=1;return reply(res,{error:'unexpected'},500)}
   const relative=pathname==='/'?'live-center.html':decodeURIComponent(pathname.slice(1)),file=path.resolve(publicRoot,relative);
   if(!file.startsWith(publicRoot)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);return res.end('not found')}

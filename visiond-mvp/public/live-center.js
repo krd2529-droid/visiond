@@ -1,3 +1,6 @@
+import { createLiveAudienceQueue } from './live-audience-queue.js?v=020134';
+import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020134';
+
 const API_ROOT = '/api/admin/live-center';
 const CACHE_TTL_MS = 15_000;
 
@@ -143,9 +146,27 @@ const state = {
   versionTicket: 0,
   saveBusy: null,
   versionBusy: null,
+  foundationTicket: 0,
+  foundationController: null,
+  portraitBindingRevision: 0,
+  activePortrait: null,
+  portraitBusy: false,
+  portraitPreviewUrl: '',
+  portraitUploadAttempt: null,
+  portraitDeleteAttempt: null,
+  integrationHealth: null,
+  facebookBoundary: null,
+  localSession: null,
+  localSessionAttempt: null,
+  localStopAttempt: null,
+  audienceBusy: false,
+  audienceQueued: 0,
+  audienceEventAttempt: null,
 };
 
 const store = typeof fetch === 'function' ? createLiveCenterStore() : null;
+const portraitPipeline = typeof document !== 'undefined' ? createLivePortraitImagePipeline() : null;
+const audienceQueue = createLiveAudienceQueue();
 const $ = selector => document.querySelector(selector);
 const element = (tag, className = '', text = '') => {
   const node = document.createElement(tag);
@@ -173,10 +194,234 @@ const setBusy = (button, busy, busyLabel = 'กำลังทำงาน…') 
   }
 };
 const bodySignature = body => JSON.stringify(body);
+export const LIVE_FOUNDATION_REQUEST_TIMEOUT_MS = 15_000;
+const blobSha256 = async blob => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))]
+  .map(byte => byte.toString(16).padStart(2, '0')).join('');
 const mutationAttempt = (current, prefix, body) => {
   const signature = bodySignature(body);
   return current?.signature === signature ? current : { signature, key: liveIdempotencyKey(prefix) };
 };
+
+async function foundationRequest(url, options = {}, signal = undefined) {
+  const headers = new Headers(options.headers || {});
+  headers.set('accept', 'application/json');
+  if (typeof options.body === 'string' && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  const requestController = new AbortController();
+  let timedOut = false;
+  const abortFromCaller = () => requestController.abort(signal?.reason);
+  if (signal?.aborted) abortFromCaller();
+  else signal?.addEventListener?.('abort', abortFromCaller, { once: true });
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    requestController.abort();
+  }, LIVE_FOUNDATION_REQUEST_TIMEOUT_MS);
+  let response;
+  let payload;
+  try {
+    response = await fetch(url, {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      ...options,
+      headers,
+      signal: requestController.signal,
+    });
+    try {
+      payload = await response.json();
+    } catch (error) {
+      if (requestController.signal.aborted) throw error;
+      payload = null;
+    }
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new LiveCenterApiError(timedOut
+      ? 'การเชื่อมต่อ Live Center ใช้เวลานานเกินไป กรุณาลองใหม่'
+      : 'การเชื่อมต่อ Live Center ขัดข้อง กรุณาลองใหม่', {
+      code: timedOut ? 'LIVE_FOUNDATION_TIMEOUT' : 'LIVE_FOUNDATION_NETWORK_FAILED',
+    });
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener?.('abort', abortFromCaller);
+  }
+  if (!response.ok) throw new LiveCenterApiError(payload?.error || `HTTP ${response.status}`, {
+    status: response.status,
+    code: payload?.code || 'LIVE_FOUNDATION_FAILED',
+    payload: payload || {},
+  });
+  const viewer = Number(payload?.viewer_id);
+  if (!Number.isSafeInteger(viewer) || String(viewer) !== String(state.viewer).split(':', 1)[0]) {
+    throw new LiveCenterApiError('คำตอบไม่ตรงกับผู้ดูที่ได้รับอนุญาต', { status: 409, code: 'LIVE_VIEWER_CHANGED' });
+  }
+  return payload;
+}
+
+function clearPortraitPreviewUrl() {
+  if (state.portraitPreviewUrl) URL.revokeObjectURL(state.portraitPreviewUrl);
+  state.portraitPreviewUrl = '';
+}
+
+function renderIntegrationHealth() {
+  const health = state.integrationHealth;
+  const badge = $('#integrationHealthBadge');
+  if (!health) {
+    badge.textContent = 'ยังไม่ได้เชื่อมต่อ';
+    $('#integrationHealthList').replaceChildren(...['Sanitizer: รอตรวจ', 'Avatar: รอตรวจ', 'เสียงไทย: รอตรวจ', 'Facebook: รอตรวจ'].map(text => element('span', '', text)));
+    return;
+  }
+  badge.textContent = health.status === 'connected' ? 'เชื่อมต่อแล้ว' : 'ยังไม่ได้เชื่อมต่อ';
+  const statuses = [
+    ['Sanitizer', health.server_pixel_reencode],
+    ['Private R2', health.portrait_storage],
+    ['D-ID Avatar', health.avatar?.connected],
+    ['Azure th-TH', health.thai_voice?.connected],
+    ['Facebook comments', health.facebook?.connected],
+  ];
+  $('#integrationHealthList').replaceChildren(...statuses.map(([label, connected]) => element('span', connected ? 'connected' : 'disconnected', `${label}: ${connected ? 'พร้อม' : 'ยังไม่ได้เชื่อมต่อ'}`)));
+}
+
+function renderPortraitFoundation() {
+  const saved = Boolean(state.show?.id);
+  const item = state.activePortrait;
+  const preview = $('#presenterPortraitPreview');
+  const placeholder = $('#presenterPortraitPlaceholder');
+  if (state.portraitPreviewUrl) {
+    preview.src = state.portraitPreviewUrl;
+    preview.hidden = false;
+    placeholder.hidden = true;
+  } else if (item?.image_url) {
+    preview.src = item.image_url;
+    preview.hidden = false;
+    placeholder.hidden = true;
+  } else {
+    preview.removeAttribute('src');
+    preview.hidden = true;
+    placeholder.hidden = false;
+  }
+  $('#presenterPortraitMeta').textContent = item
+    ? `เลือกใช้แล้ว · ${item.width}×${item.height} · รุ่นรูป ${item.portrait_version} · เก็บแบบส่วนตัว`
+    : saved ? 'ยังไม่มีรูปที่เลือกใช้กับรายการนี้' : 'บันทึกรายการก่อนจึงจะอัปโหลดได้';
+  renderIntegrationHealth();
+  syncFoundationControls();
+}
+
+function populateAudienceProducts() {
+  const select = $('#audienceProduct');
+  const previous = Number(select.value || 0);
+  select.replaceChildren();
+  for (const scene of state.scenes) {
+    const option = document.createElement('option');
+    option.value = String(scene.product_id);
+    option.textContent = scene.product.title;
+    select.append(option);
+  }
+  if (state.scenes.some(scene => scene.product_id === previous)) select.value = String(previous);
+}
+
+function renderAudienceFoundation() {
+  const answer = $('#audienceTestAnswer');
+  $('#audienceQueueCount').textContent = `${Math.min(24, state.audienceQueued)} / 24`;
+  $('#audienceTestPanel').dataset.localTestState = state.localSession ? 'active' : 'stopped';
+  if (!answer.dataset.visible) answer.hidden = true;
+  syncFoundationControls();
+}
+
+function syncFoundationControls() {
+  const saved = Boolean(state.show?.id);
+  const portraitDisabled = !saved || state.portraitBusy || state.audienceBusy;
+  for (const selector of ['#presenterPortrait', '#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) {
+    const control = $(selector); if (control) control.disabled = portraitDisabled;
+  }
+  const consented = $('#presenterRightsConsent')?.checked && $('#presenterAnimationConsent')?.checked && $('#presenterAuthorizedAdult')?.checked;
+  $('#uploadPresenterPortrait').disabled = portraitDisabled || !$('#presenterPortrait')?.files?.[0] || !consented;
+  $('#deletePresenterPortrait').disabled = portraitDisabled || !state.activePortrait;
+
+  const localEnabled = saved && Boolean(state.integrationHealth?.local_test);
+  const localActive = Boolean(state.localSession);
+  $('#startAudienceTest').disabled = !localEnabled || localActive || state.audienceBusy || state.portraitBusy;
+  $('#stopAudienceTest').disabled = !localActive || state.audienceBusy || state.portraitBusy;
+  $('#sendAudienceTest').disabled = !localActive || state.audienceBusy || state.portraitBusy || state.scenes.length === 0;
+  $('#claimAudienceTest').disabled = !localActive || state.audienceBusy || state.portraitBusy;
+  $('#audienceEventKind').disabled = !localActive || state.audienceBusy || state.portraitBusy;
+  $('#audienceViewerLabel').disabled = !localActive || state.audienceBusy || state.portraitBusy;
+  $('#audienceProduct').disabled = !localActive || state.audienceBusy || state.portraitBusy || state.scenes.length === 0;
+  $('#audienceQuestion').disabled = !localActive || state.audienceBusy || state.portraitBusy || $('#audienceEventKind').value !== 'comment';
+}
+
+function stopLocalSessionInBackground(showId, session, attempt) {
+  if (!showId || !session?.id) return;
+  const body = JSON.stringify({ session_id: session.id });
+  const key = attempt?.key || liveIdempotencyKey('local-stop');
+  void fetch(`${API_ROOT}/shows/${showId}/audience/local-session`, {
+    method: 'DELETE', credentials: 'same-origin', cache: 'no-store', keepalive: true,
+    headers: { 'content-type': 'application/json', accept: 'application/json', 'idempotency-key': key }, body,
+  }).catch(() => undefined);
+}
+
+function resetFoundationContext({ stopSession = true } = {}) {
+  const oldShowId = state.show?.id;
+  const oldSession = state.localSession;
+  const oldStopAttempt = state.localStopAttempt;
+  state.foundationTicket += 1;
+  state.foundationController?.abort();
+  state.foundationController = null;
+  portraitPipeline?.cancel();
+  if (stopSession) stopLocalSessionInBackground(oldShowId, oldSession, oldStopAttempt);
+  clearPortraitPreviewUrl();
+  state.portraitBindingRevision = 0;
+  state.activePortrait = null;
+  state.portraitBusy = false;
+  state.portraitUploadAttempt = null;
+  state.portraitDeleteAttempt = null;
+  state.integrationHealth = null;
+  state.facebookBoundary = null;
+  state.localSession = null;
+  state.localSessionAttempt = null;
+  state.localStopAttempt = null;
+  state.audienceBusy = false;
+  state.audienceQueued = 0;
+  state.audienceEventAttempt = null;
+  audienceQueue.clear('show-change');
+  const answer = $('#audienceTestAnswer');
+  if (answer) { answer.hidden = true; delete answer.dataset.visible; answer.querySelector('p').textContent = ''; }
+  if ($('#presenterPortrait')) $('#presenterPortrait').value = '';
+  for (const selector of ['#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) if ($(selector)) $(selector).checked = false;
+  renderPortraitFoundation();
+  populateAudienceProducts();
+  renderAudienceFoundation();
+}
+
+async function loadFoundation(showId, { ticket = state.openTicket } = {}) {
+  const foundationTicket = ++state.foundationTicket;
+  state.foundationController?.abort();
+  const controller = new AbortController();
+  state.foundationController = controller;
+  setStatus('#portraitStatus', 'กำลังตรวจสถานะ Photo Avatar…');
+  setStatus('#audienceStatus', 'กำลังตรวจ Local Test…');
+  try {
+    const [health, portraits, facebook] = await Promise.all([
+      foundationRequest(`${API_ROOT}/integration-health`, {}, controller.signal),
+      foundationRequest(`${API_ROOT}/shows/${showId}/presenter?limit=24`, {}, controller.signal),
+      foundationRequest(`${API_ROOT}/shows/${showId}/facebook-connector`, {}, controller.signal),
+    ]);
+    if (foundationTicket !== state.foundationTicket || ticket !== state.openTicket || state.show?.id !== showId) return;
+    state.integrationHealth = health;
+    state.facebookBoundary = facebook;
+    state.portraitBindingRevision = Number(portraits.binding?.revision || 0);
+    state.activePortrait = portraits.items?.find(item => item.id === portraits.binding?.active_id && item.status === 'active') || null;
+    renderPortraitFoundation();
+    renderAudienceFoundation();
+    setStatus('#portraitStatus', state.activePortrait ? 'รูปส่วนตัวนี้ถูกเลือกใช้กับรายการแล้ว' : 'ยังไม่มี Photo Avatar ที่เลือกใช้', state.activePortrait ? 'success' : '');
+    setStatus('#audienceStatus', health.local_test
+      ? 'พร้อมใช้ LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม'
+      : 'Local Test ยังไม่ได้เปิดในเซิร์ฟเวอร์ · Facebook ยังไม่ได้เชื่อมต่อ', health.local_test ? 'success' : '');
+  } catch (error) {
+    if (error?.name === 'AbortError' || foundationTicket !== state.foundationTicket) return;
+    setStatus('#portraitStatus', error.message, 'error');
+    setStatus('#audienceStatus', error.message, 'error');
+  } finally {
+    if (state.foundationController === controller) state.foundationController = null;
+    syncFoundationControls();
+  }
+}
 
 function updateActionState() {
   const saved = Boolean(state.show?.id);
@@ -253,6 +498,7 @@ async function loadShows({ append = false } = {}) {
 }
 
 function freshShow() {
+  resetFoundationContext();
   advanceEditorEpoch();
   state.show = null;
   state.scenes = [];
@@ -304,6 +550,7 @@ function hydrateShow(item) {
 }
 
 async function openShow(id, { refresh = false } = {}) {
+  resetFoundationContext();
   const ticket = advanceEditorEpoch();
   setStatus('#showStatus', 'กำลังเปิดรายการ…');
   try {
@@ -312,7 +559,7 @@ async function openShow(id, { refresh = false } = {}) {
     if (ticket !== state.openTicket) return;
     hydrateShow(data.item);
     setStatus('#showStatus', 'โหลดรายการแล้ว', 'success');
-    await loadVersions({ reset: true, ticket });
+    await Promise.all([loadVersions({ reset: true, ticket }), loadFoundation(id, { ticket })]);
   } catch (error) {
     if (ticket === state.openTicket) setStatus('#showStatus', error.message, 'error');
   }
@@ -371,7 +618,10 @@ async function saveShow(event) {
     await loadShows();
     if (applied && state.openTicket === operationTicket && state.show?.id === data.item.id) {
       setStatus('#showStatus', data.replayed ? 'พบคำขอเดิมและโหลดผลลัพธ์เดิมแล้ว' : 'บันทึกร่างแล้ว', 'success');
-      await loadVersions({ reset: true, ticket: operationTicket });
+      await Promise.all([
+        loadVersions({ reset: true, ticket: operationTicket }),
+        originalShowId ? Promise.resolve() : loadFoundation(data.item.id, { ticket: operationTicket }),
+      ]);
     }
   } catch (error) {
     if (editorStillOriginal()) {
@@ -604,7 +854,9 @@ function renderScenes() {
     list.append(row);
   });
   if (!state.scenes.length) list.append(element('p', 'empty', 'ยังไม่มีฉาก เลือกสินค้าด้านบนได้เลย'));
+  populateAudienceProducts();
   updateActionState();
+  syncFoundationControls();
 }
 
 function renderVersions() {
@@ -696,6 +948,263 @@ async function createVersion() {
   }
 }
 
+async function uploadPresenterPortrait() {
+  if (!state.show?.id || state.portraitBusy || state.audienceBusy) return;
+  const file = $('#presenterPortrait').files?.[0];
+  if (!file) return;
+  const showId = state.show.id;
+  const ticket = ++state.foundationTicket;
+  state.foundationController?.abort();
+  const controller = new AbortController();
+  state.foundationController = controller;
+  state.portraitBusy = true;
+  syncFoundationControls();
+  setStatus('#portraitStatus', 'กำลังสร้างรูปอนุพันธ์ที่ปลอดภัยใน Browser…');
+  try {
+    if (!(file instanceof Blob) || !file.size || file.size > LIVE_PORTRAIT_SOURCE_MAX_BYTES) throw new RangeError('รูปต้นฉบับต้องมีขนาดไม่เกิน 12 MB');
+    const sourceHash = await blobSha256(file);
+    const sourceSignature = bodySignature({ show_id: showId, name: file.name, size: file.size, last_modified: file.lastModified, source_hash: sourceHash, expected_binding_revision: state.portraitBindingRevision });
+    let attempt = state.portraitUploadAttempt;
+    if (!attempt || attempt.sourceSignature !== sourceSignature) {
+      const prepared = await portraitPipeline.prepare(file);
+      const derivativeHash = await blobSha256(prepared.file);
+      attempt = {
+        sourceSignature,
+        signature: bodySignature({ sourceSignature, derivativeHash, consent: 'rights+animation+authorized-adult' }),
+        key: liveIdempotencyKey('portrait-upload'),
+        prepared,
+      };
+      state.portraitUploadAttempt = attempt;
+    }
+    const { prepared } = attempt;
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    clearPortraitPreviewUrl();
+    state.portraitPreviewUrl = URL.createObjectURL(prepared.file);
+    renderPortraitFoundation();
+    setStatus('#portraitStatus', 'กำลังส่งรูปอนุพันธ์ไปยังบริการทำความสะอาดรูปส่วนตัว…');
+    const form = new FormData();
+    form.set('portrait', prepared.file, 'visiond-presenter.jpg');
+    form.set('rights_consent', 'accepted');
+    form.set('animation_consent', 'accepted');
+    form.set('identity_scope', 'authorized_adult');
+    form.set('consent_policy', 'visiond-live-portrait-consent-v1');
+    form.set('expected_binding_revision', String(state.portraitBindingRevision));
+    const data = await foundationRequest(`${API_ROOT}/shows/${showId}/presenter`, {
+      method: 'POST',
+      headers: { 'idempotency-key': attempt.key },
+      body: form,
+    }, controller.signal);
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    clearPortraitPreviewUrl();
+    state.activePortrait = data.item;
+    state.portraitBindingRevision = Number(data.binding_revision || state.portraitBindingRevision + 1);
+    state.portraitUploadAttempt = null;
+    state.portraitDeleteAttempt = null;
+    $('#presenterPortrait').value = '';
+    for (const selector of ['#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) $(selector).checked = false;
+    renderPortraitFoundation();
+    setStatus('#portraitStatus', data.cleanup_pending
+      ? 'เลือกใช้รูปใหม่แล้ว · การลบไฟล์เก่าจะลองซ้ำจาก checkpoint'
+      : 'อัปโหลด ทำความสะอาด และเลือกใช้รูปส่วนตัวแล้ว', 'success');
+  } catch (error) {
+    if (error?.name !== 'AbortError' && ticket === state.foundationTicket) setStatus('#portraitStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.foundationTicket) {
+      state.portraitBusy = false;
+      if (state.foundationController === controller) state.foundationController = null;
+      syncFoundationControls();
+    }
+  }
+}
+
+async function deletePresenterPortrait() {
+  if (!state.show?.id || !state.activePortrait || state.portraitBusy || state.audienceBusy) return;
+  if (!globalThis.confirm('ลบรูป Photo Avatar ที่เลือกใช้จากรายการนี้ใช่หรือไม่?')) return;
+  const showId = state.show.id;
+  const item = state.activePortrait;
+  const revision = state.portraitBindingRevision;
+  const body = { portrait_id: item.id, expected_binding_revision: revision };
+  state.portraitDeleteAttempt = mutationAttempt(state.portraitDeleteAttempt, 'portrait-delete', body);
+  const attempt = state.portraitDeleteAttempt;
+  const ticket = ++state.foundationTicket;
+  state.foundationController?.abort();
+  const controller = new AbortController();
+  state.foundationController = controller;
+  state.portraitBusy = true;
+  syncFoundationControls();
+  setStatus('#portraitStatus', 'กำลังถอนการเลือกและลบรูปส่วนตัว…');
+  try {
+    const data = await foundationRequest(`${API_ROOT}/shows/${showId}/presenter`, {
+      method: 'DELETE',
+      headers: { 'idempotency-key': attempt.key },
+      body: JSON.stringify(body),
+    }, controller.signal);
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    state.activePortrait = null;
+    state.portraitBindingRevision = Number(data.binding_revision || revision + 1);
+    state.portraitDeleteAttempt = null;
+    state.portraitUploadAttempt = null;
+    renderPortraitFoundation();
+    setStatus('#portraitStatus', data.cleanup_pending
+      ? 'ถอนการเลือกแล้ว · ไฟล์ส่วนตัวยังอยู่ในคิวลบแบบ retry ได้'
+      : 'ถอนการเลือกและลบรูปส่วนตัวแล้ว', data.cleanup_pending ? '' : 'success');
+  } catch (error) {
+    if (error?.name !== 'AbortError' && ticket === state.foundationTicket) setStatus('#portraitStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.foundationTicket) {
+      state.portraitBusy = false;
+      if (state.foundationController === controller) state.foundationController = null;
+      syncFoundationControls();
+    }
+  }
+}
+
+async function startAudienceTest() {
+  if (!state.show?.id || state.localSession || state.audienceBusy || state.portraitBusy || !state.integrationHealth?.local_test) return;
+  const showId = state.show.id;
+  const ticket = state.foundationTicket;
+  const body = { action: 'start' };
+  state.localSessionAttempt = mutationAttempt(state.localSessionAttempt, 'local-start', body);
+  state.audienceBusy = true;
+  syncFoundationControls();
+  setStatus('#audienceStatus', 'กำลังเริ่ม LOCAL TEST…');
+  try {
+    const data = await foundationRequest(`${API_ROOT}/shows/${showId}/audience/local-session`, {
+      method: 'POST', headers: { 'idempotency-key': state.localSessionAttempt.key }, body: JSON.stringify(body),
+    });
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    state.localSession = data.session;
+    state.localStopAttempt = null;
+    state.audienceQueued = 0;
+    state.audienceEventAttempt = null;
+    renderAudienceFoundation();
+    setStatus('#audienceStatus', `${data.session.source_label} · session พร้อมรับเหตุการณ์ทดสอบ`, 'success');
+  } catch (error) {
+    if (ticket === state.foundationTicket) setStatus('#audienceStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.foundationTicket) { state.audienceBusy = false; syncFoundationControls(); }
+  }
+}
+
+async function stopAudienceTest() {
+  if (!state.show?.id || !state.localSession || state.audienceBusy || state.portraitBusy) return;
+  const showId = state.show.id;
+  const session = state.localSession;
+  const ticket = state.foundationTicket;
+  const body = { session_id: session.id };
+  state.localStopAttempt = mutationAttempt(state.localStopAttempt, 'local-stop', body);
+  state.audienceBusy = true;
+  syncFoundationControls();
+  setStatus('#audienceStatus', 'กำลังหยุดและล้างข้อมูล LOCAL TEST…');
+  try {
+    const data = await foundationRequest(`${API_ROOT}/shows/${showId}/audience/local-session`, {
+      method: 'DELETE', headers: { 'idempotency-key': state.localStopAttempt.key }, body: JSON.stringify(body),
+    });
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    audienceQueue.clear('session-stop');
+    state.audienceQueued = 0;
+    if (!data.cleanup_pending) {
+      state.localSession = null;
+      state.localSessionAttempt = null;
+      state.localStopAttempt = null;
+      state.audienceEventAttempt = null;
+    }
+    renderAudienceFoundation();
+    setStatus('#audienceStatus', data.cleanup_pending
+      ? 'หยุด session แล้ว · กดซ้ำเพื่อทำ cleanup ชุดถัดไป'
+      : 'หยุดและล้างข้อมูลทดสอบแล้ว', data.cleanup_pending ? '' : 'success');
+  } catch (error) {
+    if (ticket === state.foundationTicket) setStatus('#audienceStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.foundationTicket) { state.audienceBusy = false; syncFoundationControls(); }
+  }
+}
+
+async function sendAudienceTest() {
+  if (!state.show?.id || !state.localSession || state.audienceBusy || state.portraitBusy) return;
+  const productId = Number($('#audienceProduct').value);
+  if (!Number.isSafeInteger(productId) || !state.scenes.some(scene => scene.product_id === productId)) {
+    setStatus('#audienceStatus', 'เลือกสินค้าที่อยู่ในรายการนี้ก่อน', 'error'); return;
+  }
+  const kind = $('#audienceEventKind').value;
+  const question = kind === 'comment' ? $('#audienceQuestion').value.trim() : '';
+  if (kind === 'comment' && !question) { setStatus('#audienceStatus', 'กรอกคำถามทดสอบก่อน', 'error'); return; }
+  const showId = state.show.id;
+  const ticket = state.foundationTicket;
+  const eventBody = {
+    session_id: state.localSession.id,
+    kind,
+    viewer_label: $('#audienceViewerLabel').value,
+    question,
+    product_id: productId,
+  };
+  const eventSignature = bodySignature(eventBody);
+  if (state.audienceEventAttempt?.signature !== eventSignature) {
+    state.audienceEventAttempt = { signature: eventSignature, eventId: `local.event.${crypto.randomUUID().replaceAll('-', '')}` };
+  }
+  const eventAttempt = state.audienceEventAttempt;
+  state.audienceBusy = true;
+  syncFoundationControls();
+  try {
+    const data = await foundationRequest(`${API_ROOT}/shows/${showId}/audience/local-events`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...eventBody,
+        event_id: eventAttempt.eventId,
+      }),
+    });
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    if (data.accepted && !data.replayed) state.audienceQueued = Math.min(24, state.audienceQueued + 1);
+    state.audienceEventAttempt = null;
+    renderAudienceFoundation();
+    setStatus('#audienceStatus', data.accepted
+      ? `${data.item.source_label} · เพิ่มเหตุการณ์เข้าคิวแล้ว`
+      : 'คิวเต็ม เหตุการณ์ทดสอบนี้ถูกทิ้งและล้างข้อมูลระบุตัวตนแล้ว', data.accepted ? 'success' : '');
+  } catch (error) {
+    if (ticket === state.foundationTicket) setStatus('#audienceStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.foundationTicket) { state.audienceBusy = false; syncFoundationControls(); }
+  }
+}
+
+async function claimAudienceTest() {
+  if (!state.show?.id || !state.localSession || state.audienceBusy || state.portraitBusy) return;
+  const showId = state.show.id;
+  const ticket = state.foundationTicket;
+  state.audienceBusy = true;
+  syncFoundationControls();
+  setStatus('#audienceStatus', 'กำลังรับคำตอบทดสอบหนึ่งรายการ…');
+  try {
+    const data = await foundationRequest(`${API_ROOT}/shows/${showId}/audience/queue/claim`, {
+      method: 'POST', body: JSON.stringify({ session_id: state.localSession.id }),
+    });
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    if (!data.item) { setStatus('#audienceStatus', 'คิว LOCAL TEST ว่าง'); return; }
+    const accepted = audienceQueue.enqueue(data.item);
+    if (!accepted.accepted) throw new LiveCenterApiError('คำตอบจากคิวทดสอบซ้ำหรือไม่ถูกต้อง', { code: 'LIVE_AUDIENCE_RESPONSE_INVALID' });
+    const event = audienceQueue.take();
+    if (!event || event.id !== data.item.id) throw new LiveCenterApiError('ลำดับคิวทดสอบไม่ถูกต้อง', { code: 'LIVE_AUDIENCE_RESPONSE_INVALID' });
+    const answer = $('#audienceTestAnswer');
+    answer.querySelector('small').textContent = event.sourceLabel;
+    answer.querySelector('p').textContent = event.text;
+    answer.dataset.visible = 'true';
+    answer.hidden = false;
+    await foundationRequest(`${API_ROOT}/shows/${showId}/audience/queue/claim`, {
+      method: 'DELETE',
+      body: JSON.stringify({ session_id: state.localSession.id, event_id: event.id, claim_token: data.item.claim_token, outcome: 'consumed' }),
+    });
+    if (ticket !== state.foundationTicket || state.show?.id !== showId) return;
+    audienceQueue.complete(event.id);
+    state.audienceQueued = Math.max(0, state.audienceQueued - 1);
+    renderAudienceFoundation();
+    setStatus('#audienceStatus', 'แสดงคำตอบที่ grounded แล้วหนึ่งรายการ · ไม่มีการวนอัตโนมัติ', 'success');
+  } catch (error) {
+    if (ticket === state.foundationTicket) setStatus('#audienceStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.foundationTicket) { state.audienceBusy = false; syncFoundationControls(); }
+  }
+}
+
 function bind() {
   $('#newShow').addEventListener('click', freshShow);
   $('#showForm').addEventListener('submit', saveShow);
@@ -706,7 +1215,34 @@ function bind() {
   $('#loadMoreProducts').addEventListener('click', () => loadProducts({ append: true }));
   $('#loadMoreVersions').addEventListener('click', () => loadVersions());
   $('#createVersion').addEventListener('click', createVersion);
+  $('#presenterPortrait').addEventListener('change', () => {
+    portraitPipeline?.cancel();
+    state.portraitUploadAttempt = null;
+    clearPortraitPreviewUrl();
+    renderPortraitFoundation();
+  });
+  for (const selector of ['#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) $(selector).addEventListener('change', syncFoundationControls);
+  $('#uploadPresenterPortrait').addEventListener('click', uploadPresenterPortrait);
+  $('#deletePresenterPortrait').addEventListener('click', deletePresenterPortrait);
+  $('#presenterPortraitPreview').addEventListener('error', () => {
+    $('#presenterPortraitPreview').hidden = true;
+    $('#presenterPortraitPlaceholder').hidden = false;
+    setStatus('#portraitStatus', 'โหลดตัวอย่างรูปส่วนตัวไม่สำเร็จ กรุณาตรวจสิทธิ์หรือโหลดใหม่', 'error');
+  });
+  const clearAudienceAttempt = () => { state.audienceEventAttempt = null; };
+  $('#audienceEventKind').addEventListener('change', () => { clearAudienceAttempt(); syncFoundationControls(); });
+  for (const selector of ['#audienceViewerLabel', '#audienceProduct', '#audienceQuestion']) $(selector).addEventListener('input', clearAudienceAttempt);
+  $('#startAudienceTest').addEventListener('click', startAudienceTest);
+  $('#stopAudienceTest').addEventListener('click', stopAudienceTest);
+  $('#sendAudienceTest').addEventListener('click', sendAudienceTest);
+  $('#claimAudienceTest').addEventListener('click', claimAudienceTest);
   for (const input of [$('#showTitle'), $('#showDescription'), $('#avatarPreset'), $('#outputProfile')]) input.addEventListener('input', markDirty);
+  addEventListener('beforeunload', () => {
+    stopLocalSessionInBackground(state.show?.id, state.localSession, state.localStopAttempt);
+    state.foundationController?.abort();
+    portraitPipeline?.cancel();
+    clearPortraitPreviewUrl();
+  });
 }
 
 async function initialize() {

@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/live-center.css?v=020133">
+  <link rel="stylesheet" href="/live-center.css?v=020134">
 </head>
 <body>
   <header class="live-toolbar">
@@ -50,6 +50,33 @@
         <p id="showStatus" class="status-line" role="status" aria-live="polite">เลือกหรือสร้างรายการเพื่อเริ่มทำงาน</p>
       </form>
 
+      <section id="photoPresenterPanel" class="vds-card live-foundation-card" aria-labelledby="photoPresenterTitle" data-foundation-state="idle">
+        <div class="section-head">
+          <div><small>PRIVATE · CONSENT REQUIRED</small><h2 id="photoPresenterTitle">Photo Avatar สำหรับรายการนี้</h2></div>
+          <span id="integrationHealthBadge" class="privacy-pill">ยังไม่ได้เชื่อมต่อ</span>
+        </div>
+        <p class="help">รูปเก็บแบบส่วนตัวและไม่ใส่ในไฟล์ .visiondlive ระบบรับเฉพาะบุคคลผู้ใหญ่ที่เจ้าของรูปอนุญาตให้ทำภาพเคลื่อนไหว การอัปโหลดจะเลือกใช้รูปใหม่กับรายการนี้ทันที</p>
+        <div class="foundation-grid">
+          <div class="portrait-preview-card">
+            <img id="presenterPortraitPreview" alt="ตัวอย่างรูป Photo Avatar ที่เลือกใช้" hidden>
+            <div id="presenterPortraitPlaceholder" class="portrait-placeholder">ยังไม่ได้เลือกรูปผู้นำเสนอ</div>
+            <small id="presenterPortraitMeta">บันทึกรายการก่อนจึงจะอัปโหลดได้</small>
+          </div>
+          <div class="portrait-controls">
+            <label class="vds-field">รูปบุคคล JPG/PNG<input id="presenterPortrait" type="file" accept="image/jpeg,image/png" disabled></label>
+            <label class="consent-check"><input id="presenterRightsConsent" type="checkbox" disabled> ฉันมีสิทธิ์ใช้รูปนี้และได้รับอนุญาตจากบุคคลในรูป</label>
+            <label class="consent-check"><input id="presenterAnimationConsent" type="checkbox" disabled> ยินยอมให้นำรูปไปสร้างภาพเคลื่อนไหวผ่านผู้ให้บริการที่ตั้งค่าไว้</label>
+            <label class="consent-check"><input id="presenterAuthorizedAdult" type="checkbox" disabled> เป็นบุคคลผู้ใหญ่ที่ได้รับอนุญาต ไม่ใช่การเลียนแบบบุคคลสาธารณะ</label>
+            <div class="actions">
+              <button id="uploadPresenterPortrait" class="vds-btn vds-btn--primary" type="button" disabled>อัปโหลดและเลือกใช้</button>
+              <button id="deletePresenterPortrait" class="vds-btn vds-btn--secondary" type="button" disabled>ลบรูปที่เลือก</button>
+            </div>
+          </div>
+        </div>
+        <div id="integrationHealthList" class="integration-health-list" aria-label="สถานะบริการ Photo Avatar"><span>Sanitizer: รอตรวจ</span><span>Avatar: รอตรวจ</span><span>เสียงไทย: รอตรวจ</span><span>Facebook: รอตรวจ</span></div>
+        <p id="portraitStatus" class="status-line" role="status" aria-live="polite">เลือกหรือบันทึกรายการก่อน</p>
+      </section>
+
       <section class="vds-card product-picker">
         <div class="section-head">
           <div><small>สินค้า Toys Center ที่พร้อมขาย</small><h2>เลือกสินค้าเข้าฉาก</h2></div>
@@ -69,6 +96,28 @@
         <div id="sceneList" class="scene-list" aria-live="polite"><p class="empty">ยังไม่มีฉาก เลือกสินค้าด้านบนได้เลย</p></div>
       </section>
 
+      <section id="audienceTestPanel" class="vds-card live-foundation-card" aria-labelledby="audienceTestTitle" data-local-test-state="stopped">
+        <div class="section-head">
+          <div><small>LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม</small><h2 id="audienceTestTitle">ทดสอบคำทักทายและ Q&amp;A แบบมีขอบเขต</h2></div>
+          <span id="audienceQueueCount" class="count-pill">0 / 24</span>
+        </div>
+        <p class="help">เครื่องมือนี้สร้างเหตุการณ์ทดสอบที่ติดป้ายชัดเจนเท่านั้น ไม่อ่าน Facebook/TikTok และไม่เริ่มไลฟ์จริง คำตอบอ้างอิงเฉพาะสินค้าที่อยู่ในรายการนี้</p>
+        <div class="audience-test-grid">
+          <label class="vds-field">ชนิดเหตุการณ์<select id="audienceEventKind" disabled><option value="viewer_join">ผู้ชมทดสอบเข้าห้อง</option><option value="comment">คำถามทดสอบ</option></select></label>
+          <label class="vds-field">ชื่อผู้ชมทดสอบ<input id="audienceViewerLabel" maxlength="60" value="ผู้ชมทดสอบ" disabled></label>
+          <label class="vds-field">สินค้าปัจจุบัน<select id="audienceProduct" disabled></select></label>
+          <label class="vds-field audience-question">คำถาม (ใช้เมื่อเลือกคำถามทดสอบ)<input id="audienceQuestion" maxlength="400" placeholder="เช่น ราคาเท่าไหร่ หรือมีสต็อกกี่ชิ้น" disabled></label>
+        </div>
+        <div class="actions">
+          <button id="startAudienceTest" class="vds-btn vds-btn--primary" type="button" disabled>เริ่ม Local Test</button>
+          <button id="sendAudienceTest" class="vds-btn vds-btn--secondary" type="button" disabled>ส่งเหตุการณ์ทดสอบ</button>
+          <button id="claimAudienceTest" class="vds-btn vds-btn--secondary" type="button" disabled>รับคำตอบถัดไป</button>
+          <button id="stopAudienceTest" class="vds-btn vds-btn--secondary" type="button" disabled>หยุดและล้างข้อมูลทดสอบ</button>
+        </div>
+        <div id="audienceTestAnswer" class="audience-test-answer" hidden><small>LOCAL TEST · คำตอบที่อ้างอิงข้อมูลสินค้า</small><p></p></div>
+        <p id="audienceStatus" class="status-line" role="status" aria-live="polite">บันทึกรายการก่อนเริ่ม Local Test</p>
+      </section>
+
       <section class="vds-card package-card">
         <div class="section-head">
           <div><small>เวอร์ชันอ่านอย่างเดียว</small><h2>แพ็กเกจสำหรับเครื่องไลฟ์</h2></div>
@@ -81,7 +130,7 @@
       </section>
     </section>
   </main>
-  <script src="/live-center.js?v=020133" type="module"></script>
+  <script src="/live-center.js?v=020134" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>
