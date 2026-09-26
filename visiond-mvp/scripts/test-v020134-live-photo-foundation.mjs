@@ -13,11 +13,14 @@ const root = path.resolve(import.meta.dirname, '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const sha256 = relative => createHash('sha256').update(fs.readFileSync(path.join(root, relative))).digest('hex').toUpperCase();
 
-assert.equal(read('VERSION.txt').trim(), 'v0.20.134');
-assert.match(read('public/index.html'), /WEB v0\.20\.134/);
-assert.match(read('public/admin.html'), /ADMIN v0\.20\.134/);
+const releasedVersion = read('VERSION.txt').trim();
+const assetVersion = releasedVersion === 'v0.20.135' ? '020135' : '020134';
+assert.ok(['v0.20.134', 'v0.20.135'].includes(releasedVersion));
+assert.ok(read('public/index.html').includes(`WEB ${releasedVersion}`));
+assert.ok(read('public/admin.html').includes(`ADMIN ${releasedVersion}`));
 assert.equal(sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'package schema-v1 parser stays byte-identical');
-assert.equal(sha256('.codex/active-work.md'), 'F390B44976E3B759C6C0807484C5EFA970496ED7E3D2852EDD99F71A077056A4', 'pre-existing active-work stays byte-identical');
+if (releasedVersion === 'v0.20.134') assert.equal(sha256('.codex/active-work.md'), 'F390B44976E3B759C6C0807484C5EFA970496ED7E3D2852EDD99F71A077056A4', 'pre-existing active-work stays byte-identical');
+else assert.match(read('.codex/active-work.md'), /v0\.20\.135[\s\S]*tombstone/);
 assert.equal(sha256('public/vsport.js'), '1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F', 'vSport stays byte-identical');
 
 const editorHtml = read('public/live-center.html');
@@ -42,8 +45,8 @@ for (const id of [
   'startAudienceTest', 'sendAudienceTest', 'claimAudienceTest', 'stopAudienceTest',
 ]) assert.match(editorHtml, new RegExp(`id="${id}"`), `${id} must be connected in the Boss/Admin editor`);
 assert.match(editorHtml, /LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม/);
-assert.match(editorHtml, /live-center\.css\?v=020134/);
-assert.match(editorHtml, /live-center\.js\?v=020134/);
+assert.match(editorHtml, new RegExp(`live-center\\.css\\?v=${assetVersion}`));
+assert.match(editorHtml, new RegExp(`live-center\\.js\\?v=${assetVersion}`));
 for (const token of ['portraitUploadAttempt', 'portraitDeleteAttempt', 'audienceEventAttempt', 'sourceHash', 'derivativeHash', 'createLiveAudienceQueue']) {
   assert.match(editorSource, new RegExp(token));
 }
@@ -69,17 +72,17 @@ assert.match(openerSource, /LIVE_PHOTO_PRIVATE_TIMEOUT_MS = 15_000/);
 assert.match(openerSource, /LIVE_PHOTO_TIMEOUT/);
 assert.doesNotMatch(openerSource, /RTCPeerConnection|setRemoteDescription|createAnswer/, 'unverified provider session fields must not be invented');
 
-assert.match(openerHtml, /live-center\.css\?v=020134/);
-assert.match(openerHtml, /live-package-open\.js\?v=020134/);
+assert.match(openerHtml, new RegExp(`live-center\\.css\\?v=${assetVersion}`));
+assert.match(openerHtml, new RegExp(`live-package-open\\.js\\?v=${assetVersion}`));
 for (const dependency of [
   'live-center-package.js', 'live-package-ai-host.js', 'live-package-presenter.js',
   'live-package-player.js', 'live-package-thai-speech.js', 'live-photo-avatar.js',
 ]) {
   const escaped = dependency.replaceAll('.', '\\.');
-  assert.match(openerSource, new RegExp(`from ['"]\\./${escaped}\\?v=020134['"]`), `${dependency} must use the v0.20.134 module key`);
+  assert.match(openerSource, new RegExp(`from ['"]\\./${escaped}\\?v=${assetVersion}['"]`), `${dependency} must use the active module key`);
 }
-assert.match(hostSource, /live-package-thai-speech\.js\?v=020134/);
-assert.match(playerSource, /live-package-thai-speech\.js\?v=020134/);
+assert.match(hostSource, new RegExp(`live-package-thai-speech\\.js\\?v=${assetVersion}`));
+assert.match(playerSource, new RegExp(`live-package-thai-speech\\.js\\?v=${assetVersion}`));
 
 for (const table of [
   'live_presenter_assets', 'live_presenter_bindings', 'live_portrait_upload_claims',

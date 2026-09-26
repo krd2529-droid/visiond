@@ -1,5 +1,5 @@
-import { createLiveAudienceQueue } from './live-audience-queue.js?v=020134';
-import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020134';
+import { createLiveAudienceQueue } from './live-audience-queue.js?v=020135';
+import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020135';
 
 const API_ROOT = '/api/admin/live-center';
 const CACHE_TTL_MS = 15_000;
@@ -141,11 +141,14 @@ const state = {
   createAttempt: null,
   versionAttempt: null,
   openTicket: 0,
+  openingShowId: null,
   productTicket: 0,
   showListTicket: 0,
   versionTicket: 0,
   saveBusy: null,
   versionBusy: null,
+  showDeleteBusy: new Map(),
+  showDeleteAttempts: new Map(),
   foundationTicket: 0,
   foundationController: null,
   portraitBindingRevision: 0,
@@ -461,14 +464,23 @@ function renderShows() {
   const list = $('#showList');
   list.replaceChildren();
   for (const show of state.shows) {
+    const card = element('article', 'show-card');
+    card.setAttribute('aria-current', String(show.id === state.show?.id));
     const button = element('button', 'show-row');
     button.type = 'button';
-    button.setAttribute('aria-current', String(show.id === state.show?.id));
+    button.setAttribute('aria-label', `เปิดรายการ ${show.title}`);
     const copy = element('div');
     copy.append(element('h3', '', show.title), element('p', '', `${show.scene_count} ฉาก · revision ${show.revision}`));
     button.append(copy, element('small', '', dateTime(show.updated_at)));
     button.addEventListener('click', () => openShow(show.id));
-    list.append(button);
+    const deleting = state.showDeleteBusy.has(show.id);
+    const deleteButton = element('button', 'vds-btn vds-btn--danger show-delete', deleting ? 'กำลังลบ…' : 'ลบ');
+    deleteButton.type = 'button';
+    deleteButton.disabled = deleting;
+    deleteButton.setAttribute('aria-label', `ลบรายการ ${show.title}`);
+    deleteButton.addEventListener('click', () => deleteSavedShow(show));
+    card.append(button, deleteButton);
+    list.append(card);
   }
   if (!state.shows.length) list.append(element('p', 'empty', 'ยังไม่มีรายการไลฟ์'));
   $('#loadMoreShows').hidden = !state.showCursor;
@@ -497,9 +509,10 @@ async function loadShows({ append = false } = {}) {
   }
 }
 
-function freshShow() {
-  resetFoundationContext();
+function freshShow({ stopSession = true } = {}) {
+  resetFoundationContext({ stopSession });
   advanceEditorEpoch();
+  state.openingShowId = null;
   state.show = null;
   state.scenes = [];
   state.selectedProducts.clear();
@@ -516,6 +529,49 @@ function freshShow() {
   renderScenes();
   renderVersions();
   updateActionState();
+}
+
+async function deleteSavedShow(show) {
+  if (!show?.id || state.showDeleteBusy.has(show.id)) return;
+  if (!confirm(`ต้องการลบรายการ "${show.title}" ใช่หรือไม่?`)) return;
+  const body = { owner_id: Number(show.owner_id), title: show.title, expected_revision: Number(show.revision) };
+  const currentAttempt = state.showDeleteAttempts.get(show.id);
+  const attempt = mutationAttempt(currentAttempt, 'show.delete', body);
+  state.showDeleteAttempts.set(show.id, attempt);
+  const busyToken = {};
+  state.showDeleteBusy.set(show.id, busyToken);
+  renderShows();
+  setStatus('#showStatus', `กำลังลบรายการ “${show.title}”…`);
+  try {
+    const data = await store.request(`${API_ROOT}/shows/${show.id}`, {
+      method: 'DELETE',
+      headers: { 'idempotency-key': attempt.key },
+      body: JSON.stringify(body),
+    }, { cacheable: false });
+    if (state.showDeleteBusy.get(show.id) !== busyToken) return;
+    store.invalidate(['shows:list', `show:${show.id}`, `versions:${show.id}`]);
+    state.showDeleteAttempts.delete(show.id);
+    state.shows = state.shows.filter(item => item.id !== show.id);
+    const deletedActiveShow = state.show?.id === show.id;
+    if (deletedActiveShow) freshShow({ stopSession: false });
+    else {
+      if (state.openingShowId === show.id) {
+        advanceEditorEpoch();
+        state.openingShowId = null;
+      }
+      renderShows();
+    }
+    setStatus('#showStatus', data.cleanup_pending
+      ? `ลบรายการ “${show.title}” แล้ว · ระบบกำลังล้างรูปส่วนตัวที่ผูกกับรายการ`
+      : `ลบรายการ “${show.title}” แล้ว`, 'success');
+    await loadShows();
+  } catch (error) {
+    setStatus('#showStatus', `ลบรายการ “${show.title}” ไม่สำเร็จ: ${error.message}`, 'error');
+  } finally {
+    if (state.showDeleteBusy.get(show.id) === busyToken) state.showDeleteBusy.delete(show.id);
+    renderShows();
+    updateActionState();
+  }
 }
 
 function hydrateShow(item) {
@@ -552,6 +608,7 @@ function hydrateShow(item) {
 async function openShow(id, { refresh = false } = {}) {
   resetFoundationContext();
   const ticket = advanceEditorEpoch();
+  state.openingShowId = id;
   setStatus('#showStatus', 'กำลังเปิดรายการ…');
   try {
     if (refresh) store.invalidate([`show:${id}`]);
@@ -562,6 +619,8 @@ async function openShow(id, { refresh = false } = {}) {
     await Promise.all([loadVersions({ reset: true, ticket }), loadFoundation(id, { ticket })]);
   } catch (error) {
     if (ticket === state.openTicket) setStatus('#showStatus', error.message, 'error');
+  } finally {
+    if (ticket === state.openTicket && state.openingShowId === id) state.openingShowId = null;
   }
 }
 
@@ -1206,7 +1265,7 @@ async function claimAudienceTest() {
 }
 
 function bind() {
-  $('#newShow').addEventListener('click', freshShow);
+  $('#newShow').addEventListener('click', () => freshShow());
   $('#showForm').addEventListener('submit', saveShow);
   $('#refreshShow').addEventListener('click', () => state.show?.id && openShow(state.show.id, { refresh: true }));
   $('#loadMoreShows').addEventListener('click', () => loadShows({ append: true }));

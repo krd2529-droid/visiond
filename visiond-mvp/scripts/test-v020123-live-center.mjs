@@ -38,6 +38,7 @@ const root = new URL('../', import.meta.url);
 const read = relative => readFile(new URL(relative, root), 'utf8');
 const [
   migration,
+  tombstoneMigration,
   serverSource,
   middlewareSource,
   clientSource,
@@ -53,6 +54,7 @@ const [
   versionText,
 ] = await Promise.all([
   'migrations/0112_visiond_live_center.sql',
+  'migrations/0114_live_show_tombstones.sql',
   'functions/_live_center.js',
   'functions/_middleware.js',
   'public/live-center.js',
@@ -68,7 +70,7 @@ const [
   'VERSION.txt',
 ].map(read));
 
-assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134'].includes(versionText.trim()));
+assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134','v0.20.135'].includes(versionText.trim()));
 assert.ok(homeHtml.includes(`WEB ${versionText.trim()}`));
 assert.ok(adminHtml.includes(`ADMIN ${versionText.trim()}`));
 assert.match(adminHtml, /href="\/live-center\.html"[^>]+data-feature="LIVE-CENTER-001"/);
@@ -268,6 +270,7 @@ sqlite.exec(`
   INSERT INTO sessions VALUES('boss-session',3,'2099-01-01');
 `);
 sqlite.exec(migration);
+sqlite.exec(tombstoneMigration);
 const addProduct = sqlite.prepare(`INSERT INTO toys_center_products(meta_id,slug,title,price_cents,currency,quantity,image_1_key,status,availability,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`);
 const addImage = sqlite.prepare('INSERT INTO toys_center_product_images(product_id,position,image_key) VALUES(?,?,?)');
 for (let index = 1; index <= 61; index += 1) {
@@ -418,7 +421,7 @@ const plans = [
   ["SELECT id FROM toys_center_products INDEXED BY idx_toys_center_live_inventory WHERE status='published' AND availability='in stock' AND quantity>0 AND (updated_at,id)<(?,?) ORDER BY updated_at DESC,id DESC LIMIT 25", ['9999-12-31T23:59:59.999Z', Number.MAX_SAFE_INTEGER], 'idx_toys_center_live_inventory'],
   ["SELECT id FROM toys_center_products INDEXED BY idx_toys_center_live_title WHERE status='published' AND availability='in stock' AND quantity>0 AND title COLLATE NOCASE>=? AND title COLLATE NOCASE<? ORDER BY title COLLATE NOCASE,id ASC LIMIT 25", ['alpha', 'alphb'], 'idx_toys_center_live_title'],
   ['SELECT id FROM toys_center_product_images WHERE product_id=? AND image_key=? ORDER BY position LIMIT 1', [1, 'toys/1-selected.png'], 'idx_toys_center_product_images_product_key_position'],
-  ['SELECT id FROM live_shows WHERE (updated_at,id)<(?,?) ORDER BY updated_at DESC,id DESC LIMIT 25', ['9999-12-31T23:59:59.999Z', '~'], 'idx_live_shows_updated'],
+  ['SELECT id FROM live_shows INDEXED BY idx_live_shows_updated WHERE deleted_at IS NULL AND (updated_at,id)<(?,?) ORDER BY updated_at DESC,id DESC LIMIT 25', ['9999-12-31T23:59:59.999Z', '~'], 'idx_live_shows_updated'],
   ['SELECT id FROM live_show_scenes WHERE show_id=? ORDER BY position', ['live_00000000000000000000000000000000'], 'idx_live_scenes_show_position'],
   ['SELECT id FROM live_show_versions WHERE show_id=? ORDER BY version_number DESC LIMIT 25', ['live_00000000000000000000000000000000'], 'idx_live_versions_show_number'],
   ['SELECT id FROM live_show_versions WHERE show_id=? AND idempotency_key=?', ['live_00000000000000000000000000000000', 'key'], 'idx_live_versions_show_idempotency'],
@@ -432,7 +435,7 @@ for (const [sql, args, index] of plans) {
 const pageTwoPlans = [
   ["SELECT id FROM toys_center_products INDEXED BY idx_toys_center_live_inventory WHERE status='published' AND availability='in stock' AND quantity>0 AND (updated_at,id)<(?,?) ORDER BY updated_at DESC,id DESC LIMIT 25", ['2026-09-20T00:00:00Z', 48], 'idx_toys_center_live_inventory'],
   ["SELECT id FROM toys_center_products INDEXED BY idx_toys_center_live_title WHERE status='published' AND availability='in stock' AND quantity>0 AND title COLLATE NOCASE>=? AND title COLLATE NOCASE<? AND (title COLLATE NOCASE,id)>(?,?) ORDER BY title COLLATE NOCASE ASC,id ASC LIMIT 25", ['alpha item', 'alpha iten', 'Alpha Item 024', 24], 'idx_toys_center_live_title'],
-  ['SELECT id FROM live_shows WHERE (updated_at,id)<(?,?) ORDER BY updated_at DESC,id DESC LIMIT 25', ['2026-09-20T00:00:00Z', 'live_00000000000000000000000000000000'], 'idx_live_shows_updated'],
+  ['SELECT id FROM live_shows INDEXED BY idx_live_shows_updated WHERE deleted_at IS NULL AND (updated_at,id)<(?,?) ORDER BY updated_at DESC,id DESC LIMIT 25', ['2026-09-20T00:00:00Z', 'live_00000000000000000000000000000000'], 'idx_live_shows_updated'],
 ];
 for (const [sql, args, index] of pageTwoPlans) {
   const detail = sqlite.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...args).map(row => row.detail).join(' | ');
@@ -608,7 +611,7 @@ do {
 } while (cursor);
 assert.equal(showIds.length, 52);
 assert.equal(new Set(showIds).size, 52, 'show keyset has no duplicates or omissions');
-const shippedShowListSql = d1.queries.find(sql => sql.startsWith('SELECT id,title,description,avatar_preset,output_profile,scene_count,revision,created_at,updated_at FROM live_shows WHERE (updated_at,id)<'));
+const shippedShowListSql = d1.queries.find(sql => sql.startsWith('SELECT id,title,description,avatar_preset,output_profile,scene_count,revision,created_by owner_id,created_at,updated_at FROM live_shows INDEXED BY idx_live_shows_updated WHERE deleted_at IS NULL'));
 for (const args of [
   ['9999-12-31T23:59:59.999Z', '~', 25],
   ['2026-09-20T00:00:00Z', 'live_ffffffffffffffffffffffffffffffff', 25],

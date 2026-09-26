@@ -2,7 +2,7 @@ import {
   THAI_VOICE_MISSING_MESSAGE,
   THAI_VOICE_MISSING_STATUS,
   createThaiSpeechNarrator,
-} from './live-package-thai-speech.js?v=020134';
+} from './live-package-thai-speech.js?v=020135';
 
 export const LIVE_HOST_ENDPOINT = '/api/admin/live-center/host-turn';
 export const LIVE_HOST_CONTEXT_LIMIT = 4;

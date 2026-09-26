@@ -1,4 +1,4 @@
-import { THAI_VOICE_MISSING_STATUS, createThaiSpeechNarrator } from './live-package-thai-speech.js?v=020134';
+import { THAI_VOICE_MISSING_STATUS, createThaiSpeechNarrator } from './live-package-thai-speech.js?v=020135';
 
 const PLAYER_PHASES = new Set(['ready', 'playing', 'paused', 'ended']);
 

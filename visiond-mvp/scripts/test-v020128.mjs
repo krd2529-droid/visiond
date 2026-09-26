@@ -13,10 +13,10 @@ const plan=segmentIds=>JSON.stringify({schema:LIVE_AI_PLAN_SCHEMA,segment_ids:se
 const forbidden=['สวัสดีค่ะ วันนี้ขอแนะนำสินค้าจาก VisionD','สินค้าที่นำเสนอคือ'];
 
 const visibleVersion=(await text('VERSION.txt')).trim();
-assert.ok(['v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134'].includes(visibleVersion));
+assert.ok(['v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134','v0.20.135'].includes(visibleVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${visibleVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${visibleVersion}`));
-assert.match(await text('public/live-center.html'),/live-center\.js\?v=020(?:128|129|130|131|132|133|134)/);
+assert.match(await text('public/live-center.html'),/live-center\.js\?v=020(?:128|129|130|131|132|133|134|135)/);
 assert.match(await text('FEATURE-MAP.md'),/ไม่โฆษณา opening สำเร็จรูป/);
 assert.equal(JSON.parse(await text('patch-ledgers/v0.20.128.json')).version,'v0.20.128');
 

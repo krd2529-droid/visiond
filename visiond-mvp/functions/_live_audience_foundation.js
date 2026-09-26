@@ -18,7 +18,9 @@ export const LIVE_AUDIENCE_PRODUCT_SQL = `SELECT p.id,p.title,p.price_cents,p.cu
   FROM toys_center_products p WHERE p.id=?
     AND EXISTS(SELECT 1 FROM live_show_scenes s WHERE s.show_id=? AND s.product_id=p.id)`;
 export const LIVE_AUDIENCE_CAPACITY_DISCARD_SQL = `INSERT INTO live_audience_events(id,session_id,show_id,owner_id,source,external_event_hash,kind,viewer_ref_hash,viewer_label,question_text,product_id,priority,answer_kind,answer_text,status,attempts,created_at,updated_at,expires_at)
-  VALUES(?,?,?,?,'local_test',?,?,'0000000000000000000000000000000000000000000000000000000000000000','','',?,?,?,'','discarded',0,?,?,?)`;
+  SELECT ?,?,?,?,'local_test',?,?,'0000000000000000000000000000000000000000000000000000000000000000','','',?,?,?,'','discarded',0,?,?,?
+  WHERE EXISTS(SELECT 1 FROM live_runtime_sessions WHERE id=? AND owner_id=? AND show_id=? AND mode='local_test' AND status='active')
+    AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`;
 export const LIVE_AUDIENCE_STOP_REDACT_SQL = `UPDATE live_audience_events SET status='discarded',viewer_ref_hash='0000000000000000000000000000000000000000000000000000000000000000',viewer_label='',question_text='',answer_text='',claim_token=NULL,claimed_at=NULL,updated_at=?
   WHERE id IN (
     SELECT e.id FROM live_audience_events e INDEXED BY idx_live_audience_ready_queue
@@ -89,7 +91,7 @@ const requestJson = async (request, maximum = 8192) => {
 };
 const showContext = async (env, rawId) => {
   const id = routeId(rawId, SHOW_ID, 'show id');
-  const show = await env.DB.prepare('SELECT id,created_by FROM live_shows WHERE id=?').bind(id).first();
+  const show = await env.DB.prepare('SELECT id,created_by FROM live_shows WHERE id=? AND deleted_at IS NULL').bind(id).first();
   if (!show) throw new LiveAudienceError('ไม่พบรายการไลฟ์', 404, 'LIVE_SHOW_NOT_FOUND');
   return { id, ownerId: Number(show.created_by) };
 };
@@ -181,21 +183,25 @@ export async function startLocalAudienceSession(ctx) {
     const now = new Date().toISOString();
     await cleanupExpired(ctx.env, show, now);
     const replay = await ctx.env.DB.prepare(`SELECT id,status,expires_at,create_idempotency_key,request_hash FROM live_runtime_sessions
-      WHERE owner_id=? AND show_id=? AND created_by=? AND create_idempotency_key=?`).bind(show.ownerId, show.id, auth.user.id, key).first();
+      WHERE owner_id=? AND show_id=? AND created_by=? AND create_idempotency_key=?
+        AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(show.ownerId, show.id, auth.user.id, key, show.id, show.ownerId).first();
     if (replay) {
       if (replay.request_hash !== requestHash) throw new LiveAudienceError('Idempotency-Key นี้ถูกใช้กับข้อมูลอื่นแล้ว', 409, 'LIVE_IDEMPOTENCY_CONFLICT');
       return liveJson({ viewer_id: auth.user.id, ok: replay.status === 'active', replayed: true, session: { id: replay.id, source: 'local_test', source_label: LIVE_LOCAL_TEST_LABEL, status: replay.status, expires_at: replay.expires_at } });
     }
     const active = await ctx.env.DB.prepare(`SELECT id FROM live_runtime_sessions INDEXED BY idx_live_runtime_active_owner_show_mode
-      WHERE owner_id=? AND show_id=? AND mode='local_test' AND status IN ('starting','active')`).bind(show.ownerId, show.id).first();
+      WHERE owner_id=? AND show_id=? AND mode='local_test' AND status IN ('starting','active')
+        AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(show.ownerId, show.id, show.id, show.ownerId).first();
     if (active) throw new LiveAudienceError('Local Test เปิดอยู่แล้ว กรุณาหยุด session เดิมก่อน', 409, 'LIVE_LOCAL_TEST_ALREADY_ACTIVE');
     const limited = await rateLimitIdentityAtomic(ctx.env, 'live_local_session', `${auth.user.id}:${show.id}`, { limit: 20, windowMinutes: 15, blockMinutes: 15 });
     if (limited.error) return liveJson({ error: 'เปิด Local Test บ่อยเกินไป กรุณาลองใหม่ภายหลัง', code: 'LIVE_LOCAL_TEST_RATE_LIMITED' }, 429, { 'retry-after': String(limited.retryAfter) });
     const id = `livert_${crypto.randomUUID().replaceAll('-', '')}`;
     const expiresAt = sessionExpiry(now);
     try {
-      await ctx.env.DB.prepare(`INSERT INTO live_runtime_sessions(id,show_id,owner_id,presenter_asset_id,presenter_sha256,mode,provider_adapter,provider_session_resource_id,status,session_epoch,create_idempotency_key,request_hash,created_by,created_at,updated_at,expires_at)
-        VALUES(?,?,?,NULL,NULL,'local_test','local-test',NULL,'active',1,?,?,?,?,?,?)`).bind(id, show.id, show.ownerId, key, requestHash, auth.user.id, now, now, expiresAt).run();
+      const inserted = await ctx.env.DB.prepare(`INSERT INTO live_runtime_sessions(id,show_id,owner_id,presenter_asset_id,presenter_sha256,mode,provider_adapter,provider_session_resource_id,status,session_epoch,create_idempotency_key,request_hash,created_by,created_at,updated_at,expires_at)
+        SELECT ?,?,?,NULL,NULL,'local_test','local-test',NULL,'active',1,?,?,?,?,?,?
+        WHERE EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(id, show.id, show.ownerId, key, requestHash, auth.user.id, now, now, expiresAt, show.id, show.ownerId).run();
+      if (!Number(inserted.meta?.changes)) throw new LiveAudienceError('รายการไลฟ์ถูกลบระหว่างเปิด Local Test', 409, 'LIVE_SHOW_DELETED');
     } catch (error) {
       if (!uniqueError(error)) throw error;
       const raced = await ctx.env.DB.prepare(`SELECT id,status,expires_at,request_hash FROM live_runtime_sessions
@@ -280,7 +286,8 @@ export async function createLocalAudienceEvent(ctx) {
     const expiresAt = eventExpiry(now);
     const insert = ctx.env.DB.prepare(`INSERT INTO live_audience_events(id,session_id,show_id,owner_id,source,external_event_hash,kind,viewer_ref_hash,viewer_label,question_text,product_id,priority,answer_kind,answer_text,status,attempts,created_at,updated_at,expires_at)
       SELECT ?,?,?,?,'local_test',?,?,?,?,?,?,?,?,?,'ready',0,?,?,?
-      WHERE EXISTS(SELECT 1 FROM live_runtime_sessions WHERE id=? AND owner_id=? AND show_id=? AND mode='local_test' AND status='active' AND session_epoch=? AND expires_at>?)`).bind(eventId, sessionId, show.id, show.ownerId, externalHash, kind, viewerHash, viewerLabel, question, productId, priority, answer.kind, answer.text, now, now, expiresAt, sessionId, show.ownerId, show.id, Number(session.session_epoch), now);
+      WHERE EXISTS(SELECT 1 FROM live_runtime_sessions WHERE id=? AND owner_id=? AND show_id=? AND mode='local_test' AND status='active' AND session_epoch=? AND expires_at>?)
+        AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(eventId, sessionId, show.id, show.ownerId, externalHash, kind, viewerHash, viewerLabel, question, productId, priority, answer.kind, answer.text, now, now, expiresAt, sessionId, show.ownerId, show.id, Number(session.session_epoch), now, show.id, show.ownerId);
     try {
       const result = await insert.run();
       if (!Number(result.meta?.changes)) throw new LiveAudienceError('Local Test session ถูกหยุดระหว่างรับเหตุการณ์', 409, 'LIVE_LOCAL_SESSION_INACTIVE');
@@ -292,7 +299,7 @@ export async function createLocalAudienceEvent(ctx) {
       if (!capacityError(error)) throw error;
       const discardedId = `livee_${crypto.randomUUID().replaceAll('-', '')}`;
       try {
-        await ctx.env.DB.prepare(LIVE_AUDIENCE_CAPACITY_DISCARD_SQL).bind(discardedId, sessionId, show.id, show.ownerId, externalHash, kind, productId, priority, answer.kind, now, now, expiresAt).run();
+        await ctx.env.DB.prepare(LIVE_AUDIENCE_CAPACITY_DISCARD_SQL).bind(discardedId, sessionId, show.id, show.ownerId, externalHash, kind, productId, priority, answer.kind, now, now, expiresAt, sessionId, show.ownerId, show.id, show.id, show.ownerId).run();
       } catch (discardError) { if (!uniqueError(discardError)) throw discardError; }
       return liveJson({ viewer_id: auth.user.id, accepted: false, reason: 'capacity', source: 'local_test', source_label: LIVE_LOCAL_TEST_LABEL });
     }

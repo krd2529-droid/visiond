@@ -71,7 +71,7 @@ const privateAuth = async ctx => {
 };
 const showContext = async (env, rawId) => {
   const id = routeId(rawId, SHOW_ID, 'show id');
-  const show = await env.DB.prepare('SELECT id,created_by,revision FROM live_shows WHERE id=?').bind(id).first();
+  const show = await env.DB.prepare('SELECT id,created_by,revision FROM live_shows WHERE id=? AND deleted_at IS NULL').bind(id).first();
   if (!show) throw new LivePortraitError('ไม่พบรายการไลฟ์', 404, 'LIVE_SHOW_NOT_FOUND');
   return { id, ownerId: Number(show.created_by), revision: Number(show.revision) };
 };
@@ -83,10 +83,17 @@ const requestJson = async (request, max = 8192) => {
   try { return JSON.parse(raw || '{}'); } catch { throw new LivePortraitError('JSON ไม่ถูกต้อง'); }
 };
 const cleanupRetryAt = attempts => new Date(Date.now() + Math.min(60, 2 ** Math.min(6, attempts)) * 60_000).toISOString();
-async function runObjectCleanupJob(env, job) {
-  if (!job || job.status === 'done') return true;
+async function runObjectCleanupJob(env, job, { force = false } = {}) {
+  if (!job || (!force && job.status === 'done')) return true;
   if (!env.FILES || typeof env.FILES.delete !== 'function' || typeof env.FILES.head !== 'function') return false;
   try {
+    if (!force && job.reason === 'orphan_guard' && !await env.FILES.head(job.object_key)) {
+      const attempts = Math.min(8, Number(job.attempts || 0) + 1);
+      await env.DB.prepare(`UPDATE live_portrait_object_cleanup_jobs
+        SET status='pending',attempts=?,next_attempt_at=?,last_error_code='R2_OBJECT_NOT_READY',updated_at=?
+        WHERE id=? AND owner_id=? AND show_id=? AND reason='orphan_guard' AND status IN ('reserved','pending','error')`).bind(attempts, cleanupRetryAt(attempts), new Date().toISOString(), job.id, job.owner_id, job.show_id).run();
+      return false;
+    }
     await env.FILES.delete(job.object_key);
     if (await env.FILES.head(job.object_key)) throw new Error('R2_OBJECT_STILL_PRESENT');
     const now = new Date().toISOString();
@@ -103,7 +110,7 @@ async function runObjectCleanupJob(env, job) {
   }
 }
 async function processObjectCleanup(env, show, limit = 24) {
-  const rows = (await env.DB.prepare(`SELECT id,owner_id,show_id,object_key,status,attempts
+  const rows = (await env.DB.prepare(`SELECT id,owner_id,show_id,object_key,reason,status,attempts
     FROM live_portrait_object_cleanup_jobs INDEXED BY idx_live_portrait_cleanup_due
     WHERE owner_id=? AND show_id=? AND status IN ('reserved','pending','error') AND attempts<8
       AND (next_attempt_at IS NULL OR next_attempt_at<=?)
@@ -572,14 +579,16 @@ export async function uploadLivePortrait(ctx) {
       const retried = await ctx.env.DB.prepare(`UPDATE live_portrait_upload_claims SET status='processing',lease_token=?,lease_expires_at=?,attempts=attempts+1,last_error_code='',updated_at=?
         WHERE id=? AND request_hash=? AND attempts<8
           AND (status='error' OR (status='processing' AND lease_expires_at<=?))
-        RETURNING id`).bind(uploadLease, leaseExpiresAt, now, claimReplay.id, requestHash, now).first();
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)
+        RETURNING id`).bind(uploadLease, leaseExpiresAt, now, claimReplay.id, requestHash, now, show.id, show.ownerId).first();
       if (!retried) {
         if (Number(claimReplay.attempts) >= 8) throw new LivePortraitError('อัปโหลดรูปนี้ลองซ้ำครบกำหนดแล้ว กรุณาใช้ Idempotency-Key ใหม่', 503, 'LIVE_PORTRAIT_UPLOAD_RETRY_EXHAUSTED');
         return liveJson({ error: 'รูปนี้กำลังประมวลผลจากคำขอเดิม กรุณารอสักครู่', code: 'LIVE_PORTRAIT_UPLOAD_IN_PROGRESS' }, 409, { 'retry-after': '2' });
       }
     } else {
       const inserted = await ctx.env.DB.prepare(`INSERT OR IGNORE INTO live_portrait_upload_claims(id,show_id,owner_id,uploaded_by,idempotency_key,request_hash,status,lease_token,lease_expires_at,attempts,result_asset_id,last_error_code,created_at,updated_at,expires_at)
-        VALUES(?,?,?,?,?,?,'processing',?,?,1,NULL,'',?,?,?)`).bind(uploadClaimId, show.id, show.ownerId, auth.user.id, key, requestHash, uploadLease, leaseExpiresAt, now, now, claimExpiresAt).run();
+        SELECT ?,?,?,?,?,?,'processing',?,?,1,NULL,'',?,?,?
+        WHERE EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(uploadClaimId, show.id, show.ownerId, auth.user.id, key, requestHash, uploadLease, leaseExpiresAt, now, now, claimExpiresAt, show.id, show.ownerId).run();
       if (!Number(inserted.meta?.changes)) {
       const existing = await ctx.env.DB.prepare(`SELECT id,request_hash,status,lease_expires_at,attempts,result_asset_id
         FROM live_portrait_upload_claims WHERE show_id=? AND uploaded_by=? AND idempotency_key=?`).bind(show.id, auth.user.id, key).first();
@@ -603,8 +612,20 @@ export async function uploadLivePortrait(ctx) {
     const nextBindingRevision = currentRevision + 1;
     objectKey = `live-center/presenters/${show.ownerId}/${show.id}/${id}.jpg`;
     guardId = `liveoc_${crypto.randomUUID().replaceAll('-', '')}`;
-    await ctx.env.DB.prepare(`INSERT INTO live_portrait_object_cleanup_jobs(id,owner_id,show_id,presenter_asset_id,object_key,reason,status,idempotency_key,attempts,next_attempt_at,last_error_code,created_at,updated_at)
-      VALUES(?,?,?,NULL,?,'orphan_guard','reserved',?,0,NULL,'',?,?)`).bind(guardId, show.ownerId, show.id, objectKey, `guard_${id}`, now, now).run();
+    const writerNow = new Date().toISOString();
+    const writerLeaseExpiresAt = new Date(Date.parse(writerNow) + 2 * 60 * 1000).toISOString();
+    const guardResults = await ctx.env.DB.batch([
+      ctx.env.DB.prepare(`UPDATE live_portrait_upload_claims SET lease_expires_at=?,updated_at=?
+        WHERE id=? AND request_hash=? AND status='processing' AND lease_token=?
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(writerLeaseExpiresAt, writerNow, uploadClaimId, requestHash, uploadLease, show.id, show.ownerId),
+      ctx.env.DB.prepare(`INSERT INTO live_portrait_object_cleanup_jobs(id,owner_id,show_id,presenter_asset_id,object_key,reason,status,idempotency_key,attempts,next_attempt_at,last_error_code,created_at,updated_at)
+        SELECT ?,?,?,NULL,?,'orphan_guard','reserved',?,0,?,'',?,?
+        WHERE EXISTS(SELECT 1 FROM live_portrait_upload_claims WHERE id=? AND request_hash=? AND status='processing' AND lease_token=? AND lease_expires_at=?)
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(guardId, show.ownerId, show.id, objectKey, `guard_${id}`, writerLeaseExpiresAt, writerNow, writerNow, uploadClaimId, requestHash, uploadLease, writerLeaseExpiresAt, show.id, show.ownerId),
+    ]);
+    if (!Number(guardResults[0]?.meta?.changes) || !Number(guardResults[1]?.meta?.changes)) {
+      throw new LivePortraitError('สิทธิ์ประมวลผลรูปหมดอายุ กรุณาลองใหม่', 409, 'LIVE_PORTRAIT_UPLOAD_LEASE_STALE');
+    }
     try {
       await ctx.env.FILES.put(objectKey, derivative.bytes, {
         httpMetadata: { contentType: SAFE_JPEG_CONTENT_TYPE, cacheControl: 'private, no-store' },
@@ -614,46 +635,59 @@ export async function uploadLivePortrait(ctx) {
         },
       });
     } catch (error) {
-      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first();
-      await runObjectCleanupJob(ctx.env, guard);
+      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,reason,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first();
+      await runObjectCleanupJob(ctx.env, guard, { force: true });
       throw error;
     }
     const replacementCleanupId = binding?.object_key ? `liveoc_${crypto.randomUUID().replaceAll('-', '')}` : '';
+    const finalizationNow = new Date().toISOString();
     const statements = [
       ctx.env.DB.prepare(`INSERT INTO live_presenter_assets(id,show_id,owner_id,object_key,mime_type,file_size,width,height,sha256,portrait_version,sanitizer_version,status,consent_policy,consent_attested_by,consent_attested_at,create_idempotency_key,request_hash,uploaded_by,created_at,updated_at)
         SELECT ?,?,?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?
-        WHERE EXISTS(SELECT 1 FROM live_portrait_upload_claims WHERE id=? AND request_hash=? AND status='processing' AND lease_token=?)`).bind(id, show.id, show.ownerId, objectKey, SAFE_JPEG_CONTENT_TYPE, derivative.bytes.byteLength, derivative.width, derivative.height, sha256, portraitVersion, LIVE_PORTRAIT_SANITIZER_VERSION, LIVE_PORTRAIT_CONSENT_POLICY, auth.user.id, now, key, requestHash, auth.user.id, now, now, uploadClaimId, requestHash, uploadLease),
+        WHERE EXISTS(SELECT 1 FROM live_portrait_upload_claims WHERE id=? AND request_hash=? AND status='processing' AND lease_token=? AND lease_expires_at=? AND lease_expires_at>?)
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(id, show.id, show.ownerId, objectKey, SAFE_JPEG_CONTENT_TYPE, derivative.bytes.byteLength, derivative.width, derivative.height, sha256, portraitVersion, LIVE_PORTRAIT_SANITIZER_VERSION, LIVE_PORTRAIT_CONSENT_POLICY, auth.user.id, now, key, requestHash, auth.user.id, now, now, uploadClaimId, requestHash, uploadLease, writerLeaseExpiresAt, finalizationNow, show.id, show.ownerId),
       ctx.env.DB.prepare(`INSERT INTO live_presenter_bindings(show_id,owner_id,presenter_asset_id,portrait_version,binding_revision,updated_by,updated_at)
-        VALUES(?,?,?,?,1,?,?)
+        SELECT ?,?,?,?,1,?,?
+        WHERE EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)
+          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND show_id=? AND owner_id=? AND status='pending')
         ON CONFLICT(show_id) DO UPDATE SET owner_id=excluded.owner_id,presenter_asset_id=excluded.presenter_asset_id,portrait_version=excluded.portrait_version,binding_revision=live_presenter_bindings.binding_revision+1,updated_by=excluded.updated_by,updated_at=excluded.updated_at
-        WHERE live_presenter_bindings.owner_id=? AND live_presenter_bindings.binding_revision=?`).bind(show.id, show.ownerId, id, portraitVersion, auth.user.id, now, show.ownerId, currentRevision),
+        WHERE live_presenter_bindings.owner_id=? AND live_presenter_bindings.binding_revision=?
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(show.id, show.ownerId, id, portraitVersion, auth.user.id, now, show.id, show.ownerId, id, show.id, show.ownerId, show.ownerId, currentRevision, show.id, show.ownerId),
       ctx.env.DB.prepare(`UPDATE live_presenter_assets SET status='replaced',updated_at=?
         WHERE show_id=? AND owner_id=? AND status='active' AND id<>?
-          AND EXISTS(SELECT 1 FROM live_presenter_bindings WHERE show_id=? AND owner_id=? AND presenter_asset_id=? AND binding_revision=?)`).bind(now, show.id, show.ownerId, id, show.id, show.ownerId, id, nextBindingRevision),
+          AND EXISTS(SELECT 1 FROM live_presenter_bindings WHERE show_id=? AND owner_id=? AND presenter_asset_id=? AND binding_revision=?)
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(now, show.id, show.ownerId, id, show.id, show.ownerId, id, nextBindingRevision, show.id, show.ownerId),
       ctx.env.DB.prepare(`UPDATE live_presenter_assets SET status='active',updated_at=?
         WHERE id=? AND status='pending'
-          AND EXISTS(SELECT 1 FROM live_presenter_bindings WHERE show_id=? AND owner_id=? AND presenter_asset_id=? AND binding_revision=?)`).bind(now, id, show.id, show.ownerId, id, nextBindingRevision),
+          AND EXISTS(SELECT 1 FROM live_presenter_bindings WHERE show_id=? AND owner_id=? AND presenter_asset_id=? AND binding_revision=?)
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(now, id, show.id, show.ownerId, id, nextBindingRevision, show.id, show.ownerId),
       ...Array.from({ length: LIVE_RUNTIME_MODE_LIMIT }, () => ctx.env.DB.prepare(`UPDATE live_audience_events SET status='discarded',viewer_ref_hash=?,viewer_label='',question_text='',answer_text='',claim_token=NULL,claimed_at=NULL,updated_at=?
         WHERE id IN (SELECT e.id FROM live_audience_events e INDEXED BY idx_live_audience_owner_show_cursor
           WHERE e.owner_id=? AND e.show_id=? AND e.status IN ('ready','claimed')
             AND e.session_id IN (SELECT id FROM live_runtime_sessions
               WHERE owner_id=? AND show_id=? AND presenter_asset_id<>? AND status IN ('starting','active'))
             AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')
-          ORDER BY e.created_at DESC,e.id DESC LIMIT 24)`).bind(REDACTED_VIEWER_HASH, now, show.ownerId, show.id, show.ownerId, show.id, id, id)),
+            AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)
+          ORDER BY e.created_at DESC,e.id DESC LIMIT 24)`).bind(REDACTED_VIEWER_HASH, now, show.ownerId, show.id, show.ownerId, show.id, id, id, show.id, show.ownerId)),
       ctx.env.DB.prepare(`UPDATE live_runtime_sessions SET status='stopped',session_epoch=session_epoch+1,updated_at=?,stopped_at=?
         WHERE owner_id=? AND show_id=? AND presenter_asset_id<>? AND status IN ('starting','active')
-          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')`).bind(now, now, show.ownerId, show.id, id, id),
+          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(now, now, show.ownerId, show.id, id, id, show.id, show.ownerId),
       ctx.env.DB.prepare(`UPDATE live_provider_resources SET status='delete_pending',cleanup_idempotency_key=COALESCE(cleanup_idempotency_key,?),next_cleanup_at=?,updated_at=?
         WHERE owner_id=? AND show_id=? AND presenter_asset_id<>? AND status IN ('creating','active','error')
-          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')`).bind(`cleanup_${id}`, now, now, show.ownerId, show.id, id, id),
+          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(`cleanup_${id}`, now, now, show.ownerId, show.id, id, id, show.id, show.ownerId),
       ...(binding?.object_key ? [ctx.env.DB.prepare(`INSERT OR IGNORE INTO live_portrait_object_cleanup_jobs(id,owner_id,show_id,presenter_asset_id,object_key,reason,status,idempotency_key,attempts,next_attempt_at,last_error_code,created_at,updated_at)
         SELECT ?,?,?,?,?, 'replaced','pending',?,0,?,'',?,? FROM live_presenter_assets
-        WHERE id=? AND status='active'`).bind(replacementCleanupId, show.ownerId, show.id, binding.id, binding.object_key, `replace_${binding.id}`, now, now, now, id)] : []),
+        WHERE id=? AND status='active'
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(replacementCleanupId, show.ownerId, show.id, binding.id, binding.object_key, `replace_${binding.id}`, now, now, now, id, show.id, show.ownerId)] : []),
       ctx.env.DB.prepare(`UPDATE live_portrait_upload_claims SET status='completed',lease_token=NULL,lease_expires_at=NULL,result_asset_id=?,last_error_code='',updated_at=?,completed_at=?
-        WHERE id=? AND request_hash=? AND status='processing' AND lease_token=?
-          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')`).bind(id, now, now, uploadClaimId, requestHash, uploadLease, id),
+        WHERE id=? AND request_hash=? AND status='processing' AND lease_token=? AND lease_expires_at=? AND lease_expires_at>?
+          AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')
+          AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(id, now, now, uploadClaimId, requestHash, uploadLease, writerLeaseExpiresAt, finalizationNow, id, show.id, show.ownerId),
       ctx.env.DB.prepare(`DELETE FROM live_portrait_object_cleanup_jobs WHERE id=?
-        AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')`).bind(guardId, id),
+        AND EXISTS(SELECT 1 FROM live_presenter_assets WHERE id=? AND status='active')
+        AND EXISTS(SELECT 1 FROM live_shows WHERE id=? AND created_by=? AND deleted_at IS NULL)`).bind(guardId, id, show.id, show.ownerId),
       ctx.env.DB.prepare(`DELETE FROM live_presenter_assets WHERE id=? AND status='pending'
         AND NOT EXISTS(SELECT 1 FROM live_presenter_bindings WHERE show_id=? AND owner_id=? AND presenter_asset_id=? AND binding_revision=?)`).bind(id, show.id, show.ownerId, id, nextBindingRevision),
     ];
@@ -664,8 +698,8 @@ export async function uploadLivePortrait(ctx) {
         throw new LivePortraitError('สิทธิ์ประมวลผลรูปหมดอายุ กรุณาลองใหม่', 409, 'LIVE_PORTRAIT_UPLOAD_LEASE_STALE');
       }
     } catch (error) {
-      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first();
-      await runObjectCleanupJob(ctx.env, guard); objectKey = '';
+      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,reason,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first();
+      await runObjectCleanupJob(ctx.env, guard, { force: true }); objectKey = '';
       const raced = await ctx.env.DB.prepare(`SELECT id,show_id,portrait_version,mime_type,file_size,width,height,sha256,status,consent_policy,consent_attested_at,created_at,request_hash
         FROM live_presenter_assets WHERE show_id=? AND uploaded_by=? AND create_idempotency_key=?`).bind(show.id, auth.user.id, key).first();
       if (raced?.request_hash === requestHash) return liveJson({ viewer_id: auth.user.id, ok: true, replayed: true, item: publicAsset(raced, new URL(ctx.request.url).origin) });
@@ -674,14 +708,14 @@ export async function uploadLivePortrait(ctx) {
     const created = await ctx.env.DB.prepare(`SELECT id,show_id,portrait_version,mime_type,file_size,width,height,sha256,status,consent_policy,consent_attested_at,created_at
       FROM live_presenter_assets WHERE id=? AND show_id=? AND owner_id=? AND status='active'`).bind(id, show.id, show.ownerId).first();
     if (!created) {
-      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first();
-      await runObjectCleanupJob(ctx.env, guard); objectKey = '';
+      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,reason,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first();
+      await runObjectCleanupJob(ctx.env, guard, { force: true }); objectKey = '';
       throw new LivePortraitError('รูปผู้นำเสนอถูกเปลี่ยนจากอีกหน้าต่าง กรุณาโหลดใหม่', 409, 'LIVE_PORTRAIT_STALE_BINDING');
     }
     objectKey = '';
     let cleanupPending = false;
     if (binding?.object_key) {
-      const cleanup = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,status,attempts FROM live_portrait_object_cleanup_jobs WHERE object_key=?').bind(binding.object_key).first();
+      const cleanup = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,reason,status,attempts FROM live_portrait_object_cleanup_jobs WHERE object_key=?').bind(binding.object_key).first();
       cleanupPending = !await runObjectCleanupJob(ctx.env, cleanup);
     }
     return liveJson({ viewer_id: auth.user.id, ok: true, item: publicAsset(created, new URL(ctx.request.url).origin), binding_revision: nextBindingRevision, cleanup_pending: cleanupPending }, 201);
@@ -692,8 +726,8 @@ export async function uploadLivePortrait(ctx) {
         WHERE id=? AND status='processing' AND lease_token=?`).bind(code, new Date().toISOString(), uploadClaimId, uploadLease).run().catch(() => undefined);
     }
     if (objectKey && guardId) {
-      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first().catch(() => null);
-      await runObjectCleanupJob(ctx.env, guard);
+      const guard = await ctx.env.DB.prepare('SELECT id,owner_id,show_id,object_key,reason,status,attempts FROM live_portrait_object_cleanup_jobs WHERE id=?').bind(guardId).first().catch(() => null);
+      await runObjectCleanupJob(ctx.env, guard, { force: true });
     }
     return errorResponse(error) || serverFailure(error);
   }

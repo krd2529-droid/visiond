@@ -105,14 +105,14 @@ const openerSource = await readFile(new URL('../public/live-package-open.js', im
 const hostSource = await readFile(new URL('../public/live-package-ai-host.js', import.meta.url), 'utf8');
 const playerSource = await readFile(new URL('../public/live-package-player.js', import.meta.url), 'utf8');
 const releasedVersion = (await readFile(new URL('../VERSION.txt', import.meta.url), 'utf8')).trim();
-const expectedVersion = releasedVersion === 'v0.20.134' ? '020134' : '020133';
+const expectedVersion = releasedVersion === 'v0.20.135' ? '020135' : releasedVersion === 'v0.20.134' ? '020134' : '020133';
 const expectedEdges = [
   'live-center-package.js',
   'live-package-ai-host.js',
   'live-package-presenter.js',
   'live-package-player.js',
   'live-package-thai-speech.js',
-  ...(expectedVersion === '020134' ? ['live-photo-avatar.js'] : []),
+  ...(expectedVersion === '020133' ? [] : ['live-photo-avatar.js']),
 ];
 const versionedEntry = openerHtml.includes(`/live-package-open.js?v=${expectedVersion}`);
 const versionedOpenerEdges = expectedEdges.every(file => openerSource.includes(`./${file}?v=${expectedVersion}`));

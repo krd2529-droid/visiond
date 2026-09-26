@@ -44,6 +44,7 @@ db.exec(`
 `);
 db.exec(read('migrations/0112_visiond_live_center.sql'));
 db.exec(read('migrations/0113_live_photo_avatar_audience.sql'));
+db.exec(read('migrations/0114_live_show_tombstones.sql'));
 
 const showId = 'live_11111111111111111111111111111111';
 const sessionId = 'livert_22222222222222222222222222222222';
@@ -77,6 +78,7 @@ const capacityId = 'livee_ffffffffffffffffffffffffffffffff';
 assert.doesNotThrow(() => db.prepare(LIVE_AUDIENCE_CAPACITY_DISCARD_SQL).run(
   capacityId, sessionId, showId, 1, 'f'.repeat(64), 'viewer_join',
   101, 10, 'greeting', now, now, expires,
+  sessionId, 1, showId, showId, 1,
 ), 'capacity tombstone SQL must have exactly aligned columns and binds');
 assert.deepEqual({ ...db.prepare('SELECT product_id,priority,answer_kind,answer_text,status,viewer_ref_hash,viewer_label,question_text FROM live_audience_events WHERE id=?').get(capacityId) }, {
   product_id: 101,
