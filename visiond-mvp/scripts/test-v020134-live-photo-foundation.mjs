@@ -14,8 +14,8 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const sha256 = relative => createHash('sha256').update(fs.readFileSync(path.join(root, relative))).digest('hex').toUpperCase();
 
 const releasedVersion = read('VERSION.txt').trim();
-const assetVersion = releasedVersion === 'v0.20.135' ? '020135' : '020134';
-assert.ok(['v0.20.134', 'v0.20.135'].includes(releasedVersion));
+const assetVersion = releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : '020134';
+assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136'].includes(releasedVersion));
 assert.ok(read('public/index.html').includes(`WEB ${releasedVersion}`));
 assert.ok(read('public/admin.html').includes(`ADMIN ${releasedVersion}`));
 assert.equal(sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'package schema-v1 parser stays byte-identical');

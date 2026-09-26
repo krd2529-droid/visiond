@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/live-center.css?v=020135">
+  <link rel="stylesheet" href="/live-center.css?v=020136">
 </head>
 <body>
   <header class="live-toolbar">
@@ -16,13 +16,12 @@
     <div class="live-title">
       <small>VISIOND CONTROL · LIVE-CENTER-001</small>
       <h1>VisionD Live Center</h1>
-      <p>จัดลำดับสินค้าและบทพูด แล้วสร้างแพ็กเกจสำหรับเปิดบนเครื่องไลฟ์</p>
+      <p>ทำตามขั้นตอน 1–8 จากรายละเอียดรายการไปจนถึงเปิดแพ็กเกจบนเครื่องไลฟ์</p>
     </div>
-    <a class="vds-btn vds-btn--secondary" href="/live-package-open.html">เปิดไฟล์ .visiondlive</a>
   </header>
 
   <main class="live-shell" data-feature="LIVE-CENTER-001">
-    <aside class="live-sidebar vds-card">
+    <aside class="live-sidebar vds-card" aria-label="รายการไลฟ์ที่บันทึกไว้">
       <div class="section-head">
         <div><small>รายการล่าสุด</small><h2>รายการไลฟ์</h2></div>
         <button id="newShow" class="vds-btn vds-btn--primary" type="button">+ สร้างใหม่</button>
@@ -31,10 +30,10 @@
       <button id="loadMoreShows" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดรายการเพิ่ม</button>
     </aside>
 
-    <section class="live-workspace">
-      <form id="showForm" class="vds-card show-form">
+    <section class="live-workspace" aria-label="ขั้นตอนสร้างรายการไลฟ์">
+      <form id="showForm" class="vds-card show-form workflow-step" data-workflow-step="1" aria-labelledby="editorTitle">
         <div class="section-head">
-          <div><small id="showRevision">รายการใหม่</small><h2 id="editorTitle">สร้างรายการไลฟ์</h2></div>
+          <div><small>ขั้นตอนที่ 1 · รายละเอียดรายการ</small><h2 id="editorTitle">สร้างรายการไลฟ์</h2><p id="showRevision" class="workflow-meta">รายการใหม่</p></div>
           <span class="privacy-pill">Boss/Admin · private</span>
         </div>
         <div class="show-fields">
@@ -43,16 +42,42 @@
           <label class="vds-field">ผู้นำเสนอ<select id="avatarPreset"><option value="visiond-default">VisionD เริ่มต้น</option><option value="presenter-placeholder">Presenter placeholder</option><option value="none">ไม่ใช้ Avatar</option></select></label>
         </div>
         <label class="vds-field">คำอธิบาย<textarea id="showDescription" rows="3" maxlength="2000" placeholder="โน้ตภายในของรายการ"></textarea></label>
+      </form>
+
+      <section class="vds-card product-picker workflow-step" data-workflow-step="2" aria-labelledby="workflowStep2Title">
+        <div class="section-head">
+          <div><small>ขั้นตอนที่ 2 · เลือกสินค้า</small><h2 id="workflowStep2Title">เลือกสินค้าเข้าฉาก</h2></div>
+          <span id="sceneCount" class="count-pill">0 / 24 ฉาก</span>
+        </div>
+        <div class="search-row">
+          <label class="vds-field">ค้นหาชื่อขึ้นต้น<input id="productSearch" type="search" maxlength="200" placeholder="พิมพ์ชื่อสินค้า"></label>
+          <button id="searchProducts" class="vds-btn vds-btn--secondary" type="button">ค้นหา</button>
+        </div>
+        <div id="productList" class="product-grid" aria-live="polite"><p class="empty">กำลังโหลดสินค้า…</p></div>
+        <button id="loadMoreProducts" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดสินค้าเพิ่ม</button>
+        <p id="productStatus" class="status-line" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="vds-card scene-card workflow-step" data-workflow-step="3" aria-labelledby="workflowStep3Title">
+        <div class="section-head"><div><small>ขั้นตอนที่ 3 · จัดลำดับและเขียนบท</small><h2 id="workflowStep3Title">ฉากและบทพูด</h2></div><span>ลากไม่จำเป็น · ใช้ปุ่มขึ้น/ลง</span></div>
+        <div id="sceneList" class="scene-list" aria-live="polite"><p class="empty">ยังไม่มีฉาก เลือกสินค้าด้านบนได้เลย</p></div>
+      </section>
+
+      <section class="vds-card workflow-action-card workflow-step" data-workflow-step="4" aria-labelledby="workflowStep4Title">
+        <div class="section-head">
+          <div><small>ขั้นตอนที่ 4 · บันทึกร่าง</small><h2 id="workflowStep4Title">บันทึกรายละเอียด สินค้า ฉาก และบทพูด</h2></div>
+        </div>
+        <p class="help">ตรวจฉากและบทพูดด้านบนให้เรียบร้อย แล้วบันทึกร่างก่อนใช้ Photo Avatar, Local Test หรือสร้างเวอร์ชัน</p>
         <div class="actions">
-          <button id="saveShow" class="vds-btn vds-btn--primary" type="submit">บันทึกร่าง</button>
+          <button id="saveShow" class="vds-btn vds-btn--primary" type="submit" form="showForm">บันทึกร่าง</button>
           <button id="refreshShow" class="vds-btn vds-btn--secondary" type="button" disabled>โหลดข้อมูลล่าสุด</button>
         </div>
         <p id="showStatus" class="status-line" role="status" aria-live="polite">เลือกหรือสร้างรายการเพื่อเริ่มทำงาน</p>
-      </form>
+      </section>
 
-      <section id="photoPresenterPanel" class="vds-card live-foundation-card" aria-labelledby="photoPresenterTitle" data-foundation-state="idle">
+      <section id="photoPresenterPanel" class="vds-card live-foundation-card workflow-step" data-workflow-step="5" aria-labelledby="photoPresenterTitle" data-foundation-state="idle">
         <div class="section-head">
-          <div><small>PRIVATE · CONSENT REQUIRED</small><h2 id="photoPresenterTitle">Photo Avatar สำหรับรายการนี้</h2></div>
+          <div><small>ขั้นตอนที่ 5 · ไม่บังคับ · PRIVATE · CONSENT REQUIRED</small><h2 id="photoPresenterTitle">Photo Avatar สำหรับรายการนี้</h2></div>
           <span id="integrationHealthBadge" class="privacy-pill">ยังไม่ได้เชื่อมต่อ</span>
         </div>
         <p class="help">รูปเก็บแบบส่วนตัวและไม่ใส่ในไฟล์ .visiondlive ระบบรับเฉพาะบุคคลผู้ใหญ่ที่เจ้าของรูปอนุญาตให้ทำภาพเคลื่อนไหว การอัปโหลดจะเลือกใช้รูปใหม่กับรายการนี้ทันที</p>
@@ -77,28 +102,9 @@
         <p id="portraitStatus" class="status-line" role="status" aria-live="polite">เลือกหรือบันทึกรายการก่อน</p>
       </section>
 
-      <section class="vds-card product-picker">
+      <section id="audienceTestPanel" class="vds-card live-foundation-card workflow-step" data-workflow-step="6" aria-labelledby="audienceTestTitle" data-local-test-state="stopped">
         <div class="section-head">
-          <div><small>สินค้า Toys Center ที่พร้อมขาย</small><h2>เลือกสินค้าเข้าฉาก</h2></div>
-          <span id="sceneCount" class="count-pill">0 / 24 ฉาก</span>
-        </div>
-        <div class="search-row">
-          <label class="vds-field">ค้นหาชื่อขึ้นต้น<input id="productSearch" type="search" maxlength="200" placeholder="พิมพ์ชื่อสินค้า"></label>
-          <button id="searchProducts" class="vds-btn vds-btn--secondary" type="button">ค้นหา</button>
-        </div>
-        <div id="productList" class="product-grid" aria-live="polite"><p class="empty">กำลังโหลดสินค้า…</p></div>
-        <button id="loadMoreProducts" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดสินค้าเพิ่ม</button>
-        <p id="productStatus" class="status-line" role="status" aria-live="polite"></p>
-      </section>
-
-      <section class="vds-card scene-card">
-        <div class="section-head"><div><small>ลำดับการนำเสนอ</small><h2>ฉากและบทพูด</h2></div><span>ลากไม่จำเป็น · ใช้ปุ่มขึ้น/ลง</span></div>
-        <div id="sceneList" class="scene-list" aria-live="polite"><p class="empty">ยังไม่มีฉาก เลือกสินค้าด้านบนได้เลย</p></div>
-      </section>
-
-      <section id="audienceTestPanel" class="vds-card live-foundation-card" aria-labelledby="audienceTestTitle" data-local-test-state="stopped">
-        <div class="section-head">
-          <div><small>LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม</small><h2 id="audienceTestTitle">ทดสอบคำทักทายและ Q&amp;A แบบมีขอบเขต</h2></div>
+          <div><small>ขั้นตอนที่ 6 · ไม่บังคับ · LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม</small><h2 id="audienceTestTitle">ทดสอบคำทักทายและ Q&amp;A แบบมีขอบเขต</h2></div>
           <span id="audienceQueueCount" class="count-pill">0 / 24</span>
         </div>
         <p class="help">เครื่องมือนี้สร้างเหตุการณ์ทดสอบที่ติดป้ายชัดเจนเท่านั้น ไม่อ่าน Facebook/TikTok และไม่เริ่มไลฟ์จริง คำตอบอ้างอิงเฉพาะสินค้าที่อยู่ในรายการนี้</p>
@@ -118,9 +124,9 @@
         <p id="audienceStatus" class="status-line" role="status" aria-live="polite">บันทึกรายการก่อนเริ่ม Local Test</p>
       </section>
 
-      <section class="vds-card package-card">
+      <section class="vds-card package-card workflow-step" data-workflow-step="7" aria-labelledby="workflowStep7Title">
         <div class="section-head">
-          <div><small>เวอร์ชันอ่านอย่างเดียว</small><h2>แพ็กเกจสำหรับเครื่องไลฟ์</h2></div>
+          <div><small>ขั้นตอนที่ 7 · สร้างและดาวน์โหลด</small><h2 id="workflowStep7Title">แพ็กเกจสำหรับเครื่องไลฟ์</h2></div>
           <button id="createVersion" class="vds-btn vds-btn--primary" type="button" disabled>สร้างเวอร์ชัน</button>
         </div>
         <p class="help">ไฟล์มีรูปหลักฝังอยู่ในตัว เปิดและตรวจได้โดยไม่ใช้รหัสผ่าน Token หรืออินเทอร์เน็ต และยังไม่เริ่มไลฟ์จริง</p>
@@ -128,9 +134,17 @@
         <button id="loadMoreVersions" class="vds-btn vds-btn--secondary full" type="button" hidden>โหลดเวอร์ชันเพิ่ม</button>
         <p id="versionStatus" class="status-line" role="status" aria-live="polite"></p>
       </section>
+
+      <section class="vds-card workflow-action-card workflow-step" data-workflow-step="8" aria-labelledby="workflowStep8Title">
+        <div class="section-head">
+          <div><small>ขั้นตอนที่ 8 · เปิดไฟล์ที่ดาวน์โหลด</small><h2 id="workflowStep8Title">เปิดแพ็กเกจ .visiondlive</h2></div>
+        </div>
+        <p class="help">ดาวน์โหลดเวอร์ชันจากขั้นตอนที่ 7 ก่อน แล้วเปิดไฟล์บนเครื่องไลฟ์เพื่อตรวจและเล่นแบบ local</p>
+        <div class="actions"><a class="vds-btn vds-btn--secondary" href="/live-package-open.html">เปิดไฟล์ .visiondlive</a></div>
+      </section>
     </section>
   </main>
-  <script src="/live-center.js?v=020135" type="module"></script>
+  <script src="/live-center.js?v=020136" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>

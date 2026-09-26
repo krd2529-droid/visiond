@@ -1,0 +1,50 @@
+{
+  "version": "v0.20.136",
+  "feature": "LIVE-CENTER-001",
+  "status": "patch_ready",
+  "base_commit": "62298a65",
+  "scope": "Reorder the Live Center main workspace in real DOM, visual and keyboard order so every primary action follows its prerequisites: details, products, scenes/scripts, save/refresh/status, optional Photo Avatar, optional Local Test, create/download version, then open the downloaded package. Preserve sidebar navigation, form submission, state gates and all API/auth/delete/data behavior.",
+  "files": [
+    ".codex/active-work.md",
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.136.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/live-center.css",
+    "public/live-center.html",
+    "public/live-center.js",
+    "public/live-package-ai-host.js",
+    "public/live-package-open.html",
+    "public/live-package-open.js",
+    "public/live-package-player.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129.mjs",
+    "scripts/test-v020130.mjs",
+    "scripts/test-v020131.mjs",
+    "scripts/test-v020132.mjs",
+    "scripts/test-v020133-live-esm-cache.mjs",
+    "scripts/test-v020133.mjs",
+    "scripts/test-v020134-live-photo-foundation.mjs",
+    "scripts/test-v020134.mjs",
+    "scripts/test-v020135.mjs",
+    "scripts/test-v020136-live-center-workflow-browser.mjs",
+    "scripts/test-v020136.mjs"
+  ],
+  "verification": {
+    "workflow_browser": "PASS: installed Chrome desktop and 390px prove exact real DOM/visual/Tab steps 1-8, a separate sidebar, one post-version opener, native external form submit including Enter, failed-save retention, successful downstream gates, dirty version disablement, download-before-open and late-refresh suppression.",
+    "compatibility": "PASS: npm run test:v020136 runs the focused release umbrella and the complete connected v0.20.135 through v0.20.122 chain, including Live Center delete/API/auth, Photo Avatar, audience, AI scripts, returning-cache graph, package playback, presenter and vSport contracts.",
+    "release": "PASS: evergreen regression 10/10, WEB/ADMIN v0.20.136 parity, predeploy 10 PASS / 7 established configuration WARN / 0 FAIL, syntax for 18 changed JavaScript modules and git diff --check.",
+    "independent": "PASS: Mark independently verified frozen tree 1fcca5a760e656441eff554f47616816ed2a3683 with exact 28/28 ledger-stage scope, clean cached package split, installed-Chrome desktop/390 workflow behavior, the full v0.20.136 through v0.20.122 chain, regression 10/10, visible-version, predeploy and syntax gates; report .agents/reports/mark-live-center-linear-workflow-v020136-final-verification-20260927.md."
+  },
+  "release": {
+    "status": "not committed",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "pages_deploy": "not performed"
+  }
+}

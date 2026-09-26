@@ -1,5 +1,5 @@
-import { createLiveAudienceQueue } from './live-audience-queue.js?v=020135';
-import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020135';
+import { createLiveAudienceQueue } from './live-audience-queue.js?v=020136';
+import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020136';
 
 const API_ROOT = '/api/admin/live-center';
 const CACHE_TTL_MS = 15_000;
