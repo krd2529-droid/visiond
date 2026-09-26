@@ -6,9 +6,11 @@ import './test-v020136-live-center-workflow-browser.mjs';
 const root = new URL('../', import.meta.url);
 const text = relative => readFile(new URL(relative, root), 'utf8');
 
-assert.equal((await text('VERSION.txt')).trim(), 'v0.20.136');
-assert.match(await text('public/index.html'), /WEB v0\.20\.136/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.136/);
+const releasedVersion = (await text('VERSION.txt')).trim();
+const assetVersion = releasedVersion === 'v0.20.137' ? '020137' : '020136';
+assert.ok(['v0.20.136', 'v0.20.137'].includes(releasedVersion));
+assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
+assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020136'], 'node scripts/test-v020136.mjs && npm run test:v020135');
 
 const editorHtml = await text('public/live-center.html');
@@ -27,8 +29,8 @@ const graph = await Promise.all([
   'public/live-package-ai-host.js',
   'public/live-package-player.js',
 ].map(text));
-assert.equal(graph.some(source => source.includes('?v=020135')), false, 'Live Center graph must not mix the previous cache key');
-assert.ok(graph.every(source => source.includes('?v=020136')), 'every Live Center entry or nested module source carries the v0.20.136 cache key');
+assert.equal(graph.some(source => source.includes(`?v=${assetVersion === '020137' ? '020136' : '020135'}`)), false, 'Live Center graph must not mix the previous cache key');
+assert.ok(graph.every(source => source.includes(`?v=${assetVersion}`)), `every Live Center entry or nested module source carries the ${releasedVersion} cache key`);
 
 const ledger = JSON.parse(await text('patch-ledgers/v0.20.136.json'));
 assert.equal(ledger.version, 'v0.20.136');

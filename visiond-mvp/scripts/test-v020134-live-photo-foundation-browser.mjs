@@ -202,20 +202,30 @@ try {
   await editor.setViewportSize({ width: 1440, height: 1000 });
   await editor.goto(`${base}/live-center.html`);
   await editor.locator('.show-row').filter({ hasText: show.title }).click();
+  await editor.waitForFunction(() => !document.querySelector('#presenterPortrait')?.disabled);
   await editor.waitForFunction(() => document.querySelector('#integrationHealthBadge')?.textContent === 'ยังไม่ได้เชื่อมต่อ');
   assert.match(await editor.locator('#photoPresenterPanel').innerText(), /PRIVATE · CONSENT REQUIRED/);
+  assert.equal(await editor.locator('#photoPresenterPanel input[type="checkbox"]').count(), 0, 'Photo Avatar has no consent checkboxes');
+  assert.equal(await editor.locator('#presenterConsentNotice').innerText(), 'เมื่อกด “ยืนยันสิทธิ์และอัปโหลด” คุณรับรองว่ามีสิทธิ์ใช้รูป บุคคลในรูปเป็นผู้ใหญ่ที่อนุญาตให้ใช้ภาพ อนุญาตให้นำภาพไปสร้างภาพเคลื่อนไหว และไม่ใช่การเลียนแบบบุคคลสาธารณะ');
+  assert.equal(await editor.locator('#uploadPresenterPortrait').innerText(), 'ยืนยันสิทธิ์และอัปโหลด');
+  assert.equal(await editor.locator('#uploadPresenterPortrait').getAttribute('aria-describedby'), 'presenterConsentNotice');
+  assert.equal(await editor.locator('#uploadPresenterPortrait').isDisabled(), true);
   assert.match(await editor.locator('#audienceTestPanel').innerText(), /LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม/);
   assert.equal(await editor.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1), true, 'desktop editor has no horizontal overflow');
 
   await editor.locator('#presenterPortrait').setInputFiles({ name: 'consented-person.jpg', mimeType: 'image/jpeg', buffer: fixtureImage });
-  for (const id of ['presenterRightsConsent', 'presenterAnimationConsent', 'presenterAuthorizedAdult']) await editor.locator(`#${id}`).check();
+  assert.equal(await editor.locator('#uploadPresenterPortrait').isEnabled(), true, 'valid file selection enables the explicit consent action');
+  assert.equal(metrics.uploadKeys.length, 0, 'file selection alone sends no upload');
   await editor.locator('#uploadPresenterPortrait').click();
   await editor.waitForFunction(() => document.querySelector('#portraitStatus')?.textContent.includes('ใช้เวลานานเกินไป'));
+  assert.equal(await editor.locator('#uploadPresenterPortrait').isEnabled(), true, 'ambiguous failure keeps explicit retry available');
   await editor.locator('#uploadPresenterPortrait').click();
   await editor.waitForFunction(() => document.querySelector('#portraitStatus')?.textContent.includes('เลือกใช้รูปส่วนตัวแล้ว'));
   assert.equal(metrics.uploadKeys.length, 2);
   assert.ok(metrics.uploadKeys[0]);
   assert.equal(metrics.uploadKeys[1], metrics.uploadKeys[0], 'ambiguous upload retry reuses the same Idempotency-Key');
+  assert.equal(await editor.locator('#presenterPortrait').inputValue(), '', 'success clears the selected file');
+  assert.equal(await editor.locator('#uploadPresenterPortrait').isDisabled(), true, 'success disables upload until another valid selection');
 
   await editor.locator('#deletePresenterPortrait').click();
   await editor.waitForFunction(() => document.querySelector('#portraitStatus')?.textContent.includes('response สูญหาย'));
@@ -269,4 +279,4 @@ try {
   await new Promise(resolve => server.close(resolve));
 }
 
-console.log('v0.20.134 real-Chrome consent UI, stable retry identity, offline opener, disconnected video OBS and 390px checks passed');
+console.log('v0.20.134 real-Chrome explicit consent action, stable retry identity, offline opener, disconnected video OBS and 390px checks passed');

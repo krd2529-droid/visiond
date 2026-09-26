@@ -1,8 +1,9 @@
-import { createLiveAudienceQueue } from './live-audience-queue.js?v=020136';
-import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020136';
+import { createLiveAudienceQueue } from './live-audience-queue.js?v=020137';
+import { LIVE_PORTRAIT_SOURCE_MAX_BYTES, createLivePortraitImagePipeline } from './live-portrait-image.js?v=020137';
 
 const API_ROOT = '/api/admin/live-center';
 const CACHE_TTL_MS = 15_000;
+const LIVE_PORTRAIT_SOURCE_TYPES = new Set(['image/jpeg', 'image/png']);
 
 const cloneValue = value => typeof structuredClone === 'function'
   ? structuredClone(value)
@@ -330,11 +331,14 @@ function renderAudienceFoundation() {
 function syncFoundationControls() {
   const saved = Boolean(state.show?.id);
   const portraitDisabled = !saved || state.portraitBusy || state.audienceBusy;
-  for (const selector of ['#presenterPortrait', '#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) {
-    const control = $(selector); if (control) control.disabled = portraitDisabled;
-  }
-  const consented = $('#presenterRightsConsent')?.checked && $('#presenterAnimationConsent')?.checked && $('#presenterAuthorizedAdult')?.checked;
-  $('#uploadPresenterPortrait').disabled = portraitDisabled || !$('#presenterPortrait')?.files?.[0] || !consented;
+  const portraitInput = $('#presenterPortrait');
+  portraitInput.disabled = portraitDisabled;
+  const selectedFile = portraitInput.files?.[0];
+  const validSelection = selectedFile instanceof Blob
+    && selectedFile.size > 0
+    && selectedFile.size <= LIVE_PORTRAIT_SOURCE_MAX_BYTES
+    && LIVE_PORTRAIT_SOURCE_TYPES.has(String(selectedFile.type || '').toLowerCase());
+  $('#uploadPresenterPortrait').disabled = portraitDisabled || !validSelection;
   $('#deletePresenterPortrait').disabled = portraitDisabled || !state.activePortrait;
 
   const localEnabled = saved && Boolean(state.integrationHealth?.local_test);
@@ -386,7 +390,6 @@ function resetFoundationContext({ stopSession = true } = {}) {
   const answer = $('#audienceTestAnswer');
   if (answer) { answer.hidden = true; delete answer.dataset.visible; answer.querySelector('p').textContent = ''; }
   if ($('#presenterPortrait')) $('#presenterPortrait').value = '';
-  for (const selector of ['#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) if ($(selector)) $(selector).checked = false;
   renderPortraitFoundation();
   populateAudienceProducts();
   renderAudienceFoundation();
@@ -1060,7 +1063,6 @@ async function uploadPresenterPortrait() {
     state.portraitUploadAttempt = null;
     state.portraitDeleteAttempt = null;
     $('#presenterPortrait').value = '';
-    for (const selector of ['#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) $(selector).checked = false;
     renderPortraitFoundation();
     setStatus('#portraitStatus', data.cleanup_pending
       ? 'เลือกใช้รูปใหม่แล้ว · การลบไฟล์เก่าจะลองซ้ำจาก checkpoint'
@@ -1280,7 +1282,6 @@ function bind() {
     clearPortraitPreviewUrl();
     renderPortraitFoundation();
   });
-  for (const selector of ['#presenterRightsConsent', '#presenterAnimationConsent', '#presenterAuthorizedAdult']) $(selector).addEventListener('change', syncFoundationControls);
   $('#uploadPresenterPortrait').addEventListener('click', uploadPresenterPortrait);
   $('#deletePresenterPortrait').addEventListener('click', deletePresenterPortrait);
   $('#presenterPortraitPreview').addEventListener('error', () => {
