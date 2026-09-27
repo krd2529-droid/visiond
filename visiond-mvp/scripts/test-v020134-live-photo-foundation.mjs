@@ -14,8 +14,8 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const sha256 = relative => createHash('sha256').update(fs.readFileSync(path.join(root, relative))).digest('hex').toUpperCase();
 
 const releasedVersion = read('VERSION.txt').trim();
-const assetVersion = releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : '020134';
-assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137'].includes(releasedVersion));
+const assetVersion = releasedVersion === 'v0.20.138' ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : '020134';
+assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138'].includes(releasedVersion));
 assert.ok(read('public/index.html').includes(`WEB ${releasedVersion}`));
 assert.ok(read('public/admin.html').includes(`ADMIN ${releasedVersion}`));
 assert.equal(sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'package schema-v1 parser stays byte-identical');
@@ -41,9 +41,13 @@ const packageJson = JSON.parse(read('package.json'));
 
 for (const id of [
   'presenterPortrait', 'presenterConsentNotice',
-  'uploadPresenterPortrait', 'deletePresenterPortrait', 'integrationHealthList', 'audienceTestPanel',
-  'startAudienceTest', 'sendAudienceTest', 'claimAudienceTest', 'stopAudienceTest',
+  'uploadPresenterPortrait', 'deletePresenterPortrait', 'integrationHealthList',
 ]) assert.match(editorHtml, new RegExp(`id="${id}"`), `${id} must be connected in the Boss/Admin editor`);
+for (const removedId of [
+  'audienceTestPanel', 'audienceTestTitle', 'audienceQueueCount', 'audienceEventKind',
+  'audienceViewerLabel', 'audienceProduct', 'audienceQuestion', 'startAudienceTest',
+  'sendAudienceTest', 'claimAudienceTest', 'stopAudienceTest', 'audienceTestAnswer', 'audienceStatus',
+]) assert.doesNotMatch(editorHtml, new RegExp(`id="${removedId}"`), `${removedId} must be retired from the editor`);
 assert.doesNotMatch(editorHtml, /id="presenter(?:RightsConsent|AnimationConsent|AuthorizedAdult)"|<input[^>]+type="checkbox"[^>]*>/);
 assert.match(editorHtml, /id="presenterConsentNotice"[^>]*>[^<]*มีสิทธิ์ใช้รูป[^<]*ผู้ใหญ่ที่อนุญาต[^<]*สร้างภาพเคลื่อนไหว[^<]*ไม่ใช่การเลียนแบบบุคคลสาธารณะ/);
 assert.match(editorHtml, /id="uploadPresenterPortrait"[^>]*type="button"[^>]*aria-describedby="presenterConsentNotice"[^>]*>ยืนยันสิทธิ์และอัปโหลด<\/button>/);
@@ -51,13 +55,15 @@ for (const removedId of ['presenterRightsConsent', 'presenterAnimationConsent', 
 for (const [field, value] of [['rights_consent', 'accepted'], ['animation_consent', 'accepted'], ['identity_scope', 'authorized_adult'], ['consent_policy', 'visiond-live-portrait-consent-v1']]) {
   assert.match(editorSource, new RegExp(`form\\.set\\(['"]${field}['"], ['"]${value}['"]\\)`));
 }
-assert.match(editorHtml, /LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม/);
+assert.doesNotMatch(editorHtml, /LOCAL TEST|Local Test|ทดสอบคำทักทายและ Q&amp;A/);
 assert.match(editorHtml, new RegExp(`live-center\\.css\\?v=${assetVersion}`));
 assert.match(editorHtml, new RegExp(`live-center\\.js\\?v=${assetVersion}`));
-for (const token of ['portraitUploadAttempt', 'portraitDeleteAttempt', 'audienceEventAttempt', 'sourceHash', 'derivativeHash', 'createLiveAudienceQueue']) {
+for (const token of ['portraitUploadAttempt', 'portraitDeleteAttempt', 'sourceHash', 'derivativeHash']) {
   assert.match(editorSource, new RegExp(token));
 }
-assert.match(editorSource, /eventId: `local\.event\./);
+for (const removedToken of ['createLiveAudienceQueue', 'audienceEventAttempt', 'audienceBusy', 'localSession', 'stopLocalSessionInBackground', '/audience/']) {
+  assert.doesNotMatch(editorSource, new RegExp(removedToken.replaceAll('/', '\\/')));
+}
 assert.match(editorSource, /LIVE_FOUNDATION_REQUEST_TIMEOUT_MS = 15_000/);
 assert.match(editorSource, /if \(signal\?\.aborted\) throw error/);
 assert.match(editorSource, /LIVE_FOUNDATION_TIMEOUT/);
@@ -113,8 +119,8 @@ assert.match(workerConfig, /workers_dev\s*=\s*false/);
 assert.match(workerConfig, /preview_urls\s*=\s*false/);
 assert.match(workerConfig, /\[images\][\s\S]*binding\s*=\s*"IMAGES"/);
 assert.match(pagesConfig, /\[\[env\.production\.services\]\][\s\S]*binding\s*=\s*"PORTRAIT_SANITIZER"[\s\S]*service\s*=\s*"visiond-live-portrait-sanitizer"/);
-assert.match(pagesConfig, /\[env\.production\.vars\][\s\S]*LIVE_CENTER_LOCAL_TEST_ENABLED\s*=\s*"1"/);
-assert.match(pagesConfigExample, /\[vars\][\s\S]*LIVE_CENTER_LOCAL_TEST_ENABLED\s*=\s*"1"/);
+assert.doesNotMatch(pagesConfig, /LIVE_CENTER_LOCAL_TEST_ENABLED/);
+assert.doesNotMatch(pagesConfigExample, /LIVE_CENTER_LOCAL_TEST_ENABLED/);
 for (const name of [
   'LIVE_CENTER_PROVIDER_ENCRYPTION_KEY', 'DID_BASIC_AUTHORIZATION',
   'AZURE_SPEECH_RESOURCE_NAME', 'AZURE_SPEECH_VOICE', 'AZURE_SPEECH_KEY',
@@ -146,6 +152,7 @@ const localTestEnabled = liveExternalIntegrationHealth({ LIVE_CENTER_LOCAL_TEST_
 assert.equal(localTestEnabled.local_test, true);
 assert.equal(localTestEnabled.facebook.connected, false);
 assert.equal(localTestEnabled.facebook.live_start, false);
+assert.match(featureMap, /Local Test ถูกถอดจาก DOM\/client\/cache graph/);
 assert.throws(() => createLiveAvatarAdapter({ env: {} }).startSession(), error => error?.code === 'DID_AGENT_CONTRACT_UNAVAILABLE');
 
 assert.deepEqual([...LIVE_PHOTO_AVATAR_PHASES], ['disconnected', 'connecting', 'ready', 'speaking', 'stopped', 'error']);

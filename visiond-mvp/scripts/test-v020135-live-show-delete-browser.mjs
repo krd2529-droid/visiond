@@ -44,7 +44,7 @@ const raceShow = makeShow(raceId, 'รายการรอเปิด', 43);
 const shows = new Map([activeShow, keepShow, raceShow].map(show => [show.id, show]));
 const deleteAttempts = [];
 const dialogs = [];
-let localStopRequests = 0;
+const audienceRequests = [];
 let activeDeleteMode = 'fail';
 let activeDeleteGate = null;
 let raceDetailGate = null;
@@ -142,11 +142,9 @@ const server = http.createServer(async (request, response) => {
     if (facebookMatch && request.method === 'GET') {
       return json(response, { viewer_id: viewerId, status: 'not_connected', label: 'ยังไม่ได้เชื่อมต่อ', capabilities: health.facebook, platform_live_start: false });
     }
-    const localSessionMatch = pathname.match(/^\/api\/admin\/live-center\/shows\/(live_[a-f0-9]{32})\/audience\/local-session$/);
-    if (localSessionMatch && request.method === 'DELETE') {
-      localStopRequests += 1;
-      await requestJson(request);
-      return json(response, { viewer_id: viewerId, ok: true });
+    if (/\/audience\/(?:local-session|local-events|queue)/.test(pathname)) {
+      audienceRequests.push(`${request.method} ${pathname}`);
+      return json(response, { error: 'retired audience request' }, 500);
     }
     const relative = pathname === '/' ? 'live-center.html' : pathname.replace(/^\/+/, '');
     if (!relative || relative.split('/').includes('..')) return response.writeHead(400).end();
@@ -200,7 +198,7 @@ try {
   assert.equal(await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1), true);
 
   await page.getByRole('button', { name: `เปิดรายการ ${activeShow.title}`, exact: true }).click();
-  await page.getByRole('heading', { name: activeShow.title, exact: true }).waitFor();
+  await page.locator('#editorTitle').getByText(activeShow.title, { exact: true }).waitFor();
 
   const cancelDialog = deferred();
   page.once('dialog', async dialog => {
@@ -240,7 +238,7 @@ try {
   await page.waitForFunction(() => document.querySelector('#editorTitle')?.textContent === 'สร้างรายการไลฟ์');
   assert.equal(await page.getByRole('button', { name: `ลบรายการ ${keepShow.title}`, exact: true }).count(), 1);
   assert.equal(await page.getByRole('button', { name: `ลบรายการ ${raceShow.title}`, exact: true }).count(), 1);
-  assert.equal(localStopRequests, 0, 'deleting the active editor avoids a background stop against the tombstone');
+  assert.deepEqual(audienceRequests, [], 'deleting the active editor issues no retired audience request against the tombstone');
   assert.equal(deleteAttempts.length, 2);
   assert.ok(deleteAttempts[0].key);
   assert.equal(deleteAttempts[1].key, deleteAttempts[0].key, 'retry after a failed response reuses the delete Idempotency-Key');
@@ -273,6 +271,9 @@ try {
   assert.equal(await page.locator('#editorTitle').textContent(), 'สร้างรายการไลฟ์', 'late open response cannot rehydrate a deleted show');
   assert.equal(await page.getByRole('button', { name: `ลบรายการ ${keepShow.title}`, exact: true }).count(), 1);
   assert.equal(unexpected.length, 0, unexpected.join('\n'));
+  await page.close();
+  await new Promise(resolve => setTimeout(resolve, 50));
+  assert.deepEqual(audienceRequests, [], 'delete/show-switch/unload flows issue zero retired audience requests');
   await context.close();
 } finally {
   await browser.close();

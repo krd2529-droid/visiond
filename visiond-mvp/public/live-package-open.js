@@ -1,9 +1,9 @@
-import { createLocalLivePlayback, parseVisionDLivePackage } from './live-center-package.js?v=020137';
-import { createLiveAiHostController, createLiveAiSpeechNarrator, requestLiveHostTurn } from './live-package-ai-host.js?v=020137';
-import { createLiveHumanPresenter, mountLiveHumanPresenter, resolveLiveAiPresenterPreset } from './live-package-presenter.js?v=020137';
-import { createLocalLivePlayer, createLocalSpeechNarrator } from './live-package-player.js?v=020137';
-import { THAI_VOICE_MISSING_MESSAGE } from './live-package-thai-speech.js?v=020137';
-import { createExactAudioAvatarController } from './live-photo-avatar.js?v=020137';
+import { createLocalLivePlayback, parseVisionDLivePackage } from './live-center-package.js?v=020138';
+import { createLiveAiHostController, createLiveAiSpeechNarrator, requestLiveHostTurn } from './live-package-ai-host.js?v=020138';
+import { createLiveHumanPresenter, mountLiveHumanPresenter, resolveLiveAiPresenterPreset } from './live-package-presenter.js?v=020138';
+import { createLocalLivePlayer, createLocalSpeechNarrator } from './live-package-player.js?v=020138';
+import { THAI_VOICE_MISSING_MESSAGE } from './live-package-thai-speech.js?v=020138';
+import { createExactAudioAvatarController } from './live-photo-avatar.js?v=020138';
 
 const $ = selector => document.querySelector(selector);
 let playback = null;

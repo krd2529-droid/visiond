@@ -8,8 +8,8 @@ const root = new URL('../', import.meta.url);
 const text = relative => readFile(new URL(relative, root), 'utf8');
 
 const releasedVersion = (await text('VERSION.txt')).trim();
-const assetVersion = releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : '020135';
-assert.ok(['v0.20.135', 'v0.20.136', 'v0.20.137'].includes(releasedVersion));
+const assetVersion = releasedVersion === 'v0.20.138' ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : '020135';
+assert.ok(['v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138'].includes(releasedVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020135'], 'node scripts/test-v020135.mjs && npm run test:v020134');
@@ -22,7 +22,7 @@ const graph = await Promise.all([
   'public/live-package-ai-host.js',
   'public/live-package-player.js',
 ].map(text));
-assert.equal(graph.some(source => source.includes(`?v=${assetVersion === '020137' ? '020136' : assetVersion === '020136' ? '020135' : '020134'}`)), false, 'Live Center graph must not mix the previous cache key');
+assert.equal(graph.some(source => source.includes(`?v=${assetVersion === '020138' ? '020137' : assetVersion === '020137' ? '020136' : assetVersion === '020136' ? '020135' : '020134'}`)), false, 'Live Center graph must not mix the previous cache key');
 assert.ok(graph.every(source => source.includes(`?v=${assetVersion}`)), `every Live Center entry or nested module source carries the ${releasedVersion} cache key`);
 
 const ledger = JSON.parse(await text('patch-ledgers/v0.20.135.json'));

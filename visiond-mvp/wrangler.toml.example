@@ -37,7 +37,6 @@ BANK_ACCOUNT_NAME = "ตั้งค่าใน Cloudflare"
 BANK_ACCOUNT_NUMBER = "ตั้งค่าใน Cloudflare"
 ADMIN_EMAIL = "admin@example.com"
 TURNSTILE_SITE_KEY = ""
-LIVE_CENTER_LOCAL_TEST_ENABLED = "1" # visibly labelled Boss/Admin simulator; never a platform event
 # Live Center external integration contract (names only; never commit credential values):
 # Secret: LIVE_CENTER_PROVIDER_ENCRYPTION_KEY (stable random key for private provider references)
 # Secret: DID_BASIC_AUTHORIZATION (D-ID Basic authorization header)

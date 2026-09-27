@@ -76,10 +76,8 @@ const metrics = {
   api: [],
   uploadKeys: [],
   deleteKeys: [],
-  eventBodies: [],
   uploadCommits: 0,
   deleteCommits: 0,
-  eventCommits: 0,
 };
 const mime = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -157,20 +155,6 @@ const server = http.createServer(async (request, response) => {
       response.writeHead(200, { 'content-type': 'image/jpeg', 'content-length': fixtureImage.byteLength, 'cache-control': 'private, no-store' });
       return response.end(fixtureImage);
     }
-    if (pathname === `/api/admin/live-center/shows/${showId}/audience/local-session` && request.method === 'POST') {
-      await parsedJson(request);
-      return json(response, { viewer_id: viewerId, ok: true, session: { id: `session_${'c'.repeat(32)}`, source: 'local_test', source_label: 'LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม', status: 'active', expires_at: '2026-09-25T03:00:00.000Z' } }, 201);
-    }
-    if (pathname === `/api/admin/live-center/shows/${showId}/audience/local-session` && request.method === 'DELETE') {
-      await parsedJson(request);
-      return json(response, { viewer_id: viewerId, ok: true, cleanup_pending: false });
-    }
-    if (pathname === `/api/admin/live-center/shows/${showId}/audience/local-events` && request.method === 'POST') {
-      const value = await parsedJson(request);
-      metrics.eventBodies.push(value);
-      if (metrics.eventCommits++ === 0) return json(response, { error: 'บันทึก event แล้วแต่ response สูญหาย', code: 'TEST_AMBIGUOUS_EVENT' }, 503);
-      return json(response, { viewer_id: viewerId, accepted: true, replayed: true, item: { source_label: 'LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม' } });
-    }
     if (pathname === '/fixture-avatar.jpg') {
       response.writeHead(200, { 'content-type': 'image/jpeg', 'content-length': fixtureImage.byteLength, 'cache-control': 'no-store' });
       return response.end(fixtureImage);
@@ -210,7 +194,7 @@ try {
   assert.equal(await editor.locator('#uploadPresenterPortrait').innerText(), 'ยืนยันสิทธิ์และอัปโหลด');
   assert.equal(await editor.locator('#uploadPresenterPortrait').getAttribute('aria-describedby'), 'presenterConsentNotice');
   assert.equal(await editor.locator('#uploadPresenterPortrait').isDisabled(), true);
-  assert.match(await editor.locator('#audienceTestPanel').innerText(), /LOCAL TEST · ไม่ใช่เหตุการณ์จากแพลตฟอร์ม/);
+  assert.equal(await editor.locator('#audienceTestPanel').count(), 0, 'retired Local Test panel is absent');
   assert.equal(await editor.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1), true, 'desktop editor has no horizontal overflow');
 
   await editor.locator('#presenterPortrait').setInputFiles({ name: 'consented-person.jpg', mimeType: 'image/jpeg', buffer: fixtureImage });
@@ -234,17 +218,6 @@ try {
   assert.equal(metrics.deleteKeys.length, 2);
   assert.ok(metrics.deleteKeys[0]);
   assert.equal(metrics.deleteKeys[1], metrics.deleteKeys[0], 'ambiguous delete retry reuses the same Idempotency-Key');
-
-  await editor.locator('#startAudienceTest').click();
-  await editor.waitForFunction(() => document.querySelector('#audienceStatus')?.textContent.includes('session พร้อม'));
-  await editor.locator('#audienceEventKind').selectOption('comment');
-  await editor.locator('#audienceQuestion').fill('ราคาเท่าไหร่');
-  await editor.locator('#sendAudienceTest').click();
-  await editor.waitForFunction(() => document.querySelector('#audienceStatus')?.textContent.includes('response สูญหาย'));
-  await editor.locator('#sendAudienceTest').click();
-  await editor.waitForFunction(() => document.querySelector('#audienceStatus')?.textContent.includes('เพิ่มเหตุการณ์เข้าคิวแล้ว'));
-  assert.equal(metrics.eventBodies.length, 2);
-  assert.equal(metrics.eventBodies[1].event_id, metrics.eventBodies[0].event_id, 'ambiguous local-event retry reuses the same event_id');
 
   await editor.setViewportSize({ width: 390, height: 844 });
   assert.equal(await editor.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1), true, '390px editor has no horizontal overflow');
@@ -270,6 +243,10 @@ try {
   assert.equal(await opener.locator('#startAiHost').isDisabled(), false, 'returning to legacy mode restores AI controls');
   await opener.setViewportSize({ width: 390, height: 844 });
   assert.equal(await opener.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1), true, '390px opener has no horizontal overflow');
+
+  await editor.close();
+  await new Promise(resolve => setTimeout(resolve, 50));
+  assert.deepEqual(metrics.api.filter(entry => /\/audience\/(?:local-session|local-events|queue)/.test(entry)), [], 'Photo Avatar operations and editor unload issue zero retired audience requests');
 
   const external = metrics.api.filter(entry => /facebook\.com|tiktok\.com|graph\./i.test(entry));
   assert.deepEqual(external, [], 'browser fixture makes no platform request');

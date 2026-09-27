@@ -10,9 +10,11 @@ const read = relative => readFile(new URL(relative, root));
 const text = async relative => (await read(relative)).toString('utf8');
 const sha256 = async relative => createHash('sha256').update(await read(relative)).digest('hex').toUpperCase();
 
-assert.equal((await text('VERSION.txt')).trim(), 'v0.20.137');
-assert.match(await text('public/index.html'), /WEB v0\.20\.137/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.137/);
+const releasedVersion = (await text('VERSION.txt')).trim();
+const assetVersion = releasedVersion === 'v0.20.138' ? '020138' : '020137';
+assert.ok(['v0.20.137', 'v0.20.138'].includes(releasedVersion));
+assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
+assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020137'], 'node scripts/test-v020137.mjs && npm run test:v020136');
 
 const editorHtml = await text('public/live-center.html');
@@ -36,7 +38,7 @@ for (const [field, value] of [['rights_consent', 'accepted'], ['animation_consen
 }
 assert.equal(await sha256('functions/_live_portrait_foundation.js'), '2A9F0B807CECBF76F2EBB88BD939BDB1CA5B8BC710E4C3DFE56FE148DD95AFDB', 'strict backend consent/audit/idempotency implementation stays byte-identical');
 
-assert.deepEqual([...editorHtml.matchAll(/data-workflow-step="(\d)"/g)].map(match => Number(match[1])), [1, 2, 3, 4, 5, 6, 7, 8]);
+assert.deepEqual([...editorHtml.matchAll(/data-workflow-step="(\d)"/g)].map(match => Number(match[1])), releasedVersion === 'v0.20.138' ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5, 6, 7, 8]);
 assert.equal((editorHtml.match(/href="\/live-package-open\.html"/g) || []).length, 1);
 assert.doesNotMatch(editorCss, /(?:^|[;{])\s*order\s*:/m, 'workflow order remains real DOM order');
 const graph = await Promise.all([
@@ -47,8 +49,8 @@ const graph = await Promise.all([
   'public/live-package-ai-host.js',
   'public/live-package-player.js',
 ].map(text));
-assert.equal(graph.some(source => source.includes('?v=020136')), false, 'Live Center graph must not mix the previous cache key');
-assert.ok(graph.every(source => source.includes('?v=020137')), 'every Live Center entry or nested module source carries the v0.20.137 cache key');
+assert.equal(graph.some(source => source.includes(`?v=${assetVersion === '020138' ? '020137' : '020136'}`)), false, 'Live Center graph must not mix the previous cache key');
+assert.ok(graph.every(source => source.includes(`?v=${assetVersion}`)), `every Live Center entry or nested module source carries the ${releasedVersion} cache key`);
 
 const ledger = JSON.parse(await text('patch-ledgers/v0.20.137.json'));
 assert.equal(ledger.version, 'v0.20.137');

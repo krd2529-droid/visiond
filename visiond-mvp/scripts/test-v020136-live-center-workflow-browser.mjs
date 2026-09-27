@@ -63,6 +63,7 @@ let saveMode = 'fail';
 let saveWrites = 0;
 let refreshGate = null;
 const requestBodies = [];
+const audienceRequests = [];
 const mime = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.js', 'text/javascript; charset=utf-8'],
@@ -114,6 +115,10 @@ const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, 'http://127.0.0.1');
     const pathname = decodeURIComponent(url.pathname);
+    if (/\/audience\/(?:local-session|local-events|queue)/.test(pathname)) {
+      audienceRequests.push(`${request.method} ${pathname}`);
+      return json(response, { error: 'retired audience request' }, 500);
+    }
     if (pathname === '/api/auth/me') return json(response, { user: { id: viewerId, role: 'boss', name: 'Workflow Browser Boss' } });
     if (pathname === '/api/admin/live-center/products' && request.method === 'GET') {
       return json(response, { viewer_id: viewerId, items: [product], pagination: { limit: 24, has_more: false, next_cursor: null } });
@@ -201,7 +206,8 @@ const workflowSnapshot = page => page.evaluate(() => {
     sidebarIsStep: document.querySelector('.live-sidebar')?.hasAttribute('data-workflow-step'),
     headerOpeners: document.querySelectorAll('.live-toolbar a[href="/live-package-open.html"]').length,
     totalOpeners: document.querySelectorAll('a[href="/live-package-open.html"]').length,
-    openerInStep8: opener?.closest('[data-workflow-step]')?.dataset.workflowStep,
+    openerInStep7: opener?.closest('[data-workflow-step]')?.dataset.workflowStep,
+    retiredAudienceIds: ['audienceTestPanel', 'audienceEventKind', 'audienceViewerLabel', 'audienceProduct', 'audienceQuestion', 'startAudienceTest', 'sendAudienceTest', 'claimAudienceTest', 'stopAudienceTest', 'audienceTestAnswer', 'audienceStatus'].filter(id => document.getElementById(id)),
     downloadBeforeOpener: download ? Boolean(download.compareDocumentPosition(opener) & Node.DOCUMENT_POSITION_FOLLOWING) : null,
     save: {
       type: document.querySelector('#saveShow')?.type,
@@ -213,7 +219,7 @@ const workflowSnapshot = page => page.evaluate(() => {
   };
 });
 const assertWorkflow = (snapshot, { saved }) => {
-  assert.deepEqual(snapshot.stepValues, [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(snapshot.stepValues, [1, 2, 3, 4, 5, 6, 7]);
   snapshot.stepLabels.forEach((label, index) => assert.match(label, new RegExp(`ขั้นตอนที่ ${index + 1}`)));
   assert.equal(snapshot.tops.every((top, index) => index === 0 || top > snapshot.tops[index - 1]), true, `workflow cards must descend visually: ${snapshot.tops}`);
   assert.deepEqual(snapshot.duplicateIds, []);
@@ -221,7 +227,8 @@ const assertWorkflow = (snapshot, { saved }) => {
   assert.equal(snapshot.sidebarIsStep, false);
   assert.equal(snapshot.headerOpeners, 0);
   assert.equal(snapshot.totalOpeners, 1);
-  assert.equal(snapshot.openerInStep8, '8');
+  assert.equal(snapshot.openerInStep7, '7');
+  assert.deepEqual(snapshot.retiredAudienceIds, []);
   assert.deepEqual(snapshot.save, { type: 'submit', form: 'showForm', nestedInForm: false, step: '4' });
   assert.equal(snapshot.noOverflow, true);
   assert.equal(snapshot.downloadBeforeOpener, saved ? true : null);
@@ -273,22 +280,21 @@ try {
   assert.equal(requestBodies.every(body => body.scenes.length === 1), true);
   assert.equal(await page.locator('#refreshShow').isEnabled(), true);
   assert.equal(await page.locator('#presenterPortrait').isEnabled(), true);
-  assert.equal(await page.locator('#startAudienceTest').isEnabled(), true);
+  assert.equal(await page.locator('#audienceTestPanel').count(), 0);
   assert.equal(await page.locator('#createVersion').isEnabled(), true);
   assertWorkflow(await workflowSnapshot(page), { saved: true });
 
   const savedTabs = await tabFrom(page, '#saveShow', 16);
   const tabIndex = value => savedTabs.indexOf(value);
   assert.ok(tabIndex('refreshShow') >= 0 && tabIndex('presenterPortrait') > tabIndex('refreshShow'), `saved-show tabs enter optional Photo after save: ${savedTabs}`);
-  assert.ok(tabIndex('startAudienceTest') > tabIndex('presenterPortrait'), `saved-show tabs enter Local Test after Photo: ${savedTabs}`);
-  assert.ok(tabIndex('createVersion') > tabIndex('startAudienceTest'), `saved-show tabs enter version creation after Local Test: ${savedTabs}`);
+  assert.ok(tabIndex('createVersion') > tabIndex('presenterPortrait'), `saved-show tabs enter version creation directly after optional Photo: ${savedTabs}`);
   assert.ok(savedTabs.indexOf(version.download_url) > tabIndex('createVersion'), `download follows create version: ${savedTabs}`);
   assert.ok(savedTabs.indexOf('/live-package-open.html') > savedTabs.indexOf(version.download_url), `package opener follows version download: ${savedTabs}`);
 
   await page.setViewportSize({ width: 390, height: 844 });
   assertWorkflow(await workflowSnapshot(page), { saved: true });
   const mobileSavedTabs = await tabFrom(page, '#saveShow', 16);
-  assert.ok(mobileSavedTabs.indexOf('createVersion') > mobileSavedTabs.indexOf('startAudienceTest'), `390px keyboard order remains linear: ${mobileSavedTabs}`);
+  assert.ok(mobileSavedTabs.indexOf('createVersion') > mobileSavedTabs.indexOf('presenterPortrait'), `390px keyboard order remains linear: ${mobileSavedTabs}`);
   assert.ok(mobileSavedTabs.indexOf('/live-package-open.html') > mobileSavedTabs.indexOf(version.download_url), `390px opener remains after download: ${mobileSavedTabs}`);
 
   await page.locator('#showDescription').fill('แก้ไขหลังบันทึก');
@@ -304,6 +310,9 @@ try {
   assertWorkflow(await workflowSnapshot(page), { saved: false });
   assert.equal(errors.length, 0, errors.join('\n'));
   assert.ok(expectedHttpErrors.length >= 1, 'the intentional failed-save response was observed');
+  await page.close();
+  await new Promise(resolve => setTimeout(resolve, 50));
+  assert.deepEqual(audienceRequests, [], 'open/save/refresh/show-switch/unload issue zero retired audience requests');
   await context.close();
 } finally {
   await browser.close();
