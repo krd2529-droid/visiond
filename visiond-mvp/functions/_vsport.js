@@ -128,7 +128,8 @@ export function newsRssUrlForWindow(newsDate,scopeMode='all_teams_for_day',teamN
 }
 
 export function bingNewsRssUrlForWindow(newsDate,scopeMode='all_teams_for_day',teamName='',windowKind='exact'){
-  const window=bangkokNewsWindow(newsDate,windowKind),subject=newsSubject(scopeMode,teamName),params=new URLSearchParams({q:`${subject} after:${window.query_after} before:${window.query_before}`,format:'rss',setlang:'en-GB',qft:'sortbydate="1"'});
+  bangkokNewsWindow(newsDate,windowKind);
+  const subject=newsSubject(scopeMode,teamName),params=new URLSearchParams({q:subject,format:'rss',setlang:'en-GB',qft:'sortbydate="1"'});
   return `https://www.bing.com/news/search?${params}`;
 }
 

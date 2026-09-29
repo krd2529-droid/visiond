@@ -47,9 +47,9 @@ assert.throws(()=>newsRssUrlForWindow(project.news_date,'specific_team','...','e
 assert.throws(()=>bingNewsRssUrlForWindow(project.news_date,'specific_team','...','exact'),/INVALID_NEWS_TEAM/);
 const internationalGroup=aliasParse('International football transfer update','', 'all_teams_for_day');
 assert.equal(internationalGroup.length,1);assert.equal(internationalGroup[0].team_name,'ฟุตบอลต่างประเทศ');
-const googleExact=queryOf(newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'exact')),googleFallback=queryOf(newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'fallback')),bingFallback=queryOf(bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'fallback'));
+const googleExact=queryOf(newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'exact')),googleFallback=queryOf(newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'fallback')),bingExact=queryOf(bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'exact')),bingFallback=queryOf(bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,'fallback'));
 for(const term of ['"Manchester United"','"Man United"','"Man Utd"','"แมนยู"'])assert.ok(googleExact.includes(term),term);
-assert.match(googleExact,/after:2026-09-28 before:2026-09-30/);assert.match(googleFallback,/after:2026-09-26 before:2026-09-29/);assert.match(bingFallback,/after:2026-09-26 before:2026-09-29/);
+assert.match(googleExact,/after:2026-09-28 before:2026-09-30/);assert.match(googleFallback,/after:2026-09-26 before:2026-09-29/);assert.equal(bingExact,bingFallback);assert.doesNotMatch(bingFallback,/\b(?:after|before):/);
 assert.equal(isNewsRssEnvelope(rss()),true);for(const invalid of ['','<html><body>no news</body></html>','<rss></rss>','<channel></channel>'])assert.equal(isNewsRssEnvelope(invalid),false);
 
 const exactCalls=[];
@@ -67,7 +67,7 @@ assert.equal(partial.discovery.mode,'fallback');assert.deepEqual(partial.discove
 
 let zeroCalls=0;
 await assert.rejects(()=>discoverNews(project,{retryDelayMs:0,sleepImpl:async()=>{},fetchImpl:async()=>{zeroCalls++;return response(rss())}}),error=>{assert.equal(error.code,'NEWS_NOT_FOUND');assert.equal(error.discovery.mode,'zero');assert.deepEqual(error.discovery.exact,{google:'empty',bing:'empty'});assert.deepEqual(error.discovery.fallback,{google:'empty',bing:'empty'});return true});
-assert.equal(zeroCalls,4,'two valid-empty providers are checked once in exact and once in the sole 48-hour fallback');
+assert.equal(zeroCalls,3,'valid-empty Bing response is reused while Google keeps distinct exact/fallback requests');
 
 let outageCalls=0;
 await assert.rejects(()=>discoverNews(project,{retryDelayMs:0,sleepImpl:async()=>{},fetchImpl:async()=>{outageCalls++;return new Response('',{status:503})}}),error=>{assert.equal(error.code,'NEWS_SOURCES_UNAVAILABLE');assert.equal(error.discovery.mode,'unavailable');assert.deepEqual(error.discovery.exact,{google:'unavailable',bing:'unavailable'});return true});
@@ -75,7 +75,7 @@ assert.equal(outageCalls,4,'complete outage is bounded to two attempts per exact
 
 let malformedCalls=0;
 await assert.rejects(()=>discoverNews(project,{retryDelayMs:0,sleepImpl:async()=>{},fetchImpl:async url=>{malformedCalls++;return providerOf(url)==='google'&&phaseOf(url)==='exact'?response('<html>temporary edge page</html>'):response(rss())}}),error=>{assert.equal(error.code,'NEWS_SOURCES_UNAVAILABLE');assert.equal(error.discovery.mode,'unavailable');assert.equal(error.discovery.exact.google,'unavailable');return true});
-assert.equal(malformedCalls,5,'HTTP 200 malformed XML is retried and classified unavailable, never valid empty');
+assert.equal(malformedCalls,4,'HTTP 200 malformed XML is retried and classified unavailable, never valid empty or cached');
 
 const many=[];for(let i=0;i<30;i++)many.push(item(`Liverpool story ${i}`,'2026-09-29T10:00:00.000Z','Liverpool Source',`l${i}`));for(let i=0;i<30;i++)many.push(item(`Arsenal story ${i}`,'2026-09-29T09:00:00.000Z','Arsenal Source',`a${i}`));
 const balanced=parseNewsRss(rss(many.join('')),{newsDate:project.news_date,scopeMode:'all_teams_for_day'});assert.equal(balanced.length,6);assert.equal(balanced.filter(story=>story.team_name==='Liverpool FC').length,3);assert.equal(balanced.filter(story=>story.team_name==='Arsenal').length,3);assert.equal(new Set(balanced.map(story=>story.fingerprint)).size,balanced.length);

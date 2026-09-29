@@ -76,9 +76,15 @@ async function readNewsResponse(response){
   return new TextDecoder().decode(bytes);
 }
 
-async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt}){
+async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt,successfulResponses}){
   const outcomes={google:'skipped',bing:'skipped'},providers=[{id:'google',url:newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bing',url:bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)}];
   for(const provider of providers){
+    const cacheKey=`${provider.id}\n${provider.url}`,cached=successfulResponses.get(cacheKey);
+    if(cached){
+      const stories=parseNewsRss(cached.xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:24,retrievedAt:cached.retrievedAt});outcomes[provider.id]=stories.length?'stories':'empty';
+      if(stories.length)return{stories,provider:provider.id,attempt:cached.attempt,outcomes};
+      continue;
+    }
     for(let attempt=1;attempt<=NEWS_FETCH_ATTEMPTS;attempt++){
       await onAttempt({provider:provider.id,windowKind,attempt,maxAttempts:NEWS_FETCH_ATTEMPTS});
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),Math.max(1,timeoutMs));
@@ -86,7 +92,7 @@ async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelay
         const response=await fetchImpl(provider.url,{headers:{'user-agent':'VisionD-vSport/1.0','accept':'application/rss+xml, application/xml, text/xml'},signal:controller.signal});
         if(!response.ok)throw new Error('NEWS_PROVIDER_UNAVAILABLE');
         const xml=await readNewsResponse(response);if(!isNewsRssEnvelope(xml))throw new Error('NEWS_RSS_ENVELOPE_INVALID');
-        const stories=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:24});outcomes[provider.id]=stories.length?'stories':'empty';
+        const retrievedAt=new Date().toISOString(),stories=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:24,retrievedAt});successfulResponses.set(cacheKey,{xml,retrievedAt,attempt});outcomes[provider.id]=stories.length?'stories':'empty';
         if(stories.length)return{stories,provider:provider.id,attempt,outcomes};
         break;
       }catch{
@@ -98,7 +104,7 @@ async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelay
 }
 
 export async function discoverNews(project,{fetchImpl=fetch,timeoutMs=NEWS_FETCH_TIMEOUT_MS,retryDelayMs=250,sleepImpl=sleep,onAttempt=async()=>{}}={}){
-  const options={fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt},exactWindow=bangkokNewsWindow(project.news_date,'exact'),fallbackWindow=bangkokNewsWindow(project.news_date,'fallback'),exact=await discoverWindow(project,'exact',options),base={selected:project.news_date,from:exactWindow.from_day,to:exactWindow.to_day,exact:exact.outcomes,fallback:{google:'skipped',bing:'skipped'}};
+  const options={fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt,successfulResponses:new Map()},exactWindow=bangkokNewsWindow(project.news_date,'exact'),fallbackWindow=bangkokNewsWindow(project.news_date,'fallback'),exact=await discoverWindow(project,'exact',options),base={selected:project.news_date,from:exactWindow.from_day,to:exactWindow.to_day,exact:exact.outcomes,fallback:{google:'skipped',bing:'skipped'}};
   if(exact.stories.length)return{...exact,windowKind:'exact',discovery:{...base,mode:'exact',count:exact.stories.length}};
   const exactValid=Object.values(exact.outcomes).some(state=>state==='empty');
   if(!exactValid)throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าว Google News และ Bing News ไม่พร้อมใช้งานชั่วคราว กรุณารอ 1–2 นาที แล้วกด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ',{...base,mode:'unavailable',count:0});

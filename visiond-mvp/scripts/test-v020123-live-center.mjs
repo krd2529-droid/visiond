@@ -70,7 +70,7 @@ const [
   'VERSION.txt',
 ].map(read));
 
-assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134','v0.20.135','v0.20.136','v0.20.137','v0.20.138','v0.20.139'].includes(versionText.trim()));
+assert.ok(['v0.20.123','v0.20.124','v0.20.125','v0.20.126','v0.20.127','v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134','v0.20.135','v0.20.136','v0.20.137','v0.20.138','v0.20.139','v0.20.140'].includes(versionText.trim()));
 assert.ok(homeHtml.includes(`WEB ${versionText.trim()}`));
 assert.ok(adminHtml.includes(`ADMIN ${versionText.trim()}`));
 assert.match(adminHtml, /href="\/live-center\.html"[^>]+data-feature="LIVE-CENTER-001"/);

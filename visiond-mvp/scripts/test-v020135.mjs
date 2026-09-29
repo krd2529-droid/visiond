@@ -8,8 +8,8 @@ const root = new URL('../', import.meta.url);
 const text = relative => readFile(new URL(relative, root), 'utf8');
 
 const releasedVersion = (await text('VERSION.txt')).trim();
-const assetVersion = ['v0.20.138','v0.20.139'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : '020135';
-assert.ok(['v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139'].includes(releasedVersion));
+const assetVersion = ['v0.20.138','v0.20.139','v0.20.140'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : '020135';
+assert.ok(['v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140'].includes(releasedVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020135'], 'node scripts/test-v020135.mjs && npm run test:v020134');
