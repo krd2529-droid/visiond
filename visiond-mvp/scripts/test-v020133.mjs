@@ -11,10 +11,10 @@ const sha256 = async path => createHash('sha256').update(await read(path)).diges
 const sha256Text = value => createHash('sha256').update(value).digest('hex').toUpperCase();
 
 const releasedVersion = (await text('VERSION.txt')).trim();
-const assetVersion = releasedVersion === 'v0.20.138' ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : releasedVersion === 'v0.20.134' ? '020134' : '020133';
-assert.ok(['v0.20.133', 'v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138'].includes(releasedVersion));
-assert.match(await text('public/index.html'), /WEB v0\.20\.(?:133|134|135|136|137|138)/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:133|134|135|136|137|138)/);
+const assetVersion = ['v0.20.138','v0.20.139'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : releasedVersion === 'v0.20.134' ? '020134' : '020133';
+assert.ok(['v0.20.133', 'v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139'].includes(releasedVersion));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:133|134|135|136|137|138|139)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:133|134|135|136|137|138|139)/);
 assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:133|134|135|136|137|138)/);
 assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:133|134|135|136|137|138)/);
 
@@ -59,8 +59,8 @@ if (assetVersion === '020133') {
 assert.equal(await sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'schema-v1 parser remains byte-identical');
 assert.equal(await sha256('public/live-package-presenter.js'), '9104B066C7FA668AE68884C2B7C453F9938AD9D0CE1B339F7BA879A7217DB9DB', 'presenter remains byte-identical');
 assert.equal(await sha256('public/live-package-thai-speech.js'), '29205FB148CC96585795B4CD3E8C8CEE7A1B11889E1482308C6986740D0822D8', 'Thai narrator remains byte-identical');
-if (['v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138'].includes(releasedVersion)) assert.match(await text('functions/_live_center.js'), /export async function deleteLiveShow/);
+if (['v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139'].includes(releasedVersion)) assert.match(await text('functions/_live_center.js'), /export async function deleteLiveShow/);
 else assert.equal(await sha256('functions/_live_center.js'), '2FD2240E4F413B3BDC57A325D5CAAE8412E1D057EA3DB2A51A5FEED3F047A9D0', 'private host server remains byte-identical');
-assert.equal(await sha256('public/vsport.js'), '1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F', 'vSport remains byte-identical');
+assert.equal(await sha256('public/vsport.js'), releasedVersion === 'v0.20.139' ? 'A76A02B528D30B6DB390586E7515BCF674A045EAEA88FDFD69DB51B572AE208B' : '1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F', 'vSport matches its released bytes');
 
 console.log('v0.20.133 versioned ESM graph, returning-cache recovery and v0.20.132 behavior preservation checks passed');

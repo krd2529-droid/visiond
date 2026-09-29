@@ -1,0 +1,53 @@
+{
+  "version": "v0.20.139",
+  "feature": "VSPORT-001",
+  "status": "patch_ready",
+  "base_commit": "fbe3c27c",
+  "scope": "Fix V Sport daily news discovery with strict Asia/Bangkok calendar windows, bounded canonical Thai/English team aliases, exact-day precedence and one explicit preceding-48-hour fallback. Distinguish structurally valid empty feeds from unavailable or malformed providers, persist only closed provider/window metadata in the existing idempotent job checkpoint, and render truthful Thai completion/reopen status while preserving additive story UPSERT, selections, private bounded reads and existing indexes.",
+  "files": [
+    ".codex/active-work.md",
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_vsport.js",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.139.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020122.mjs",
+    "scripts/test-v020123-live-center.mjs",
+    "scripts/test-v020124-vsport-news.mjs",
+    "scripts/test-v020128.mjs",
+    "scripts/test-v020129.mjs",
+    "scripts/test-v020130.mjs",
+    "scripts/test-v020131.mjs",
+    "scripts/test-v020132.mjs",
+    "scripts/test-v020133-live-esm-cache.mjs",
+    "scripts/test-v020133.mjs",
+    "scripts/test-v020134-live-photo-foundation.mjs",
+    "scripts/test-v020134.mjs",
+    "scripts/test-v020135.mjs",
+    "scripts/test-v020136.mjs",
+    "scripts/test-v020137.mjs",
+    "scripts/test-v020138.mjs",
+    "scripts/test-v020139-vsport-news-browser.mjs",
+    "scripts/test-v020139-vsport-news-discovery.mjs",
+    "scripts/test-v020139.mjs"
+  ],
+  "verification": {
+    "focused_server": "PASS: Bangkok half-open UTC edges, exact precedence, one two-day fallback, bounded aliases with Latin token boundaries and Thai phrases, empty normalized team fail-closed/no-query behavior, provider structural outcomes, max3/max24, fingerprint UPSERT and existing query-plan indexes.",
+    "focused_browser": "PASS: installed Chrome desktop 1440 and mobile 390 show exact/fallback/outage provider and window status, preserve stories and selection on failure, reuse the same idempotency key on retry and avoid overflow or unexpected writes.",
+    "compatibility": "PRIOR PASS on first freeze: connected v0.20.139 through v0.20.122. Per narrow-remediation direction the broad chain was not rerun; exact _vsport hash assertions in v0.20.128/v0.20.129 were refreshed for this refreeze.",
+    "release": "PRIOR PASS on first freeze: evergreen regression 10/10, visible WEB/ADMIN v0.20.139 and predeploy 10 PASS/7 WARN/0 FAIL. Current narrow focused/syntax/diff/stage evidence is recorded in the candidate report; broad gates await new independent review.",
+    "independent": "PENDING on replacement freeze: first freeze RED for Latin substring and empty normalized team boundaries; narrow remediation is focused-test green."
+  },
+  "release": {
+    "status": "not committed",
+    "commit": "not performed",
+    "push": "not performed",
+    "migration": "not required",
+    "pages_deploy": "not performed"
+  }
+}

@@ -13,7 +13,7 @@ const plan=segmentIds=>JSON.stringify({schema:LIVE_AI_PLAN_SCHEMA,segment_ids:se
 const forbidden=['สวัสดีค่ะ วันนี้ขอแนะนำสินค้าจาก VisionD','สินค้าที่นำเสนอคือ'];
 
 const visibleVersion=(await text('VERSION.txt')).trim();
-assert.ok(['v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134','v0.20.135','v0.20.136','v0.20.137','v0.20.138'].includes(visibleVersion));
+assert.ok(['v0.20.128','v0.20.129','v0.20.130','v0.20.131','v0.20.132','v0.20.133','v0.20.134','v0.20.135','v0.20.136','v0.20.137','v0.20.138','v0.20.139'].includes(visibleVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${visibleVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${visibleVersion}`));
 assert.match(await text('public/live-center.html'),/live-center\.js\?v=020(?:128|129|130|131|132|133|134|135|136|137|138)/);
@@ -39,13 +39,13 @@ for(const product of products){
 
 const unchangedVsport={
   'migrations/0111_vsport.sql':'0AD1F2DA8B5833615BAE8967A7953CB75F83CE9ABEBAC12E5F1E4CEC2321A59D',
-  'functions/_vsport.js':'976BFECEC019BE414734B4DC8DD8B75E3C9C6B06690B4F105426CD333B5FA2B5',
-  'functions/api/admin/vsport.js':'C695DDC0A71B9C7300D1E52C910BF07F85583439B733B6B006E26D3154A9322E',
+  'functions/_vsport.js':visibleVersion==='v0.20.139'?'9089691CDA6DEB576E41359E4991219DF660B6C76EEA13B626C8DC75A6A7C6AF':'976BFECEC019BE414734B4DC8DD8B75E3C9C6B06690B4F105426CD333B5FA2B5',
+  'functions/api/admin/vsport.js':visibleVersion==='v0.20.139'?'139A8A453F3AEE4284458BDC8881BFC3FDB18FE9477CB87C6B4DBB77F3CC1488':'C695DDC0A71B9C7300D1E52C910BF07F85583439B733B6B006E26D3154A9322E',
   'functions/api/admin/vsport-assets/[id].js':'6BEF06AD1B137C56707D6F01CE0F86777CB79D8D6EFF108C763F9C07EAB4A434',
-  'public/vsport.html':'7F4315D8ECD75762D15B31224F763561FA98DF71A5020A21965ABBC4F7A21ABC',
+  'public/vsport.html':visibleVersion==='v0.20.139'?'B8D5444993682CD85EE67FCB599F17235F1B3A760D859D60B3D9755A1A07E0C1':'7F4315D8ECD75762D15B31224F763561FA98DF71A5020A21965ABBC4F7A21ABC',
   'public/vsport.css':'262CE0A73E4044B3F2FEABBD4DE65C5C98D635EDFD44AAABFEF2B395111A0EFC',
-  'public/vsport.js':'1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F',
-  'scripts/test-v020124-vsport-news.mjs':'4924FD3925702A27219C7982EB59B47D80E2B19221D4FAF3D1BD074AA3D70CF1',
+  'public/vsport.js':visibleVersion==='v0.20.139'?'A76A02B528D30B6DB390586E7515BCF674A045EAEA88FDFD69DB51B572AE208B':'1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F',
+  'scripts/test-v020124-vsport-news.mjs':visibleVersion==='v0.20.139'?'44CF43323EFE25205651546456AA2463765701B1B4231EABBB8561833E788931':'4924FD3925702A27219C7982EB59B47D80E2B19221D4FAF3D1BD074AA3D70CF1',
 };
 for(const [path,expected] of Object.entries(unchangedVsport))assert.equal(await sha256(path),expected,`${path} must remain byte-identical to released vSport`);
 

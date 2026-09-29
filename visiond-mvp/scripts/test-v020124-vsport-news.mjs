@@ -11,7 +11,7 @@ const bingItem=(headline='Liverpool agree deal',date='Tue, 22 Sep 2026 10:00:00 
 const rss=items=>`<?xml version="1.0"?><rss xmlns:News="https://www.bing.com/news/search"><channel>${items.join('')}</channel></rss>`;
 
 assert.match(bingNewsRssUrl(project.news_date,project.scope_mode,project.team_name),/^https:\/\/www\.bing\.com\/news\/search\?/);
-assert.match(bingNewsRssUrl(project.news_date,project.scope_mode,project.team_name),/2026-09-22/);
+assert.match(new URL(bingNewsRssUrl(project.news_date,project.scope_mode,project.team_name)).searchParams.get('q'),/after:2026-09-21 before:2026-09-23/);
 assert.equal(normalizeNewsSourceUrl(bingLink.replaceAll('&amp;','&')),bingTarget);
 assert.equal(normalizeNewsSourceUrl('http://publisher.example/story'),'');
 assert.equal(normalizeNewsSourceUrl(`https://www.bing.com/news/apiclick.aspx?url=${encodeURIComponent('https://127.0.0.1/story')}`),'');
@@ -64,4 +64,4 @@ assert.match(api,/existing\.status==='failed'/,'failed jobs remain retryable thr
 assert.match(api,/NEWS_FETCH_TIMEOUT_MS=4500/);
 assert.doesNotMatch(api,/NEWS_HTTP_/,'raw provider HTTP status must not be stored by discovery');
 
-console.log('PASS v0.20.124 vSport bounded news retry, attributed Bing fallback, strict selected-day filter, dedupe/idempotency and Thai outage recovery');
+console.log('PASS v0.20.124 vSport bounded provider retry, attributed Bing fallback, strict selected-day filter, dedupe/idempotency and Thai outage recovery');

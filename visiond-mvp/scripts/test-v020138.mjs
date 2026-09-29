@@ -13,9 +13,9 @@ import './test-v020138-live-center-local-test-removal-browser.mjs';
 const root = new URL('../', import.meta.url);
 const text = relative => readFile(new URL(relative, root), 'utf8');
 
-assert.equal((await text('VERSION.txt')).trim(), 'v0.20.138');
-assert.match(await text('public/index.html'), /WEB v0\.20\.138/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.138/);
+const releasedVersion=(await text('VERSION.txt')).trim();assert.ok(['v0.20.138','v0.20.139'].includes(releasedVersion));
+assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
+assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 const packageJson = JSON.parse(await text('package.json'));
 assert.equal(packageJson.scripts['test:v020138'], 'node scripts/test-v020138.mjs && npm run test:v020137');
 

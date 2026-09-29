@@ -1,5 +1,5 @@
 import {json,requireAdmin} from '../../_lib.js';
-import {balanceStories,bingNewsRssUrl,escapeLike,extractImageUrls,imageDimensions,isSafeRemoteUrl,newsRssUrl,parseCursor,parseNewsRss} from '../../_vsport.js';
+import {bangkokNewsWindow,bingNewsRssUrlForWindow,escapeLike,extractImageUrls,imageDimensions,isNewsRssEnvelope,isSafeRemoteUrl,newsRssUrlForWindow,parseCursor,parseNewsRss} from '../../_vsport.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
@@ -60,8 +60,15 @@ async function newJob(ctx,auth,project,type,key){
 }
 const finishJob=(env,id,status,checkpoint='',error='')=>env.DB.prepare('UPDATE vsport_jobs SET status=?,checkpoint=?,error_text=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(status,clean(checkpoint,400),clean(error,500),id).run();
 
-const newsError=(code,message)=>Object.assign(new Error(message),{code});
+const newsError=(code,message,discovery)=>Object.assign(new Error(message),{code,discovery});
 const sleep=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
+const newsProviderState=Object.freeze({stories:'stories',empty:'empty',unavailable:'unavailable',skipped:'skipped'});
+
+export function newsDiscoveryCheckpoint(discovery){
+  const states=value=>({google:Object.values(newsProviderState).includes(value?.google)?value.google:'skipped',bing:Object.values(newsProviderState).includes(value?.bing)?value.bing:'skipped'}),selected=String(discovery?.selected||''),from=String(discovery?.from||''),to=String(discovery?.to||''),mode=['exact','fallback','zero','unavailable'].includes(discovery?.mode)?discovery.mode:'unavailable',count=integer(discovery?.count||0,0,24)??0;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(selected)||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to))return'';
+  return JSON.stringify({v:1,kind:'news',mode,selected,from,to,count,exact:states(discovery?.exact),fallback:states(discovery?.fallback)});
+}
 
 async function readNewsResponse(response){
   const expected=Number(response.headers.get('content-length')||0);if(expected>NEWS_MAX_BYTES)throw new Error('NEWS_RESPONSE_TOO_LARGE');
@@ -69,36 +76,46 @@ async function readNewsResponse(response){
   return new TextDecoder().decode(bytes);
 }
 
-export async function discoverNews(project,{fetchImpl=fetch,timeoutMs=NEWS_FETCH_TIMEOUT_MS,retryDelayMs=250,sleepImpl=sleep,onAttempt=async()=>{}}={}){
-  const providers=[{id:'google',url:newsRssUrl(project.news_date,project.scope_mode,project.team_name)},{id:'bing',url:bingNewsRssUrl(project.news_date,project.scope_mode,project.team_name)}];
-  let hadSuccessfulResponse=false;
+async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt}){
+  const outcomes={google:'skipped',bing:'skipped'},providers=[{id:'google',url:newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bing',url:bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)}];
   for(const provider of providers){
     for(let attempt=1;attempt<=NEWS_FETCH_ATTEMPTS;attempt++){
-      await onAttempt({provider:provider.id,attempt,maxAttempts:NEWS_FETCH_ATTEMPTS});
-      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),Math.max(1,timeoutMs));let response;
+      await onAttempt({provider:provider.id,windowKind,attempt,maxAttempts:NEWS_FETCH_ATTEMPTS});
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),Math.max(1,timeoutMs));
       try{
-        response=await fetchImpl(provider.url,{headers:{'user-agent':'VisionD-vSport/1.0','accept':'application/rss+xml, application/xml, text/xml'},signal:controller.signal});
-        if(!response.ok)throw new Error(`NEWS_PROVIDER_HTTP_${response.status}`);
-        hadSuccessfulResponse=true;
-        const stories=parseNewsRss(await readNewsResponse(response),{newsDate:project.news_date,scopeMode:project.scope_mode,teamName:project.team_name,limit:24});
-        if(stories.length)return{stories,provider:provider.id,attempt};
+        const response=await fetchImpl(provider.url,{headers:{'user-agent':'VisionD-vSport/1.0','accept':'application/rss+xml, application/xml, text/xml'},signal:controller.signal});
+        if(!response.ok)throw new Error('NEWS_PROVIDER_UNAVAILABLE');
+        const xml=await readNewsResponse(response);if(!isNewsRssEnvelope(xml))throw new Error('NEWS_RSS_ENVELOPE_INVALID');
+        const stories=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:24});outcomes[provider.id]=stories.length?'stories':'empty';
+        if(stories.length)return{stories,provider:provider.id,attempt,outcomes};
         break;
       }catch{
-        if(attempt<NEWS_FETCH_ATTEMPTS)await sleepImpl(Math.max(0,retryDelayMs)*attempt);
+        if(attempt<NEWS_FETCH_ATTEMPTS)await sleepImpl(Math.max(0,retryDelayMs)*attempt);else outcomes[provider.id]='unavailable';
       }finally{clearTimeout(timer)}
     }
   }
-  if(hadSuccessfulResponse)throw newsError('NEWS_NOT_FOUND',`ไม่พบข่าววันที่ ${project.news_date} ที่มีชื่อสำนักข่าวและลิงก์ต้นทาง กรุณาตรวจวันที่หรือทีม แล้วกด “ค้นข่าววันนี้” อีกครั้ง`);
-  throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าว Google News และ Bing News ไม่พร้อมใช้งานชั่วคราว กรุณารอ 1–2 นาที แล้วกด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ');
+  return{stories:[],provider:'',attempt:0,outcomes};
+}
+
+export async function discoverNews(project,{fetchImpl=fetch,timeoutMs=NEWS_FETCH_TIMEOUT_MS,retryDelayMs=250,sleepImpl=sleep,onAttempt=async()=>{}}={}){
+  const options={fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt},exactWindow=bangkokNewsWindow(project.news_date,'exact'),fallbackWindow=bangkokNewsWindow(project.news_date,'fallback'),exact=await discoverWindow(project,'exact',options),base={selected:project.news_date,from:exactWindow.from_day,to:exactWindow.to_day,exact:exact.outcomes,fallback:{google:'skipped',bing:'skipped'}};
+  if(exact.stories.length)return{...exact,windowKind:'exact',discovery:{...base,mode:'exact',count:exact.stories.length}};
+  const exactValid=Object.values(exact.outcomes).some(state=>state==='empty');
+  if(!exactValid)throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าว Google News และ Bing News ไม่พร้อมใช้งานชั่วคราว กรุณารอ 1–2 นาที แล้วกด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ',{...base,mode:'unavailable',count:0});
+  const fallback=await discoverWindow(project,'fallback',options),fallbackBase={...base,from:fallbackWindow.from_day,to:fallbackWindow.to_day,fallback:fallback.outcomes};
+  if(fallback.stories.length)return{...fallback,windowKind:'fallback',discovery:{...fallbackBase,mode:'fallback',count:fallback.stories.length}};
+  const unavailable=[...Object.values(exact.outcomes),...Object.values(fallback.outcomes)].includes('unavailable');
+  if(unavailable)throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าวบางส่วนไม่พร้อมใช้งาน จึงยืนยันผลข่าวว่างไม่ได้ กรุณากด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ',{...fallbackBase,mode:'unavailable',count:0});
+  throw newsError('NEWS_NOT_FOUND',`ไม่พบข่าวตรงวันที่ ${project.news_date} หรือในสองวันก่อนหน้าจากแหล่งข่าวที่ตรวจสำเร็จ กรุณาตรวจวันที่หรือทีม แล้วกด “ค้นข่าววันนี้” อีกครั้ง`,{...fallbackBase,mode:'zero',count:0});
 }
 
 async function runDiscovery(env,jobId,project){
   try{
     await finishJob(env,jobId,'running','fetch_news');
-    const discovery=await discoverNews(project,{onAttempt:({provider,attempt,maxAttempts})=>finishJob(env,jobId,'running',`fetch_news:${provider}:${attempt}/${maxAttempts}`)}),stories=discovery.stories;
+    const discovery=await discoverNews(project,{onAttempt:({provider,windowKind,attempt,maxAttempts})=>finishJob(env,jobId,'running',`fetch_news:${windowKind}:${provider}:${attempt}/${maxAttempts}`)}),stories=discovery.stories;
     const statements=stories.map((story,index)=>env.DB.prepare(`INSERT INTO vsport_stories(project_id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,fingerprint,selected,sort_order) VALUES(?,?,?,?,?,?,?,?,?,1,?) ON CONFLICT(project_id,fingerprint) DO UPDATE SET headline=excluded.headline,summary=excluded.summary,team_name=excluded.team_name,publisher=excluded.publisher,source_url=excluded.source_url,published_at=excluded.published_at,retrieved_at=excluded.retrieved_at,sort_order=excluded.sort_order`).bind(project.id,story.headline,story.summary,story.team_name,story.publisher,story.source_url,story.published_at,story.retrieved_at,story.fingerprint,index*10));
-    statements.push(env.DB.prepare("UPDATE vsport_projects SET status='stories_ready',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(project.id));await env.DB.batch(statements);await finishJob(env,jobId,'completed',`stories:${stories.length}:${discovery.provider}`);
-  }catch(error){await finishJob(env,jobId,'failed','',error?.message||'ค้นข่าวไม่สำเร็จ กรุณาลองอีกครั้ง')}
+    statements.push(env.DB.prepare("UPDATE vsport_projects SET status='stories_ready',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(project.id));await env.DB.batch(statements);await finishJob(env,jobId,'completed',newsDiscoveryCheckpoint(discovery.discovery));
+  }catch(error){await finishJob(env,jobId,'failed',newsDiscoveryCheckpoint(error?.discovery),error?.message||'ค้นข่าวไม่สำเร็จ กรุณาลองอีกครั้ง')}
 }
 
 const scriptPrompt=(project,stories)=>`คุณเป็นบรรณาธิการข่าวฟุตบอลภาษาไทย จงเขียนสคริปต์เสียงแบบฟังต่อเนื่อง ความยาวเป้าหมาย ${project.target_minutes} นาที (ประมาณ ${project.target_minutes*125}-${project.target_minutes*150} คำภาษาไทย) จากรายการข่าวที่ให้เท่านั้น ห้ามเติมข้อเท็จจริง ตัวเลข คำพูด หรือข่าวอื่นที่ไม่มีในรายการ แยกเป็นบทนำ หัวข้อข่าวแต่ละเรื่อง และบทสรุป ทุกหัวข้อต้องลงท้ายบรรทัด [แหล่งข่าว: ชื่อสำนักข่าว | URL] ข้อความเชื่อมเชิงบรรณาธิการต้องใช้ถ้อยคำชัดว่าเป็นการวิเคราะห์หรือบริบท ไม่ใช่ข้อเท็จจริง หากข้อมูลไม่พอให้บอกตรง ๆ ว่าแหล่งข่าวยังไม่มีรายละเอียด ตอบเป็นภาษาไทยล้วนแบบข้อความธรรมดา

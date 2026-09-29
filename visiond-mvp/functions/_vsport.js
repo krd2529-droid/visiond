@@ -13,18 +13,61 @@ export function decodeXml(value=''){
 
 const firstTag=(xml,name)=>decodeXml(xml.match(new RegExp(`<(?:[\\w.-]+:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?${name}>`,'i'))?.[1]||'');
 const stripHtml=value=>cleanText(decodeXml(String(value||'').replace(/<script\b[\s\S]*?<\/script>/gi,' ').replace(/<style\b[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ')));
-const isoDay=value=>{const date=new Date(value);return Number.isNaN(date.valueOf())?'':date.toISOString().slice(0,10)};
-
-const teamMatchers=[
-  ['Liverpool FC',/\b(?:liverpool|reds)\b/i],['Arsenal',/\b(?:arsenal|gunners)\b/i],['Manchester City',/\b(?:manchester city|man city|cityzens)\b/i],
-  ['Manchester United',/\b(?:manchester united|man united|man utd|red devils)\b/i],['Chelsea',/\bchelsea\b/i],['Tottenham Hotspur',/\b(?:tottenham|spurs)\b/i],
-  ['Newcastle United',/\bnewcastle\b/i],['Aston Villa',/\baston villa\b/i],['Real Madrid',/\breal madrid\b/i],['Barcelona',/\bbarcelona\b/i],
-  ['Bayern Munich',/\bbayern(?: munich)?\b/i],['Paris Saint-Germain',/\b(?:paris saint-germain|psg)\b/i],['Inter Milan',/\binter milan\b/i],['AC Milan',/\bac milan\b/i],
+const DAY_MS=86400000,BANGKOK_OFFSET_MS=7*60*60*1000;
+const normalizeTeamText=value=>cleanText(value).normalize('NFKC').toLocaleLowerCase('en').replace(/[.'’]/g,'').replace(/[‐‑–—_-]+/g,' ').replace(/\s+/g,' ').replace(/\s+fc$/,'').trim();
+const normalizedTeamPhraseMatches=(normalizedValue,normalizedNeedle)=>{
+  if(!normalizedNeedle)return false;
+  if(!/[a-z0-9]/i.test(normalizedNeedle))return normalizedValue.includes(normalizedNeedle);
+  const escaped=normalizedNeedle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`,'i').test(normalizedValue);
+};
+const teamDefinitions=[
+  {name:'Liverpool FC',aliases:['Liverpool FC','Liverpool','ลิเวอร์พูล','หงส์แดง'],query:['Liverpool FC','Liverpool','ลิเวอร์พูล'],pattern:/\b(?:liverpool|reds)\b/i},
+  {name:'Arsenal',aliases:['Arsenal','อาร์เซนอล','ปืนใหญ่'],query:['Arsenal','อาร์เซนอล'],pattern:/\b(?:arsenal|gunners)\b/i},
+  {name:'Manchester City',aliases:['Manchester City','Man City','แมนเชสเตอร์ ซิตี้','แมนซิตี้','เรือใบสีฟ้า'],query:['Manchester City','Man City','แมนซิตี้'],pattern:/\b(?:manchester city|man city|cityzens)\b/i},
+  {name:'Manchester United',aliases:['Manchester United','Man United','Man Utd','MUFC','Red Devils','แมนเชสเตอร์ ยูไนเต็ด','แมนเชสเตอร์ยูไนเต็ด','แมนยู','ปีศาจแดง'],query:['Manchester United','Man United','Man Utd','แมนเชสเตอร์ ยูไนเต็ด','แมนยู'],pattern:/\b(?:manchester united|man united|man utd|mufc|red devils)\b/i},
+  {name:'Chelsea',aliases:['Chelsea','เชลซี','สิงห์บลูส์'],query:['Chelsea','เชลซี'],pattern:/\bchelsea\b/i},
+  {name:'Tottenham Hotspur',aliases:['Tottenham Hotspur','Tottenham','Spurs','ท็อตแนม ฮ็อตสเปอร์','ทอตแนม ฮอตสเปอร์','สเปอร์ส'],query:['Tottenham Hotspur','Tottenham','Spurs','สเปอร์ส'],pattern:/\b(?:tottenham|spurs)\b/i},
+  {name:'Newcastle United',aliases:['Newcastle United','Newcastle','นิวคาสเซิล ยูไนเต็ด','นิวคาสเซิล'],query:['Newcastle United','Newcastle','นิวคาสเซิล'],pattern:/\bnewcastle\b/i},
+  {name:'Aston Villa',aliases:['Aston Villa','แอสตัน วิลลา','แอสตัน วิลล่า'],query:['Aston Villa','แอสตัน วิลลา'],pattern:/\baston villa\b/i},
+  {name:'Real Madrid',aliases:['Real Madrid','เรอัล มาดริด'],query:['Real Madrid','เรอัล มาดริด'],pattern:/\breal madrid\b/i},
+  {name:'Barcelona',aliases:['Barcelona','Barca','บาร์เซโลนา','บาร์เซโลน่า','บาร์ซา'],query:['Barcelona','Barca','บาร์เซโลนา'],pattern:/\b(?:barcelona|barca)\b/i},
+  {name:'Bayern Munich',aliases:['Bayern Munich','Bayern','บาเยิร์น มิวนิก','บาเยิร์น'],query:['Bayern Munich','Bayern','บาเยิร์น มิวนิก'],pattern:/\bbayern(?: munich)?\b/i},
+  {name:'Paris Saint-Germain',aliases:['Paris Saint-Germain','Paris Saint Germain','PSG','ปารีส แซงต์ แชร์กแมง','เปแอสเช'],query:['Paris Saint-Germain','PSG','เปแอสเช'],pattern:/\b(?:paris saint[- ]germain|psg)\b/i},
+  {name:'Inter Milan',aliases:['Inter Milan','Inter','อินเตอร์ มิลาน','อินเตอร์'],query:['Inter Milan','อินเตอร์ มิลาน'],pattern:/\binter milan\b/i},
+  {name:'AC Milan',aliases:['AC Milan','เอซี มิลาน'],query:['AC Milan','เอซี มิลาน'],pattern:/\bac milan\b/i},
 ];
+for(const team of teamDefinitions)team.normalizedAliases=team.aliases.map(normalizeTeamText);
+const matchingDefinition=value=>{const normalized=normalizeTeamText(value);return teamDefinitions.find(team=>team.normalizedAliases.includes(normalized))||null};
+const matchesTeam=(headline,team)=>{const normalized=normalizeTeamText(headline);return team.pattern.test(headline)||team.normalizedAliases.some(alias=>normalizedTeamPhraseMatches(normalized,alias))};
+
+export function resolveNewsTeam(value=''){
+  const entered=cleanText(value).slice(0,120),normalized=normalizeTeamText(entered),definition=matchingDefinition(entered);
+  return definition?{canonical:definition.name,recognized:true,query_aliases:[...definition.query]}:{canonical:entered,recognized:false,query_aliases:normalized?[entered]:[]};
+}
+
+const strictCalendarEpoch=value=>{
+  const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!match)throw new Error('INVALID_NEWS_DATE');
+  const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]),epoch=Date.UTC(year,month-1,day),date=new Date(epoch);
+  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)throw new Error('INVALID_NEWS_DATE');
+  return epoch;
+};
+const shiftedDay=(epoch,offset=0)=>new Date(epoch+offset).toISOString().slice(0,10);
+
+export function bangkokNewsWindow(newsDate,kind='exact'){
+  if(!['exact','fallback'].includes(kind))throw new Error('INVALID_NEWS_WINDOW');
+  const calendarEpoch=strictCalendarEpoch(newsDate),exactStart=calendarEpoch-BANGKOK_OFFSET_MS,start=kind==='fallback'?exactStart-2*DAY_MS:exactStart,end=kind==='fallback'?exactStart:exactStart+DAY_MS;
+  return{kind,start_ms:start,end_ms:end,from_day:shiftedDay(start,BANGKOK_OFFSET_MS),to_day:shiftedDay(end,BANGKOK_OFFSET_MS),query_after:shiftedDay(start),query_before:shiftedDay(end,DAY_MS)};
+}
+
+export function isNewsRssEnvelope(xml=''){
+  const value=String(xml||'').trim(),rssOpen=value.search(/<rss(?:\s|>)/i),rssClose=value.search(/<\/rss\s*>/i),channelOpen=value.search(/<channel(?:\s|>)/i),channelClose=value.search(/<\/channel\s*>/i);
+  return rssOpen>=0&&channelOpen>rssOpen&&channelClose>channelOpen&&rssClose>channelClose;
+}
 
 export function detectTeam(headline,scopeMode='all_teams_for_day',requestedTeam=''){
-  if(scopeMode==='specific_team')return cleanText(requestedTeam).slice(0,120);
-  return teamMatchers.find(([,pattern])=>pattern.test(headline))?.[0]||'ฟุตบอลต่างประเทศ';
+  if(scopeMode==='specific_team')return resolveNewsTeam(requestedTeam).canonical;
+  return teamDefinitions.find(team=>matchesTeam(headline,team))?.name||'ฟุตบอลต่างประเทศ';
 }
 
 export function storyFingerprint(story){
@@ -50,12 +93,12 @@ export function balanceStories(items,{limit=24,maxPerTeam=3}={}){
   return balanced;
 }
 
-export function parseNewsRss(xml,{newsDate,scopeMode='all_teams_for_day',teamName='',limit=24,retrievedAt=new Date().toISOString()}={}){
-  const seen=new Set(),stories=[];
+export function parseNewsRss(xml,{newsDate,windowKind='exact',scopeMode='all_teams_for_day',teamName='',limit=24,retrievedAt=new Date().toISOString()}={}){
+  const seen=new Set(),stories=[],window=bangkokNewsWindow(newsDate,windowKind),specificTeam=scopeMode==='specific_team'?matchingDefinition(teamName):null,unknownNeedle=normalizeTeamText(teamName);
   for(const match of String(xml||'').matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)){
-    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedDay=isoDay(publishedRaw);
-    if(!headline||!publisher||!/^https:\/\//i.test(sourceUrl)||publishedDay!==newsDate)continue;
-    if(scopeMode==='specific_team'&&teamName&&!headline.toLocaleLowerCase('en').includes(cleanText(teamName).toLocaleLowerCase('en').replace(/\s+fc$/,'')))continue;
+    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedMs=Date.parse(publishedRaw);
+    if(!headline||!publisher||!/^https:\/\//i.test(sourceUrl)||!Number.isFinite(publishedMs)||publishedMs<window.start_ms||publishedMs>=window.end_ms)continue;
+    if(scopeMode==='specific_team'&&(!unknownNeedle||!(specificTeam?matchesTeam(headline,specificTeam):normalizedTeamPhraseMatches(normalizeTeamText(headline),unknownNeedle))))continue;
     const story={headline,summary:stripHtml(firstTag(item,'description')).slice(0,1600),team_name:detectTeam(headline,scopeMode,teamName),publisher,source_url:sourceUrl,published_at:new Date(publishedRaw).toISOString(),retrieved_at:retrievedAt};
     story.fingerprint=storyFingerprint(story);
     if(seen.has(story.fingerprint))continue;seen.add(story.fingerprint);stories.push(story);
@@ -65,14 +108,27 @@ export function parseNewsRss(xml,{newsDate,scopeMode='all_teams_for_day',teamNam
 }
 
 export function newsRssUrl(newsDate,scopeMode='all_teams_for_day',teamName=''){
-  const start=new Date(`${newsDate}T00:00:00Z`);if(Number.isNaN(start.valueOf()))throw new Error('INVALID_NEWS_DATE');
-  const next=new Date(start.valueOf()+86400000).toISOString().slice(0,10),subject=scopeMode==='specific_team'?`"${cleanText(teamName).slice(0,120)}" football`:'football (Premier League OR Champions League OR transfer OR manager OR player)';
-  return `https://news.google.com/rss/search?q=${encodeURIComponent(`${subject} after:${newsDate} before:${next}`)}&hl=en-GB&gl=GB&ceid=GB:en`;
+  return newsRssUrlForWindow(newsDate,scopeMode,teamName,'exact');
 }
 
 export function bingNewsRssUrl(newsDate,scopeMode='all_teams_for_day',teamName=''){
-  const start=new Date(`${newsDate}T00:00:00Z`);if(Number.isNaN(start.valueOf()))throw new Error('INVALID_NEWS_DATE');
-  const subject=scopeMode==='specific_team'?`"${cleanText(teamName).slice(0,120)}" football`:'football (Premier League OR Champions League OR transfer OR manager OR player)',params=new URLSearchParams({q:`${subject} ${newsDate}`,format:'rss',setlang:'en-GB',qft:'sortbydate="1"'});
+  return bingNewsRssUrlForWindow(newsDate,scopeMode,teamName,'exact');
+}
+
+const newsSubject=(scopeMode,teamName)=>{
+  if(scopeMode!=='specific_team')return'football (Premier League OR Champions League OR transfer OR manager OR player)';
+  const resolved=resolveNewsTeam(teamName),terms=resolved.query_aliases.slice(0,5).map(value=>cleanText(value).replace(/["()]/g,' ').slice(0,120)).filter(Boolean).map(value=>`"${value}"`);
+  if(!terms.length)throw new Error('INVALID_NEWS_TEAM');
+  return`${terms.length>1?`(${terms.join(' OR ')})`:terms[0]} football`;
+};
+
+export function newsRssUrlForWindow(newsDate,scopeMode='all_teams_for_day',teamName='',windowKind='exact'){
+  const window=bangkokNewsWindow(newsDate,windowKind),subject=newsSubject(scopeMode,teamName);
+  return `https://news.google.com/rss/search?q=${encodeURIComponent(`${subject} after:${window.query_after} before:${window.query_before}`)}&hl=en-GB&gl=GB&ceid=GB:en`;
+}
+
+export function bingNewsRssUrlForWindow(newsDate,scopeMode='all_teams_for_day',teamName='',windowKind='exact'){
+  const window=bangkokNewsWindow(newsDate,windowKind),subject=newsSubject(scopeMode,teamName),params=new URLSearchParams({q:`${subject} after:${window.query_after} before:${window.query_before}`,format:'rss',setlang:'en-GB',qft:'sortbydate="1"'});
   return `https://www.bing.com/news/search?${params}`;
 }
 
