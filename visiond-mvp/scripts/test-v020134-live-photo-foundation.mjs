@@ -14,14 +14,14 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const sha256 = relative => createHash('sha256').update(fs.readFileSync(path.join(root, relative))).digest('hex').toUpperCase();
 
 const releasedVersion = read('VERSION.txt').trim();
-const assetVersion = ['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : '020134';
-assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141', 'v0.20.142'].includes(releasedVersion));
+const assetVersion = ['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142','v0.20.143'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : '020134';
+assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141', 'v0.20.142', 'v0.20.143'].includes(releasedVersion));
 assert.ok(read('public/index.html').includes(`WEB ${releasedVersion}`));
 assert.ok(read('public/admin.html').includes(`ADMIN ${releasedVersion}`));
 assert.equal(sha256('public/live-center-package.js'), '0BDC88818EA1369614B0275B9442E1E0C17C17AE502614E2145BEE1D7AB26E35', 'package schema-v1 parser stays byte-identical');
 if (releasedVersion === 'v0.20.134') assert.equal(sha256('.codex/active-work.md'), 'F390B44976E3B759C6C0807484C5EFA970496ED7E3D2852EDD99F71A077056A4', 'pre-existing active-work stays byte-identical');
 else assert.match(read('.codex/active-work.md'), /v0\.20\.135[\s\S]*tombstone/);
-assert.equal(sha256('public/vsport.js'), releasedVersion === 'v0.20.142' ? 'AF6853566D8D833F7AF98ECE4963020B0C181562766409DFEC928DA8AE112C3F' : releasedVersion === 'v0.20.141' ? 'FF611CC457D8BDE96B8CF3C13E5D653C060B7F67F7823457C39914865BF0CF52' : ['v0.20.139','v0.20.140'].includes(releasedVersion) ? 'A76A02B528D30B6DB390586E7515BCF674A045EAEA88FDFD69DB51B572AE208B' : '1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F', 'vSport matches its released bytes');
+assert.equal(sha256('public/vsport.js'), releasedVersion === 'v0.20.143' ? '9543B1DC78AC1E1EB7F152DA92F9D0E468212F64A75C6E717DDF02AB4C83C4E8' : releasedVersion === 'v0.20.142' ? 'AF6853566D8D833F7AF98ECE4963020B0C181562766409DFEC928DA8AE112C3F' : releasedVersion === 'v0.20.141' ? 'FF611CC457D8BDE96B8CF3C13E5D653C060B7F67F7823457C39914865BF0CF52' : ['v0.20.139','v0.20.140'].includes(releasedVersion) ? 'A76A02B528D30B6DB390586E7515BCF674A045EAEA88FDFD69DB51B572AE208B' : '1A257C80E9C734081FF3E56DE56A260F25DEB01FE6DD785C1A938C4986F2159F', 'vSport matches its released bytes');
 
 const editorHtml = read('public/live-center.html');
 const editorSource = read('public/live-center.js');

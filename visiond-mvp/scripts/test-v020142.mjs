@@ -15,15 +15,17 @@ const [version, home, admin, html, css, client, foundation, api, featureMap, pac
   'migrations/0111_vsport.sql', 'migrations/0115_vsport_project_delete.sql',
 ].map(text));
 
-assert.equal(version.trim(), 'v0.20.142');
-assert.match(home, /WEB v0\.20\.142/);
-assert.match(admin, /ADMIN v0\.20\.142/);
-assert.match(html, /src="\/vsport\.js\?v=020142"/);
+const releasedVersion = version.trim();
+const assetVersion = releasedVersion === 'v0.20.143' ? '020143' : '020142';
+assert.ok(['v0.20.142', 'v0.20.143'].includes(releasedVersion));
+assert.ok(home.includes(`WEB ${releasedVersion}`));
+assert.ok(admin.includes(`ADMIN ${releasedVersion}`));
+assert.match(html, new RegExp(`src="/vsport\\.js\\?v=${assetVersion}"`));
 assert.doesNotMatch(html, /vsport\.js\?v=020141/);
 assert.match(foundation, /export function isLikelyContentImageUrl/);
 assert.match(foundation, /supportedImageExtensions=new Set\(\['jpg','jpeg','png','webp'\]\)/);
 assert.match(foundation, /unsupportedImageExtensions=new Set\(\['svg','gif','ico','avif'\]\)/);
-assert.match(api, /display_eligible:isLikelyContentImageUrl\(item\.source_url\)/);
+assert.match(api, /display_eligible:(?:isLikelyContentImageUrl\(item\.source_url\)|isDisplayEligibleImageCandidate\(item\))/);
 assert.match(api, /extractImageUrls\(new TextDecoder\(\)\.decode\(bytes\),response\.url\|\|story\.source_url,4\)/);
 assert.match(api, /let count=0;const seen=new Set\(\)/);
 assert.match(api, /if\(count>=24\)break/);
@@ -36,10 +38,10 @@ assert.match(client, /ยังมีรายการหน้าถัดไ�
 assert.match(featureMap, /v0\.20\.142/);
 assert.match(featureMap, /4 ต่อข่าว\/24 ต่อ job/);
 
-assert.equal(await sha256('functions/_vsport.js'), '1E2940C567FF36E2306EB2AF742FAD2CE5D57F9F632E2E6CF9F8E2CA73B1F93A');
-assert.equal(await sha256('functions/api/admin/vsport.js'), '5F43FAE73B45056EF8409CB5D7E5CB96006DAFF730378907F2ABF1E7489E22C2');
-assert.equal(await sha256('public/vsport.html'), 'F235ED6322A31D62AB5DB3BDA40A2D73A9DFD42917E920E8DB63224B600B9AEF');
-assert.equal(await sha256('public/vsport.js'), 'AF6853566D8D833F7AF98ECE4963020B0C181562766409DFEC928DA8AE112C3F');
+assert.equal(await sha256('functions/_vsport.js'), releasedVersion === 'v0.20.143' ? 'C23F799D69413F1D16A493D8A386CF741FEE758D3B9B66685626857143A67022' : '1E2940C567FF36E2306EB2AF742FAD2CE5D57F9F632E2E6CF9F8E2CA73B1F93A');
+assert.equal(await sha256('functions/api/admin/vsport.js'), releasedVersion === 'v0.20.143' ? '0D1776B49DBC31B684BFDCA4E62B86F2BE31B8D25EE973AFAC2964F057BFCB73' : '5F43FAE73B45056EF8409CB5D7E5CB96006DAFF730378907F2ABF1E7489E22C2');
+assert.equal(await sha256('public/vsport.html'), releasedVersion === 'v0.20.143' ? 'CF1B0F748C88E85E0AB4C0B290A75C57FD2B304D0ACA010F9838504D22416B51' : 'F235ED6322A31D62AB5DB3BDA40A2D73A9DFD42917E920E8DB63224B600B9AEF');
+assert.equal(await sha256('public/vsport.js'), releasedVersion === 'v0.20.143' ? '9543B1DC78AC1E1EB7F152DA92F9D0E468212F64A75C6E717DDF02AB4C83C4E8' : 'AF6853566D8D833F7AF98ECE4963020B0C181562766409DFEC928DA8AE112C3F');
 assert.equal(await sha256('public/vsport.css'), '262CE0A73E4044B3F2FEABBD4DE65C5C98D635EDFD44AAABFEF2B395111A0EFC');
 assert.equal(await sha256('functions/api/admin/vsport-assets/[id].js'), '6BEF06AD1B137C56707D6F01CE0F86777CB79D8D6EFF108C763F9C07EAB4A434');
 assert.equal(await sha256('migrations/0111_vsport.sql'), '0AD1F2DA8B5833615BAE8967A7953CB75F83CE9ABEBAC12E5F1E4CEC2321A59D');

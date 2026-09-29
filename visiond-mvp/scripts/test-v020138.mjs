@@ -13,7 +13,7 @@ import './test-v020138-live-center-local-test-removal-browser.mjs';
 const root = new URL('../', import.meta.url);
 const text = relative => readFile(new URL(relative, root), 'utf8');
 
-const releasedVersion=(await text('VERSION.txt')).trim();assert.ok(['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142'].includes(releasedVersion));
+const releasedVersion=(await text('VERSION.txt')).trim();assert.ok(['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142','v0.20.143'].includes(releasedVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 const packageJson = JSON.parse(await text('package.json'));

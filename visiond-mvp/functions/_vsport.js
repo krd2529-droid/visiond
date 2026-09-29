@@ -161,8 +161,16 @@ export function isSafeRemoteUrl(value){
 
 const supportedImageExtensions=new Set(['jpg','jpeg','png','webp']),unsupportedImageExtensions=new Set(['svg','gif','ico','avif']);
 const decorativeImageDirectories=new Set(['app-store','appstore','badges','chrome','flags','icons','logo','logos','menu','nav','navigation','play-store','playstore','sprites']);
-const decorativeImageBasenames=new Set(['app-store','appstore','arrow','favicon','flag','footer-logo','google-play','hamburger','header-logo','icon','logo','menu','menu-arrow','play-store','site-logo','spacer','sprite','tracking-pixel']);
+const decorativeImageBasenames=new Set(['app-store','appstore','arrow','covers-header-v2-dropdown-caret','dropdown-caret','favicon','flag','footer-logo','google-play','hamburger','header-logo','icon','logo','menu','menu-arrow','play-store','site-logo','spacer','sprite','tracking-pixel']);
 const socialImageMetaNames=new Set(['og:image','og:image:url','twitter:image','twitter:image:src']);
+const terminalImageCandidateErrors=new Set(['IMAGE_DECODE_OR_SIZE_INVALID','IMAGE_SUPPORTED_FORMAT_NEGOTIATION_FAILED','IMAGE_TOO_LARGE']);
+const retryableImageHttpStatuses=new Set([408,409,425,429]);
+
+const numericImageTransform=(url,names)=>{
+  const values=[];
+  for(const[name,value]of url.searchParams)if(names.has(name.toLowerCase())&&/^\d+$/.test(value)){const number=Number(value);if(Number.isSafeInteger(number))values.push(number)}
+  return values.length?Math.min(...values):null;
+};
 
 export function isLikelyContentImageUrl(value){
   if(!isSafeRemoteUrl(value))return false;
@@ -171,8 +179,19 @@ export function isLikelyContentImageUrl(value){
     if(extension&&(!supportedImageExtensions.has(extension)||unsupportedImageExtensions.has(extension)))return false;
     if(directorySegments.some(segment=>decorativeImageDirectories.has(segment)))return false;
     if(decorativeImageBasenames.has(canonicalStem))return false;
+    const width=numericImageTransform(url,new Set(['w','width'])),height=numericImageTransform(url,new Set(['h','height']));
+    if(width!==null&&height!==null&&(width<320||height<180))return false;
     return true;
   }catch{return false}
+}
+
+export function isDisplayEligibleImageCandidate(candidate){
+  if(!isLikelyContentImageUrl(candidate?.source_url))return false;
+  if(candidate?.state!=='failed')return true;
+  const code=String(candidate?.error_message||'').trim();
+  if(terminalImageCandidateErrors.has(code))return false;
+  const status=Number(code.match(/^IMAGE_HTTP_(\d{3})$/)?.[1]||0);
+  return !(status>=400&&status<500&&!retryableImageHttpStatuses.has(status));
 }
 
 export function extractImageUrls(html,baseUrl,limit=12){
