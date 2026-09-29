@@ -1,4 +1,4 @@
-import {json,requireAdmin} from '../../_lib.js';
+import {json,requireAdmin,sha256} from '../../_lib.js';
 import {bangkokNewsWindow,bingNewsRssUrlForWindow,escapeLike,extractImageUrls,imageDimensions,isNewsRssEnvelope,isSafeRemoteUrl,newsRssUrlForWindow,parseCursor,parseNewsRss} from '../../_vsport.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
 
@@ -11,9 +11,60 @@ const JOB_LEASE_MS=120000;
 const NEWS_FETCH_TIMEOUT_MS=4500;
 const NEWS_FETCH_ATTEMPTS=2;
 const NEWS_MAX_BYTES=2*1024*1024;
+const INGEST_LEASE_MS=120000;
+const CLEANUP_LIMIT=24;
+const DELETE_KEY_MIN=8;
+const DELETE_KEY_MAX=128;
 
 async function ownedProject(env,id,ownerId,{withScript=false}={}){
   return env.DB.prepare(`SELECT ${projectFields}${withScript?',narration_script':''} FROM vsport_projects WHERE id=? AND owner_id=?`).bind(id,ownerId).first();
+}
+
+const isoAfter=milliseconds=>new Date(Date.now()+milliseconds).toISOString();
+const rowChanges=result=>Number(result?.meta?.changes||0);
+const cleanupBackoff=attempts=>Math.min(15*60,Math.max(30,2**Math.min(5,Math.max(0,attempts-1))*30));
+
+async function exactObjectCleanup(files,objectKey){
+  await files.head(objectKey);
+  await files.delete(objectKey);
+  return !(await files.head(objectKey));
+}
+
+async function countProjectCleanup(env,ownerId,projectId){
+  const row=await env.DB.prepare("SELECT COUNT(*) count FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND status<>'done'").bind(ownerId,projectId).first();
+  return Number(row?.count||0);
+}
+
+async function updateReceiptCleanupState(env,ownerId,projectId,pending){
+  await env.DB.prepare("UPDATE vsport_project_deletions SET cleanup_state=?,cleanup_completed_at=CASE WHEN ?=0 THEN CURRENT_TIMESTAMP ELSE NULL END,updated_at=CURRENT_TIMESTAMP WHERE owner_id=? AND project_id=?").bind(pending?'pending':'complete',pending?1:0,ownerId,projectId).run();
+}
+
+async function processProjectCleanup(env,ownerId,projectId){
+  if(!env.FILES){const pending=await countProjectCleanup(env,ownerId,projectId);await updateReceiptCleanupState(env,ownerId,projectId,pending);return{pending,processed:0}}
+  const now=new Date().toISOString(),rows=(await env.DB.prepare("SELECT id,object_key,status,attempts FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND status IN ('pending','error') AND (next_attempt_at IS NULL OR julianday(next_attempt_at)<=julianday(?)) ORDER BY COALESCE(next_attempt_at,created_at),id LIMIT ?").bind(ownerId,projectId,now,CLEANUP_LIMIT).all()).results||[];
+  let processed=0;
+  for(const row of rows){
+    const claimUntil=isoAfter(INGEST_LEASE_MS),claimed=await env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET status='pending',attempts=attempts+1,next_attempt_at=?,last_error_code='',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=? AND attempts=? AND (next_attempt_at IS NULL OR julianday(next_attempt_at)<=julianday(?))").bind(claimUntil,row.id,row.status,Number(row.attempts||0),now).run();
+    if(!rowChanges(claimed))continue;
+    processed++;
+    let code='';
+    try{if(!await exactObjectCleanup(env.FILES,row.object_key))code='R2_OBJECT_REMAINS'}catch(error){code=clean(error?.name==='AbortError'?'R2_CLEANUP_TIMEOUT':'R2_CLEANUP_FAILED',80)}
+    if(!code)await env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET status='done',next_attempt_at=NULL,last_error_code='',completed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'").bind(row.id).run();
+    else{const attempts=Number(row.attempts||0)+1,next=isoAfter(cleanupBackoff(attempts)*1000);await env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET status='error',next_attempt_at=?,last_error_code=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'").bind(next,code,row.id).run()}
+  }
+  const pending=await countProjectCleanup(env,ownerId,projectId);await updateReceiptCleanupState(env,ownerId,projectId,pending);return{pending,processed};
+}
+
+async function forceCleanupGuard(env,{ownerId,projectId,objectKey,writerFence}){
+  const asset=await env.DB.prepare('SELECT id FROM vsport_assets WHERE owner_id=? AND project_id=? AND object_key=?').bind(ownerId,projectId,objectKey).first();
+  if(asset)return{recorded:true,assetId:Number(asset.id)};
+  const guard=await env.DB.prepare('SELECT id FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND object_key=? AND writer_fence=?').bind(ownerId,projectId,objectKey,writerFence).first();
+  if(!guard)return{recorded:false,cleaned:false};
+  let cleaned=false,code='';
+  try{cleaned=await exactObjectCleanup(env.FILES,objectKey);if(!cleaned)code='R2_OBJECT_REMAINS'}catch{code='R2_CLEANUP_FAILED'}
+  if(cleaned)await env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET status='done',reason='orphan_guard',next_attempt_at=NULL,last_error_code='',completed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND writer_fence=?").bind(guard.id,writerFence).run();
+  else await env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET status='error',next_attempt_at=?,last_error_code=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND writer_fence=?").bind(isoAfter(30000),code||'R2_CLEANUP_FAILED',guard.id,writerFence).run();
+  return{recorded:false,cleaned};
 }
 
 async function listProjects(ctx,ownerId){
@@ -180,14 +231,74 @@ async function ingestImage(ctx,auth,project,body){
   }
   if(!candidate||!isSafeRemoteUrl(candidate.source_url))return json({error:'ไม่พบรูปที่เลือกหรือ URL รูปไม่ปลอดภัย'},400,headers);
   const existing=await ctx.env.DB.prepare('SELECT id FROM vsport_assets WHERE project_id=? AND candidate_id=?').bind(project.id,candidate.id).first();if(existing)return json({ok:true,id:existing.id,preview_url:`/api/admin/vsport-assets/${existing.id}`,reused:true},200,headers);
-  let key='';
+  const writerFence=crypto.randomUUID();let key='',guardId='';
   try{
-    const claimed=await ctx.env.DB.prepare("UPDATE vsport_image_candidates SET state='ingesting',error_message='',updated_at=CURRENT_TIMESTAMP WHERE id=? AND (state IN ('candidate','failed') OR (state='ingesting' AND updated_at<datetime('now','-2 minutes')))").bind(candidate.id).run();if(!Number(claimed.meta?.changes))return json({error:'รูปนี้กำลังถูกนำเข้าอยู่ กรุณารอผลเดิม'},409,headers);
+    const claimed=await ctx.env.DB.prepare("UPDATE vsport_image_candidates SET state='ingesting',error_message='',ingest_fence=?,ingest_lease_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND project_id=? AND EXISTS(SELECT 1 FROM vsport_projects p WHERE p.id=vsport_image_candidates.project_id AND p.owner_id=?) AND (state IN ('candidate','failed') OR (state='ingesting' AND (ingest_lease_expires_at IS NULL OR julianday(ingest_lease_expires_at)<=julianday(?))))").bind(writerFence,isoAfter(INGEST_LEASE_MS),candidate.id,project.id,auth.user.id,new Date().toISOString()).run();if(!rowChanges(claimed))return json({error:'รูปนี้กำลังถูกนำเข้าอยู่ กรุณารอผลเดิม'},409,headers);
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000),response=await safeFollowFetch(candidate.source_url,{headers:{'user-agent':'Mozilla/5.0 VisionD-vSport/1.0','accept':'image/avif,image/webp,image/png,image/jpeg'},signal:controller.signal}).finally(()=>clearTimeout(timer));if(!response.ok)throw new Error(`IMAGE_HTTP_${response.status}`);
     const mime=clean(response.headers.get('content-type')?.split(';')[0],80).toLowerCase();if(!['image/jpeg','image/png','image/webp'].includes(mime))throw new Error('IMAGE_MIME_UNSUPPORTED');const expected=Number(response.headers.get('content-length')||0);if(expected>8*1024*1024)throw new Error('IMAGE_TOO_LARGE');const bytes=new Uint8Array(await response.arrayBuffer());if(!bytes.length||bytes.length>8*1024*1024)throw new Error('IMAGE_TOO_LARGE');const dimensions=imageDimensions(bytes,mime);if(!dimensions||dimensions.width<320||dimensions.height<180)throw new Error('IMAGE_DECODE_OR_SIZE_INVALID');
-    const ext=mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg';key=`vsport/${auth.user.id}/${project.id}/${crypto.randomUUID()}.${ext}`;await ctx.env.FILES.put(key,bytes,{httpMetadata:{contentType:mime}});
-    const row=await ctx.env.DB.prepare('INSERT INTO vsport_assets(project_id,story_id,candidate_id,owner_id,object_key,source_url,source_page_url,publisher,mime_type,file_size,width,height) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id').bind(project.id,candidate.story_id,candidate.id,auth.user.id,key,candidate.source_url,candidate.source_page_url,candidate.publisher,mime,bytes.length,dimensions.width,dimensions.height).first();await ctx.env.DB.prepare("UPDATE vsport_image_candidates SET state='ready',error_message='',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(candidate.id).run();return json({ok:true,id:row.id,preview_url:`/api/admin/vsport-assets/${row.id}`,width:dimensions.width,height:dimensions.height},201,headers);
-  }catch(error){if(key)await ctx.env.FILES.delete(key).catch(()=>{});await ctx.env.DB.prepare("UPDATE vsport_image_candidates SET state='failed',error_message=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(clean(error?.name==='AbortError'?'IMAGE_TIMEOUT':error?.message||'IMAGE_INGEST_FAILED',300),candidate.id).run();return json({error:`นำเข้ารูปไม่สำเร็จ (${clean(error?.message||'IMAGE_INGEST_FAILED',120)})`,candidate_id:candidate.id},422,headers)}
+    const ext=mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg',leaseExpiresAt=isoAfter(INGEST_LEASE_MS);key=`vsport/${auth.user.id}/${project.id}/${crypto.randomUUID()}.${ext}`;guardId=crypto.randomUUID();
+    const guarded=await ctx.env.DB.batch([
+      ctx.env.DB.prepare("UPDATE vsport_image_candidates SET ingest_lease_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND project_id=? AND state='ingesting' AND ingest_fence=? AND EXISTS(SELECT 1 FROM vsport_projects WHERE id=? AND owner_id=?)").bind(leaseExpiresAt,candidate.id,project.id,writerFence,project.id,auth.user.id),
+      ctx.env.DB.prepare("INSERT INTO vsport_object_cleanup_jobs(id,owner_id,project_id,object_key,reason,status,writer_fence,lease_expires_at,next_attempt_at) SELECT ?,?,?,?,?, 'reserved',?,?,? WHERE EXISTS(SELECT 1 FROM vsport_image_candidates c JOIN vsport_projects p ON p.id=c.project_id WHERE c.id=? AND c.project_id=? AND c.state='ingesting' AND c.ingest_fence=? AND c.ingest_lease_expires_at=? AND p.owner_id=?)").bind(guardId,auth.user.id,project.id,key,'orphan_guard',writerFence,leaseExpiresAt,leaseExpiresAt,candidate.id,project.id,writerFence,leaseExpiresAt,auth.user.id)
+    ]);if(!rowChanges(guarded[0])||!rowChanges(guarded[1]))throw new Error('IMAGE_INGEST_FENCE_LOST');
+    const guard=await ctx.env.DB.prepare("SELECT id FROM vsport_object_cleanup_jobs WHERE id=? AND owner_id=? AND project_id=? AND object_key=? AND reason='orphan_guard' AND status='reserved' AND writer_fence=? AND julianday(lease_expires_at)>julianday(?) AND EXISTS(SELECT 1 FROM vsport_image_candidates c JOIN vsport_projects p ON p.id=c.project_id WHERE c.id=? AND c.project_id=? AND c.state='ingesting' AND c.ingest_fence=? AND c.ingest_lease_expires_at=vsport_object_cleanup_jobs.lease_expires_at AND p.owner_id=?)").bind(guardId,auth.user.id,project.id,key,writerFence,new Date().toISOString(),candidate.id,project.id,writerFence,auth.user.id).first();if(!guard)throw new Error('IMAGE_INGEST_FENCE_LOST');
+    await ctx.env.FILES.put(key,bytes,{httpMetadata:{contentType:mime}});
+    const finalized=await ctx.env.DB.batch([
+      ctx.env.DB.prepare("INSERT INTO vsport_assets(project_id,story_id,candidate_id,owner_id,object_key,source_url,source_page_url,publisher,mime_type,file_size,width,height) SELECT c.project_id,c.story_id,c.id,p.owner_id,?,?,?,?,?,?,?,? FROM vsport_image_candidates c JOIN vsport_projects p ON p.id=c.project_id JOIN vsport_object_cleanup_jobs g ON g.id=? AND g.object_key=? WHERE c.id=? AND c.project_id=? AND c.state='ingesting' AND c.ingest_fence=? AND p.owner_id=? AND g.owner_id=p.owner_id AND g.project_id=p.id AND g.reason='orphan_guard' AND g.status='reserved' AND g.writer_fence=? AND julianday(g.lease_expires_at)>julianday(?)").bind(key,candidate.source_url,candidate.source_page_url,candidate.publisher,mime,bytes.length,dimensions.width,dimensions.height,guardId,key,candidate.id,project.id,writerFence,auth.user.id,writerFence,new Date().toISOString()),
+      ctx.env.DB.prepare("UPDATE vsport_image_candidates SET state='ready',error_message='',ingest_fence=NULL,ingest_lease_expires_at=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=? AND project_id=? AND state='ingesting' AND ingest_fence=? AND EXISTS(SELECT 1 FROM vsport_assets WHERE candidate_id=? AND object_key=?) AND EXISTS(SELECT 1 FROM vsport_object_cleanup_jobs WHERE id=? AND object_key=? AND writer_fence=? AND status='reserved')").bind(candidate.id,project.id,writerFence,candidate.id,key,guardId,key,writerFence),
+      ctx.env.DB.prepare("DELETE FROM vsport_object_cleanup_jobs WHERE id=? AND owner_id=? AND project_id=? AND object_key=? AND writer_fence=? AND status='reserved' AND EXISTS(SELECT 1 FROM vsport_assets WHERE candidate_id=? AND object_key=?)").bind(guardId,auth.user.id,project.id,key,writerFence,candidate.id,key)
+    ]);if(finalized.some(result=>!rowChanges(result)))throw new Error('IMAGE_INGEST_FINALIZE_FAILED');
+    const row=await ctx.env.DB.prepare('SELECT id FROM vsport_assets WHERE project_id=? AND owner_id=? AND candidate_id=? AND object_key=?').bind(project.id,auth.user.id,candidate.id,key).first();if(!row)throw new Error('IMAGE_INGEST_FINALIZE_FAILED');return json({ok:true,id:row.id,preview_url:`/api/admin/vsport-assets/${row.id}`,width:dimensions.width,height:dimensions.height},201,headers);
+  }catch(error){
+    if(key&&guardId){const cleanup=await forceCleanupGuard(ctx.env,{ownerId:auth.user.id,projectId:project.id,objectKey:key,writerFence});if(cleanup.recorded)return json({ok:true,id:cleanup.assetId,preview_url:`/api/admin/vsport-assets/${cleanup.assetId}`,reused:true},200,headers)}
+    const code=clean(error?.name==='AbortError'?'IMAGE_TIMEOUT':error?.message||'IMAGE_INGEST_FAILED',120);await ctx.env.DB.prepare("UPDATE vsport_image_candidates SET state='failed',error_message=?,ingest_fence=NULL,ingest_lease_expires_at=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=? AND project_id=? AND ingest_fence=?").bind(code,candidate.id,project.id,writerFence).run();return json({error:`นำเข้ารูปไม่สำเร็จ (${code})`,candidate_id:candidate.id},422,headers)
+  }
+}
+
+async function deleteReceiptResponse(ctx,receipt,{replayed}){
+  const cleanup=await processProjectCleanup(ctx.env,Number(receipt.owner_id),Number(receipt.project_id)),cleanupPending=cleanup.pending>0,status=cleanupPending?202:200;
+  return json({ok:true,deleted:true,project_id:Number(receipt.project_id),title:receipt.project_title,replayed,cleanup_pending:cleanupPending,cleanup_processed:cleanup.processed},status,headers);
+}
+
+export async function onRequestDelete(ctx){
+  const auth=await requireAdmin(ctx);if(auth.error){const deniedHeaders=new Headers(auth.error.headers);for(const [name,value] of Object.entries(headers))deniedHeaders.set(name,value);return new Response(auth.error.body,{status:auth.error.status,headers:deniedHeaders})}
+  const body=await ctx.request.json().catch(()=>null),idempotencyKey=String(ctx.request.headers.get('Idempotency-Key')||'').trim();
+  if(!body||Array.isArray(body)||typeof body!=='object'||Object.keys(body).sort().join(',')!=='expected_title,project_id')return json({error:'ข้อมูลยืนยันการลบไม่ถูกต้อง'},400,headers);
+  const projectId=integer(body.project_id,1,Number.MAX_SAFE_INTEGER),expectedTitle=clean(body.expected_title,180);
+  if(!projectId||!expectedTitle||!/^[\x21-\x7e]{8,128}$/.test(idempotencyKey))return json({error:'รหัสโปรเจกต์ ชื่อยืนยัน หรือ Idempotency-Key ไม่ถูกต้อง'},400,headers);
+  const requestHash=await sha256(JSON.stringify({project_id:projectId,expected_title:expectedTitle}));
+  const byKey=await ctx.env.DB.prepare('SELECT owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state FROM vsport_project_deletions WHERE owner_id=? AND idempotency_key=?').bind(auth.user.id,idempotencyKey).first();
+  if(byKey){if(Number(byKey.project_id)!==projectId||byKey.request_hash!==requestHash||byKey.project_title!==expectedTitle)return json({error:'Idempotency-Key นี้ถูกใช้กับคำขอลบอื่นแล้ว'},409,headers);return deleteReceiptResponse(ctx,byKey,{replayed:true})}
+  const project=await ctx.env.DB.prepare('SELECT id,title FROM vsport_projects WHERE id=? AND owner_id=?').bind(projectId,auth.user.id).first();
+  if(!project){const deleted=await ctx.env.DB.prepare('SELECT owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state FROM vsport_project_deletions WHERE owner_id=? AND project_id=?').bind(auth.user.id,projectId).first();return deleted?json({error:'โปรเจกต์นี้ถูกลบแล้วด้วยคำขออื่น'},409,headers):json({error:'ไม่พบโปรเจกต์ vSport'},404,headers)}
+  if(project.title!==expectedTitle)return json({error:'ชื่อโปรเจกต์เปลี่ยนแล้ว กรุณารีเฟรชก่อนยืนยันลบ'},409,headers);
+  const now=new Date().toISOString();let results;
+  try{
+    results=await ctx.env.DB.batch([
+      ctx.env.DB.prepare("INSERT INTO vsport_project_deletions(owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state) SELECT p.owner_id,p.id,p.title,?,?,'pending' FROM vsport_projects p WHERE p.id=? AND p.owner_id=? AND p.title=? AND NOT EXISTS(SELECT 1 FROM vsport_jobs j WHERE j.project_id=p.id AND j.status IN ('queued','running')) AND NOT EXISTS(SELECT 1 FROM vsport_image_candidates c WHERE c.project_id=p.id AND c.state='ingesting' AND (c.ingest_lease_expires_at IS NULL OR julianday(c.ingest_lease_expires_at)>julianday(?))) AND NOT EXISTS(SELECT 1 FROM vsport_object_cleanup_jobs g WHERE g.owner_id=p.owner_id AND g.project_id=p.id AND g.reason='orphan_guard' AND g.status='reserved' AND julianday(g.lease_expires_at)>julianday(?))").bind(idempotencyKey,requestHash,projectId,auth.user.id,expectedTitle,now,now),
+      ctx.env.DB.prepare("INSERT INTO vsport_object_cleanup_jobs(id,owner_id,project_id,object_key,reason,status,next_attempt_at) SELECT lower(hex(randomblob(16))),a.owner_id,a.project_id,a.object_key,'deleted','pending',? FROM vsport_assets a WHERE a.project_id=? AND a.owner_id=? AND EXISTS(SELECT 1 FROM vsport_project_deletions d WHERE d.owner_id=? AND d.project_id=? AND d.idempotency_key=? AND d.request_hash=?) ON CONFLICT(object_key) DO UPDATE SET reason='deleted',status=CASE WHEN vsport_object_cleanup_jobs.status='done' THEN 'done' ELSE 'pending' END,next_attempt_at=CASE WHEN vsport_object_cleanup_jobs.status='done' THEN NULL ELSE excluded.next_attempt_at END,last_error_code='',updated_at=CURRENT_TIMESTAMP").bind(now,projectId,auth.user.id,auth.user.id,projectId,idempotencyKey,requestHash),
+      ctx.env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET reason='deleted',status=CASE WHEN status='done' THEN 'done' ELSE 'pending' END,next_attempt_at=CASE WHEN status='done' THEN NULL ELSE ? END,last_error_code='',updated_at=CURRENT_TIMESTAMP WHERE owner_id=? AND project_id=? AND reason='orphan_guard' AND (status<>'reserved' OR lease_expires_at IS NULL OR julianday(lease_expires_at)<=julianday(?)) AND EXISTS(SELECT 1 FROM vsport_project_deletions WHERE owner_id=? AND project_id=? AND idempotency_key=? AND request_hash=?)").bind(now,auth.user.id,projectId,now,auth.user.id,projectId,idempotencyKey,requestHash),
+      ctx.env.DB.prepare('DELETE FROM vsport_projects WHERE id=? AND owner_id=? AND EXISTS(SELECT 1 FROM vsport_project_deletions WHERE owner_id=? AND project_id=? AND idempotency_key=? AND request_hash=?)').bind(projectId,auth.user.id,auth.user.id,projectId,idempotencyKey,requestHash)
+    ]);
+  }catch{
+    const replay=await ctx.env.DB.prepare('SELECT owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state FROM vsport_project_deletions WHERE owner_id=? AND idempotency_key=?').bind(auth.user.id,idempotencyKey).first();
+    if(replay&&Number(replay.project_id)===projectId&&replay.request_hash===requestHash&&replay.project_title===expectedTitle)return deleteReceiptResponse(ctx,replay,{replayed:true});
+    if(replay)return json({error:'Idempotency-Key นี้ถูกใช้กับคำขอลบอื่นแล้ว'},409,headers);
+    return json({error:'บันทึกการลบโปรเจกต์ไม่สำเร็จ โปรเจกต์เดิมยังไม่ถูกลบ'},500,headers);
+  }
+  if(!rowChanges(results[0])||!rowChanges(results[3])){
+    const replay=await ctx.env.DB.prepare('SELECT owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state FROM vsport_project_deletions WHERE owner_id=? AND idempotency_key=?').bind(auth.user.id,idempotencyKey).first();
+    if(replay&&Number(replay.project_id)===projectId&&replay.request_hash===requestHash&&replay.project_title===expectedTitle)return deleteReceiptResponse(ctx,replay,{replayed:true});
+    const current=await ctx.env.DB.prepare('SELECT id,title FROM vsport_projects WHERE id=? AND owner_id=?').bind(projectId,auth.user.id).first();
+    if(!current)return json({error:'ไม่พบโปรเจกต์ vSport'},404,headers);
+    const active=await ctx.env.DB.prepare("SELECT CASE WHEN EXISTS(SELECT 1 FROM vsport_jobs WHERE project_id=? AND status IN ('queued','running')) THEN 'job' WHEN EXISTS(SELECT 1 FROM vsport_image_candidates WHERE project_id=? AND state='ingesting' AND (ingest_lease_expires_at IS NULL OR julianday(ingest_lease_expires_at)>julianday(?))) THEN 'ingest' WHEN EXISTS(SELECT 1 FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND reason='orphan_guard' AND status='reserved' AND julianday(lease_expires_at)>julianday(?)) THEN 'guard' ELSE '' END reason").bind(projectId,projectId,now,auth.user.id,projectId,now).first();
+    if(active?.reason)return json({error:'โปรเจกต์นี้ยังมีงานหรือการนำเข้ารูปที่กำลังทำอยู่ กรุณารอให้เสร็จแล้วลองลบอีกครั้ง'},409,headers);
+    if(current.title!==expectedTitle)return json({error:'ชื่อโปรเจกต์เปลี่ยนแล้ว กรุณารีเฟรชก่อนยืนยันลบ'},409,headers);
+    return json({error:'ลบโปรเจกต์ไม่สำเร็จ โปรเจกต์เดิมยังอยู่'},500,headers);
+  }
+  const receipt=await ctx.env.DB.prepare('SELECT owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state FROM vsport_project_deletions WHERE owner_id=? AND project_id=?').bind(auth.user.id,projectId).first();
+  if(!receipt)return json({error:'ไม่พบหลักฐานการลบ โปรเจกต์เดิมอาจยังอยู่'},500,headers);
+  return deleteReceiptResponse(ctx,receipt,{replayed:false});
 }
 
 export async function onRequestPost(ctx){

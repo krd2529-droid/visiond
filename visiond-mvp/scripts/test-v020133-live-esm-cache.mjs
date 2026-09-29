@@ -105,7 +105,7 @@ const openerSource = await readFile(new URL('../public/live-package-open.js', im
 const hostSource = await readFile(new URL('../public/live-package-ai-host.js', import.meta.url), 'utf8');
 const playerSource = await readFile(new URL('../public/live-package-player.js', import.meta.url), 'utf8');
 const releasedVersion = (await readFile(new URL('../VERSION.txt', import.meta.url), 'utf8')).trim();
-const expectedVersion = ['v0.20.138','v0.20.139','v0.20.140'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : releasedVersion === 'v0.20.134' ? '020134' : '020133';
+const expectedVersion = ['v0.20.138','v0.20.139','v0.20.140','v0.20.141'].includes(releasedVersion) ? '020138' : releasedVersion === 'v0.20.137' ? '020137' : releasedVersion === 'v0.20.136' ? '020136' : releasedVersion === 'v0.20.135' ? '020135' : releasedVersion === 'v0.20.134' ? '020134' : '020133';
 const expectedEdges = [
   'live-center-package.js',
   'live-package-ai-host.js',

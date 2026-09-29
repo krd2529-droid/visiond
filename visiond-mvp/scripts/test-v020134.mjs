@@ -9,7 +9,7 @@ const root = new URL('../', import.meta.url);
 const text = path => readFile(new URL(path, root), 'utf8');
 
 const releasedVersion = (await text('VERSION.txt')).trim();
-assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140'].includes(releasedVersion));
+assert.ok(['v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141'].includes(releasedVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020134'], 'node scripts/test-v020134.mjs && npm run test:v020133');
