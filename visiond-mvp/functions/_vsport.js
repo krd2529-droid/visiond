@@ -159,12 +159,30 @@ export function isSafeRemoteUrl(value){
   }catch{return false}
 }
 
+const supportedImageExtensions=new Set(['jpg','jpeg','png','webp']),unsupportedImageExtensions=new Set(['svg','gif','ico','avif']);
+const decorativeImageDirectories=new Set(['app-store','appstore','badges','chrome','flags','icons','logo','logos','menu','nav','navigation','play-store','playstore','sprites']);
+const decorativeImageBasenames=new Set(['app-store','appstore','arrow','favicon','flag','footer-logo','google-play','hamburger','header-logo','icon','logo','menu','menu-arrow','play-store','site-logo','spacer','sprite','tracking-pixel']);
+const socialImageMetaNames=new Set(['og:image','og:image:url','twitter:image','twitter:image:src']);
+
+export function isLikelyContentImageUrl(value){
+  if(!isSafeRemoteUrl(value))return false;
+  try{
+    const url=new URL(value),pathname=decodeURIComponent(url.pathname).toLowerCase(),segments=pathname.split('/').filter(Boolean),basename=segments.at(-1)||'',extensionMatch=basename.match(/\.([a-z0-9]{2,8})$/i),extension=extensionMatch?.[1]?.toLowerCase()||'',stem=extensionMatch?basename.slice(0,-extensionMatch[0].length):basename,canonicalStem=stem.replace(/@(2|3)x$/,''),directorySegments=segments.slice(0,-1);
+    if(extension&&(!supportedImageExtensions.has(extension)||unsupportedImageExtensions.has(extension)))return false;
+    if(directorySegments.some(segment=>decorativeImageDirectories.has(segment)))return false;
+    if(decorativeImageBasenames.has(canonicalStem))return false;
+    return true;
+  }catch{return false}
+}
+
 export function extractImageUrls(html,baseUrl,limit=12){
-  const found=[];
-  const add=value=>{try{const url=new URL(decodeXml(value),baseUrl).href;if(isSafeRemoteUrl(url)&&!found.includes(url))found.push(url)}catch{}};
-  for(const pattern of [/<meta[^>]+(?:property|name)=["'](?:og:image(?::url)?|twitter:image(?::src)?)["'][^>]+content=["']([^"']+)["'][^>]*>/gi,/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image(?::url)?|twitter:image(?::src)?)["'][^>]*>/gi,/<img[^>]+src=["']([^"']+)["'][^>]*>/gi]){
-    for(const match of String(html||'').matchAll(pattern)){add(match[1]);if(found.length>=limit)return found}
+  const found=[],social=[],body=[];
+  const add=value=>{try{const url=new URL(decodeXml(value),baseUrl).href;if(isLikelyContentImageUrl(url)&&!found.includes(url))found.push(url)}catch{}};
+  for(const match of String(html||'').matchAll(/<(meta|img)\b[^>]*>/gi)){
+    const attributes={};for(const attribute of match[0].matchAll(/\b([a-z][\w:-]*)\s*=\s*(["'])(.*?)\2/gi)){const name=attribute[1].toLowerCase();if(!Object.hasOwn(attributes,name))attributes[name]=attribute[3]}
+    if(match[1].toLowerCase()==='meta'){const name=String(attributes.property||attributes.name||'').toLowerCase();if(socialImageMetaNames.has(name)&&attributes.content)social.push(attributes.content)}else if(attributes.src)body.push(attributes.src);
   }
+  for(const value of [...social,...body]){add(value);if(found.length>=limit)return found}
   return found;
 }
 

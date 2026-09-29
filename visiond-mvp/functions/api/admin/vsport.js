@@ -1,5 +1,5 @@
 import {json,requireAdmin,sha256} from '../../_lib.js';
-import {bangkokNewsWindow,bingNewsRssUrlForWindow,escapeLike,extractImageUrls,imageDimensions,isNewsRssEnvelope,isSafeRemoteUrl,newsRssUrlForWindow,parseCursor,parseNewsRss} from '../../_vsport.js';
+import {bangkokNewsWindow,bingNewsRssUrlForWindow,escapeLike,extractImageUrls,imageDimensions,isLikelyContentImageUrl,isNewsRssEnvelope,isSafeRemoteUrl,newsRssUrlForWindow,parseCursor,parseNewsRss} from '../../_vsport.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
@@ -83,7 +83,7 @@ async function projectDetail(ctx,ownerId,id,include){
   if(parts.has('stories')){const after=integer(params.get('story_cursor')||0,0,Number.MAX_SAFE_INTEGER),rows=(await ctx.env.DB.prepare('SELECT id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,selected,sort_order FROM vsport_stories WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,after).all()).results||[];result.stories=rows.slice(0,24);result.story_pagination={limit:24,has_more:rows.length>24,next_cursor:rows.length>24?String(result.stories.at(-1).id):null}}
   if(parts.has('media')){
     const candidateAfter=integer(params.get('candidate_cursor')||0,0,Number.MAX_SAFE_INTEGER),assetAfter=integer(params.get('asset_cursor')||0,0,Number.MAX_SAFE_INTEGER),candidateRows=(await ctx.env.DB.prepare('SELECT id,story_id,source_url,source_page_url,publisher,state,error_message,created_at FROM vsport_image_candidates WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,candidateAfter).all()).results||[],assetRows=(await ctx.env.DB.prepare('SELECT id,story_id,candidate_id,source_url,source_page_url,publisher,mime_type,file_size,width,height,created_at FROM vsport_assets WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,assetAfter).all()).results||[];
-    result.candidates=candidateRows.slice(0,24);result.assets=assetRows.slice(0,24).map(item=>({...item,preview_url:`/api/admin/vsport-assets/${item.id}`}));result.media_pagination={candidates:{limit:24,has_more:candidateRows.length>24,next_cursor:candidateRows.length>24?String(result.candidates.at(-1).id):null},assets:{limit:24,has_more:assetRows.length>24,next_cursor:assetRows.length>24?String(result.assets.at(-1).id):null}};
+    const candidatePage=candidateRows.slice(0,24),assetPage=assetRows.slice(0,24);result.candidates=candidatePage.map(item=>({...item,display_eligible:isLikelyContentImageUrl(item.source_url)}));result.assets=assetPage.map(item=>({...item,preview_url:`/api/admin/vsport-assets/${item.id}`}));result.media_pagination={candidates:{limit:24,has_more:candidateRows.length>24,next_cursor:candidateRows.length>24?String(candidatePage.at(-1).id):null},assets:{limit:24,has_more:assetRows.length>24,next_cursor:assetRows.length>24?String(assetPage.at(-1).id):null}};
   }
   return result;
 }
@@ -195,7 +195,7 @@ async function fetchPageImages(story){
     const response=await safeFollowFetch(story.source_url,{headers:{'user-agent':'Mozilla/5.0 VisionD-vSport/1.0','accept':'text/html'},signal:controller.signal});if(!response.ok)return[];
     const length=Number(response.headers.get('content-length')||0);if(length>2*1024*1024)return[];
     const bytes=await response.arrayBuffer();if(bytes.byteLength>2*1024*1024)return[];
-    return extractImageUrls(new TextDecoder().decode(bytes),response.url||story.source_url,8);
+    return extractImageUrls(new TextDecoder().decode(bytes),response.url||story.source_url,4);
   }catch{return[]}finally{clearTimeout(timer)}
 }
 
@@ -213,10 +213,10 @@ async function safeFollowFetch(input,options={}){
 async function runImageDiscovery(env,jobId,project){
   try{
     await finishJob(env,jobId,'running','find_images');const stories=(await env.DB.prepare('SELECT id,publisher,source_url FROM vsport_stories WHERE project_id=? AND selected=1 ORDER BY sort_order,id LIMIT 24').bind(project.id).all()).results||[];if(!stories.length)throw new Error('NO_SELECTED_STORIES');
-    let count=0;
-    for(let index=0;index<stories.length;index+=4){
+    let count=0;const seen=new Set();
+    for(let index=0;index<stories.length&&count<24;index+=4){
       const group=stories.slice(index,index+4),sets=await Promise.all(group.map(fetchPageImages));
-      const statements=[];group.forEach((story,offset)=>sets[offset].forEach(url=>{count++;statements.push(env.DB.prepare(`INSERT INTO vsport_image_candidates(project_id,story_id,source_url,source_page_url,publisher,state) VALUES(?,?,?,?,?,'candidate') ON CONFLICT(project_id,source_url) DO NOTHING`).bind(project.id,story.id,url,story.source_url,story.publisher))}));if(statements.length)await env.DB.batch(statements);await finishJob(env,jobId,'running',`stories:${Math.min(index+4,stories.length)}/${stories.length}`);
+      const statements=[];group.forEach((story,offset)=>{for(const url of sets[offset]){if(count>=24)break;if(seen.has(url))continue;seen.add(url);count++;statements.push(env.DB.prepare(`INSERT INTO vsport_image_candidates(project_id,story_id,source_url,source_page_url,publisher,state) VALUES(?,?,?,?,?,'candidate') ON CONFLICT(project_id,source_url) DO NOTHING`).bind(project.id,story.id,url,story.source_url,story.publisher))}});if(statements.length)await env.DB.batch(statements);await finishJob(env,jobId,'running',`stories:${Math.min(index+4,stories.length)}/${stories.length}`);
     }
     if(!count)throw new Error('NO_IMAGE_CANDIDATES');await env.DB.prepare("UPDATE vsport_projects SET status='media_review',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(project.id).run();await finishJob(env,jobId,'completed',`candidates:${count}`);
   }catch(error){await finishJob(env,jobId,'failed','',error?.message||'IMAGE_DISCOVERY_FAILED')}

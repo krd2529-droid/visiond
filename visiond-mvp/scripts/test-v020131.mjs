@@ -9,9 +9,9 @@ const read = path => readFile(new URL(path, root));
 const text = async path => (await read(path)).toString('utf8');
 const sha256 = async path => createHash('sha256').update(await read(path)).digest('hex').toUpperCase();
 
-assert.ok(['v0.20.131', 'v0.20.132', 'v0.20.133', 'v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141'].includes((await text('VERSION.txt')).trim()));
-assert.match(await text('public/index.html'), /WEB v0\.20\.(?:131|132|133|134|135|136|137|138|139|140|141)/);
-assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:131|132|133|134|135|136|137|138|139|140|141)/);
+assert.ok(['v0.20.131', 'v0.20.132', 'v0.20.133', 'v0.20.134', 'v0.20.135', 'v0.20.136', 'v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141', 'v0.20.142'].includes((await text('VERSION.txt')).trim()));
+assert.match(await text('public/index.html'), /WEB v0\.20\.(?:131|132|133|134|135|136|137|138|139|140|141|142)/);
+assert.match(await text('public/admin.html'), /ADMIN v0\.20\.(?:131|132|133|134|135|136|137|138|139|140|141|142)/);
 assert.match(await text('public/live-center.html'), /live-center\.css\?v=020(?:131|132|133|134|135|136|137|138)/);
 assert.match(await text('public/live-center.html'), /live-center\.js\?v=020(?:131|132|133|134|135|136|137|138)/);
 
