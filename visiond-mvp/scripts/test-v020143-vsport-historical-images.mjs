@@ -10,9 +10,10 @@ const require = createRequire(import.meta.url);
 const sharp = require('sharp');
 const root = new URL('../', import.meta.url);
 const text = relative => readFile(new URL(relative, root), 'utf8');
-const [migration111, migration115] = await Promise.all([
+const [migration111, migration115, migration117] = await Promise.all([
   text('migrations/0111_vsport.sql'),
   text('migrations/0115_vsport_project_delete.sql'),
+  text('migrations/0117_vsport_headline_lookup.sql'),
 ]);
 
 const urls = Object.freeze({
@@ -94,6 +95,7 @@ INSERT INTO sessions VALUES('admin-session',1,'2099-01-01');
 `);
 db.exec(migration111);
 db.exec(migration115);
+db.exec(migration117);
 const d1 = new D1Mock(db);
 const r2 = new R2Mock();
 const env = { DB: d1, FILES: r2 };
@@ -136,6 +138,15 @@ const historical = [
   ['https://img.example.test/news/candidate.png', 'candidate', '', true],
 ];
 for (const [url, state, error] of historical) insertCandidate(historyProject, historyStory, url, state, error);
+
+const mixedProject = newProject('Persisted non-soccer regression');
+const soccerStory = Number(db.prepare("INSERT INTO vsport_stories(project_id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,fingerprint,selected,sort_order) VALUES(?,'Arsenal signs a new striker','Premier League soccer transfer','Arsenal','Fixture','https://news.example.test/soccer','2026-09-30','2026-09-30','soccer-positive',1,0) RETURNING id").get(mixedProject).id);
+const apStory = Number(db.prepare("INSERT INTO vsport_stories(project_id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,fingerprint,selected,sort_order) VALUES(?,'College football picks: Coaches know all too well seasons can turn','Ohio State Buckeyes','Other','AP','https://apnews.com/article/ap-college-football-picks-test','2026-09-30','2026-09-30','college-negative',1,10) RETURNING id").get(mixedProject).id);
+db.prepare("INSERT INTO vsport_stories(project_id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,fingerprint,selected,sort_order) VALUES(?,'Fitzmaurice confirmed as Galway football manager','Won three All-Irelands as a player with Kerry','Other','BBC','https://www.bbc.com/sport/articles/c6r7d7587vpeo','2026-09-30','2026-09-30','gaelic-negative',1,20)").run(mixedProject);
+db.prepare("UPDATE vsport_projects SET thumbnail_headline='Fitzmaurice confirmed as Galway football manager' WHERE id=?").run(mixedProject);
+const apCandidate = insertCandidate(mixedProject, apStory, 'https://img.example.test/news/college-photo.png', 'ready');
+const validCandidate = insertCandidate(mixedProject, soccerStory, 'https://img.example.test/news/soccer-photo.png');
+db.prepare("INSERT INTO vsport_assets(project_id,story_id,candidate_id,owner_id,object_key,source_url,source_page_url,publisher,mime_type,file_size,width,height) VALUES(?,?,?,1,'legacy-gridiron-key','https://img.example.test/news/college-photo.png','https://apnews.com/article/ap-college-football-picks-test','AP','image/png',100,800,533)").run(mixedProject,apStory,apCandidate);
 
 let bodyFetches = 0;
 const originalFetch = globalThis.fetch;
@@ -188,6 +199,23 @@ try {
 
   const after = await json(await onRequestGet(context('GET', { url: `https://visiondonline.com/api/admin/vsport?id=${projectId}&include=media` })));
   for (const key of ['caret', 'unsupported', 'crop']) assert.equal(after.body.candidates.find(item => Number(item.id) === candidateIds[key])?.display_eligible, false, `${key} is terminal after a truthful attempt`);
+  const mixed = await json(await onRequestGet(context('GET', { url: `https://visiondonline.com/api/admin/vsport?id=${mixedProject}&include=stories,media` })));
+  assert.equal(mixed.status,200);
+  assert.deepEqual(mixed.body.stories.map(item=>item.id),[soccerStory],'persisted AP and Gaelic stories are excluded');
+  assert.equal(mixed.body.project.thumbnail_headline_eligible,false,'saved Gaelic headline is not reused as thumbnail copy');
+  assert.equal(mixed.body.candidates.find(item=>item.id===apCandidate).display_eligible,false,'legacy gridiron candidate is unavailable');
+  assert.equal(mixed.body.assets[0].story_eligible,false,'legacy gridiron asset remains in library but is barred from rendering');
+  const badHeadline = await json(await onRequestPost(context('POST', { body: { action:'save',project_id:mixedProject,thumbnail_headline:'Fitzmaurice confirmed as Galway football manager' } })));
+  assert.equal(badHeadline.body.code,'THUMBNAIL_NOT_SOCCER');
+  const badFocus = await json(await onRequestPost(context('POST', { body: { action:'save',project_id:mixedProject,thumbnail_focus_asset_id:mixed.body.assets[0].id } })));
+  assert.equal(badFocus.body.code,'THUMBNAIL_ASSET_NOT_SOCCER');
+  const blocked = await json(await onRequestPost(context('POST', { body: { action:'ingest_image',project_id:mixedProject,candidate_id:apCandidate } })));
+  assert.equal(blocked.status,422,'old gridiron candidate cannot be ingested again');
+  const valid = await json(await onRequestPost(context('POST', { body: { action:'ingest_image',project_id:mixedProject,candidate_id:validCandidate } })));
+  assert.equal(valid.status,201,'genuine soccer sibling remains ingestible');
+  const mixedAfter = await json(await onRequestGet(context('GET', { url: `https://visiondonline.com/api/admin/vsport?id=${mixedProject}&include=media` })));
+  assert.equal(mixedAfter.body.assets.length,2);
+  assert.equal(mixedAfter.body.assets.find(item=>item.story_id===soccerStory).story_eligible,true);
 } finally {
   globalThis.fetch = originalFetch;
   largePng.fill(0);
@@ -198,6 +226,9 @@ try {
 for (const [sql, args, index] of [
   ['SELECT id FROM vsport_image_candidates WHERE project_id=? AND id>? ORDER BY id LIMIT 25', [historyProject, 0], 'idx_vsport_candidates_project_id'],
   ['SELECT id FROM vsport_assets WHERE project_id=? AND id>? ORDER BY id LIMIT 25', [projectId, 0], 'idx_vsport_assets_project_id'],
+  ['SELECT c.id FROM vsport_image_candidates c JOIN vsport_stories s ON s.id=c.story_id AND s.project_id=c.project_id WHERE c.project_id=? AND c.id>? ORDER BY c.id LIMIT 25', [mixedProject, 0], 'idx_vsport_candidates_project_id'],
+  ['SELECT a.id FROM vsport_assets a JOIN vsport_stories s ON s.id=a.story_id AND s.project_id=a.project_id WHERE a.project_id=? AND a.id>? ORDER BY a.id LIMIT 25', [mixedProject, 0], 'idx_vsport_assets_project_id'],
+  ['SELECT headline,summary,source_url FROM vsport_stories WHERE project_id=? AND headline=? LIMIT 1', [mixedProject, 'Fitzmaurice confirmed as Galway football manager'], 'idx_vsport_stories_project_headline'],
 ]) {
   const plan = db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...args).map(row => row.detail).join(' | ');
   assert.match(plan, new RegExp(index), plan);

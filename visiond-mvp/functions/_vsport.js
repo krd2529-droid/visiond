@@ -57,6 +57,31 @@ export const isAmericanFootballNews=(headline,summary)=>{
   const normalizedHeadline=normalizeSportCueText(headline),normalizedSummary=normalizeSportCueText(summary);
   return americanFootballHeadlineCues.some(pattern=>pattern.test(normalizedHeadline))||americanFootballSummaryCues.some(pattern=>pattern.test(normalizedSummary))||umassDartmouthFootballContext.test(normalizedHeadline)||umassDartmouthFootballContext.test(normalizedSummary);
 };
+const soccerContext=/\b(?:soccer|association football|football club|premier league|champions league|fpl|galway united)\b/;
+const otherFootballCues=[
+  /\b(?:college|collegiate|flag)(?:-|\s+)football\b/,
+  /\b(?:quarterback|running back|wide receiver|tight end|touchdown|super bowl|gridiron)\b/,
+  /\b(?:linebacker|pass(?:-|\s+)catchers?)\b/,
+  /\b(?:gaelic(?:-|\s+)football|gaelic games|all(?:-|\s+)irelands?|gaa)\b/,
+  /\bfantasy(?:-|\s+)football\b.{0,120}\b(?:nfl|quarterback|running back|wide receiver|tight end|brock bowers|omarion hampton|browns|panthers|pass(?:-|\s+)catchers?)\b/,
+  /\b(?:nfl|quarterback|running back|wide receiver|tight end|brock bowers|omarion hampton|browns|panthers|pass(?:-|\s+)catchers?)\b.{0,120}\bfantasy(?:-|\s+)football\b/,
+];
+export const isNonSoccerNews=(headline,summary,sourceUrl='')=>{
+  const head=normalizeSportCueText(headline),body=normalizeSportCueText(summary),source=String(sourceUrl||'').toLowerCase();
+  if(isAmericanFootballNews(headline,'')||otherFootballCues.slice(1).some(pattern=>pattern.test(head)))return true;
+  if(/\/(?:college-football|ncaaf|nfl|gaelic-games|american-football|flag-football)(?:\/|\b)|\/sports\/college\/[^/]+\/football\/|\/maryland-football-/.test(source))return true;
+  if(otherFootballCues[0].test(head)&&!/\bcollege(?:-|\s+)football(?:-|\s+)club\b/.test(head)&&!(/\/(?:soccer|association-football)\//.test(source)&&soccerContext.test(body)))return true;
+  if(soccerContext.test(head)||soccerContext.test(body))return false;
+  return isAmericanFootballNews('',summary)||otherFootballCues.some(pattern=>pattern.test(body));
+};
+const positiveSoccerCues=/\b(?:soccer|association football|premier league|champions league|football league|football club|football transfer|fpl|uefa|fifa|la liga|bundesliga|serie a|ligue 1|striker|goalkeeper|inter miami|new england revolution|christian pulisic|pulisic)\b/;
+export const isSoccerEligibleNews=(headline,summary,sourceUrl='',scopeMode='all_teams_for_day')=>{
+  if(isNonSoccerNews(headline,summary,sourceUrl))return false;
+  if(scopeMode==='specific_team')return true;
+  const head=normalizeSportCueText(headline),body=normalizeSportCueText(summary),source=String(sourceUrl||'').toLowerCase();
+  if(positiveSoccerCues.test(head)||positiveSoccerCues.test(body)||/\/(?:soccer|association-football|premier-league|champions-league)\//.test(source))return true;
+  return teamDefinitions.some(team=>matchesTeam(headline,team));
+};
 
 export function resolveNewsTeam(value=''){
   const entered=cleanText(value).slice(0,120),normalized=normalizeTeamText(entered),definition=matchingDefinition(entered);
@@ -121,7 +146,7 @@ export function parseNewsRss(xml,{newsDate,windowKind='exact',scopeMode='all_tea
   for(const match of String(xml||'').matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)){
     const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),summary=stripHtml(firstTag(item,'description')).slice(0,1600),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedMs=Date.parse(publishedRaw);
     if(!headline||!publisher||!/^https:\/\//i.test(sourceUrl)||!Number.isFinite(publishedMs)||publishedMs<window.start_ms||publishedMs>=window.end_ms)continue;
-    if(isAmericanFootballNews(headline,summary))continue;
+    if(!isSoccerEligibleNews(headline,summary,sourceUrl,scopeMode))continue;
     if(scopeMode==='specific_team'&&(!unknownNeedle||!(specificTeam?matchesTeam(headline,specificTeam):normalizedTeamPhraseMatches(normalizeTeamText(headline),unknownNeedle))))continue;
     const story={headline,summary,team_name:detectTeam(headline,scopeMode,teamName),publisher,source_url:sourceUrl,published_at:new Date(publishedRaw).toISOString(),retrieved_at:retrievedAt};
     story.fingerprint=storyFingerprint(story);
@@ -140,7 +165,7 @@ export function bingNewsRssUrl(newsDate,scopeMode='all_teams_for_day',teamName='
 }
 
 const newsSubject=(scopeMode,teamName)=>{
-  if(scopeMode!=='specific_team')return'football (Premier League OR Champions League OR transfer OR manager OR player)';
+  if(scopeMode!=='specific_team')return'(soccer OR "Premier League" OR "Champions League" OR UEFA OR "La Liga" OR Bundesliga OR "Serie A" OR "Football League")';
   const resolved=resolveNewsTeam(teamName),terms=resolved.query_aliases.slice(0,5).map(value=>cleanText(value).replace(/["()]/g,' ').slice(0,120)).filter(Boolean).map(value=>`"${value}"`);
   if(!terms.length)throw new Error('INVALID_NEWS_TEAM');
   return`${terms.length>1?`(${terms.join(' OR ')})`:terms[0]} football`;
@@ -202,9 +227,11 @@ export function isLikelyContentImageUrl(value){
     const url=new URL(value),pathname=decodeURIComponent(url.pathname).toLowerCase(),segments=pathname.split('/').filter(Boolean),basename=segments.at(-1)||'',extensionMatch=basename.match(/\.([a-z0-9]{2,8})$/i),extension=extensionMatch?.[1]?.toLowerCase()||'',stem=extensionMatch?basename.slice(0,-extensionMatch[0].length):basename,canonicalStem=stem.replace(/@(2|3)x$/,''),directorySegments=segments.slice(0,-1);
     if(extension&&(!supportedImageExtensions.has(extension)||unsupportedImageExtensions.has(extension)))return false;
     if(directorySegments.some(segment=>decorativeImageDirectories.has(segment)))return false;
-    if(decorativeImageBasenames.has(canonicalStem))return false;
+    if(decorativeImageBasenames.has(canonicalStem)||/(?:getiton(?:google)?play|download-on-the-app-store|(?:google|app|play)-store-badge|googleplay-badge)/.test(canonicalStem))return false;
     const width=numericImageTransform(url,new Set(['w','width'])),height=numericImageTransform(url,new Set(['h','height']));
     if(width!==null&&height!==null&&(width<320||height<180))return false;
+    const resize=pathname.match(/\/resize\/(\d+)x(\d+)(?:!|\/|$)/)||url.searchParams.get('resize')?.match(/^(\d+)[x,](\d+)$/);
+    if(resize&&(Number(resize[1])<320||Number(resize[2])<180))return false;
     return true;
   }catch{return false}
 }
