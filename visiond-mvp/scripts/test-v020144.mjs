@@ -8,6 +8,7 @@ import './test-v020142-vsport-image-workflow.mjs';
 import './test-v020144-vsport-stale-media-status-browser.mjs';
 import './test-v020144-vsport-asset-delete.mjs';
 import './test-v020144-vsport-asset-delete-browser.mjs';
+import './test-v020144-vsport-team-default-browser.mjs';
 
 const root=new URL('../',import.meta.url),read=relative=>readFile(new URL(relative,root)),text=async relative=>(await read(relative)).toString('utf8'),sha256=async relative=>createHash('sha256').update(await read(relative)).digest('hex').toUpperCase();
 const [version,home,admin,html,css,client,foundation,api,featureMap,packageText,migration111,migration115]=await Promise.all(['VERSION.txt','public/index.html','public/admin.html','public/vsport.html','public/vsport.css','public/vsport.js','functions/_vsport.js','functions/api/admin/vsport.js','FEATURE-MAP.md','package.json','migrations/0111_vsport.sql','migrations/0115_vsport_project_delete.sql'].map(text));
@@ -24,7 +25,7 @@ assert.match(client,/story_cursor=/);assert.match(client,/hiddenStoryCount/);ass
 assert.match(featureMap,/v0\.20\.144/);assert.match(featureMap,/project\/operation\/revision/);
 assert.equal(await sha256('functions/_vsport.js'),'3C0EBB9F3B78FC6B5D43A816DFCBF67A25D5337ACBD37AD9C2DAB180A8E821FE');
 assert.equal(await sha256('functions/api/admin/vsport.js'),'F72AE353D30D22DA6B4806325FA36572F1D34D4BE00A03AE6737A76C266EEA52');
-assert.equal(await sha256('public/vsport.html'),'9C0C24E288151DEBD73FAA47CB33494A78A856156913A9B58194A46394C05D3D');
+assert.equal(await sha256('public/vsport.html'),'989AEAA2A4424D5022C2589BC5F303856597BA874420E707471E11BFE1F8FFD4');
 assert.equal(await sha256('public/vsport.js'),'89672E6F476F5CAD6A39C12A041D90FC7A033259E8D99E8DFD674E54582D0026');
 assert.equal(await sha256('public/vsport.css'),'262CE0A73E4044B3F2FEABBD4DE65C5C98D635EDFD44AAABFEF2B395111A0EFC');
 assert.equal(await sha256('functions/api/admin/vsport-assets/[id].js'),'21BC3778C179EEE9DAF1F3766E226BD90FAF5D20803F443CB0B6E056CD73AAEA');
