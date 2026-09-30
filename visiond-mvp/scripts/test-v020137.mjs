@@ -11,8 +11,8 @@ const text = async relative => (await read(relative)).toString('utf8');
 const sha256 = async relative => createHash('sha256').update(await read(relative)).digest('hex').toUpperCase();
 
 const releasedVersion = (await text('VERSION.txt')).trim();
-const assetVersion = ['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142','v0.20.143'].includes(releasedVersion) ? '020138' : '020137';
-assert.ok(['v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141', 'v0.20.142', 'v0.20.143'].includes(releasedVersion));
+const assetVersion = ['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142','v0.20.143','v0.20.144'].includes(releasedVersion) ? '020138' : '020137';
+assert.ok(['v0.20.137', 'v0.20.138', 'v0.20.139', 'v0.20.140', 'v0.20.141', 'v0.20.142', 'v0.20.143','v0.20.144'].includes(releasedVersion));
 assert.ok((await text('public/index.html')).includes(`WEB ${releasedVersion}`));
 assert.ok((await text('public/admin.html')).includes(`ADMIN ${releasedVersion}`));
 assert.equal(JSON.parse(await text('package.json')).scripts['test:v020137'], 'node scripts/test-v020137.mjs && npm run test:v020136');
@@ -38,7 +38,7 @@ for (const [field, value] of [['rights_consent', 'accepted'], ['animation_consen
 }
 assert.equal(await sha256('functions/_live_portrait_foundation.js'), '2A9F0B807CECBF76F2EBB88BD939BDB1CA5B8BC710E4C3DFE56FE148DD95AFDB', 'strict backend consent/audit/idempotency implementation stays byte-identical');
 
-assert.deepEqual([...editorHtml.matchAll(/data-workflow-step="(\d)"/g)].map(match => Number(match[1])), ['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142','v0.20.143'].includes(releasedVersion) ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5, 6, 7, 8]);
+assert.deepEqual([...editorHtml.matchAll(/data-workflow-step="(\d)"/g)].map(match => Number(match[1])), ['v0.20.138','v0.20.139','v0.20.140','v0.20.141','v0.20.142','v0.20.143','v0.20.144'].includes(releasedVersion) ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5, 6, 7, 8]);
 assert.equal((editorHtml.match(/href="\/live-package-open\.html"/g) || []).length, 1);
 assert.doesNotMatch(editorCss, /(?:^|[;{])\s*order\s*:/m, 'workflow order remains real DOM order');
 const graph = await Promise.all([

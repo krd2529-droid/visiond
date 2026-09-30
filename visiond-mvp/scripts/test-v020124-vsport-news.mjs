@@ -32,14 +32,15 @@ assert.equal(fallback.provider,'bing');
 assert.equal(fallback.stories.length,1);
 assert.equal(fallback.stories[0].source_url,bingTarget);
 
-let retryCalls=0;
-const retried=await discoverNews(project,{retryDelayMs:0,sleepImpl:async()=>{},fetchImpl:async()=>{
-  retryCalls++;
-  return retryCalls===1?new Response('',{status:503}):new Response(rss([googleItem(),googleItem()]),{status:200});
+const retryCalls=[];
+const retried=await discoverNews(project,{retryDelayMs:0,sleepImpl:async()=>{},fetchImpl:async url=>{
+  retryCalls.push(url.includes('news.google.com')?'google':'bing');
+  return retryCalls.length===1?new Response('',{status:503}):new Response(rss([googleItem(),googleItem()]),{status:200});
 }});
-assert.equal(retryCalls,2,'a transient primary failure has a bounded retry');
+assert.deepEqual(retryCalls,['google','google','bing'],'the primary gets one bounded retry, then the same exact window checks Bing only to fill toward fifteen');
 assert.equal(retried.provider,'google');
 assert.equal(retried.stories.length,1,'duplicate feed items collapse before persistence');
+assert.deepEqual(retried.discovery.exact,{google:'stories',bing:'empty'});
 assert.equal(storyFingerprint(retried.stories[0]),storyFingerprint(parsedBing[0]),'provider headline suffix differences do not create duplicate stories on retry/fallback');
 
 let outageCalls=0;

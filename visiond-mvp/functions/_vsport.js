@@ -14,6 +14,7 @@ export function decodeXml(value=''){
 const firstTag=(xml,name)=>decodeXml(xml.match(new RegExp(`<(?:[\\w.-]+:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?${name}>`,'i'))?.[1]||'');
 const stripHtml=value=>cleanText(decodeXml(String(value||'').replace(/<script\b[\s\S]*?<\/script>/gi,' ').replace(/<style\b[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ')));
 const DAY_MS=86400000,BANGKOK_OFFSET_MS=7*60*60*1000;
+export const NEWS_RESULT_LIMIT=15;
 const normalizeTeamText=value=>cleanText(value).normalize('NFKC').toLocaleLowerCase('en').replace(/[.'’]/g,'').replace(/[‐‑–—_-]+/g,' ').replace(/\s+/g,' ').replace(/\s+fc$/,'').trim();
 const normalizedTeamPhraseMatches=(normalizedValue,normalizedNeedle)=>{
   if(!normalizedNeedle)return false;
@@ -40,6 +41,22 @@ const teamDefinitions=[
 for(const team of teamDefinitions)team.normalizedAliases=team.aliases.map(normalizeTeamText);
 const matchingDefinition=value=>{const normalized=normalizeTeamText(value);return teamDefinitions.find(team=>team.normalizedAliases.includes(normalized))||null};
 const matchesTeam=(headline,team)=>{const normalized=normalizeTeamText(headline);return team.pattern.test(headline)||team.normalizedAliases.some(alias=>normalizedTeamPhraseMatches(normalized,alias))};
+const normalizeSportCueText=value=>cleanText(value).normalize('NFKC').toLocaleLowerCase('en').replace(/\bn[^\p{L}\p{N}]*c[^\p{L}\p{N}]*a[^\p{L}\p{N}]*a[^\p{L}\p{N}]*f\b/gu,'ncaaf').replace(/\bn[^\p{L}\p{N}]*f[^\p{L}\p{N}]*l\b/gu,'nfl').replace(/[‐‑–—_]+/g,'-').replace(/[^\p{L}\p{N}-]+/gu,' ').replace(/\s+/g,' ').trim();
+const americanFootballHeadlineCues=[
+  /\b(?:nfl|ncaaf|gridiron|super bowl)\b/,
+  /\b(?:american(?:-|\s+)football|ncaa(?:-|\s+)football|national(?:-|\s+)football(?:-|\s+)league)\b/,
+  /\bhigh(?:-|\s+)school(?:-|\s+)football\b/,
+];
+const americanFootballSummaryCues=[
+  /\bncaaf\b/,
+  /\b(?:american(?:-|\s+)football|ncaa(?:-|\s+)football|national(?:-|\s+)football(?:-|\s+)league)\b/,
+  /\bhigh(?:-|\s+)school(?:-|\s+)football\b/,
+];
+const umassDartmouthFootballContext=/(?:\bumass(?:-|\s+)dartmouth\b.{0,100}\bfootball(?:-|\s+)(?:player|team|coach|game)\b|\bfootball(?:-|\s+)(?:player|team|coach|game)\b.{0,100}\bumass(?:-|\s+)dartmouth\b)/;
+export const isAmericanFootballNews=(headline,summary)=>{
+  const normalizedHeadline=normalizeSportCueText(headline),normalizedSummary=normalizeSportCueText(summary);
+  return americanFootballHeadlineCues.some(pattern=>pattern.test(normalizedHeadline))||americanFootballSummaryCues.some(pattern=>pattern.test(normalizedSummary))||umassDartmouthFootballContext.test(normalizedHeadline)||umassDartmouthFootballContext.test(normalizedSummary);
+};
 
 export function resolveNewsTeam(value=''){
   const entered=cleanText(value).slice(0,120),normalized=normalizeTeamText(entered),definition=matchingDefinition(entered);
@@ -78,33 +95,40 @@ export function storyFingerprint(story){
   return (hash>>>0).toString(16).padStart(8,'0');
 }
 
-export function balanceStories(items,{limit=24,maxPerTeam=3}={}){
+const boundedNewsResultLimit=value=>Number.isSafeInteger(value)?Math.max(0,Math.min(NEWS_RESULT_LIMIT,value)):NEWS_RESULT_LIMIT;
+
+export function balanceStories(items,{limit=NEWS_RESULT_LIMIT}={}){
+  const resultLimit=boundedNewsResultLimit(limit);
   const groups=new Map();
   for(const item of items){const key=item.team_name||'ฟุตบอลต่างประเทศ';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(item)}
   const balanced=[];
-  for(let round=0;balanced.length<limit;round++){
+  for(let round=0;balanced.length<resultLimit;round++){
     let added=false;
     for(const group of groups.values()){
-      if(round>=maxPerTeam||!group[round])continue;
-      balanced.push(group[round]);added=true;if(balanced.length===limit)break;
+      if(!group[round])continue;
+      balanced.push(group[round]);added=true;if(balanced.length===resultLimit)break;
     }
     if(!added)break;
   }
   return balanced;
 }
 
-export function parseNewsRss(xml,{newsDate,windowKind='exact',scopeMode='all_teams_for_day',teamName='',limit=24,retrievedAt=new Date().toISOString()}={}){
+export function parseNewsRss(xml,{newsDate,windowKind='exact',scopeMode='all_teams_for_day',teamName='',limit=NEWS_RESULT_LIMIT,excludedFingerprints=new Set(),retrievedAt=new Date().toISOString()}={}){
+  const resultLimit=boundedNewsResultLimit(limit);
+  const excluded=new Set(),excludedValues=excludedFingerprints instanceof Set?[...excludedFingerprints]:[];
+  for(const value of excludedValues.slice(0,NEWS_RESULT_LIMIT)){const fingerprint=String(value||'').toLowerCase();if(/^[0-9a-f]{8}$/.test(fingerprint))excluded.add(fingerprint)}
   const seen=new Set(),stories=[],window=bangkokNewsWindow(newsDate,windowKind),specificTeam=scopeMode==='specific_team'?matchingDefinition(teamName):null,unknownNeedle=normalizeTeamText(teamName);
   for(const match of String(xml||'').matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)){
-    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedMs=Date.parse(publishedRaw);
+    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),summary=stripHtml(firstTag(item,'description')).slice(0,1600),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedMs=Date.parse(publishedRaw);
     if(!headline||!publisher||!/^https:\/\//i.test(sourceUrl)||!Number.isFinite(publishedMs)||publishedMs<window.start_ms||publishedMs>=window.end_ms)continue;
+    if(isAmericanFootballNews(headline,summary))continue;
     if(scopeMode==='specific_team'&&(!unknownNeedle||!(specificTeam?matchesTeam(headline,specificTeam):normalizedTeamPhraseMatches(normalizeTeamText(headline),unknownNeedle))))continue;
-    const story={headline,summary:stripHtml(firstTag(item,'description')).slice(0,1600),team_name:detectTeam(headline,scopeMode,teamName),publisher,source_url:sourceUrl,published_at:new Date(publishedRaw).toISOString(),retrieved_at:retrievedAt};
+    const story={headline,summary,team_name:detectTeam(headline,scopeMode,teamName),publisher,source_url:sourceUrl,published_at:new Date(publishedRaw).toISOString(),retrieved_at:retrievedAt};
     story.fingerprint=storyFingerprint(story);
-    if(seen.has(story.fingerprint))continue;seen.add(story.fingerprint);stories.push(story);
+    if(excluded.has(story.fingerprint)||seen.has(story.fingerprint))continue;seen.add(story.fingerprint);stories.push(story);
   }
   stories.sort((a,b)=>b.published_at.localeCompare(a.published_at));
-  return scopeMode==='all_teams_for_day'?balanceStories(stories,{limit,maxPerTeam:3}):stories.slice(0,limit);
+  return scopeMode==='all_teams_for_day'?balanceStories(stories,{limit:resultLimit}):stories.slice(0,resultLimit);
 }
 
 export function newsRssUrl(newsDate,scopeMode='all_teams_for_day',teamName=''){

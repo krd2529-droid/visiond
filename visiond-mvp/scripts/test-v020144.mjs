@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {parseNewsCheckpoint} from '../public/vsport.js';
+
+import './test-v020139-vsport-news-discovery.mjs';
+import './test-v020142-vsport-image-workflow.mjs';
+import './test-v020144-vsport-stale-media-status-browser.mjs';
+import './test-v020144-vsport-asset-delete.mjs';
+import './test-v020144-vsport-asset-delete-browser.mjs';
+
+const root=new URL('../',import.meta.url),read=relative=>readFile(new URL(relative,root)),text=async relative=>(await read(relative)).toString('utf8'),sha256=async relative=>createHash('sha256').update(await read(relative)).digest('hex').toUpperCase();
+const [version,home,admin,html,css,client,foundation,api,featureMap,packageText,migration111,migration115]=await Promise.all(['VERSION.txt','public/index.html','public/admin.html','public/vsport.html','public/vsport.css','public/vsport.js','functions/_vsport.js','functions/api/admin/vsport.js','FEATURE-MAP.md','package.json','migrations/0111_vsport.sql','migrations/0115_vsport_project_delete.sql'].map(text));
+assert.equal(version.trim(),'v0.20.144');
+assert.match(home,/WEB v0\.20\.144/);assert.match(admin,/ADMIN v0\.20\.144/);assert.match(html,/src="\/vsport\.js\?v=020144"/);assert.doesNotMatch(html,/vsport\.js\?v=020143/);
+assert.match(html,/สูงสุด 15 ข่าวต่อการค้นหา/);assert.match(html,/ไม่รวมอเมริกันฟุตบอล/);
+assert.match(foundation,/NEWS_RESULT_LIMIT=15/);assert.match(foundation,/high\(\?:-\|\\s\+\)school\(\?:-\|\\s\+\)football/);assert.match(foundation,/umass\(\?:-\|\\s\+\)dartmouth/);assert.doesNotMatch(foundation,/\(\?:american\|college\|high/,'bare college football is not an American-football rejection shortcut');
+assert.match(api,/mergeWindowStories/);assert.match(api,/stories\.length>=NEWS_RESULT_LIMIT/);assert.match(api,/ON CONFLICT\(project_id,fingerprint\) DO UPDATE/);assert.doesNotMatch(api,/DELETE FROM vsport_stories/);
+assert.match(api,/hidden_non_soccer:rawPage\.length-stories\.length/);assert.match(api,/SELECTED_STORY_SCAN_PAGES=4/);assert.match(api,/STORY_NOT_SOCCER/);assert.match(api,/STORY_SELECTION_REVIEW_REQUIRED/);assert.match(api,/isAmericanFootballNews\(candidate\.headline,candidate\.summary\)/);
+const legacyCheckpoint={v:1,kind:'news',mode:'exact',selected:'2026-09-29',from:'2026-09-29',to:'2026-09-30',count:24,exact:{google:'stories',bing:'skipped'},fallback:{google:'skipped',bing:'skipped'}};assert.equal(parseNewsCheckpoint(JSON.stringify(legacyCheckpoint))?.count,24,'historical completed checkpoint counts through 24 remain readable');
+assert.match(client,/beginMediaStatusOperation/);assert.match(client,/mediaStatusRevision/);assert.match(client,/mediaOperation&&!isCurrentMediaStatusOperation\(mediaOperation\)/);assert.match(client,/refreshed\.state!==['"]failed['"]\|\|refreshed\.display_eligible!==false/);assert.match(client,/รูปที่เก็บสำเร็จยังพร้อมใช้งาน/);assert.match(client,/กรุณาเลือกรูปอื่นหรือเพิ่ม URL รูปด้วยตนเอง/);assert.match(client,/focusOwnedAtStart/);assert.match(client,/addEventListener\(['"]focusin['"],watchFocus,true\)/);
+assert.match(client,/focusGuard:ownsFocus/);assert.match(client,/typeof focusGuard!==['\"]function['\"]\|\|focusGuard\(\)/);
+assert.match(client,/story_cursor=/);assert.match(client,/hiddenStoryCount/);assert.match(client,/loadMoreStories/);assert.match(client,/selectionOverride/);
+assert.match(featureMap,/v0\.20\.144/);assert.match(featureMap,/project\/operation\/revision/);
+assert.equal(await sha256('functions/_vsport.js'),'3C0EBB9F3B78FC6B5D43A816DFCBF67A25D5337ACBD37AD9C2DAB180A8E821FE');
+assert.equal(await sha256('functions/api/admin/vsport.js'),'F72AE353D30D22DA6B4806325FA36572F1D34D4BE00A03AE6737A76C266EEA52');
+assert.equal(await sha256('public/vsport.html'),'9C0C24E288151DEBD73FAA47CB33494A78A856156913A9B58194A46394C05D3D');
+assert.equal(await sha256('public/vsport.js'),'89672E6F476F5CAD6A39C12A041D90FC7A033259E8D99E8DFD674E54582D0026');
+assert.equal(await sha256('public/vsport.css'),'262CE0A73E4044B3F2FEABBD4DE65C5C98D635EDFD44AAABFEF2B395111A0EFC');
+assert.equal(await sha256('functions/api/admin/vsport-assets/[id].js'),'21BC3778C179EEE9DAF1F3766E226BD90FAF5D20803F443CB0B6E056CD73AAEA');
+assert.equal(await sha256('migrations/0111_vsport.sql'),'0AD1F2DA8B5833615BAE8967A7953CB75F83CE9ABEBAC12E5F1E4CEC2321A59D');
+assert.equal(await sha256('migrations/0115_vsport_project_delete.sql'),'AFAB8039627D49A1BD3165740008169AF7AAB4B08E831C09E82A780C764DCBE4');
+assert.equal(await sha256('migrations/0116_vsport_asset_delete.sql'),'BA869BAE4791BD604B1C0F8F5C0DA83B6789267BEA5031A20BE34ECB67DD6917');
+assert.match(migration111,/idx_vsport_candidates_project_id/);assert.match(migration115,/idx_vsport_cleanup_state_due/);
+const packageJson=JSON.parse(packageText);assert.equal(packageJson.scripts['test:v020144'],'node scripts/test-v020144.mjs && npm run test:v020143');
+const liveGraph=await Promise.all(['public/live-center.html','public/live-center.js','public/live-package-open.html','public/live-package-open.js','public/live-package-ai-host.js','public/live-package-player.js'].map(text));assert.ok(liveGraph.every(source=>source.includes('?v=020138')),'unrelated Live Center cache graph remains v0.20.138');assert.equal(liveGraph.some(source=>source.includes('?v=020144')),false);
+const ledger=JSON.parse(await text('patch-ledgers/v0.20.144.json'));assert.equal(ledger.version,'v0.20.144');assert.equal(ledger.feature,'VSPORT-001');assert.equal(ledger.files.length,41);for(const required of ['functions/_vsport.js','functions/api/admin/vsport.js','functions/api/admin/vsport-assets/[id].js','migrations/0116_vsport_asset_delete.sql','public/vsport.js','public/vsport.html','scripts/test-v020124-vsport-news.mjs','scripts/test-v020139-vsport-news-discovery.mjs','scripts/test-v020142-vsport-image-workflow.mjs','scripts/test-v020144-vsport-stale-media-status-browser.mjs','scripts/test-v020144-vsport-asset-delete.mjs','scripts/test-v020144-vsport-asset-delete-browser.mjs','scripts/test-v020144.mjs'])assert.ok(ledger.files.includes(required),required);for(const forbidden of ['public/vsport.css','migrations/0111_vsport.sql','migrations/0115_vsport_project_delete.sql','scripts/test-v020143-vsport-historical-images.mjs','scripts/test-v020143-vsport-historical-images-browser.mjs'])assert.equal(ledger.files.includes(forbidden),false,`${forbidden} stays outside task scope`);
+console.log('v0.20.144 V Sport stale media-status, fifteen-result provider fill and soccer-only discovery release checks passed');

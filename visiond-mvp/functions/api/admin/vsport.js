@@ -1,5 +1,5 @@
 import {json,requireAdmin,sha256} from '../../_lib.js';
-import {bangkokNewsWindow,bingNewsRssUrlForWindow,escapeLike,extractImageUrls,imageDimensions,isDisplayEligibleImageCandidate,isSafeRemoteUrl,isNewsRssEnvelope,newsRssUrlForWindow,parseCursor,parseNewsRss} from '../../_vsport.js';
+import {balanceStories,bangkokNewsWindow,bingNewsRssUrlForWindow,escapeLike,extractImageUrls,imageDimensions,isAmericanFootballNews,isDisplayEligibleImageCandidate,isSafeRemoteUrl,isNewsRssEnvelope,NEWS_RESULT_LIMIT,newsRssUrlForWindow,parseCursor,parseNewsRss} from '../../_vsport.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
@@ -15,6 +15,7 @@ const INGEST_LEASE_MS=120000;
 const CLEANUP_LIMIT=24;
 const DELETE_KEY_MIN=8;
 const DELETE_KEY_MAX=128;
+const SELECTED_STORY_SCAN_PAGES=4;
 
 async function ownedProject(env,id,ownerId,{withScript=false}={}){
   return env.DB.prepare(`SELECT ${projectFields}${withScript?',narration_script':''} FROM vsport_projects WHERE id=? AND owner_id=?`).bind(id,ownerId).first();
@@ -80,7 +81,7 @@ async function listProjects(ctx,ownerId){
 async function projectDetail(ctx,ownerId,id,include){
   const project=await ownedProject(ctx.env,id,ownerId,{withScript:true});if(!project)return null;
   const params=new URL(ctx.request.url).searchParams,parts=new Set(String(include||'').split(',').map(x=>x.trim()).filter(Boolean)),result={project};
-  if(parts.has('stories')){const after=integer(params.get('story_cursor')||0,0,Number.MAX_SAFE_INTEGER),rows=(await ctx.env.DB.prepare('SELECT id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,selected,sort_order FROM vsport_stories WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,after).all()).results||[];result.stories=rows.slice(0,24);result.story_pagination={limit:24,has_more:rows.length>24,next_cursor:rows.length>24?String(result.stories.at(-1).id):null}}
+  if(parts.has('stories')){const after=integer(params.get('story_cursor')||0,0,Number.MAX_SAFE_INTEGER),rows=(await ctx.env.DB.prepare('SELECT id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,selected,sort_order FROM vsport_stories WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,after).all()).results||[],rawPage=rows.slice(0,24),stories=rawPage.filter(story=>!isAmericanFootballNews(story.headline,story.summary));result.stories=stories;result.story_pagination={limit:24,has_more:rows.length>24,next_cursor:rows.length>24&&rawPage.length?String(rawPage.at(-1).id):null,hidden_non_soccer:rawPage.length-stories.length}}
   if(parts.has('media')){
     const candidateAfter=integer(params.get('candidate_cursor')||0,0,Number.MAX_SAFE_INTEGER),assetAfter=integer(params.get('asset_cursor')||0,0,Number.MAX_SAFE_INTEGER),candidateRows=(await ctx.env.DB.prepare('SELECT id,story_id,source_url,source_page_url,publisher,state,error_message,created_at FROM vsport_image_candidates WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,candidateAfter).all()).results||[],assetRows=(await ctx.env.DB.prepare('SELECT id,story_id,candidate_id,source_url,source_page_url,publisher,mime_type,file_size,width,height,created_at FROM vsport_assets WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,assetAfter).all()).results||[];
     const candidatePage=candidateRows.slice(0,24),assetPage=assetRows.slice(0,24);result.candidates=candidatePage.map(item=>({...item,display_eligible:isDisplayEligibleImageCandidate(item)}));result.assets=assetPage.map(item=>({...item,preview_url:`/api/admin/vsport-assets/${item.id}`}));result.media_pagination={candidates:{limit:24,has_more:candidateRows.length>24,next_cursor:candidateRows.length>24?String(candidatePage.at(-1).id):null},assets:{limit:24,has_more:assetRows.length>24,next_cursor:assetRows.length>24?String(assetPage.at(-1).id):null}};
@@ -116,7 +117,7 @@ const sleep=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds))
 const newsProviderState=Object.freeze({stories:'stories',empty:'empty',unavailable:'unavailable',skipped:'skipped'});
 
 export function newsDiscoveryCheckpoint(discovery){
-  const states=value=>({google:Object.values(newsProviderState).includes(value?.google)?value.google:'skipped',bing:Object.values(newsProviderState).includes(value?.bing)?value.bing:'skipped'}),selected=String(discovery?.selected||''),from=String(discovery?.from||''),to=String(discovery?.to||''),mode=['exact','fallback','zero','unavailable'].includes(discovery?.mode)?discovery.mode:'unavailable',count=integer(discovery?.count||0,0,24)??0;
+  const states=value=>({google:Object.values(newsProviderState).includes(value?.google)?value.google:'skipped',bing:Object.values(newsProviderState).includes(value?.bing)?value.bing:'skipped'}),selected=String(discovery?.selected||''),from=String(discovery?.from||''),to=String(discovery?.to||''),mode=['exact','fallback','zero','unavailable'].includes(discovery?.mode)?discovery.mode:'unavailable',count=integer(discovery?.count||0,0,NEWS_RESULT_LIMIT)??0;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(selected)||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to))return'';
   return JSON.stringify({v:1,kind:'news',mode,selected,from,to,count,exact:states(discovery?.exact),fallback:states(discovery?.fallback)});
 }
@@ -127,13 +128,21 @@ async function readNewsResponse(response){
   return new TextDecoder().decode(bytes);
 }
 
+const mergeWindowStories=(current,incoming,scopeMode)=>{
+  const seen=new Set(),merged=[];
+  for(const story of [...current,...incoming]){if(seen.has(story.fingerprint))continue;seen.add(story.fingerprint);merged.push(story)}
+  merged.sort((a,b)=>b.published_at.localeCompare(a.published_at));
+  return scopeMode==='all_teams_for_day'?balanceStories(merged,{limit:NEWS_RESULT_LIMIT}):merged.slice(0,NEWS_RESULT_LIMIT);
+};
+
 async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt,successfulResponses}){
-  const outcomes={google:'skipped',bing:'skipped'},providers=[{id:'google',url:newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bing',url:bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)}];
+  const outcomes={google:'skipped',bing:'skipped'},providers=[{id:'google',url:newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bing',url:bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)}];let stories=[],selectedProvider='',selectedAttempt=0;
   for(const provider of providers){
+    const excludedFingerprints=new Set(stories.map(story=>story.fingerprint));
     const cacheKey=`${provider.id}\n${provider.url}`,cached=successfulResponses.get(cacheKey);
     if(cached){
-      const stories=parseNewsRss(cached.xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:24,retrievedAt:cached.retrievedAt});outcomes[provider.id]=stories.length?'stories':'empty';
-      if(stories.length)return{stories,provider:provider.id,attempt:cached.attempt,outcomes};
+      const parsed=parseNewsRss(cached.xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:NEWS_RESULT_LIMIT,excludedFingerprints,retrievedAt:cached.retrievedAt});outcomes[provider.id]=parsed.length?'stories':'empty';
+      if(parsed.length){if(!selectedProvider){selectedProvider=provider.id;selectedAttempt=cached.attempt}stories=mergeWindowStories(stories,parsed,project.scope_mode);if(stories.length>=NEWS_RESULT_LIMIT)break}
       continue;
     }
     for(let attempt=1;attempt<=NEWS_FETCH_ATTEMPTS;attempt++){
@@ -143,15 +152,16 @@ async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelay
         const response=await fetchImpl(provider.url,{headers:{'user-agent':'VisionD-vSport/1.0','accept':'application/rss+xml, application/xml, text/xml'},signal:controller.signal});
         if(!response.ok)throw new Error('NEWS_PROVIDER_UNAVAILABLE');
         const xml=await readNewsResponse(response);if(!isNewsRssEnvelope(xml))throw new Error('NEWS_RSS_ENVELOPE_INVALID');
-        const retrievedAt=new Date().toISOString(),stories=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:24,retrievedAt});successfulResponses.set(cacheKey,{xml,retrievedAt,attempt});outcomes[provider.id]=stories.length?'stories':'empty';
-        if(stories.length)return{stories,provider:provider.id,attempt,outcomes};
+        const retrievedAt=new Date().toISOString(),parsed=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:NEWS_RESULT_LIMIT,excludedFingerprints,retrievedAt});successfulResponses.set(cacheKey,{xml,retrievedAt,attempt});outcomes[provider.id]=parsed.length?'stories':'empty';
+        if(parsed.length){if(!selectedProvider){selectedProvider=provider.id;selectedAttempt=attempt}stories=mergeWindowStories(stories,parsed,project.scope_mode)}
         break;
       }catch{
         if(attempt<NEWS_FETCH_ATTEMPTS)await sleepImpl(Math.max(0,retryDelayMs)*attempt);else outcomes[provider.id]='unavailable';
       }finally{clearTimeout(timer)}
     }
+    if(stories.length>=NEWS_RESULT_LIMIT)break;
   }
-  return{stories:[],provider:'',attempt:0,outcomes};
+  return{stories,provider:selectedProvider,attempt:selectedAttempt,outcomes};
 }
 
 export async function discoverNews(project,{fetchImpl=fetch,timeoutMs=NEWS_FETCH_TIMEOUT_MS,retryDelayMs=250,sleepImpl=sleep,onAttempt=async()=>{}}={}){
@@ -175,6 +185,16 @@ async function runDiscovery(env,jobId,project){
   }catch(error){await finishJob(env,jobId,'failed',newsDiscoveryCheckpoint(error?.discovery),error?.message||'ค้นข่าวไม่สำเร็จ กรุณาลองอีกครั้ง')}
 }
 
+async function selectedSoccerStories(env,projectId,fields){
+  const stories=[];let scanned=0,sortOrder=0,id=0,started=false;
+  for(let page=0;page<SELECTED_STORY_SCAN_PAGES&&stories.length<24;page++){
+    const where=started?'project_id=? AND selected=1 AND (sort_order>? OR (sort_order=? AND id>?))':'project_id=? AND selected=1',bindings=started?[projectId,sortOrder,sortOrder,id]:[projectId],rows=(await env.DB.prepare(`SELECT id,headline,summary,sort_order,${fields} FROM vsport_stories WHERE ${where} ORDER BY sort_order,id LIMIT 24`).bind(...bindings).all()).results||[];
+    scanned+=rows.length;for(const story of rows)if(!isAmericanFootballNews(story.headline,story.summary)){stories.push(story);if(stories.length===24)break}
+    if(rows.length<24)return{stories,scanned,complete:true};const last=rows.at(-1);sortOrder=Number(last.sort_order);id=Number(last.id);started=true;
+  }
+  return{stories,scanned,complete:stories.length===24};
+}
+
 const scriptPrompt=(project,stories)=>`คุณเป็นบรรณาธิการข่าวฟุตบอลภาษาไทย จงเขียนสคริปต์เสียงแบบฟังต่อเนื่อง ความยาวเป้าหมาย ${project.target_minutes} นาที (ประมาณ ${project.target_minutes*125}-${project.target_minutes*150} คำภาษาไทย) จากรายการข่าวที่ให้เท่านั้น ห้ามเติมข้อเท็จจริง ตัวเลข คำพูด หรือข่าวอื่นที่ไม่มีในรายการ แยกเป็นบทนำ หัวข้อข่าวแต่ละเรื่อง และบทสรุป ทุกหัวข้อต้องลงท้ายบรรทัด [แหล่งข่าว: ชื่อสำนักข่าว | URL] ข้อความเชื่อมเชิงบรรณาธิการต้องใช้ถ้อยคำชัดว่าเป็นการวิเคราะห์หรือบริบท ไม่ใช่ข้อเท็จจริง หากข้อมูลไม่พอให้บอกตรง ๆ ว่าแหล่งข่าวยังไม่มีรายละเอียด ตอบเป็นภาษาไทยล้วนแบบข้อความธรรมดา
 ขอบเขตทีม: ${project.scope_mode==='specific_team'?project.team_name:'ทุกทีมที่มีข่าวในวันนั้น'}
 วันที่ข่าว: ${project.news_date}
@@ -183,7 +203,7 @@ ${stories.map((story,index)=>`${index+1}. ${story.headline}\nสำนักข�
 
 async function runScript(env,jobId,project){
   try{
-    await finishJob(env,jobId,'running','compose_script');const rows=(await env.DB.prepare('SELECT headline,summary,publisher,source_url,published_at FROM vsport_stories WHERE project_id=? AND selected=1 ORDER BY sort_order,id LIMIT 24').bind(project.id).all()).results||[];if(!rows.length)throw new Error('NO_SELECTED_STORIES');
+    await finishJob(env,jobId,'running','compose_script');const selected=await selectedSoccerStories(env,project.id,'publisher,source_url,published_at');if(!selected.complete)throw new Error('STORY_SELECTION_REVIEW_REQUIRED');const rows=selected.stories;if(!rows.length)throw new Error(selected.scanned?'NO_ELIGIBLE_SOCCER_STORIES':'NO_SELECTED_STORIES');
     const script=clean(await requestWorkNotesAI(env,scriptPrompt(project,rows),{maxTokens:8192,temperature:.25,deadlineMs:55000}),60000);if(script.length<1000)throw new Error('SCRIPT_TOO_SHORT');
     await env.DB.prepare("UPDATE vsport_projects SET narration_script=?,status='script_ready',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(script,project.id).run();await finishJob(env,jobId,'completed',`characters:${script.length}`);
   }catch(error){await finishJob(env,jobId,'failed','',error?.message||'SCRIPT_FAILED')}
@@ -212,7 +232,7 @@ async function safeFollowFetch(input,options={}){
 
 async function runImageDiscovery(env,jobId,project){
   try{
-    await finishJob(env,jobId,'running','find_images');const stories=(await env.DB.prepare('SELECT id,publisher,source_url FROM vsport_stories WHERE project_id=? AND selected=1 ORDER BY sort_order,id LIMIT 24').bind(project.id).all()).results||[];if(!stories.length)throw new Error('NO_SELECTED_STORIES');
+    await finishJob(env,jobId,'running','find_images');const selected=await selectedSoccerStories(env,project.id,'publisher,source_url');if(!selected.complete)throw new Error('STORY_SELECTION_REVIEW_REQUIRED');const stories=selected.stories;if(!stories.length)throw new Error(selected.scanned?'NO_ELIGIBLE_SOCCER_STORIES':'NO_SELECTED_STORIES');
     let count=0;const seen=new Set();
     for(let index=0;index<stories.length&&count<24;index+=4){
       const group=stories.slice(index,index+4),sets=await Promise.all(group.map(fetchPageImages));
@@ -225,10 +245,11 @@ async function runImageDiscovery(env,jobId,project){
 async function ingestImage(ctx,auth,project,body){
   if(!ctx.env.FILES)return json({error:'ยังไม่ได้เชื่อมพื้นที่เก็บรูป FILES'},503,headers);
   const candidateId=integer(body.candidate_id,1,Number.MAX_SAFE_INTEGER),storyId=integer(body.story_id,1,Number.MAX_SAFE_INTEGER);let candidate;
-  if(candidateId)candidate=await ctx.env.DB.prepare('SELECT c.id,c.story_id,c.source_url,c.source_page_url,c.publisher FROM vsport_image_candidates c WHERE c.id=? AND c.project_id=?').bind(candidateId,project.id).first();
+  if(candidateId)candidate=await ctx.env.DB.prepare('SELECT c.id,c.story_id,c.source_url,c.source_page_url,c.publisher,s.headline,s.summary FROM vsport_image_candidates c JOIN vsport_stories s ON s.id=c.story_id AND s.project_id=c.project_id WHERE c.id=? AND c.project_id=?').bind(candidateId,project.id).first();
   else if(storyId&&isSafeRemoteUrl(body.image_url)){
-    const story=await ctx.env.DB.prepare('SELECT id,source_url,publisher FROM vsport_stories WHERE id=? AND project_id=?').bind(storyId,project.id).first();if(story){const inserted=await ctx.env.DB.prepare(`INSERT INTO vsport_image_candidates(project_id,story_id,source_url,source_page_url,publisher,state) VALUES(?,?,?,?,?,'candidate') ON CONFLICT(project_id,source_url) DO UPDATE SET updated_at=CURRENT_TIMESTAMP RETURNING id`).bind(project.id,story.id,clean(body.image_url,2000),story.source_url,story.publisher).first();candidate={id:inserted.id,story_id:story.id,source_url:clean(body.image_url,2000),source_page_url:story.source_url,publisher:story.publisher}}
+    const story=await ctx.env.DB.prepare('SELECT id,headline,summary,source_url,publisher FROM vsport_stories WHERE id=? AND project_id=?').bind(storyId,project.id).first();if(story&&isAmericanFootballNews(story.headline,story.summary))return json({error:'ข่าวนี้ไม่ใช่ข่าวฟุตบอลที่รองรับ'},422,headers);if(story){const inserted=await ctx.env.DB.prepare(`INSERT INTO vsport_image_candidates(project_id,story_id,source_url,source_page_url,publisher,state) VALUES(?,?,?,?,?,'candidate') ON CONFLICT(project_id,source_url) DO UPDATE SET updated_at=CURRENT_TIMESTAMP RETURNING id`).bind(project.id,story.id,clean(body.image_url,2000),story.source_url,story.publisher).first();candidate={id:inserted.id,story_id:story.id,source_url:clean(body.image_url,2000),source_page_url:story.source_url,publisher:story.publisher,headline:story.headline,summary:story.summary}}
   }
+  if(candidate&&isAmericanFootballNews(candidate.headline,candidate.summary))return json({error:'ข่าวนี้ไม่ใช่ข่าวฟุตบอลที่รองรับ'},422,headers);
   if(!candidate||!isSafeRemoteUrl(candidate.source_url))return json({error:'ไม่พบรูปที่เลือกหรือ URL รูปไม่ปลอดภัย'},400,headers);
   const existing=await ctx.env.DB.prepare('SELECT id FROM vsport_assets WHERE project_id=? AND candidate_id=?').bind(project.id,candidate.id).first();if(existing)return json({ok:true,id:existing.id,preview_url:`/api/admin/vsport-assets/${existing.id}`,reused:true},200,headers);
   const writerFence=crypto.randomUUID();let key='',guardId='';
@@ -311,7 +332,7 @@ export async function onRequestPost(ctx){
   const projectId=integer(body.project_id,1,Number.MAX_SAFE_INTEGER),project=projectId?await ownedProject(ctx.env,projectId,auth.user.id,{withScript:true}):null;if(!project)return json({error:'ไม่พบโปรเจกต์ vSport'},404,headers);
   if(action==='save'){
     const targetSeconds=Number(body.target_seconds||0),script=clean(body.narration_script,60000),headline=clean(body.thumbnail_headline,180),subheadline=clean(body.thumbnail_subheadline,240),focusText=clean(body.thumbnail_focus_text,120),focusAssetId=integer(body.thumbnail_focus_asset_id,1,Number.MAX_SAFE_INTEGER),palette=['red-yellow','blue-white','black-gold'].includes(body.thumbnail_palette)?body.thumbnail_palette:'red-yellow',layout=['split','stack','spotlight'].includes(body.thumbnail_layout)?body.thumbnail_layout:'split';if(targetSeconds&&(!Number.isFinite(targetSeconds)||targetSeconds<1||targetSeconds>21600))return json({error:'ระยะเวลาเสียงต้องอยู่ระหว่าง 1–21,600 วินาที'},400,headers);if(focusAssetId&&!await ctx.env.DB.prepare('SELECT id FROM vsport_assets WHERE id=? AND project_id=? AND owner_id=?').bind(focusAssetId,project.id,auth.user.id).first())return json({error:'รูปเด่นไม่ได้อยู่ในโปรเจกต์นี้'},400,headers);
-    const ids=[...new Set((body.story_ids||[]).map(Number).filter(id=>Number.isInteger(id)&&id>0))].slice(0,24),statements=[ctx.env.DB.prepare("UPDATE vsport_projects SET target_seconds=?,narration_script=?,thumbnail_headline=?,thumbnail_subheadline=?,thumbnail_focus_text=?,thumbnail_focus_asset_id=?,thumbnail_palette=?,thumbnail_layout=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_id=?").bind(targetSeconds||0,script,headline,subheadline,focusText,focusAssetId||null,palette,layout,project.id,auth.user.id)];
+    const ids=[...new Set((body.story_ids||[]).map(Number).filter(id=>Number.isInteger(id)&&id>0))];if(ids.length>24)return json({error:'เลือกข่าวได้ไม่เกิน 24 รายการ กรุณาตรวจรายการอีกครั้ง',code:'STORY_SELECTION_LIMIT_EXCEEDED'},422,headers);if(Array.isArray(body.story_ids)&&ids.length){const requested=(await ctx.env.DB.prepare(`SELECT id,headline,summary FROM vsport_stories WHERE project_id=? AND id IN (${ids.map(()=>'?').join(',')}) LIMIT 24`).bind(project.id,...ids).all()).results||[];if(requested.some(story=>isAmericanFootballNews(story.headline,story.summary)))return json({error:'รายการที่เลือกมีข่าวที่ไม่ใช่ฟุตบอล กรุณาโหลดรายการใหม่',code:'STORY_NOT_SOCCER'},422,headers)}const statements=[ctx.env.DB.prepare("UPDATE vsport_projects SET target_seconds=?,narration_script=?,thumbnail_headline=?,thumbnail_subheadline=?,thumbnail_focus_text=?,thumbnail_focus_asset_id=?,thumbnail_palette=?,thumbnail_layout=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_id=?").bind(targetSeconds||0,script,headline,subheadline,focusText,focusAssetId||null,palette,layout,project.id,auth.user.id)];
     if(Array.isArray(body.story_ids)){statements.push(ctx.env.DB.prepare('UPDATE vsport_stories SET selected=0 WHERE project_id=?').bind(project.id));if(ids.length)statements.push(ctx.env.DB.prepare(`UPDATE vsport_stories SET selected=1 WHERE project_id=? AND id IN (${ids.map(()=>'?').join(',')})`).bind(project.id,...ids))}await ctx.env.DB.batch(statements);return json({ok:true},200,headers);
   }
   if(action==='ingest_image')return ingestImage(ctx,auth,project,body);
