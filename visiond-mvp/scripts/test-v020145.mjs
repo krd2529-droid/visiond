@@ -14,11 +14,12 @@ const [version, home, admin, html, foundation, api, client, css, migration, pack
   'public/vsport.css', 'migrations/0117_vsport_headline_lookup.sql',
   'package.json', 'patch-ledgers/v0.20.145.json',
 ].map(text));
-assert.equal(version.trim(), 'v0.20.145');
-assert.match(home, /WEB v0\.20\.145/);
-assert.match(admin, /ADMIN v0\.20\.145/);
-assert.match(html, /vsport\.css\?v=020145/);
-assert.match(html, /vsport\.js\?v=020145/);
+assert.ok(['v0.20.145','v0.20.146'].includes(version.trim()));
+assert.ok(home.includes(`WEB ${version.trim()}`));
+assert.ok(admin.includes(`ADMIN ${version.trim()}`));
+const assetVersion=version.trim()==='v0.20.146'?'020146':'020145';
+assert.match(html,new RegExp(`vsport\\.css\\?v=${assetVersion}`));
+assert.match(html,new RegExp(`vsport\\.js\\?v=${assetVersion}`));
 assert.match(foundation, /export const isSoccerEligibleNews/);
 assert.match(foundation, /export function isLikelyContentImageUrl/);
 assert.match(api, /thumbnail_headline_eligible/);

@@ -323,6 +323,36 @@ export async function onRequestDelete(ctx){
   return deleteReceiptResponse(ctx,receipt,{replayed:false});
 }
 
+export async function prepareThaiThumbnailHeadline(env,project,ownerId,requestAI=requestWorkNotesAI){
+  const hasThai=value=>/[\u0e00-\u0e7f]/u.test(String(value||''));
+  if(hasThai(project.thumbnail_headline))return{ok:true,headline:project.thumbnail_headline,reused:true};
+  const expected=project.thumbnail_headline||'';
+  let story;
+  if(expected){
+    const source=await env.DB.prepare('SELECT headline,summary,publisher,source_url FROM vsport_stories WHERE project_id=? AND headline=? AND selected=1 LIMIT 1').bind(project.id,expected).first();
+    if(source&&isSoccerEligibleNews(source.headline,source.summary,source.source_url,project.scope_mode))story=source;
+  }else{
+    const selected=await selectedSoccerStories(env,project.id,project.scope_mode,'publisher,source_url');
+    story=selected.stories[0];
+  }
+  if(!story){
+    const fallback='ข่าวฟุตบอลวันนี้';
+    await env.DB.prepare("UPDATE vsport_projects SET thumbnail_headline=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_id=? AND COALESCE(thumbnail_headline,'')=?").bind(fallback,project.id,ownerId,expected).run();
+    const current=await ownedProject(env,project.id,ownerId);
+    return{ok:true,headline:current?.thumbnail_headline||fallback,requires_review:true};
+  }
+  let headline='ข่าวฟุตบอลวันนี้',requiresReview=true;
+  try{
+    const prompt=`เขียนพาดหัวปกวิดีโอข่าวฟุตบอลภาษาไทยสั้น ๆ ไม่เกิน 70 ตัวอักษร จากข้อมูลข่าวจริงต่อไปนี้เท่านั้น ตอบพาดหัวบรรทัดเดียวเป็นภาษาไทย ห้ามใช้อักษรละติน ห้ามเพิ่มผลการแข่งขัน ตัวเลข ชื่อคน ทีม หรือข้อเท็จจริงที่ไม่มีในข้อมูล หากไม่มั่นใจการถอดชื่อเฉพาะให้ตอบ ข่าวฟุตบอลวันนี้ เท่านั้น\nพาดหัวต้นทาง: ${clean(story.headline,180)}\nสรุปฟีด: ${clean(story.summary,600)}\nสำนักข่าว: ${clean(story.publisher,100)}\nURL: ${clean(story.source_url,500)}`;
+    const proposed=clean(await requestAI(env,prompt,{maxTokens:160,temperature:0,deadlineMs:9000}),180).replace(/^['"“”]+|['"“”]+$/gu,'').trim();
+    const thaiConsonants=(proposed.match(/[ก-ฮ]/gu)||[]).length,sourceText=`${story.headline} ${story.summary||''}`,numbers=proposed.match(/[0-9]+/gu)||[];
+    if(proposed.length<=70&&!/[\r\n]/u.test(proposed)&&!/[A-Za-z]/u.test(proposed)&&thaiConsonants>=5&&proposed!=='ข่าวฟุตบอลวันนี้'&&numbers.every(number=>sourceText.includes(number))){headline=proposed;requiresReview=false}
+  }catch{}
+  const written=await env.DB.prepare("UPDATE vsport_projects SET thumbnail_headline=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_id=? AND COALESCE(thumbnail_headline,'')=?").bind(headline,project.id,ownerId,expected).run();
+  if(!written.meta?.changes){const current=await ownedProject(env,project.id,ownerId);headline=current?.thumbnail_headline||headline}
+  return{ok:true,headline,requires_review:requiresReview};
+}
+
 export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>({})),action=clean(body.action,40);
   if(action==='create'){
@@ -331,6 +361,9 @@ export async function onRequestPost(ctx){
     const row=await ctx.env.DB.prepare('INSERT INTO vsport_projects(owner_id,title,news_date,scope_mode,team_name,target_minutes) VALUES(?,?,?,?,?,?) RETURNING id').bind(auth.user.id,title,newsDate,scopeMode,scopeMode==='specific_team'?teamName:'',targetMinutes).first();return json({ok:true,id:row.id},201,headers);
   }
   const projectId=integer(body.project_id,1,Number.MAX_SAFE_INTEGER),project=projectId?await ownedProject(ctx.env,projectId,auth.user.id,{withScript:true}):null;if(!project)return json({error:'ไม่พบโปรเจกต์ vSport'},404,headers);
+  if(action==='prepare_thumbnail_headline'){
+    return json(await prepareThaiThumbnailHeadline(ctx.env,project,auth.user.id),200,headers);
+  }
   if(action==='save'){
     const targetSeconds=Number(body.target_seconds||0),script=clean(body.narration_script,60000),headline=clean(body.thumbnail_headline,180),subheadline=clean(body.thumbnail_subheadline,240),focusText=clean(body.thumbnail_focus_text,120),focusAssetId=integer(body.thumbnail_focus_asset_id,1,Number.MAX_SAFE_INTEGER),palette=['red-yellow','blue-white','black-gold'].includes(body.thumbnail_palette)?body.thumbnail_palette:'red-yellow',layout=['split','stack','spotlight'].includes(body.thumbnail_layout)?body.thumbnail_layout:'split';if(targetSeconds&&(!Number.isFinite(targetSeconds)||targetSeconds<1||targetSeconds>21600))return json({error:'ระยะเวลาเสียงต้องอยู่ระหว่าง 1–21,600 วินาที'},400,headers);
     if(headline){const source=await ctx.env.DB.prepare('SELECT headline,summary,source_url FROM vsport_stories WHERE project_id=? AND headline=? LIMIT 1').bind(project.id,headline).first();if(source&&!isSoccerEligibleNews(source.headline,source.summary,source.source_url,project.scope_mode))return json({error:'หัวข้อปกนี้มาจากข่าวที่ไม่ใช่ฟุตบอล กรุณาเลือกข่าวฟุตบอล',code:'THUMBNAIL_NOT_SOCCER'},422,headers)}

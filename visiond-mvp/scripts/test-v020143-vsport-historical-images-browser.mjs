@@ -37,6 +37,7 @@ const server = http.createServer((req, res) => {
     req.on('data', chunk => { raw += chunk; });
     return req.on('end', () => {
       const body = JSON.parse(raw || '{}');
+      if (body.action === 'prepare_thumbnail_headline') return send(res, { ok: true, headline: 'ข่าวฟุตบอลวันนี้', requires_review: true });
       posts.push(body);
       if (body.action !== 'ingest_image' || body.candidate_id !== 403) return send(res, { error: 'unexpected fictional write' }, 400);
       candidates = candidates.map(item => item.id === 403 ? { ...item, state: 'ready', error_message: '' } : item);

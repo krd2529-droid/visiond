@@ -1,0 +1,36 @@
+{
+  "version": "v0.20.146",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Prepare Thai-only cover copy once from the exact selected eligible source headline, retain edited Thai, use a neutral Thai review fallback when source or AI is unavailable, and render bounded Thai text consistently in preview and PNG export.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.146.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020139-vsport-news-browser.mjs",
+    "scripts/test-v020140-vsport-bing-browser.mjs",
+    "scripts/test-v020142-vsport-image-workflow-browser.mjs",
+    "scripts/test-v020143-vsport-historical-images-browser.mjs",
+    "scripts/test-v020145.mjs",
+    "scripts/test-v020146-vsport-thai-cover.mjs",
+    "scripts/test-v020146-vsport-thai-cover-browser.mjs",
+    "scripts/test-v020146.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: server provenance/reuse/fallback/CAS plus installed Chrome Thai canvas/download PNG with matching pixels, manual save/reopen and English-source fallback.",
+    "compatibility": "PASS: v0.20.145 wrapper before version stamp; v0.20.146 wrapper runs relevant V Sport v145 and v139/v140/v142/v143 browser regressions directly, not the historical exact-version chain.",
+    "independent": "Pending frozen-tree Mark review."
+  },
+  "release": {
+    "status": "not committed",
+    "commit": "not performed",
+    "push": "not performed",
+    "pages_deploy": "not performed"
+  }
+}
