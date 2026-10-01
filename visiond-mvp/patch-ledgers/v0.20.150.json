@@ -1,0 +1,27 @@
+{
+  "version": "v0.20.150",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Add a bounded BBC Sport football RSS third provider only after Google/Bing are empty in the same Bangkok window, preserving exact-before-fallback precedence and truthful source diagnostics.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_vsport.js",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.150.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020150-vsport-news-browser.mjs",
+    "scripts/test-v020150-vsport-news-fallback.mjs",
+    "scripts/test-v020150.mjs"
+  ],
+  "verification": {
+    "focused": "PASS deterministic screenshot-state red-to-BBC exact rescue, exact-before-fallback, trusted BBC links/publisher, no American football, bounded all-source failure/empty and diagnostic checkpoint <=400; desktop/mobile Chrome Step 1 recovery.",
+    "compatibility": "PASS npm run test:v020150 focused server/browser and connected v149/v148/v147/v146/v145 gates. Historical v139/v140 exact-two-provider assertions intentionally not rewritten.",
+    "independent": "Pending frozen Mark review."
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}

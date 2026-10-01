@@ -23,16 +23,17 @@ const newsProviderStates=new Set(['stories','empty','unavailable','skipped']),ne
 
 export function parseNewsCheckpoint(value=''){
   try{
-    const data=JSON.parse(String(value||'')),day=value=>/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')),providers=value=>value&&newsProviderStates.has(value.google)&&newsProviderStates.has(value.bing)?{google:value.google,bing:value.bing}:null,count=Number(data.count),exact=providers(data.exact),fallback=providers(data.fallback);
+    const data=JSON.parse(String(value||'')),day=value=>/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')),providers=value=>value&&newsProviderStates.has(value.google)&&newsProviderStates.has(value.bing)&&(!value.bbc||newsProviderStates.has(value.bbc))?{google:value.google,bing:value.bing,...(value.bbc?{bbc:value.bbc}:{})}:null,count=Number(data.count),exact=providers(data.exact),fallback=providers(data.fallback);
     if(data.v!==1||data.kind!=='news'||!newsModes.has(data.mode)||!day(data.selected)||!day(data.from)||!day(data.to)||!Number.isInteger(count)||count<0||count>24||!exact||!fallback)return null;
-    return{mode:data.mode,selected:data.selected,from:data.from,to:data.to,count,exact,fallback};
+    const failureCodes=new Set(['http','timeout','size','envelope','parse','network']),failures={};for(const [key,reason] of Object.entries(data.failures||{}))if(/^[ef][gbc]$/u.test(key)&&failureCodes.has(reason))failures[key]=reason;
+    return{mode:data.mode,selected:data.selected,from:data.from,to:data.to,count,exact,fallback,failures};
   }catch{return null}
 }
 
-const newsProviderText=providers=>`Google News: ${providers.google==='stories'?'พบข่าว':providers.google==='empty'?'ตอบสำเร็จแต่ไม่มีข่าว':providers.google==='unavailable'?'ไม่พร้อม/ข้อมูลไม่ถูกต้อง':'ไม่ได้เรียกต่อ'} · Bing News: ${providers.bing==='stories'?'พบข่าว':providers.bing==='empty'?'ตอบสำเร็จแต่ไม่มีข่าว':providers.bing==='unavailable'?'ไม่พร้อม/ข้อมูลไม่ถูกต้อง':'ไม่ได้เรียกต่อ'}`;
+const newsProviderText=(providers,failures={},phase='e')=>{const reasonText={http:'HTTP',timeout:'หมดเวลา',size:'ข้อมูลใหญ่เกิน',envelope:'RSS ไม่ถูกต้อง',parse:'อ่าน RSS ไม่สำเร็จ',network:'เครือข่าย'},stateText=(value,key)=>`${value==='stories'?'พบข่าว':value==='empty'?'ตอบสำเร็จแต่ไม่มีข่าว':value==='unavailable'?'ไม่พร้อม/ข้อมูลไม่ถูกต้อง':'ไม่ได้เรียกต่อ'}${value==='unavailable'&&reasonText[failures[`${phase}${key}`]]?` (${reasonText[failures[`${phase}${key}`]]})`:''}`,base=`Google News: ${stateText(providers.google,'g')} · Bing News: ${stateText(providers.bing,'b')}`;return providers.bbc&&providers.bbc!=='skipped'?`${base} · BBC Sport: ${stateText(providers.bbc,'c')}`:base};
 export function formatNewsJobStatus(job){
   const data=parseNewsCheckpoint(job?.checkpoint);if(!data)return'';
-  const exact=newsProviderText(data.exact),fallback=newsProviderText(data.fallback),window=`ช่วงค้นหา ${data.from} ถึงก่อน ${data.to} (เวลาเอเชีย/กรุงเทพฯ)`;
+  const exact=newsProviderText(data.exact,data.failures,'e'),fallback=newsProviderText(data.fallback,data.failures,'f'),window=`ช่วงค้นหา ${data.from} ถึงก่อน ${data.to} (เวลาเอเชีย/กรุงเทพฯ)`;
   if(data.mode==='exact')return`พบ ${data.count} ข่าวตรงวันที่ ${data.selected} · ${window} · ${exact}`;
   if(data.mode==='fallback')return`ไม่พบข่าวตรงวันที่ ${data.selected} จึงใช้ข่าวย้อนหลังไม่เกิน 48 ชั่วโมง (${data.count} ข่าว ไม่ใช่ผลตรงวัน) · ${window} · รอบตรงวัน ${exact} · รอบย้อนหลัง ${fallback}`;
   if(data.mode==='zero')return`ไม่พบข่าวตรงวันที่ ${data.selected} และสองวันก่อนหน้า · ${window} · รอบตรงวัน ${exact} · รอบย้อนหลัง ${fallback}`;

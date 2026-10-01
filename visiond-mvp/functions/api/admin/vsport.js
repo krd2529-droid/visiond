@@ -12,6 +12,7 @@ const JOB_LEASE_MS=120000;
 const NEWS_FETCH_TIMEOUT_MS=4500;
 const NEWS_FETCH_ATTEMPTS=2;
 const NEWS_MAX_BYTES=2*1024*1024;
+const BBC_FOOTBALL_RSS='https://feeds.bbci.co.uk/sport/football/rss.xml';
 const INGEST_LEASE_MS=120000;
 const CLEANUP_LIMIT=24;
 const DELETE_KEY_MIN=8;
@@ -119,11 +120,13 @@ const finishJob=(env,id,status,checkpoint='',error='')=>env.DB.prepare('UPDATE v
 const newsError=(code,message,discovery)=>Object.assign(new Error(message),{code,discovery});
 const sleep=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 const newsProviderState=Object.freeze({stories:'stories',empty:'empty',unavailable:'unavailable',skipped:'skipped'});
+const newsFailureClass=error=>error?.name==='AbortError'?'timeout':error?.message==='NEWS_PROVIDER_HTTP'?'http':error?.message==='NEWS_RESPONSE_TOO_LARGE'?'size':error?.message==='NEWS_RSS_ENVELOPE_INVALID'?'envelope':error?.message==='NEWS_RSS_PARSE'?'parse':'network';
 
 export function newsDiscoveryCheckpoint(discovery){
-  const states=value=>({google:Object.values(newsProviderState).includes(value?.google)?value.google:'skipped',bing:Object.values(newsProviderState).includes(value?.bing)?value.bing:'skipped'}),selected=String(discovery?.selected||''),from=String(discovery?.from||''),to=String(discovery?.to||''),mode=['exact','fallback','zero','unavailable'].includes(discovery?.mode)?discovery.mode:'unavailable',count=integer(discovery?.count||0,0,NEWS_RESULT_LIMIT)??0;
+  const states=value=>{const result={google:Object.values(newsProviderState).includes(value?.google)?value.google:'skipped',bing:Object.values(newsProviderState).includes(value?.bing)?value.bing:'skipped'};if(Object.values(newsProviderState).includes(value?.bbc))result.bbc=value.bbc;return result},selected=String(discovery?.selected||''),from=String(discovery?.from||''),to=String(discovery?.to||''),mode=['exact','fallback','zero','unavailable'].includes(discovery?.mode)?discovery.mode:'unavailable',count=integer(discovery?.count||0,0,NEWS_RESULT_LIMIT)??0;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(selected)||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to))return'';
-  return JSON.stringify({v:1,kind:'news',mode,selected,from,to,count,exact:states(discovery?.exact),fallback:states(discovery?.fallback)});
+  const failures={};for(const [phase,prefix] of [['exact','e'],['fallback','f']])for(const [provider,suffix] of [['google','g'],['bing','b'],['bbc','c']]){const reason=discovery?.failures?.[phase]?.[provider];if(['http','timeout','size','envelope','parse','network'].includes(reason))failures[`${prefix}${suffix}`]=reason}
+  const checkpoint={v:1,kind:'news',mode,selected,from,to,count,exact:states(discovery?.exact),fallback:states(discovery?.fallback)};if(Object.keys(failures).length)checkpoint.failures=failures;return JSON.stringify(checkpoint);
 }
 
 async function readNewsResponse(response){
@@ -140,12 +143,13 @@ const mergeWindowStories=(current,incoming,scopeMode)=>{
 };
 
 async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt,successfulResponses}){
-  const outcomes={google:'skipped',bing:'skipped'},providers=[{id:'google',url:newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bing',url:bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)}];let stories=[],selectedProvider='',selectedAttempt=0;
+  const outcomes={google:'skipped',bing:'skipped'},reasons={},providers=[{id:'google',url:newsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bing',url:bingNewsRssUrlForWindow(project.news_date,project.scope_mode,project.team_name,windowKind)},{id:'bbc',url:BBC_FOOTBALL_RSS}];let stories=[],selectedProvider='',selectedAttempt=0;
   for(const provider of providers){
+    if(provider.id==='bbc'&&stories.length)break;
     const excludedFingerprints=new Set(stories.map(story=>story.fingerprint));
     const cacheKey=`${provider.id}\n${provider.url}`,cached=successfulResponses.get(cacheKey);
     if(cached){
-      const parsed=parseNewsRss(cached.xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:NEWS_RESULT_LIMIT,excludedFingerprints,retrievedAt:cached.retrievedAt});outcomes[provider.id]=parsed.length?'stories':'empty';
+      const parsed=parseNewsRss(cached.xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:NEWS_RESULT_LIMIT,excludedFingerprints,retrievedAt:cached.retrievedAt,bbcOnly:provider.id==='bbc'});outcomes[provider.id]=parsed.length?'stories':'empty';
       if(parsed.length){if(!selectedProvider){selectedProvider=provider.id;selectedAttempt=cached.attempt}stories=mergeWindowStories(stories,parsed,project.scope_mode);if(stories.length>=NEWS_RESULT_LIMIT)break}
       continue;
     }
@@ -154,26 +158,26 @@ async function discoverWindow(project,windowKind,{fetchImpl,timeoutMs,retryDelay
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),Math.max(1,timeoutMs));
       try{
         const response=await fetchImpl(provider.url,{headers:{'user-agent':'VisionD-vSport/1.0','accept':'application/rss+xml, application/xml, text/xml'},signal:controller.signal});
-        if(!response.ok)throw new Error('NEWS_PROVIDER_UNAVAILABLE');
+        if(!response.ok)throw new Error('NEWS_PROVIDER_HTTP');
         const xml=await readNewsResponse(response);if(!isNewsRssEnvelope(xml))throw new Error('NEWS_RSS_ENVELOPE_INVALID');
-        const retrievedAt=new Date().toISOString(),parsed=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:NEWS_RESULT_LIMIT,excludedFingerprints,retrievedAt});successfulResponses.set(cacheKey,{xml,retrievedAt,attempt});outcomes[provider.id]=parsed.length?'stories':'empty';
+        const retrievedAt=new Date().toISOString();let parsed;try{parsed=parseNewsRss(xml,{newsDate:project.news_date,windowKind,scopeMode:project.scope_mode,teamName:project.team_name,limit:NEWS_RESULT_LIMIT,excludedFingerprints,retrievedAt,bbcOnly:provider.id==='bbc'})}catch{throw new Error('NEWS_RSS_PARSE')}successfulResponses.set(cacheKey,{xml,retrievedAt,attempt});outcomes[provider.id]=parsed.length?'stories':'empty';delete reasons[provider.id];
         if(parsed.length){if(!selectedProvider){selectedProvider=provider.id;selectedAttempt=attempt}stories=mergeWindowStories(stories,parsed,project.scope_mode)}
         break;
-      }catch{
-        if(attempt<NEWS_FETCH_ATTEMPTS)await sleepImpl(Math.max(0,retryDelayMs)*attempt);else outcomes[provider.id]='unavailable';
+      }catch(error){
+        if(attempt<NEWS_FETCH_ATTEMPTS)await sleepImpl(Math.max(0,retryDelayMs)*attempt);else{outcomes[provider.id]='unavailable';reasons[provider.id]=newsFailureClass(error)}
       }finally{clearTimeout(timer)}
     }
     if(stories.length>=NEWS_RESULT_LIMIT)break;
   }
-  return{stories,provider:selectedProvider,attempt:selectedAttempt,outcomes};
+  return{stories,provider:selectedProvider,attempt:selectedAttempt,outcomes,reasons};
 }
 
 export async function discoverNews(project,{fetchImpl=fetch,timeoutMs=NEWS_FETCH_TIMEOUT_MS,retryDelayMs=250,sleepImpl=sleep,onAttempt=async()=>{}}={}){
-  const options={fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt,successfulResponses:new Map()},exactWindow=bangkokNewsWindow(project.news_date,'exact'),fallbackWindow=bangkokNewsWindow(project.news_date,'fallback'),exact=await discoverWindow(project,'exact',options),base={selected:project.news_date,from:exactWindow.from_day,to:exactWindow.to_day,exact:exact.outcomes,fallback:{google:'skipped',bing:'skipped'}};
+  const options={fetchImpl,timeoutMs,retryDelayMs,sleepImpl,onAttempt,successfulResponses:new Map()},exactWindow=bangkokNewsWindow(project.news_date,'exact'),fallbackWindow=bangkokNewsWindow(project.news_date,'fallback'),exact=await discoverWindow(project,'exact',options),base={selected:project.news_date,from:exactWindow.from_day,to:exactWindow.to_day,exact:exact.outcomes,fallback:{google:'skipped',bing:'skipped'},failures:{exact:exact.reasons,fallback:{}}};
   if(exact.stories.length)return{...exact,windowKind:'exact',discovery:{...base,mode:'exact',count:exact.stories.length}};
   const exactValid=Object.values(exact.outcomes).some(state=>state==='empty');
-  if(!exactValid)throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าว Google News และ Bing News ไม่พร้อมใช้งานชั่วคราว กรุณารอ 1–2 นาที แล้วกด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ',{...base,mode:'unavailable',count:0});
-  const fallback=await discoverWindow(project,'fallback',options),fallbackBase={...base,from:fallbackWindow.from_day,to:fallbackWindow.to_day,fallback:fallback.outcomes};
+  if(!exactValid)throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าว Google News, Bing News และ BBC Sport ไม่พร้อมใช้งานชั่วคราว กรุณารอ 1–2 นาที แล้วกด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ',{...base,mode:'unavailable',count:0});
+  const fallback=await discoverWindow(project,'fallback',options),fallbackBase={...base,from:fallbackWindow.from_day,to:fallbackWindow.to_day,fallback:fallback.outcomes,failures:{exact:exact.reasons,fallback:fallback.reasons}};
   if(fallback.stories.length)return{...fallback,windowKind:'fallback',discovery:{...fallbackBase,mode:'fallback',count:fallback.stories.length}};
   const unavailable=[...Object.values(exact.outcomes),...Object.values(fallback.outcomes)].includes('unavailable');
   if(unavailable)throw newsError('NEWS_SOURCES_UNAVAILABLE','แหล่งข่าวบางส่วนไม่พร้อมใช้งาน จึงยืนยันผลข่าวว่างไม่ได้ กรุณากด “ค้นข่าววันนี้” อีกครั้ง ระบบจะใช้โปรเจกต์เดิมต่อและไม่สร้างข่าวซ้ำ',{...fallbackBase,mode:'unavailable',count:0});

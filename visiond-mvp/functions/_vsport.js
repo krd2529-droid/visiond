@@ -138,13 +138,13 @@ export function balanceStories(items,{limit=NEWS_RESULT_LIMIT}={}){
   return balanced;
 }
 
-export function parseNewsRss(xml,{newsDate,windowKind='exact',scopeMode='all_teams_for_day',teamName='',limit=NEWS_RESULT_LIMIT,excludedFingerprints=new Set(),retrievedAt=new Date().toISOString()}={}){
+export function parseNewsRss(xml,{newsDate,windowKind='exact',scopeMode='all_teams_for_day',teamName='',limit=NEWS_RESULT_LIMIT,excludedFingerprints=new Set(),retrievedAt=new Date().toISOString(),bbcOnly=false}={}){
   const resultLimit=boundedNewsResultLimit(limit);
   const excluded=new Set(),excludedValues=excludedFingerprints instanceof Set?[...excludedFingerprints]:[];
   for(const value of excludedValues.slice(0,NEWS_RESULT_LIMIT)){const fingerprint=String(value||'').toLowerCase();if(/^[0-9a-f]{8}$/.test(fingerprint))excluded.add(fingerprint)}
   const seen=new Set(),stories=[],window=bangkokNewsWindow(newsDate,windowKind),specificTeam=scopeMode==='specific_team'?matchingDefinition(teamName):null,unknownNeedle=normalizeTeamText(teamName);
   for(const match of String(xml||'').matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)){
-    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),summary=stripHtml(firstTag(item,'description')).slice(0,1600),publisher=cleanText(firstTag(item,'source')).slice(0,180),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedMs=Date.parse(publishedRaw);
+    const item=match[1],headline=cleanText(firstTag(item,'title')).slice(0,500),summary=stripHtml(firstTag(item,'description')).slice(0,1600),sourceUrl=normalizeNewsSourceUrl(firstTag(item,'link')),bbcLink=bbcOnly&&/^https:\/\/(?:www\.)?bbc\.(?:co\.uk|com)\/sport\/football(?:\/|$)/iu.test(sourceUrl),publisher=bbcOnly?(bbcLink?'BBC Sport':''):cleanText(firstTag(item,'source')).slice(0,180),publishedRaw=cleanText(firstTag(item,'pubDate')),publishedMs=Date.parse(publishedRaw);
     if(!headline||!publisher||!/^https:\/\//i.test(sourceUrl)||!Number.isFinite(publishedMs)||publishedMs<window.start_ms||publishedMs>=window.end_ms)continue;
     if(!isSoccerEligibleNews(headline,summary,sourceUrl,scopeMode))continue;
     if(scopeMode==='specific_team'&&(!unknownNeedle||!(specificTeam?matchesTeam(headline,specificTeam):normalizedTeamPhraseMatches(normalizeTeamText(headline),unknownNeedle))))continue;
