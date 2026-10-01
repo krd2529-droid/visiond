@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+const root=new URL('../',import.meta.url),read=relative=>readFile(new URL(relative,root),'utf8');
+const [version,home,admin,html,api,client,pkg,ledgerText]=await Promise.all(['VERSION.txt','public/index.html','public/admin.html','public/vsport.html','functions/api/admin/vsport.js','public/vsport.js','package.json','patch-ledgers/v0.20.148.json'].map(read));
+assert.equal(version.trim(),'v0.20.148');assert.match(home,/WEB v0\.20\.148/);assert.match(admin,/ADMIN v0\.20\.148/);assert.match(html,/vsport\.js\?v=020148/);assert.match(html,/vsport\.css\?v=020148/);assert.match(api,/fetchCommonsPerson/);assert.match(client,/orderedTimelineAssetIds/);assert.equal(JSON.parse(pkg).scripts['test:v020148'],'node scripts/test-v020148.mjs');
+const ledger=JSON.parse(ledgerText);assert.equal(ledger.version,'v0.20.148');
+for(const path of ['functions/_vsport-people.js','functions/api/admin/vsport.js','migrations/0118_vsport_script_people.sql','public/vsport.js','public/vsport.html','scripts/test-v020148-vsport-person-images.mjs','scripts/test-v020148-vsport-person-images-browser.mjs'])assert.ok(ledger.files.includes(path),path);
+for(const script of ['scripts/test-v020148-vsport-person-images.mjs','scripts/test-v020148-vsport-person-images-browser.mjs','scripts/test-v020147-vsport-colon-cover-browser.mjs','scripts/test-v020146-vsport-thai-cover.mjs','scripts/test-v020146-vsport-thai-cover-browser.mjs','scripts/test-v020145-vsport-soccer-media.mjs'])execFileSync(process.execPath,[script],{cwd:root,stdio:'inherit'});
+for(const path of ['functions/_vsport-people.js','functions/api/admin/vsport.js','public/vsport.js'])execFileSync(process.execPath,['--check',path],{cwd:root,stdio:'inherit'});
+console.log('PASS v0.20.148 person-image release and connected V Sport regressions');

@@ -7,7 +7,7 @@
   <title>vSport | VisionD Control</title>
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/vsport.css?v=020147">
+  <link rel="stylesheet" href="/vsport.css?v=020148">
 </head>
 <body>
   <header class="sport-toolbar">
@@ -52,11 +52,13 @@
       </section>
 
       <section id="mediaStep" class="vds-card step-card">
-        <div class="section-head"><div><small>ขั้นที่ 3</small><h2>เสียง รูปที่เก็บถาวร และไทม์ไลน์</h2></div><button id="discoverImages" class="vds-btn vds-btn--primary" type="button">หารูปจากข่าวที่เลือก</button></div>
+        <div class="section-head"><div><small>ขั้นที่ 3</small><h2>เสียง รูปที่เก็บถาวร และไทม์ไลน์</h2></div><button id="discoverImages" class="vds-btn vds-btn--primary" type="button">หารูปบุคคลจากบทพูด</button></div>
+        <label class="vds-field">ชื่อในบทที่ AI อาจตกหล่น (บรรทัดละชื่อ; เพิ่ม | ชื่ออังกฤษสำหรับค้นได้)<textarea id="personNamesOverride" rows="2" maxlength="1500" placeholder="โมฮาเหม็ด ซาลาห์ | Mohamed Salah"></textarea></label><p id="personSearchSummary" class="status-line" aria-live="polite"></p><button id="discoverMorePeople" class="vds-btn vds-btn--secondary" type="button" hidden>ค้นชื่อชุดถัดไป</button>
         <div class="media-inputs"><label class="vds-field">ระยะเวลาเสียงจริง (วินาที)<input id="targetSeconds" type="number" min="1" max="21600" step="0.001" placeholder="เช่น 1832.448"></label><label class="vds-field">ไฟล์เสียงพากย์<input id="audioFile" type="file" accept="audio/*"></label><button id="useAudioDuration" class="vds-btn vds-btn--secondary" type="button" disabled>ใช้ความยาวจากไฟล์เสียง</button></div>
         <p id="audioStatus" class="status-line">ยังไม่ได้เลือกไฟล์เสียง</p>
-        <div class="manual-image"><label class="vds-field">เรื่องที่รูปนี้เกี่ยวข้อง<select id="manualStory"></select></label><label class="vds-field">URL รูปโดยตรง (HTTPS)<input id="manualImageUrl" type="url" placeholder="https://..."></label><button id="ingestManualImage" class="vds-btn vds-btn--secondary" type="button">ตรวจและเก็บรูปนี้</button></div>
-        <h3>รูปที่พบ — ยังไม่แสดงภาพจนกว่าจะตรวจและเก็บสำเนา</h3><div id="candidateList" class="candidate-list"></div>
+        <div class="manual-image"><label class="vds-field">เรื่องที่รูปนี้เกี่ยวข้อง<select id="manualStory"></select></label><label class="vds-field">บุคคลในบท (ไม่บังคับ)<select id="manualPerson"><option value="">รูปข่าวทั่วไป</option></select></label><label class="vds-field">URL รูปโดยตรง (HTTPS)<input id="manualImageUrl" type="url" placeholder="https://..."></label><button id="ingestManualImage" class="vds-btn vds-btn--secondary" type="button">ตรวจและเก็บรูปนี้</button></div>
+        <div id="manualImageReview" hidden><img id="manualImagePreview" alt="ภาพ URL ที่เพิ่มเอง ยังไม่ยืนยันบุคคลหรือสิทธิ์" style="max-width:220px;max-height:135px;object-fit:contain"><a id="manualImageLink" target="_blank" rel="noopener noreferrer">เปิดภาพต้นทางในแท็บใหม่</a><p>ระบบตรวจชนิดและขนาดไฟล์เท่านั้น ไม่ยืนยันตัวบุคคลหรือสิทธิ์ของ URL ที่เพิ่มเอง</p></div>
+        <h3>ภาพตรงชื่อค้นหา — ตรวจใบหน้าและสิทธิ์ก่อนเก็บ (ผลค้นหาไม่ยืนยันตัวตน)</h3><div id="candidateList" class="candidate-list"></div><button id="batchIngestPeople" class="vds-btn vds-btn--primary" type="button">ตรวจและเก็บรูปบุคคลที่เลือก</button>
         <h3>รูปพร้อมใช้จากคลังส่วนตัว</h3><div id="assetList" class="asset-list"></div>
         <div class="timeline-head"><h3>ไทม์ไลน์สไลด์</h3><button id="planTimeline" class="vds-btn vds-btn--secondary" type="button">คำนวณให้ตรงระยะเวลา</button></div><div id="timelineList" class="timeline-list"></div>
         <p id="mediaStatus" class="status-line" role="status" aria-live="polite"></p>
@@ -78,7 +80,7 @@
       </section>
     </section>
   </main>
-  <script src="/vsport.js?v=020147" type="module"></script>
+  <script src="/vsport.js?v=020148" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>

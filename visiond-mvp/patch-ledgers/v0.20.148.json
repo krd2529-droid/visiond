@@ -1,0 +1,28 @@
+{
+  "version": "v0.20.148",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Discover script-mentioned people through bounded Commons PD/CC0 metadata queries; require visible identity/rights review before safe private ingest; report per-person shortfall and use validated assets in first-mention slide order with lazy media pagination.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_vsport-people.js",
+    "functions/api/admin/vsport.js",
+    "migrations/0118_vsport_script_people.sql",
+    "package.json",
+    "patch-ledgers/v0.20.148.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020148-vsport-person-images-browser.mjs",
+    "scripts/test-v020148-vsport-person-images.mjs",
+    "scripts/test-v020148.mjs"
+  ],
+  "verification": {
+    "focused": "PASS deterministic D1 migration/index/Commons metadata/person grounding/conflict/ready-count/list-light/replay tests; installed Chrome desktop/mobile visible preview and failed-preview lock, unchecked review, batch ingest, saved-count refresh, >24 asset pagination, script order, actual downloaded WebM decoded blue-to-red frame pixels.",
+    "compatibility": "PASS npm run test:v020148, including direct connected v147/v146/v145 server/browser gates and syntax checks.",
+    "independent": "Pending frozen Mark review."
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}
