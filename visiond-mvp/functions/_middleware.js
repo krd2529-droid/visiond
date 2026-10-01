@@ -48,6 +48,9 @@ export async function onRequest(ctx){
   const headers=new Headers(response.headers);
   for(const [key,value] of Object.entries(securityHeaders))headers.set(key,value);
   headers.set('x-frame-options','SAMEORIGIN');
+  if(['/vsport','/vsport.html'].includes(url.pathname)&&responseType.includes('text/html')){
+    headers.set('content-security-policy',`${securityHeaders['content-security-policy']}; media-src 'self' blob:`);
+  }
   if(isLiveCenterHtmlPath(url.pathname)){
     headers.set('referrer-policy','no-referrer');headers.set('x-frame-options','DENY');headers.set('cache-control','private, no-store');
     headers.set('content-security-policy',"default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");

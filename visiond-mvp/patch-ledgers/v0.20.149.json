@@ -1,0 +1,25 @@
+{
+  "version": "v0.20.149",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Permit locally created blob video/audio media only on V Sport HTML pages, preserving all other CSP directives and routes; prove old-policy failure and new-policy WebM export under actual middleware headers.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_middleware.js",
+    "package.json",
+    "patch-ledgers/v0.20.149.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "scripts/test-v020148-vsport-person-images-browser.mjs",
+    "scripts/test-v020149-vsport-media-csp.mjs",
+    "scripts/test-v020149.mjs"
+  ],
+  "verification": {
+    "focused": "PASS installed Chrome desktop/mobile old middleware CSP blocks WebM with no download; page-scoped new middleware CSP yields actual downloaded WebM blue-to-red frames.",
+    "compatibility": "PASS npm run test:v020149 with direct connected v148 server/browser and v147-v145 functional regressions plus syntax. Historical v148 wrapper version pins intentionally not rewritten.",
+    "independent": "Pending frozen Mark review."
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}
