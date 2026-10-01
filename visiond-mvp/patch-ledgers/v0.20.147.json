@@ -1,0 +1,29 @@
+{
+  "version": "v0.20.147",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Keep the main Thai cover headline at its existing size and draw text after the first ordinary or fullwidth colon in a measured smaller font, with bounded wrapping and matching preview/export pixels.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.147.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020147-vsport-colon-cover-browser.mjs",
+    "scripts/test-v020147.mjs"
+  ],
+  "verification": {
+    "focused": "PASS: installed Chrome desktop/mobile exact screenshot headline uses 76px prefix and a measured 56px one-line detail; balanced fullwidth/long detail avoids tiny tail, no-colon remains 76px, and actual 1280x720 PNG headline pixels match preview.",
+    "compatibility": "v0.20.146 wrapper passed on changed canvas behavior before v147 version stamp; v147 wrapper runs connected v146 Thai-cover and v145 soccer tests directly, not historical exact-version pins.",
+    "independent": "Pending frozen-tree Mark review."
+  },
+  "release": {
+    "status": "not committed",
+    "commit": "not performed",
+    "push": "not performed",
+    "pages_deploy": "not performed"
+  }
+}

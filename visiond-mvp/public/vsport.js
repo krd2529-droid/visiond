@@ -266,6 +266,36 @@ async function mergeFiles(){
 
 async function thumbnailImages(){const focusId=Number($('#thumbFocusAsset').value)||0,available=usableAssets().sort((a,b)=>Number(b.id===focusId)-Number(a.id===focusId)).slice(0,3),images=[];for(const asset of available){const image=new Image();image.src=asset.preview_url;await image.decode();images.push(image)}return images}
 function wrapText(context,text,maxWidth,maxLines){const value=String(text||'ข่าวฟุตบอลวันนี้'),parts=globalThis.Intl?.Segmenter?[...new Intl.Segmenter('th',{granularity:'grapheme'}).segment(value)].map(part=>part.segment):Array.from(value),lines=[];let line='';for(let index=0;index<parts.length;index++){const next=line+parts[index];if(context.measureText(next).width<=maxWidth){line=next;continue}if(lines.length===maxLines-1){let clipped=line.trimEnd();while(clipped&&context.measureText(`${clipped}…`).width>maxWidth)clipped=clipped.slice(0,-1);lines.push(`${clipped}…`);return lines}if(line.trim())lines.push(line.trimEnd());line=parts[index].trimStart()}if(line.trim())lines.push(line.trimEnd());return lines.length?lines:['ข่าวฟุตบอลวันนี้']}
+function balancedDetailLines(context,detail,maxWidth){
+  for(const granularity of ['word','grapheme']){
+    const parts=globalThis.Intl?.Segmenter?[...new Intl.Segmenter('th',{granularity}).segment(detail)].map(part=>part.segment):Array.from(detail);
+    let best=null;
+    for(let index=1;index<parts.length;index++){
+      const first=parts.slice(0,index).join('').trimEnd(),second=parts.slice(index).join('').trimStart();
+      if(!first||!second)continue;
+      const firstWidth=context.measureText(first).width,secondWidth=context.measureText(second).width;
+      if(firstWidth>maxWidth||secondWidth>maxWidth||Math.min(firstWidth,secondWidth)<maxWidth*.3)continue;
+      const imbalance=Math.abs(firstWidth-secondWidth);
+      if(!best||imbalance<best.imbalance)best={lines:[first,second],imbalance};
+    }
+    if(best)return best.lines;
+  }
+  return wrapText(context,detail,maxWidth,2);
+}
+function drawHeadline(context,headline){
+  const value=String(headline||'ข่าวฟุตบอลวันนี้'),colon=value.search(/[:：]/u),prefix=value.slice(0,colon).trim(),suffix=value.slice(colon+1).trim(),font=size=>`900 ${size}px "Noto Sans Thai",Tahoma,sans-serif`;
+  context.font=font(76);
+  if(colon<=0||!prefix||!suffix){wrapText(context,value,760,3).forEach((line,index)=>{const y=230+index*92;context.strokeText(line,70,y);context.fillText(line,70,y)});return}
+  const prefixLines=wrapText(context,prefix,760,2);
+  prefixLines.forEach((line,index)=>{const y=230+index*92;context.strokeText(line,70,y);context.fillText(line,70,y)});
+  const detail=`${value[colon]} ${suffix}`;
+  let detailSize=59;
+  do{context.font=font(detailSize);if(context.measureText(detail).width<=760||detailSize===54)break;detailSize--}while(true);
+  context.lineWidth=10;
+  const detailSlots=3-prefixLines.length,detailLines=detailSlots===2&&context.measureText(detail).width>760?balancedDetailLines(context,detail,760):wrapText(context,detail,760,detailSlots);
+  detailLines.forEach((line,index)=>{const y=230+prefixLines.length*92+index*72;context.strokeText(line,70,y);context.fillText(line,70,y)});
+  context.lineWidth=14;
+}
 async function drawThumbnail(showSafe=true){
   if(showSafe&&thumbnailExporting)return false;
   const revision=++thumbnailDrawRevision,canvas=$('#thumbnailCanvas'),context=canvas.getContext('2d');
@@ -276,9 +306,9 @@ async function drawThumbnail(showSafe=true){
   context.fillStyle=colors[0];context.fillRect(0,0,1280,720);
   if(images.length){if(state.layout==='spotlight'){context.globalAlpha=.72;drawCover(context,images[0],0,0,1280,720);context.globalAlpha=1}else{images.slice(0,state.layout==='stack'?3:2).forEach((image,index)=>{context.globalAlpha=index?0.72:1;drawCover(context,image,state.layout==='stack'?index*427:640+index*320,0,state.layout==='stack'?427:640,720)});context.globalAlpha=1}}
   const gradient=context.createLinearGradient(0,0,900,0);gradient.addColorStop(0,colors[0]);gradient.addColorStop(1,'transparent');context.fillStyle=gradient;context.fillRect(0,0,1000,720);
-  context.font='900 76px "Noto Sans Thai",Tahoma,sans-serif';context.lineWidth=14;context.strokeStyle='#15080a';context.fillStyle=colors[1];
+  context.lineWidth=14;context.strokeStyle='#15080a';context.fillStyle=colors[1];
   const headline=thaiCopy($('#thumbHeadline').value)?$('#thumbHeadline').value:'ข่าวฟุตบอลวันนี้';
-  wrapText(context,headline,760,3).forEach((line,index)=>{const y=230+index*92;context.strokeText(line,70,y);context.fillText(line,70,y)});
+  drawHeadline(context,headline);
   context.font='800 34px "Noto Sans Thai",Tahoma,sans-serif';context.fillStyle=colors[2];
   const subheadline=$('#thumbSubheadline').value,visibleSubheadline=thaiCopy(subheadline)?subheadline:`ข่าวประจำวันที่ ${state.project?.news_date||''}`;
   context.fillText(wrapText(context,visibleSubheadline,760,1)[0],72,540);
