@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020154": "node scripts/test-v020154.mjs",
     "test:v020153": "node scripts/test-v020153-vsport-historical-people.mjs && node scripts/test-v020148-vsport-person-images.mjs",
     "test:v020152": "node scripts/test-v020152-vsport-manual-selection.mjs",
     "test:v020150": "node scripts/test-v020150.mjs",

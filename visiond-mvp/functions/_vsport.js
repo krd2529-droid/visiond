@@ -250,7 +250,11 @@ export function extractImageUrls(html,baseUrl,limit=12){
   const add=value=>{try{const url=new URL(decodeXml(value),baseUrl).href;if(isLikelyContentImageUrl(url)&&!found.includes(url))found.push(url)}catch{}};
   for(const match of String(html||'').matchAll(/<(meta|img)\b[^>]*>/gi)){
     const attributes={};for(const attribute of match[0].matchAll(/\b([a-z][\w:-]*)\s*=\s*(["'])(.*?)\2/gi)){const name=attribute[1].toLowerCase();if(!Object.hasOwn(attributes,name))attributes[name]=attribute[3]}
-    if(match[1].toLowerCase()==='meta'){const name=String(attributes.property||attributes.name||'').toLowerCase();if(socialImageMetaNames.has(name)&&attributes.content)social.push(attributes.content)}else if(attributes.src)body.push(attributes.src);
+    if(match[1].toLowerCase()==='meta'){const name=String(attributes.property||attributes.name||'').toLowerCase();if(socialImageMetaNames.has(name)&&attributes.content)social.push(attributes.content)}else{
+      const srcset=attributes['data-srcset']||attributes.srcset||'',choices=srcset.split(',').map(part=>part.trim().split(/\s+/u)[0]).filter(Boolean);
+      if(choices.length)body.push(choices.at(-1));
+      for(const value of [attributes['data-src'],attributes['data-original'],attributes.src])if(value)body.push(value);
+    }
   }
   for(const value of [...social,...body]){add(value);if(found.length>=limit)return found}
   return found;

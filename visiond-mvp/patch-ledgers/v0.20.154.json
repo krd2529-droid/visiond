@@ -1,0 +1,29 @@
+{
+  "version": "v0.20.154",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Preserve draft-script viewport and offer genuine selected-article image choices through bounded resumable news-image jobs before existing person discovery; retain manual image-rights review.",
+  "files": [
+    "VERSION.txt",
+    "functions/_vsport.js",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.154.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020148-vsport-person-images.mjs",
+    "scripts/test-v020154.mjs",
+    "scripts/test-v020154-vsport-news-browser.mjs",
+    "scripts/test-v020154-vsport-news-images.mjs",
+    "scripts/test-v020154-vsport-news-parser.mjs",
+    "scripts/test-v020154-vsport-news-recovery.mjs",
+    "scripts/test-v020154-vsport-scroll-browser.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020154 PASS: 4/7/24 keyset batches, same-second/reload/final-person recovery, lazy image parser, visible candidate cards and manual rights on desktop/mobile, draft scroll desktop/mobile; v020148 person integration and visible version parity PASS",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}

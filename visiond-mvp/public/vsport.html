@@ -52,7 +52,8 @@
       </section>
 
       <section id="mediaStep" class="vds-card step-card">
-        <div class="section-head"><div><small>ขั้นที่ 3</small><h2>เสียง รูปที่เก็บถาวร และไทม์ไลน์</h2></div><button id="discoverImages" class="vds-btn vds-btn--primary" type="button">หารูปบุคคลจากบทพูด</button></div>
+        <div class="section-head"><div><small>ขั้นที่ 3</small><h2>เสียง รูปที่เก็บถาวร และไทม์ไลน์</h2></div><button id="discoverImages" class="vds-btn vds-btn--primary" type="button">หารูปจากข่าวที่เลือกและบทพูด</button></div>
+        <div id="newsImageSummary" aria-live="polite"></div>
         <label class="vds-field">ชื่อในบทที่ AI อาจตกหล่น (บรรทัดละชื่อ; เพิ่ม | ชื่ออังกฤษสำหรับค้นได้)<textarea id="personNamesOverride" rows="2" maxlength="1500" placeholder="โมฮาเหม็ด ซาลาห์ | Mohamed Salah"></textarea></label><p id="personSearchSummary" class="status-line" aria-live="polite"></p><button id="discoverMorePeople" class="vds-btn vds-btn--secondary" type="button" hidden>ค้นชื่อชุดถัดไป</button>
         <div class="media-inputs"><label class="vds-field">ระยะเวลาเสียงจริง (วินาที)<input id="targetSeconds" type="number" min="1" max="21600" step="0.001" placeholder="เช่น 1832.448"></label><label class="vds-field">ไฟล์เสียงพากย์<input id="audioFile" type="file" accept="audio/*"></label><button id="useAudioDuration" class="vds-btn vds-btn--secondary" type="button" disabled>ใช้ความยาวจากไฟล์เสียง</button></div>
         <p id="audioStatus" class="status-line">ยังไม่ได้เลือกไฟล์เสียง</p>
@@ -80,7 +81,7 @@
       </section>
     </section>
   </main>
-  <script src="/vsport.js?v=020153" type="module"></script>
+  <script src="/vsport.js?v=020154" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>
