@@ -1,0 +1,30 @@
+.story-preview {
+  width: min(100%, 360px);
+  margin: 0 0 var(--vd-space-3);
+}
+
+.story-preview img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--vd-radius-sm);
+  background: var(--vd-surface-subtle);
+}
+
+.story-preview small {
+  display: block;
+  margin-top: 4px;
+  color: var(--vd-text-secondary);
+}
+
+.story-preview-empty {
+  display: grid;
+  place-items: center;
+  min-height: 90px;
+  padding: 10px;
+  border: 1px dashed var(--vd-border);
+  border-radius: var(--vd-radius-sm);
+  background: var(--vd-surface-subtle);
+  font-size: var(--vd-text-sm);
+}

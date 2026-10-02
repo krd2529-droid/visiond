@@ -18,6 +18,8 @@ const CLEANUP_LIMIT=24;
 const DELETE_KEY_MIN=8;
 const DELETE_KEY_MAX=128;
 const SELECTED_STORY_SCAN_PAGES=4;
+const STORY_PREVIEW_FOUND_TTL_MS=60*60*1000;
+const STORY_PREVIEW_EMPTY_TTL_MS=10*60*1000;
 export function personCursorFromJob(key,value){const encoded=String(key||'').match(/:discover_images:cursor:(\d{1,3}):/u),fromKey=encoded?integer(encoded[1],0,120):null,fromBody=value===undefined||value===null?null:integer(value,0,120);if(fromKey!==null&&fromBody!==null&&fromKey!==fromBody)return null;return fromKey??fromBody??0}
 export function newsImageCursorFromJob(key,value){
   const match=String(key||'').match(/:nimg:(\d{13}):cursor:(start|-?\d+~\d+):selection:([a-f0-9]{16})(?::|$)/u),token=match?.[2],supplied=String(value??'start');
@@ -92,7 +94,7 @@ async function projectDetail(ctx,ownerId,id,include){
   const project=await ownedProject(ctx.env,id,ownerId,{withScript:true});if(!project)return null;
   const params=new URL(ctx.request.url).searchParams,parts=new Set(String(include||'').split(',').map(x=>x.trim()).filter(Boolean)),result={project};
   if(parts.has('stories')&&project.thumbnail_headline){const source=await ctx.env.DB.prepare('SELECT headline,summary,source_url FROM vsport_stories WHERE project_id=? AND headline=? LIMIT 1').bind(id,project.thumbnail_headline).first();project.thumbnail_headline_eligible=!source||isSoccerEligibleNews(source.headline,source.summary,source.source_url,project.scope_mode)}
-  if(parts.has('stories')){const after=integer(params.get('story_cursor')||0,0,Number.MAX_SAFE_INTEGER),rows=(await ctx.env.DB.prepare('SELECT id,headline,summary,team_name,publisher,source_url,published_at,retrieved_at,selected,sort_order FROM vsport_stories WHERE project_id=? AND id>? ORDER BY id LIMIT 25').bind(id,after).all()).results||[],rawPage=rows.slice(0,24),stories=rawPage.filter(story=>isSoccerEligibleNews(story.headline,story.summary,story.source_url,project.scope_mode));result.stories=stories;result.story_pagination={limit:24,has_more:rows.length>24,next_cursor:rows.length>24&&rawPage.length?String(rawPage.at(-1).id):null,hidden_non_soccer:rawPage.length-stories.length}}
+  if(parts.has('stories')){const after=integer(params.get('story_cursor')||0,0,Number.MAX_SAFE_INTEGER),rows=(await ctx.env.DB.prepare("SELECT s.id,s.headline,s.summary,s.team_name,s.publisher,s.source_url,s.published_at,s.retrieved_at,s.selected,s.sort_order,p.image_url AS preview_image_url,p.state AS preview_status,p.checked_at AS preview_checked_at FROM vsport_stories s LEFT JOIN vsport_story_previews p ON p.project_id=s.project_id AND p.story_id=s.id AND p.source_url=s.source_url WHERE s.project_id=? AND s.id>? ORDER BY s.id LIMIT 25").bind(id,after).all()).results||[],rawPage=rows.slice(0,24),stories=rawPage.filter(story=>isSoccerEligibleNews(story.headline,story.summary,story.source_url,project.scope_mode));result.stories=stories;result.story_pagination={limit:24,has_more:rows.length>24,next_cursor:rows.length>24&&rawPage.length?String(rawPage.at(-1).id):null,hidden_non_soccer:rawPage.length-stories.length}}
   if(parts.has('media')){
     project.selected_story_ids=((await ctx.env.DB.prepare('SELECT id FROM vsport_stories WHERE project_id=? AND selected=1 ORDER BY sort_order,id LIMIT 24').bind(id).all()).results||[]).map(row=>Number(row.id));
     const candidateAfter=integer(params.get('candidate_cursor')||0,0,Number.MAX_SAFE_INTEGER),assetAfter=integer(params.get('asset_cursor')||0,0,Number.MAX_SAFE_INTEGER),candidateRows=(await ctx.env.DB.prepare('SELECT c.id,c.story_id,c.source_url,c.source_page_url,c.publisher,c.state,c.error_message,c.created_at,c.person_name,c.subject_kind,c.subject_name,c.script_hash,c.license_code,c.identity_confirmed,c.story_association,s.headline AS story_headline,s.summary AS story_summary,s.source_url AS story_source_url FROM vsport_image_candidates c JOIN vsport_stories s ON s.id=c.story_id AND s.project_id=c.project_id WHERE c.project_id=? AND c.id>? ORDER BY c.id LIMIT 25').bind(id,candidateAfter).all()).results||[],assetRows=(await ctx.env.DB.prepare('SELECT a.id,a.story_id,a.candidate_id,a.source_url,a.source_page_url,a.publisher,a.mime_type,a.file_size,a.width,a.height,a.created_at,c.person_name,c.subject_kind,c.subject_name,c.script_hash,c.license_code,c.identity_confirmed,c.story_association,s.headline AS story_headline,s.summary AS story_summary,s.source_url AS story_source_url FROM vsport_assets a LEFT JOIN vsport_image_candidates c ON c.id=a.candidate_id JOIN vsport_stories s ON s.id=a.story_id AND s.project_id=a.project_id WHERE a.project_id=? AND a.id>? ORDER BY a.id LIMIT 25').bind(id,assetAfter).all()).results||[];
@@ -235,6 +237,22 @@ async function fetchPageImages(story){
   }catch{return{urls:[],unavailable:true}}finally{clearTimeout(timer)}
 }
 
+async function previewNewsStories(env,project,storyIds){
+  const ids=Array.isArray(storyIds)?[...new Set(storyIds.map(Number))]:[];
+  if(!ids.length||ids.length>3||ids.some(id=>!Number.isSafeInteger(id)||id<=0))return null;
+  const placeholders=ids.map(()=>'?').join(','),rows=(await env.DB.prepare(`SELECT s.id,s.headline,s.summary,s.source_url,p.image_url,p.state,p.checked_at,p.source_url AS preview_source_url FROM vsport_stories s LEFT JOIN vsport_story_previews p ON p.project_id=s.project_id AND p.story_id=s.id WHERE s.project_id=? AND s.id IN (${placeholders}) LIMIT 3`).bind(project.id,...ids).all()).results||[];
+  if(rows.length!==ids.length||rows.some(row=>!isSoccerEligibleNews(row.headline,row.summary,row.source_url,project.scope_mode)))return null;
+  const now=Date.now(),items=await Promise.all(rows.map(async story=>{
+    const ttl=story.state==='found'?STORY_PREVIEW_FOUND_TTL_MS:STORY_PREVIEW_EMPTY_TTL_MS;
+    if(story.preview_source_url===story.source_url&&story.state&&now-Date.parse(story.checked_at)<ttl)return{id:story.id,preview_image_url:story.state==='found'?story.image_url:'',preview_status:story.state,source_page_url:story.source_url};
+    const result=await fetchPageImages(story),urls=result.urls.filter(isLikelyContentImageUrl).slice(0,4),imageUrl=urls[0]||'',status=imageUrl?'found':result.unavailable?'unavailable':'empty',checkedAt=new Date().toISOString();
+    const written=await env.DB.prepare("INSERT INTO vsport_story_previews(project_id,story_id,source_url,image_url,image_urls_json,state,checked_at) SELECT project_id,id,source_url,?,?,?,? FROM vsport_stories WHERE project_id=? AND id=? AND source_url=? ON CONFLICT(project_id,story_id) DO UPDATE SET source_url=excluded.source_url,image_url=excluded.image_url,image_urls_json=excluded.image_urls_json,state=excluded.state,checked_at=excluded.checked_at").bind(imageUrl,JSON.stringify(urls),status,checkedAt,project.id,story.id,story.source_url).run();
+    if(!written.meta?.changes)return{id:story.id,preview_image_url:'',preview_status:'stale',source_page_url:story.source_url};
+    return{id:story.id,preview_image_url:imageUrl,preview_status:status,source_page_url:story.source_url};
+  }));
+  return items;
+}
+
 async function runNewsImageBatch(env,jobId,project,cursor,expectedIds){
   try{
     await finishJob(env,jobId,'running',`news:${cursor.token}`);
@@ -243,13 +261,17 @@ async function runNewsImageBatch(env,jobId,project,cursor,expectedIds){
     if(!expected.length||!sameSelection(await selectedIds()))throw new Error('NEWS_SELECTION_CHANGED_RESTART');
     const where=cursor.id===null?'project_id=? AND selected=1':'project_id=? AND selected=1 AND (sort_order>? OR (sort_order=? AND id>?))',bindings=cursor.id===null?[project.id]:[project.id,cursor.sortOrder,cursor.sortOrder,cursor.id];
     const rows=(await env.DB.prepare(`SELECT id,headline,summary,sort_order,publisher,source_url FROM vsport_stories WHERE ${where} ORDER BY sort_order,id LIMIT 4`).bind(...bindings).all()).results||[],page=rows.slice(0,3),next=rows.length>3&&page.length?`${page.at(-1).sort_order}~${page.at(-1).id}`:null;
-    const prior=await Promise.all(page.map(story=>env.DB.prepare("SELECT source_url,state,error_message FROM vsport_image_candidates WHERE project_id=? AND story_id=? AND story_association='news_cover' ORDER BY id LIMIT 4").bind(project.id,story.id).all().then(value=>value.results||[])));
-    const fetched=await Promise.all(page.map((story,index)=>!isSoccerEligibleNews(story.headline,story.summary,story.source_url,project.scope_mode)?Promise.resolve({urls:[],excluded:true}):prior[index].some(isDisplayEligibleImageCandidate)?Promise.resolve({urls:[],existing:true}):fetchPageImages(story)));
+    const [prior,previews]=await Promise.all([
+      Promise.all(page.map(story=>env.DB.prepare("SELECT source_url,state,error_message FROM vsport_image_candidates WHERE project_id=? AND story_id=? AND story_association='news_cover' ORDER BY id LIMIT 4").bind(project.id,story.id).all().then(value=>value.results||[]))),
+      Promise.all(page.map(story=>env.DB.prepare('SELECT image_url,image_urls_json,state,source_url,checked_at FROM vsport_story_previews WHERE project_id=? AND story_id=?').bind(project.id,story.id).first()))
+    ]);
+    const previewUrls=page.map((story,index)=>{const preview=previews[index];if(preview?.state!=='found'||preview.source_url!==story.source_url||Date.now()-Date.parse(preview.checked_at)>=STORY_PREVIEW_FOUND_TTL_MS||!isLikelyContentImageUrl(preview.image_url))return[];try{const urls=JSON.parse(preview.image_urls_json||'[]');return[...new Set([preview.image_url,...(Array.isArray(urls)?urls:[])].filter(isLikelyContentImageUrl))].slice(0,4)}catch{return[preview.image_url]}});
+    const fetched=await Promise.all(page.map((story,index)=>!isSoccerEligibleNews(story.headline,story.summary,story.source_url,project.scope_mode)?Promise.resolve({urls:[],excluded:true}):previewUrls[index].length?Promise.resolve({urls:previewUrls[index],cached:true}):prior[index].some(isDisplayEligibleImageCandidate)?Promise.resolve({urls:[],existing:true}):fetchPageImages(story)));
     if(!sameSelection(await selectedIds()))throw new Error('NEWS_SELECTION_CHANGED_RESTART');
     const items=[];
     for(const [index,story] of page.entries()){
       const result=fetched[index];
-      if(!result.excluded&&!result.existing){const statements=result.urls.slice(0,4).map(url=>env.DB.prepare("INSERT INTO vsport_image_candidates(project_id,story_id,source_url,source_page_url,publisher,state,story_association) VALUES(?,?,?,?,?,'candidate','news_cover') ON CONFLICT(project_id,source_url) DO NOTHING").bind(project.id,story.id,url,story.source_url,story.publisher));if(statements.length)await env.DB.batch(statements)}
+      if(!result.excluded){const urls=[...new Set(result.urls)].slice(0,4),statements=urls.map(url=>env.DB.prepare("INSERT INTO vsport_image_candidates(project_id,story_id,source_url,source_page_url,publisher,state,story_association) VALUES(?,?,?,?,?,'candidate','news_cover') ON CONFLICT(project_id,source_url) DO NOTHING").bind(project.id,story.id,url,story.source_url,story.publisher));if(statements.length)await env.DB.batch(statements)}
       const current=result.excluded?[]:(await env.DB.prepare("SELECT source_url,state,error_message FROM vsport_image_candidates WHERE project_id=? AND story_id=? AND story_association='news_cover' ORDER BY id LIMIT 4").bind(project.id,story.id).all()).results||[],count=current.filter(isDisplayEligibleImageCandidate).length;
       items.push({id:story.id,s:result.excluded?'x':count?'f':result.unavailable?'u':result.urls.length?'d':'e',n:count});
     }
@@ -419,6 +441,10 @@ export async function onRequestPost(ctx){
     const row=await ctx.env.DB.prepare('INSERT INTO vsport_projects(owner_id,title,news_date,scope_mode,team_name,target_minutes) VALUES(?,?,?,?,?,?) RETURNING id').bind(auth.user.id,title,newsDate,scopeMode,scopeMode==='specific_team'?teamName:'',targetMinutes).first();return json({ok:true,id:row.id},201,headers);
   }
   const projectId=integer(body.project_id,1,Number.MAX_SAFE_INTEGER),project=projectId?await ownedProject(ctx.env,projectId,auth.user.id,{withScript:true}):null;if(!project)return json({error:'ไม่พบโปรเจกต์ vSport'},404,headers);
+  if(action==='preview_news_stories'){
+    const items=await previewNewsStories(ctx.env,project,body.story_ids);
+    return items?json({ok:true,items},200,headers):json({error:'รายการข่าวสำหรับภาพตัวอย่างไม่ถูกต้อง'},422,headers);
+  }
   if(action==='prepare_thumbnail_headline'){
     return json(await prepareThaiThumbnailHeadline(ctx.env,project,auth.user.id),200,headers);
   }

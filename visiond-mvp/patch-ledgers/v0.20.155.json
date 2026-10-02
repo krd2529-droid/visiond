@@ -1,0 +1,28 @@
+{
+  "version": "v0.20.155",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Show each selectable Step 1 news article's own image before selection through bounded cached article previews; retain Step 3 image alternatives and manual rights confirmation.",
+  "files": [
+    "VERSION.txt",
+    "functions/api/admin/vsport.js",
+    "migrations/0120_vsport_story_previews.sql",
+    "package.json",
+    "patch-ledgers/v0.20.155.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport-story-previews.css",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020154-vsport-news-browser.mjs",
+    "scripts/test-v020154-vsport-news-images.mjs",
+    "scripts/test-v020155.mjs",
+    "scripts/test-v020155-vsport-story-browser.mjs",
+    "scripts/test-v020155-vsport-story-previews.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020155 PASS: bounded preselection previews, source-keyed TTL and index, selected-only image1 plus alternatives, desktop/mobile visual and overlap dedup, v154 news/rights/scroll chain",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}
