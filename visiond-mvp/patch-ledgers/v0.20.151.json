@@ -1,0 +1,29 @@
+{
+  "version": "v0.20.151",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Restore a reviewed selected-news opening image using bounded first-three selected-story fallback, retain exact-script people with Latin search aliases, support typed team/event/topic imagery when no person is named, and render news-first ordered slide video.",
+  "files": [
+    "FEATURE-MAP.md",
+    "VERSION.txt",
+    "functions/_vsport-people.js",
+    "functions/api/admin/vsport.js",
+    "migrations/0119_vsport_script_subjects.sql",
+    "package.json",
+    "patch-ledgers/v0.20.151.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020148-vsport-person-images.mjs",
+    "scripts/test-v020148-vsport-person-images-browser.mjs",
+    "scripts/test-v020151-vsport-selection-browser.mjs",
+    "scripts/test-v020151.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020151 PASS after bounded first-three selected-news fallback: A-empty/B-valid and A-success/no-extra-fetch; exact-span person, AI-empty event/no-subject, rights/index, Chrome desktop/mobile A-to-B PNG/WebM",
+    "compatibility": "Connected v148 person/browser, v149 CSP, v150 provider, v146 Thai and v145 soccer tests PASS; historical v150 stamp-pinned and v147 text-only cover browser not run against new v151 media-required semantics",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}

@@ -7,7 +7,7 @@
   <title>vSport | VisionD Control</title>
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-  <link rel="stylesheet" href="/vsport.css?v=020150">
+  <link rel="stylesheet" href="/vsport.css?v=020151">
 </head>
 <body>
   <header class="sport-toolbar">
@@ -74,13 +74,13 @@
 
       <section id="thumbnailStep" class="vds-card step-card">
         <div class="section-head"><div><small>ขั้นที่ 5</small><h2>ปกวิดีโอ 16:9 ที่แก้ไขได้</h2></div><span class="privacy-pill">1280 × 720 px</span></div>
-        <div class="thumbnail-controls"><label class="vds-field">หัวข่าว<input id="thumbHeadline" maxlength="180" placeholder="สรุปข่าวเด่นวันนี้"></label><label class="vds-field">ข้อความรอง<input id="thumbSubheadline" maxlength="240" placeholder="ประเด็นสำคัญที่ผู้ชมจะได้ฟัง"></label><label class="vds-field">ทีม / นักเตะ / ผู้จัดการที่ต้องการเน้น<input id="thumbFocusText" maxlength="120" placeholder="เช่น Liverpool · ผู้จัดการทีม"></label><label class="vds-field">รูปเด่น<select id="thumbFocusAsset"><option value="">เลือกอัตโนมัติ</option></select></label><label class="vds-field">โทนสี<select id="thumbPalette"><option value="red-yellow">แดง–เหลือง Breaking</option><option value="blue-white">น้ำเงิน–ขาว</option><option value="black-gold">ดำ–ทอง</option></select></label></div>
+        <div class="thumbnail-controls"><label class="vds-field">หัวข่าว<input id="thumbHeadline" maxlength="180" placeholder="สรุปข่าวเด่นวันนี้"></label><label class="vds-field">ข้อความรอง<input id="thumbSubheadline" maxlength="240" placeholder="ประเด็นสำคัญที่ผู้ชมจะได้ฟัง"></label><label class="vds-field">ทีม / นักเตะ / ผู้จัดการที่ต้องการเน้น<input id="thumbFocusText" maxlength="120" placeholder="เช่น Liverpool · ผู้จัดการทีม"></label><label class="vds-field">รูปเด่นจากข่าวที่เลือก (ตรวจสิทธิ์ก่อนใช้)<select id="thumbFocusAsset"><option value="">เลือกอัตโนมัติ</option></select></label><label class="vds-field">โทนสี<select id="thumbPalette"><option value="red-yellow">แดง–เหลือง Breaking</option><option value="blue-white">น้ำเงิน–ขาว</option><option value="black-gold">ดำ–ทอง</option></select></label></div>
         <div class="concepts" role="group" aria-label="เลือกแนวจัดวาง"><button class="vds-btn vds-btn--secondary" type="button" data-layout="split" aria-pressed="true">คอนเซปต์ 1 · แบ่งภาพ</button><button class="vds-btn vds-btn--secondary" type="button" data-layout="stack" aria-pressed="false">คอนเซปต์ 2 · ซ้อนพาดหัว</button><button class="vds-btn vds-btn--secondary" type="button" data-layout="spotlight" aria-pressed="false">คอนเซปต์ 3 · ภาพเด่น</button></div>
         <p class="help">กรอบประในพรีวิวคือ safe area; ไฟล์ส่งออกจะไม่มีกรอบนี้</p><canvas id="thumbnailCanvas" width="1280" height="720" aria-label="ตัวอย่างปก vSport"></canvas><div class="actions"><button id="previewThumbnail" class="vds-btn vds-btn--secondary" type="button">อัปเดตตัวอย่าง</button><button id="saveThumbnail" class="vds-btn vds-btn--secondary" type="button">บันทึกข้อความปก</button><button id="exportThumbnail" class="vds-btn vds-btn--primary" type="button">ส่งออก PNG</button></div><p id="thumbnailStatus" class="status-line" role="status" aria-live="polite"></p>
       </section>
     </section>
   </main>
-  <script src="/vsport.js?v=020150" type="module"></script>
+  <script src="/vsport.js?v=020151" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>
