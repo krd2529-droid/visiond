@@ -1,0 +1,22 @@
+{
+  "version": "v0.20.152",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Start newly discovered news unchecked and let the user clear old checked news with a persisted Step 1 action.",
+  "files": [
+    "VERSION.txt",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.152.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020152-vsport-manual-selection.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020152 PASS: SQL discovery upsert, desktop/mobile initial and legacy checks, clear failure recovery, clear/save/reopen, empty selection script status",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}

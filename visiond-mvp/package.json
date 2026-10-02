@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test:v020152": "node scripts/test-v020152-vsport-manual-selection.mjs",
     "test:v020150": "node scripts/test-v020150.mjs",
     "test:v020151": "node scripts/test-v020151.mjs",
     "test:v020149": "node scripts/test-v020149.mjs",
