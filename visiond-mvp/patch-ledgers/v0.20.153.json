@@ -1,0 +1,22 @@
+{
+  "version": "v0.20.153",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Keep historical person-image discovery CC0/public-domain only; exclude selected-story teams from person roster and reject obvious stadium/logo person-image false positives.",
+  "files": [
+    "VERSION.txt",
+    "functions/_vsport-people.js",
+    "functions/api/admin/vsport.js",
+    "package.json",
+    "patch-ledgers/v0.20.153.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "scripts/test-v020153-vsport-historical-people.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020153 PASS: team/person relevance, strict CC0/public-domain license, historical title, duplicate, zero-result, bounded person discovery regression",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}
