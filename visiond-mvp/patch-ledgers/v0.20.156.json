@@ -1,0 +1,22 @@
+{
+  "version": "v0.20.156",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Allow one selected soccer news story to form a silent slideshow from saved, decoded, script-matched images tied to that story when no news-cover image is available.",
+  "files": [
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.156.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020156.mjs",
+    "scripts/test-v020156-vsport-one-news-timeline-browser.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020156 PASS: one-news team-only two-slide fallback, normal cover/focus ordering, generic no-subject rejection, connected v155/v154 API and desktop/mobile browser, visible version parity",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}

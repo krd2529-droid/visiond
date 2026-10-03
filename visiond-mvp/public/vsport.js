@@ -294,8 +294,10 @@ function orderedTimelineAssetIds(){
   const news=available.filter(asset=>(asset.story_association==='news_cover'||Number(asset.id)===focusId&&!asset.person_name&&!asset.subject_kind)&&(!selected.length||selected.includes(Number(asset.story_id)))).sort((a,b)=>Number(b.id===focusId)-Number(a.id===focusId)||selected.indexOf(Number(a.story_id))-selected.indexOf(Number(b.story_id))||Number(a.id)-Number(b.id))[0];
   const people=available.filter(asset=>asset.person_name&&asset.identity_confirmed===1&&asset.script_hash===state.scriptHash&&script.includes(asset.person_name)),topics=available.filter(asset=>['team','event','topic'].includes(asset.subject_kind)&&asset.script_hash===state.scriptHash&&script.includes(asset.subject_name));
   const subjects=(people.length?people:topics).sort((a,b)=>script.indexOf(a.person_name||a.subject_name)-script.indexOf(b.person_name||b.subject_name)||Number(a.id)-Number(b.id));
-  if(!news||!subjects.length)return[];
-  return[news.id,...subjects.map(asset=>asset.id)]
+  if(!subjects.length)return[];
+  if(news)return[news.id,...subjects.map(asset=>asset.id)];
+  if(selected.length!==1)return[];
+  return subjects.filter(asset=>Number(asset.story_id)===Number(selected[0])).map(asset=>asset.id)
 }
 
 function renderAssets(projectId,version){
