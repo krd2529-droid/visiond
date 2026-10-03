@@ -1,0 +1,23 @@
+{
+  "version": "v0.20.158",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Add finite WebM Segment Info/Duration to the rendered silent slideshow before preview and private multipart upload so the persisted player reports finite native duration and supports midpoint scrubbing after reload.",
+  "files": [
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.158.json",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "public/vsport-webm.js",
+    "scripts/test-v020158.mjs",
+    "scripts/test-v020158-vsport-webm.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020158 PASS: bounded Info/Duration patch, >8 MiB body integrity, idempotence, unsafe header rejection, connected v157 D1/R2 and v156 browser regressions, visible version parity",
+    "independent": "Mark raw/fixed 8 MiB Chrome RED/GREEN and full vSport render-save-reload finite duration/midpoint seek GREEN; unsupported-header rerender preserves prior video; frozen review pending"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}
