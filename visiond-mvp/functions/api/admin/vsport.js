@@ -44,8 +44,11 @@ async function exactObjectCleanup(files,objectKey){
 }
 
 async function countProjectCleanup(env,ownerId,projectId){
-  const row=await env.DB.prepare("SELECT COUNT(*) count FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND status<>'done'").bind(ownerId,projectId).first();
-  return Number(row?.count||0);
+  const [objects,uploads]=await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) count FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND status<>'done'").bind(ownerId,projectId).first(),
+    env.DB.prepare("SELECT COUNT(*) count FROM vsport_video_abort_jobs WHERE owner_id=? AND project_id=? AND status<>'done'").bind(ownerId,projectId).first()
+  ]);
+  return Number(objects?.count||0)+Number(uploads?.count||0);
 }
 
 async function updateReceiptCleanupState(env,ownerId,projectId,pending){
@@ -54,8 +57,15 @@ async function updateReceiptCleanupState(env,ownerId,projectId,pending){
 
 async function processProjectCleanup(env,ownerId,projectId){
   if(!env.FILES){const pending=await countProjectCleanup(env,ownerId,projectId);await updateReceiptCleanupState(env,ownerId,projectId,pending);return{pending,processed:0}}
-  const now=new Date().toISOString(),rows=(await env.DB.prepare("SELECT id,object_key,status,attempts FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND status IN ('pending','error') AND (next_attempt_at IS NULL OR julianday(next_attempt_at)<=julianday(?)) ORDER BY COALESCE(next_attempt_at,created_at),id LIMIT ?").bind(ownerId,projectId,now,CLEANUP_LIMIT).all()).results||[];
   let processed=0;
+  const aborts=(await env.DB.prepare("SELECT id,object_key,r2_upload_id,attempts FROM vsport_video_abort_jobs WHERE owner_id=? AND project_id=? AND status IN ('pending','error') AND (next_attempt_at IS NULL OR julianday(next_attempt_at)<=julianday(?)) ORDER BY id LIMIT ?").bind(ownerId,projectId,new Date().toISOString(),CLEANUP_LIMIT).all()).results||[];
+  for(const job of aborts){
+    processed++;let done=false;
+    try{await env.FILES.resumeMultipartUpload(job.object_key,job.r2_upload_id).abort();done=true}catch(error){try{const object=await env.FILES.head(job.object_key);done=Boolean(object)||!object&&(error?.code==='NoSuchUpload'||error?.name==='NoSuchUpload'||/NoSuchUpload|multipart upload does not exist/iu.test(String(error?.message||'')))}catch{}}
+    if(done)await env.DB.prepare("UPDATE vsport_video_abort_jobs SET status='done',completed_at=CURRENT_TIMESTAMP,next_attempt_at=NULL WHERE id=? AND owner_id=? AND project_id=?").bind(job.id,ownerId,projectId).run();
+    else await env.DB.prepare("UPDATE vsport_video_abort_jobs SET status='error',attempts=attempts+1,next_attempt_at=? WHERE id=? AND owner_id=? AND project_id=?").bind(isoAfter(cleanupBackoff(Number(job.attempts||0)+1)*1000),job.id,ownerId,projectId).run();
+  }
+  const now=new Date().toISOString(),rows=(await env.DB.prepare("SELECT id,object_key,status,attempts FROM vsport_object_cleanup_jobs WHERE owner_id=? AND project_id=? AND status IN ('pending','error') AND (next_attempt_at IS NULL OR julianday(next_attempt_at)<=julianday(?)) ORDER BY COALESCE(next_attempt_at,created_at),id LIMIT ?").bind(ownerId,projectId,now,CLEANUP_LIMIT).all()).results||[];
   for(const row of rows){
     const claimUntil=isoAfter(INGEST_LEASE_MS),claimed=await env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET status='pending',attempts=attempts+1,next_attempt_at=?,last_error_code='',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=? AND attempts=? AND (next_attempt_at IS NULL OR julianday(next_attempt_at)<=julianday(?))").bind(claimUntil,row.id,row.status,Number(row.attempts||0),now).run();
     if(!rowChanges(claimed))continue;
@@ -379,6 +389,8 @@ export async function onRequestDelete(ctx){
     results=await ctx.env.DB.batch([
       ctx.env.DB.prepare("INSERT INTO vsport_project_deletions(owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state) SELECT p.owner_id,p.id,p.title,?,?,'pending' FROM vsport_projects p WHERE p.id=? AND p.owner_id=? AND p.title=? AND NOT EXISTS(SELECT 1 FROM vsport_jobs j WHERE j.project_id=p.id AND j.status IN ('queued','running')) AND NOT EXISTS(SELECT 1 FROM vsport_image_candidates c WHERE c.project_id=p.id AND c.state='ingesting' AND (c.ingest_lease_expires_at IS NULL OR julianday(c.ingest_lease_expires_at)>julianday(?))) AND NOT EXISTS(SELECT 1 FROM vsport_object_cleanup_jobs g WHERE g.owner_id=p.owner_id AND g.project_id=p.id AND g.reason='orphan_guard' AND g.status='reserved' AND julianday(g.lease_expires_at)>julianday(?))").bind(idempotencyKey,requestHash,projectId,auth.user.id,expectedTitle,now,now),
       ctx.env.DB.prepare("INSERT INTO vsport_object_cleanup_jobs(id,owner_id,project_id,object_key,reason,status,next_attempt_at) SELECT lower(hex(randomblob(16))),a.owner_id,a.project_id,a.object_key,'deleted','pending',? FROM vsport_assets a WHERE a.project_id=? AND a.owner_id=? AND EXISTS(SELECT 1 FROM vsport_project_deletions d WHERE d.owner_id=? AND d.project_id=? AND d.idempotency_key=? AND d.request_hash=?) ON CONFLICT(object_key) DO UPDATE SET reason='deleted',status=CASE WHEN vsport_object_cleanup_jobs.status='done' THEN 'done' ELSE 'pending' END,next_attempt_at=CASE WHEN vsport_object_cleanup_jobs.status='done' THEN NULL ELSE excluded.next_attempt_at END,last_error_code='',updated_at=CURRENT_TIMESTAMP").bind(now,projectId,auth.user.id,auth.user.id,projectId,idempotencyKey,requestHash),
+      ctx.env.DB.prepare("INSERT INTO vsport_object_cleanup_jobs(id,owner_id,project_id,object_key,reason,status,next_attempt_at) SELECT lower(hex(randomblob(16))),v.owner_id,v.project_id,v.object_key,'deleted','pending',? FROM vsport_silent_videos v WHERE v.project_id=? AND v.owner_id=? AND EXISTS(SELECT 1 FROM vsport_project_deletions d WHERE d.owner_id=? AND d.project_id=? AND d.idempotency_key=? AND d.request_hash=?) ON CONFLICT(object_key) DO UPDATE SET reason='deleted',status='pending',next_attempt_at=excluded.next_attempt_at,last_error_code='',updated_at=CURRENT_TIMESTAMP").bind(now,projectId,auth.user.id,auth.user.id,projectId,idempotencyKey,requestHash),
+      ctx.env.DB.prepare("INSERT INTO vsport_video_abort_jobs(id,owner_id,project_id,object_key,r2_upload_id,status,next_attempt_at) SELECT lower(hex(randomblob(16))),u.owner_id,u.project_id,u.object_key,u.r2_upload_id,'pending',? FROM vsport_video_uploads u WHERE u.project_id=? AND u.owner_id=? AND u.r2_upload_id<>'' AND u.state IN ('initiating','uploading','completing') AND EXISTS(SELECT 1 FROM vsport_project_deletions d WHERE d.owner_id=? AND d.project_id=? AND d.idempotency_key=? AND d.request_hash=?) ON CONFLICT(object_key) DO UPDATE SET status='pending',next_attempt_at=excluded.next_attempt_at").bind(now,projectId,auth.user.id,auth.user.id,projectId,idempotencyKey,requestHash),
       ctx.env.DB.prepare("UPDATE vsport_object_cleanup_jobs SET reason='deleted',status=CASE WHEN status='done' THEN 'done' ELSE 'pending' END,next_attempt_at=CASE WHEN status='done' THEN NULL ELSE ? END,last_error_code='',updated_at=CURRENT_TIMESTAMP WHERE owner_id=? AND project_id=? AND reason='orphan_guard' AND (status<>'reserved' OR lease_expires_at IS NULL OR julianday(lease_expires_at)<=julianday(?)) AND EXISTS(SELECT 1 FROM vsport_project_deletions WHERE owner_id=? AND project_id=? AND idempotency_key=? AND request_hash=?)").bind(now,auth.user.id,projectId,now,auth.user.id,projectId,idempotencyKey,requestHash),
       ctx.env.DB.prepare('DELETE FROM vsport_projects WHERE id=? AND owner_id=? AND EXISTS(SELECT 1 FROM vsport_project_deletions WHERE owner_id=? AND project_id=? AND idempotency_key=? AND request_hash=?)').bind(projectId,auth.user.id,auth.user.id,projectId,idempotencyKey,requestHash)
     ]);
@@ -388,7 +400,7 @@ export async function onRequestDelete(ctx){
     if(replay)return json({error:'Idempotency-Key นี้ถูกใช้กับคำขอลบอื่นแล้ว'},409,headers);
     return json({error:'บันทึกการลบโปรเจกต์ไม่สำเร็จ โปรเจกต์เดิมยังไม่ถูกลบ'},500,headers);
   }
-  if(!rowChanges(results[0])||!rowChanges(results[3])){
+  if(!rowChanges(results[0])||!rowChanges(results[5])){
     const replay=await ctx.env.DB.prepare('SELECT owner_id,project_id,project_title,idempotency_key,request_hash,cleanup_state FROM vsport_project_deletions WHERE owner_id=? AND idempotency_key=?').bind(auth.user.id,idempotencyKey).first();
     if(replay&&Number(replay.project_id)===projectId&&replay.request_hash===requestHash&&replay.project_title===expectedTitle)return deleteReceiptResponse(ctx,replay,{replayed:true});
     const current=await ctx.env.DB.prepare('SELECT id,title FROM vsport_projects WHERE id=? AND owner_id=?').bind(projectId,auth.user.id).first();

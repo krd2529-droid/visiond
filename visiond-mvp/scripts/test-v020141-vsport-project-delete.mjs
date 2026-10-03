@@ -5,7 +5,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {onRequestDelete,onRequestPost} from '../functions/api/admin/vsport.js';
 
 const require=createRequire(import.meta.url),sharp=require('sharp'),root=new URL('../',import.meta.url),text=relative=>readFile(new URL(relative,root),'utf8');
-const [migration111,migration115,source]=await Promise.all(['migrations/0111_vsport.sql','migrations/0115_vsport_project_delete.sql','functions/api/admin/vsport.js'].map(text));
+const [migration111,migration115,migration118,migration119,migration120,migration121,source]=await Promise.all(['migrations/0111_vsport.sql','migrations/0115_vsport_project_delete.sql','migrations/0118_vsport_script_people.sql','migrations/0119_vsport_script_subjects.sql','migrations/0120_vsport_story_previews.sql','migrations/0121_vsport_silent_video.sql','functions/api/admin/vsport.js'].map(text));
 assert.match(migration115,/vsport_project_deletions/);assert.match(migration115,/vsport_object_cleanup_jobs/);assert.match(migration115,/object_key TEXT NOT NULL UNIQUE/);assert.match(migration115,/idx_vsport_cleanup_state_due/);assert.match(migration115,/ingest_fence/);assert.match(source,/export async function onRequestDelete/);assert.doesNotMatch(source,/FILES\.(?:list|delete)\([^)]*vsport\//);assert.match(source,/head\(objectKey\)[\s\S]*delete\(objectKey\)[\s\S]*head\(objectKey\)/);
 
 class BoundStatement{
@@ -22,11 +22,12 @@ class D1Mock{
 }
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return{promise,resolve,reject}};
 class R2Mock{
-  constructor(){this.objects=new Map();this.headCalls=[];this.deleteCalls=[];this.putCalls=[];this.deleteFailures=new Set();this.putGate=null}
+  constructor(){this.objects=new Map();this.headCalls=[];this.deleteCalls=[];this.putCalls=[];this.deleteFailures=new Set();this.putGate=null;this.multipartAborts=[];this.abortErrors=new Map()}
   seed(key,value=new Uint8Array([1,2,3])){this.objects.set(key,new Uint8Array(value))}
   async put(key,value){this.putCalls.push(key);if(this.putGate){const gate=this.putGate;gate.seen.resolve(key);await gate.release.promise}this.objects.set(key,new Uint8Array(value))}
   async head(key){this.headCalls.push(key);return this.objects.has(key)?{size:this.objects.get(key).byteLength}:null}
   async delete(key){this.deleteCalls.push(key);if(this.deleteFailures.has(key))throw new Error('synthetic delete failure');this.objects.delete(key)}
+  resumeMultipartUpload(key,id){return{abort:async()=>{this.multipartAborts.push({key,id});if(this.abortErrors.has(key))throw this.abortErrors.get(key)}}}
 }
 
 const db=new DatabaseSync(':memory:');db.exec(`
@@ -43,7 +44,7 @@ const db=new DatabaseSync(':memory:');db.exec(`
   INSERT INTO sessions VALUES('admin-session',1,'2099-01-01');
   INSERT INTO sessions VALUES('other-session',2,'2099-01-01');
   INSERT INTO sessions VALUES('member-session',3,'2099-01-01');
-`);db.exec(migration111);db.exec(migration115);
+`);db.exec(migration111);db.exec(migration115);db.exec(migration118);db.exec(migration119);db.exec(migration120);db.exec(migration121);
 const d1=new D1Mock(db),r2=new R2Mock(),env={DB:d1,FILES:r2},waits=[];
 const context=(method,{session='admin-session',body,headers={}}={})=>{const requestHeaders=new Headers(headers);if(session)requestHeaders.set('cookie',`vd_session=${session}`);let payload;if(body!==undefined){payload=typeof body==='string'?body:JSON.stringify(body);requestHeaders.set('content-type','application/json')}return{request:new Request('https://visiondonline.com/api/admin/vsport',{method,headers:requestHeaders,body:payload}),env,waitUntil(promise){waits.push(promise)}}};
 const bodyOf=async response=>({status:response.status,headers:response.headers,json:await response.json()});
@@ -68,6 +69,24 @@ response=await bodyOf(await del(target,'Different title','delete.target.0001'));
 const failedProject=makeProject(1,'Rollback target'),failedStory=seedStory(failedProject);seedAsset(failedProject,failedStory,`vsport/1/${failedProject}/rollback.png`,1);const deletesBefore=r2.deleteCalls.length;d1.failNextBatch=true;response=await bodyOf(await del(failedProject,'Rollback target','delete.rollback.0001'));assert.equal(response.status,500);assert.equal(db.prepare('SELECT COUNT(*) count FROM vsport_projects WHERE id=?').get(failedProject).count,1);assert.equal(db.prepare('SELECT COUNT(*) count FROM vsport_project_deletions WHERE project_id=?').get(failedProject).count,0);assert.equal(r2.deleteCalls.length,deletesBefore,'R2 is untouched before failed D1 commit');
 
 const partialProject=makeProject(1,'Partial cleanup'),partialStory=seedStory(partialProject),partialKey=`vsport/1/${partialProject}/partial.png`;seedAsset(partialProject,partialStory,partialKey,1);r2.deleteFailures.add(partialKey);response=await bodyOf(await del(partialProject,'Partial cleanup','delete.partial.0001'));assert.equal(response.status,202);assert.equal(response.json.cleanup_pending,true);assert.equal(db.prepare('SELECT status FROM vsport_object_cleanup_jobs WHERE object_key=?').get(partialKey).status,'error');r2.deleteFailures.clear();db.prepare("UPDATE vsport_object_cleanup_jobs SET next_attempt_at=datetime('now','-1 minute') WHERE object_key=?").run(partialKey);response=await bodyOf(await del(partialProject,'Partial cleanup','delete.partial.0001'));assert.equal(response.status,200);assert.equal(r2.objects.has(partialKey),false);
+
+const staleVideoProject=makeProject(1,'Stale video upload'),staleVideoKey=`vsport/1/${staleVideoProject}/silent-stale.webm`;
+db.prepare("INSERT INTO vsport_video_uploads(id,owner_id,project_id,idempotency_key,object_key,r2_upload_id,mime_type,file_size,duration_seconds,state,updated_at) VALUES('stale-video',1,?,'stale-video-key',?,'r2-stale','video/webm',600,2,'uploading',datetime('now','-5 minutes'))").run(staleVideoProject,staleVideoKey);
+db.prepare("INSERT INTO vsport_object_cleanup_jobs(id,owner_id,project_id,object_key,reason,status,writer_fence,lease_expires_at,next_attempt_at) VALUES('stale-video-guard',1,?,?,'orphan_guard','reserved','stale-video',datetime('now','-5 minutes'),datetime('now','-5 minutes'))").run(staleVideoProject,staleVideoKey);
+response=await bodyOf(await del(staleVideoProject,'Stale video upload','delete.stale.video.1'));assert.equal(response.status,200);assert.equal(db.prepare('SELECT COUNT(*) n FROM vsport_projects WHERE id=?').get(staleVideoProject).n,0);assert.deepEqual(r2.multipartAborts.at(-1),{key:staleVideoKey,id:'r2-stale'});assert.equal(db.prepare('SELECT status FROM vsport_video_abort_jobs WHERE object_key=?').get(staleVideoKey).status,'done');
+
+const savedVideoProject=makeProject(1,'Saved silent video'),savedVideoKey=`vsport/1/${savedVideoProject}/silent-saved.webm`;r2.seed(savedVideoKey);
+db.prepare("INSERT INTO vsport_silent_videos(project_id,owner_id,object_key,mime_type,file_size,duration_seconds) VALUES(?,1,?,'video/webm',3,2)").run(savedVideoProject,savedVideoKey);
+response=await bodyOf(await del(savedVideoProject,'Saved silent video','delete.saved.video.1'));assert.equal(response.status,200);assert.equal(r2.objects.has(savedVideoKey),false);assert.equal(db.prepare('SELECT status FROM vsport_object_cleanup_jobs WHERE object_key=?').get(savedVideoKey).status,'done');
+
+for(const [kind,abortError] of [['missing',Object.assign(new Error('NoSuchUpload'),{code:'NoSuchUpload'})],['transient',new Error('R2 temporarily unavailable')]]){
+  const projectId=makeProject(1,`Abort ${kind}`),key=`vsport/1/${projectId}/silent-${kind}.webm`,uploadId=`upload-${kind}`,deleteKey=`delete.abort.${kind}.1`;
+  db.prepare("INSERT INTO vsport_video_uploads(id,owner_id,project_id,idempotency_key,object_key,r2_upload_id,mime_type,file_size,duration_seconds,state,updated_at) VALUES(?,?,?,?,?,?,'video/webm',600,2,'uploading',datetime('now','-5 minutes'))").run(uploadId,1,projectId,`idem-${kind}`,key,`r2-${kind}`);
+  db.prepare("INSERT INTO vsport_object_cleanup_jobs(id,owner_id,project_id,object_key,reason,status,writer_fence,lease_expires_at,next_attempt_at) VALUES(?,?,?,?, 'orphan_guard','reserved',?,datetime('now','-5 minutes'),datetime('now','-5 minutes'))").run(`guard-${kind}`,1,projectId,key,uploadId);
+  r2.abortErrors.set(key,abortError);response=await bodyOf(await del(projectId,`Abort ${kind}`,deleteKey));assert.equal(response.status,kind==='missing'?200:202);assert.equal(db.prepare('SELECT status FROM vsport_video_abort_jobs WHERE object_key=?').get(key).status,kind==='missing'?'done':'error');
+  if(kind==='transient'){r2.abortErrors.delete(key);db.prepare("UPDATE vsport_video_abort_jobs SET next_attempt_at=datetime('now','-1 minute') WHERE object_key=?").run(key);response=await bodyOf(await del(projectId,`Abort ${kind}`,deleteKey));assert.equal(response.status,200);assert.equal(db.prepare('SELECT status FROM vsport_video_abort_jobs WHERE object_key=?').get(key).status,'done')}
+  r2.abortErrors.delete(key);
+}
 
 const png=new Uint8Array(await sharp({create:{width:320,height:180,channels:4,background:{r:200,g:20,b:20,alpha:1}}}).png().toBuffer()),originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(png,{status:200,headers:{'content-type':'image/png','content-length':String(png.byteLength)}});
 try{

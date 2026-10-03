@@ -1,0 +1,28 @@
+{
+  "version": "v0.20.157",
+  "feature": "VSPORT-001",
+  "status": "patch_ready_review_pending",
+  "scope": "Persist each successful silent slideshow to private owner-scoped R2 with bounded multipart upload, expose latest project video through authenticated Range playback after reopen, and clean exact video objects/uploads when the project is deleted.",
+  "files": [
+    "VERSION.txt",
+    "package.json",
+    "patch-ledgers/v0.20.157.json",
+    "migrations/0121_vsport_silent_video.sql",
+    "functions/_vsport-video.js",
+    "functions/api/admin/vsport-video.js",
+    "functions/api/admin/vsport-video/[id].js",
+    "functions/api/admin/vsport.js",
+    "public/admin.html",
+    "public/index.html",
+    "public/vsport.html",
+    "public/vsport.js",
+    "scripts/test-v020141-vsport-project-delete.mjs",
+    "scripts/test-v020157-vsport-video.mjs",
+    "scripts/test-v020157.mjs"
+  ],
+  "verification": {
+    "focused": "npm run test:v020157 PASS: owner-scoped D1/R2 multipart, video-only WebM gate, >8 MiB upload, Range playback, ambiguous completion retry, stale session fence, exact video/delete cleanup, connected v156 browser scenarios and visible version parity; Mark Chrome protocol-emulator RED fixture GREEN after reload",
+    "independent": "Pending frozen Mark review"
+  },
+  "release": {"status":"not committed","commit":"not performed","push":"not performed","pages_deploy":"not performed"}
+}

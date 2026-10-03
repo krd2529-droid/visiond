@@ -71,6 +71,7 @@
         <div class="actions"><button id="enqueueRender" class="vds-btn vds-btn--primary" type="button">เพิ่มเข้าคิว</button><button id="startQueue" class="vds-btn vds-btn--secondary" type="button">เริ่มงานถัดไป</button><button id="pauseRender" class="vds-btn vds-btn--tonal" type="button" disabled>พัก</button><button id="cancelRender" class="vds-btn vds-btn--danger" type="button" disabled>ยกเลิกงานปัจจุบัน</button></div>
         <div id="renderQueue" class="render-queue"></div><progress id="renderProgress" value="0" max="100"></progress><p id="renderStatus" class="status-line" role="status" aria-live="polite"></p>
         <canvas id="videoCanvas" width="1280" height="720" aria-label="ตัวอย่างเฟรมวิดีโอ"></canvas><div id="silentOutput" class="output-box"></div>
+        <h3>วิดีโอสไลด์โชว์เงียบล่าสุดที่บันทึกแล้ว</h3><div id="latestSilentOutput" class="output-box"></div><button id="retrySilentSave" class="vds-btn vds-btn--secondary" type="button" hidden>ลองบันทึกวิดีโออีกครั้ง</button><p id="silentSaveStatus" class="status-line" role="status" aria-live="polite"></p>
         <h3>รวมวิดีโอเงียบกับเสียงภายนอก</h3><div class="merge-grid"><label class="vds-field">วิดีโอเงียบ<input id="silentVideoFile" type="file" accept="video/webm,video/mp4,video/*"></label><label class="vds-field">เสียงพากย์<input id="mergeAudioFile" type="file" accept="audio/*"></label></div><label class="confirm-line"><input id="acceptMismatch" type="checkbox"> ยืนยันให้ตัดตามไฟล์ที่สั้นกว่า หากความยาวต่างกันเกิน 0.5 วินาที</label><button id="mergeMedia" class="vds-btn vds-btn--primary" type="button">รวมเป็นวิดีโอสุดท้าย</button><p id="mergeStatus" class="status-line" role="status" aria-live="polite"></p><div id="finalOutput" class="output-box"></div>
       </section>
 
@@ -82,7 +83,7 @@
       </section>
     </section>
   </main>
-  <script src="/vsport.js?v=020156" type="module"></script>
+  <script src="/vsport.js?v=020157" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>
