@@ -1,0 +1,10 @@
+https://example.com/campaign/1
+https://example.com/campaign/2
+https://example.com/campaign/3
+https://example.com/campaign/4
+https://example.com/campaign/5
+https://example.com/campaign/6
+https://example.com/campaign/7
+https://example.com/campaign/8
+https://example.com/campaign/9
+https://example.com/campaign/10

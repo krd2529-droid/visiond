@@ -1,0 +1,222 @@
+{
+  "product": "SMS Mix",
+  "status": "candidate-debug-fresh-install-only",
+  "package": "com.smsmix.app",
+  "versionName": "0.2.0",
+  "versionCode": 2,
+  "signerCertificateSha256": "3473fc6379b957999e039538db05d1b9812b54b614e6ecc0108b134ca76cf29c",
+  "signedScheme": "v2",
+  "originalSignerMismatch": true,
+  "sourceZip": {
+    "name": "SMS-Mix-v0.2.0-source.zip",
+    "bytes": 103092,
+    "sha256": "62155f4fa52422c7da7631b9461a092feb05b00887adbdacb580496327e679f8"
+  },
+  "apk": {
+    "name": "SMS-Mix-v0.2.0-debug.apk",
+    "bytes": 44805,
+    "sha256": "e63828e3c60b8f02e00e83a5d61030dd2282ee8e9353b29fefe1833c419a41c5"
+  },
+  "sourceFiles": [
+    {
+      "path": "android/.gitignore",
+      "bytes": 69,
+      "sha256": "d4a16a44a7fa5c2f82ad11a2e60cb3a7feaf6c13c75e856fb879e6098f85f935"
+    },
+    {
+      "path": "android/app/build.gradle",
+      "bytes": 569,
+      "sha256": "d63a2bf997cb2b271bc3b3583a4f69c235cab21d23f8e0ad972b70a35b9b9470"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "bytes": 1502,
+      "sha256": "a04c6fa04ddd49043d87e235f38d70f91326bc1f4d61fa604bfc151995812b09"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/BootReceiver.java",
+      "bytes": 411,
+      "sha256": "d35f923337799b8d164c1b00b3b44e0c07faf1ed745ef065587569b6800344b8"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/CampaignCore.java",
+      "bytes": 5254,
+      "sha256": "c112be8288e21768fa95d6cbf90d34c3850365eff320b3c70bb3ed40034b6c86"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/LicenseClient.java",
+      "bytes": 8712,
+      "sha256": "fef2d40a8f202f62b3a5062f304ddd0a78233f88d701d901fd56d160fddca1d1"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/MainActivity.java",
+      "bytes": 29218,
+      "sha256": "02f96a0c7192e3fbb8ecdfbb484bc8352eeab0fc7afae4993a2e8bb98b5605ee"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/SavedSets.java",
+      "bytes": 3281,
+      "sha256": "611e42ed8afa1a6e321e2c47b319a55af5ba93d2a634a1d8032bb3755f7e2199"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/Scheduler.java",
+      "bytes": 11312,
+      "sha256": "412870b895a3a99e8eff16d9b9c24c865b506108bedcbf839ac3bfabc35f14f2"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/SendReceiver.java",
+      "bytes": 642,
+      "sha256": "4e37c28cb45a56e913232fdaca0ab7194948ffde52a86c840df86ce686ef8b3c"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/SentReceiver.java",
+      "bytes": 324,
+      "sha256": "f0ff8507634eb97067fd75cab958ddf217e953a2b8942c3ba229ea714caf66aa"
+    },
+    {
+      "path": "android/app/src/main/java/com/smsmix/app/Store.java",
+      "bytes": 2731,
+      "sha256": "6df9c2aba3c946a86ae298053c4c3181860c277e53ebdc956147ce90f5c636b5"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/ic_sms.xml",
+      "bytes": 442,
+      "sha256": "b90f8e89f8e6c506b4f6e6630679f18cdceb88ec12d7bdc2b9a7a88d4fad0adb"
+    },
+    {
+      "path": "android/app/src/main/res/xml/data_extraction_rules.xml",
+      "bytes": 592,
+      "sha256": "8229fb932c72312facb76c9d20270f2dea3d251e1210ec710812608487508246"
+    },
+    {
+      "path": "android/app/src/test/java/com/smsmix/app/LicenseAndSetsTest.java",
+      "bytes": 5834,
+      "sha256": "465bdc7b790d837ba8329280426f4057e8cfd1f6f079562622b85f80dd1d2233"
+    },
+    {
+      "path": "android/app/src/test/java/com/smsmix/app/QueueTest.java",
+      "bytes": 16012,
+      "sha256": "0e94a540f556a138fae38dc93615953a31e39188682f88c51ebb9322bb45b7d3"
+    },
+    {
+      "path": "android/build.gradle",
+      "bytes": 69,
+      "sha256": "7c2248fd2eddd20ccc0da72abb80cfb4beab12b2ec71cc022b36746df856290a"
+    },
+    {
+      "path": "android/examples/captions.txt",
+      "bytes": 1281,
+      "sha256": "a61e9a77de69c7dd77df9af4eb5446bf3b9a9622310a77ceafc9e9d4ef9852c6"
+    },
+    {
+      "path": "android/examples/links.txt",
+      "bytes": 321,
+      "sha256": "473d0ba26c2a07216bc2345e59afd7bca81c5947fe535d3fa02f1548dd78fc92"
+    },
+    {
+      "path": "android/gradle.properties",
+      "bytes": 77,
+      "sha256": "aa117e8383bc86f0ec6cd6f9f75ec87119b42184ca7de688969a65c0362f184b"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.jar",
+      "bytes": 43583,
+      "sha256": "2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "bytes": 341,
+      "sha256": "66243a08ddd59f6da973ed47f8c2d248e0e4505d723d2793e741a231acd83ad2"
+    },
+    {
+      "path": "android/gradlew",
+      "bytes": 8762,
+      "sha256": "a3648413b47ef77af21d5ebc36c687c7d103aaef3e17f33de7d4f080a6f300a3"
+    },
+    {
+      "path": "android/gradlew.bat",
+      "bytes": 2966,
+      "sha256": "57931b17dd228e5c24dac90e815d0bf82477e831a4618dfab4136f5446b42a9f"
+    },
+    {
+      "path": "android/PROJECT_STATUS.md",
+      "bytes": 1164,
+      "sha256": "070111da04749c096f332f2067bc6b4107422a824627c9243eb72eeb455a294a"
+    },
+    {
+      "path": "android/README.md",
+      "bytes": 9716,
+      "sha256": "bda41fd128ce9e738055b4893a0994be6f14034e6b2ba17d8d3b663666a55cb7"
+    },
+    {
+      "path": "android/settings.gradle",
+      "bytes": 267,
+      "sha256": "e8204705e622131c714630d78cc8235ef23dbd7a1ff287bc608caaa51d2ee871"
+    },
+    {
+      "path": "android/test-core.ps1",
+      "bytes": 816,
+      "sha256": "d6bf2cd389095c979affd6406dd6f6a70bf8e30443220db0da175f8de6f00ceb"
+    },
+    {
+      "path": "android/tests/CoreTest.java",
+      "bytes": 3433,
+      "sha256": "0aeaec100ed36b1a70bd68f1e248a1c9875866d8b376f4cfa345db2b30fb9a7b"
+    },
+    {
+      "path": "visiond-integration/functions/_smsmix_license.js",
+      "bytes": 4800,
+      "sha256": "59cd1844eac5fba87930be8c193737b83192da9493a0fb0d604cb2ad52ad64c8"
+    },
+    {
+      "path": "visiond-integration/functions/api/admin/vision7/licenses.js",
+      "bytes": 11453,
+      "sha256": "695ab6a284499eb6085c5e747a54542a87d8cb13e58542e7df40a4a918633c9f"
+    },
+    {
+      "path": "visiond-integration/functions/api/admin/vision7/licenses/[id]/history.js",
+      "bytes": 2019,
+      "sha256": "a4477837fe502602dea83acd9f6e5fd2d5f219e237839532b5045d45d5fc13ca"
+    },
+    {
+      "path": "visiond-integration/functions/api/vision7/my-programs.js",
+      "bytes": 2809,
+      "sha256": "6f876e03b23e196110dd7c80cdb72536bd68019000039ad199c553a3e462d8fc"
+    },
+    {
+      "path": "visiond-integration/functions/api/vision7/sms-mix/activate.js",
+      "bytes": 107,
+      "sha256": "1f982dc65752e02d4fd42c8db582e5bceee112a145920981b4bbb2c88a690ee5"
+    },
+    {
+      "path": "visiond-integration/functions/api/vision7/sms-mix/check.js",
+      "bytes": 101,
+      "sha256": "77dd1701de2cabb5a534cc66dc1ec5991bd7b0b2905cede345de34fa0c995502"
+    },
+    {
+      "path": "visiond-integration/migrations/0122_smsmix_single_device.sql",
+      "bytes": 309,
+      "sha256": "989870add99bc23344a33bc86e1e37a31bf0aac1074ec7db49c697822fd6f62e"
+    },
+    {
+      "path": "visiond-integration/public/my-programs.js",
+      "bytes": 3011,
+      "sha256": "74527f18a8c1af66c589f4614bd6b4b4b85dcb3171bcf38b00002869ba59e707"
+    },
+    {
+      "path": "visiond-integration/public/vision7-admin.js",
+      "bytes": 34880,
+      "sha256": "dc4c03114615c5c630c80c52386808bc568ed1f08024a6590f6f59dafca7fee7"
+    },
+    {
+      "path": "visiond-integration/scripts/test-smsmix-admin-display.mjs",
+      "bytes": 1462,
+      "sha256": "d9bffa89513663d5e56c421c9028c5ad805fd29045a1d7e709901187b92f5fe0"
+    },
+    {
+      "path": "visiond-integration/scripts/test-smsmix-license.mjs",
+      "bytes": 9598,
+      "sha256": "46b986a88a6c4e747b481ae9aa824747891476998ce7adc4cdb1d8be2d49eba7"
+    }
+  ]
+}

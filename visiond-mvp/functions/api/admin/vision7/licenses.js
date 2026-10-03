@@ -25,7 +25,7 @@ export async function onRequestGet(ctx) {
   if (a.error) return a.error;
   for (const sql of ["ALTER TABLE vision7_licenses ADD COLUMN issuance_type TEXT NOT NULL DEFAULT 'legacy'", "ALTER TABLE vision7_licenses ADD COLUMN issue_cost INTEGER NOT NULL DEFAULT 0"]) await ctx.env.DB.prepare(sql).run().catch(() => {});
   const rows = await ctx.env.DB.prepare(
-    `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.order_id,l.key_last4,l.status,l.starts_at,l.expires_at,l.renewed_at,l.max_devices,l.binding_state,l.source,l.note,l.created_at,l.issuance_type,l.issue_cost,u.name user_name,u.email,p.code program_code,p.platform_type,x.title program_title,q.name plan_name,q.duration_days,COALESCE(NULLIF(l.issue_cost,0),CASE WHEN l.order_id IS NOT NULL THEN COALESCE((SELECT oi.price FROM order_items oi WHERE oi.order_id=l.order_id AND oi.product_id=q.product_id LIMIT 1),0) WHEN l.issuance_type='test' THEN 0 ELSE COALESCE(px.price,q.price,0) END,0) display_cost,COALESCE(issuer.name,issuer.username,CASE WHEN l.order_id IS NOT NULL THEN 'ระบบ/ออเดอร์' ELSE 'ระบบ' END) issuer_name,(SELECT COUNT(*) FROM vision7_license_devices d WHERE d.license_id=l.id AND d.revoked_at IS NULL) active_devices FROM vision7_licenses l JOIN users u ON u.id=l.user_id JOIN vision7_programs p ON p.id=l.program_id LEFT JOIN products x ON x.id=p.product_id LEFT JOIN vision7_plans q ON q.id=l.plan_id LEFT JOIN products px ON px.id=q.product_id LEFT JOIN users issuer ON issuer.id=l.created_by ORDER BY l.created_at DESC`,
+    `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.order_id,l.key_last4,l.status,l.starts_at,l.expires_at,l.renewed_at,l.max_devices,l.binding_state,l.source,l.note,l.created_at,l.issuance_type,l.issue_cost,u.name user_name,u.email,p.code program_code,p.platform_type,x.title program_title,q.name plan_name,q.duration_days,COALESCE(NULLIF(l.issue_cost,0),CASE WHEN l.order_id IS NOT NULL THEN COALESCE((SELECT oi.price FROM order_items oi WHERE oi.order_id=l.order_id AND oi.product_id=q.product_id LIMIT 1),0) WHEN l.issuance_type='test' THEN 0 ELSE COALESCE(px.price,q.price,0) END,0) display_cost,COALESCE(issuer.name,issuer.username,CASE WHEN l.order_id IS NOT NULL THEN 'ระบบ/ออเดอร์' ELSE 'ระบบ' END) issuer_name,CASE WHEN p.code='sms-mix' THEN (SELECT COUNT(*) FROM vision7_smsmix_bindings b WHERE b.license_id=l.id) ELSE (SELECT COUNT(*) FROM vision7_license_devices d WHERE d.license_id=l.id AND d.revoked_at IS NULL) END active_devices FROM vision7_licenses l JOIN users u ON u.id=l.user_id JOIN vision7_programs p ON p.id=l.program_id LEFT JOIN products x ON x.id=p.product_id LEFT JOIN vision7_plans q ON q.id=l.plan_id LEFT JOIN products px ON px.id=q.product_id LEFT JOIN users issuer ON issuer.id=l.created_by ORDER BY l.created_at DESC`,
   ).all();
   const items = (rows.results || []).map((x) => ({
       ...x,
@@ -137,7 +137,7 @@ export async function onRequestPatch(ctx) {
     action = String(b.action || "status");
   if (!id) return json({ error: "ไม่พบรหัสคีย์" }, 400);
   const license = await ctx.env.DB.prepare(
-    "SELECT id,program_id,plan_id,status,expires_at FROM vision7_licenses WHERE id=?",
+    "SELECT l.id,l.program_id,l.plan_id,l.status,l.expires_at,p.code program_code FROM vision7_licenses l JOIN vision7_programs p ON p.id=l.program_id WHERE l.id=?",
   )
     .bind(id)
     .first();
@@ -148,14 +148,17 @@ export async function onRequestPatch(ctx) {
     const owner = await ctx.env.DB.prepare("SELECT user_id FROM vision7_licenses WHERE id=?").bind(id).first();
     const shops = (await ctx.env.DB.prepare("SELECT id FROM veasy_shops WHERE license_id=?").bind(id).all().catch(() => ({ results: [] }))).results || [];
     const statements = [ctx.env.DB.prepare("UPDATE vision7_license_devices SET revoked_at=CURRENT_TIMESTAMP WHERE license_id=? AND revoked_at IS NULL").bind(id)];
+    const smsResetIndex = license.program_code === "sms-mix" ? statements.length : -1;
+    if (smsResetIndex >= 0) statements.push(ctx.env.DB.prepare("DELETE FROM vision7_smsmix_bindings WHERE license_id=?").bind(id));
     for (const hash of hashes) statements.push(ctx.env.DB.prepare("UPDATE vision7_app_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND device_hash=? AND revoked_at IS NULL").bind(owner.user_id, hash));
     for (const shop of shops) {
       statements.push(ctx.env.DB.prepare("DELETE FROM veasy_runtime_leases WHERE shop_id=?").bind(shop.id));
       statements.push(ctx.env.DB.prepare("DELETE FROM veasy_conversation_leases WHERE shop_id=?").bind(shop.id));
     }
-    if (statements.length) await ctx.env.DB.batch(statements);
-    await licenseEvent(ctx.env, id, a.user.id, "device_slots_reset_by_operator", { revoked_devices: devices.length, shop_preserved: true, reason: text(b.note) || "test_slot_reset" });
-    return json({ ok: true, revoked_devices: devices.length, active_devices: 0, key_preserved: true, shop_preserved: true });
+    const resetResults = await ctx.env.DB.batch(statements);
+    const revokedCount = Math.max(devices.length, smsResetIndex >= 0 ? Number(resetResults[smsResetIndex]?.meta?.changes || 0) : 0);
+    await licenseEvent(ctx.env, id, a.user.id, "device_slots_reset_by_operator", { revoked_devices: revokedCount, shop_preserved: true, reason: text(b.note) || "test_slot_reset" });
+    return json({ ok: true, revoked_devices: revokedCount, active_devices: 0, key_preserved: true, shop_preserved: true });
   }
   if (action === "status") {
     const status = validLicenseStatus(b.status);
