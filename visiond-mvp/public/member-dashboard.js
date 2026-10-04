@@ -5,7 +5,7 @@ const sections={overview:dashOverview,orders:dashOrders,downloads:dashDownloads,
 const roleLabel={boss:'Boss · เจ้าของระบบ',admin:'Admin · ผู้ดูแลระบบ',user:'User · สมาชิกทั่วไป',customer:'User · สมาชิกทั่วไป'};
 const money=n=>new Intl.NumberFormat('th-TH').format((Number(n)||0)/100)+' บาท';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const isDownloadProduct=item=>item?.category!=='resale-rights'&&item?.product_kind!=='course';
+const isDownloadProduct=item=>item?.category!=='resale-rights'&&item?.product_kind!=='course'&&item?.product_kind!=='vpage-credit';
 document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=()=>showSection(b.dataset.dash));
 function showSection(name){name=name==='my-products'?'downloads':name;if(!sections[name])name='overview';document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active',x.dataset.dash===name));Object.values(sections).forEach(x=>x.hidden=true);sections[name].hidden=false;history.replaceState(null,'','#'+name)}
 let loadedOrders=[],ordersCursor=null,ordersHasMore=false,currentBank={},currentUser=null;

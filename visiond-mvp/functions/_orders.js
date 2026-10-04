@@ -2,6 +2,7 @@ import {ensureVxAccess,vxGrantStatement} from './_vx_access.js';
 import {fulfillVision7Order} from './_vision7_orders.js';
 import {memberCategories} from './_member_plan.js';
 import {ensureVxReferralSchema,referralCommissionStatement} from './_vx_referrals.js';
+import {isVpageCreditProduct} from './_vpage.js';
 
 async function grantFirstOrderGift(env,userId,paidOrderId){
   const existing=await env.DB.prepare("SELECT id FROM orders WHERE user_id=? AND order_origin='first_order_gift' LIMIT 1").bind(userId).first();
@@ -51,7 +52,8 @@ export async function grantOrder(env, order, actor = {}) {
   const actorName = actor.name || actor.username || actor.email || 'VisionD Auto',actorRole = actor.role || 'system',actorId = Number(actor.id) || 0,statements=[],grantIndexes=[];
   for (const item of items) {
     grantIndexes.push(statements.length);
-    if(item.product_kind==='vx-access')statements.push(vxGrantStatement(env,order,item.slug));
+    if(isVpageCreditProduct(item))statements.push(env.DB.prepare(`INSERT OR IGNORE INTO vpage_credits(user_id,order_id,source_order_item_id,status,service_days) SELECT ?,?,?,'available',30 WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND user_id=? AND status='pending_review')`).bind(order.user_id,order.id,item.order_item_id,order.id,order.user_id));
+    else if(item.product_kind==='vx-access')statements.push(vxGrantStatement(env,order,item.slug));
     else if(item.category==='resale-rights')statements.push(env.DB.prepare(`INSERT OR IGNORE INTO course_right_credits(user_id,product_id,order_id,active,source_order_item_id) SELECT ?,?,?,1,? WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND status='pending_review')`).bind(order.user_id,item.product_id,order.id,item.order_item_id,order.id));
     else statements.push(env.DB.prepare(`INSERT OR IGNORE INTO entitlements(user_id,product_id,order_id) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND status='pending_review')`).bind(order.user_id,item.product_id,order.id,order.id));
     if(item.product_kind==='member')for(const category of memberCategories(item.member_category)){const months=Math.max(0,Number(item.member_duration_months)||0),expiry=months?`+${months} months`:null;statements.push(expiry?env.DB.prepare(`INSERT INTO category_memberships(user_id,category_slug,order_id,starts_at,expires_at,active,updated_at) SELECT ?,?,?,CURRENT_TIMESTAMP,datetime('now',?),1,CURRENT_TIMESTAMP WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND status='pending_review') ON CONFLICT(user_id,category_slug) DO UPDATE SET order_id=excluded.order_id,starts_at=CURRENT_TIMESTAMP,expires_at=CASE WHEN category_memberships.expires_at LIKE '9999-%' THEN category_memberships.expires_at WHEN category_memberships.expires_at>CURRENT_TIMESTAMP THEN datetime(category_memberships.expires_at,?) ELSE excluded.expires_at END,active=1,updated_at=CURRENT_TIMESTAMP`).bind(order.user_id,category,order.id,expiry,order.id,expiry):env.DB.prepare(`INSERT INTO category_memberships(user_id,category_slug,order_id,starts_at,expires_at,active,updated_at) SELECT ?,?,?,CURRENT_TIMESTAMP,'9999-12-31 23:59:59',1,CURRENT_TIMESTAMP WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND status='pending_review') ON CONFLICT(user_id,category_slug) DO UPDATE SET order_id=excluded.order_id,starts_at=CURRENT_TIMESTAMP,expires_at='9999-12-31 23:59:59',active=1,updated_at=CURRENT_TIMESTAMP`).bind(order.user_id,category,order.id,order.id))}
