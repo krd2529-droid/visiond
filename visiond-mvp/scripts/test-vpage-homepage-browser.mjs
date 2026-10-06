@@ -31,8 +31,8 @@ try{
     assert.equal(await page.locator('.step-card').count(),3);
     const offer=page.locator('.offer-card');
     assert.equal(await offer.isVisible(),true,`${viewport.name} exact offer is prominent`);
-    assert.equal((await offer.innerText()).replace(/\s+/g,' ').trim(),'999 บาท / 30 วัน / 1 เซลเพจ');
-    assert.equal(await offer.getAttribute('aria-label'),'แพ็กเกจ 999 บาท ระยะเวลา 30 วัน สำหรับ 1 เซลเพจ');
+    assert.equal((await offer.innerText()).replace(/\s+/g,' ').trim(),'1 เซลเพจ / 30 วัน / 999 บาท');
+    assert.equal(await offer.getAttribute('aria-label'),'1 เซลเพจ / 30 วัน / 999 บาท');
     const cta=page.getByRole('link',{name:/คุยกับเราทาง LINE/}).first();
     assert.equal(await cta.getAttribute('href'),'https://lin.ee/rUcWsJu');
     assert.equal(await cta.getAttribute('target'),'_blank');

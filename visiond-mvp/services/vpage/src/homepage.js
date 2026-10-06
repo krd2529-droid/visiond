@@ -108,7 +108,7 @@ export const homepageHtml=`<!doctype html>
         <p class="eyebrow">บริการเซลเพจเพื่อธุรกิจออนไลน์</p>
         <h1>สร้างหน้าขายที่เล่าเรื่องสินค้า<br>และพาลูกค้า<span class="accent">ไปต่อได้ทันที</span></h1>
         <p>SmartLinkPage ช่วยจัดข้อมูลสินค้า จุดเด่น และช่องทางติดต่อให้อยู่ในหน้าเดียว เพื่อให้ลูกค้าเข้าใจสิ่งที่คุณนำเสนอและเลือกขั้นตอนต่อไปได้ง่ายขึ้น</p>
-        <div class="offer-card" aria-label="แพ็กเกจ 999 บาท ระยะเวลา 30 วัน สำหรับ 1 เซลเพจ">999 บาท / 30 วัน / 1 เซลเพจ</div>
+        <div class="offer-card" aria-label="1 เซลเพจ / 30 วัน / 999 บาท">1 เซลเพจ / 30 วัน / 999 บาท</div>
         <div class="actions"><a class="button line-cta" href="https://lin.ee/rUcWsJu" target="_blank" rel="noopener noreferrer"><span class="line-icon" aria-hidden="true">LINE</span>คุยกับเราทาง LINE</a><a class="button button-secondary" href="#services">ดูบริการของเรา</a></div>
       </div>
       <div class="hero-visual" aria-label="ตัวอย่างหน้าเสนอสินค้า">

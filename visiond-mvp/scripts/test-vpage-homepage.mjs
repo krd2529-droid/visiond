@@ -28,7 +28,7 @@ assert.match(homepage,/<title>SmartLinkPage \| บริการสร้าง
 assert.match(homepage,/บริการเซลเพจเพื่อธุรกิจออนไลน์/);
 assert.match(homepage,/สร้างหน้าขายที่เล่าเรื่องสินค้า/);
 assert.match(homepage,/ขั้นตอนการเริ่มต้น/);
-assert.match(homepage,/999 บาท \/ 30 วัน \/ 1 เซลเพจ/);
+assert.match(homepage,/1 เซลเพจ \/ 30 วัน \/ 999 บาท/);
 assert.match(homepage,/href="https:\/\/lin\.ee\/rUcWsJu"/);
 assert.match(homepage,/target="_blank"/);
 assert.match(homepage,/rel="noopener noreferrer"/);
