@@ -1,7 +1,7 @@
 name = "visiond-vpage"
 main = "src/index.js"
 compatibility_date = "2026-08-02"
-routes = [{ pattern = "smartlinkpage.com/*", zone_name = "smartlinkpage.com" }]
+routes = [{ pattern = "smartlinkpage.com", custom_domain = true }]
 
 [[d1_databases]]
 binding = "VPAGE_DB"
