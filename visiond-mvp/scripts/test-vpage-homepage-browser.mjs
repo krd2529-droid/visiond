@@ -29,6 +29,10 @@ try{
     assert.equal((await page.getByRole('heading',{level:1}).innerText()).replace(/\s+/g,''),'สร้างหน้าขายที่เล่าเรื่องสินค้าและพาลูกค้าไปต่อได้ทันที');
     assert.equal(await page.locator('.feature-card').count(),3);
     assert.equal(await page.locator('.step-card').count(),3);
+    const offer=page.locator('.offer-card');
+    assert.equal(await offer.isVisible(),true,`${viewport.name} exact offer is prominent`);
+    assert.equal((await offer.innerText()).replace(/\s+/g,' ').trim(),'999 บาท / 30 วัน / 1 เซลเพจ');
+    assert.equal(await offer.getAttribute('aria-label'),'แพ็กเกจ 999 บาท ระยะเวลา 30 วัน สำหรับ 1 เซลเพจ');
     const cta=page.getByRole('link',{name:/คุยกับเราทาง LINE/}).first();
     assert.equal(await cta.getAttribute('href'),'https://lin.ee/rUcWsJu');
     assert.equal(await cta.getAttribute('target'),'_blank');
@@ -36,6 +40,10 @@ try{
     assert.equal(await cta.isVisible(),true);
     await cta.focus();
     assert.equal(await cta.evaluate(link=>link.matches(':focus-visible')),true,`${viewport.name} primary CTA has keyboard focus visibility`);
+    const [offerBox,ctaBox]=await Promise.all([offer.boundingBox(),cta.boundingBox()]);
+    assert.ok(offerBox&&ctaBox,`${viewport.name} offer and CTA have rendered bounds`);
+    assert.ok(offerBox.y+offerBox.height<=ctaBox.y,`${viewport.name} exact offer does not overlap its LINE CTA`);
+    assert.ok(ctaBox.y+ctaBox.height<=viewport.height,`${viewport.name} offer and LINE CTA stay above the fold`);
     const geometry=await page.evaluate(()=>{
       const cta=document.querySelector('.hero .line-cta'),hero=document.querySelector('.hero'),footer=document.querySelector('footer');
       const c=cta.getBoundingClientRect(),h=hero.getBoundingClientRect(),f=footer.getBoundingClientRect();

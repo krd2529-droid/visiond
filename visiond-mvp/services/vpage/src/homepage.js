@@ -46,6 +46,7 @@ export const homepageHtml=`<!doctype html>
     h1{max-width:760px;margin-bottom:25px;font-size:clamp(2.7rem,5.7vw,5.4rem);line-height:1.06;letter-spacing:-.055em;text-wrap:balance}
     .accent{color:var(--cyan)}
     .hero-copy>p:not(.eyebrow){max-width:650px;margin-bottom:32px;color:var(--muted);font-size:clamp(1.06rem,1.6vw,1.24rem)}
+    .offer-card{display:inline-flex;align-items:center;margin:0 0 25px;padding:12px 18px;border:1px solid #62e9fa70;border-radius:15px;background:#0b356dcc;box-shadow:inset 0 1px #ffffff1c,0 12px 32px #001a3f55;color:var(--white);font-size:clamp(1.08rem,1.6vw,1.3rem);font-weight:900;letter-spacing:.01em}
     .actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
     .button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:12px 24px;border-radius:15px;text-decoration:none;font-weight:900;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
     .button:hover,.button:focus-visible{transform:translateY(-2px)}
@@ -89,7 +90,7 @@ export const homepageHtml=`<!doctype html>
     .contact-panel h2{position:relative;max-width:700px;margin:0 0 14px}.contact-panel p{position:relative;max-width:630px;margin:0;color:#cce8f2}.contact-panel .button{position:relative;z-index:1;white-space:nowrap}
     footer{padding:35px 0;border-top:1px solid var(--line);color:#8ea5cc;font-size:.85rem}.footer-row{display:flex;justify-content:space-between;gap:20px;align-items:center}.footer-row strong{color:#eef8ff}
     :focus-visible{outline:3px solid #86edff;outline-offset:4px}
-    @media(max-width:860px){.nav-links a:not(.nav-line){display:none}.hero{grid-template-columns:1fr;padding:64px 0 82px}.hero-copy{text-align:center}.eyebrow{justify-content:center}.hero-copy>p:not(.eyebrow){margin-inline:auto}.actions{justify-content:center}.hero-visual{min-height:430px}.section-head{grid-template-columns:1fr;gap:20px}.feature-grid{grid-template-columns:1fr}.feature-card{min-height:auto}.feature-no{margin-bottom:24px}.audience-row{grid-template-columns:1fr 1fr;padding:25px 0}.audience-row>strong{grid-column:1/-1}.contact-panel{grid-template-columns:1fr;text-align:center}.contact-panel p{margin-inline:auto}.contact-panel .button{justify-self:center}}
+    @media(max-width:860px){.nav-links a:not(.nav-line){display:none}.hero{grid-template-columns:1fr;padding:64px 0 82px}.hero-copy{text-align:center}.eyebrow{justify-content:center}.hero-copy>p:not(.eyebrow){margin-inline:auto}.offer-card{justify-content:center}.actions{justify-content:center}.hero-visual{min-height:430px}.section-head{grid-template-columns:1fr;gap:20px}.feature-grid{grid-template-columns:1fr}.feature-card{min-height:auto}.feature-no{margin-bottom:24px}.audience-row{grid-template-columns:1fr 1fr;padding:25px 0}.audience-row>strong{grid-column:1/-1}.contact-panel{grid-template-columns:1fr;text-align:center}.contact-panel p{margin-inline:auto}.contact-panel .button{justify-self:center}}
     @media(max-width:560px){.shell{width:min(100% - 28px,1160px)}.nav{min-height:72px}.brand-logo{width:205px}.nav-line{padding:8px 13px}.hero{min-height:auto;padding-top:52px;gap:34px}.hero h1{font-size:clamp(2.45rem,13vw,3.6rem)}.hero h1 br{display:none}.actions{display:grid}.button{width:100%}.hero-visual{min-height:390px}.sales-preview{width:84%;transform:none}.orbit{width:310px}.mini-badge.one{left:-4px;top:58px}.mini-badge.two{right:-6px;bottom:44px}.audience-row{grid-template-columns:1fr}.audience-row>strong{grid-column:auto}.audience-item{padding:9px 0 9px 16px}.section{padding:82px 0}.feature-card{padding:25px}.flow-grid{grid-template-columns:1fr;gap:34px}.step-card:not(:last-child){margin:0;padding-bottom:34px;border-right:0;border-bottom:1px solid var(--line)}.contact-wrap{padding:80px 0}.contact-panel{padding:36px 22px}.footer-row{align-items:flex-start;flex-direction:column}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button{transition:none}}
   </style>
@@ -107,6 +108,7 @@ export const homepageHtml=`<!doctype html>
         <p class="eyebrow">บริการเซลเพจเพื่อธุรกิจออนไลน์</p>
         <h1>สร้างหน้าขายที่เล่าเรื่องสินค้า<br>และพาลูกค้า<span class="accent">ไปต่อได้ทันที</span></h1>
         <p>SmartLinkPage ช่วยจัดข้อมูลสินค้า จุดเด่น และช่องทางติดต่อให้อยู่ในหน้าเดียว เพื่อให้ลูกค้าเข้าใจสิ่งที่คุณนำเสนอและเลือกขั้นตอนต่อไปได้ง่ายขึ้น</p>
+        <div class="offer-card" aria-label="แพ็กเกจ 999 บาท ระยะเวลา 30 วัน สำหรับ 1 เซลเพจ">999 บาท / 30 วัน / 1 เซลเพจ</div>
         <div class="actions"><a class="button line-cta" href="https://lin.ee/rUcWsJu" target="_blank" rel="noopener noreferrer"><span class="line-icon" aria-hidden="true">LINE</span>คุยกับเราทาง LINE</a><a class="button button-secondary" href="#services">ดูบริการของเรา</a></div>
       </div>
       <div class="hero-visual" aria-label="ตัวอย่างหน้าเสนอสินค้า">
