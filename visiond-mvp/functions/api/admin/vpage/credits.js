@@ -11,6 +11,6 @@ export async function onRequestGet(ctx){
   if(userId){where.push('c.user_id=?');args.push(userId)}
   if(cursor){where.push('c.id<?');args.push(cursor)}
   args.push(limit+1);
-  const result=await ctx.env.DB.prepare(`SELECT c.id,c.user_id,c.status,c.service_days,c.granted_at,c.consumed_at,o.order_no,u.name customer_name,u.email customer_email FROM vpage_credits c JOIN orders o ON o.id=c.order_id JOIN users u ON u.id=c.user_id WHERE ${where.join(' AND ')} ORDER BY c.id DESC LIMIT ?`).bind(...args).all(),items=result.results||[],hasMore=items.length>limit;if(hasMore)items.pop();
+  const result=await ctx.env.DB.prepare(`SELECT c.id,c.user_id,CASE WHEN c.status='available' AND EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state='held') THEN 'provisioning' ELSE c.status END status,c.service_days,c.granted_at,c.consumed_at,o.order_no,u.name customer_name,u.email customer_email FROM vpage_credits c JOIN orders o ON o.id=c.order_id JOIN users u ON u.id=c.user_id WHERE ${where.join(' AND ')} ORDER BY c.id DESC LIMIT ?`).bind(...args).all(),items=result.results||[],hasMore=items.length>limit;if(hasMore)items.pop();
   return json({items,pagination:{limit,has_more:hasMore,next_cursor:hasMore&&items.length?String(items.at(-1).id):null}},200,{'cache-control':'private, no-store'});
 }

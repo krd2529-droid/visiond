@@ -29,6 +29,7 @@ INSERT INTO users(id,email,username,name,role) VALUES(1,'one@example.test','one'
 INSERT INTO sessions VALUES('session-one',1,datetime('now','+1 day'),CURRENT_TIMESTAMP),('session-two',2,datetime('now','+1 day'),CURRENT_TIMESTAMP),('session-admin',9,datetime('now','+1 day'),CURRENT_TIMESTAMP);
 INSERT INTO settings(key,value) VALUES('promotion_enabled','1'),('promotion_percent','90'),('promotion_scope','all'),('accepting_orders','1'),('first_order_promo_enabled','0');`);
 sqlite.exec(readFileSync(new URL('../migrations/0123_vpage_credit_purchase.sql',import.meta.url),'utf8'));
+sqlite.exec(readFileSync(new URL('../migrations/0124_vpage_provisioning.sql',import.meta.url),'utf8'));
 sqlite.prepare("UPDATE products SET price=1 WHERE slug='vpage-credit'").run();
 
 const DB={

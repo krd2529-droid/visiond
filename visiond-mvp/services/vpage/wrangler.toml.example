@@ -1,0 +1,14 @@
+name = "visiond-vpage"
+main = "src/index.js"
+compatibility_date = "2026-08-02"
+
+[[d1_databases]]
+binding = "VPAGE_DB"
+database_name = "vpage-db"
+database_id = "replace-with-isolated-vpage-d1-id"
+
+[vars]
+VPAGE_KEY_ID = "visiond-main-v1"
+
+# Set VPAGE_SHARED_SECRET with `wrangler secret put VPAGE_SHARED_SECRET`.
+# Route smartlinkpage.com only after the local and independent gates pass.
