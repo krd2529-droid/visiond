@@ -3,6 +3,7 @@ import {existsSync,readFileSync} from 'node:fs';
 
 const required=[
   '../services/vpage/src/index.js',
+  '../services/vpage/src/homepage.js',
   '../services/vpage/migrations/0001_vpage_service.sql',
   '../services/vpage/wrangler.toml.example',
   '../migrations/0124_vpage_provisioning.sql',

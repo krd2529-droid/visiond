@@ -1,3 +1,5 @@
+import {brandLogoSvg,homepageHtml} from './homepage.js';
+
 const encoder=new TextEncoder();
 export const RESERVED_SLUGS=new Set(['admin','api','login','support','www','cdn-cgi','health','internal','status']);
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -183,7 +185,8 @@ async function lifecycle(request,path,env,ownerRef,rawBody){
 
 async function publicPage(request,env){
   const url=new URL(request.url),hostname=url.hostname.toLowerCase().replace(/^www\./,''),slug=decodeURIComponent(url.pathname.slice(1));
-  if(url.pathname==='/')return html('<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Vpage</title><main><h1>บริการเซลเพจเพื่อธุรกิจออนไลน์</h1><p>Vpage by VisionD</p></main></html>');
+  if(url.pathname==='/')return html(homepageHtml,200,{'content-security-policy':"default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",'permissions-policy':'camera=(), microphone=(), geolocation=()','cross-origin-opener-policy':'same-origin'});
+  if(url.pathname==='/smartlinkpage-logo.svg')return new Response(brandLogoSvg,{headers:{'content-type':'image/svg+xml; charset=utf-8','cache-control':'public, max-age=604800, immutable','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
   if(!validSlug(slug))return html('<h1>ไม่พบหน้า</h1>',404);
   const cache=globalThis.caches?.default,cacheUrl=`https://${hostname}/${slug}`,cacheKey=new Request(cacheUrl),fence=publicFences.get(cacheUrl)||0,route=await env.VPAGE_DB.prepare("SELECT p.id,p.active_set,p.public_generation FROM vpage_pages p JOIN vpage_domains d ON d.id=p.domain_id WHERE d.hostname=? AND d.enabled=1 AND p.slug=? AND p.status='active' AND datetime(p.expires_at)>CURRENT_TIMESTAMP").bind(hostname,slug).first();
   if(!route){if(cache)await cache.delete(cacheKey).catch(()=>{});return html('<h1>ไม่พบหน้า</h1>',404)}
