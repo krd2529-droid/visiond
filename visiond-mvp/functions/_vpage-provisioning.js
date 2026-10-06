@@ -6,6 +6,8 @@ const ID=/^[A-Za-z0-9._:-]{8,128}$/;
 export const VPAGE_RESERVED_SLUGS=new Set(['admin','api','login','support','www','cdn-cgi','health','internal','status']);
 const domainCache={expires:0,value:null,inflight:null};
 const availabilityCache=new Map();
+const editorCache=new Map();
+const editorGenerations=new Map();
 
 export class VpageRemoteError extends Error{
   constructor(message,{status=502,code='VPAGE_REMOTE_FAILED',ambiguous=false}={}){super(message);this.status=status;this.code=code;this.ambiguous=ambiguous}
@@ -15,6 +17,7 @@ export const validVpageSlug=value=>typeof value==='string'&&value.length>=3&&val
 export const validVpageDisplayName=value=>typeof value==='string'&&value.trim().length>=1&&value.trim().length<=120;
 export const validVpageIdempotencyKey=value=>ID.test(String(value||''));
 export const vpageOwnerRef=userId=>sha256(`visiond-vpage-owner-v1:${Number(userId)}`);
+export const vpageActorRef=userId=>sha256(`visiond-vpage-actor-v1:${Number(userId)}`);
 const hex=buffer=>[...new Uint8Array(buffer)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
 const sign=async(secret,canonical)=>{const key=await crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return hex(await crypto.subtle.sign('HMAC',key,encoder.encode(canonical)))};
 
@@ -46,4 +49,12 @@ export async function checkVpageAvailability(env,domainId,slug){
 }
 export async function createRemoteVpage(env,userId,key,payload){return request(env,'/api/v1/pages',{method:'POST',ownerRef:await vpageOwnerRef(userId),body:payload,idempotencyKey:key})}
 export function invalidateVpageAvailability(domainId,slug){availabilityCache.delete(`${domainId}:${slug}`)}
-export function clearVpageCaches(){domainCache.value=null;domainCache.expires=0;domainCache.inflight=null;availabilityCache.clear()}
+const editorKey=(ownerRef,pageId)=>`${ownerRef}:${pageId}`;
+function invalidateEditor(pageId){editorGenerations.set(pageId,(editorGenerations.get(pageId)||0)+1);for(const key of editorCache.keys())if(key.endsWith(`:${pageId}`))editorCache.delete(key)}
+export async function readRemoteVpageEditor(env,{userId,pageId,boss=false}){
+  const ownerRef=boss?'system':await vpageOwnerRef(userId),key=editorKey(ownerRef,pageId),generation=editorGenerations.get(pageId)||0,cached=editorCache.get(key);if(cached?.generation===generation&&cached?.value&&cached.expires>Date.now())return cached.value;if(cached?.generation===generation&&cached?.inflight)return cached.inflight;
+  let inflight;inflight=request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/editor`,{ownerRef}).then(value=>{if((editorGenerations.get(pageId)||0)===generation&&editorCache.get(key)?.inflight===inflight)editorCache.set(key,{generation,value,expires:Date.now()+5000});return value}).catch(error=>{if(editorCache.get(key)?.inflight===inflight)editorCache.delete(key);throw error});editorCache.set(key,{generation,inflight});return inflight;
+}
+export async function saveRemoteVpageContent(env,{userId,pageId,setNo,key,payload}){const value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/content-sets/${setNo}`,{method:'PUT',ownerRef:await vpageOwnerRef(userId),body:payload,idempotencyKey:key});invalidateEditor(pageId);return value}
+export async function switchRemoteVpageSet(env,{userId,pageId,setNo,key,boss=false}){const ownerRef=boss?'system':await vpageOwnerRef(userId),value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/active-set`,{method:'POST',ownerRef,body:{active_set:setNo,actor_ref:boss?await vpageActorRef(userId):ownerRef,actor_kind:boss?'boss':'owner'},idempotencyKey:key});invalidateEditor(pageId);return value}
+export function clearVpageCaches(){domainCache.value=null;domainCache.expires=0;domainCache.inflight=null;availabilityCache.clear();editorCache.clear();editorGenerations.clear()}
