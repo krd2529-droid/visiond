@@ -27,7 +27,7 @@ async function request(env,path,{method='GET',ownerRef='system',body=null,idempo
   let baseUrl;try{baseUrl=new URL(base)}catch{}
   const secureBase=baseUrl?.protocol==='https:'||(baseUrl?.protocol==='http:'&&['127.0.0.1','localhost'].includes(baseUrl.hostname));
   if(!secureBase||!keyId||secret.length<32)throw new VpageRemoteError('ยังไม่ได้ตั้งค่าบริการ Vpage',{status:503,code:'VPAGE_SERVICE_NOT_CONFIGURED'});
-  const rawBody=body===null?'':JSON.stringify(body);if(encoder.encode(rawBody).byteLength>16384)throw new VpageRemoteError('ข้อมูลยาวเกินกำหนด',{status:413,code:'VPAGE_PAYLOAD_TOO_LARGE'});
+  const rawBody=body===null?'':JSON.stringify(body);if(encoder.encode(rawBody).byteLength>131072)throw new VpageRemoteError('ข้อมูลยาวเกินกำหนด',{status:413,code:'VPAGE_PAYLOAD_TOO_LARGE'});
   const timestamp=String(Math.floor(Date.now()/1000)),nonce=crypto.randomUUID().replaceAll('-',''),digest=await sha256(rawBody),canonical=['vpage-v1',method,path,keyId,timestamp,nonce,ownerRef,digest].join('\n'),signature=await sign(secret,canonical);
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
   let response;
@@ -55,6 +55,6 @@ export async function readRemoteVpageEditor(env,{userId,pageId,boss=false}){
   const ownerRef=boss?'system':await vpageOwnerRef(userId),key=editorKey(ownerRef,pageId),generation=editorGenerations.get(pageId)||0,cached=editorCache.get(key);if(cached?.generation===generation&&cached?.value&&cached.expires>Date.now())return cached.value;if(cached?.generation===generation&&cached?.inflight)return cached.inflight;
   let inflight;inflight=request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/editor`,{ownerRef}).then(value=>{if((editorGenerations.get(pageId)||0)===generation&&editorCache.get(key)?.inflight===inflight)editorCache.set(key,{generation,value,expires:Date.now()+5000});return value}).catch(error=>{if(editorCache.get(key)?.inflight===inflight)editorCache.delete(key);throw error});editorCache.set(key,{generation,inflight});return inflight;
 }
-export async function saveRemoteVpageContent(env,{userId,pageId,setNo,key,payload}){const value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/content-sets/${setNo}`,{method:'PUT',ownerRef:await vpageOwnerRef(userId),body:payload,idempotencyKey:key});invalidateEditor(pageId);return value}
+export async function saveRemoteVpageContent(env,{userId,pageId,setNo,key,payload,boss=false}){const value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/content-sets/${setNo}`,{method:'PUT',ownerRef:boss?'system':await vpageOwnerRef(userId),body:payload,idempotencyKey:key});invalidateEditor(pageId);return value}
 export async function switchRemoteVpageSet(env,{userId,pageId,setNo,key,boss=false}){const ownerRef=boss?'system':await vpageOwnerRef(userId),value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/active-set`,{method:'POST',ownerRef,body:{active_set:setNo,actor_ref:boss?await vpageActorRef(userId):ownerRef,actor_kind:boss?'boss':'owner'},idempotencyKey:key});invalidateEditor(pageId);return value}
 export function clearVpageCaches(){domainCache.value=null;domainCache.expires=0;domainCache.inflight=null;availabilityCache.clear();editorCache.clear();editorGenerations.clear()}

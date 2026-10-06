@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {existsSync,readFileSync} from 'node:fs';
+
+const migrationUrl=new URL('../services/vpage/migrations/0003_vpage_multi_items.sql',import.meta.url);
+assert.ok(existsSync(migrationUrl),'missing normalized Vpage multi-item migration');
+const migration=readFileSync(migrationUrl,'utf8');
+const service=readFileSync(new URL('../services/vpage/src/index.js',import.meta.url),'utf8');
+const ownerUi=readFileSync(new URL('../public/vpage.js',import.meta.url),'utf8');
+const bossUi=readFileSync(new URL('../public/vpage-admin.js',import.meta.url),'utf8');
+const bridge=readFileSync(new URL('../functions/_vpage-provisioning.js',import.meta.url),'utf8');
+const ownerSave=readFileSync(new URL('../functions/api/vpage/pages/[id]/content-sets/[set].js',import.meta.url),'utf8');
+const bossSave=readFileSync(new URL('../functions/api/admin/vpage/pages/[id]/content-sets/[set].js',import.meta.url),'utf8');
+const bossRoute=new URL('../functions/api/admin/vpage/pages/[id]/content-sets/[set].js',import.meta.url);
+
+assert.match(migration,/CREATE TABLE vpage_product_items/i);
+assert.match(migration,/CREATE TABLE vpage_contact_items/i);
+assert.match(migration,/PRIMARY KEY\s*\(page_id,set_no,position\)/i);
+assert.match(migration,/INSERT INTO vpage_product_items[\s\S]*product_url/i);
+assert.match(migration,/INSERT INTO vpage_contact_items[\s\S]*contact_url/i);
+assert.match(service,/product_items/);
+assert.match(service,/contact_items/);
+assert.match(service,/VPAGE_CONTENT_ITEMS_INVALID/);
+assert.match(ownerUi,/data-add-item/);
+assert.match(ownerUi,/data-move-item/);
+assert.match(ownerUi,/maxlength="2048"/);
+assert.match(bossUi,/data-boss-save-set/);
+assert.match(bossUi,/maxlength="2048"/);
+for(const source of [service,bridge,ownerSave,bossSave])assert.match(source,/131072/,'every content-save layer shares the bounded legal payload ceiling');
+assert.ok(existsSync(bossRoute),'missing Boss content-set save route');
+console.log('PASS Vpage normalized multi-link/contact static contract');

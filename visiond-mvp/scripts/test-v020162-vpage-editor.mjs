@@ -43,5 +43,5 @@ assert.doesNotMatch(bossRoutes,/requireAdmin/);
 assert.match(ui,/ชุดเนื้อหา 1/);
 assert.match(ui,/ชุดเนื้อหา 2/);
 assert.match(ui,/ชื่อร้านร่วมกัน/);
-assert.match(bossUi,/สลับชุดเนื้อหา/);
+assert.match(bossUi,/สลับชุด/);
 console.log('PASS Vpage editor/two-set static contract');

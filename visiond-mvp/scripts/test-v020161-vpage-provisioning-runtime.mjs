@@ -14,7 +14,7 @@ const adapter=(sqlite,control={})=>({
   async batch(statements){if(control.failFinalOnce&&statements.some(statement=>statement.__sql.includes('UPDATE vpage_pages SET vpage_id='))){control.failFinalOnce=false;throw new Error('simulated local commit uncertainty')}sqlite.exec('BEGIN');try{const results=statements.map(statement=>{const result=sqlite.prepare(statement.__sql).run(...statement.__args);return{meta:{changes:Number(result.changes)}}});sqlite.exec('COMMIT');return results}catch(error){sqlite.exec('ROLLBACK');throw error}}
 });
 const serviceSqlite=new DatabaseSync(':memory:'),visionSqlite=new DatabaseSync(':memory:');
-serviceSqlite.exec('PRAGMA foreign_keys=ON;'+readFileSync(new URL('../services/vpage/migrations/0001_vpage_service.sql',import.meta.url),'utf8')+readFileSync(new URL('../services/vpage/migrations/0002_vpage_editor.sql',import.meta.url),'utf8'));
+serviceSqlite.exec('PRAGMA foreign_keys=ON;'+readFileSync(new URL('../services/vpage/migrations/0001_vpage_service.sql',import.meta.url),'utf8')+readFileSync(new URL('../services/vpage/migrations/0002_vpage_editor.sql',import.meta.url),'utf8')+readFileSync(new URL('../services/vpage/migrations/0003_vpage_multi_items.sql',import.meta.url),'utf8'));
 visionSqlite.exec(`PRAGMA foreign_keys=ON;
 CREATE TABLE runtime_schema_state(schema_key TEXT PRIMARY KEY,version INTEGER NOT NULL);INSERT INTO runtime_schema_state VALUES('core',66);
 CREATE TABLE users(id INTEGER PRIMARY KEY,email TEXT,username TEXT,name TEXT,phone TEXT,role TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
