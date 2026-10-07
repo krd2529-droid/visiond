@@ -34,7 +34,7 @@ const d1=sqlite=>({
   }
 });
 
-for(const migration of ['0123_vpage_credit_purchase.sql','0124_vpage_provisioning.sql','0125_vpage_editor.sql','0126_vpage_renewal.sql','0127_vpage_media.sql']){
+for(const migration of ['0123_vpage_credit_purchase.sql','0124_vpage_provisioning.sql','0125_vpage_editor.sql','0126_vpage_renewal.sql','0127_vpage_media.sql','0128_vpage_admin_credit_grants.sql']){
   await env.DB.exec(await readFile(new URL(`../migrations/${migration}`,import.meta.url),'utf8'));
 }
 for(const user of [

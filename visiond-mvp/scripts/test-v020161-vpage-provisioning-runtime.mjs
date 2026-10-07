@@ -29,7 +29,10 @@ INSERT INTO order_items(id,order_id,product_id,product_title,price) VALUES(1,1,1
 visionSqlite.exec(readFileSync(new URL('../migrations/0123_vpage_credit_purchase.sql',import.meta.url),'utf8'));
 visionSqlite.exec("INSERT INTO vpage_credits(user_id,order_id,source_order_item_id) VALUES(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6)");
 visionSqlite.exec(readFileSync(new URL('../migrations/0124_vpage_provisioning.sql',import.meta.url),'utf8'));
+visionSqlite.exec(readFileSync(new URL('../migrations/0125_vpage_editor.sql',import.meta.url),'utf8'));
 visionSqlite.exec(readFileSync(new URL('../migrations/0126_vpage_renewal.sql',import.meta.url),'utf8'));
+visionSqlite.exec(readFileSync(new URL('../migrations/0127_vpage_media.sql',import.meta.url),'utf8'));
+visionSqlite.exec(readFileSync(new URL('../migrations/0128_vpage_admin_credit_grants.sql',import.meta.url),'utf8'));
 
 const secret='local-test-secret-that-is-at-least-32-characters',keyId='visiond-main-v1';
 const serviceEnv={VPAGE_DB:adapter(serviceSqlite),VPAGE_SHARED_SECRET:secret,VPAGE_KEY_ID:keyId};
