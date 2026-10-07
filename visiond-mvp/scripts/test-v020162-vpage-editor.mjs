@@ -44,4 +44,6 @@ assert.match(ui,/ชุดเนื้อหา 1/);
 assert.match(ui,/ชุดเนื้อหา 2/);
 assert.match(ui,/ชื่อร้านร่วมกัน/);
 assert.match(bossUi,/สลับชุด/);
+assert.match(bossUi,/URL เซลเพจที่บันทึกไว้/);
+assert.match(bossUi,/เปิดดูเซลเพจ/);
 console.log('PASS Vpage editor/two-set static contract');
