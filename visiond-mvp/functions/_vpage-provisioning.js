@@ -10,7 +10,7 @@ const editorCache=new Map();
 const editorGenerations=new Map();
 
 export class VpageRemoteError extends Error{
-  constructor(message,{status=502,code='VPAGE_REMOTE_FAILED',ambiguous=false}={}){super(message);this.status=status;this.code=code;this.ambiguous=ambiguous}
+  constructor(message,{status=502,code='VPAGE_REMOTE_FAILED',ambiguous=false,partial=null}={}){super(message);this.status=status;this.code=code;this.ambiguous=ambiguous;this.partial=partial}
 }
 
 export const validVpageSlug=value=>typeof value==='string'&&value.length>=3&&value.length<=50&&SLUG.test(value)&&!VPAGE_RESERVED_SLUGS.has(value);
@@ -35,7 +35,7 @@ async function request(env,path,{method='GET',ownerRef='system',body=null,idempo
   catch{throw new VpageRemoteError('ติดต่อบริการ Vpage ไม่สำเร็จ',{status:502,code:'VPAGE_REMOTE_UNCERTAIN',ambiguous:true})}
   finally{clearTimeout(timer)}
   const payload=await response.json().catch(()=>({}));
-  if(!response.ok)throw new VpageRemoteError(String(payload.error||'บริการ Vpage ปฏิเสธคำขอ'),{status:response.status,code:String(payload.code||'VPAGE_REMOTE_FAILED'),ambiguous:response.status>=500||response.status===408});
+  if(!response.ok){const code=String(payload.code||'VPAGE_REMOTE_FAILED');throw new VpageRemoteError(String(payload.error||'บริการ Vpage ปฏิเสธคำขอ'),{status:response.status,code,ambiguous:response.status>=500||response.status===408||code==='VPAGE_IDEMPOTENCY_IN_PROGRESS'})}
   return payload;
 }
 
@@ -48,6 +48,17 @@ export async function checkVpageAvailability(env,domainId,slug){
   const path=`/api/v1/domains/${encodeURIComponent(domainId)}/slugs/${encodeURIComponent(slug)}/availability`,inflight=request(env,path).then(value=>{availabilityCache.set(key,{value,expires:Date.now()+10000});return value}).catch(error=>{availabilityCache.delete(key);throw error});availabilityCache.set(key,{inflight});return inflight;
 }
 export async function createRemoteVpage(env,userId,key,payload){return request(env,'/api/v1/pages',{method:'POST',ownerRef:await vpageOwnerRef(userId),body:payload,idempotencyKey:key})}
+export async function renewRemoteVpage(env,{userId,pageId,key}){
+  const ownerRef=await vpageOwnerRef(userId),body={},renewed=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/renew`,{method:'POST',ownerRef,body,idempotencyKey:key});
+  if(renewed?.item?.status!=='suspended'){invalidateEditor(pageId);return renewed}
+  try{return await resumeRenewedVpage(env,{userId,pageId,key,expectedExpiry:renewed.item.expires_at})}
+  catch(error){const known=error instanceof VpageRemoteError;throw new VpageRemoteError('ต่ออายุแล้ว แต่ยังยืนยันการกลับมาเปิดใช้ไม่ได้',{status:known?error.status:502,code:known?error.code:'VPAGE_RENEWAL_RESUME_UNCERTAIN',ambiguous:true,partial:{item:renewed.item}})}
+}
+export async function resumeRenewedVpage(env,{userId,pageId,key,expectedExpiry}){
+  const ownerRef=await vpageOwnerRef(userId),body={},resumeKey=`renew-resume-${await sha256(key)}`,resumed=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/resume`,{method:'POST',ownerRef,body,idempotencyKey:resumeKey}),item=resumed?.item;
+  if(!item||item.id!==pageId||item.status!=='active'||!item.expires_at||new Date(item.expires_at).getTime()!==new Date(expectedExpiry).getTime())throw new VpageRemoteError('ผลเปิดใช้หลังต่ออายุไม่ถูกต้อง',{status:502,code:'VPAGE_RENEWAL_RESUME_RESPONSE_INVALID',ambiguous:true});
+  invalidateEditor(pageId);return resumed;
+}
 export function invalidateVpageAvailability(domainId,slug){availabilityCache.delete(`${domainId}:${slug}`)}
 const editorKey=(ownerRef,pageId)=>`${ownerRef}:${pageId}`;
 function invalidateEditor(pageId){editorGenerations.set(pageId,(editorGenerations.get(pageId)||0)+1);for(const key of editorCache.keys())if(key.endsWith(`:${pageId}`))editorCache.delete(key)}
@@ -55,6 +66,7 @@ export async function readRemoteVpageEditor(env,{userId,pageId,boss=false}){
   const ownerRef=boss?'system':await vpageOwnerRef(userId),key=editorKey(ownerRef,pageId),generation=editorGenerations.get(pageId)||0,cached=editorCache.get(key);if(cached?.generation===generation&&cached?.value&&cached.expires>Date.now())return cached.value;if(cached?.generation===generation&&cached?.inflight)return cached.inflight;
   let inflight;inflight=request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/editor`,{ownerRef}).then(value=>{if((editorGenerations.get(pageId)||0)===generation&&editorCache.get(key)?.inflight===inflight)editorCache.set(key,{generation,value,expires:Date.now()+5000});return value}).catch(error=>{if(editorCache.get(key)?.inflight===inflight)editorCache.delete(key);throw error});editorCache.set(key,{generation,inflight});return inflight;
 }
+export async function readRemoteVpageEditorFresh(env,{userId,pageId,boss=false}){invalidateEditor(pageId);return request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/editor`,{ownerRef:boss?'system':await vpageOwnerRef(userId)})}
 export async function saveRemoteVpageContent(env,{userId,pageId,setNo,key,payload,boss=false}){const value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/content-sets/${setNo}`,{method:'PUT',ownerRef:boss?'system':await vpageOwnerRef(userId),body:payload,idempotencyKey:key});invalidateEditor(pageId);return value}
 export async function switchRemoteVpageSet(env,{userId,pageId,setNo,key,boss=false}){const ownerRef=boss?'system':await vpageOwnerRef(userId),value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/active-set`,{method:'POST',ownerRef,body:{active_set:setNo,actor_ref:boss?await vpageActorRef(userId):ownerRef,actor_kind:boss?'boss':'owner'},idempotencyKey:key});invalidateEditor(pageId);return value}
 export function clearVpageCaches(){domainCache.value=null;domainCache.expires=0;domainCache.inflight=null;availabilityCache.clear();editorCache.clear();editorGenerations.clear()}

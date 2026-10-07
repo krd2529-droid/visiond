@@ -3,7 +3,7 @@ import {ensureDatabase} from '../../../_schema.js';
 import {createRemoteVpage,invalidateVpageAvailability,listVpageDomains,validVpageDisplayName,validVpageIdempotencyKey,validVpageSlug,VpageRemoteError} from '../../../_vpage-provisioning.js';
 
 const responseHeaders={'cache-control':'private, no-store'};
-const view=row=>({id:row.id,vpage_id:row.vpage_id,domain_id:row.domain_id,slug:row.slug,display_name:row.display_name,status:row.status,public_url:row.public_url,created_at:row.remote_created_at||row.created_at,expires_at:row.expires_at,last_error_code:row.last_error_code||null});
+const view=row=>({id:row.id,vpage_id:row.vpage_id,domain_id:row.domain_id,slug:row.slug,display_name:row.display_name,status:row.status,lifecycle_status:row.status==='active'&&row.expires_at&&new Date(row.expires_at)<=new Date()?'expired':row.status,public_url:row.public_url,created_at:row.remote_created_at||row.created_at,expires_at:row.expires_at,last_error_code:row.last_error_code||null,renewal_state:row.renewal_state||null,renewal_request_id:row.renewal_request_id||null});
 const pageParams=request=>{const url=new URL(request.url),rawLimit=url.searchParams.get('limit'),rawCursor=url.searchParams.get('cursor'),limit=Math.min(24,Math.max(1,Number.parseInt(rawLimit,10)||24));if(rawCursor!==null&&!/^[A-Za-z0-9_-]{8,80}$/.test(rawCursor))return {error:true};return{limit,cursor:rawCursor}};
 const existingPage=(env,userId,key)=>env.DB.prepare('SELECT * FROM vpage_pages WHERE user_id=? AND create_idempotency_key=?').bind(userId,key).first();
 
@@ -46,8 +46,8 @@ export async function reconcileVpageProvisioning(ctx,userId,local,{domain=null,s
 export async function onRequestGet(ctx){
   await ensureDatabase(ctx.env);const auth=await requireUser(ctx,{includeCourseOwner:false});if(auth.error)return auth.error;const page=pageParams(ctx.request);if(page.error)return json({error:'เคอร์เซอร์ไม่ถูกต้อง'},400,responseHeaders);
   const statement=page.cursor
-    ?ctx.env.DB.prepare('SELECT * FROM vpage_pages WHERE user_id=? AND id<? ORDER BY id DESC LIMIT ?').bind(auth.user.id,page.cursor,page.limit+1)
-    :ctx.env.DB.prepare('SELECT * FROM vpage_pages WHERE user_id=? ORDER BY id DESC LIMIT ?').bind(auth.user.id,page.limit+1);
+    ?ctx.env.DB.prepare("SELECT p.*,r.state renewal_state,r.id renewal_request_id FROM vpage_pages p LEFT JOIN vpage_renewal_requests r ON r.page_id=p.id AND r.user_id=p.user_id AND r.state IN ('held','remote_committed') WHERE p.user_id=? AND p.id<? ORDER BY p.id DESC LIMIT ?").bind(auth.user.id,page.cursor,page.limit+1)
+    :ctx.env.DB.prepare("SELECT p.*,r.state renewal_state,r.id renewal_request_id FROM vpage_pages p LEFT JOIN vpage_renewal_requests r ON r.page_id=p.id AND r.user_id=p.user_id AND r.state IN ('held','remote_committed') WHERE p.user_id=? ORDER BY p.id DESC LIMIT ?").bind(auth.user.id,page.limit+1);
   const result=await statement.all(),items=result.results||[],hasMore=items.length>page.limit;if(hasMore)items.pop();return json({items:items.map(view),pagination:{limit:page.limit,has_more:hasMore,next_cursor:hasMore&&items.length?items.at(-1).id:null}},200,responseHeaders);
 }
 
@@ -65,15 +65,15 @@ export async function onRequestPost(ctx){
   if(local?.status==='active')return json({item:view(local),replayed:true},200,responseHeaders);
   if(local?.status==='failed')return json({error:'คำขอเดิมสิ้นสุดแล้ว กรุณาส่งคำขอใหม่',code:local.last_error_code||'VPAGE_REQUEST_FAILED'},409,responseHeaders);
   if(!local){
-    const credit=await ctx.env.DB.prepare("SELECT c.id FROM vpage_credits c INDEXED BY idx_vpage_credits_owner_status WHERE c.user_id=? AND c.status='available' AND NOT EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state IN ('held','committed')) ORDER BY c.id LIMIT 1").bind(auth.user.id).first();
+    const credit=await ctx.env.DB.prepare("SELECT c.id FROM vpage_credits c INDEXED BY idx_vpage_credits_owner_status WHERE c.user_id=? AND c.status='available' AND NOT EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state IN ('held','committed')) AND NOT EXISTS(SELECT 1 FROM vpage_renewal_requests r WHERE r.credit_id=c.id AND r.state IN ('held','remote_committed')) ORDER BY c.id LIMIT 1").bind(auth.user.id).first();
     if(!credit)return json({error:'ไม่มีเครดิต Vpage ที่พร้อมใช้',code:'VPAGE_CREDIT_REQUIRED'},409,responseHeaders);
     const id=`vpl_${crypto.randomUUID().replaceAll('-','')}`,claimId=`vpc_${crypto.randomUUID().replaceAll('-','')}`,guard=`guard_${crypto.randomUUID().replaceAll('-','')}`;
     try{await ctx.env.DB.batch([
-      ctx.env.DB.prepare("INSERT INTO vpage_transition_guards(token) VALUES(CASE WHEN EXISTS(SELECT 1 FROM vpage_credits c WHERE c.id=? AND c.user_id=? AND c.status='available' AND NOT EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state IN ('held','committed'))) THEN ? ELSE NULL END)").bind(credit.id,auth.user.id,guard),
+      ctx.env.DB.prepare("INSERT INTO vpage_transition_guards(token) VALUES(CASE WHEN EXISTS(SELECT 1 FROM vpage_credits c WHERE c.id=? AND c.user_id=? AND c.status='available' AND NOT EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state IN ('held','committed')) AND NOT EXISTS(SELECT 1 FROM vpage_renewal_requests r WHERE r.credit_id=c.id AND r.state IN ('held','remote_committed'))) THEN ? ELSE NULL END)").bind(credit.id,auth.user.id,guard),
       ctx.env.DB.prepare("INSERT INTO vpage_pages(id,user_id,credit_id,domain_id,slug,display_name,status,create_idempotency_key,create_request_hash) VALUES(?,?,?,?,?,?,'provisioning',?,?)").bind(id,auth.user.id,credit.id,domainId,slug,displayName,key,requestHash),
       ctx.env.DB.prepare("INSERT INTO vpage_credit_claims(id,credit_id,page_id,state) VALUES(?,?,?,'held')").bind(claimId,credit.id,id),
       ctx.env.DB.prepare('DELETE FROM vpage_transition_guards WHERE token=?').bind(guard)
-    ])}catch(error){local=await existingPage(ctx.env,auth.user.id,key);if(!local){const slugTaken=await ctx.env.DB.prepare("SELECT id FROM vpage_pages WHERE domain_id=? AND slug=? AND status IN ('provisioning','repair_required','active','suspended') LIMIT 1").bind(domainId,slug).first();if(slugTaken)return json({error:'URL นี้ถูกใช้แล้ว',code:'VPAGE_SLUG_CONFLICT'},409,responseHeaders);const creditHeld=await ctx.env.DB.prepare("SELECT id FROM vpage_credit_claims WHERE credit_id=? AND state IN ('held','committed') LIMIT 1").bind(credit.id).first();if(creditHeld)return json({error:'เครดิตกำลังถูกใช้งาน',code:'VPAGE_PROVISIONING_CONFLICT'},409,responseHeaders);throw error}}
+    ])}catch(error){local=await existingPage(ctx.env,auth.user.id,key);if(!local){const slugTaken=await ctx.env.DB.prepare("SELECT id FROM vpage_pages WHERE domain_id=? AND slug=? AND status IN ('provisioning','repair_required','active','suspended') LIMIT 1").bind(domainId,slug).first();if(slugTaken)return json({error:'URL นี้ถูกใช้แล้ว',code:'VPAGE_SLUG_CONFLICT'},409,responseHeaders);const creditHeld=await ctx.env.DB.prepare("SELECT id FROM vpage_credit_claims WHERE credit_id=? AND state IN ('held','committed') UNION ALL SELECT id FROM vpage_renewal_requests WHERE credit_id=? AND state IN ('held','remote_committed') LIMIT 1").bind(credit.id,credit.id).first();if(creditHeld)return json({error:'เครดิตกำลังถูกใช้งาน',code:'VPAGE_PROVISIONING_CONFLICT'},409,responseHeaders);throw error}}
     local=local||await existingPage(ctx.env,auth.user.id,key);
     if(local?.status==='active')return json({item:view(local),replayed:true},200,responseHeaders);
     if(local?.status==='failed')return json({error:'คำขอเดิมสิ้นสุดแล้ว กรุณาส่งคำขอใหม่',code:local.last_error_code||'VPAGE_REQUEST_FAILED'},409,responseHeaders);
