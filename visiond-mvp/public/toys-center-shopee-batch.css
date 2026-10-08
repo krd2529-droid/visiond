@@ -1,0 +1,8 @@
+.shopee-result-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch;min-width:0}
+.shopee-result-wrap>.shopee-result{min-width:0}
+.shopee-result-wrap>.shopee-batch-add{align-self:stretch}
+.shopee-batch{margin-top:20px;padding:18px;border:1px solid var(--toy-line);border-radius:14px;background:#f8fffe}
+.shopee-batch h3{margin:0 0 4px}.shopee-batch p{margin:8px 0}.shopee-batch-list{display:grid;gap:8px;margin:14px 0}
+.shopee-batch-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,220px) auto;gap:10px;align-items:end;padding:12px;border:1px solid var(--toy-line);border-radius:12px;background:#fff}
+.shopee-batch-row strong,.shopee-batch-row small{display:block;overflow-wrap:anywhere}.shopee-batch-row small{color:#476b68}.shopee-batch-row label{display:grid;gap:5px;font-weight:800}
+@media(max-width:700px){.shopee-result-wrap,.shopee-batch-row{grid-template-columns:1fr}.shopee-result-wrap>.shopee-batch-add,.shopee-batch-row>.vds-btn{width:100%}}

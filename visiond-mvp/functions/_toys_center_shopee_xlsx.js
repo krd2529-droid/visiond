@@ -8,13 +8,13 @@ const ALLOWED_PARTS=new Set(['[Content_Types].xml','_rels/.rels','docProps/app.x
 const EXPECTED_HEADERS=['ps_category|0|0','ps_product_name|1|0','ps_product_description|1|0','ps_maximum_purchase_quantity|0|0','ps_maximum_purchase_quantity_start_date|0|0','ps_maximum_purchase_quantity_time_period|0|0','ps_maximum_purchase_quantity_end_date|0|0','ps_minimum_purchase_quantity|0|0','ps_sku_parent_short|0|0','et_title_variation_integration_no|0|0','et_title_variation_1|0|0','et_title_option_for_variation_1|0|0','et_title_image_per_variation|0|3','et_title_variation_2|0|0','et_title_option_for_variation_2|0|0','ps_price|1|1','ps_stock|0|1','ps_sku_short|0|0','ps_new_size_chart|0|1','et_title_size_chart|0|3','ps_gtin_code|0|0','ps_item_cover_image|0|3','ps_item_image_1|0|3','ps_item_image_2|0|3','ps_item_image_3|0|3','ps_item_image_4|0|3','ps_item_image_5|0|3','ps_item_image_6|0|3','ps_item_image_7|0|3','ps_item_image_8|0|3','ps_weight|0|1','ps_length|0|1','ps_width|0|1','ps_height|0|1','channel_id.7000|0|0','ps_product_pre_order_dts|0|1','et_title_reason|0|0'];
 
 const xmlText=value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,' ');
-const textCell=(column,value)=>`<c r="${column}7" t="inlineStr"><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
-const numberCell=(column,value)=>`<c r="${column}7"><v>${value}</v></c>`;
+const textCell=(column,row,value)=>`<c r="${column}${row}" t="inlineStr"><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
+const numberCell=(column,row,value)=>`<c r="${column}${row}"><v>${value}</v></c>`;
 
-function productRow(values){
+function productRow(values,row){
   const cells=[];
-  const text=(column,value)=>{if(value!==''&&value!==null&&value!==undefined)cells.push(textCell(column,value))};
-  const number=(column,value)=>{if(value!==null&&value!==undefined)cells.push(numberCell(column,value))};
+  const text=(column,value)=>{if(value!==''&&value!==null&&value!==undefined)cells.push(textCell(column,row,value))};
+  const number=(column,value)=>{if(value!==null&&value!==undefined)cells.push(numberCell(column,row,value))};
   number('A',values.categoryId);
   text('B',values.name);
   text('C',values.description);
@@ -29,7 +29,7 @@ function productRow(values){
   number('AG',values.widthCm);
   number('AH',values.heightCm);
   text('AI',values.standardDelivery);
-  return `<row r="7" spans="1:37">${cells.join('')}</row>`;
+  return `<row r="${row}" spans="1:37">${cells.join('')}</row>`;
 }
 
 function crc32(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}return(crc^0xffffffff)>>>0}
@@ -116,13 +116,15 @@ function replaceEntry(archive,directory,name,bytes,localOffset){
 }
 
 export async function makeShopeeWorkbook(source,values){
+  const rows=Array.isArray(values)?values:[values];
+  if(!rows.length||rows.length>24)throw new Error('เลือกสินค้า Shopee 1–24 รายการต่อไฟล์');
   const template=Uint8Array.from(source instanceof Uint8Array?source:new Uint8Array(source)),archive=locateEntries(template);
   await assertNoExternalRelationships(template,archive);
   await assertNoActiveFormulas(template,archive);
   let xml=decoder.decode(await inflateEntry(template,archive,TARGET));
   if(!xml.includes('</sheetData>')||!xml.includes('r="AK1"')||!xml.includes('r="D2"')||!xml.includes('r="AK6"')||/<row\b[^>]*\br="7"/.test(xml))throw new Error('เทมเพลต Shopee ไม่มีตำแหน่งแถว 7 ที่คาดไว้');
   await assertTemplate(template,archive,xml);
-  xml=normalizePane(xml).replace(/<dimension\s+ref="[^"]*"/, '<dimension ref="A1:AK7"').replace('</sheetData>',`${productRow(values)}</sheetData>`);
+  xml=normalizePane(xml).replace(/<dimension\s+ref="[^"]*"/, `<dimension ref="A1:AK${rows.length+6}"`).replace('</sheetData>',`${rows.map((value,index)=>productRow(value,index+7)).join('')}</sheetData>`);
   const replacements=new Map([[TARGET,encoder.encode(xml)]]);
   for(const name of archive.entries.keys())if(name!==TARGET&&/^xl\/worksheets\/sheet\d+\.xml$/.test(name)){
     const original=decoder.decode(await inflateEntry(template,archive,name)),normalized=normalizePane(original);

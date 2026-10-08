@@ -7,7 +7,7 @@ const MAX_REQUEST_BYTES=2300000;
 const text=value=>String(value??'').trim();
 const length=value=>Array.from(value).length;
 const validInteger=(value,min,max)=>Number.isSafeInteger(Number(value))&&Number(value)>=min&&Number(value)<=max;
-async function boundedFormData(request){
+export async function boundedFormData(request){
   if(!request.body)return null;
   const reader=request.body.getReader(),chunks=[];let length=0,oversized=false;
   try{for(;;){const {done,value}=await reader.read();if(done)break;if(oversized)continue;length+=value.length;if(length>MAX_REQUEST_BYTES){oversized=true;chunks.length=0}else chunks.push(value)}}finally{reader.releaseLock()}
