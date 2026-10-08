@@ -7,7 +7,7 @@
   <meta name="description" content="วางชื่อสินค้าและราคาบนภาพ ดูตัวอย่าง และดาวน์โหลดภาพความละเอียดต้นฉบับด้วย Vedit">
   <link rel="stylesheet" href="/style.css?v=02057">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
-  <link rel="stylesheet" href="/vedit.css?v=020174">
+  <link rel="stylesheet" href="/vedit.css?v=020175">
   <link rel="stylesheet" href="/mobile-storefront.css?v=014407">
   <link rel="stylesheet" href="/header-shell.css?v=014578">
   <link rel="stylesheet" href="/frontend-theme.css?v=014407">
@@ -44,6 +44,14 @@
           <input id="veditImage" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
           <small>รองรับ JPG, PNG, WebP ตั้งแต่ 320×320 พิกเซล ไม่เกิน 20 MB และ 40 ล้านพิกเซล</small>
         </label>
+        <label class="vedit-file-label">หรือ ZIP รูปสินค้าหนึ่งรายการ
+          <input id="veditArchive" name="archive" type="file" accept=".zip,application/zip,application/x-zip-compressed">
+          <small>สูงสุด 24 รูปต่อ ZIP · ใช้ชื่อและราคาเดียวกันทุกภาพ · ประมวลผลบนเครื่องนี้</small>
+        </label>
+        <label id="veditArchivePreviewLabel" hidden>ดูตัวอย่างภาพใน ZIP
+          <select id="veditArchivePreview" aria-describedby="veditArchiveSummary"></select>
+        </label>
+        <p id="veditArchiveSummary" class="vedit-archive-summary" hidden></p>
         <label>ชื่อสินค้า
           <textarea id="veditProductName" name="product_name" maxlength="160" rows="3" required>ชื่อสินค้า</textarea>
           <small><span data-count-for="veditProductName">10</span>/160 ตัวอักษร</small>
@@ -54,6 +62,7 @@
         </label>
         <p id="veditStatus" class="vedit-status" role="status">เลือกรูปสินค้าเพื่อเริ่มแต่งภาพ</p>
         <button id="veditDownload" class="vds-btn vds-btn--primary" type="button" disabled>ดาวน์โหลด PNG ขนาดต้นฉบับ</button>
+        <button id="veditCancel" class="vds-btn" type="button" hidden>ยกเลิกการสร้าง ZIP</button>
       </form>
       <section class="vedit-preview-panel" aria-labelledby="veditPreviewHeading">
         <div class="vedit-preview-heading"><h2 id="veditPreviewHeading">ตัวอย่างภาพ</h2><output id="veditResolution">ยังไม่มีรูป</output></div>
@@ -62,7 +71,7 @@
       </section>
     </section>
   </main>
-  <script src="/vedit.js?v=020174"></script>
+  <script src="/vedit.js?v=020175"></script>
   <script src="/shared-nav.js?v=020174"></script>
   <script src="/header-shell.js?v=014578" defer></script>
   <script src="/mobile-storefront.js?v=014407" defer></script>
