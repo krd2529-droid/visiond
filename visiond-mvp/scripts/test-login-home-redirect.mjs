@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source=fs.readFileSync(new URL('../public/member-auth.js',import.meta.url),'utf8').replace(/^import\([^\n]+\);\r?\n/,'');
+const loginHtml=fs.readFileSync(new URL('../public/login.html',import.meta.url),'utf8');
+assert.match(loginHtml,/src="\/member-auth\.js\?v=020175"/);
 
 async function submit(formId,saved,responseOk=true){
   const entries=saved===undefined?[]:[['vd_return_to',saved]];
