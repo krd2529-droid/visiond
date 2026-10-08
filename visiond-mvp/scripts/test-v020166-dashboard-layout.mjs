@@ -9,7 +9,7 @@ const require=createRequire(import.meta.url);let chromium;
 for(const candidate of [process.env.PLAYWRIGHT_PACKAGE,'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright','playwright'].filter(Boolean)){try{({chromium}=require(candidate));break}catch{}}
 assert.ok(chromium,'installed Chrome required');
 const publicRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public'),html=fs.readFileSync(path.join(publicRoot,'dashboard.html'),'utf8'),css=fs.readFileSync(path.join(publicRoot,'my-hub.css'),'utf8');
-assert.match(html,/href="\/my-hub\.css\?v=020166"/,'dashboard must request the repaired stylesheet with a new cache key');
+assert.match(html,/href="\/my-hub\.css\?v=020176"/,'dashboard must request the repaired stylesheet with a new cache key');
 assert.match(css,/\.dashboard-shell>\.member-sidebar\{grid-column:1;grid-row:1/,'sidebar must be pinned to the 260px desktop track');
 assert.match(css,/\.dashboard-shell>\.dashboard-content\{grid-column:2;grid-row:1/,'overview must be pinned to the flexible desktop track');
 assert.match(css,/@media\(max-width:850px\)[\s\S]*\.dashboard-content\{[^}]*width:100%/,'mobile content must own the full shell width');
