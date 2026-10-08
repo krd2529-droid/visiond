@@ -11,7 +11,7 @@ assert.match(sharedNav, /id="navRegister" class="signup-link" href="\/register\.
 assert.ok(storefrontPages.length >= 10);
 for (const name of storefrontPages) {
   const html = fs.readFileSync(new URL(`public/${name}`, root), 'utf8');
-  assert.match(html, /shared-nav\.js\?v=020173/, `${name} must load the current shared navigation`);
+  assert.match(html, /shared-nav\.js\?v=020174/, `${name} must load the current shared navigation`);
 }
 console.log(`PASS v0.20.57 login button on ${storefrontPages.length} storefront pages`);
 

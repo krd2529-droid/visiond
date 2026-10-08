@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Vedit | แต่งภาพสินค้าบนเครื่องของคุณ</title>
+  <meta name="description" content="วางชื่อสินค้าและราคาบนภาพ ดูตัวอย่าง และดาวน์โหลดภาพความละเอียดต้นฉบับด้วย Vedit">
+  <link rel="stylesheet" href="/style.css?v=02057">
+  <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
+  <link rel="stylesheet" href="/vedit.css?v=020174">
+  <link rel="stylesheet" href="/mobile-storefront.css?v=014407">
+  <link rel="stylesheet" href="/header-shell.css?v=014578">
+  <link rel="stylesheet" href="/frontend-theme.css?v=014407">
+</head>
+<body class="vd-frontend vedit-page">
+  <header class="topbar">
+    <a class="brand" href="/">VISIOND <small>ONLINE</small></a>
+    <nav>
+      <a class="nav-home-link" href="/">หน้าแรก</a>
+      <a href="/digital-products.html">สินค้าดิจิทัล</a>
+      <a class="nav-course-basket" href="/course-center">ศูนย์จัดการคอร์ส</a>
+      <a class="nav-vpage-link" href="/vpage">Vpage</a>
+      <a class="nav-vedit-link" href="/vedit" aria-current="page">Vedit</a>
+      <a href="/courses.html">ระบบ V-Learning</a>
+      <a href="/vtools">Vtools</a>
+      <a class="nav-guides-link" href="/guides.html">คู่มือการใช้งาน</a>
+      <a href="/blog.html">บทความ</a>
+      <a href="/about.html">เกี่ยวกับเรา</a>
+      <a id="navLogin" class="login-link" href="/login.html">เข้าสู่ระบบ</a>
+      <a id="navRegister" class="signup-link" href="/register.html">สมัครสมาชิก</a>
+      <a class="cart-nav" href="/cart.html"><span aria-hidden="true">🛒</span> รถเข็น <b data-cart-count>0</b></a>
+    </nav>
+  </header>
+  <main class="vedit-shell">
+    <section class="vedit-intro">
+      <p class="vedit-eyebrow">VISIOND VEDIT</p>
+      <h1>แต่งภาพสินค้า พร้อมดาวน์โหลดขนาดต้นฉบับ</h1>
+      <p>รูปและข้อความประมวลผลเฉพาะในเบราว์เซอร์ ไม่อัปโหลดไปยัง VisionD</p>
+    </section>
+    <section class="vedit-workspace" aria-labelledby="veditEditorHeading">
+      <form id="veditControls" class="vedit-controls" novalidate>
+        <h2 id="veditEditorHeading">ตั้งค่าภาพ</h2>
+        <label class="vedit-file-label">รูปสินค้า
+          <input id="veditImage" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+          <small>รองรับ JPG, PNG, WebP ตั้งแต่ 320×320 พิกเซล ไม่เกิน 20 MB และ 40 ล้านพิกเซล</small>
+        </label>
+        <label>ชื่อสินค้า
+          <textarea id="veditProductName" name="product_name" maxlength="160" rows="3" required>ชื่อสินค้า</textarea>
+          <small><span data-count-for="veditProductName">10</span>/160 ตัวอักษร</small>
+        </label>
+        <label>ราคา / ข้อความอื่น
+          <textarea id="veditPriceText" name="price_text" maxlength="120" rows="3" required>ราคา 199 บาท</textarea>
+          <small><span data-count-for="veditPriceText">12</span>/120 ตัวอักษร</small>
+        </label>
+        <p id="veditStatus" class="vedit-status" role="status">เลือกรูปสินค้าเพื่อเริ่มแต่งภาพ</p>
+        <button id="veditDownload" class="vds-btn vds-btn--primary" type="button" disabled>ดาวน์โหลด PNG ขนาดต้นฉบับ</button>
+      </form>
+      <section class="vedit-preview-panel" aria-labelledby="veditPreviewHeading">
+        <div class="vedit-preview-heading"><h2 id="veditPreviewHeading">ตัวอย่างภาพ</h2><output id="veditResolution">ยังไม่มีรูป</output></div>
+        <div id="veditEmpty" class="vedit-empty">เลือกรูป JPG, PNG หรือ WebP<br>ข้อความจะอัปเดตบนภาพทันที</div>
+        <canvas id="veditCanvas" aria-label="ตัวอย่างภาพสินค้าที่แต่งแล้ว" hidden></canvas>
+      </section>
+    </section>
+  </main>
+  <script src="/vedit.js?v=020174"></script>
+  <script src="/shared-nav.js?v=020174"></script>
+  <script src="/header-shell.js?v=014578" defer></script>
+  <script src="/mobile-storefront.js?v=014407" defer></script>
+  <script src="/visiond-design-system.js?v=014407" defer></script>
+</body>
+</html>

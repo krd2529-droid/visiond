@@ -16,23 +16,23 @@ const publicRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../p
 const shared=fs.readFileSync(path.join(publicRoot,'shared-nav.js'),'utf8');
 const home=fs.readFileSync(path.join(publicRoot,'index.html'),'utf8');
 const vpageHtml=fs.readFileSync(path.join(publicRoot,'vpage.html'),'utf8');
-const expectedConsumers=['about.html','blog.html','bots.html','contact.html','course-center.html','course-seller.html','course.html','courses.html','digital-products.html','guides.html','index.html','my-courses.html','privacy.html','terms.html','vpage.html'].sort();
+const expectedConsumers=['about.html','blog.html','bots.html','contact.html','course-center.html','course-seller.html','course.html','courses.html','digital-products.html','guides.html','index.html','my-courses.html','privacy.html','terms.html','vedit.html','vpage.html'].sort();
 const consumers=fs.readdirSync(publicRoot).filter(name=>name.endsWith('.html')&&fs.readFileSync(path.join(publicRoot,name),'utf8').includes('shared-nav.js?v=')).sort();
 
 assert.deepEqual(consumers,expectedConsumers,'focused contract enumerates every shared-nav consumer');
 for(const name of consumers){
   const html=fs.readFileSync(path.join(publicRoot,name),'utf8');
-  assert.equal((html.match(/shared-nav\.js\?v=020173/g)||[]).length,1,`${name} loads the updated shared navigation exactly once`);
-  assert.doesNotMatch(html,/shared-nav\.js\?v=02057/,`${name} is not pinned to the old cache key`);
+  assert.equal((html.match(/shared-nav\.js\?v=020174/g)||[]).length,1,`${name} loads the updated shared navigation exactly once`);
+  assert.doesNotMatch(html,/shared-nav\.js\?v=020(?:57|173)/,`${name} is not pinned to an old cache key`);
 }
 assert.equal((shared.match(/'\/vpage','Vpage'/g)||[]).length,1,'canonical shared navigation contains exactly one Vpage entry');
-assert.match(shared,/ศูนย์จัดการคอร์ส'\],\['nav-vpage-link','\/vpage','Vpage'\],\['','\/courses\.html'/,'canonical shared navigation places Vpage in the requested row');
-assert.match(home,/ศูนย์จัดการคอร์ส<\/a[\s\S]*?<a class="nav-vpage-link" href="\/vpage">Vpage<\/a>[\s\S]*?<a href="\/courses\.html">ระบบ V-Learning<\/a>/,'main first-paint navigation preserves order around Vpage');
+assert.match(shared,/ศูนย์จัดการคอร์ส'\],\['nav-vpage-link','\/vpage','Vpage'\],\['nav-vedit-link','\/vedit','Vedit'\],\['','\/courses\.html'/,'canonical shared navigation preserves the primary row around Vpage');
+assert.match(home,/ศูนย์จัดการคอร์ส<\/a[\s\S]*?<a class="nav-vpage-link" href="\/vpage">Vpage<\/a>[\s\S]*?<a class="nav-vedit-link" href="\/vedit">Vedit<\/a>[\s\S]*?<a href="\/courses\.html">ระบบ V-Learning<\/a>/,'main first-paint navigation preserves order around Vpage');
 assert.match(vpageHtml,/mobile-storefront\.css\?v=014407/,'Vpage loads the canonical mobile header styles');
 assert.match(vpageHtml,/header-shell\.css\?v=014578/,'Vpage loads the canonical desktop header styles');
 assert.match(vpageHtml,/vpage\.css\?v=020163[\s\S]*mobile-storefront\.css\?v=014407[\s\S]*header-shell\.css\?v=014578[\s\S]*frontend-theme\.css\?v=020159/,'Vpage preserves the current production asset key and proven public header stylesheet cascade');
-assert.match(vpageHtml,/vpage\.js\?v=020163[\s\S]*shared-nav\.js\?v=020173/,'Vpage preserves the current production runtime and then loads the canonical navigation');
-assert.match(vpageHtml,/shared-nav\.js\?v=020173/,'Vpage loads the canonical navigation runtime');
+assert.match(vpageHtml,/vpage\.js\?v=020163[\s\S]*shared-nav\.js\?v=020174/,'Vpage preserves the current production runtime and then loads the canonical navigation');
+assert.match(vpageHtml,/shared-nav\.js\?v=020174/,'Vpage loads the canonical navigation runtime');
 assert.match(vpageHtml,/header-shell\.js\?v=014578/,'Vpage loads the canonical header shell runtime');
 assert.match(vpageHtml,/mobile-storefront\.js\?v=014407/,'Vpage loads the canonical mobile drawer runtime');
 assert.equal((vpageHtml.match(/id="createVpageForm"/g)||[]).length,1,'Vpage form remains present exactly once');
@@ -121,10 +121,11 @@ try{
         assert.equal(await toggle.getAttribute('aria-label'),'เปิดเมนูหลัก');
         assert.equal(await page.locator('.topbar>nav').getAttribute('aria-hidden'),'true');
         await toggle.click();
+        await current.waitFor({state:'visible'});
         assert.equal(await toggle.getAttribute('aria-expanded'),'true');
         assert.equal(await toggle.getAttribute('aria-label'),'ปิดเมนูหลัก');
-        assert.equal(await current.isVisible(),true);
         await page.keyboard.press('Escape');
+        await page.waitForFunction(()=>document.querySelector('.mobile-nav-toggle')?.getAttribute('aria-expanded')==='false');
         assert.equal(await toggle.getAttribute('aria-expanded'),'false');
         assert.equal(await toggle.getAttribute('aria-label'),'เปิดเมนูหลัก');
       }else{
