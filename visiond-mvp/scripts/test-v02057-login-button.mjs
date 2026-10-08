@@ -11,7 +11,7 @@ assert.match(sharedNav, /id="navRegister" class="signup-link" href="\/register\.
 assert.ok(storefrontPages.length >= 10);
 for (const name of storefrontPages) {
   const html = fs.readFileSync(new URL(`public/${name}`, root), 'utf8');
-  assert.match(html, /shared-nav\.js\?v=02057/, `${name} must load the current shared navigation`);
+  assert.match(html, /shared-nav\.js\?v=020173/, `${name} must load the current shared navigation`);
 }
 console.log(`PASS v0.20.57 login button on ${storefrontPages.length} storefront pages`);
 
@@ -20,5 +20,5 @@ assert.ok(styles.includes(':is(.signup-link,.login-link)'));
 assert.ok(sharedNav.indexOf('id="navLogin"') < sharedNav.indexOf('id="navRegister"'), 'login precedes registration');
 for (const name of htmlFiles) {
   const html = fs.readFileSync(new URL(`public/${name}`, root), 'utf8');
-  for (const ref of html.matchAll(/(?:href|src)="\/style\.css\?v=([^" ]+)/g)) assert.equal(ref[1], '02057', name);
+  for (const ref of html.matchAll(/(?:href|src)="\/style\.css\?v=([^" ]+)/g)) assert.equal(ref[1], name === 'vpage.html' || name === 'vpage-admin.html' ? '020159' : '02057', name);
 }
