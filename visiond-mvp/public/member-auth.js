@@ -1,14 +1,14 @@
 import('/facebook-chat.js?v=02057');
 const authMessage=document.querySelector('#pageAuthMsg');
-const returnTo=()=>{
+const returnTo=(fallback='/dashboard.html')=>{
   const saved=String(sessionStorage.getItem('vd_return_to')||'').trim();
-  if(!/^\/(?!\/)/.test(saved)) return '/dashboard.html';
+  if(!/^\/(?!\/)/.test(saved)) return fallback;
   try{
     const target=new URL(saved,location.origin);
-    if(target.origin!==location.origin) return '/dashboard.html';
+    if(target.origin!==location.origin) return fallback;
     return `${target.pathname}${target.search}${target.hash}`;
   }catch{
-    return '/dashboard.html';
+    return fallback;
   }
 };
 
@@ -41,7 +41,7 @@ async function submitAuth(form,endpoint,loadingText){
     const data=await response.json().catch(()=>({}));
     if(!response.ok) throw new Error(data.error||`เซิร์ฟเวอร์เข้าสู่ระบบขัดข้อง (${response.status}) กรุณาลองใหม่`);
     window.visiondTrack?.(form.id==='registerPageForm'?'signup_complete':'login_success');
-    const destination=returnTo();
+    const destination=returnTo(form.id==='loginPageForm'?'/':'/dashboard.html');
     sessionStorage.removeItem('vd_return_to');
     location.href=destination;
   }catch(error){
