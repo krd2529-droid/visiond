@@ -1,9 +1,10 @@
 import {json,requireAdmin} from '../../../../_lib.js';
-import {galleryUrl} from '../../../../_toys_center.js';
+import {prepareShopeeImage} from '../../../../_toys_center_shopee_images.js';
 import {makeShopeeWorkbook} from '../../../../_toys_center_shopee_xlsx.js';
 
 const responseHeaders={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const MAX_REQUEST_BYTES=2300000;
+export const SHOPEE_CATEGORY_ID=101394;
 const text=value=>String(value??'').trim();
 const length=value=>Array.from(value).length;
 const validInteger=(value,min,max)=>Number.isSafeInteger(Number(value))&&Number(value)>=min&&Number(value)<=max;
@@ -16,10 +17,9 @@ export async function boundedFormData(request){
   return new Request(request.url,{method:'POST',headers:{'content-type':request.headers.get('content-type')||''},body:bytes}).formData();
 }
 
-export function validateShopeeRow(product,images,{categoryId,standardDelivery},origin){
+export function validateShopeeRow(product,images,{standardDelivery},origin){
   const errors=[];
-  const category=text(categoryId),delivery=text(standardDelivery),name=text(product.title),description=text(product.description),sku=text(product.meta_id),gtin=text(product.gtin);
-  if(!/^\d{1,15}$/.test(category)||!validInteger(category,1,Number.MAX_SAFE_INTEGER))errors.push('กรอกรหัสหมวดหมู่ Shopee เป็นตัวเลขจาก Seller Centre');
+  const delivery=text(standardDelivery),name=text(product.title),description=text(product.description),sku=text(product.meta_id),gtin=text(product.gtin);
   if(delivery!=='เปิด')errors.push('เปิด Standard Delivery ของร้านใน Seller Centre แล้วเลือก “เปิด” ที่นี่');
   if(product.status!=='published')errors.push('เผยแพร่สินค้าใน VisionD ก่อน เพื่อให้ Shopee ดึงลิงก์รูปได้');
   if(length(name)<20||length(name)>120)errors.push('ชื่อสินค้าต้องยาว 20–120 ตัวอักษรตามเทมเพลต Shopee');
@@ -38,7 +38,7 @@ export function validateShopeeRow(product,images,{categoryId,standardDelivery},o
     else if(!['image/jpeg','image/png'].includes(image.type)||!validInteger(image.size,1,2*1024*1024))errors.push(`รูป ${index+1} ต้องเป็น JPG/PNG ขนาดไม่เกิน 2 MB`);
   }
   if(!/^https:\/\//i.test(origin))errors.push('ลิงก์รูปต้องใช้ HTTPS ที่เข้าถึงได้จากภายนอก');
-  return{errors,row:{categoryId:Number(category),name,description,sku,price:Number(product.price_cents)/100,stock:Number(product.quantity),gtin,images:images.map(image=>image.url),weightKg:Number(product.shopee_weight_g)/1000,lengthCm:Number(product.shopee_package_length_mm)/10,widthCm:Number(product.shopee_package_width_mm)/10,heightCm:Number(product.shopee_package_height_mm)/10,standardDelivery:delivery}};
+  return{errors,row:{categoryId:SHOPEE_CATEGORY_ID,name,description,sku,price:Number(product.price_cents)/100,stock:Number(product.quantity),gtin,images:images.map(image=>image.url),weightKg:Number(product.shopee_weight_g)/1000,lengthCm:Number(product.shopee_package_length_mm)/10,widthCm:Number(product.shopee_package_width_mm)/10,heightCm:Number(product.shopee_package_height_mm)/10,standardDelivery:delivery}};
 }
 
 export async function onRequestPost(ctx){
@@ -56,11 +56,9 @@ export async function onRequestPost(ctx){
   const selected=gallery.find(item=>item.image_key===product.image_1_key),seen=new Set(),ordered=[];
   for(const item of selected?[selected,...gallery]:gallery){if(!item||seen.has(item.image_key)||ordered.length>=9)continue;seen.add(item.image_key);ordered.push(item)}
   const origin=new URL(ctx.request.url).origin;
-  const images=await Promise.all(ordered.map(async(item,index)=>{
-    let object=null;try{object=await ctx.env.FILES?.head(item.image_key)}catch{}
-    return{url:galleryUrl(origin,id,Number(item.position),item.id),cover:index===0&&item===selected,exists:Boolean(object),type:String(object?.httpMetadata?.contentType||'').toLowerCase(),size:Number(object?.size)};
-  }));
-  const {errors,row}=validateShopeeRow(product,images,{categoryId:form.get('category_id'),standardDelivery:form.get('standard_delivery')},origin);
+  let images;try{images=await Promise.all(ordered.map(async(item,index)=>({...await prepareShopeeImage(ctx,id,item,origin),cover:index===0&&item===selected})))}
+  catch(error){return json({error:error.message||'เตรียมรูป Shopee ไม่สำเร็จ'},503,responseHeaders)}
+  const {errors,row}=validateShopeeRow(product,images,{standardDelivery:form.get('standard_delivery')},origin);
   if(errors.length)return json({error:'ข้อมูลยังไม่พร้อมสำหรับ Excel Shopee',errors},422,responseHeaders);
   try{
     const workbook=await makeShopeeWorkbook(source,row);

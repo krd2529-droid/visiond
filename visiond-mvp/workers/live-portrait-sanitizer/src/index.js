@@ -6,6 +6,7 @@ const MAX_SOURCE_PIXELS = 24_000_000;
 const OUTPUT_EDGE = 1024;
 const VPAGE_MAX_SOURCE_PIXELS = 16_777_216;
 const VPAGE_OUTPUT_FORMAT = 'image/webp';
+const SHOPEE_MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
 const PRIVATE_HEADERS = Object.freeze({
   'cache-control': 'no-store, private',
   'content-security-policy': "default-src 'none'",
@@ -224,10 +225,59 @@ export async function sanitizeLivePortrait(request, env) {
   });
 }
 
+export async function sanitizeShopeeImage(request, env) {
+  const url = new URL(request.url);
+  if (url.origin !== 'https://portrait-sanitizer.internal' || url.pathname !== '/v1/shopee-reencode' || request.method !== 'POST')
+    throw new SanitizerError('SHOPEE_SANITIZER_NOT_FOUND', 404);
+  const type = String(request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (request.headers.get('x-visiond-sanitizer-protocol') !== '1' || !['image/jpeg', 'image/png', 'image/webp'].includes(type))
+    throw new SanitizerError('SHOPEE_SANITIZER_PROTOCOL_INVALID', 415);
+  if (!env?.IMAGES || typeof env.IMAGES.info !== 'function' || typeof env.IMAGES.input !== 'function')
+    throw new SanitizerError('SHOPEE_SANITIZER_IMAGES_UNAVAILABLE', 503);
+  const advertised = Number(request.headers.get('x-visiond-input-bytes') || 0);
+  if (!Number.isSafeInteger(advertised) || advertised < 1 || advertised > MAX_INPUT_BYTES)
+    throw new SanitizerError('SHOPEE_SANITIZER_INPUT_SIZE_INVALID', 413);
+  const input = await readBoundedStream(request.body, MAX_INPUT_BYTES, 'SHOPEE_SANITIZER_INPUT_TOO_LARGE');
+  if (input.byteLength !== advertised) throw new SanitizerError('SHOPEE_SANITIZER_INPUT_INVALID', 422);
+  let info;
+  try { info = await env.IMAGES.info(new Blob([input]).stream()); }
+  catch { throw new SanitizerError('SHOPEE_SANITIZER_INPUT_INVALID', 422); }
+  if (!validVpageImageInfo(info, type)) throw new SanitizerError('SHOPEE_SANITIZER_INPUT_INVALID', 422);
+  let output;
+  let outputInfo;
+  try {
+    for (const [edge, quality] of [[1600, 85], [1200, 78], [900, 70]]) {
+      const result = await env.IMAGES.input(new Blob([input]).stream())
+        .transform({ width: edge, height: edge, fit: 'scale-down', background: '#FFFFFF' })
+        .output({ format: 'image/jpeg', quality, anim: false });
+      const response = result.response();
+      if (!response?.ok || String(response.headers?.get?.('content-type') || '').split(';')[0].trim().toLowerCase() !== 'image/jpeg')
+        throw new SanitizerError('SHOPEE_SANITIZER_OUTPUT_INVALID', 503);
+      try { output = await readBoundedStream(response.body, MAX_OUTPUT_BYTES, 'SHOPEE_SANITIZER_OUTPUT_TOO_LARGE'); }
+      catch (error) { if (error instanceof SanitizerError && error.code === 'SHOPEE_SANITIZER_OUTPUT_TOO_LARGE') { output = null; continue; } throw error; }
+      if (output.byteLength <= SHOPEE_MAX_OUTPUT_BYTES) break;
+    }
+    if (!output || output.byteLength < 64 || output.byteLength > SHOPEE_MAX_OUTPUT_BYTES || output[0] !== 0xff || output[1] !== 0xd8 || output.at(-2) !== 0xff || output.at(-1) !== 0xd9)
+      throw new SanitizerError('SHOPEE_SANITIZER_OUTPUT_INVALID', 503);
+    outputInfo = await env.IMAGES.info(new Blob([output]).stream());
+    if (normalizedImageFormat(outputInfo?.format) !== 'image/jpeg' || !Number.isSafeInteger(Number(outputInfo?.width)) || !Number.isSafeInteger(Number(outputInfo?.height)) || Number(outputInfo.width) < 1 || Number(outputInfo.height) < 1)
+      throw new SanitizerError('SHOPEE_SANITIZER_OUTPUT_INVALID', 503);
+  } catch (error) {
+    if (error instanceof SanitizerError) throw error;
+    throw new SanitizerError('SHOPEE_SANITIZER_IMAGES_FAILED', 503);
+  } finally { input.fill(0); }
+  return new Response(output, {status: 200, headers: {
+    ...PRIVATE_HEADERS, 'content-type': 'image/jpeg', 'content-length': String(output.byteLength),
+    'x-visiond-sanitizer': 'cloudflare-images-v1', 'x-visiond-output-bytes': String(output.byteLength),
+    'x-visiond-output-sha256': await sha256Hex(output),
+  }});
+}
+
 export default {
   async fetch(request, env) {
     try {
       if (new URL(request.url).pathname === '/v1/vpage-reencode') return await sanitizeVpageImage(request, env);
+      if (new URL(request.url).pathname === '/v1/shopee-reencode') return await sanitizeShopeeImage(request, env);
       return await sanitizeLivePortrait(request, env);
     }
     catch (error) { return jsonError(error); }
