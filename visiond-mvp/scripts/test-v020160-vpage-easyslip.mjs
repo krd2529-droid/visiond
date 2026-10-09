@@ -7,6 +7,7 @@ import {onRequestPost as uploadSlip} from '../functions/api/orders/[id]/slip.js'
 const db=env.DB;
 await db.exec(await readFile(new URL('../migrations/0123_vpage_credit_purchase.sql',import.meta.url),'utf8'));
 await db.prepare("INSERT INTO settings(key,value) VALUES('vision3_auto_verify','1') ON CONFLICT(key) DO UPDATE SET value='1'").run();
+for(const [key,value] of Object.entries({vpage_bank_name:'Mock Bank',vpage_account_name:'Test Vpage',vpage_account_number:'012-345-6789'}))await db.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(key,value).run();
 for(let id=5;id<=10;id++){
   await db.prepare("INSERT INTO users(id,email,name,password_hash,role) VALUES(?,?,?,'test','customer')").bind(id,`vpage-slip-${id}@example.invalid`,`Vpage Slip ${id}`).run();
   await db.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+1 day'))").bind(`vpage-slip-${id}`,id).run();

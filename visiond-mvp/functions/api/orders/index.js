@@ -1,6 +1,6 @@
 import {ensureVxAccess,VX_PLANS} from '../../_vx_access.js';
 import { json, requireUser, statusLabel } from "../../_lib.js";
-import { loadPaymentSettings, publicPaymentSettings } from "../../_payment.js";
+import { loadPaymentSettings, loadVpagePaymentSettings, publicPaymentSettings } from "../../_payment.js";
 import { ensureDatabase } from "../../_schema.js";
 import { ensureVision7Schema } from "../../_vision7_schema.js";
 import { vision7LicenseEncryptionConfigured } from "../../_vision7_license_crypto.js";
@@ -84,6 +84,8 @@ export async function onRequestPost(ctx) {
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
   const vpageItems=orderedResults.filter(product=>product?.slug==='vpage-credit'||product?.product_kind==='vpage-credit');
   if(vpageItems.length&&(orderedResults.length!==1||vpageItems.length!==1||!isVpageCreditProduct(vpageItems[0])))return json({error:'Vpage Credit ต้องชำระแยกครั้งละ 1 เครดิต'},400);
+  const vpagePayment=vpageItems.length?await loadVpagePaymentSettings(ctx.env):null;
+  if(vpageItems.length&&!vpagePayment)return json({error:'ยังไม่ได้ตั้งค่าบัญชีรับโอน Vpage Credit กรุณาติดต่อผู้ดูแลระบบ',code:'VPAGE_PAYMENT_ACCOUNT_NOT_CONFIGURED'},503,{'cache-control':'private, no-store'});
   if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
   const vxItems=orderedResults.filter(p=>p.product_kind==='vx-access');
   if(vxItems.length && (orderedResults.length!==1||!VX_PLANS.some(p=>p.slug===vxItems[0].slug&&p.price===Number(vxItems[0].price))))return json({error:'สิทธิ์ VX ต้องชำระแยกครั้งละ 1 แพ็กเกจ กรุณาตรวจสอบตะกร้า'},400);
@@ -163,7 +165,7 @@ export async function onRequestPost(ctx) {
       Date.now().toString().slice(-10) +
       "-" +
       Math.floor(Math.random() * 90 + 10);
-  const seller=sellerItems[0],companyCourse=companyCourseItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=companyCourse?{active_account:'bank',bank_name:companyCourse.payment_bank_name,account_name:companyCourse.payment_account_name,account_number:companyCourse.payment_account_number,qr_url:''}:seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
+  const seller=sellerItems[0],companyCourse=companyCourseItems[0],partnerCourse=seller?.course_plan==='partner',paymentTarget=vpagePayment?{...vpagePayment,accepting_orders:payment.accepting_orders,payment_message:payment.payment_message}:companyCourse?{active_account:'bank',bank_name:companyCourse.payment_bank_name,account_name:companyCourse.payment_account_name,account_number:companyCourse.payment_account_number,qr_url:''}:seller&&!partnerCourse?{active_account:seller.payment_qr_url?'qr':'bank',bank_name:seller.payment_bank_name,account_name:seller.payment_account_name,account_number:seller.payment_account_number,qr_url:seller.payment_qr_url}:payment,revenue=courseRevenue(seller?.course_plan,total);
   const guardedProductIds=[...new Set(orderedResults.filter(p=>p.category!=='resale-rights'&&!p.vision7_plan_id&&p.product_kind!=='vx-access'&&!isVpageCreditProduct(p)).map(p=>Number(p.id)))],guardJson=JSON.stringify(guardedProductIds),vpageProductId=vpageItems.length?Number(vpageItems[0].id):0;
   const referralAttribution=await activeReferralAttribution(ctx.env,a.user.id);
   const statements=[ctx.env.DB.prepare(`INSERT INTO orders(order_no,user_id,total,payment_account_type,payment_bank_name,payment_account_number,payment_account_name,course_owner_user_id,seller_course_id,payment_qr_url,discount_kind,discount_amount,course_plan,teacher_revenue,visiond_revenue,course_api_fee,vx_referral_attribution_id)
@@ -193,7 +195,7 @@ export async function onRequestPost(ctx) {
       total,
       items: pricedResults.map(p=>({...p,price:p.sale_price})),
       promotion,
-      bank: seller||companyCourse?paymentTarget:publicPaymentSettings(payment),coursePlan:seller?.course_plan||null,revenue:seller?revenue:null,
+      bank: seller||companyCourse?paymentTarget:publicPaymentSettings(paymentTarget),coursePlan:seller?.course_plan||null,revenue:seller?revenue:null,
     },
     201,
   );

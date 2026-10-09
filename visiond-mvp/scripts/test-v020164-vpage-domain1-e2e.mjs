@@ -47,6 +47,7 @@ for(const user of [
   await env.DB.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES(?,?,datetime('now','+1 day'))").bind(user[4],user[0]).run();
 }
 await env.DB.prepare("INSERT INTO settings(key,value) VALUES('vision3_auto_verify','1') ON CONFLICT(key) DO UPDATE SET value='1'").run();
+for(const [key,value] of Object.entries({vpage_bank_name:'Mock Bank',vpage_account_name:'Test Vpage',vpage_account_number:'012-345-6789'}))await env.DB.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(key,value).run();
 env.EASYSLIP_API_KEY='synthetic-local-key-never-sent';
 env.FILES={...env.FILES,async put(){}};
 
