@@ -16,6 +16,21 @@ export class VpageRemoteError extends Error{
 export const validVpageSlug=value=>typeof value==='string'&&value.length>=3&&value.length<=50&&SLUG.test(value)&&!VPAGE_RESERVED_SLUGS.has(value);
 export const validVpageDisplayName=value=>typeof value==='string'&&value.trim().length>=1&&value.trim().length<=120;
 export const validVpageIdempotencyKey=value=>ID.test(String(value||''));
+const normalizedHttpsUrl=(value,{hosts=null,required=true,max=2048}={})=>{if(!value)return required?null:'';if(typeof value!=='string'||value.length>max||value!==value.trim())return null;try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password||url.href!==value||url.href.length>max)return null;const host=url.hostname.toLowerCase();if(hosts&&!hosts.some(item=>host===item||host.endsWith(`.${item}`)))return null;return url.href}catch{return null}};
+const normalizedYoutube=value=>{if(!value)return'';if(typeof value!=='string'||value!==value.trim())return null;try{const url=new URL(value),id=url.hostname==='www.youtube.com'&&url.pathname==='/watch'?url.searchParams.get('v')||'':'';if(!/^[A-Za-z0-9_-]{6,20}$/.test(id))return null;const canonical=`https://www.youtube.com/watch?v=${id}`;return !url.username&&!url.password&&url.href===canonical&&value===canonical?canonical:null}catch{return null}};
+export function normalizeVpageContentSet(body,setNo){
+  if(!body||Number(body.set_no)!==setNo)return null;
+  const productImage=normalizedHttpsUrl(body.product_image_url),backgroundImage=normalizedHttpsUrl(body.background_image_url),youtubeUrl=normalizedYoutube(body.youtube_url),detail=typeof body.detail_text==='string'?body.detail_text.trim():'',textSize=String(body.text_size||''),textStyle=String(body.text_style||''),rawProducts=Array.isArray(body.product_items)?body.product_items:null,rawContacts=Array.isArray(body.contact_items)?body.contact_items:null;
+  if(!rawProducts||rawProducts.length<1||rawProducts.length>3||!rawContacts||rawContacts.length<1||rawContacts.length>3)return null;
+  const productItems=rawProducts.map(item=>({destination_url:normalizedHttpsUrl(item?.destination_url),image_url:normalizedHttpsUrl(item?.image_url,{required:false})}));
+  const contactItems=rawContacts.map(item=>{const contactType=String(item?.contact_type||''),hosts=contactType==='facebook'?['facebook.com','m.me']:contactType==='line'?['line.me']:[];return{contact_type:contactType,destination_url:hosts.length?normalizedHttpsUrl(item?.destination_url,{hosts}):null,image_url:normalizedHttpsUrl(item?.image_url,{required:false})}});
+  if(!productImage||!backgroundImage||youtubeUrl===null||detail.length<1||detail.length>4000||!['small','medium','large'].includes(textSize)||!['normal','strong','emphasis'].includes(textStyle)||productItems.some(item=>!item.destination_url||item.image_url===null)||contactItems.some(item=>!['facebook','line'].includes(item.contact_type)||!item.destination_url||item.image_url===null))return null;
+  return{set_no:setNo,product_image_url:productImage,detail_text:detail,text_size:textSize,text_style:textStyle,youtube_url:youtubeUrl,product_url:productItems[0].destination_url,contact_url:contactItems[0].destination_url,background_image_url:backgroundImage,product_items:productItems.map((item,index)=>({position:index+1,...item})),contact_items:contactItems.map((item,index)=>({position:index+1,...item}))};
+}
+export function normalizeVpageCreateContent(body){
+  const activeSet=Number(body?.active_set),sets=Array.isArray(body?.content_sets)&&body.content_sets.length===2?[normalizeVpageContentSet(body.content_sets[0],1),normalizeVpageContentSet(body.content_sets[1],2)]:null;
+  return [1,2].includes(activeSet)&&sets?.every(Boolean)?{active_set:activeSet,content_sets:sets}:null;
+}
 export const vpageOwnerRef=userId=>sha256(`visiond-vpage-owner-v1:${Number(userId)}`);
 export const vpageActorRef=userId=>sha256(`visiond-vpage-actor-v1:${Number(userId)}`);
 const hex=buffer=>[...new Uint8Array(buffer)].map(byte=>byte.toString(16).padStart(2,'0')).join('');

@@ -18,14 +18,15 @@ const contentView=(row,productItems=[],contactItems=[])=>({set_no:Number(row.set
 const pageSql=`SELECT p.id,p.domain_id,p.owner_ref,p.slug,p.display_name,p.status,p.active_set,p.public_generation,p.create_request_hash,p.created_at,p.expires_at,p.updated_at,d.hostname FROM vpage_pages p JOIN vpage_domains d ON d.id=p.domain_id`;
 const httpsUrl=(value,{hosts=null,required=true,max=2048}={})=>{if(!value)return required?null:'';if(typeof value!=='string'||value.length>max)return null;try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password||url.href.length>max)return null;const host=url.hostname.toLowerCase();if(hosts&&!hosts.some(item=>host===item||host.endsWith(`.${item}`)))return null;return url.href}catch{return null}};
 const youtubeId=value=>{if(!value)return'';try{const url=new URL(value),host=url.hostname.toLowerCase();let id='';if(host==='youtu.be')id=url.pathname.slice(1);else if(host==='youtube.com'||host.endsWith('.youtube.com'))id=url.pathname==='/watch'?url.searchParams.get('v')||'':url.pathname.startsWith('/shorts/')?url.pathname.split('/')[2]||'':url.pathname.startsWith('/embed/')?url.pathname.split('/')[2]||'':'';return /^[A-Za-z0-9_-]{6,20}$/.test(id)?id:''}catch{return''}};
+const canonicalYoutube=value=>{if(!value)return'';if(typeof value!=='string'||value!==value.trim())return null;try{const url=new URL(value),id=url.hostname==='www.youtube.com'&&url.pathname==='/watch'?url.searchParams.get('v')||'':'';if(!/^[A-Za-z0-9_-]{6,20}$/.test(id))return null;const canonical=`https://www.youtube.com/watch?v=${id}`;return !url.username&&!url.password&&url.href===canonical&&value===canonical?canonical:null}catch{return null}};
 const youtubeEmbed=value=>{const id=youtubeId(value);return id?`https://www.youtube-nocookie.com/embed/${id}`:''};
 const publicFences=new Map();
 const publicCacheDelete=async page=>{const key=`https://${page.hostname}/${page.slug}`;publicFences.set(key,(publicFences.get(key)||0)+1);if(globalThis.caches?.default)await globalThis.caches.default.delete(new Request(key)).catch(()=>{})};
 const actorValid=(value,kind)=>/^[a-f0-9]{64}$/.test(String(value||''))&&['owner','boss'].includes(kind);
 const completeSetWhere="c.page_id=? AND c.set_no=? AND c.revision>0 AND length(trim(c.product_image_url))>0 AND length(trim(c.detail_text))>0 AND length(trim(c.background_image_url))>0 AND (SELECT COUNT(*) FROM vpage_product_items pi WHERE pi.page_id=c.page_id AND pi.set_no=c.set_no) BETWEEN 1 AND 3 AND (SELECT COUNT(*) FROM vpage_contact_items ci WHERE ci.page_id=c.page_id AND ci.set_no=c.set_no) BETWEEN 1 AND 3";
 
-function normalizeContent(body){
-  const productImage=httpsUrl(body.product_image_url),backgroundImage=httpsUrl(body.background_image_url),rawYoutube=typeof body.youtube_url==='string'?body.youtube_url.trim():'',youtubeVideoId=youtubeId(rawYoutube),youtubeUrl=rawYoutube?(youtubeVideoId?`https://www.youtube.com/watch?v=${youtubeVideoId}`:null):'';
+function normalizeContent(body,{canonicalYoutubeOnly=false}={}){
+  const productImage=httpsUrl(body.product_image_url),backgroundImage=httpsUrl(body.background_image_url),rawYoutube=typeof body.youtube_url==='string'?body.youtube_url.trim():'',youtubeVideoId=youtubeId(rawYoutube),youtubeUrl=canonicalYoutubeOnly?canonicalYoutube(body.youtube_url):rawYoutube?(youtubeVideoId?`https://www.youtube.com/watch?v=${youtubeVideoId}`:null):'';
   const detail=typeof body.detail_text==='string'?body.detail_text.trim():'',textSize=String(body.text_size||''),textStyle=String(body.text_style||'');
   const rawProducts=Array.isArray(body.product_items)?body.product_items:null,rawContacts=Array.isArray(body.contact_items)?body.contact_items:null;
   if(!rawProducts||rawProducts.length<1||rawProducts.length>3||!rawContacts||rawContacts.length<1||rawContacts.length>3)return null;
@@ -80,27 +81,30 @@ async function availability(path,env){
 async function createPage(request,env,ownerRef,rawBody){
   if(!OWNER.test(ownerRef))return json({error:'owner required',code:'VPAGE_OWNER_REQUIRED'},400);
   const key=String(request.headers.get('idempotency-key')||'').trim();if(!IDEMPOTENCY.test(key))return json({error:'idempotency key required',code:'VPAGE_IDEMPOTENCY_REQUIRED'},400);
-  const body=await parseBody(rawBody),displayName=typeof body.display_name==='string'?body.display_name.trim():'',domainId=String(body.domain_id||''),slug=String(body.slug||'');
-  if(displayName.length<1||displayName.length>120||!validSlug(slug)||domainId.length>64)return json({error:'invalid page details',code:'VPAGE_INPUT_INVALID'},400);
-  const requestHash=await sha256(JSON.stringify({display_name:displayName,domain_id:domainId,slug,owner_ref:ownerRef}));
+  const body=await parseBody(rawBody),displayName=typeof body.display_name==='string'?body.display_name.trim():'',domainId=String(body.domain_id||''),slug=String(body.slug||''),activeSet=Number(body.active_set),rawSets=Array.isArray(body.content_sets)?body.content_sets:null,contentSets=rawSets?.length===2&&rawSets.every((item,index)=>Number(item?.set_no)===index+1)?rawSets.map((item,index)=>{const content=normalizeContent(item,{canonicalYoutubeOnly:true});return content?{set_no:index+1,...content}:null}):null;
+  if(displayName.length<1||displayName.length>120||!validSlug(slug)||domainId.length>64||![1,2].includes(activeSet)||!contentSets?.every(Boolean))return json({error:'invalid page details or content',code:'VPAGE_INPUT_INVALID'},400);
+  const contentDigest=await sha256(JSON.stringify({active_set:activeSet,content_sets:contentSets})),requestHash=await sha256(JSON.stringify({display_name:displayName,domain_id:domainId,slug,owner_ref:ownerRef,active_set:activeSet,content_sets:contentSets}));
   const existing=await env.VPAGE_DB.prepare(`${pageSql} WHERE p.create_idempotency_key=?`).bind(key).first();
-  if(existing){if(existing.create_request_hash!==requestHash)return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);return json({item:pageView(existing),replayed:true},200)}
+  if(existing){if(existing.create_request_hash!==requestHash)return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);return json({item:pageView(existing),content_digest:contentDigest,replayed:true},200)}
   const domain=await env.VPAGE_DB.prepare('SELECT id,hostname FROM vpage_domains WHERE id=? AND enabled=1').bind(domainId).first();if(!domain)return json({error:'domain unavailable',code:'VPAGE_DOMAIN_UNAVAILABLE'},404);
   const id=`vp_${crypto.randomUUID().replaceAll('-','')}`,createdAt=new Date().toISOString(),expiresAt=new Date(Date.now()+30*86400000).toISOString();
   try{await env.VPAGE_DB.batch([
-    env.VPAGE_DB.prepare("INSERT INTO vpage_pages(id,domain_id,owner_ref,slug,display_name,status,create_idempotency_key,create_request_hash,created_at,expires_at,updated_at) VALUES(?,?,?,?,?,'active',?,?,?,?,?)").bind(id,domainId,ownerRef,slug,displayName,key,requestHash,createdAt,expiresAt,createdAt),
-    env.VPAGE_DB.prepare('INSERT INTO vpage_content_sets(page_id,set_no) VALUES(?,1)').bind(id),
-    env.VPAGE_DB.prepare('INSERT INTO vpage_content_sets(page_id,set_no) VALUES(?,2)').bind(id)
+    env.VPAGE_DB.prepare("INSERT INTO vpage_pages(id,domain_id,owner_ref,slug,display_name,status,active_set,create_idempotency_key,create_request_hash,created_at,expires_at,updated_at) VALUES(?,?,?,?,?,'active',?,?,?,?,?,?)").bind(id,domainId,ownerRef,slug,displayName,activeSet,key,requestHash,createdAt,expiresAt,createdAt),
+    ...contentSets.flatMap(content=>[
+      env.VPAGE_DB.prepare('INSERT INTO vpage_content_sets(page_id,set_no,product_image_url,detail_text,text_size,text_style,youtube_url,product_url,contact_url,background_image_url,revision,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,1,?)').bind(id,content.set_no,content.product_image_url,content.detail_text,content.text_size,content.text_style,content.youtube_url,content.product_url,content.contact_url,content.background_image_url,createdAt),
+      ...content.product_items.map(item=>env.VPAGE_DB.prepare('INSERT INTO vpage_product_items(page_id,set_no,position,destination_url,image_url) VALUES(?,?,?,?,?)').bind(id,content.set_no,item.position,item.destination_url,item.image_url)),
+      ...content.contact_items.map(item=>env.VPAGE_DB.prepare('INSERT INTO vpage_contact_items(page_id,set_no,position,contact_type,destination_url,image_url) VALUES(?,?,?,?,?,?)').bind(id,content.set_no,item.position,item.contact_type,item.destination_url,item.image_url))
+    ])
   ])}
   catch(error){
     const raced=await env.VPAGE_DB.prepare(`${pageSql} WHERE p.create_idempotency_key=?`).bind(key).first();
-    if(raced&&raced.create_request_hash===requestHash)return json({item:pageView(raced),replayed:true},200);
+    if(raced&&raced.create_request_hash===requestHash)return json({item:pageView(raced),content_digest:contentDigest,replayed:true},200);
     if(raced)return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);
     const slugTaken=await env.VPAGE_DB.prepare('SELECT id FROM vpage_pages WHERE domain_id=? AND slug=? LIMIT 1').bind(domainId,slug).first();
     if(slugTaken)return json({error:'slug unavailable',code:'VPAGE_SLUG_CONFLICT'},409);
     throw error;
   }
-  return json({item:{id,domain_id:domainId,slug,display_name:displayName,status:'active',public_url:`https://${domain.hostname}/${slug}`,created_at:createdAt,expires_at:expiresAt,updated_at:createdAt},replayed:false},201);
+  return json({item:{id,domain_id:domainId,slug,display_name:displayName,status:'active',active_set:activeSet,public_url:`https://${domain.hostname}/${slug}`,created_at:createdAt,expires_at:expiresAt,updated_at:createdAt},content_digest:contentDigest,replayed:false},201);
 }
 
 async function readPage(path,env,ownerRef){

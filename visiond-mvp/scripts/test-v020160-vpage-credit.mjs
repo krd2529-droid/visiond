@@ -34,6 +34,7 @@ sqlite.exec(readFileSync(new URL('../migrations/0125_vpage_editor.sql',import.me
 sqlite.exec(readFileSync(new URL('../migrations/0126_vpage_renewal.sql',import.meta.url),'utf8'));
 sqlite.exec(readFileSync(new URL('../migrations/0127_vpage_media.sql',import.meta.url),'utf8'));
 sqlite.exec(readFileSync(new URL('../migrations/0128_vpage_admin_credit_grants.sql',import.meta.url),'utf8'));
+sqlite.exec(readFileSync(new URL('../migrations/0129_vpage_create_content.sql',import.meta.url),'utf8'));
 sqlite.prepare("UPDATE products SET price=1 WHERE slug='vpage-credit'").run();
 
 const DB={

@@ -18,6 +18,9 @@ await env.DB.prepare("INSERT INTO vpage_media_save_ops(id,owner_id,page_id,vpage
 await env.DB.prepare("INSERT INTO vpage_media_pending_refs(op_id,media_id,slot_key) VALUES('vps_99999999999999999999999999999999','vpm_99999999999999999999999999999999','hero')").run();
 await env.DB.prepare("INSERT INTO vpage_media_refs(page_id,owner_id,set_no,slot_key,media_id) VALUES('vpl_99999999999999999999999999999999',990,1,'hero','vpm_99999999999999999999999999999999')").run();
 await env.DB.exec(await readFile(new URL('../migrations/0128_vpage_admin_credit_grants.sql',import.meta.url),'utf8'));
+await env.DB.exec(await readFile(new URL('../migrations/0129_vpage_create_content.sql',import.meta.url),'utf8'));
+assert.equal((await env.DB.prepare("SELECT create_content_json,create_active_set FROM vpage_pages WHERE id='vpl_99999999999999999999999999999999'").first()).create_content_json,'','populated upgrade preserves existing page with an explicitly empty legacy create snapshot');
+assert.equal((await env.DB.prepare("SELECT create_active_set FROM vpage_pages WHERE id='vpl_99999999999999999999999999999999'").first()).create_active_set,1,'populated upgrade defaults an existing page to content set 1');
 assert.equal((await env.DB.prepare('SELECT COUNT(*) count FROM vpage_credits WHERE id=990 AND order_id=990').first()).count,1,'populated upgrade preserves purchase credit');
 assert.equal((await env.DB.prepare('SELECT COUNT(*) count FROM vpage_credit_claims WHERE credit_id=990').first()).count,1,'populated upgrade preserves claim FK');
 assert.equal((await env.DB.prepare('SELECT COUNT(*) count FROM vpage_renewal_requests WHERE credit_id=990').first()).count,1,'populated upgrade preserves renewal FK');

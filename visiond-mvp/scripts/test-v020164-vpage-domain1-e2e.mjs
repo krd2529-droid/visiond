@@ -34,7 +34,7 @@ const d1=sqlite=>({
   }
 });
 
-for(const migration of ['0123_vpage_credit_purchase.sql','0124_vpage_provisioning.sql','0125_vpage_editor.sql','0126_vpage_renewal.sql','0127_vpage_media.sql','0128_vpage_admin_credit_grants.sql']){
+for(const migration of ['0123_vpage_credit_purchase.sql','0124_vpage_provisioning.sql','0125_vpage_editor.sql','0126_vpage_renewal.sql','0127_vpage_media.sql','0128_vpage_admin_credit_grants.sql','0129_vpage_create_content.sql']){
   await env.DB.exec(await readFile(new URL(`../migrations/${migration}`,import.meta.url),'utf8'));
 }
 for(const user of [
@@ -159,7 +159,7 @@ try{
   const available=await readJson(await availability(context('/api/vpage/availability?domain_id=dom_smartlinkpage&slug=domain-one-shop')));
   assert.equal(available.status,200);
   assert.equal(available.data.available,true);
-  const createBody={domain_id:'dom_smartlinkpage',slug:'domain-one-shop',display_name:'ร้าน Domain One'};
+  const createBody={domain_id:'dom_smartlinkpage',slug:'domain-one-shop',display_name:'ร้าน Domain One',active_set:1,content_sets:[{set_no:1,...content('initial-one')},{set_no:2,...content('initial-two')}]};
   const created=await readJson(await createPage(context('/api/vpage/pages',{method:'POST',body:createBody,key:'domain-one-create-0000000000000001'})));
   assert.equal(created.status,201,JSON.stringify(created.data));
   assert.equal(created.data.item.public_url,'https://smartlinkpage.com/domain-one-shop');
@@ -170,6 +170,7 @@ try{
   assert.equal(ledger.data.items[0].status,'consumed');
   assert.equal(await count('SELECT COUNT(*) count FROM vpage_pages WHERE user_id=20'),1);
   assert.equal(serviceSqlite.prepare("SELECT COUNT(*) count FROM vpage_pages WHERE slug='domain-one-shop'").get().count,1);
+  const initialPublic=await vpageService.fetch(new Request('https://smartlinkpage.com/domain-one-shop'),serviceEnv),initialPublicHtml=await initialPublic.text();assert.equal(initialPublic.status,200);assert.match(initialPublicHtml,/รายละเอียด initial-one/);assert.doesNotMatch(initialPublicHtml,/รายละเอียด initial-two/,'atomic create publishes only the selected complete set');
 
   const createReplay=await readJson(await createPage(context('/api/vpage/pages',{method:'POST',body:createBody,key:'domain-one-create-0000000000000001'})));
   assert.equal(createReplay.status,200);
@@ -187,8 +188,8 @@ try{
   assert.equal(initialEditor.status,200);
   assert.equal(initialEditor.data.item.display_name,'ร้าน Domain One');
   assert.equal(initialEditor.data.item.content_sets.length,2);
-  const setOne=content('set-one',{youtube:'https://www.youtube.com/watch?v=abcdefghijk',itemImages:true});
-  const setTwo=content('set-two');
+  const setOne={...content('set-one',{youtube:'https://www.youtube.com/watch?v=abcdefghijk',itemImages:true}),expected_revision:1};
+  const setTwo={...content('set-two'),expected_revision:1};
   const savedOne=await readJson(await ownerSave(context(`/api/vpage/pages/${localId}/content-sets/1`,{method:'PUT',body:setOne,key:'domain-one-save-set-one-000001',params:{id:localId,set:'1'}})));
   const savedTwo=await readJson(await ownerSave(context(`/api/vpage/pages/${localId}/content-sets/2`,{method:'PUT',body:setTwo,key:'domain-one-save-set-two-000002',params:{id:localId,set:'2'}})));
   assert.deepEqual([savedOne.status,savedTwo.status],[200,200]);

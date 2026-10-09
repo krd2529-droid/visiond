@@ -7,6 +7,7 @@ const required=[
   '../services/vpage/migrations/0001_vpage_service.sql',
   '../services/vpage/wrangler.toml.example',
   '../migrations/0124_vpage_provisioning.sql',
+  '../migrations/0129_vpage_create_content.sql',
   '../functions/api/vpage/domains.js',
   '../functions/api/vpage/availability.js',
   '../functions/api/vpage/pages/index.js',
@@ -21,6 +22,10 @@ assert.match(sources,/VPAGE_SHARED_SECRET/);
 assert.match(sources,/idempotency/i);
 assert.match(sources,/nonce/i);
 assert.match(sources,/repair_required/);
+assert.match(sources,/create_content_json/);
+assert.match(sources,/create_active_set/);
+assert.match(sources,/normalizeVpageCreateContent/);
+assert.match(sources,/content_digest/);
 assert.match(sources,/local\.create_idempotency_key/);
 assert.match(sources,/WHERE id=\? AND user_id=\?/);
 assert.match(sources,/VPAGE_REPAIR_BODY_FORBIDDEN/);
@@ -32,5 +37,8 @@ assert.match(ui,/สร้างเซลเพจ/);
 assert.match(ui,/https:\/\/smartlinkpage\.com\//);
 assert.match(ui,/maxlength="50"/);
 assert.match(ui,/ตรวจสอบและดำเนินการต่อ/);
+assert.match(ui,/data-create-content-set/);
+assert.match(ui,/vpageCreateActiveSet/);
+assert.match(ui,/หลังสร้างแล้ว/);
 assert.match(ui,/\/repair`,\{method:'POST'\}/);
 console.log('PASS Vpage provisioning service and VisionD contract');
