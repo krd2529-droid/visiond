@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {applyMigration} from './apply-vpage-styling-migration.mjs';
+import {applyMigration,parseD1Output} from './apply-vpage-styling-migration.mjs';
 
 const initial=[{name:'page_id'},{name:'background_image_url'}];
 const migrated=[...initial,{name:'background_color'},{name:'text_font'},{name:'text_color'}];
@@ -12,4 +12,7 @@ const absent=fake(initial);applyMigration(absent.run);assert.deepEqual(absent.co
 const present=fake(migrated);applyMigration(present.run);assert.deepEqual(present.counts(),{files:0,reads:2});
 const partial=fake([...initial,{name:'background_color'}]);assert.throws(()=>applyMigration(partial.run),/Partial Vpage styling schema/);assert.deepEqual(partial.counts(),{files:0,reads:1});
 const failed=fake(initial,{apply:false});assert.throws(()=>applyMigration(failed.run),/verification failed/);assert.deepEqual(failed.counts(),{files:1,reads:2});
+assert.deepEqual(parseD1Output('Executed 3 commands in 12ms',false),[]);
+assert.deepEqual(parseD1Output(JSON.stringify([{success:true,results:initial}]),true),initial);
+assert.throws(()=>parseD1Output('not JSON',true),/valid JSON/);
 console.log('PASS Vpage styling migration absent/present/partial/verification');

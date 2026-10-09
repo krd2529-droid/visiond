@@ -9,8 +9,13 @@ const expected=new Set(['background_color','text_font','text_color']);
 function execute(args){
   const run=spawnSync(process.execPath,[wrangler,'d1','execute','vpage-db','--remote','--config',config,'--json',...args],{encoding:'utf8',maxBuffer:1024*1024});
   if(run.status!==0)throw new Error(`Vpage D1 command failed (${run.status}): ${run.stderr.trim()}`);
+  return parseD1Output(run.stdout,args[0]!=='--file');
+}
+
+export function parseD1Output(stdout,expectJson){
+  if(!expectJson)return [];
   let result;
-  try{result=JSON.parse(run.stdout)}catch{throw new Error('Vpage D1 did not return valid JSON')}
+  try{result=JSON.parse(stdout)}catch{throw new Error('Vpage D1 did not return valid JSON')}
   const rows=Array.isArray(result)?result:[result];
   if(rows.some(row=>row.success!==true))throw new Error('Vpage D1 reported an unsuccessful statement');
   return rows.flatMap(row=>row.results||[]);
