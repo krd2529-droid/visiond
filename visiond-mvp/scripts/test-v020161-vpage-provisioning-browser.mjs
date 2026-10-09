@@ -9,7 +9,7 @@ const require=createRequire(import.meta.url);let chromium;
 for(const candidate of [process.env.PLAYWRIGHT_PACKAGE,'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright','playwright'].filter(Boolean)){try{({chromium}=require(candidate));break}catch{}}
 assert.ok(chromium,'installed Chrome required');
 const publicRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public');
-let balance=1,pages=[],createCalls=0,repairCalls=0,createKey='',creditStatus='available',ambiguousCreate=false;
+let balance=1,pages=[],createCalls=0,repairCalls=0,createKey='',creditStatus='available',ambiguousCreate=false,lastAvailabilitySlug='';
 const send=(response,status,body)=>{response.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'private, no-store'});response.end(JSON.stringify(body))};
 const server=http.createServer(async(request,response)=>{
   const url=new URL(request.url,'http://127.0.0.1');
@@ -18,7 +18,7 @@ const server=http.createServer(async(request,response)=>{
   if(url.pathname==='/api/vpage/offer')return send(response,200,{item:{slug:'vpage-credit',price:99900}});
   if(url.pathname==='/api/vpage/credits')return send(response,200,{balance,items:[{id:1,status:creditStatus,service_days:30,granted_at:'2026-10-06 10:00:00',consumed_at:creditStatus==='consumed'?'2026-10-06 10:05:00':null,order_no:'VP-BROWSER'}],pagination:{limit:24,has_more:false,next_cursor:null}});
   if(url.pathname==='/api/vpage/domains')return send(response,200,{items:[{id:'dom_smartlinkpage',slot:1,hostname:'smartlinkpage.com'}]});
-  if(url.pathname==='/api/vpage/availability')return send(response,200,{domain_id:'dom_smartlinkpage',slug:url.searchParams.get('slug'),available:!pages.length,public_url:`https://smartlinkpage.com/${url.searchParams.get('slug')}`});
+  if(url.pathname==='/api/vpage/availability'){lastAvailabilitySlug=url.searchParams.get('slug');return send(response,200,{domain_id:'dom_smartlinkpage',slug:lastAvailabilitySlug,available:!pages.length,public_url:`https://smartlinkpage.com/${lastAvailabilitySlug}`})}
   if(url.pathname==='/api/vpage/pages'&&request.method==='GET')return send(response,200,{items:pages,pagination:{limit:24,has_more:false,next_cursor:null}});
   if(url.pathname==='/api/vpage/pages'&&request.method==='POST'){
     createCalls++;createKey=String(request.headers['idempotency-key']||'');let raw='';for await(const chunk of request)raw+=chunk;const body=JSON.parse(raw);
@@ -41,8 +41,11 @@ async function chooseSolidStyling(page){await page.locator('[data-create-tab="2"
 try{
   for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
     balance=1;pages=[];createCalls=0;repairCalls=0;createKey='';creditStatus='available';ambiguousCreate=false;const page=await browser.newPage({viewport}),errors=[],badResponses=[];page.on('pageerror',error=>errors.push(error.message));page.on('response',response=>{if(response.status()>=400)badResponses.push(`${response.status()} ${response.url()}`)});
-    await page.goto(`${base}/vpage.html`);await page.waitForSelector('#vpageDomain:not([disabled])');assert.deepEqual(await page.evaluate(()=>({width:innerWidth,height:innerHeight})),viewport);assert.match(await page.locator('link[href^="/vpage.css"]').getAttribute('href'),/020180$/);assert.match(await page.locator('script[src^="/vpage.js"]').getAttribute('src'),/020180$/);assert.equal(await page.locator('#vpageBalance').innerText(),'1');
-    await page.locator('#vpageDisplayName').fill('ร้านมะลิออนไลน์');await page.locator('#vpageSlug').fill('mali-online');await page.waitForFunction(()=>document.querySelector('#vpageAvailability')?.dataset.available==='true');
+    await page.goto(`${base}/vpage.html`);await page.waitForSelector('#vpageDomain:not([disabled])');assert.deepEqual(await page.evaluate(()=>({width:innerWidth,height:innerHeight})),viewport);assert.match(await page.locator('link[href^="/vpage.css"]').getAttribute('href'),/020180$/);assert.match(await page.locator('script[src^="/vpage.js"]').getAttribute('src'),/020182$/);assert.equal(await page.locator('#vpageBalance').innerText(),'1');
+    await page.locator('#vpageDisplayName').fill('ร้านมะลิออนไลน์');await page.locator('#vpageSlug').fill('Champion');assert.equal(await page.locator('#vpageSlug').inputValue(),'champion');assert.equal(await page.locator('#vpageUrlPreview').innerText(),'https://smartlinkpage.com/champion');await page.waitForFunction(()=>document.querySelector('#vpageAvailability')?.dataset.available==='true');assert.equal(lastAvailabilitySlug,'champion');
+    await page.locator('#vpageSlug').evaluate(node=>{node.value='Restored'});await page.locator('#vpageDomain').dispatchEvent('change');assert.equal(await page.locator('#vpageSlug').inputValue(),'restored');assert.equal(await page.locator('#vpageUrlPreview').innerText(),'https://smartlinkpage.com/restored');
+    await page.locator('#vpageSlug').fill('champion!');assert.equal(await page.locator('#vpageSlug').inputValue(),'champion!');assert.equal(await page.locator('#vpageUrlPreview').innerText(),'https://smartlinkpage.com/your-slug');assert.equal(await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).isDisabled(),true);
+    await page.locator('#vpageSlug').fill('mali-online');assert.equal(await page.locator('#vpageSlug').inputValue(),'mali-online');await page.waitForFunction(()=>document.querySelector('#vpageAvailability')?.dataset.available==='true');
     assert.equal(await page.locator('#vpageUrlPreview').innerText(),'https://smartlinkpage.com/mali-online');assert.equal(await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).isEnabled(),true);
     await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).click();
     assert.equal(createCalls,0,'incomplete two-set content is rejected before create/credit hold');
@@ -59,7 +62,7 @@ try{
     await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).click();
     assert.equal(createCalls,0,'credentialed YouTube is rejected in the browser before credit hold');
     assert.match(await page.locator('#vpageAvailability').innerText(),/YouTube/);
-    await createYoutube.fill('https://www.youtube.com/watch?v=abcdefghijk');await page.locator('#vpageCreateActiveSet').selectOption('2');
+    await createYoutube.fill('https://www.youtube.com/watch?v=abcdefghijk');await page.locator('#vpageCreateActiveSet').selectOption('2');await page.locator('#vpageSlug').fill('Mali-Online');assert.equal(await page.locator('#vpageSlug').inputValue(),'mali-online');await page.waitForFunction(()=>document.querySelector('#vpageAvailability')?.dataset.available==='true');assert.equal(lastAvailabilitySlug,'mali-online');
     await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).click();await page.waitForFunction(()=>document.querySelector('#vpageBalance')?.textContent==='0');assert.equal(createCalls,1);assert.match(await page.locator('#vpageAvailability').innerText(),/https:\/\/smartlinkpage\.com\/mali-online/);
     await page.reload();await page.waitForSelector('.vpage-page-row a');assert.equal(await page.locator('.vpage-page-row a').innerText(),'https://smartlinkpage.com/mali-online');assert.equal(await page.locator('#vpageBalance').innerText(),'0');assert.equal(createCalls,1,'reload never provisions again');
     await page.waitForFunction(()=>Boolean(window.VisionDI18n));assert.equal(await page.evaluate(()=>window.VisionDI18n.lang),'en');await page.evaluate(async()=>{const node=document.createTextNode('ข้อความทดสอบ');document.body.append(node);node.remove();await new Promise(resolve=>requestAnimationFrame(resolve))});
