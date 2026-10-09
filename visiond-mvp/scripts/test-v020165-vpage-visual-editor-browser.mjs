@@ -34,7 +34,7 @@ INSERT INTO users(id,email,username,name,role) VALUES(1,'owner@example.invalid',
 INSERT INTO sessions(id,user_id,expires_at) VALUES('visual-owner',1,datetime('now','+1 day'));`);
 localSqlite.exec(read('migrations/0127_vpage_media.sql'));
 const serviceSqlite=new DatabaseSync(':memory:');serviceSqlite.exec('PRAGMA foreign_keys=ON;');
-for(const migration of ['0001_vpage_service.sql','0002_vpage_editor.sql','0003_vpage_multi_items.sql'])serviceSqlite.exec(read(`services/vpage/migrations/${migration}`));
+for(const migration of ['0001_vpage_service.sql','0002_vpage_editor.sql','0003_vpage_multi_items.sql','0004_vpage_styling.sql'])serviceSqlite.exec(read(`services/vpage/migrations/${migration}`));
 
 const secret='visual-browser-secret-at-least-32-characters',keyId='visiond-main-v1',localId='vpl_11111111111111111111111111111111',remoteId='vp_11111111111111111111111111111111',slug='visual-handler-flow',ownerRef=await vpageOwnerRef(1),now='2026-10-07T10:00:00.000Z',expires='2099-11-06T10:00:00.000Z';
 serviceSqlite.prepare("INSERT INTO vpage_pages(id,domain_id,owner_ref,slug,display_name,status,create_idempotency_key,create_request_hash,created_at,expires_at,updated_at,active_set,public_generation) VALUES(?,?,?,?,?,'active',?,?,?,?,?,1,0)").run(remoteId,'dom_smartlinkpage',ownerRef,slug,'ร้าน Actual Handler','browser-create-key','0'.repeat(64),now,expires,now);

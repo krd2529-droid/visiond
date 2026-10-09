@@ -158,7 +158,7 @@
     return lead+(exact[s]||s)+tail;
   }
   function translateElement(root=document){
-    if(lang!=='en')return;
+    if(lang!=='en'||!root)return;
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{
       const p=n.parentElement;
       return p&&!/^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA)$/.test(p.tagName)&&hasThai(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;

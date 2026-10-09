@@ -19,4 +19,4 @@ const initSharedNav=async()=>{
 };
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initSharedNav,{once:true});
 else initSharedNav();
-import('/i18n.js?v=014407');
+import('/i18n.js?v=020180');
