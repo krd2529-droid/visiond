@@ -1,0 +1,14 @@
+/* Shared global navigation for pages with their own local workspace toolbar. */
+.vd-page-header{box-sizing:border-box;position:relative;z-index:10;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px 24px;width:100%;min-width:0;margin:0;padding:15px clamp(16px,4vw,48px);background:linear-gradient(105deg,#043f3d,#067b77 55%,#0abab5);border-bottom:3px solid #062f2d;color:#fff;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif;box-shadow:0 8px 24px #062f2d22}
+.vd-page-header .brand{color:#fff;font-size:22px;font-weight:900;line-height:1.1;text-decoration:none;white-space:nowrap}
+.vd-page-header .brand small{display:block;margin-top:3px;font-size:10px;letter-spacing:.12em}
+.vd-page-header nav{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:thin}
+.vd-page-header nav a,.vd-page-header nav button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 11px;border:1px solid #ffffff4d;border-radius:10px;background:#ffffff18;color:#fff;font-family:inherit;font-size:13px;font-weight:800;line-height:1.2;text-decoration:none;white-space:nowrap;cursor:pointer}
+.vd-page-header nav a:hover,.vd-page-header nav button:hover{background:#ffffff30;color:#fff}
+.vd-page-header nav a:focus-visible,.vd-page-header nav button:focus-visible,.vd-page-header .brand:focus-visible{outline:3px solid #ffdb73;outline-offset:2px}
+.vd-page-header nav [aria-current="page"]{background:#fff;color:#075f5b}
+.vd-front-header{grid-template-columns:1fr;gap:10px;width:100vw;margin-left:calc(50% - 50vw)}
+.vd-front-header nav{justify-content:flex-start}
+.vd-front-header nav .nav-primary-group,.vd-front-header nav .nav-utility-group{display:flex;align-items:center;gap:6px}
+.vd-front-header nav .nav-utility-group{margin-left:auto}
+@media(max-width:800px){.vd-page-header{grid-template-columns:1fr;gap:10px;padding:12px 16px}.vd-page-header .brand{font-size:19px}.vd-page-header nav{justify-content:flex-start}.vd-front-header nav .nav-utility-group{margin-left:0}}

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/work-notes.css?v=014621">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
-</head>
+<link rel="stylesheet" href="/page-navigation.css?v=1"><script src="/page-navigation.js?v=1" data-page-nav="back" defer></script></head>
 <body>
 <header class="notes-toolbar"><a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a><div><small>VISIOND CONTROL · WORK-NOTES-001</small><h1>คลังโน้ตทำ PowerPoint</h1></div></header>
 <main class="notes-shell"><section class="notes-card editor"><h2 id="formTitle">เพิ่มโน้ต</h2><form id="noteForm"><label>หัวข้อ *<input id="noteTitle" maxlength="160" required placeholder="เช่น แผนคอนเทนต์ TikTok เดือนนี้"></label><label>เนื้อหาโน้ต *<span class="content-tools"><button id="attachImage" class="vds-btn vds-btn--secondary" type="button">📎 แนบรูปตรงตำแหน่งนี้</button><small>หรือพิมพ์ /แนบ แล้ววางรูปแคป · รูปจะแสดงเป็นป้ายสั้น</small></span><textarea id="noteContent" maxlength="30000" rows="12" required placeholder="เขียนหรือวางข้อมูลทั้งหมดที่ต้องการใช้ทำสไลด์"></textarea><input id="noteImages" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden><div id="attachmentChips" class="attachment-chips"></div></label><div class="actions"><button id="saveNote" class="vds-btn vds-btn--primary">บันทึกโน้ตและรูป</button><button id="cancelEdit" class="vds-btn vds-btn--secondary" type="button" hidden>ยกเลิกแก้ไข</button></div></form><p id="noteStatus" role="status" aria-live="polite"></p></section>

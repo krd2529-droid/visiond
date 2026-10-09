@@ -16,14 +16,14 @@ const publicRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../p
 const shared=fs.readFileSync(path.join(publicRoot,'shared-nav.js'),'utf8');
 const home=fs.readFileSync(path.join(publicRoot,'index.html'),'utf8');
 const vpageHtml=fs.readFileSync(path.join(publicRoot,'vpage.html'),'utf8');
-const expectedConsumers=['about.html','blog.html','bots.html','contact.html','course-center.html','course-seller.html','course.html','courses.html','digital-products.html','guides.html','index.html','my-courses.html','privacy.html','terms.html','vedit.html','vpage.html'].sort();
+const expectedConsumers=['about.html','blog.html','bots.html','cart.html','contact.html','course-basket-edit.html','course-center.html','course-rights-terms.html','course-seller.html','course.html','courses.html','dashboard.html','digital-products.html','forgot-password.html','guides.html','index.html','login.html','member.html','my-courses.html','partner-commerce-claim.html','privacy.html','product.html','register.html','reset-password.html','terms.html','vedit.html','vpage.html','vtools.html'].sort();
 const consumers=fs.readdirSync(publicRoot).filter(name=>name.endsWith('.html')&&fs.readFileSync(path.join(publicRoot,name),'utf8').includes('shared-nav.js?v=')).sort();
 
 assert.deepEqual(consumers,expectedConsumers,'focused contract enumerates every shared-nav consumer');
 for(const name of consumers){
   const html=fs.readFileSync(path.join(publicRoot,name),'utf8');
-  assert.equal((html.match(/shared-nav\.js\?v=020174/g)||[]).length,1,`${name} loads the updated shared navigation exactly once`);
-  assert.doesNotMatch(html,/shared-nav\.js\?v=020(?:57|173)/,`${name} is not pinned to an old cache key`);
+  assert.equal((html.match(/shared-nav\.js\?v=020176/g)||[]).length,1,`${name} loads the updated shared navigation exactly once`);
+  assert.doesNotMatch(html,/shared-nav\.js\?v=020(?:57|173|174)/,`${name} is not pinned to an old cache key`);
 }
 assert.equal((shared.match(/'\/vpage','Vpage'/g)||[]).length,1,'canonical shared navigation contains exactly one Vpage entry');
 assert.match(shared,/ศูนย์จัดการคอร์ส'\],\['nav-vpage-link','\/vpage','Vpage'\],\['nav-vedit-link','\/vedit','Vedit'\],\['','\/courses\.html'/,'canonical shared navigation preserves the primary row around Vpage');
@@ -31,8 +31,8 @@ assert.match(home,/ศูนย์จัดการคอร์ส<\/a[\s\S]*?<
 assert.match(vpageHtml,/mobile-storefront\.css\?v=014407/,'Vpage loads the canonical mobile header styles');
 assert.match(vpageHtml,/header-shell\.css\?v=014578/,'Vpage loads the canonical desktop header styles');
 assert.match(vpageHtml,/vpage\.css\?v=020179[\s\S]*mobile-storefront\.css\?v=014407[\s\S]*header-shell\.css\?v=014578[\s\S]*frontend-theme\.css\?v=020159/,'Vpage loads the preview CSS while preserving the proven public header stylesheet cascade');
-assert.match(vpageHtml,/vpage\.js\?v=020179[\s\S]*shared-nav\.js\?v=020174/,'Vpage loads the preview runtime and then the canonical navigation');
-assert.match(vpageHtml,/shared-nav\.js\?v=020174/,'Vpage loads the canonical navigation runtime');
+assert.match(vpageHtml,/vpage\.js\?v=020179[\s\S]*shared-nav\.js\?v=020176/,'Vpage loads the preview runtime and then the canonical navigation');
+assert.match(vpageHtml,/shared-nav\.js\?v=020176/,'Vpage loads the canonical navigation runtime');
 assert.match(vpageHtml,/header-shell\.js\?v=014578/,'Vpage loads the canonical header shell runtime');
 assert.match(vpageHtml,/mobile-storefront\.js\?v=014407/,'Vpage loads the canonical mobile drawer runtime');
 assert.equal((vpageHtml.match(/id="createVpageForm"/g)||[]).length,1,'Vpage form remains present exactly once');
