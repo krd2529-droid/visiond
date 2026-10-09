@@ -142,6 +142,7 @@ closeEditor.onclick = () => { resetProductForm(); if(mobileEditorQuery.matches)l
 productEditor.onsubmit = saveProduct;
 deleteProductButton.onclick = deleteProduct;
 paymentSettingsForm.onsubmit = savePaymentSettings;
+document.querySelector('#vpagePaymentSettingsForm').onsubmit = saveVpagePaymentSettings;
 promotionSettingsForm.onsubmit = savePromotionSettings;
 firstOrderPromotionForm.onsubmit = saveFirstOrderPromotion;
 newCategoryButton.onclick = resetCategoryForm;
@@ -1365,6 +1366,22 @@ async function loadPaymentSettings() {
     ? `<img src="${esc(p.qr_url)}" alt="QR ชำระเงิน"><small>QR ที่ใช้งานอยู่ในขณะนี้</small>`
     : "<small>ยังไม่ได้อัปโหลดรูป QR</small>";
   settingsMessage.textContent = "";
+  await loadVpagePaymentSettings();
+}
+async function loadVpagePaymentSettings(){
+  const form=document.querySelector('#vpagePaymentSettingsForm'),message=document.querySelector('#vpagePaymentSettingsMessage');
+  form.hidden=viewer?.role!=='boss';form.style.display=form.hidden?'none':'';if(form.hidden)return;
+  message.textContent='กำลังโหลดบัญชี Vpage…';
+  const response=await fetch('/api/admin/vpage/payment-settings',{cache:'no-store'}),data=await response.json().catch(()=>({}));
+  if(!response.ok){message.textContent=data.error||'โหลดบัญชี Vpage ไม่สำเร็จ';return}
+  const item=data.item||{};form.elements.bank_name.value=item.bank_name||'';form.elements.account_name.value=item.account_name||'';form.elements.account_number.value=item.account_number||'';
+  message.textContent=data.configured?'บัญชี Vpage Credit พร้อมใช้':'ยังไม่ได้ตั้งค่าบัญชี Vpage Credit';
+}
+async function saveVpagePaymentSettings(event){
+  event.preventDefault();if(viewer?.role!=='boss')return;
+  const form=event.currentTarget,message=document.querySelector('#vpagePaymentSettingsMessage'),button=form.querySelector('button[type="submit"]');
+  message.textContent='กำลังบันทึกบัญชี Vpage…';button.disabled=true;
+  try{const response=await fetch('/api/admin/vpage/payment-settings',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({bank_name:form.elements.bank_name.value,account_name:form.elements.account_name.value,account_number:form.elements.account_number.value})}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'บันทึกบัญชี Vpage ไม่สำเร็จ');message.textContent='บันทึกบัญชี Vpage Credit แล้ว'}catch(error){message.textContent=error.message}finally{button.disabled=false}
 }
 async function loadPromotionSettings(){
   promotionSettingsMessage.textContent='กำลังโหลดโปรโมชั่น…';

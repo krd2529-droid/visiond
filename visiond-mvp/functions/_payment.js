@@ -18,5 +18,13 @@ export async function loadExistingPaymentSettings(env){
   return {...profiles[active_account],active_account,profiles,qr_url:map.qr_url||env.PAYMENT_QR_URL||'',accepting_orders:map.accepting_orders!=='0',vision3_auto_verify:map.vision3_auto_verify!=='0',vision5_rights_auto_verify:map.vision5_rights_auto_verify!=='0',payment_message:map.payment_message||'ส่งสลิปแล้ว กรุณารอแอดมินตรวจสอบและอนุมัติไฟล์'};
 }
 export async function loadPaymentSettings(env){await ensureSettings(env);return loadExistingPaymentSettings(env)}
+export async function loadVpagePaymentSettings(env){
+  await ensureSettings(env);
+  const {results}=await env.DB.prepare("SELECT key,value FROM settings WHERE key IN ('vpage_bank_name','vpage_account_name','vpage_account_number')").all();
+  const values=Object.fromEntries(results.map(row=>[row.key,row.value]));
+  const bank_name=String(values.vpage_bank_name||'').trim(),account_name=String(values.vpage_account_name||'').trim(),account_number=String(values.vpage_account_number||'').trim();
+  if(bank_name.length<2||bank_name.length>100||account_name.length<2||account_name.length>150||!/^[0-9 -]{8,30}$/.test(account_number)||!/^[0-9]{8,20}$/.test(account_number.replace(/[^0-9]/g,'')))return null;
+  return {active_account:'vpage',bank_name,account_name,account_number,qr_url:''};
+}
 export async function saveSetting(env,key,value){await ensureSettings(env);await env.DB.prepare(`INSERT INTO settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP`).bind(key,String(value??'')).run()}
 export function publicPaymentSettings(settings){const {bank_name,account_name,account_number,qr_url,accepting_orders,payment_message,active_account}=settings;return {bank_name,account_name,account_number,qr_url,accepting_orders,payment_message,active_account}}

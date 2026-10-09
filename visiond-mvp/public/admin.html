@@ -2048,6 +2048,17 @@
               >
             </div>
           </form>
+          <form id="vpagePaymentSettingsForm" class="payment-settings-card" hidden style="display:none">
+            <h3>บัญชีรับโอน Vpage Credit</h3>
+            <p>ใช้เฉพาะคำสั่งซื้อ Vpage Credit ใหม่ ไม่เปลี่ยนบัญชีรับโอนสินค้าอื่นหรือคำสั่งซื้อเดิม</p>
+            <div class="form-two">
+              <label>ชื่อธนาคาร<input name="bank_name" maxlength="100" required autocomplete="off" /></label>
+              <label>เลขบัญชี<input name="account_number" maxlength="30" inputmode="numeric" pattern="[0-9 -]{8,30}" required autocomplete="off" /></label>
+            </div>
+            <label>ชื่อบัญชี<input name="account_name" maxlength="150" required autocomplete="off" /></label>
+            <p id="vpagePaymentSettingsMessage" class="form-message" role="status" aria-live="polite"></p>
+            <div class="editor-actions"><button class="primary" type="submit">บันทึกบัญชี Vpage Credit</button></div>
+          </form>
         </section>
         <section id="usersPanel" data-feature="MEMBER-ADMIN-001" hidden>
           <div class="section-head">
@@ -2311,7 +2322,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-<script src="/admin.js?v=02069"></script>
+<script src="/admin.js?v=02070"></script>
     <script src="/vision2.js?v=014422"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=02058"></script>
