@@ -39,7 +39,7 @@ async function fillCreateSet(page,setNo){await page.locator(`[data-create-tab="$
 try{
   for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
     balance=1;pages=[];createCalls=0;repairCalls=0;createKey='';creditStatus='available';ambiguousCreate=false;const page=await browser.newPage({viewport}),errors=[],badResponses=[];page.on('pageerror',error=>errors.push(error.message));page.on('response',response=>{if(response.status()>=400)badResponses.push(`${response.status()} ${response.url()}`)});
-    await page.goto(`${base}/vpage.html`);await page.waitForSelector('#vpageDomain:not([disabled])');assert.deepEqual(await page.evaluate(()=>({width:innerWidth,height:innerHeight})),viewport);assert.match(await page.locator('link[href^="/vpage.css"]').getAttribute('href'),/020172$/);assert.match(await page.locator('script[src^="/vpage.js"]').getAttribute('src'),/020172$/);assert.equal(await page.locator('#vpageBalance').innerText(),'1');
+    await page.goto(`${base}/vpage.html`);await page.waitForSelector('#vpageDomain:not([disabled])');assert.deepEqual(await page.evaluate(()=>({width:innerWidth,height:innerHeight})),viewport);assert.match(await page.locator('link[href^="/vpage.css"]').getAttribute('href'),/020178$/);assert.match(await page.locator('script[src^="/vpage.js"]').getAttribute('src'),/020172$/);assert.equal(await page.locator('#vpageBalance').innerText(),'1');
     await page.locator('#vpageDisplayName').fill('ร้านมะลิออนไลน์');await page.locator('#vpageSlug').fill('mali-online');await page.waitForFunction(()=>document.querySelector('#vpageAvailability')?.dataset.available==='true');
     assert.equal(await page.locator('#vpageUrlPreview').innerText(),'https://smartlinkpage.com/mali-online');assert.equal(await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).isEnabled(),true);
     await page.getByRole('button',{name:'ยืนยันสร้างเซลเพจ'}).click();
@@ -62,7 +62,7 @@ try{
     await page.reload();await page.waitForSelector('.vpage-page-row a');assert.equal(await page.locator('.vpage-page-row a').innerText(),'https://smartlinkpage.com/mali-online');assert.equal(await page.locator('#vpageBalance').innerText(),'0');assert.equal(createCalls,1,'reload never provisions again');
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth);assert.equal(overflow,false,`no horizontal overflow at ${viewport.width}`);assert.deepEqual(errors,[]);assert.deepEqual(badResponses,[]);await page.close();
   }
-  for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
+  for(const viewport of [{width:768,height:844},{width:900,height:844},{width:1142,height:844},{width:1440,height:900},{width:390,height:844}]){
     balance=0;pages=[];createCalls=0;repairCalls=0;creditStatus='available';ambiguousCreate=false;
     const page=await browser.newPage({viewport}),errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`${base}/vpage.html`);await page.waitForSelector('[data-create-content-set="1"]');
@@ -73,6 +73,9 @@ try{
     await page.waitForFunction(()=>document.querySelector('[data-create-content-set="1"] [data-template-slot="detail"]')?.textContent.includes('ZERO_CREDIT_PREVIEW'));
     await page.locator('[data-create-tab="2"]').click();
     assert.equal(await page.locator('[data-create-content-set="2"]').isVisible(),true,'second template remains available without a credit');
+    const geometry=await page.evaluate(()=>{const card=document.querySelector('.vpage-create'),form=document.querySelector('#createVpageForm'),section=document.querySelector('.vpage-create-template'),panel=document.querySelector('[data-create-content-set="2"]'),box=card.getBoundingClientRect(),style=getComputedStyle(card),left=box.left+parseFloat(style.paddingLeft),right=box.right-parseFloat(style.paddingRight),outside=[...panel.querySelectorAll('input,textarea,select,.vpage-template-canvas')].filter(node=>node.getClientRects().length).map(node=>({name:node.getAttribute('name')||node.className,left:node.getBoundingClientRect().left,right:node.getBoundingClientRect().right})).filter(item=>item.left<left-1||item.right>right+1);return{outside,formOverflow:form.scrollWidth-form.clientWidth,sectionOverflow:section.scrollWidth-section.clientWidth}});
+    assert.deepEqual(geometry.outside,[],`preview controls exceed padded card at ${viewport.width}px: ${JSON.stringify(geometry)}`);
+    assert.ok(geometry.formOverflow<=1&&geometry.sectionOverflow<=1,`preview has clipped internal overflow at ${viewport.width}px: ${JSON.stringify(geometry)}`);
     assert.equal(createCalls,0,'preview at zero credits never creates a page or holds a credit');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false);
     assert.deepEqual(errors,[]);await page.close();
