@@ -1,0 +1,35 @@
+name: Inventory Vpage Media Prerequisites
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vpage-production
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: visiond-mvp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.20.0'
+      - name: Verify read-only inventory contract
+        run: node scripts/test-vpage-media-inventory.mjs
+      - name: Count current page/image slots and inspect isolated storage
+        run: node scripts/inventory-vpage-media-production.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
