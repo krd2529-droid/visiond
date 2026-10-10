@@ -77,9 +77,10 @@ function contentMediaRefs(content,setNo){
   for(const [index,item] of content.contact_items.entries())if(item.image_url)slots.push([`contact:${index+1}`,item.image_url]);
   return slots.map(([slot,url])=>{const match=String(url).match(/^https:\/\/smartlinkpage\.com\/media\/(vpm_[a-f0-9]{32})$/);return{setNo,slot,url,id:match?.[1]||null}});
 }
-async function verifyContentMedia(env,ownerRef,contentSets){
-  // Stage 1: keep HTTPS create/save compatible until the upload UI is deployed.
+async function verifyContentMedia(env,ownerRef,contentSets,{requireOwned=false}={}){
+  // New pages use owned uploads; existing-page edits retain HTTPS compatibility.
   const refs=contentSets.flatMap(item=>contentMediaRefs(item,item.set_no));
+  if(requireOwned&&refs.some(item=>!item.id))return null;
   const owned=refs.filter(item=>item.id),ids=[...new Set(owned.map(item=>item.id))];if(!ids.length)return [];
   if(!env.VPAGE_MEDIA)return null;
   const marks=ids.map(()=>'?').join(','),rows=(await env.VPAGE_DB.prepare(`SELECT id,object_key,content_hash,file_size,mime_type FROM vpage_media WHERE owner_ref=? AND state='ready' AND id IN (${marks}) LIMIT 16`).bind(ownerRef,...ids).all()).results||[];
@@ -143,10 +144,10 @@ async function createPage(request,env,ownerRef,rawBody){
   const key=String(request.headers.get('idempotency-key')||'').trim();if(!IDEMPOTENCY.test(key))return json({error:'idempotency key required',code:'VPAGE_IDEMPOTENCY_REQUIRED'},400);
   const body=await parseBody(rawBody),displayName=typeof body.display_name==='string'?body.display_name.trim():'',domainId=String(body.domain_id||''),slug=String(body.slug||''),activeSet=Number(body.active_set),rawSets=Array.isArray(body.content_sets)?body.content_sets:null,contentSets=rawSets?.length===2&&rawSets.every((item,index)=>Number(item?.set_no)===index+1)?rawSets.map((item,index)=>{const content=normalizeContent(item,{canonicalYoutubeOnly:true});return content?{set_no:index+1,...content}:null}):null;
   if(displayName.length<1||displayName.length>120||!validSlug(slug)||domainId.length>64||![1,2].includes(activeSet)||!contentSets?.every(Boolean))return json({error:'invalid page details or content',code:'VPAGE_INPUT_INVALID'},400);
-  const mediaRefs=await verifyContentMedia(env,ownerRef,contentSets);if(!mediaRefs)return json({error:'Vpage media unavailable',code:'VPAGE_MEDIA_NOT_READY'},409);
   const contentDigest=await sha256(JSON.stringify({active_set:activeSet,content_sets:contentSets})),requestHash=await sha256(JSON.stringify({display_name:displayName,domain_id:domainId,slug,owner_ref:ownerRef,active_set:activeSet,content_sets:contentSets}));
   const existing=await env.VPAGE_DB.prepare(`${pageSql} WHERE p.create_idempotency_key=?`).bind(key).first();
   if(existing){if(existing.create_request_hash!==requestHash)return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);return json({item:pageView(existing),content_digest:contentDigest,replayed:true},200)}
+  const mediaRefs=await verifyContentMedia(env,ownerRef,contentSets,{requireOwned:true});if(!mediaRefs)return json({error:'Vpage media unavailable',code:'VPAGE_MEDIA_NOT_READY'},409);
   const domain=await env.VPAGE_DB.prepare('SELECT id,hostname FROM vpage_domains WHERE id=? AND enabled=1').bind(domainId).first();if(!domain)return json({error:'domain unavailable',code:'VPAGE_DOMAIN_UNAVAILABLE'},404);
   const id=`vp_${crypto.randomUUID().replaceAll('-','')}`,createdAt=new Date().toISOString(),expiresAt=new Date(Date.now()+30*86400000).toISOString();
   try{await env.VPAGE_DB.batch([
