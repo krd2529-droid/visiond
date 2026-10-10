@@ -84,6 +84,10 @@ export async function onRequestPost(ctx) {
   const orderedResults=requestedSlugs.map(slug=>bySlug.get(slug));
   const vpageItems=orderedResults.filter(product=>product?.slug==='vpage-credit'||product?.product_kind==='vpage-credit');
   if(vpageItems.length&&(orderedResults.length!==1||vpageItems.length!==1||!isVpageCreditProduct(vpageItems[0])))return json({error:'Vpage Credit ต้องชำระแยกครั้งละ 1 เครดิต'},400);
+  if(vpageItems.length){
+    const pending=await ctx.env.DB.prepare("SELECT o.id,o.order_no,o.total,o.status,o.payment_account_type,o.payment_bank_name,o.payment_account_name,o.payment_account_number,o.payment_qr_url FROM orders o JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? AND oi.product_id=? AND o.status IN ('awaiting_payment','pending_review','rejected') ORDER BY o.id DESC LIMIT 1").bind(a.user.id,vpageItems[0].id).first();
+    if(pending)return json({error:'มีออเดอร์ Vpage ที่ยังดำเนินการไม่เสร็จ',code:'VPAGE_PENDING_ORDER',order:{id:pending.id,orderNo:pending.order_no,total:pending.total,status:pending.status,bank:{active_account:pending.payment_account_type,bank_name:pending.payment_bank_name,account_name:pending.payment_account_name,account_number:pending.payment_account_number,qr_url:pending.payment_qr_url||''}}},409,{'cache-control':'private, no-store'});
+  }
   const vpagePayment=vpageItems.length?await loadVpagePaymentSettings(ctx.env):null;
   if(vpageItems.length&&!vpagePayment)return json({error:'ยังไม่ได้ตั้งค่าบัญชีรับโอน Vpage Credit กรุณาติดต่อผู้ดูแลระบบ',code:'VPAGE_PAYMENT_ACCOUNT_NOT_CONFIGURED'},503,{'cache-control':'private, no-store'});
   if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
