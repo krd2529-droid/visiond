@@ -181,13 +181,36 @@ async function lifecycle(request,path,env,ownerRef,rawBody){
   if(action==='resume'){if(new Date(expiresAt)<=new Date())return json({error:'page expired',code:'VPAGE_PAGE_EXPIRED'},409);if(status==='suspended')status='active'}
   if(action==='renew'){const base=Math.max(Date.now(),new Date(expiresAt).getTime());expiresAt=new Date(base+30*86400000).toISOString()}
   if(action==='delete')status='deleted';
+  const guard=`vg_${crypto.randomUUID().replaceAll('-','')}`;
   try{await env.VPAGE_DB.batch([
+    ...(action==='renew'?[env.VPAGE_DB.prepare("INSERT INTO vpage_compensation_guards(token) VALUES(CASE WHEN EXISTS(SELECT 1 FROM vpage_pages WHERE id=? AND owner_ref=? AND expires_at=?) THEN ? ELSE NULL END)").bind(id,ownerRef,page.expires_at,guard)]:[]),
     env.VPAGE_DB.prepare('INSERT INTO vpage_lifecycle_requests(idempotency_key,page_id,owner_ref,action,request_hash) VALUES(?,?,?,?,?)').bind(key,id,ownerRef,action,requestHash),
-    env.VPAGE_DB.prepare('UPDATE vpage_pages SET status=?,expires_at=?,public_generation=public_generation+?,updated_at=? WHERE id=? AND owner_ref=?').bind(status,expiresAt,['suspend','resume','delete'].includes(action)?1:0,now,id,ownerRef)
+    env.VPAGE_DB.prepare('UPDATE vpage_pages SET status=?,expires_at=?,public_generation=public_generation+?,updated_at=? WHERE id=? AND owner_ref=?').bind(status,expiresAt,['suspend','resume','delete'].includes(action)?1:0,now,id,ownerRef),
+    ...(action==='renew'?[env.VPAGE_DB.prepare('DELETE FROM vpage_compensation_guards WHERE token=?').bind(guard)]:[])
   ])}catch{return json({error:'request in progress',code:'VPAGE_IDEMPOTENCY_IN_PROGRESS'},409)}
   page={...page,status,expires_at:expiresAt,updated_at:now};
   if(['suspend','resume','delete'].includes(action))await publicCacheDelete(page);
   return json({item:pageView(page),replayed:false});
+}
+
+async function compensate(request,path,env,ownerRef,rawBody){
+  const match=path.match(/^\/api\/v1\/pages\/(vp_[a-f0-9]{32})\/compensate$/);if(!match)return null;
+  if(ownerRef!=='system')return json({error:'boss operation only',code:'VPAGE_BOSS_REQUIRED'},403);
+  const id=match[1],key=String(request.headers.get('idempotency-key')||'').trim(),body=await parseBody(rawBody);
+  if(!IDEMPOTENCY.test(key)||!body||typeof body!=='object'||Array.isArray(body)||!OWNER.test(body.owner_ref)||!OWNER.test(body.actor_ref)||!Number.isInteger(body.days)||body.days<1||body.days>365||typeof body.expected_expiry!=='string'||!Number.isFinite(Date.parse(body.expected_expiry))||new Date(body.expected_expiry).toISOString()!==body.expected_expiry)return json({error:'invalid compensation request',code:'VPAGE_COMPENSATION_INVALID'},400);
+  const prior=await env.VPAGE_DB.prepare('SELECT page_id,owner_ref,actor_ref,days,before_expires_at,after_expires_at FROM vpage_compensation_requests WHERE idempotency_key=?').bind(key).first();
+  if(prior){if(prior.page_id!==id||prior.owner_ref!==body.owner_ref||prior.actor_ref!==body.actor_ref||Number(prior.days)!==body.days||prior.before_expires_at!==body.expected_expiry)return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);return json({item:{id,expires_at:prior.after_expires_at},before_expires_at:prior.before_expires_at,replayed:true})}
+  const page=await env.VPAGE_DB.prepare(`${pageSql} WHERE p.id=? AND p.owner_ref=? AND p.status='active'`).bind(id,body.owner_ref).first();
+  if(!page)return json({error:'page not found',code:'VPAGE_PAGE_NOT_FOUND'},404);
+  if(page.expires_at!==body.expected_expiry)return json({error:'expiry changed',code:'VPAGE_EXPIRY_CONFLICT'},409);
+  const base=Math.max(Date.now(),Date.parse(page.expires_at)),after=new Date(base+body.days*86400000).toISOString(),guard=`vcg_${crypto.randomUUID().replaceAll('-','')}`;
+  try{await env.VPAGE_DB.batch([
+    env.VPAGE_DB.prepare("INSERT INTO vpage_compensation_guards(token) VALUES(CASE WHEN EXISTS(SELECT 1 FROM vpage_pages WHERE id=? AND owner_ref=? AND status='active' AND expires_at=?) THEN ? ELSE NULL END)").bind(id,body.owner_ref,page.expires_at,guard),
+    env.VPAGE_DB.prepare('INSERT INTO vpage_compensation_requests(idempotency_key,page_id,owner_ref,actor_ref,days,before_expires_at,after_expires_at) VALUES(?,?,?,?,?,?,?)').bind(key,id,body.owner_ref,body.actor_ref,body.days,page.expires_at,after),
+    env.VPAGE_DB.prepare("UPDATE vpage_pages SET expires_at=?,updated_at=? WHERE id=? AND owner_ref=? AND status='active' AND expires_at=?").bind(after,new Date().toISOString(),id,body.owner_ref,page.expires_at),
+    env.VPAGE_DB.prepare('DELETE FROM vpage_compensation_guards WHERE token=?').bind(guard)
+  ])}catch{const raced=await env.VPAGE_DB.prepare('SELECT page_id,owner_ref,actor_ref,days,before_expires_at,after_expires_at FROM vpage_compensation_requests WHERE idempotency_key=?').bind(key).first();if(raced&&raced.page_id===id&&raced.owner_ref===body.owner_ref&&raced.actor_ref===body.actor_ref&&Number(raced.days)===body.days&&raced.before_expires_at===body.expected_expiry)return json({item:{id,expires_at:raced.after_expires_at},before_expires_at:raced.before_expires_at,replayed:true});return json({error:'compensation in progress',code:'VPAGE_IDEMPOTENCY_IN_PROGRESS'},409)}
+  await publicCacheDelete(page);return json({item:{id,expires_at:after},before_expires_at:page.expires_at,replayed:false});
 }
 
 async function publicPage(request,env){
@@ -225,7 +248,7 @@ export default {async fetch(request,env){
     if(request.method==='GET'){const found=await availability(path,env);if(found)return found;const editor=await readEditor(path,env,auth.ownerRef);if(editor)return editor;const page=await readPage(path,env,auth.ownerRef);if(page)return page}
     if(request.method==='POST'&&path==='/api/v1/pages')return createPage(request,env,auth.ownerRef,rawBody);
     if(request.method==='PUT'){const result=await saveContent(request,path,env,auth.ownerRef,rawBody);if(result)return result}
-    if(request.method==='POST'){const switched=await switchSet(request,path,env,auth.ownerRef,rawBody);if(switched)return switched;const result=await lifecycle(request,path,env,auth.ownerRef,rawBody);if(result)return result}
+    if(request.method==='POST'){const switched=await switchSet(request,path,env,auth.ownerRef,rawBody);if(switched)return switched;const compensated=await compensate(request,path,env,auth.ownerRef,rawBody);if(compensated)return compensated;const result=await lifecycle(request,path,env,auth.ownerRef,rawBody);if(result)return result}
     return json({error:'not found',code:'VPAGE_NOT_FOUND'},404);
   }catch(error){return json({error:'request failed',code:error?.code||'VPAGE_REQUEST_FAILED'},Number(error?.status)||500)}
 }};
