@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import {DatabaseSync} from 'node:sqlite';
 import {onRequestGet as listAccounts,onRequestPost as createAccount} from '../functions/api/admin/account-vault/index.js';
 import {onRequestPatch as updateAccount} from '../functions/api/admin/account-vault/[id].js';
-import {socialAccountValues} from '../functions/_account_vault_social.js';
+import {socialAccountValues,withSocialMachineColumn} from '../functions/_account_vault_social.js';
 
 const read=path=>fs.readFile(new URL('../'+path,import.meta.url),'utf8');
 const sqlite=new DatabaseSync(':memory:');
@@ -40,13 +40,13 @@ seen.length=0;
 response=await createAccount(ctx('https://fixture.test/api/admin/account-vault',{method:'POST',body:shopee}));
 assert.equal(response.status,201);assert.equal(response.headers.get('cache-control'),'private, no-store');
 let data=await response.json(),id=data.item.id;
-assert.equal(data.item.platform,'Shopee');assert.equal(data.item.login_url,'https://seller.shopee.co.th/');assert.equal(Object.hasOwn(data.item,'email'),false);
-assert.equal(seen.filter(sql=>/^INSERT INTO admin_account_vault/.test(sql)).length,1);assert.equal(seen.some(sql=>/CREATE|ALTER/.test(sql)),false);
+assert.equal(data.item.platform,'Shopee');assert.equal(data.item.login_url,'https://seller.shopee.co.th/');assert.equal(data.item.email,shopee.email);assert.equal(data.item.machine,'');
+assert.equal(seen.filter(sql=>/^INSERT INTO admin_account_vault/.test(sql)).length,2,'schema upgrade retries the insert once');assert.equal(seen.filter(sql=>/^ALTER TABLE admin_account_vault/.test(sql)).length,1,'old schema upgrades on first Boss write');
 
 seen.length=0;
 response=await listAccounts(ctx('https://fixture.test/api/admin/account-vault?limit=24'));
 assert.equal(response.status,200);data=await response.json();assert.equal(data.pagination.limit,24);assert.equal(data.items.length,1);assert.equal(data.items[0].platform,'Shopee');
-assert.equal(seen.filter(sql=>sql.includes('admin_account_vault')).length,1,'list remains one bounded keyset vault query');assert.equal(seen.some(sql=>/CREATE|ALTER/.test(sql)),false);
+assert.equal(seen.filter(sql=>sql.includes('admin_account_vault')).length,1,'healthy list remains one bounded keyset vault query');assert.equal(seen.some(sql=>/CREATE|ALTER/.test(sql)),false);
 
 seen.length=0;
 response=await updateAccount(ctx('https://fixture.test/api/admin/account-vault/'+id,{method:'PATCH',body:{...shopee,account_name:'Boss Shopee Updated',login_url:'https://seller.shopee.co.th/account/signin'}},id));
@@ -55,6 +55,12 @@ assert.equal(response.status,200);data=await response.json();assert.equal(data.i
 const custom={...shopee,platform:'Custom Marketplace',account_name:'Existing Custom Platform',login_url:'custom.example.test'};
 seen.length=0;response=await createAccount(ctx('https://fixture.test/api/admin/account-vault',{method:'POST',body:custom}));assert.equal(response.status,201);data=await response.json();const customId=data.item.id;assert.equal(data.item.platform,'Custom Marketplace');assert.equal(data.item.login_url,'https://custom.example.test/');assert.equal(seen.filter(sql=>/^INSERT INTO admin_account_vault/.test(sql)).length,1);
 seen.length=0;response=await updateAccount(ctx('https://fixture.test/api/admin/account-vault/'+customId,{method:'PATCH',body:{...custom,account_name:'Existing Custom Platform Updated'}},customId));assert.equal(response.status,200);data=await response.json();assert.equal(data.item.platform,'Custom Marketplace');assert.equal(data.item.account_name,'Existing Custom Platform Updated');assert.equal(seen.filter(sql=>/^UPDATE admin_account_vault/.test(sql)).length,1);
+
+let schemaReady=false,alterCalls=0;
+const raceDb={prepare(sql){assert.match(sql,/^ALTER TABLE admin_account_vault ADD COLUMN machine/);return{async run(){alterCalls++;if(schemaReady)throw new Error('duplicate column name: machine');schemaReady=true}}}};
+const raced=await Promise.all([1,2].map(async id=>{let attempts=0;return withSocialMachineColumn(raceDb,async()=>{attempts++;if(attempts===1){await Promise.resolve();throw new Error('no such column: machine')}return id})}));
+assert.deepEqual(raced,[1,2]);assert.equal(alterCalls,2,'concurrent first requests tolerate one duplicate-column race');
+await assert.rejects(()=>withSocialMachineColumn(raceDb,()=>{throw new Error('permission denied')}),/permission denied/);
 
 sqlite.close();
 console.log('PASS v0.20.120 Shopee Boss vault add/edit/list, custom platform preservation, role denial and bounded list');

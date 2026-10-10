@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>บัญชีโซเชียล | VisionD Control</title>
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
-  <link rel="stylesheet" href="/account-vault.css?v=020116">
+  <link rel="stylesheet" href="/account-vault.css?v=020158-vault-table">
   <link rel="stylesheet" href="/visiond-button-system.css?v=014407">
 <link rel="stylesheet" href="/page-navigation.css?v=1"><script src="/page-navigation.js?v=1" data-page-nav="back" defer></script></head>
 <body>
-  <header class="vault-toolbar"><a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a><div><small>VISIOND CONTROL · ACCOUNT-VAULT-001 · BOSS ONLY</small><h1>บัญชีโซเชียล</h1></div><span>v0.20.120</span></header>
+  <header class="vault-toolbar"><a class="vds-btn vds-btn--text" href="/admin.html">← หลังบ้าน</a><div><small>VISIOND CONTROL · ACCOUNT-VAULT-001 · BOSS ONLY</small><h1>บัญชีโซเชียล</h1></div><span>v0.20.158</span></header>
   <main class="vault-shell">
     <section id="vaultAccess" class="vault-card vault-access" role="status" aria-live="polite"><h2>กำลังตรวจสอบสิทธิ์ Boss…</h2><p>ข้อมูลจะไม่ถูกโหลดก่อนยืนยันสิทธิ์</p></section>
     <div id="vaultWorkspace" class="vault-workspace" hidden>
@@ -23,6 +23,7 @@
           <label class="wide">ลิงก์เข้าสู่ระบบ *<input name="login_url" type="text" maxlength="1000" required inputmode="url" placeholder="เช่น tiktok.com หรือ https://www.tiktok.com/login"></label>
           <label>เบอร์โทร<input name="phone" type="tel" maxlength="80" autocomplete="off" placeholder="กรอกเบอร์โทรหรืออีเมลอย่างน้อยหนึ่งรายการ"></label>
           <label>อีเมล<input name="email" type="email" maxlength="320" autocomplete="off" placeholder="กรอกอีเมลหรือเบอร์โทรอย่างน้อยหนึ่งรายการ"></label>
+          <label class="wide">Machine / เครื่อง<input name="machine" maxlength="160" autocomplete="off" placeholder="เช่น เครื่องที่ใช้เข้าสู่บัญชี"></label>
           <label class="wide">คำใบ้รหัสผ่านแบบสั้น *<span class="password-field"><input name="password_hint" type="password" maxlength="64" autocomplete="off" required aria-describedby="passwordHintHelp"><button id="togglePasswordHint" type="button">แสดง</button></span><small id="passwordHintHelp">ไม่เกิน 64 ตัวอักษร และห้ามใส่รหัสผ่านจริง</small></label>
           <label class="wide">หมายเหตุ<textarea name="note" rows="3" maxlength="3000" placeholder="เช่น ใช้กับเพจไหน หรือข้อมูลกู้คืนบัญชี"></textarea></label>
           <div class="actions wide"><button id="saveAccount" class="vds-btn vds-btn--primary">บันทึกบัญชีโซเชียล</button><button id="cancelEdit" class="vds-btn vds-btn--secondary" type="button" hidden>ยกเลิกแก้ไข</button></div>
@@ -31,12 +32,12 @@
       </section>
       <section class="vault-card">
         <div class="list-head"><div><h2>บัญชีโซเชียลที่บันทึกไว้</h2><b id="accountCount">แสดง 0 รายการ</b></div></div>
-        <div id="accountList" class="account-list"></div>
+        <div id="accountList" class="account-list" aria-live="polite"></div>
         <button id="loadMoreAccounts" class="vds-btn vds-btn--secondary load-more" type="button" hidden>โหลดรายการเก่ากว่า</button>
       </section>
     </div>
   </main>
-  <script src="/account-vault.js?v=020116" type="module"></script>
+  <script src="/account-vault.js?v=020158-vault-table" type="module"></script>
   <script src="/visiond-button-system.js?v=014407" defer></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 const $=selector=>document.querySelector(selector);
 const access=$('#vaultAccess'),workspace=$('#vaultWorkspace'),form=$('#vaultForm'),list=$('#accountList'),status=$('#vaultStatus'),loadMore=$('#loadMoreAccounts');
 const PAGE_SIZE=24,LIST_TTL=30000,requestInflight=new Map(),listCache=new Map(),secretDetails=new Map(),visibleSecrets=new Set(),revealTimers=new Map();
-let viewerId=null,items=[],editingId=null,nextCursor=null,secretGeneration=0,editSecretTimer=null;
+let viewerId=null,items=[],editingId=null,nextCursor=null,secretGeneration=0,listGeneration=0,editSecretTimer=null;
 
 function message(text,error=false){status.textContent=text;status.classList.toggle('error',error)}
 async function api(path='',options={}){
@@ -32,7 +32,7 @@ async function loadSecret(item){
   retainSecret(item.id,secret);return secret;
 }
 function clearPlaintext(){
-  secretGeneration++;
+  secretGeneration++;listGeneration++;items=[];nextCursor=null;listCache.clear();
   for(const id of [...secretDetails.keys()])conceal(id);
   if(editingId)resetForm();
   else{clearTimeout(editSecretTimer);editSecretTimer=null;form.elements.email.value='';form.elements.phone.value='';form.elements.password_hint.value='';form.elements.password_hint.type='password';$('#togglePasswordHint').textContent='แสดง'}
@@ -50,7 +50,7 @@ async function edit(item){
   try{
     const secret=await loadSecret(item);if(!secret)return;
     editingId=item.id;form.elements.platform.value=item.platform;form.elements.account_name.value=item.account_name;form.elements.login_url.value=item.login_url;
-    form.elements.phone.value=secret.phone||'';form.elements.email.value=secret.email||'';form.elements.password_hint.value=secret.password_hint||'';form.elements.note.value=item.note||'';
+    form.elements.phone.value=secret.phone||'';form.elements.email.value=secret.email||'';form.elements.machine.value=item.machine||'';form.elements.password_hint.value=secret.password_hint||'';form.elements.note.value=item.note||'';
     $('#formTitle').textContent='แก้ไขบัญชีโซเชียล';$('#saveAccount').textContent='บันทึกการแก้ไข';$('#cancelEdit').hidden=false;
     clearTimeout(editSecretTimer);editSecretTimer=setTimeout(()=>{resetForm();message('ซ่อนข้อมูลแก้ไขให้อัตโนมัติแล้ว')},60000);
     form.scrollIntoView({behavior:'smooth'});form.elements.platform.focus();
@@ -64,38 +64,52 @@ async function copyText(value,success){
 }
 function copyLink(item){return copyText(item.login_url,'คัดลอกลิงก์แล้ว')}
 async function copyEmail(item){
-  try{const secret=await loadSecret(item);if(!secret)return;if(!secret.email)throw new Error('EMAIL_UNAVAILABLE');await copyText(secret.email,'คัดลอกอีเมลแล้ว')}
+  try{if(!item.email)throw new Error('EMAIL_UNAVAILABLE');await copyText(item.email,'คัดลอกอีเมลแล้ว')}
   catch{message('คัดลอกอีเมลไม่สำเร็จ กรุณาลองอีกครั้ง',true)}
 }
 async function remove(item){
   if(!confirm('ลบบัญชี “'+item.account_name+'” ใช่ไหม?'))return;
-  try{await api('/'+item.id,{method:'DELETE'});invalidateVault(item.id);items=items.filter(value=>value.id!==item.id);render();message('ลบบัญชีโซเชียลแล้ว')}catch(error){message(error.message,true)}
+  const revision=listGeneration;
+  try{await api('/'+item.id,{method:'DELETE'});invalidateVault(item.id);if(revision===listGeneration&&document.visibilityState!=='hidden'){items=items.filter(value=>value.id!==item.id);render();message('ลบบัญชีโซเชียลแล้ว')}}catch(error){message(error.message,true)}
 }
 function render(){
   $('#accountCount').textContent='แสดง '+items.length+' รายการ';list.replaceChildren();
   if(!items.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='ยังไม่มีบัญชีโซเชียล';list.append(empty)}
-  for(const item of items){
-    const row=document.createElement('article'),secret=visibleSecrets.has(item.id)?secretDetails.get(item.id):null;row.className='account-row';
-    const title=document.createElement('h3');title.textContent=item.platform+' · '+item.account_name;
-    const link=document.createElement('p');link.className='login-url';link.textContent=item.login_url;
-    const details=document.createElement('p');details.className='secret-line';
-    details.textContent=secret?'อีเมล: '+(secret.email||'-')+'\nเบอร์: '+(secret.phone||'-')+'\nคำใบ้รหัสผ่าน: '+secret.password_hint:'อีเมล: '+(item.email_masked||'-')+' · เบอร์: '+(item.phone_masked||'-')+' · คำใบ้รหัสผ่าน: '+(item.password_hint_masked||'••••••••');
-    const note=document.createElement('small');note.textContent=item.note||'ไม่มีหมายเหตุ';
-    const actions=document.createElement('div');actions.className='account-actions';
+  const groups=new Map();for(const item of items){const key=item.platform.toLocaleLowerCase();if(!groups.has(key))groups.set(key,{platform:item.platform,items:[]});groups.get(key).items.push(item)}
+  for(const {platform,items:group} of groups.values()){
+    const section=document.createElement('section');section.className='platform-group';
+    const heading=document.createElement('h3');heading.textContent=platform;section.append(heading);
+    const hint=document.createElement('p');hint.className='table-scroll-hint';hint.textContent='เลื่อนตารางซ้าย–ขวาเพื่อดูทุกคอลัมน์และปุ่มจัดการ';section.append(hint);
+    const scroller=document.createElement('div');scroller.className='account-table-scroll';scroller.tabIndex=0;scroller.setAttribute('aria-label','ตารางบัญชี '+platform);
+    const table=document.createElement('table');table.className='account-table';
+    const caption=document.createElement('caption');caption.textContent='บัญชี '+platform;table.append(caption);
+    const thead=document.createElement('thead'),headRow=document.createElement('tr');
+    for(const label of ['บัญชี','ลิงก์เข้าสู่ระบบ','อีเมล','เบอร์โทร','Machine / เครื่อง','คำใบ้รหัสผ่าน','หมายเหตุ','จัดการ']){const th=document.createElement('th');th.scope='col';th.textContent=label;headRow.append(th)}
+    thead.append(headRow);table.append(thead);
+    const tbody=document.createElement('tbody');
+    for(const item of group){
+    const row=document.createElement('tr'),secret=visibleSecrets.has(item.id)?secretDetails.get(item.id):null;row.className='account-row';
+    const cell=(value,className='')=>{const td=document.createElement('td');td.textContent=value||'-';if(className)td.className=className;row.append(td);return td};
+    const account=document.createElement('th');account.scope='row';account.textContent=item.account_name;row.append(account);
+    cell(item.login_url,'login-url');cell(item.email,'contact-value');cell(item.phone,'contact-value');cell(item.machine);cell(secret?.password_hint||'••••••••','secret-line');cell(item.note);
+    const actionsCell=document.createElement('td'),actions=document.createElement('div');actions.className='account-actions';
     const open=document.createElement('a');open.className='vds-btn vds-btn--primary';open.href=item.login_url;open.target='_blank';open.rel='noopener noreferrer';open.textContent='เปิดหน้าเข้าสู่ระบบ';
     const copyLogin=document.createElement('button');copyLogin.type='button';copyLogin.className='vds-btn vds-btn--secondary';copyLogin.textContent='คัดลอกลิงก์';copyLogin.onclick=()=>copyLink(item);
     const copyMail=document.createElement('button');copyMail.type='button';copyMail.className='vds-btn vds-btn--secondary';copyMail.textContent='คัดลอกอีเมล';copyMail.onclick=()=>copyEmail(item);
     const show=document.createElement('button');show.type='button';show.className='vds-btn vds-btn--secondary';show.textContent=secret?'ซ่อนข้อมูล':'แสดงข้อมูล';show.onclick=()=>reveal(item);
     const change=document.createElement('button');change.type='button';change.className='vds-btn vds-btn--secondary';change.textContent='แก้ไข';change.onclick=()=>edit(item);
     const del=document.createElement('button');del.type='button';del.className='vds-btn vds-btn--danger';del.textContent='ลบ';del.onclick=()=>remove(item);
-    actions.append(open,copyLogin);if(item.has_email)actions.append(copyMail);actions.append(show,change,del);row.append(title,link,details,note,actions);list.append(row);
+    actions.append(open,copyLogin);if(item.has_email)actions.append(copyMail);actions.append(show,change,del);actionsCell.append(actions);row.append(actionsCell);tbody.append(row);
+    }
+    table.append(tbody);scroller.append(table);section.append(scroller);list.append(section);
   }
   loadMore.hidden=!nextCursor;loadMore.disabled=false;
 }
 async function load(cursor=null){
-  const path='?limit='+PAGE_SIZE+(cursor?'&cursor='+encodeURIComponent(cursor):''),key=viewerId+':'+path,cached=listCache.get(key);
+  const revision=listGeneration,path='?limit='+PAGE_SIZE+(cursor?'&cursor='+encodeURIComponent(cursor):''),key=viewerId+':'+path,cached=listCache.get(key);
   try{
     const data=cached&&cached.expires>Date.now()?cached.data:await api(path);
+    if(revision!==listGeneration||document.visibilityState==='hidden')return;
     if(!cached||cached.expires<=Date.now())listCache.set(key,{data,expires:Date.now()+LIST_TTL});
     const incoming=data.items||[];items=cursor?[...items,...incoming.filter(item=>!items.some(current=>current.id===item.id))]:incoming;
     nextCursor=data.pagination?.next_cursor||null;render();
@@ -110,17 +124,17 @@ async function init(){
   }catch{access.innerHTML='<h2>ตรวจสอบสิทธิ์ไม่สำเร็จ</h2><p>กรุณาโหลดหน้าใหม่อีกครั้ง</p>'}
 }
 form.onsubmit=async event=>{
-  event.preventDefault();const button=$('#saveAccount'),wasEditing=editingId,id=editingId;button.disabled=true;
+  event.preventDefault();const button=$('#saveAccount'),wasEditing=editingId,id=editingId,revision=listGeneration;button.disabled=true;
   try{
     const body=Object.fromEntries(new FormData(form));if(!body.phone.trim()&&!body.email.trim())throw new Error('กรุณากรอกเบอร์โทรหรืออีเมลอย่างน้อยหนึ่งรายการ');
     const data=wasEditing?await api('/'+id,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)}):await api('',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-    invalidateVault(id??data.item?.id);items=wasEditing?items.map(item=>item.id===id?data.item:item):[data.item,...items.filter(item=>item.id!==data.item.id)];
-    resetForm();render();message(wasEditing?'บันทึกการแก้ไขแล้ว':'บันทึกบัญชีโซเชียลแบบเข้ารหัสแล้ว');
+    invalidateVault(id??data.item?.id);if(revision===listGeneration&&document.visibilityState!=='hidden'){items=wasEditing?items.map(item=>item.id===id?data.item:item):[data.item,...items.filter(item=>item.id!==data.item.id)];resetForm();render();message(wasEditing?'บันทึกการแก้ไขแล้ว':'บันทึกบัญชีโซเชียลแบบเข้ารหัสแล้ว')}
   }catch(error){message(error.message,true)}finally{button.disabled=false}
 };
 $('#cancelEdit').onclick=resetForm;
 $('#togglePasswordHint').onclick=()=>{const input=form.elements.password_hint,show=input.type==='password';input.type=show?'text':'password';$('#togglePasswordHint').textContent=show?'ซ่อน':'แสดง'};
 loadMore.onclick=async()=>{if(!nextCursor)return;loadMore.disabled=true;await load(nextCursor)};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')clearPlaintext()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')clearPlaintext();else if(viewerId!=null)load()});
 window.addEventListener('pagehide',clearPlaintext);
+window.addEventListener('pageshow',()=>{if(viewerId!=null&&!items.length&&document.visibilityState!=='hidden')load()});
 init();

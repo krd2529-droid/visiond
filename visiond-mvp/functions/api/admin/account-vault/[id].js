@@ -1,6 +1,6 @@
 import {json,requireBoss} from '../../../_lib.js';
 import {accountVaultEncryptionReady,decryptAccountVaultValue,encryptAccountVaultValue} from '../../../_account_vault_crypto.js';
-import {SOCIAL_ACCOUNT_KIND,maskedSocialAccount,privateVaultResponse,socialAccountPurpose,socialAccountValues} from '../../../_account_vault_social.js';
+import {SOCIAL_ACCOUNT_KIND,maskedSocialAccount,privateVaultResponse,socialAccountPurpose,socialAccountValues,withSocialMachineColumn} from '../../../_account_vault_social.js';
 
 const headers={'cache-control':'private, no-store'};
 async function authorize(ctx){const auth=await requireBoss(ctx);return auth.error?{error:privateVaultResponse(auth.error)}:auth}
@@ -28,9 +28,9 @@ export async function onRequestPatch(ctx){
       value.phone?encryptAccountVaultValue(ctx.env,value.phone,socialAccountPurpose(current.encryption_context,'phone')):'',
       encryptAccountVaultValue(ctx.env,value.passwordHint,socialAccountPurpose(current.encryption_context,'password-hint')),
     ]);
-    const row=await ctx.env.DB.prepare("UPDATE admin_account_vault SET platform=?,account_name=?,login_url=?,email_ciphertext=?,email_hint='',phone_ciphertext=?,phone_last4='',password_hint_ciphertext=?,note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND record_kind=? RETURNING id,platform,account_name,login_url,note,created_at,updated_at").bind(value.platform,value.accountName,value.loginUrl,emailCiphertext,phoneCiphertext,passwordHintCiphertext,value.note,current.id,auth.user.id,SOCIAL_ACCOUNT_KIND).first();
+    const row=await withSocialMachineColumn(ctx.env.DB,()=>ctx.env.DB.prepare("UPDATE admin_account_vault SET platform=?,account_name=?,login_url=?,email_ciphertext=?,email_hint='',phone_ciphertext=?,phone_last4='',password_hint_ciphertext=?,machine=?,note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_user_id=? AND record_kind=? RETURNING id,platform,account_name,login_url,machine,note,created_at,updated_at").bind(value.platform,value.accountName,value.loginUrl,emailCiphertext,phoneCiphertext,passwordHintCiphertext,value.machine,value.note,current.id,auth.user.id,SOCIAL_ACCOUNT_KIND).first());
     if(!row)return json({error:'ไม่พบบัญชีนี้'},404,headers);
-    return json({ok:true,item:maskedSocialAccount(row,{hasEmail:Boolean(value.email),hasPhone:Boolean(value.phone),hasPasswordHint:true})},200,headers);
+    return json({ok:true,item:{...maskedSocialAccount(row,{hasEmail:Boolean(value.email),hasPhone:Boolean(value.phone),hasPasswordHint:true}),email:value.email,phone:value.phone}},200,headers);
   }catch(error){return json({error:error?.message||'บันทึกบัญชีโซเชียลไม่สำเร็จ'},400,headers)}
 }
 
