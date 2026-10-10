@@ -11,10 +11,11 @@ const image='vpm_'+'a'.repeat(32),imageUrl=`https://smartlinkpage.com/media/${im
 database.prepare("INSERT INTO vpage_owner_assets(id,owner_id,object_key,source_hash,content_hash,mime_type,file_size,width,height,idempotency_key,state) VALUES(?,1,'media/object',?,?,'image/webp',1,1,1,'key','ready')").run(image,'a'.repeat(64),'b'.repeat(64));
 const content=set_no=>({set_no,product_image_url:set_no===2?imageUrl:'',background_image_url:'',detail_text:set_no===1?'partial':'',youtube_url:'',text_size:'medium',text_style:'normal',text_font:'system',text_color:'#073b38',background_color:'#e9f5f3',product_items:[{destination_url:'',image_url:''}],contact_items:[{destination_url:'',image_url:'',contact_type:'facebook'}]});
 const draft={display_name:'ร้านร่าง',domain_id:'',slug:'',active_set:2,content_sets:[content(1),content(2)]};
+draft.content_sets[0].product_items[0].destination_url='javascript:alert(1)';draft.content_sets[0].contact_items[0].destination_url='   ';draft.content_sets[1].product_items[0].destination_url='  VisionDOnline.COM  ';draft.content_sets[1].contact_items[0].destination_url='lin.ee/raw';
 const call=async(fn,owner,body)=>{const request=new Request('https://visiond.test/api/vpage/draft',{method:fn===onRequestGet?'GET':fn===onRequestDelete?'DELETE':'PUT',headers:{cookie:`vd_session=owner-${owner}`,'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const response=await fn({request,env:{DB}});return{status:response.status,body:await response.json(),cache:response.headers.get('cache-control')}};
 assert.equal((await call(onRequestGet,'a')).body.item,null);
 const saved=await call(onRequestPut,'a',{expected_revision:0,draft});assert.equal(saved.status,200);assert.equal(saved.body.revision,1);assert.equal(saved.cache,'private, no-store');
-assert.equal((await call(onRequestGet,'a')).body.item.content_sets[1].product_image_url,imageUrl);
+assert.equal((await call(onRequestGet,'a')).body.item.content_sets[1].product_image_url,imageUrl);assert.deepEqual((await call(onRequestGet,'a')).body.item,draft,'draft handler preserves arbitrary destination text exactly');
 assert.throws(()=>database.prepare("UPDATE vpage_owner_assets SET state='deleting' WHERE id=?").run(image),/vpage media in draft/,'saved draft blocks asset deletion');
 assert.equal((await call(onRequestGet,'b')).body.item,null,'other owner cannot read draft');
 assert.equal((await call(onRequestPut,'b',{expected_revision:0,draft})).status,409,'other owner cannot use owner A media');

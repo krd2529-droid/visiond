@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {normalizeVpageContentSet} from '../functions/_vpage-provisioning.js';
+
+const cases=[['https://visiondonline.com','https://visiondonline.com/'],['  VisionDOnline.COM/shop  ','https://visiondonline.com/shop'],['http://Example.com','http://example.com/'],['https://lin.ee/abc','https://lin.ee/abc'],['lin.ee/abc','https://lin.ee/abc'],['https://example.com/','https://example.com/'],['javascript:alert(1)',''],['data:text/html,hello',''],['vbscript:msgbox(1)',''],['https://user:pass@example.com/',''],['not a link',''],['   ',''],['//evil.example/',''],['https://example.com\\@evil.example',''],['java\nscript:alert(1)','']];
+const content=value=>({set_no:1,product_image_url:'https://images.example/hero.webp',background_image_url:'https://images.example/background.webp',detail_text:'details',text_size:'medium',text_style:'normal',youtube_url:'',product_items:[{destination_url:value,image_url:''}],contact_items:[{contact_type:'line',destination_url:value,image_url:''}]});
+for(const [raw] of cases){const normalized=normalizeVpageContentSet(content(raw),1);assert.ok(normalized,`persist arbitrary nonempty destination ${JSON.stringify(raw)}`);assert.equal(normalized.product_items[0].destination_url,raw);assert.equal(normalized.contact_items[0].destination_url,raw)}
+assert.equal(normalizeVpageContentSet(content(''),1),null,'existing nonempty bound remains');assert.equal(normalizeVpageContentSet(content('x'.repeat(2049)),1),null,'existing length bound remains');
+for(const file of ['public/vpage.js','services/vpage/src/index.js']){const source=readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),definition=source.match(/^const safeDestinationHref=.*;$/m);assert.ok(definition,`${file} defines safe display-only normalization`);const safe=Function(`${definition[0]};return safeDestinationHref`)();for(const [raw,expected] of cases)assert.equal(safe(raw),expected,`${file}: ${JSON.stringify(raw)}`)}
+const ui=readFileSync(new URL('../public/vpage.js',import.meta.url),'utf8');assert.doesNotMatch(ui,/ยังไม่ได้เซฟร่าง|มีการแก้ไขที่ยังไม่เซฟร่าง/);assert.doesNotMatch(ui,/data-item-field="destination_url" type="url"/);
+console.log('PASS destination raw preservation, safe display normalization and unchanged structural bounds');
