@@ -111,6 +111,10 @@ const launcherContextFromQuery=launcherProfileRequested&&launcherMode&&((launche
 let launcherContext=launcherContextFromQuery;
 let handoffOpened = false, launcherTargetConsumed = false, pageAuthorized = false, pageViewerId = "", pageViewerRole = "", pageWorkspaceDelegated = false;
 let state = { channels: [], channelPagination: {}, selected: requestedChannelId, connection: null, shopConnection: null, connectionLoadSeq: 0, shopDateFrom: dateDaysAgo(29), shopDateTo: commissionAvailability().latestDate, showcasePage: 1, showcaseSearch: "", showcaseProducts: [], inventoryProducts: [], inventoryEvents: [], inventoryCounts: {}, inventoryPagination: {}, marketplaceProducts: [], marketplaceCategories: [], marketplaceCategoriesForConnection: "", marketplaceCategoriesLoadingForConnection: "", marketplaceNextToken: "", marketplaceSearchedAt: "", marketplaceComparisonDays: 3, shopMarketplaceProducts: [], shopMarketplaceNextToken: "", shopMarketplaceSearchedAt: "", shopMarketplaceComparisonDays: 3 };
+let acceptedShowcaseAdds = { channelId: "", connectionId: "", ids: new Set() };
+function acceptedShowcaseIdsForCurrentChannel() {
+  return state.shopConnection && acceptedShowcaseAdds.channelId === String(state.selected) && acceptedShowcaseAdds.channelId === String(state.shopConnection.channel_id) && acceptedShowcaseAdds.connectionId === String(state.shopConnection.id) ? acceptedShowcaseAdds.ids : new Set();
+}
 const setBrowserProfileStatus=(text,type="")=>{const status=$("[data-browser-profile-status]");if(status){status.textContent=text;status.dataset.type=type}};
 const browserLauncher=window.createVisionDBrowserLauncher?.({cryptoApi:window.crypto,invoke:(uri)=>{location.href=uri},setStatus:setBrowserProfileStatus,storage:window.localStorage,getOwnerId:()=>pageViewerId})||null;
 const commandLauncher=window.createVisionDCommandLauncher?.({cryptoApi:window.crypto,openWindow:(...args)=>window.open(...args)})||null;
@@ -845,11 +849,14 @@ function renderMarketplaceProducts(data = null, mode = "product") {
   }
   const time = view.searchedAt ? new Date(view.searchedAt).toLocaleString("th-TH") : "ขณะนี้", firstCount = products.filter((product) => product.previous_snapshot_at === null || product.previous_snapshot_at === void 0).length;
   snapshot.textContent = mode === "shop" ? `ข้อมูลสินค้าจาก TikTok เวลา ${time} · พบ ${products.length.toLocaleString()} รายการ` : `Snapshot จาก TikTok เวลา ${time} · พบ ${products.length.toLocaleString()} รายการ · เทียบยอดกับ snapshot ย้อนหลัง ${view.comparisonDays} วัน${firstCount ? ` · ${firstCount.toLocaleString()} รายการเป็น snapshot แรก จึงยังไม่มีอัตราเติบโต` : ""}`;
+  const showcaseIds = new Set((state.showcaseProducts || []).map((product) => String(product.product_id || "")).filter(Boolean));
+  for (const id of acceptedShowcaseIdsForCurrentChannel()) showcaseIds.add(id);
   const rows = products.map((product) => {
     const image = safeProductImage(product.image_url), name = escapeHtml(product.name || product.product_id), link = safeProductImage(product.product_url), growth = product.growth || {}, growthText = growth.growth_percent === null || growth.growth_percent === void 0 ? "Snapshot แรก" : `${Number(growth.growth_percent) > 0 ? "+" : ""}${Number(growth.growth_percent).toLocaleString("th-TH", { maximumFractionDigits: 1 })}%`, growthClass = growth.growth_percent === null || growth.growth_percent === void 0 ? "new" : Number(growth.growth_percent) > 0 ? "up" : Number(growth.growth_percent) < 0 ? "down" : "flat";
     const picture = image ? `<img class="showcase-product-image" src="${escapeHtml(image)}" alt="รูป ${name}" loading="lazy">` : '<span class="showcase-product-image placeholder">ไม่มีรูป</span>', title = link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer"><b>${name}</b></a>` : `<b>${name}</b>`;
-    const actions = `<td>${productLinkControl(product.product_url)}</td><td><button class="marketplace-row-add" type="button" data-add-marketplace-product="${escapeHtml(product.product_id)}">เพิ่มเข้า Showcase</button></td><td><button class="marketplace-row-add marketplace-selection-add" type="button" data-select-marketplace-product="${escapeHtml(product.product_id)}">เพิ่มเข้าลิสต์คัดสินค้า</button></td>`;
-    return mode === "shop" ? `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${escapeHtml(product.category_name||product.category_id||"–")}</td>${actions}</tr>` : `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}"></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td>${actions}</tr>`;
+    const inShowcase = showcaseIds.has(String(product.product_id || ""));
+    const actions = `<td>${productLinkControl(product.product_url)}</td><td>${inShowcase ? '<button class="marketplace-row-add" type="button" disabled>เพิ่มแล้ว</button>' : `<button class="marketplace-row-add" type="button" data-add-marketplace-product="${escapeHtml(product.product_id)}">เพิ่มเข้า Showcase</button>`}</td><td><button class="marketplace-row-add marketplace-selection-add" type="button" data-select-marketplace-product="${escapeHtml(product.product_id)}">เพิ่มเข้าลิสต์คัดสินค้า</button></td>`;
+    return mode === "shop" ? `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}" ${inShowcase ? "disabled" : ""}></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td>${escapeHtml(product.category_name||product.category_id||"–")}</td>${actions}</tr>` : `<tr data-marketplace-product-id="${escapeHtml(product.product_id)}"><td><input class="marketplace-product-check" type="checkbox" aria-label="เลือก ${name}" ${inShowcase ? "disabled" : ""}></td><td><div class="showcase-product-cell">${picture}<div>${title}<code>${escapeHtml(product.product_id)}</code></div></div></td><td>${escapeHtml(product.shop_name || "–")}</td><td>${Number(product.units_sold || 0).toLocaleString()}</td><td>${Number(product.commission_rate || 0) ? `${(Number(product.commission_rate) / 100).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%` : "–"}</td><td><span class="gmv-growth ${growthClass}">${growthText}</span></td>${actions}</tr>`;
   }).join("");
   const nextId = mode === "shop" ? "marketplaceShopNext" : "marketplaceNext";
   const headers=mode==="shop"?"<th>เลือก</th><th>รูปและสินค้า</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>หมวดหมู่</th><th>ลิงก์สินค้า</th><th>Showcase</th><th>ลิสต์คัดสินค้า</th>":`<th>เลือก</th><th>สินค้า</th><th>ร้านค้า</th><th>ขายแล้ว</th><th>ค่าคอม</th><th>เติบโต ${view.comparisonDays} วัน</th><th>ลิงก์สินค้า</th><th>Showcase</th><th>ลิสต์คัดสินค้า</th>`;
@@ -1337,6 +1344,9 @@ async function loadTikTokConnection(channelId = state.selected, context = channe
   if(loadSeq!==state.connectionLoadSeq||!context||!channelOwnership.current(context)||requestedRange!==String(shopDateQuery(requestedChannelId)))return shopConnection;
   state.connection = connection;
   state.shopConnection = shopConnection;
+  state.showcaseProducts = shopConnection ? products.filter((product) => product.product_id) : [];
+  if (!shopConnection || acceptedShowcaseAdds.channelId !== String(requestedChannelId) || acceptedShowcaseAdds.connectionId !== String(shopConnection.id)) acceptedShowcaseAdds = { channelId: String(requestedChannelId), connectionId: String(shopConnection?.id || ""), ids: new Set() };
+  for (const product of state.showcaseProducts) acceptedShowcaseAdds.ids.delete(String(product.product_id));
   state.orderSync=data.order_sync||{status:'never',revision:0};
   state.orderSyncRange=requestedRange;
   const shopActions = tiktokShopActionVisibility({ selectable: Boolean(tiktokShopNavigation.connectUrl()), connected: Boolean(shopConnection) });
@@ -1844,17 +1854,39 @@ async function addProductsToShowcase(ids, button, mode = "product") {
   }
   if (!ids.length) return showToast("กรุณาเลือกสินค้า Marketplace ก่อน", "warning");
   button.disabled = true;
+  let acceptedSingle = false;
   try {
     const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_add", id: shopConnection.id, channel_id: context.channelId, product_ids: ids }) });
     if(!channelOwnership.current(context))return;
-    showToast(result.warning || `เพิ่มสินค้าเข้า Showcase ของ ${shopConnection.creator_username || "บัญชี Creator"} แล้ว ${Number(result.added || ids.length).toLocaleString()} รายการ`, result.warning ? "warning" : "success");
+    acceptedSingle = ids.length === 1 && Number(result.requested) === 1 && Number(result.added) === 1 && Array.isArray(result.errors) && result.errors.length === 0;
+    if (acceptedSingle) {
+      if (acceptedShowcaseAdds.channelId !== context.channelId || acceptedShowcaseAdds.connectionId !== String(shopConnection.id)) acceptedShowcaseAdds = { channelId: context.channelId, connectionId: String(shopConnection.id), ids: new Set() };
+      acceptedShowcaseAdds.ids.add(String(ids[0]));
+    }
     await loadTikTokConnection(context.channelId,context);
+    if(!channelOwnership.current(context))return;
     renderMarketplaceProducts({ products: marketplaceView(mode).products }, mode);
+    const confirmed = new Set((state.showcaseProducts || []).map((product) => String(product.product_id || "")));
+    for (const id of acceptedShowcaseIdsForCurrentChannel()) confirmed.add(id);
+    const confirmedCount = ids.filter((id) => confirmed.has(String(id))).length;
+    if (confirmedCount === ids.length && Number(result.added) === ids.length && !result.warning) showToast(`เพิ่มสินค้าเข้า Showcase ของ ${shopConnection.creator_username || "บัญชี Creator"} แล้ว ${confirmedCount.toLocaleString()} รายการ`, "success");
+    else showToast(result.warning || (Number(result.added) > 0 ? `TikTok รับคำขอแล้ว แต่ยังยืนยันสินค้าใน Showcase ได้ ${confirmedCount} จาก ${ids.length} รายการ กรุณาซิงก์ Showcase อีกครั้ง` : "TikTok ยังไม่ยืนยันการเพิ่มสินค้าใหม่ กรุณาตรวจรายละเอียด Showcase ก่อนลองอีกครั้ง"), "warning");
   } catch (error) {
-    if(channelOwnership.current(context))showToast(error.message, "error");
+    if(channelOwnership.current(context)) {
+      if (acceptedSingle) {
+        renderMarketplaceProducts({ products: marketplaceView(mode).products }, mode);
+        showToast("TikTok รับสินค้าแล้ว แต่ดึงรายการล่าสุดกลับมาแสดงไม่สำเร็จ กรุณาซิงก์ Showcase อีกครั้ง", "warning");
+      } else showToast(showcaseAddErrorMessage(error), "error");
+    }
   } finally {
     button.disabled = false;
   }
+}
+function showcaseAddErrorMessage(error) {
+  const detail = error?.detail;
+  const describe = (item) => typeof item === "string" ? item : item && typeof item === "object" ? [item.code ?? item.error_code, item.message || item.error_message || item.reason].filter(Boolean).join(": ") : "";
+  const reason = (Array.isArray(detail) ? detail.map(describe).filter(Boolean).slice(0, 2).join("; ") : describe(detail)).slice(0, 240);
+  return [String(error?.message || "เพิ่มสินค้าใน Showcase ไม่สำเร็จ"), reason].filter(Boolean).join(" — ");
 }
 async function addMarketplaceSelection(mode = "product") {
   const view = marketplaceView(mode), ids = [...view.box.querySelectorAll(".marketplace-product-check:checked")].map((input) => input.closest("[data-marketplace-product-id]").dataset.marketplaceProductId).filter(Boolean);
@@ -1877,12 +1909,14 @@ async function removeShowcaseProducts(ids, scopeLabel, sourceButton) {
       const batch = uniqueIds.slice(index, index + 200);
       const result = await api("/api/admin/tiktok-connections", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "shop_remove", id: connectionId, channel_id: context.channelId, product_ids: batch }) });
       removed += Number(result.removed || batch.length);
+      if (Number(result.removed) === batch.length && acceptedShowcaseAdds.channelId === context.channelId && acceptedShowcaseAdds.connectionId === String(connectionId)) for (const id of batch) acceptedShowcaseAdds.ids.delete(String(id));
     }
     if(!channelOwnership.current(context))return;showToast(`ลบสินค้าออกจาก Showcase แล้ว ${removed.toLocaleString()} รายการ`);
     state.showcasePage = 1;
     await loadTikTokConnection(context.channelId,context);
+    if(channelOwnership.current(context))for(const mode of ["product","shop"]){const view=marketplaceView(mode);if(view.products.length)renderMarketplaceProducts({products:view.products},mode)}
   } catch (error) {
-    if(channelOwnership.current(context)){showToast(removed ? `ลบสำเร็จ ${removed.toLocaleString()} รายการ ก่อนเกิดข้อผิดพลาด: ${error.message}` : error.message, "error");await loadTikTokConnection(context.channelId,context);}
+    if(channelOwnership.current(context)){showToast(removed ? `ลบสำเร็จ ${removed.toLocaleString()} รายการ ก่อนเกิดข้อผิดพลาด: ${error.message}` : error.message, "error");await loadTikTokConnection(context.channelId,context);if(channelOwnership.current(context))for(const mode of ["product","shop"]){const view=marketplaceView(mode);if(view.products.length)renderMarketplaceProducts({products:view.products},mode)}}
   } finally {
     buttons.forEach((button) => { button.disabled = false; });
   }
