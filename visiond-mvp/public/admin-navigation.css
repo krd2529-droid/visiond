@@ -106,3 +106,34 @@
 .admin-menu-board .admin-all-grid>.danger-link,.admin-menu-board .admin-all-grid>button.boss-only-danger{border-color:#dfa3a3!important;background:#fff7f7!important;color:#982e2e!important;box-shadow:0 7px 18px rgba(132,32,32,.07)!important}
 @media(max-width:520px){.admin-menu-board .admin-all-grid>button,.admin-menu-board .admin-all-grid>.admin-more-link{min-height:96px!important;padding:10px 7px!important}}
 body:not(.viewer-is-boss) .admin-tabs > .boss-only-danger{display:none!important}
+
+/* Personal admin shortcuts and independent pin controls. */
+.admin-pinned-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:22px 0 0}
+.admin-pinned-heading h2{margin:0;color:#075f5b;font-size:18px}
+.admin-pinned-heading span{color:#526d6b;font-size:12px}
+.admin-pinned-empty{margin:12px 0 30px;padding:18px;border:1px dashed #a7d1cd;border-radius:14px;background:#f7fffe;color:#526d6b}
+.admin-pinned-empty[hidden]{display:none!important}
+.admin-tabs{margin-top:12px!important}
+.admin-tabs:empty{display:none!important}
+.admin-pinned-item{display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-tabs .admin-pinned-item>.admin-pinned-shortcut{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:100%;min-width:0;min-height:104px;margin:0;padding:12px 10px;border:1px solid rgba(7,143,136,.2);border-radius:17px;background:#fff;color:#143f3d;box-shadow:0 7px 18px rgba(6,78,76,.08);text-decoration:none;text-align:center;font:800 14px/1.28 "Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif;cursor:pointer}
+.admin-tabs .admin-pinned-item>.admin-pinned-shortcut:hover{border-color:rgba(7,143,136,.55);box-shadow:0 11px 24px rgba(6,78,76,.14)}
+.admin-tabs .admin-pinned-item>.admin-pinned-shortcut.active,.admin-tabs .admin-pinned-item>.course-tab-link{border-color:#078f88;background:linear-gradient(145deg,#0bc4bd,#07958f);color:#063d3a}
+.admin-tabs .admin-pinned-item>.admin-pinned-shortcut.active .admin-tab-icon,.admin-tabs .admin-pinned-item>.course-tab-link .admin-tab-icon{background:rgba(255,255,255,.34)}
+.admin-tabs .admin-pinned-item>.admin-pinned-unpin{box-sizing:border-box;width:100%;min-width:0;min-height:30px;margin:0;padding:5px 7px;border:1px solid #8bbfba;border-radius:9px;background:#fff;color:#075f5b;box-shadow:none;font-family:inherit;font-size:10px;font-weight:800;line-height:1.2;cursor:pointer}
+.admin-tabs .admin-pinned-item>.admin-pinned-unpin:hover{background:#e0f8f5}
+.admin-tabs .admin-pinned-item>button:focus-visible,.admin-tabs .admin-pinned-item>a:focus-visible{outline:3px solid #f1b92b;outline-offset:2px}
+.admin-menu-item{position:relative;min-width:0}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination{appearance:none;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:100%;min-width:0;min-height:104px;margin:0;padding:34px 10px 13px;border:1px solid rgba(7,143,136,.22);border-radius:17px;background:#fff;color:#143f3d;box-shadow:0 7px 18px rgba(6,78,76,.08);text-decoration:none;text-align:center;font:900 14px/1.25 "Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif;cursor:pointer}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination:hover{border-color:rgba(7,143,136,.55);background:#f4fffe;box-shadow:0 11px 24px rgba(6,78,76,.14)}
+.admin-menu-board .admin-all-grid>.admin-menu-item>button.active{border-color:#078f88;background:linear-gradient(145deg,#0bc4bd,#07958f);color:#063d3a}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination>span:first-child{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#e8f9f7;font-size:21px;line-height:1}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination>span:last-child{font-size:14px;font-weight:900;line-height:1.25}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination b{display:block;font-size:14px;font-weight:900;line-height:1.25}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.danger-link,.admin-menu-board .admin-all-grid>.admin-menu-item>.boss-only-danger.danger-link{border-color:#dfa3a3;background:#fff7f7;color:#982e2e}
+.admin-menu-item .admin-pin-toggle{position:absolute;top:7px;right:7px;z-index:1;min-height:26px;padding:3px 8px;border:1px solid #8bbfba;border-radius:999px;background:#fff;color:#075f5b;font-family:inherit;font-size:11px;font-weight:800;line-height:1.2;cursor:pointer}
+.admin-menu-item .admin-pin-toggle[aria-pressed="true"]{border-color:#087f79;background:#e0f8f5;color:#075f5b}
+.admin-menu-item .admin-pin-toggle:hover{background:#ccf1ec}
+.admin-menu-item>.admin-menu-destination:focus-visible,.admin-menu-item>.admin-pin-toggle:focus-visible{outline:3px solid #f1b92b;outline-offset:2px}
+@media(max-width:1040px){.admin-pinned-heading{flex-wrap:wrap}.admin-tabs{margin-bottom:22px!important}.admin-pinned-item{flex:0 0 118px;scroll-snap-align:start}}
+@media(max-width:520px){.admin-pinned-heading span{font-size:11px}.admin-tabs .admin-pinned-item>.admin-pinned-shortcut{min-height:96px;padding:10px 7px}.admin-tabs .admin-pinned-item>.admin-pinned-unpin{font-size:9px}.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination{min-height:96px;padding:33px 7px 10px}.admin-menu-item .admin-pin-toggle{font-size:10px}}

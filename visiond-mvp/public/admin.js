@@ -394,6 +394,111 @@ manualUnlockForm.insertAdjacentHTML(
 );
 refreshUnlockHistory.onclick = loadUnlockHistory;
 
+function setupAdminMenuPins() {
+  const strip = document.querySelector('.admin-tabs');
+  const grid = document.querySelector('.admin-all-grid');
+  const empty = document.querySelector('#adminPinnedEmpty');
+  if (!strip || !grid || !empty || !viewer?.id) return;
+
+  const topDestinations = [...strip.children].filter(node => node.matches('button[data-admin-tab],a[href]'));
+  const destinationId = node => {
+    if (node.dataset.adminTab) return `tab:${node.dataset.adminTab}`;
+    // Store an opaque, stable ID; saved preferences never contain a URL or markup.
+    let hash = 0x811c9dc5;
+    for (const char of node.getAttribute('href') || '') {
+      hash ^= char.charCodeAt(0);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return `link:${(hash >>> 0).toString(16).padStart(8, '0')}`;
+  };
+  const defaultIds = topDestinations.map(destinationId);
+  grid.prepend(...topDestinations);
+  const candidates = [...grid.children].filter(node => node.matches('button[data-admin-tab],a[href]'));
+  const knownIds = new Set(candidates.map(destinationId));
+  const destinations = new Map();
+  for (const source of candidates) {
+    if (source.classList.contains('boss-only-danger') && viewer.role !== 'boss') continue;
+    const id = destinationId(source);
+    if (destinations.has(id)) continue;
+    destinations.set(id, source);
+  }
+
+  const storageKey = `visiond:admin:pins:v1:${viewer.id}`;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+  const savedIds = new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string' && knownIds.has(id)) : []);
+  const hiddenIds = [...savedIds].filter(id => !destinations.has(id));
+  const pinned = new Set(Array.isArray(saved) ? [...savedIds].filter(id => destinations.has(id)) : defaultIds.filter(id => destinations.has(id)));
+  const toggles = new Map();
+  const shortcutNodes = new Map();
+  const labelOf = source => source.textContent.replace(/\s+/g, ' ').trim();
+  const syncActive = () => {
+    for (const [id, shortcut] of shortcutNodes) {
+      shortcut.classList.toggle('active', destinations.get(id)?.classList.contains('active') || false);
+    }
+  };
+  const changePin = (id, shouldPin) => {
+    if (shouldPin) pinned.add(id);
+    else pinned.delete(id);
+    try { localStorage.setItem(storageKey, JSON.stringify([...hiddenIds, ...pinned])); } catch {}
+    render();
+    toggles.get(id)?.focus();
+  };
+  const render = () => {
+    strip.replaceChildren();
+    shortcutNodes.clear();
+    for (const [id, source] of destinations) {
+      const isPinned = pinned.has(id);
+      const toggle = toggles.get(id);
+      toggle.setAttribute('aria-pressed', String(isPinned));
+      toggle.setAttribute('aria-label', `${isPinned ? 'เอาหมุดออกจาก' : 'ปักหมุด'} ${labelOf(source)}`);
+      toggle.textContent = isPinned ? '★ ปักหมุดแล้ว' : '☆ ปักหมุด';
+      if (!isPinned) continue;
+      const item = document.createElement('div');
+      item.className = 'admin-pinned-item';
+      item.dataset.adminPinnedId = id;
+      const shortcut = document.createElement(source.localName === 'a' ? 'a' : 'button');
+      shortcut.className = 'admin-pinned-shortcut' + (source.localName === 'a' ? ' admin-tab-link' : '');
+      if (source.classList.contains('boss-only-danger')) shortcut.classList.add('boss-only-danger');
+      if (source.classList.contains('course-tab-link')) shortcut.classList.add('course-tab-link');
+      if (source.localName === 'a') shortcut.href = source.getAttribute('href');
+      else {
+        shortcut.type = 'button';
+        shortcut.addEventListener('click', () => source.click());
+      }
+      shortcut.append(...[...source.childNodes].map(node => node.cloneNode(true)));
+      const unpin = document.createElement('button');
+      unpin.type = 'button';
+      unpin.className = 'admin-pinned-unpin';
+      unpin.textContent = '× ถอนปักหมุด';
+      unpin.setAttribute('aria-label', `ถอนปักหมุด ${labelOf(source)}`);
+      unpin.addEventListener('click', () => changePin(id, false));
+      item.append(shortcut, unpin);
+      strip.append(item);
+      shortcutNodes.set(id, shortcut);
+    }
+    empty.hidden = shortcutNodes.size > 0;
+    syncActive();
+  };
+
+  for (const [id, source] of destinations) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'admin-menu-item';
+    if (source.classList.contains('boss-only-danger')) wrapper.classList.add('boss-only-danger');
+    source.before(wrapper);
+    wrapper.append(source);
+    source.classList.add('admin-menu-destination');
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'admin-pin-toggle';
+    toggle.addEventListener('click', () => changePin(id, !pinned.has(id)));
+    wrapper.append(toggle);
+    toggles.set(id, toggle);
+    if (source.dataset.adminTab) source.addEventListener('click', syncActive);
+  }
+  render();
+}
+
 async function init() {
   clearTikTokReviewerSecrets();
   const me = await fetch("/api/auth/me");
@@ -410,6 +515,7 @@ async function init() {
   }
   setupBossMobilePreview();
   await loadDigitalStorefrontEmergency();
+  setupAdminMenuPins();
   adminPanel.hidden = false;
   Object.entries(panels).forEach(
     ([name, panel]) => (panel.hidden = name !== "orders"),

@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/admin-categories.css?v=01398" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
-    <link rel="stylesheet" href="/admin-navigation.css?v=014478" />
+    <link rel="stylesheet" href="/admin-navigation.css?v=014479" />
     <link rel="stylesheet" href="/admin-mobile.css?v=014129" />
     <style>
       .v3-review-section {
@@ -996,7 +996,8 @@
       </section>
       <div id="accessDenied"></div>
       <section id="adminPanel" hidden>
-        <div class="admin-tabs" aria-label="งานหลักหลังบ้าน">
+        <div class="admin-pinned-heading"><h2>เมนูที่ปักหมุด</h2><span>เลือกปักหมุดหรือเอาหมุดออกได้ที่เมนูจัดการทั้งหมด</span></div>
+        <nav class="admin-tabs" aria-label="เมนูที่ปักหมุด">
           <button class="active" data-admin-tab="orders">
             <span class="admin-tab-icon" aria-hidden="true">🧾</span
             ><span>ออเดอร์<br />และสลิป</span>
@@ -1033,7 +1034,8 @@
             ><span class="admin-tab-icon" aria-hidden="true">🎓</span
             ><span>ตรวจคอร์ส<br />ผู้ขาย</span></a
           >
-        </div>
+        </nav>
+        <p id="adminPinnedEmpty" class="admin-pinned-empty" hidden>ยังไม่มีเมนูที่ปักหมุด เลือกเมนูจากรายการด้านล่างเพื่อเพิ่มทางลัด</p>
         <section class="admin-menu-board" aria-label="เมนูจัดการหลังบ้านทั้งหมด">
           <h2>เมนูจัดการทั้งหมด</h2>
           <div class="admin-all-grid">
@@ -2322,7 +2324,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-<script src="/admin.js?v=02070"></script>
+<script src="/admin.js?v=02071"></script>
     <script src="/vision2.js?v=014422"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=02058"></script>
