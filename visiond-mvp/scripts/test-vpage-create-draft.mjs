@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {onRequestGet,onRequestPut,onRequestDelete} from '../functions/api/vpage/draft.js';
+import {onRequestDelete as deleteOwnerMedia} from '../functions/api/vpage/media/[id].js';
+
+const database=new DatabaseSync(':memory:');database.exec("PRAGMA foreign_keys=ON; CREATE TABLE runtime_schema_state(schema_key TEXT PRIMARY KEY,version INTEGER); INSERT INTO runtime_schema_state VALUES('core',66); CREATE TABLE users(id INTEGER PRIMARY KEY,email TEXT,username TEXT,name TEXT,phone TEXT,role TEXT,created_at TEXT); CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id INTEGER,expires_at TEXT); INSERT INTO users VALUES(1,'a@local','a','A','','user','2026-01-01'),(2,'b@local','b','B','','user','2026-01-01'); INSERT INTO sessions VALUES('owner-a',1,'2099-01-01'),('owner-b',2,'2099-01-01'); CREATE TABLE vpage_pages(id TEXT); CREATE TABLE vpage_credits(id TEXT);");
+database.exec(readFileSync(new URL('../migrations/0131_vpage_owner_assets.sql',import.meta.url),'utf8'));database.exec(readFileSync(new URL('../migrations/0132_vpage_create_drafts.sql',import.meta.url),'utf8'));
+const DB={prepare(sql){const statement=database.prepare(sql);const bound=args=>({bind(...values){return bound(values)},async first(){return statement.get(...args)||null},async all(){return{results:statement.all(...args)}},async run(){const result=statement.run(...args);return{meta:{changes:result.changes}}}});return bound([])},async batch(statements){database.exec('BEGIN');try{const results=[];for(const statement of statements)results.push(await statement.run());database.exec('COMMIT');return results}catch(error){database.exec('ROLLBACK');throw error}}};
+const image='vpm_'+'a'.repeat(32),imageUrl=`https://smartlinkpage.com/media/${image}`;
+database.prepare("INSERT INTO vpage_owner_assets(id,owner_id,object_key,source_hash,content_hash,mime_type,file_size,width,height,idempotency_key,state) VALUES(?,1,'media/object',?,?,'image/webp',1,1,1,'key','ready')").run(image,'a'.repeat(64),'b'.repeat(64));
+const content=set_no=>({set_no,product_image_url:set_no===2?imageUrl:'',background_image_url:'',detail_text:set_no===1?'partial':'',youtube_url:'',text_size:'medium',text_style:'normal',text_font:'system',text_color:'#073b38',background_color:'#e9f5f3',product_items:[{destination_url:'',image_url:''}],contact_items:[{destination_url:'',image_url:'',contact_type:'facebook'}]});
+const draft={display_name:'ร้านร่าง',domain_id:'',slug:'',active_set:2,content_sets:[content(1),content(2)]};
+const call=async(fn,owner,body)=>{const request=new Request('https://visiond.test/api/vpage/draft',{method:fn===onRequestGet?'GET':fn===onRequestDelete?'DELETE':'PUT',headers:{cookie:`vd_session=owner-${owner}`,'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const response=await fn({request,env:{DB}});return{status:response.status,body:await response.json(),cache:response.headers.get('cache-control')}};
+assert.equal((await call(onRequestGet,'a')).body.item,null);
+const saved=await call(onRequestPut,'a',{expected_revision:0,draft});assert.equal(saved.status,200);assert.equal(saved.body.revision,1);assert.equal(saved.cache,'private, no-store');
+assert.equal((await call(onRequestGet,'a')).body.item.content_sets[1].product_image_url,imageUrl);
+assert.throws(()=>database.prepare("UPDATE vpage_owner_assets SET state='deleting' WHERE id=?").run(image),/vpage media in draft/,'saved draft blocks asset deletion');
+assert.equal((await call(onRequestGet,'b')).body.item,null,'other owner cannot read draft');
+assert.equal((await call(onRequestPut,'b',{expected_revision:0,draft})).status,409,'other owner cannot use owner A media');
+assert.equal((await call(onRequestPut,'a',{expected_revision:0,draft})).body.replayed,true,'lost response retries are idempotent');
+const revised=structuredClone(draft);revised.slug='partial-draft';assert.equal((await call(onRequestPut,'a',{expected_revision:1,draft:revised})).body.revision,2);
+assert.equal((await call(onRequestPut,'a',{expected_revision:1,draft})).status,409,'stale tab cannot overwrite');
+assert.equal((await call(onRequestDelete,'a',{expected_revision:1})).body.deleted,false);
+assert.equal((await call(onRequestDelete,'a',{expected_revision:2})).body.deleted,true);
+database.prepare("UPDATE vpage_owner_assets SET state='deleting' WHERE id=?").run(image);
+assert.equal((await call(onRequestPut,'a',{expected_revision:0,draft})).status,409,'deletion first blocks draft reference');
+assert.equal((await call(onRequestGet,'a')).body.item,null);assert.equal(database.prepare('SELECT count(*) n FROM vpage_pages').get().n,0);assert.equal(database.prepare('SELECT count(*) n FROM vpage_credits').get().n,0);
+const absentId='vpm_'+'b'.repeat(32),retryId='vpm_'+'c'.repeat(32),blockedId='vpm_'+'d'.repeat(32),addAsset=database.prepare("INSERT INTO vpage_owner_assets(id,owner_id,object_key,source_hash,content_hash,mime_type,file_size,width,height,idempotency_key,state) VALUES(?,1,?,?,?,'image/webp',1,1,1,?,?)");
+for(const [id,state] of [[absentId,'pending'],[retryId,'deleting'],[blockedId,'ready']])addAsset.run(id,`media/${id}`,'a'.repeat(64),'b'.repeat(64),`key-${id}`,state);
+const deleted=[],FILES={async delete(key){deleted.push(key)}},originalFetch=globalThis.fetch;let remoteStatus=404,remoteCode='VPAGE_MEDIA_NOT_FOUND';globalThis.fetch=async input=>{assert.match(String(input),/^https:\/\/vpage\.test\/api\/v1\/media\/vpm_/);return new Response(JSON.stringify({error:'remote refusal',code:remoteCode}),{status:remoteStatus,headers:{'content-type':'application/json'}})};
+try{const deleteCall=async id=>{const request=new Request(`https://visiond.test/api/vpage/media/${id}`,{method:'DELETE',headers:{cookie:'vd_session=owner-a'}});return deleteOwnerMedia({request,params:{id},env:{DB,FILES,VPAGE_API_BASE:'https://vpage.test',VPAGE_SHARED_SECRET:'test-secret-at-least-thirty-two-chars',VPAGE_KEY_ID:'test-key'}})};
+  assert.equal((await deleteCall(absentId)).status,200,'pending object with remote 404 can be deleted');assert.equal(database.prepare('SELECT state FROM vpage_owner_assets WHERE id=?').get(absentId).state,'deleted');
+  assert.equal((await deleteCall(retryId)).status,200,'deleting retry with remote 404 finishes local cleanup');assert.equal(database.prepare('SELECT state FROM vpage_owner_assets WHERE id=?').get(retryId).state,'deleted');
+  remoteStatus=409;remoteCode='VPAGE_MEDIA_REFERENCED';assert.equal((await deleteCall(blockedId)).status,409,'other remote refusals must not be treated as absence');assert.equal(database.prepare('SELECT state FROM vpage_owner_assets WHERE id=?').get(blockedId).state,'ready');assert.deepEqual(deleted,[`media/${absentId}`,`media/${retryId}`]);
+}finally{globalThis.fetch=originalFetch}
+console.log('PASS private owner create draft save, restore, revision, replay, isolation and no page/credit writes');

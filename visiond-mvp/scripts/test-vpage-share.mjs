@@ -6,7 +6,7 @@ import service from '../services/vpage/src/index.js';
 
 const db=new DatabaseSync(':memory:');
 const migration=name=>readFileSync(new URL(`../services/vpage/migrations/${name}`,import.meta.url),'utf8');
-db.exec('PRAGMA foreign_keys=ON;'+migration('0001_vpage_service.sql')+migration('0002_vpage_editor.sql')+migration('0003_vpage_multi_items.sql'));
+db.exec('PRAGMA foreign_keys=ON;'+migration('0001_vpage_service.sql')+migration('0002_vpage_editor.sql')+migration('0003_vpage_multi_items.sql')+migration('0004_vpage_styling.sql'));
 const id='vp_33333333333333333333333333333333',product='https://shop.example/item?a=1&b=2',contact='https://line.me/R/ti/p/@seller';
 db.prepare("INSERT INTO vpage_pages(id,domain_id,owner_ref,slug,display_name,status,create_idempotency_key,create_request_hash,created_at,expires_at,updated_at) VALUES(?,'dom_smartlinkpage',?,'share-example','Share Example','active','share-key','share-hash',CURRENT_TIMESTAMP,datetime('now','+1 day'),CURRENT_TIMESTAMP)").run(id,'a'.repeat(64));
 db.prepare("INSERT INTO vpage_content_sets(page_id,set_no,product_image_url,detail_text,background_image_url,revision) VALUES(?,1,'https://images.example/product.jpg','Details','https://images.example/background.jpg',1)").run(id);

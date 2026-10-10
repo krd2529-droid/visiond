@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {createRequire} from 'node:module';
+import {onRequestPost,onRequestGet} from '../functions/api/vpage/media/index.js';
+import {onRequestGet as preview,onRequestHead as previewHead} from '../functions/api/vpage/media/[id].js';
+import worker from '../services/vpage/src/index.js';
+import {hashVpageBytes} from '../functions/_vpage-media.js';
+const require=createRequire(import.meta.url),sharp=require(process.env.SHARP_PACKAGE||'sharp');
+const adapter=db=>({prepare(sql){const bound=args=>({bind(...values){return bound(values)},async first(){return db.prepare(sql).get(...args)||null},async all(){return{results:db.prepare(sql).all(...args)}},async run(){const result=db.prepare(sql).run(...args);return{meta:{changes:Number(result.changes)}}}});return bound([])},async batch(statements){db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push(await statement.run());db.exec('COMMIT');return results}catch(error){db.exec('ROLLBACK');throw error}}});
+const local=new DatabaseSync(':memory:'),remote=new DatabaseSync(':memory:');
+local.exec(`PRAGMA foreign_keys=ON;CREATE TABLE runtime_schema_state(schema_key TEXT PRIMARY KEY,version INTEGER);INSERT INTO runtime_schema_state VALUES('core',66);
+CREATE TABLE users(id INTEGER PRIMARY KEY,email TEXT,username TEXT,name TEXT,phone TEXT,role TEXT,created_at TEXT);
+CREATE TABLE sessions(id TEXT PRIMARY KEY,user_id INTEGER,expires_at TEXT);
+INSERT INTO users VALUES(1,'a@local','a','A','','user','2026-01-01'),(2,'b@local','b','B','','user','2026-01-01');
+INSERT INTO sessions VALUES('owner-a',1,'2099-01-01'),('owner-b',2,'2099-01-01');
+CREATE TABLE vpage_pages(id TEXT PRIMARY KEY,user_id INTEGER,vpage_id TEXT,status TEXT,expires_at TEXT);CREATE TABLE vpage_credits(id INTEGER);`);
+local.exec(readFileSync(new URL('../migrations/0127_vpage_media.sql',import.meta.url),'utf8'));
+for(const file of ['0001_vpage_service','0002_vpage_editor','0003_vpage_multi_items','0004_vpage_styling','0005_vpage_compensation','0006_vpage_media'])remote.exec(readFileSync(new URL('../services/vpage/migrations/'+file+'.sql',import.meta.url),'utf8'));
+function storage(){const objects=new Map();let puts=0,failAfterPut=false,headFault=false;const view=value=>({body:value.bytes,size:value.bytes.length,httpMetadata:value.httpMetadata,customMetadata:value.customMetadata,arrayBuffer:async()=>value.bytes.slice().buffer});return{objects,get puts(){return puts},set failAfterPut(value){failAfterPut=value},async put(key,bytes,options){puts++;objects.set(key,{bytes:new Uint8Array(await new Response(bytes).arrayBuffer()),...options});if(failAfterPut){failAfterPut=false;headFault=true}},async head(key){if(headFault){headFault=false;return null}const value=objects.get(key);return value?view(value):null},async get(key){const value=objects.get(key);return value?view(value):null},async delete(key){objects.delete(key)}}}
+const FILES=storage(),VPAGE_MEDIA=storage();let sanitizerCalls=0;
+const PORTRAIT_SANITIZER={async fetch(url,options){sanitizerCalls++;assert.equal(url,'https://portrait-sanitizer.internal/v1/vpage-reencode');assert.equal(options.headers['x-visiond-sanitizer-protocol'],'2');const source=Buffer.from(await new Response(options.body).arrayBuffer()),image=sharp(source),metadata=await image.metadata();await image.clone().raw().toBuffer();const output=await image.webp().toBuffer(),hash=await hashVpageBytes(output);return new Response(output,{headers:{'content-type':'image/webp','content-length':String(output.length),'x-visiond-sanitizer':'cloudflare-images-v1','x-visiond-output-bytes':String(output.length),'x-visiond-output-width':String(metadata.width),'x-visiond-output-height':String(metadata.height),'x-visiond-output-sha256':hash}})}};
+const secret='precreate-media-runtime-secret-at-least-32-chars',key='test-key',remoteEnv={VPAGE_DB:adapter(remote),VPAGE_MEDIA,VPAGE_SHARED_SECRET:secret,VPAGE_KEY_ID:key},env={DB:adapter(local),FILES,PORTRAIT_SANITIZER,VPAGE_API_BASE:'https://vpage.test',VPAGE_SHARED_SECRET:secret,VPAGE_KEY_ID:key,APP_ORIGIN:'https://visiond.test'};
+const png=await sharp({create:{width:12,height:8,channels:3,background:'#123456'}}).png().toBuffer();
+const nativeFetch=globalThis.fetch;let loseResponse=false;
+globalThis.fetch=async(url,init)=>{const response=await worker.fetch(new Request(url,init),remoteEnv);if(loseResponse){loseResponse=false;throw new Error('simulated response loss')}return response};
+const upload=async({session='owner-a',idempotency='owner-upload-first',bytes=png,type='image/png'}={})=>{const form=new FormData();form.set('image',new File([bytes],'fixture.png',{type}));const request=new Request('https://visiond.test/api/vpage/media',{method:'POST',headers:{cookie:'vd_session='+session,'idempotency-key':idempotency},body:form});request.headers.set('content-length',String((await request.clone().arrayBuffer()).byteLength));const response=await onRequestPost({request,env});return{status:response.status,body:await response.json()}};
+const read=async(id,session,head=false)=>{const request=new Request('https://visiond.test/api/vpage/media/'+id,{method:head?'HEAD':'GET',headers:session?{cookie:'vd_session='+session}:{}});return(head?previewHead:preview)({request,params:{id},env})};
+try{
+ assert.equal((await upload({session:'unknown'})).status,401);
+ const first=await upload();assert.equal(first.status,201,JSON.stringify(first.body));const id=first.body.item.id;
+ assert.equal(first.body.item.url,'https://smartlinkpage.com/media/'+id);assert.equal(first.body.item.preview_url,'https://visiond.test/api/vpage/media/'+id);
+ const row=local.prepare('SELECT * FROM vpage_owner_assets WHERE id=?').get(id),remoteRow=remote.prepare('SELECT * FROM vpage_media WHERE id=?').get(id);assert.equal(row.state,'ready');assert.equal(remoteRow.state,'ready');assert.equal(row.content_hash,remoteRow.content_hash);
+ assert.deepEqual(FILES.objects.get(row.object_key).bytes,VPAGE_MEDIA.objects.get(remoteRow.object_key).bytes);assert.equal((await sharp(Buffer.from(FILES.objects.get(row.object_key).bytes)).metadata()).width,12);
+ const localPuts=FILES.puts,remotePuts=VPAGE_MEDIA.puts,calls=sanitizerCalls;
+ const replay=await upload();assert.equal(replay.status,200);assert.equal(replay.body.item.id,id);assert.equal(FILES.puts,localPuts);assert.equal(VPAGE_MEDIA.puts,remotePuts);assert.equal(sanitizerCalls,calls);
+ const own=await read(id,'owner-a');assert.equal(own.status,200);assert.equal(own.headers.get('cache-control'),'private, no-store');assert.equal((await read(id,'owner-b')).status,404);assert.equal((await read(id)).status,404);
+ assert.equal((await read(id,'owner-a',true)).status,200);assert.equal((await (await read(id,'owner-a',true)).arrayBuffer()).byteLength,0);
+ assert.equal((await worker.fetch(new Request(first.body.item.url),remoteEnv)).status,404,'uncommitted owner upload remains private on Vpage');
+ assert.equal((await upload({idempotency:'bad-mime-key',type:'image/jpeg'})).status,422);
+ assert.equal((await upload({idempotency:'bad-svg-key',type:'image/svg+xml',bytes:Buffer.from('<svg/>')})).status,422);
+ assert.equal((await upload({idempotency:'too-large-key',bytes:Buffer.alloc(5*1024*1024+1)})).status,413);
+ const wide=await sharp({create:{width:4097,height:1,channels:3,background:'#123456'}}).png().toBuffer();assert.equal((await upload({idempotency:'wide-image-key',bytes:wide})).status,422);
+ loseResponse=true;const uncertain=await upload({idempotency:'lost-response-key'});assert.equal(uncertain.status,502);assert.equal(local.prepare("SELECT state FROM vpage_owner_assets WHERE idempotency_key='lost-response-key'").get().state,'pending');
+ const recovered=await upload({idempotency:'lost-response-key'});assert.equal(recovered.status,201,JSON.stringify(recovered.body));assert.equal(local.prepare("SELECT count(*) n FROM vpage_owner_assets WHERE idempotency_key='lost-response-key'").get().n,1);
+ FILES.failAfterPut=true;assert.equal((await upload({idempotency:'local-readback-key'})).status,502);assert.equal((await upload({idempotency:'local-readback-key'})).status,201);
+ const other=await upload({session:'owner-b',idempotency:'owner-upload-first'});assert.equal(other.status,201);assert.notEqual(other.body.item.id,id);
+ const insert=local.prepare("INSERT INTO vpage_owner_assets(id,owner_id,object_key,source_hash,content_hash,mime_type,file_size,width,height,idempotency_key,state) VALUES(?,1,?,?,?,'image/webp',1,1,1,?,'ready')");
+ for(let n=1;n<=26;n++){const fixtureId='vpm_'+n.toString(16).padStart(32,'0');insert.run(fixtureId,'fixture/'+n,'a'.repeat(64),'b'.repeat(64),'list-key-'+n)}
+ const list=async cursor=>{const response=await onRequestGet({env,request:new Request('https://visiond.test/api/vpage/media'+(cursor?'?cursor='+cursor:''),{headers:{cookie:'vd_session=owner-a'}})});assert.equal(response.headers.get('cache-control'),'private, no-store');return response.json()};
+ const page1=await list(),page2=await list(page1.pagination.next_cursor);assert.equal(page1.items.length,24);const ids=[...page1.items,...page2.items].map(item=>item.id);assert.equal(new Set(ids).size,ids.length);assert.equal(ids.length,local.prepare('SELECT count(*) n FROM vpage_owner_assets WHERE owner_id=1').get().n);assert(!ids.includes(other.body.item.id));
+ const plan=local.prepare("EXPLAIN QUERY PLAN SELECT id FROM vpage_owner_assets WHERE owner_id=? AND state IN ('pending','ready') AND id<? ORDER BY id DESC LIMIT 25").all(1,'vpm_ffffffffffffffffffffffffffffffff');assert(plan.some(row=>row.detail.includes('idx_vpage_owner_assets_list')));
+ assert.equal(local.prepare('SELECT count(*) n FROM vpage_pages').get().n,0);assert.equal(local.prepare('SELECT count(*) n FROM vpage_credits').get().n,0);assert.equal(remote.prepare('SELECT count(*) n FROM vpage_pages').get().n,0);
+ console.log('PASS actual owner upload handler, signed Worker, protocol2 decode, both storage readbacks, replay/lost-response recovery, private ownership, validation, indexed24 keyset and no page/credit writes');
+}finally{globalThis.fetch=nativeFetch}

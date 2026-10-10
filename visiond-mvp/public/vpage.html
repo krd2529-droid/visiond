@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vpage | VisionD Online</title>
   <meta name="description" content="ซื้อเครดิตและสร้างเซลเพจ Vpage บน smartlinkpage.com">
-  <link rel="stylesheet" href="/style.css?v=020159"><link rel="stylesheet" href="/visiond-design-system.css?v=020159"><link rel="stylesheet" href="/vpage.css?v=020180"><link rel="stylesheet" href="/mobile-storefront.css?v=014407"><link rel="stylesheet" href="/header-shell.css?v=014578"><link rel="stylesheet" href="/frontend-theme.css?v=020159">
+  <link rel="stylesheet" href="/style.css?v=020159"><link rel="stylesheet" href="/visiond-design-system.css?v=020159"><link rel="stylesheet" href="/vpage.css?v=020185"><link rel="stylesheet" href="/mobile-storefront.css?v=014407"><link rel="stylesheet" href="/header-shell.css?v=014578"><link rel="stylesheet" href="/frontend-theme.css?v=020159">
 </head>
 <body class="vd-frontend">
 <header class="topbar"><a class="brand" href="/">VISIOND <small>ONLINE</small></a><nav><a class="nav-home-link" href="/">หน้าแรก</a><a href="/digital-products.html">สินค้าดิจิทัล</a><a class="nav-course-basket" href="/course-center">ศูนย์จัดการคอร์ส</a><a class="nav-vpage-link" href="/vpage" aria-current="page">Vpage</a><a href="/courses.html">ระบบ V-Learning</a><a href="/vtools">Vtools</a><a class="nav-guides-link" href="/guides.html">คู่มือการใช้งาน</a><a href="/blog.html">บทความ</a><a href="/about.html">เกี่ยวกับเรา</a><a id="navLogin" class="login-link" href="/login.html">เข้าสู่ระบบ</a><a id="navRegister" class="signup-link" href="/register.html">สมัครสมาชิก</a><a class="cart-nav" href="/cart.html"><span aria-hidden="true">🛒</span> รถเข็น <b data-cart-count>0</b></a></nav></header>
@@ -19,9 +19,10 @@
       <p class="vpage-url-preview">URL ของคุณ: <strong id="vpageUrlPreview">https://smartlinkpage.com/your-slug</strong></p>
       <p id="vpageAvailability" role="status"></p>
       <section class="vpage-create-template" aria-labelledby="vpageCreateContentHeading" data-vpage-template-version="1">
-        <header><div><h3 id="vpageCreateContentHeading">เตรียมเนื้อหา 2 ชุดก่อนใช้เครดิต</h3><p>กรอกและดูตัวอย่างให้ครบทั้งสองชุด รูปสินค้าหลักต้องเป็น URL แบบ HTTPS; พื้นหลังเลือกใช้รูปหรือสีได้ และหลังสร้างแล้วสามารถอัปโหลดไฟล์ผ่านตัวแก้ไขได้</p></div></header>
+        <header><div><h3 id="vpageCreateContentHeading">เตรียมเนื้อหา 2 ชุดก่อนใช้เครดิต</h3><p>อัปโหลดรูปสินค้าหลัก รูปพื้นหลัง และรูปประกอบได้ทั้งสองชุดก่อนใช้เครดิต พื้นหลังเลือกใช้รูปหรือสีได้</p></div></header>
         <div id="vpageCreateSets"></div>
       </section>
+      <button id="saveVpageDraft" class="vds-btn" type="button">เซฟร่าง</button><span id="vpageDraftStatus" role="status"></span>
       <button class="vds-btn vds-btn--primary" type="submit" disabled>ยืนยันสร้างเซลเพจ</button>
     </form>
   </section>
@@ -29,7 +30,7 @@
 </main>
 <dialog id="vpageEditor" data-vpage-template-version="1"><button id="closeVpageEditor" type="button" aria-label="ปิด">×</button><header><p class="eyebrow dark">VPAGE VISUAL EDITOR</p><h2 id="vpageEditorName">ชื่อร้านร่วมกัน</h2><a id="vpageEditorUrl" target="_blank" rel="noopener"></a><p>แก้และดูตัวอย่างทีละชุด ชื่อร้าน, slug และ URL เป็นข้อมูลร่วมกัน การบันทึกไม่เปลี่ยนชุดที่แสดงจนกว่าจะกด “แสดงชุด”</p></header><p id="vpageEditorMessage" role="status"></p><div id="vpageEditorSets"></div></dialog>
 <dialog id="vpagePayment"><button id="closeVpagePayment" type="button" aria-label="ปิด">×</button><h2>ชำระเงิน Vpage Credit</h2><p id="vpageOrderNo"></p><strong id="vpageOrderTotal"></strong><dl><div><dt>ธนาคาร</dt><dd id="vpageBankName">-</dd></div><div><dt>ชื่อบัญชี</dt><dd id="vpageAccountName">-</dd></div><div><dt>เลขบัญชี</dt><dd id="vpageAccountNumber">-</dd></div></dl><form id="vpageSlipForm"><label>แนบสลิป<input name="slip" type="file" accept="image/jpeg,image/png,image/webp" required></label><label>หมายเหตุ<input name="note" maxlength="300"></label><p id="vpageSlipMessage" role="status"></p><button class="vds-btn vds-btn--primary" type="submit">อัปโหลดสลิป</button></form></dialog>
-<script src="/vpage.js?v=020184"></script>
+<script src="/vpage.js?v=020185"></script>
 <script src="/shared-nav.js?v=020180"></script>
 <script src="/header-shell.js?v=014578" defer></script>
 <script src="/mobile-storefront.js?v=014407" defer></script>

@@ -40,6 +40,10 @@ assert.match(ui,/ตรวจสอบและดำเนินการต่
 assert.match(ui,/data-create-content-set/);
 assert.doesNotMatch(ui,/vpageCreateActiveSet/);
 assert.ok(ui.includes(`active_set:Number(createSets.querySelector('[data-create-tab][aria-selected="true"]')?.dataset.createTab)`));
-assert.match(ui,/หลังสร้างแล้ว/);
+assert.match(ui,/อัปโหลดรูปสินค้าหลัก/);
+assert.doesNotMatch(ui,/รูปสินค้าหลักต้องเป็น URL/);
+const createImageControls=ui.match(/const createSetPanel=.*|const createListRow=.*/g).join('\n');
+assert.match(createImageControls,/data-media-url type="hidden"/);
+assert.doesNotMatch(createImageControls,/(?:product_image_url|background_image_url|image_url)" data-media-url type="url"/);
 assert.match(ui,/\/repair`,\{method:'POST'\}/);
 console.log('PASS Vpage provisioning service and VisionD contract');

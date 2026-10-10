@@ -64,6 +64,18 @@ export async function checkVpageAvailability(env,domainId,slug){
   const path=`/api/v1/domains/${encodeURIComponent(domainId)}/slugs/${encodeURIComponent(slug)}/availability`,inflight=request(env,path).then(value=>{availabilityCache.set(key,{value,expires:Date.now()+10000});return value}).catch(error=>{availabilityCache.delete(key);throw error});availabilityCache.set(key,{inflight});return inflight;
 }
 export async function createRemoteVpage(env,userId,key,payload){return request(env,'/api/v1/pages',{method:'POST',ownerRef:await vpageOwnerRef(userId),body:payload,idempotencyKey:key})}
+export async function uploadRemoteVpageMedia(env,{userId,id,bytes,width,height}){
+  const base=String(env.VPAGE_API_BASE||'').replace(/\/$/,''),keyId=String(env.VPAGE_KEY_ID||''),secret=String(env.VPAGE_SHARED_SECRET||''),path=`/api/v1/media/${id}`;
+  let baseUrl;try{baseUrl=new URL(base)}catch{}
+  if(!(baseUrl?.protocol==='https:'||baseUrl?.protocol==='http:'&&['127.0.0.1','localhost'].includes(baseUrl.hostname))||!keyId||secret.length<32||!/^vpm_[a-f0-9]{32}$/.test(id)||!(bytes instanceof Uint8Array)||bytes.byteLength<1||bytes.byteLength>5*1024*1024)throw new VpageRemoteError('คลังรูป Vpage ยังไม่พร้อม',{status:503,code:'VPAGE_MEDIA_REMOTE_NOT_CONFIGURED'});
+  const ownerRef=await vpageOwnerRef(userId),timestamp=String(Math.floor(Date.now()/1000)),nonce=crypto.randomUUID().replaceAll('-',''),digest=hex(await crypto.subtle.digest('SHA-256',bytes)),canonical=['vpage-v1','PUT',path,keyId,timestamp,nonce,ownerRef,digest].join('\n'),signature=await sign(secret,canonical);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20_000);let response;
+  try{response=await fetch(base+path,{method:'PUT',headers:{'accept':'application/json','content-type':'image/webp','content-length':String(bytes.byteLength),'x-vpage-image-width':String(width),'x-vpage-image-height':String(height),'x-vpage-key-id':keyId,'x-vpage-timestamp':timestamp,'x-vpage-nonce':nonce,'x-vpage-owner-ref':ownerRef,'x-vpage-signature':signature},body:bytes,signal:controller.signal})}catch{throw new VpageRemoteError('คัดลอกรูปไป Vpage ไม่สำเร็จ',{status:502,code:'VPAGE_MEDIA_REMOTE_UNCERTAIN',ambiguous:true})}finally{clearTimeout(timer)}
+  const payload=await response.json().catch(()=>({}));if(!response.ok)throw new VpageRemoteError(String(payload.error||'บริการ Vpage ปฏิเสธรูป'),{status:response.status,code:String(payload.code||'VPAGE_MEDIA_REMOTE_FAILED'),ambiguous:response.status>=500});
+  if(payload.item?.id!==id||payload.item?.content_hash!==digest||Number(payload.item?.file_size)!==bytes.byteLength)throw new VpageRemoteError('Vpage ยืนยันรูปไม่ตรงกับไฟล์',{status:502,code:'VPAGE_MEDIA_REMOTE_MISMATCH',ambiguous:true});
+  return payload.item;
+}
+export async function deleteRemoteVpageMedia(env,{userId,id}){if(!/^vpm_[a-f0-9]{32}$/.test(id))throw new VpageRemoteError('รหัสรูปไม่ถูกต้อง',{status:400,code:'VPAGE_MEDIA_INVALID'});return request(env,`/api/v1/media/${id}`,{method:'DELETE',ownerRef:await vpageOwnerRef(userId),body:{}})}
 export async function renewRemoteVpage(env,{userId,pageId,key}){
   const ownerRef=await vpageOwnerRef(userId),body={},renewed=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/renew`,{method:'POST',ownerRef,body,idempotencyKey:key});
   if(renewed?.item?.status!=='suspended'){invalidateEditor(pageId);return renewed}
