@@ -10,7 +10,13 @@ const json=(body,status=200,headers={})=>new Response(JSON.stringify(body),{stat
 const html=(body,status=200,headers={})=>new Response(body,{status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=0, s-maxage=30, must-revalidate','content-security-policy':"default-src 'none'; img-src https:; frame-src https://www.youtube-nocookie.com; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",'x-content-type-options':'nosniff','referrer-policy':'no-referrer',...headers}});
 const hex=bytes=>[...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
 const bytes=value=>Uint8Array.from(String(value).match(/.{2}/g)||[],part=>Number.parseInt(part,16));
-const sha256=async value=>hex(await crypto.subtle.digest('SHA-256',encoder.encode(value)));
+const sha256=async value=>hex(await crypto.subtle.digest('SHA-256',value instanceof Uint8Array?value:encoder.encode(value)));
+async function boundedBody(request,limit,expected){
+  const reader=request.body?.getReader?.();if(!reader)throw Object.assign(new Error('missing body'),{status:400,code:'VPAGE_BODY_MISSING'});
+  const chunks=[];let size=0;try{while(true){const{done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit){await reader.cancel().catch(()=>{});throw Object.assign(new Error('payload too large'),{status:413,code:'VPAGE_PAYLOAD_TOO_LARGE'})}chunks.push(value)}}catch(error){await reader.cancel().catch(()=>{});throw error}
+  if(size!==expected)throw Object.assign(new Error('length mismatch'),{status:400,code:'VPAGE_BODY_LENGTH_MISMATCH'});
+  const output=new Uint8Array(size);let offset=0;for(const chunk of chunks){output.set(chunk,offset);offset+=chunk.byteLength}return output;
+}
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export const validSlug=value=>typeof value==='string'&&value.length>=3&&value.length<=50&&SLUG.test(value)&&!RESERVED_SLUGS.has(value);
 const pageView=page=>({id:page.id,domain_id:page.domain_id,slug:page.slug,display_name:page.display_name,status:page.status,active_set:Number(page.active_set)||1,public_url:`https://${page.hostname}/${page.slug}`,created_at:page.created_at,expires_at:page.expires_at,updated_at:page.updated_at});
@@ -64,6 +70,58 @@ async function parseBody(rawBody){
   try{return JSON.parse(rawBody)}catch{throw Object.assign(new Error('invalid json'),{status:400,code:'VPAGE_INVALID_JSON'})}
 }
 
+const mediaUrl=id=>`https://smartlinkpage.com/media/${id}`;
+function contentMediaRefs(content,setNo){
+  const slots=[['hero',content.product_image_url]];if(content.background_image_url)slots.push(['background',content.background_image_url]);
+  for(const [index,item] of content.product_items.entries())if(item.image_url)slots.push([`product:${index+1}`,item.image_url]);
+  for(const [index,item] of content.contact_items.entries())if(item.image_url)slots.push([`contact:${index+1}`,item.image_url]);
+  return slots.map(([slot,url])=>{const match=String(url).match(/^https:\/\/smartlinkpage\.com\/media\/(vpm_[a-f0-9]{32})$/);return{setNo,slot,url,id:match?.[1]||null}});
+}
+async function verifyContentMedia(env,ownerRef,contentSets){
+  // Stage 1: keep HTTPS create/save compatible until the upload UI is deployed.
+  const refs=contentSets.flatMap(item=>contentMediaRefs(item,item.set_no));
+  const owned=refs.filter(item=>item.id),ids=[...new Set(owned.map(item=>item.id))];if(!ids.length)return [];
+  if(!env.VPAGE_MEDIA)return null;
+  const marks=ids.map(()=>'?').join(','),rows=(await env.VPAGE_DB.prepare(`SELECT id,object_key,content_hash,file_size,mime_type FROM vpage_media WHERE owner_ref=? AND state='ready' AND id IN (${marks}) LIMIT 16`).bind(ownerRef,...ids).all()).results||[];
+  if(rows.length!==ids.length)return null;
+  for(const row of rows){const object=await env.VPAGE_MEDIA.head(row.object_key);if(!object||Number(object.size)!==Number(row.file_size)||object.customMetadata?.sha256!==row.content_hash||object.httpMetadata?.contentType!==row.mime_type)return null}
+  return owned;
+}
+async function ingestMedia(request,env,ownerRef,path,body){
+  const match=path.match(/^\/api\/v1\/media\/(vpm_[a-f0-9]{32})$/);
+  if(!match||!OWNER.test(ownerRef))return json({error:'invalid media request',code:'VPAGE_MEDIA_INVALID'},400);
+  if(!env.VPAGE_MEDIA)return json({error:'media storage unavailable',code:'VPAGE_MEDIA_STORAGE_MISSING'},503);
+  const id=match[1],size=body.byteLength,hash=await sha256(body),mime=request.headers.get('content-type'),width=Number(request.headers.get('x-vpage-image-width')),height=Number(request.headers.get('x-vpage-image-height'));
+  if(size<1||size>5*1024*1024||mime!=='image/webp'||!Number.isInteger(width)||!Number.isInteger(height)||width<1||height<1||width>4096||height>4096||width*height>16_777_216)return json({error:'invalid media',code:'VPAGE_MEDIA_INVALID'},422);
+  const key=`media/${id}.webp`,existing=await env.VPAGE_DB.prepare('SELECT owner_ref,object_key,content_hash,file_size,width,height,state FROM vpage_media WHERE id=?').bind(id).first();
+  if(existing&&(existing.owner_ref!==ownerRef||existing.content_hash!==hash||Number(existing.file_size)!==size||Number(existing.width)!==width||Number(existing.height)!==height||existing.state==='deleted'||existing.state==='deleting'))return json({error:'media conflict',code:'VPAGE_MEDIA_CONFLICT'},409);
+  if(!existing){try{await env.VPAGE_DB.prepare("INSERT INTO vpage_media(id,owner_ref,object_key,content_hash,mime_type,file_size,width,height,state) VALUES(?,?,?,?,'image/webp',?,?,?,'pending')").bind(id,ownerRef,key,hash,size,width,height).run()}catch{return json({error:'media in progress',code:'VPAGE_MEDIA_IN_PROGRESS'},409)}}
+  const matches=obj=>obj&&Number(obj.size)===size&&obj.customMetadata?.sha256===hash&&obj.httpMetadata?.contentType==='image/webp';
+  let stored=await env.VPAGE_MEDIA.head(key);if(!matches(stored)){await env.VPAGE_MEDIA.put(key,body,{httpMetadata:{contentType:'image/webp'},customMetadata:{sha256:hash}});stored=await env.VPAGE_MEDIA.head(key)}
+  if(!matches(stored))return json({error:'media storage uncertain',code:'VPAGE_MEDIA_STORAGE_UNCERTAIN'},502);
+  await env.VPAGE_DB.prepare("UPDATE vpage_media SET state='ready',updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_ref=? AND state='pending'").bind(id,ownerRef).run();
+  return json({item:{id,url:mediaUrl(id),width,height,file_size:size,content_hash:hash}},existing?200:201);
+}
+
+async function deleteMedia(env,ownerRef,path){
+  const match=path.match(/^\/api\/v1\/media\/(vpm_[a-f0-9]{32})$/);if(!match||!OWNER.test(ownerRef))return json({error:'invalid media request',code:'VPAGE_MEDIA_INVALID'},400);
+  const id=match[1],row=await env.VPAGE_DB.prepare('SELECT id,object_key,state FROM vpage_media WHERE id=? AND owner_ref=?').bind(id,ownerRef).first();if(!row)return json({error:'not found',code:'VPAGE_MEDIA_NOT_FOUND'},404);
+  if(row.state==='deleted')return json({ok:true,id,replayed:true});
+  const used=await env.VPAGE_DB.prepare('SELECT 1 used FROM vpage_media_refs INDEXED BY idx_vpage_media_refs_media WHERE media_id=? LIMIT 1').bind(id).first();if(used)return json({error:'media in use',code:'VPAGE_MEDIA_IN_USE'},409);
+  if(row.state==='ready'||row.state==='pending')try{await env.VPAGE_DB.prepare("UPDATE vpage_media SET state='deleting',updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_ref=? AND state IN ('ready','pending')").bind(id,ownerRef).run()}catch{return json({error:'media in use',code:'VPAGE_MEDIA_IN_USE'},409)}
+  try{await env.VPAGE_MEDIA.delete(row.object_key);await env.VPAGE_DB.prepare("UPDATE vpage_media SET state='deleted',updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_ref=? AND state='deleting'").bind(id,ownerRef).run();return json({ok:true,id,replayed:false})}catch{return json({error:'delete uncertain',code:'VPAGE_MEDIA_DELETE_UNCERTAIN'},502)}
+}
+
+async function publicMedia(request,env,path){
+  const match=path.match(/^\/media\/(vpm_[a-f0-9]{32})$/);if(!match)return null;
+  const missing=()=>new Response('Not found',{status:404,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff'}});
+  if(!['GET','HEAD'].includes(request.method)||!env.VPAGE_MEDIA)return missing();
+  const row=await env.VPAGE_DB.prepare("SELECT m.object_key,m.content_hash,m.file_size,m.mime_type FROM vpage_media m JOIN vpage_media_refs r INDEXED BY idx_vpage_media_refs_media ON r.media_id=m.id JOIN vpage_pages p ON p.id=r.page_id AND p.active_set=r.set_no WHERE m.id=? AND m.state='ready' AND p.status='active' AND datetime(p.expires_at)>CURRENT_TIMESTAMP LIMIT 1").bind(match[1]).first();
+  if(!row)return missing();const obj=request.method==='HEAD'?await env.VPAGE_MEDIA.head(row.object_key):await env.VPAGE_MEDIA.get(row.object_key);
+  if(!obj||Number(obj.size)!==Number(row.file_size)||obj.customMetadata?.sha256!==row.content_hash||obj.httpMetadata?.contentType!==row.mime_type)return missing();
+  return new Response(request.method==='HEAD'?null:obj.body,{headers:{'content-type':row.mime_type,'content-length':String(row.file_size),'cache-control':'private, no-store','x-content-type-options':'nosniff','cross-origin-resource-policy':'same-origin'}});
+}
+
 async function domains(request,env){
   const url=new URL(request.url),raw=url.searchParams.get('cursor'),cursor=raw===null?0:Number(raw);
   if(raw!==null&&(!/^\d+$/.test(raw)||!Number.isSafeInteger(cursor)||cursor<0))return json({error:'invalid cursor',code:'VPAGE_CURSOR_INVALID'},400);
@@ -85,6 +143,7 @@ async function createPage(request,env,ownerRef,rawBody){
   const key=String(request.headers.get('idempotency-key')||'').trim();if(!IDEMPOTENCY.test(key))return json({error:'idempotency key required',code:'VPAGE_IDEMPOTENCY_REQUIRED'},400);
   const body=await parseBody(rawBody),displayName=typeof body.display_name==='string'?body.display_name.trim():'',domainId=String(body.domain_id||''),slug=String(body.slug||''),activeSet=Number(body.active_set),rawSets=Array.isArray(body.content_sets)?body.content_sets:null,contentSets=rawSets?.length===2&&rawSets.every((item,index)=>Number(item?.set_no)===index+1)?rawSets.map((item,index)=>{const content=normalizeContent(item,{canonicalYoutubeOnly:true});return content?{set_no:index+1,...content}:null}):null;
   if(displayName.length<1||displayName.length>120||!validSlug(slug)||domainId.length>64||![1,2].includes(activeSet)||!contentSets?.every(Boolean))return json({error:'invalid page details or content',code:'VPAGE_INPUT_INVALID'},400);
+  const mediaRefs=await verifyContentMedia(env,ownerRef,contentSets);if(!mediaRefs)return json({error:'Vpage media unavailable',code:'VPAGE_MEDIA_NOT_READY'},409);
   const contentDigest=await sha256(JSON.stringify({active_set:activeSet,content_sets:contentSets})),requestHash=await sha256(JSON.stringify({display_name:displayName,domain_id:domainId,slug,owner_ref:ownerRef,active_set:activeSet,content_sets:contentSets}));
   const existing=await env.VPAGE_DB.prepare(`${pageSql} WHERE p.create_idempotency_key=?`).bind(key).first();
   if(existing){if(existing.create_request_hash!==requestHash)return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);return json({item:pageView(existing),content_digest:contentDigest,replayed:true},200)}
@@ -96,7 +155,8 @@ async function createPage(request,env,ownerRef,rawBody){
       env.VPAGE_DB.prepare('INSERT INTO vpage_content_sets(page_id,set_no,product_image_url,detail_text,text_size,text_style,text_font,text_color,youtube_url,product_url,contact_url,background_image_url,background_color,revision,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)').bind(id,content.set_no,content.product_image_url,content.detail_text,content.text_size,content.text_style,content.text_font||'system',content.text_color||'#073b38',content.youtube_url,content.product_url,content.contact_url,content.background_image_url,content.background_color||null,createdAt),
       ...content.product_items.map(item=>env.VPAGE_DB.prepare('INSERT INTO vpage_product_items(page_id,set_no,position,destination_url,image_url) VALUES(?,?,?,?,?)').bind(id,content.set_no,item.position,item.destination_url,item.image_url)),
       ...content.contact_items.map(item=>env.VPAGE_DB.prepare('INSERT INTO vpage_contact_items(page_id,set_no,position,contact_type,destination_url,image_url) VALUES(?,?,?,?,?,?)').bind(id,content.set_no,item.position,item.contact_type,item.destination_url,item.image_url))
-    ])
+    ]),
+    ...mediaRefs.map(ref=>env.VPAGE_DB.prepare('INSERT INTO vpage_media_refs(page_id,set_no,slot_key,media_id) VALUES(?,?,?,?)').bind(id,ref.setNo,ref.slot,ref.id))
   ])}
   catch(error){
     const raced=await env.VPAGE_DB.prepare(`${pageSql} WHERE p.create_idempotency_key=?`).bind(key).first();
@@ -131,6 +191,7 @@ async function saveContent(request,path,env,ownerRef,rawBody){
   const [,id,rawSet]=match,setNo=Number(rawSet),key=String(request.headers.get('idempotency-key')||'').trim();if(!IDEMPOTENCY.test(key))return json({error:'idempotency key required',code:'VPAGE_IDEMPOTENCY_REQUIRED'},400);
   const page=await authorizedPage(env,id,ownerRef);if(!page)return json({error:'not found',code:'VPAGE_PAGE_NOT_FOUND'},404);
   const body=await parseBody(rawBody),content=normalizeContent(body),expectedRevision=Number(body.expected_revision);if(!content||!Number.isSafeInteger(expectedRevision)||expectedRevision<0)return json({error:'invalid content items',code:'VPAGE_CONTENT_ITEMS_INVALID'},400);
+  const mediaRefs=await verifyContentMedia(env,page.owner_ref,[{...content,set_no:setNo}]);if(!mediaRefs)return json({error:'Vpage media unavailable',code:'VPAGE_MEDIA_NOT_READY'},409);
   const requestHash=await sha256(JSON.stringify({id,set_no:setNo,expected_revision:expectedRevision,content})),prior=await env.VPAGE_DB.prepare('SELECT page_id,owner_ref,action,request_hash FROM vpage_editor_requests WHERE idempotency_key=?').bind(key).first();
   if(prior&&(prior.page_id!==id||prior.owner_ref!==ownerRef||prior.action!=='save_set'||prior.request_hash!==requestHash))return json({error:'idempotency conflict',code:'VPAGE_IDEMPOTENCY_CONFLICT'},409);
   if(!prior){const guard=`guard_${crypto.randomUUID().replaceAll('-','')}`;try{await env.VPAGE_DB.batch([
@@ -141,6 +202,8 @@ async function saveContent(request,path,env,ownerRef,rawBody){
       ...content.product_items.map(item=>env.VPAGE_DB.prepare('INSERT INTO vpage_product_items(page_id,set_no,position,destination_url,image_url) VALUES(?,?,?,?,?)').bind(id,setNo,item.position,item.destination_url,item.image_url)),
       env.VPAGE_DB.prepare('DELETE FROM vpage_contact_items WHERE page_id=? AND set_no=?').bind(id,setNo),
       ...content.contact_items.map(item=>env.VPAGE_DB.prepare('INSERT INTO vpage_contact_items(page_id,set_no,position,contact_type,destination_url,image_url) VALUES(?,?,?,?,?,?)').bind(id,setNo,item.position,item.contact_type,item.destination_url,item.image_url)),
+      env.VPAGE_DB.prepare('DELETE FROM vpage_media_refs WHERE page_id=? AND set_no=?').bind(id,setNo),
+      ...mediaRefs.map(ref=>env.VPAGE_DB.prepare('INSERT INTO vpage_media_refs(page_id,set_no,slot_key,media_id) VALUES(?,?,?,?)').bind(id,setNo,ref.slot,ref.id)),
       env.VPAGE_DB.prepare('UPDATE vpage_pages SET public_generation=public_generation+1 WHERE id=? AND active_set=?').bind(id,setNo),
       env.VPAGE_DB.prepare('DELETE FROM vpage_editor_guards WHERE token=?').bind(guard)
     ])}catch{const raced=await env.VPAGE_DB.prepare('SELECT page_id,owner_ref,action,request_hash FROM vpage_editor_requests WHERE idempotency_key=?').bind(key).first();if(!raced)return json({error:'content changed; reload before saving',code:'VPAGE_CONTENT_REVISION_CONFLICT'},409);if(raced.page_id!==id||raced.owner_ref!==ownerRef||raced.action!=='save_set'||raced.request_hash!==requestHash)return json({error:'request in progress',code:'VPAGE_IDEMPOTENCY_IN_PROGRESS'},409)}}
@@ -240,10 +303,14 @@ async function publicPage(request,env){
 export default {async fetch(request,env){
   try{
     const url=new URL(request.url),path=url.pathname;
-    if(!path.startsWith('/api/'))return publicPage(request,env);
+    if(!path.startsWith('/api/'))return await publicMedia(request,env,path)||publicPage(request,env);
     if(!path.startsWith('/api/v1/'))return json({error:'not found',code:'VPAGE_NOT_FOUND'},404);
-    const rawBody=request.method==='GET'||request.method==='HEAD'?'':await request.text();if(encoder.encode(rawBody).byteLength>131072)return json({error:'payload too large',code:'VPAGE_PAYLOAD_TOO_LARGE'},413);
+    const binaryMedia=request.method==='PUT'&&/^\/api\/v1\/media\/vpm_[a-f0-9]{32}$/.test(path),declaredLength=Number(request.headers.get('content-length'));
+    if(binaryMedia&&(!Number.isSafeInteger(declaredLength)||declaredLength<1||declaredLength>5*1024*1024))return json({error:'invalid media length',code:'VPAGE_MEDIA_LENGTH_INVALID'},413);
+    const rawBody=request.method==='GET'||request.method==='HEAD'?'':binaryMedia?await boundedBody(request,5*1024*1024,declaredLength):await request.text();if((binaryMedia?rawBody.byteLength:encoder.encode(rawBody).byteLength)>(binaryMedia?5*1024*1024:131072))return json({error:'payload too large',code:'VPAGE_PAYLOAD_TOO_LARGE'},413);
     const auth=await authenticate(request,env,rawBody);if(auth.error)return auth.error;
+    if(binaryMedia)return ingestMedia(request,env,auth.ownerRef,path,rawBody);
+    if(request.method==='DELETE'&&/^\/api\/v1\/media\/vpm_[a-f0-9]{32}$/.test(path))return deleteMedia(env,auth.ownerRef,path);
     if(request.method==='GET'&&path==='/api/v1/domains')return domains(request,env);
     if(request.method==='GET'){const found=await availability(path,env);if(found)return found;const editor=await readEditor(path,env,auth.ownerRef);if(editor)return editor;const page=await readPage(path,env,auth.ownerRef);if(page)return page}
     if(request.method==='POST'&&path==='/api/v1/pages')return createPage(request,env,auth.ownerRef,rawBody);

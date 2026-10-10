@@ -8,6 +8,10 @@ binding = "VPAGE_DB"
 database_name = "vpage-db"
 database_id = "7bca4b86-f36d-4080-8de0-30953f442752"
 
+[[r2_buckets]]
+binding = "VPAGE_MEDIA"
+bucket_name = "visiond-vpage-media"
+
 [vars]
 VPAGE_KEY_ID = "visiond-main-v1"
 

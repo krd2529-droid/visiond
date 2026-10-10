@@ -10,6 +10,8 @@ on:
       - visiond-mvp/package-lock.json
       - visiond-mvp/services/vpage/src/**
       - visiond-mvp/services/vpage/wrangler.toml
+      - visiond-mvp/services/vpage/migrations/0006_vpage_media.sql
+      - visiond-mvp/scripts/apply-vpage-media-migration.mjs
 
 permissions:
   contents: read
@@ -55,12 +57,20 @@ jobs:
           node scripts/test-v020163-vpage-multi-items-runtime.mjs
           node scripts/test-vpage-compensation-migration.mjs
           node scripts/test-vpage-compensation-worker.mjs
+          node scripts/test-vpage-media-migration.mjs
+          node scripts/test-vpage-owned-media.mjs
 
       - name: Validate Vpage Worker bundle
         run: node_modules/.bin/wrangler deploy --dry-run --strict --config services/vpage/wrangler.toml
 
       - name: Apply and verify Vpage compensation schema
         run: node scripts/apply-vpage-compensation-migration.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify private Vpage storage and apply media schema
+        run: node scripts/apply-vpage-media-migration.mjs
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
