@@ -1,5 +1,6 @@
 import {json,requireUser,sha256} from '../../../../_lib.js';
 import {ensureDatabase} from '../../../../_schema.js';
+import {ensureVpageCompensationSchema} from '../../../../_vpage-compensation-schema.js';
 import {renewRemoteVpage,resumeRenewedVpage,validVpageIdempotencyKey,VpageRemoteError} from '../../../../_vpage-provisioning.js';
 
 const headers={'cache-control':'private, no-store'};
@@ -61,7 +62,7 @@ async function reconcile(ctx,userId,page,renewal){
 }
 
 export async function onRequestPost(ctx){
-  await ensureDatabase(ctx.env);const auth=await requireUser(ctx,{includeCourseOwner:false});if(auth.error)return auth.error;
+  await ensureDatabase(ctx.env);const auth=await requireUser(ctx,{includeCourseOwner:false});if(auth.error)return auth.error;await ensureVpageCompensationSchema(ctx.env);
   const id=String(ctx.params?.id||'');if(!pageIdPattern.test(id))return json({error:'ไม่พบเซลเพจ'},404,headers);
   let raw='';try{raw=await ctx.request.text()}catch{return json({error:'อ่านข้อมูลไม่สำเร็จ',code:'VPAGE_INPUT_INVALID'},400,headers)}if(raw.trim())return json({error:'คำขอต่ออายุไม่รับข้อมูลจากเบราว์เซอร์',code:'VPAGE_RENEWAL_BODY_FORBIDDEN'},400,headers);
   const page=await readPage(ctx.env,auth.user.id,id);if(!page?.vpage_id||!['active','suspended'].includes(page.status))return json({error:'ไม่พบเซลเพจ'},404,headers);
@@ -78,7 +79,7 @@ export async function onRequestPost(ctx){
     if(!credit)return json({error:'ไม่มีเครดิต Vpage ที่พร้อมใช้สำหรับต่ออายุ',code:'VPAGE_CREDIT_REQUIRED'},409,headers);
     const requestHash=await sha256(JSON.stringify({page_id:id,user_id:Number(auth.user.id),action:'renew'})),requestId=`vpr_${crypto.randomUUID().replaceAll('-','')}`,guard=`guard_${crypto.randomUUID().replaceAll('-','')}`;
     try{await ctx.env.DB.batch([
-      ctx.env.DB.prepare("INSERT INTO vpage_transition_guards(token) VALUES(CASE WHEN EXISTS(SELECT 1 FROM vpage_pages p JOIN vpage_credits c ON c.id=? AND c.user_id=p.user_id WHERE p.id=? AND p.user_id=? AND p.status IN ('active','suspended') AND (p.status='suspended' OR p.expires_at IS NULL OR datetime(p.expires_at)<=CURRENT_TIMESTAMP) AND c.status='available' AND NOT EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state IN ('held','committed')) AND NOT EXISTS(SELECT 1 FROM vpage_renewal_requests r WHERE (r.credit_id=c.id OR r.page_id=p.id) AND r.state IN ('held','remote_committed'))) THEN ? ELSE NULL END)").bind(credit.id,id,auth.user.id,guard),
+      ctx.env.DB.prepare("INSERT INTO vpage_transition_guards(token) VALUES(CASE WHEN EXISTS(SELECT 1 FROM vpage_pages p JOIN vpage_credits c ON c.id=? AND c.user_id=p.user_id WHERE p.id=? AND p.user_id=? AND p.status IN ('active','suspended') AND (p.status='suspended' OR p.expires_at IS NULL OR datetime(p.expires_at)<=CURRENT_TIMESTAMP) AND c.status='available' AND NOT EXISTS(SELECT 1 FROM vpage_credit_claims x WHERE x.credit_id=c.id AND x.state IN ('held','committed')) AND NOT EXISTS(SELECT 1 FROM vpage_renewal_requests r WHERE (r.credit_id=c.id OR r.page_id=p.id) AND r.state IN ('held','remote_committed')) AND NOT EXISTS(SELECT 1 FROM vpage_compensation_requests x WHERE x.page_id=p.id AND x.state='held')) THEN ? ELSE NULL END)").bind(credit.id,id,auth.user.id,guard),
       ctx.env.DB.prepare("INSERT INTO vpage_renewal_requests(id,user_id,page_id,credit_id,idempotency_key,request_hash,state) VALUES(?,?,?,?,?,?,'held')").bind(requestId,auth.user.id,id,credit.id,suppliedKey,requestHash),
       ctx.env.DB.prepare('DELETE FROM vpage_transition_guards WHERE token=?').bind(guard)
     ])}catch{

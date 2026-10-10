@@ -70,6 +70,10 @@ export async function renewRemoteVpage(env,{userId,pageId,key}){
   try{return await resumeRenewedVpage(env,{userId,pageId,key,expectedExpiry:renewed.item.expires_at})}
   catch(error){const known=error instanceof VpageRemoteError;throw new VpageRemoteError('ต่ออายุแล้ว แต่ยังยืนยันการกลับมาเปิดใช้ไม่ได้',{status:known?error.status:502,code:known?error.code:'VPAGE_RENEWAL_RESUME_UNCERTAIN',ambiguous:true,partial:{item:renewed.item}})}
 }
+export async function compensateRemoteVpage(env,{userId,actorId,pageId,key,days,expectedExpiry}){
+  const value=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/compensate`,{method:'POST',ownerRef:'system',body:{owner_ref:await vpageOwnerRef(userId),actor_ref:await vpageActorRef(actorId),days,expected_expiry:expectedExpiry},idempotencyKey:key});
+  invalidateEditor(pageId);return value;
+}
 export async function resumeRenewedVpage(env,{userId,pageId,key,expectedExpiry}){
   const ownerRef=await vpageOwnerRef(userId),body={},resumeKey=`renew-resume-${await sha256(key)}`,resumed=await request(env,`/api/v1/pages/${encodeURIComponent(pageId)}/resume`,{method:'POST',ownerRef,body,idempotencyKey:resumeKey}),item=resumed?.item;
   if(!item||item.id!==pageId||item.status!=='active'||!item.expires_at||new Date(item.expires_at).getTime()!==new Date(expectedExpiry).getTime())throw new VpageRemoteError('ผลเปิดใช้หลังต่ออายุไม่ถูกต้อง',{status:502,code:'VPAGE_RENEWAL_RESUME_RESPONSE_INVALID',ambiguous:true});
