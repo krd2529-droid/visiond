@@ -25,12 +25,12 @@ const env={ACCOUNT_VAULT_ENCRYPTION_KEY:'test-key-that-is-at-least-thirty-two-ch
 const request=(url,{method='GET',session='boss-session',body}={})=>new Request(url,{method,headers:{cookie:'vd_session='+session,...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
 const ctx=(url,options={},id)=>({env,request:request(url,options),params:id?{id:String(id)}:{}});
 const shopee={platform:'Shopee',account_name:'Boss Shopee',login_url:'seller.shopee.co.th',phone:'',email:'boss-shopee@example.test',password_hint:'orange-cart',note:'ร้านหลัก'};
-const suggestedPlatforms=['Facebook','Instagram','TikTok','YouTube','LINE','X','Shopee'];
+const suggestedPlatforms=['Facebook','Instagram','TikTok','YouTube','LINE','X','Shopee','Gmail'];
 
 for(const platform of suggestedPlatforms)assert.equal(socialAccountValues({...shopee,platform}).platform,platform);
 assert.equal(socialAccountValues({...shopee,platform:'Custom Marketplace'}).platform,'Custom Marketplace','datalist remains a suggestion and preserves custom platform text');
 const html=await read('public/account-vault.html');
-assert.deepEqual([...html.matchAll(/<option value="([^"]+)">/g)].map(match=>match[1]),suggestedPlatforms,'Shopee joins the existing platform suggestions without replacing them');
+assert.deepEqual([...html.matchAll(/<option value="([^"]+)">/g)].map(match=>match[1]),suggestedPlatforms,'Gmail joins the existing platform suggestions without replacing them');
 
 seen.length=0;
 let response=await createAccount(ctx('https://fixture.test/api/admin/account-vault',{method:'POST',session:'user-session',body:shopee}));
