@@ -129,17 +129,18 @@ export function createToyImagePipeline(options={}){
     if(!files.length)return[];
     try{const normalized=await promise;if(slots.get(slot)!==entry)return[];const fragment=container.ownerDocument.createDocumentFragment();normalized.forEach((file,index)=>{const img=container.ownerDocument.createElement('img'),url=createUrl(file);entry.urls.push(url);img.src=url;img.alt='ตัวอย่างรูป VisionD '+(index+1);fragment.append(img)});container.replaceChildren(fragment);return normalized}catch(error){if(slots.get(slot)!==entry)return[];container.replaceChildren();throw error}
   };
-  const appendSelected=async(form,payload)=>{
+  const appendSelected=async(form,payload,{visiondFiles}={})=>{
     const selected=TOY_IMAGE_FIELDS.map(slot=>{
-      const input=form.elements[slot],files=slot==='image_1'?[...(input?.files||[])].slice(0,11):[input?.files?.[0]].filter(Boolean);
+      const input=form.elements[slot],getFiles=slot==='image_1'&&typeof visiondFiles==='function'?visiondFiles:()=>slot==='image_1'?[...(input?.files||[])]:[input?.files?.[0]].filter(Boolean);
+      const files=[...getFiles()].slice(0,slot==='image_1'?11:1);
       if(slot==='image_1'&&files.length>10)throw new Error('รูปสำหรับ VisionD เลือกได้สูงสุด 10 รูป');
       if(files.length&&!sameFiles(slots.get(slot)?.sources||[],files))selectFiles(slot,files);
-      return{slot,input,files,entry:files.length?slots.get(slot):null};
+      return{slot,files,getFiles,entry:files.length?slots.get(slot):null};
     }),normalized=await Promise.all(selected.map(item=>item.entry?item.entry.promise:[]));
     for(let index=0;index<selected.length;index++){
-      const{slot,input,files,entry}=selected[index];payload.delete(slot);
+      const{slot,files,getFiles,entry}=selected[index];payload.delete(slot);
       if(!files.length)continue;
-      const current=slot==='image_1'?[...(input.files||[])]:[input.files?.[0]].filter(Boolean);
+      const current=[...getFiles()];
       if(slots.get(slot)!==entry||!sameFiles(current,files))throw new Error('รูป '+slotLabel(slot)+' ถูกเปลี่ยนระหว่างประมวลผล กรุณาลองอีกครั้ง');
       normalized[index].forEach(file=>payload.append(slot,file,file.name));
     }

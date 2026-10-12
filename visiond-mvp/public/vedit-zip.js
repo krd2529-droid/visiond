@@ -12,10 +12,13 @@ export const VEDIT_ZIP_LIMITS = Object.freeze({
 const decoder = new TextDecoder('utf-8', { fatal: true });
 const encoder = new TextEncoder();
 const mimeByExtension = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+const heicMimeByExtension = { heic: 'image/heic', heif: 'image/heif' };
 const signatures = {
   'image/jpeg': bytes => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff,
   'image/png': bytes => [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((byte, index) => bytes[index] === byte),
-  'image/webp': bytes => [82, 73, 70, 70].every((byte, index) => bytes[index] === byte) && [87, 69, 66, 80].every((byte, index) => bytes[index + 8] === byte)
+  'image/webp': bytes => [82, 73, 70, 70].every((byte, index) => bytes[index] === byte) && [87, 69, 66, 80].every((byte, index) => bytes[index + 8] === byte),
+  'image/heic': bytes => bytes.length >= 12 && [102, 116, 121, 112].every((byte, index) => bytes[index + 4] === byte),
+  'image/heif': bytes => bytes.length >= 12 && [102, 116, 121, 112].every((byte, index) => bytes[index + 4] === byte)
 };
 const u16 = (view, offset) => view.getUint16(offset, true);
 const u32 = (view, offset) => view.getUint32(offset, true);
@@ -70,8 +73,9 @@ async function inflateBounded(bytes, maximum, signal) {
   return output;
 }
 
-export async function inspectVeditZip(file, { signal } = {}) {
+export async function inspectVeditZip(file, { signal, allowHeic = false, maxImages = VEDIT_ZIP_LIMITS.entries } = {}) {
   cancelled(signal);
+  check(Number.isInteger(maxImages) && maxImages > 0 && maxImages <= VEDIT_ZIP_LIMITS.entries, 'จำนวนรูปใน ZIP ไม่ถูกต้อง');
   check(file && typeof file.arrayBuffer === 'function' && file.size > 0 && file.size <= VEDIT_ZIP_LIMITS.archiveBytes, 'ZIP ต้องมีขนาดมากกว่า 0 และไม่เกิน 64 MB');
   const bytes = new Uint8Array(await file.arrayBuffer());
   cancelled(signal);
@@ -104,9 +108,9 @@ export async function inspectVeditZip(file, { signal } = {}) {
     const key = name.toLocaleLowerCase('und');
     if (seen.has(key)) { reject('ชื่อไฟล์ซ้ำ'); continue; }
     seen.add(key);
-    const extension = name.split('.').pop().toLowerCase(), type = mimeByExtension[extension];
-    if (!type) { reject('รองรับเฉพาะ JPG, PNG และ WebP'); continue; }
-    check(entries.length < VEDIT_ZIP_LIMITS.entries, 'ZIP มีรูปเกิน 24 รูป กรุณาแบ่งเป็นหลาย ZIP');
+    const extension = name.split('.').pop().toLowerCase(), type = mimeByExtension[extension] || (allowHeic ? heicMimeByExtension[extension] : undefined);
+    if (!type) { reject(allowHeic ? 'รองรับเฉพาะ JPG, PNG, WebP, HEIC และ HEIF' : 'รองรับเฉพาะ JPG, PNG และ WebP'); continue; }
+    check(entries.length < maxImages, maxImages === VEDIT_ZIP_LIMITS.entries ? 'ZIP มีรูปเกิน 24 รูป กรุณาแบ่งเป็นหลาย ZIP' : `ZIP มีรูปเกิน ${maxImages} รูป`);
     check(size > 0 && size <= VEDIT_ZIP_LIMITS.imageBytes, `รูป ${name} ต้องมีขนาดมากกว่า 0 และไม่เกิน 20 MB`);
     check(totalSize + size <= VEDIT_ZIP_LIMITS.totalImageBytes, 'รูปใน ZIP รวมกันเกิน 120 MB กรุณาแบ่งเป็นหลาย ZIP');
     if ((flags & 0x2041) || ![0, 8].includes(method) || (mode & 0xf000) === 0xa000) { reject('วิธีบีบอัดหรือชนิดไฟล์ไม่รองรับ'); continue; }
@@ -121,7 +125,7 @@ export async function inspectVeditZip(file, { signal } = {}) {
     entries.push({ name, type, size, compressedSize, method, start, expectedCrc });
     totalSize += size;
   }
-  check(cursor === end && entries.length > 0, entries.length ? 'สารบัญ ZIP มีข้อมูลเกิน' : 'ไม่พบรูป JPG, PNG หรือ WebP ที่ใช้ได้ใน ZIP');
+  check(cursor === end && entries.length > 0, entries.length ? 'สารบัญ ZIP มีข้อมูลเกิน' : allowHeic && rejected.length ? `ZIP มีไฟล์ที่ใช้ไม่ได้: ${rejected[0].name} (${rejected[0].reason})` : allowHeic ? 'ไม่พบรูป JPG, PNG, WebP, HEIC หรือ HEIF ที่ใช้ได้ใน ZIP' : 'ไม่พบรูป JPG, PNG หรือ WebP ที่ใช้ได้ใน ZIP');
   localRanges.sort((a, b) => a[0] - b[0]);
   for (let i = 1; i < localRanges.length; i++) check(localRanges[i][0] >= localRanges[i - 1][1], 'รายการ ZIP ทับข้อมูลกัน');
   async function extract(entry, { signal: extractionSignal } = {}) {

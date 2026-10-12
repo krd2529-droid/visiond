@@ -99,4 +99,11 @@ await assert.rejects(inspectVeditZip(fixtureZip(Array.from({ length: 25 }, (_, i
 const maliciousInflate = await inspectVeditZip(fixtureZip([{ name: 'bomb.png', bytes: new Uint8Array(1024), reportedSize: 100, deflate: true }]));
 await assert.rejects(maliciousInflate.extract(maliciousInflate.entries[0]), /เกิน 20 MB|ไม่สมบูรณ์/);
 await assert.rejects(inspectVeditZip(new File([new Uint8Array([1, 2, 3])], 'bad.zip')), /ไม่สมบูรณ์/);
+const heic = new Uint8Array([0, 0, 0, 12, 102, 116, 121, 112, 104, 101, 105, 99]);
+const toys = await inspectVeditZip(fixtureZip([{ name: 'photo.heif', bytes: heic }]), { allowHeic: true, maxImages: 10 });
+assert.equal((await toys.extract(toys.entries[0])).type, 'image/heif');
+await assert.rejects(inspectVeditZip(fixtureZip(Array.from({ length: 11 }, (_, index) => ({ name: `${index}.png`, bytes: pngA }))), { allowHeic: true, maxImages: 10 }), /เกิน 10 รูป/);
+await assert.rejects(inspectVeditZip(fixtureZip([{ name: '../unsafe.png', bytes: pngA }]), { allowHeic: true, maxImages: 10 }), /ไม่ปลอดภัย/);
+await assert.rejects(inspectVeditZip({ size: VEDIT_ZIP_LIMITS.archiveBytes + 1, arrayBuffer() { throw new Error('should not read'); } }, { allowHeic: true, maxImages: 10 }), /64 MB/);
+await assert.rejects(inspectVeditZip(fixtureZip(Array.from({ length: 7 }, (_, index) => ({ name: `${index}.png`, bytes: pngA, reportedSize: VEDIT_ZIP_LIMITS.imageBytes }))), { allowHeic: true, maxImages: 10 }), /120 MB/);
 console.log('Vedit ZIP core PASS: bounded inspection, rejections, deflate, CRC, cancellation and output round trip');
