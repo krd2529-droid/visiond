@@ -51,6 +51,9 @@ export async function onRequest(ctx){
   if(['/vsport','/vsport.html'].includes(url.pathname)&&responseType.includes('text/html')){
     headers.set('content-security-policy',`${securityHeaders['content-security-policy']}; media-src 'self' blob:`);
   }
+  if(['/vedit','/vedit.html'].includes(url.pathname)&&responseType.includes('text/html')){
+    headers.set('content-security-policy',securityHeaders['content-security-policy'].replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'"));
+  }
   if(isLiveCenterHtmlPath(url.pathname)){
     headers.set('referrer-policy','no-referrer');headers.set('x-frame-options','DENY');headers.set('cache-control','private, no-store');
     headers.set('content-security-policy',"default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");

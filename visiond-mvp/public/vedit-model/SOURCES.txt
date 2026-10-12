@@ -1,0 +1,12 @@
+Vedit browser background removal components
+
+u2netp.onnx
+  Source: https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx
+  Original U-2-Net project: https://github.com/xuebinqin/U-2-Net
+  License: Apache-2.0 (see LICENSE-u2net.txt)
+  SHA-256: 309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8
+
+ort.wasm.min.js, ort-wasm-simd-threaded.mjs, ort-wasm-simd-threaded.wasm
+  Source: onnxruntime-web npm package, version 1.22.0
+  Project: https://github.com/microsoft/onnxruntime
+  License: MIT (see LICENSE-onnxruntime.txt)

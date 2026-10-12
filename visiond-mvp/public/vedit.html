@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vedit | แต่งภาพสินค้าบนเครื่องของคุณ</title>
-  <meta name="description" content="เพิ่มกรอบชื่อสินค้าและราคาด้านบนภาพ ดูตัวอย่างและดาวน์โหลดด้วย Vedit โดยไม่บังภาพต้นฉบับ">
+  <meta name="description" content="แต่งภาพสินค้าและ ZIP ด้วยห้าสไตล์ ตัดฉากหลังบนเครื่อง และดาวน์โหลด PNG สำเร็จรูป">
   <link rel="stylesheet" href="/style.css?v=02057">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
-  <link rel="stylesheet" href="/vedit.css?v=020175">
+  <link rel="stylesheet" href="/vedit.css?v=020189">
   <link rel="stylesheet" href="/mobile-storefront.css?v=014407">
   <link rel="stylesheet" href="/header-shell.css?v=014578">
   <link rel="stylesheet" href="/frontend-theme.css?v=014407">
@@ -33,8 +33,8 @@
   <main class="vedit-shell">
     <section class="vedit-intro">
       <p class="vedit-eyebrow">VISIOND VEDIT</p>
-      <h1>เพิ่มกรอบชื่อและราคาเหนือภาพสินค้า</h1>
-      <p>ภาพต้นฉบับคงขนาดเดิมใต้กรอบที่เพิ่มด้านบน ไม่มีข้อความทับภาพ · ประมวลผลเฉพาะในเบราว์เซอร์ ไม่อัปโหลดไปยัง VisionD</p>
+      <h1>แต่งภาพสินค้าด้วย Vedit</h1>
+      <p>รูปเดี่ยวใช้กรอบชื่อและราคาแบบเดิม · ZIP เลือกได้ห้าสไตล์ ตัดฉากหลังและใส่ชื่อ ราคา และ Zippo Udon โดยไม่บังสินค้า · ภาพประมวลผลในเบราว์เซอร์ ไม่อัปโหลดไปยัง VisionD</p>
     </section>
     <section class="vedit-workspace" aria-labelledby="veditEditorHeading">
       <form id="veditControls" class="vedit-controls" novalidate>
@@ -51,6 +51,16 @@
           <select id="veditArchivePreview" aria-describedby="veditArchiveSummary"></select>
         </label>
         <p id="veditArchiveSummary" class="vedit-archive-summary" hidden></p>
+        <label>สไตล์ภาพสำหรับ ZIP
+          <select id="veditStyle" disabled>
+            <option value="plain">เรียบ · กรอบแดง</option>
+            <option value="metal">Metal · โลหะ</option>
+            <option value="street">Street · สตรีท</option>
+            <option value="premium">Premium · หรู</option>
+            <option value="vintage">Vintage · วินเทจ</option>
+          </select>
+          <small>รูปสินค้าใน ZIP จะถูกตัดฉากหลังบนเครื่องนี้ก่อนวางบนพื้นหลังที่เลือก ครั้งแรกอาจใช้เวลาสักครู่</small>
+        </label>
         <label>ชื่อสินค้า
           <textarea id="veditProductName" name="product_name" maxlength="160" rows="3" required>ชื่อสินค้า</textarea>
           <small><span data-count-for="veditProductName">10</span>/160 ตัวอักษร</small>
@@ -70,7 +80,8 @@
       </section>
     </section>
   </main>
-  <script src="/vedit.js?v=020188"></script>
+  <script src="/vedit-model/ort.wasm.min.js?v=1.22.0"></script>
+  <script src="/vedit.js?v=020189"></script>
   <script src="/shared-nav.js?v=020187"></script>
   <script src="/header-shell.js?v=014578" defer></script>
   <script src="/mobile-storefront.js?v=014407" defer></script>

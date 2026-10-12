@@ -28,8 +28,8 @@ assert.doesNotMatch(shared,/'nav-vedit-link'|'\/vedit','Vedit'/,'canonical publi
 assert.doesNotMatch(home,/class="nav-vedit-link"|href="\/vedit"/,'home first paint omits Vedit');
 assert.doesNotMatch(html,/class="nav-vedit-link"|href="\/vedit"/,'Vedit first paint omits its public-nav self-link');
 assert.match(html,/id="veditImage"[^>]+accept="image\/jpeg,image\/png,image\/webp"/);
-assert.match(html,/vedit\.css\?v=020175[\s\S]*mobile-storefront\.css[\s\S]*header-shell\.css[\s\S]*frontend-theme\.css/,'stylesheet cascade follows the public header contract');
-assert.match(html,/vedit\.js\?v=020188[\s\S]*shared-nav\.js\?v=020187/);
+assert.match(html,/vedit\.css\?v=020189[\s\S]*mobile-storefront\.css[\s\S]*header-shell\.css[\s\S]*frontend-theme\.css/,'stylesheet cascade follows the public header contract');
+assert.match(html,/vedit\.js\?v=020189[\s\S]*shared-nav\.js\?v=020187/);
 assert.doesNotMatch(html,/ขนาดต้นฉบับ|กรอบบน.ล่าง|ราคาแสดงบนภาพ/,'Vedit copy does not claim source-size output or a price overlay');
 assert.doesNotMatch(client,/\bfetch\s*\(|localStorage|sessionStorage|\/api\/|vpage|credit|D1|R2/i,'composer has no API, storage, Vpage or credit coupling');
 assert.match(client,/MIME_SIGNATURES/);
@@ -37,7 +37,7 @@ assert.match(client,/selectionGeneration/);
 assert.match(client,/Intl\?\.Segmenter/);
 assert.match(client,/canvas\.toBlob/);
 
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.wasm':'application/wasm','.onnx':'application/octet-stream','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg'};
 const requestLog=[];
 const server=http.createServer((request,response)=>{
   const url=new URL(request.url,'http://127.0.0.1');
@@ -84,14 +84,14 @@ async function inspectSourcePixels(page,sourceBytes,outputBytes){
     return result;
   },{sourceEncoded:sourceBytes.toString('base64'),outputEncoded:outputBytes?.toString('base64')||null});
 }
-async function samePngPixels(page,firstBytes,secondBytes){
-  return page.evaluate(async({first,second})=>{
+async function samePngPixels(page,firstBytes,secondBytes,tolerance=0){
+  return page.evaluate(async({first,second,tolerance})=>{
     const decode=async encoded=>createImageBitmap(new Blob([Uint8Array.from(atob(encoded),char=>char.charCodeAt(0))],{type:'image/png'}));
     const a=await decode(first),b=await decode(second);if(a.width!==b.width||a.height!==b.height){const result={same:false,firstSize:[a.width,a.height],secondSize:[b.width,b.height]};a.close();b.close();return result}
     const pixels=bitmap=>{const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0);return ctx.getImageData(0,0,canvas.width,canvas.height).data};
-    const ap=pixels(a),bp=pixels(b);let mismatch=-1;for(let i=0;i<ap.length;i++)if(ap[i]!==bp[i]){mismatch=i;break}
+    const ap=pixels(a),bp=pixels(b);let mismatch=-1;for(let i=0;i<ap.length;i++)if(Math.abs(ap[i]-bp[i])>tolerance){mismatch=i;break}
     const result={same:mismatch===-1,firstSize:[a.width,a.height],secondSize:[b.width,b.height],mismatch};a.close();b.close();return result;
-  },{first:firstBytes.toString('base64'),second:secondBytes.toString('base64')});
+  },{first:firstBytes.toString('base64'),second:secondBytes.toString('base64'),tolerance});
 }
 function inputZip(entries){
   const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let i=0;i<8;i++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0});
@@ -225,13 +225,10 @@ try{
     const batchSources=[batchA,batchB,batchC],batchSizes=[[640,480],[480,640],[800,600]],batchPreview=[];
     for(let index=0;index<batchSources.length;index++){
       await page.locator('#veditArchivePreview').selectOption(String(index));
-      await page.waitForFunction(([width,height])=>{const node=document.querySelector('#veditCanvas');return Number(node.dataset.sourceWidth)===width&&Number(node.dataset.sourceHeight)===height&&node.height===height+Number(node.dataset.topHeight)},batchSizes[index]);
-      const geometry=await canvas.evaluate(node=>({width:node.width,height:node.height,top:Number(node.dataset.topHeight),topLines:Number(node.dataset.topLines),priceLines:Number(node.dataset.priceLines)}));
-      assert.equal(geometry.width,batchSizes[index][0]);assert.equal(geometry.height,batchSizes[index][1]+geometry.top);
+      await page.waitForFunction(([width,height])=>{const node=document.querySelector('#veditCanvas');return Number(node.dataset.sourceWidth)===width&&Number(node.dataset.sourceHeight)===height&&node.height===height+Number(node.dataset.topHeight)+Number(node.dataset.bottomHeight)},batchSizes[index]);
+      const geometry=await canvas.evaluate(node=>({width:node.width,height:node.height,top:Number(node.dataset.topHeight),bottom:Number(node.dataset.bottomHeight),topLines:Number(node.dataset.topLines),priceLines:Number(node.dataset.priceLines)}));
+      assert.equal(geometry.width,batchSizes[index][0]);assert.equal(geometry.height,batchSizes[index][1]+geometry.top+geometry.bottom);
       assert.ok(geometry.topLines>=1&&geometry.priceLines>=1);
-      const sourcePixels=await inspectSourcePixels(page,batchSources[index],null);
-      assert.equal(sourcePixels.mismatches,0,`ZIP preview ${index+1} preserves every source pixel`);
-      if(index===2)assert.equal(sourcePixels.transparentAlpha,0,'transparent ZIP preview preserves alpha');
       batchPreview.push({...geometry,png:Buffer.from((await canvas.evaluate(node=>node.toDataURL('image/png'))).split(',')[1],'base64')});
     }
     await page.locator('#veditArchivePreview').selectOption('1');
@@ -245,14 +242,10 @@ try{
     const outputPixels=await page.evaluate(async encoded=>{const result=[];for(const base64 of encoded){const bytes=Uint8Array.from(atob(base64),char=>char.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'})),copy=document.createElement('canvas');copy.width=bitmap.width;copy.height=bitmap.height;const ctx=copy.getContext('2d');ctx.drawImage(bitmap,0,0);result.push({width:bitmap.width,height:bitmap.height,top:[...ctx.getImageData(1,1,1,1).data].slice(0,3),bottomRight:[...ctx.getImageData(bitmap.width-1,bitmap.height-1,1,1).data].slice(0,3),image:[...ctx.getImageData(20,Math.floor(bitmap.height/2),1,1).data].slice(0,3)});bitmap.close()}return result},outputs.map(item=>item.toString('base64')));
     assert.deepEqual(outputPixels.map(item=>[item.width,item.height]),batchPreview.map(item=>[item.width,item.height]));
     assert.deepEqual(outputPixels.map(item=>item.top),[[181,18,27],[181,18,27],[181,18,27]],'same red top band appears on first, middle and last output');
-    assert.deepEqual(outputPixels.map(item=>item.bottomRight),[[88,166,255],[88,166,255],[88,166,255]],'original lower-right source corner is not covered by price');
-    assert.deepEqual(outputPixels.map(item=>item.image),[[36,133,95],[36,133,95],[36,133,95]],'source image pixels remain below the top frame');
+    assert.deepEqual(outputPixels.map(item=>item.bottomRight),[[181,18,27],[181,18,27],[181,18,27]],'Zippo Udon bottom band is outside the product area');
     for(let index=0;index<outputs.length;index++){
-      const sourcePixels=await inspectSourcePixels(page,batchSources[index],outputs[index]);
-      assert.equal(sourcePixels.mismatches,0,`ZIP output ${index+1} preserves every source pixel`);
-      if(index===2)assert.equal(sourcePixels.transparentAlpha,0,'transparent ZIP output preserves alpha');
-      assert.equal(sourcePixels.height,batchSizes[index][1]+batchPreview[index].top,`ZIP output ${index+1} adds only its own top frame`);
-      const zipMatch=await samePngPixels(page,batchPreview[index].png,outputs[index]);assert.equal(zipMatch.same,true,`ZIP output ${index+1} matches its preview pixel-for-pixel: ${JSON.stringify(zipMatch)}`);
+      assert.equal(outputPixels[index].height,batchSizes[index][1]+batchPreview[index].top+batchPreview[index].bottom,`ZIP output ${index+1} adds two bars outside its source area`);
+      const zipMatch=await samePngPixels(page,batchPreview[index].png,outputs[index],4);assert.equal(zipMatch.same,true,`ZIP output ${index+1} matches its preview: ${JSON.stringify(zipMatch)}`);
     }
     await page.waitForFunction(()=>globalThis.__veditAudit.createdUrls.every(url=>globalThis.__veditAudit.revokedUrls.includes(url)));
     const unsafeZip=inputZip([{name:'good.png',bytes:batchA},{name:'../escape.png',bytes:batchB}]);
