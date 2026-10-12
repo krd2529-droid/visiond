@@ -27,12 +27,14 @@ for(const name of consumers){
   assert.doesNotMatch(html,/shared-nav\.js\?v=020(?:57|173|174)/,`${name} is not pinned to an old cache key`);
 }
 assert.equal((shared.match(/'\/vpage','Vpage'/g)||[]).length,1,'canonical shared navigation contains exactly one Vpage entry');
-assert.match(shared,/ศูนย์จัดการคอร์ส'\],\['nav-vpage-link','\/vpage','Vpage'\],\['nav-vedit-link','\/vedit','Vedit'\],\['','\/courses\.html'/,'canonical shared navigation preserves the primary row around Vpage');
-assert.match(home,/ศูนย์จัดการคอร์ส<\/a[\s\S]*?<a class="nav-vpage-link" href="\/vpage">Vpage<\/a>[\s\S]*?<a class="nav-vedit-link" href="\/vedit">Vedit<\/a>[\s\S]*?<a href="\/courses\.html">ระบบ V-Learning<\/a>/,'main first-paint navigation preserves order around Vpage');
+assert.match(shared,/ศูนย์จัดการคอร์ส'\],\['nav-vpage-link','\/vpage','Vpage'\],\['','\/courses\.html'/,'canonical shared navigation preserves the primary row around Vpage');
+assert.match(home,/ศูนย์จัดการคอร์ส<\/a[\s\S]*?<a class="nav-vpage-link" href="\/vpage">Vpage<\/a>[\s\S]*?<a href="\/courses\.html">ระบบ V-Learning<\/a>/,'main first-paint navigation preserves order around Vpage');
+assert.doesNotMatch(shared,/'nav-vedit-link'|'\/vedit','Vedit'/,'canonical public nav omits Vedit');
+assert.doesNotMatch(home,/class="nav-vedit-link"|href="\/vedit"/,'home first-paint nav omits Vedit');
 assert.match(vpageHtml,/mobile-storefront\.css\?v=014407/,'Vpage loads the canonical mobile header styles');
 assert.match(vpageHtml,/header-shell\.css\?v=014578/,'Vpage loads the canonical desktop header styles');
-assert.match(vpageHtml,/vpage\.css\?v=020180[\s\S]*mobile-storefront\.css\?v=014407[\s\S]*header-shell\.css\?v=014578[\s\S]*frontend-theme\.css\?v=020159/,'Vpage loads the preview CSS while preserving the proven public header stylesheet cascade');
-assert.match(vpageHtml,/vpage\.js\?v=020180[\s\S]*shared-nav\.js\?v=020180/,'Vpage loads the preview runtime and then the canonical navigation');
+assert.match(vpageHtml,/vpage\.css\?v=020185[\s\S]*mobile-storefront\.css\?v=014407[\s\S]*header-shell\.css\?v=014578[\s\S]*frontend-theme\.css\?v=020159/,'Vpage loads the preview CSS while preserving the proven public header stylesheet cascade');
+assert.match(vpageHtml,/vpage\.js\?v=020186[\s\S]*shared-nav\.js\?v=020180/,'Vpage loads the preview runtime and then the canonical navigation');
 assert.match(vpageHtml,/shared-nav\.js\?v=020180/,'Vpage loads the canonical navigation runtime');
 assert.match(vpageHtml,/header-shell\.js\?v=014578/,'Vpage loads the canonical header shell runtime');
 assert.match(vpageHtml,/mobile-storefront\.js\?v=014407/,'Vpage loads the canonical mobile drawer runtime');

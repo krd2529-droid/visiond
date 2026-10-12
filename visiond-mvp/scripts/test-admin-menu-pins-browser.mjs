@@ -26,7 +26,8 @@ const server=http.createServer((req,res)=>{
   if(url.pathname==='/admin.html'||url.pathname==='/admin'){
     res.writeHead(200,{'content-type':'text/html; charset=utf-8'});return res.end(html);
   }
-  const local=path.resolve(publicRoot,`.${url.pathname}`);
+  const pathname=url.pathname==='/vedit'?'/vedit.html':url.pathname;
+  const local=path.resolve(publicRoot,`.${pathname}`);
   if(!local.startsWith(publicRoot)||!fs.existsSync(local)){res.writeHead(404);return res.end('not found')}
   const type={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'}[path.extname(local)]||'application/octet-stream';
   res.writeHead(200,{'content-type':type});res.end(fs.readFileSync(local));
@@ -41,7 +42,19 @@ try{
     const page=await context.newPage();
     await page.goto(`${base}/admin.html`);
     await page.waitForSelector('.admin-menu-item .admin-pin-toggle');
-    assert.equal(await page.locator('.admin-menu-item').count(),36,'static plus middleware destinations');
+    assert.equal(await page.locator('.admin-menu-item').count(),37,'static plus middleware destinations');
+    const vedit=page.locator('.admin-menu-item:has(> a[href="/vedit"])');
+    assert.equal(await vedit.count(),1,'Vedit is available in the admin all-menu grid');
+    await vedit.locator('.admin-pin-toggle').click();
+    assert.equal(await page.locator('.admin-tabs > .admin-pinned-item > a[href="/vedit"]').count(),1,'Vedit can be pinned as an admin shortcut');
+    await page.locator('.admin-tabs > .admin-pinned-item:has(> a[href="/vedit"]) .admin-pinned-unpin').click();
+    assert.equal(await page.locator('.admin-tabs > .admin-pinned-item > a[href="/vedit"]').count(),0,'Vedit can be unpinned');
+    const veditPage=await context.newPage();
+    await veditPage.goto(`${base}/admin.html`);
+    await veditPage.locator('.admin-menu-item > a[href="/vedit"]').click();
+    await veditPage.waitForURL('**/vedit');
+    assert.equal(await veditPage.locator('#veditControls').count(),1,'admin menu opens the existing Vedit editor');
+    await veditPage.close();
     assert.equal(await page.locator('.admin-tabs > [data-admin-pinned-id]').count(),12,'initial top destinations pinned');
     assert.equal(await page.locator('#digitalStorefrontEmergency').count(),1);
     assert.equal(await page.locator('#digitalStorefrontEmergency').locator('..').evaluate(node=>node.classList.contains('admin-menu-item')),false,'emergency action is not pinnable');
@@ -97,7 +110,8 @@ try{
     await page.reload();await page.waitForSelector('.admin-menu-item .admin-pin-toggle');
     assert.equal(await page.locator('.admin-tabs > [data-admin-pinned-id]').count(),0);
     assert.equal(await page.locator('#adminPinnedEmpty').isVisible(),true,'empty state visible');
-    assert.equal(await page.locator('.admin-menu-item').count(),32,'Admin has every non-Boss destination');
+    assert.equal(await page.locator('.admin-menu-item').count(),33,'Admin has every non-Boss destination');
+    assert.equal(await page.locator('.admin-menu-item:has(> a[href="/vedit"])').count(),1,'Admin role can reach Vedit menu');
     assert.equal(await page.evaluate(()=>document.querySelector('.admin-menu-board').scrollWidth>document.querySelector('.admin-menu-board').clientWidth),false,'all-menu grid fits viewport');
     await context.close();
   }

@@ -16,20 +16,20 @@ assert.ok(chromium,'installed Chrome required');
 const publicRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public');
 const read=name=>fs.readFileSync(path.join(publicRoot,name),'utf8');
 const shared=read('shared-nav.js'),home=read('index.html'),html=read('vedit.html'),client=read('vedit.js');
-const expectedConsumers=['about.html','blog.html','bots.html','contact.html','course-center.html','course-seller.html','course.html','courses.html','digital-products.html','guides.html','index.html','my-courses.html','privacy.html','terms.html','vedit.html','vpage.html'].sort();
+const expectedConsumers=['about.html','blog.html','bots.html','cart.html','contact.html','course-basket-edit.html','course-center.html','course-rights-terms.html','course-seller.html','course.html','courses.html','dashboard.html','digital-products.html','forgot-password.html','guides.html','index.html','login.html','member.html','my-courses.html','partner-commerce-claim.html','privacy.html','product.html','register.html','reset-password.html','terms.html','vedit.html','vpage.html','vtools.html'].sort();
 const consumers=fs.readdirSync(publicRoot).filter(name=>name.endsWith('.html')&&read(name).includes('shared-nav.js?v=')).sort();
 assert.deepEqual(consumers,expectedConsumers,'every canonical nav consumer is enumerated');
 for(const name of consumers){
   const source=read(name);
-  assert.equal((source.match(/shared-nav\.js\?v=020174/g)||[]).length,1,`${name} loads cache key 020174 once`);
+  assert.equal((source.match(new RegExp(`shared-nav\\.js\\?v=${name==='vpage.html'?'020180':'020176'}`,'g'))||[]).length,1,`${name} loads the current shared nav once`);
   assert.doesNotMatch(source,/shared-nav\.js\?v=020(?:57|173)/,`${name} has no stale cache key`);
 }
-assert.equal((shared.match(/'nav-vedit-link','\/vedit','Vedit'/g)||[]).length,1,'canonical nav has exactly one Vedit entry');
-assert.match(shared,/\/vpage','Vpage'\],\['nav-vedit-link','\/vedit','Vedit'\],\['','\/courses\.html'/,'Vedit is after Vpage and before V-Learning');
-assert.match(home,/class="nav-vpage-link" href="\/vpage">Vpage<\/a>[\s\S]*?class="nav-vedit-link" href="\/vedit">Vedit<\/a>[\s\S]*?href="\/courses\.html">ระบบ V-Learning<\/a>/,'home first paint has the same Vedit order');
+assert.doesNotMatch(shared,/'nav-vedit-link'|'\/vedit','Vedit'/,'canonical public nav omits Vedit');
+assert.doesNotMatch(home,/class="nav-vedit-link"|href="\/vedit"/,'home first paint omits Vedit');
+assert.doesNotMatch(html,/class="nav-vedit-link"|href="\/vedit"/,'Vedit first paint omits its public-nav self-link');
 assert.match(html,/id="veditImage"[^>]+accept="image\/jpeg,image\/png,image\/webp"/);
 assert.match(html,/vedit\.css\?v=020175[\s\S]*mobile-storefront\.css[\s\S]*header-shell\.css[\s\S]*frontend-theme\.css/,'stylesheet cascade follows the public header contract');
-assert.match(html,/vedit\.js\?v=020175[\s\S]*shared-nav\.js\?v=020174/);
+assert.match(html,/vedit\.js\?v=020175[\s\S]*shared-nav\.js\?v=020176/);
 assert.doesNotMatch(client,/\bfetch\s*\(|localStorage|sessionStorage|\/api\/|vpage|credit|D1|R2/i,'composer has no API, storage, Vpage or credit coupling');
 assert.match(client,/MIME_SIGNATURES/);
 assert.match(client,/selectionGeneration/);
@@ -38,7 +38,6 @@ assert.match(client,/canvas\.toBlob/);
 
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg'};
 const requestLog=[];
-let navProbePending=true;
 const server=http.createServer((request,response)=>{
   const url=new URL(request.url,'http://127.0.0.1');
   requestLog.push({method:request.method,path:url.pathname,length:Number(request.headers['content-length']||0)});
@@ -46,7 +45,6 @@ const server=http.createServer((request,response)=>{
     const payload=url.pathname==='/api/auth/me'?{user:null}:{items:[],products:[],courses:[]};
     response.writeHead(200,{'content-type':'application/json','cache-control':'private, no-store'});response.end(JSON.stringify(payload));return;
   }
-  if(url.pathname==='/vedit'&&navProbePending){navProbePending=false;response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end('<!doctype html><html lang="th"><title>Vedit navigation destination</title><main>Vedit</main></html>');return}
   const pathname=['/','/index.html'].includes(url.pathname)?'/index.html':['/vedit','/vedit.html'].includes(url.pathname)?'/vedit.html':url.pathname;
   const local=path.resolve(publicRoot,`.${pathname}`),relative=path.relative(publicRoot,local);
   if(relative.startsWith('..')||path.isAbsolute(relative)||!fs.existsSync(local)){response.writeHead(404,{'content-type':'text/plain'});response.end('not found');return}
@@ -72,7 +70,6 @@ function inputZip(entries){
 
 try{
   for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
-    navProbePending=true;
     const context=await browser.newContext({viewport,locale:'th-TH',acceptDownloads:true});
     await context.addInitScript(()=>{
       globalThis.__veditAudit={decoded:[],closed:[],createdUrls:[],revokedUrls:[],slowStarted:false};
@@ -88,42 +85,37 @@ try{
       URL.revokeObjectURL=url=>{globalThis.__veditAudit.revokedUrls.push(url);return nativeRevokeUrl(url)};
     });
     await context.route('https://**/*',route=>route.fulfill({status:204,body:''}));
-    const page=await context.newPage(),errors=[],failed=[],bad=[];let committedVeditAbort=0;
+    const page=await context.newPage(),errors=[],failed=[],bad=[];
     page.on('pageerror',error=>errors.push(error.message));
     page.on('console',message=>{if(message.type()==='error')errors.push(message.text())});
-    page.on('requestfailed',request=>{const error=request.failure()?.errorText||'unknown';if(request.isNavigationRequest()&&request.url()===`${base}/vedit`&&error==='net::ERR_ABORTED'){committedVeditAbort+=1;return}if(request.url().startsWith(base))failed.push(`${request.url()} ${error}`)});
+    page.on('requestfailed',request=>{const error=request.failure()?.errorText||'unknown';if(request.url().startsWith(base))failed.push(`${request.url()} ${error}`)});
     page.on('response',response=>{if(response.url().startsWith(base)&&response.status()>=400)bad.push(`${response.status()} ${response.url()}`)});
 
     await page.goto(base);
     await page.locator('.topbar.header-shell-ready.mobile-nav-ready').waitFor({state:'attached'});
     await page.locator('.topbar nav[data-account-ready="1"]').waitFor({state:'attached'});
-    const homeEntry=page.locator('.topbar .nav-vedit-link');
-    assert.equal(await homeEntry.count(),1,'home has one Vedit entry');
-    if(viewport.width<=800){const toggle=page.locator('.mobile-nav-toggle');await toggle.click();await homeEntry.waitFor({state:'visible'})}
-    await homeEntry.click({noWaitAfter:true});
-    await page.waitForFunction(()=>location.pathname==='/vedit'&&document.title==='Vedit navigation destination');
+    assert.equal(await page.locator('.topbar a[href="/vedit"]').count(),0,'home omits Vedit on desktop and mobile');
+    if(viewport.width<=800){const toggle=page.locator('.mobile-nav-toggle');await toggle.click();await page.locator('.topbar .nav-vpage-link').waitFor({state:'visible'});assert.equal(await page.locator('.topbar a[href="/vedit"]').count(),0)}
+    await page.goto(`${base}/vedit`);
     await page.waitForLoadState('networkidle');
-    assert.equal(new URL(page.url()).pathname,'/vedit','real nav click reaches Vedit');
-    await page.goto(`${base}/vedit?runtime=1`);
+    assert.equal(new URL(page.url()).pathname,'/vedit','direct Vedit URL still works');
 
     for(const route of ['/vedit','/vedit.html']){
       if(new URL(page.url()).pathname!==route)await page.goto(`${base}${route}`);
       await page.locator('.topbar.header-shell-ready.mobile-nav-ready').waitFor({state:'attached'});
       await page.locator('.topbar nav[data-account-ready="1"]').waitFor({state:'attached'});
-      const current=page.locator('.topbar .nav-vedit-link');
-      assert.equal(await current.count(),1,`${route} has one Vedit entry`);
-      assert.equal(await current.getAttribute('aria-current'),'page',`${route} marks Vedit current`);
-      assert.deepEqual(await page.locator('.topbar>nav>a').evaluateAll(nodes=>nodes.slice(0,5).map(node=>new URL(node.href).pathname.replace(/\.html$/,''))),['/','/digital-products','/course-center','/vpage','/vedit']);
+      assert.equal(await page.locator('.topbar a[href="/vedit"]').count(),0,`${route} omits Vedit public-nav entry`);
+      assert.deepEqual(await page.locator('.topbar>nav>a').evaluateAll(nodes=>nodes.slice(0,5).map(node=>new URL(node.href).pathname.replace(/\.html$/,''))),['/','/digital-products','/course-center','/vpage','/courses']);
       for(const selector of ['#navLogin','#navRegister','.cart-nav','.vd-language-switcher'])assert.equal(await page.locator(`.topbar ${selector}`).count(),1,`${selector} is not duplicated`);
       if(viewport.width<=800){
         const toggle=page.locator('.mobile-nav-toggle');
         assert.equal(await toggle.getAttribute('aria-expanded'),'false');
         await toggle.click();
-        await current.waitFor({state:'visible'});
+        await page.locator('.topbar .nav-vpage-link').waitFor({state:'visible'});
         assert.equal(await toggle.getAttribute('aria-expanded'),'true');
         await page.keyboard.press('Escape');
         await page.waitForFunction(()=>document.querySelector('.mobile-nav-toggle')?.getAttribute('aria-expanded')==='false');
-      }else assert.equal(await current.isVisible(),true);
+      }else assert.equal(await page.locator('.topbar .nav-vpage-link').isVisible(),true);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,'route has no horizontal overflow');
     }
 
@@ -225,7 +217,7 @@ try{
     await page.evaluate(()=>globalThis.__veditRestoreSlowBlob());
     assert.equal(cancelledDownloads,0,'cancelled batch produces no ZIP');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth),false,'composer has no horizontal overflow');
-    assert.ok(committedVeditAbort<=1,'actual Vedit click has at most the known committed-document detach signal');assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);assert.deepEqual(bad,[]);await context.close();
+    assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);assert.deepEqual(bad,[]);await context.close();
   }
   const outbound=requestLog.filter(item=>!['GET','HEAD'].includes(item.method)||item.length>0);
   assert.equal(outbound.every(item=>['/api/analytics/view','/api/analytics/event'].includes(item.path)&&item.length<=256),true,'only the established small analytics events may write; image and text bytes never leave the browser');
