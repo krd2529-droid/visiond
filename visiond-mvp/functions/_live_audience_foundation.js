@@ -15,7 +15,7 @@ export const LIVE_AUDIENCE_UNKNOWN_ANSWER = 'ขออภัยค่ะ ตอ�
 export const LIVE_AUDIENCE_REDACTED_VIEWER_HASH = '0'.repeat(64);
 const LIVE_RUNTIME_MODE_LIMIT = 3;
 export const LIVE_AUDIENCE_PRODUCT_SQL = `SELECT p.id,p.title,p.price_cents,p.currency,p.quantity,p.status,p.availability,p.brand,p.product_line,p.series,p.updated_at
-  FROM toys_center_products p WHERE p.id=?
+  FROM toys_center_products p WHERE p.store_id='toys-center' AND p.id=?
     AND EXISTS(SELECT 1 FROM live_show_scenes s WHERE s.show_id=? AND s.product_id=p.id)`;
 export const LIVE_AUDIENCE_CAPACITY_DISCARD_SQL = `INSERT INTO live_audience_events(id,session_id,show_id,owner_id,source,external_event_hash,kind,viewer_ref_hash,viewer_label,question_text,product_id,priority,answer_kind,answer_text,status,attempts,created_at,updated_at,expires_at)
   SELECT ?,?,?,?,'local_test',?,?,'0000000000000000000000000000000000000000000000000000000000000000','','',?,?,?,'','discarded',0,?,?,?

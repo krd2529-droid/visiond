@@ -15,7 +15,7 @@ export async function onRequestPost(ctx){
   if(checked.error)return json({error:checked.error},400,TOYS_ORDER_HEADERS);
   const value=checked.value,[requestHash,tokenHash]=await Promise.all([guestRequestHash(value),guestTokenHash(value.clientToken)]),existing=await selectByToken(ctx.env).bind(tokenHash).first();
   if(existing)return existing.request_hash===requestHash?json({ok:true,idempotent:true,order:guestReceipt(existing)},200,TOYS_ORDER_HEADERS):json({error:'รหัสคำสั่งซื้อนี้ถูกใช้กับข้อมูลอื่นแล้ว'},409,TOYS_ORDER_HEADERS);
-  const product=await ctx.env.DB.prepare("SELECT id,meta_id,slug,title,price_cents,currency,availability,quantity FROM toys_center_products WHERE id=? AND status='published'").bind(value.productId).first();
+  const product=await ctx.env.DB.prepare("SELECT id,meta_id,slug,title,price_cents,currency,availability,quantity FROM toys_center_products WHERE id=? AND store_id='toys-center' AND status='published'").bind(value.productId).first();
   if(!product)return json({error:'ไม่พบสินค้าที่ต้องการสั่งซื้อ'},404,TOYS_ORDER_HEADERS);
   if(product.availability!=='in stock'||Number(product.quantity)<value.quantity)return json({error:'สินค้าเหลือไม่พอ กรุณาเลือกจำนวนใหม่'},409,TOYS_ORDER_HEADERS);
   const payment=await loadExistingPaymentSettings(ctx.env);

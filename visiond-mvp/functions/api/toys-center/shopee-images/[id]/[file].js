@@ -1,11 +1,13 @@
 import {shopeeDerivativeKey} from '../../../../_toys_center_shopee_images.js';
+import {stockStore} from '../../../../_stock.js';
 
 const missing=()=>new Response('Not found',{status:404,headers:{'cache-control':'no-store','x-content-type-options':'nosniff'}});
 async function serve(ctx,headOnly=false){
+  const store=stockStore(ctx.request.url);if(!store)return missing();
   const productId=Number(ctx.params.id),match=String(ctx.params.file||'').match(/^([1-9]\d*)\.(jpg|png)$/);
   if(!Number.isSafeInteger(productId)||productId<1||!match)return missing();
   const imageId=Number(match[1]);if(!Number.isSafeInteger(imageId))return missing();
-  const row=await ctx.env.DB.prepare("SELECT i.image_key FROM toys_center_product_images i JOIN toys_center_products p ON p.id=i.product_id WHERE i.id=? AND i.product_id=? AND p.status='published'").bind(imageId,productId).first();
+  const row=await ctx.env.DB.prepare("SELECT i.image_key FROM toys_center_product_images i JOIN toys_center_products p ON p.id=i.product_id WHERE i.id=? AND i.product_id=? AND p.store_id=? AND p.status='published'").bind(imageId,productId,store.id).first();
   if(!row)return missing();
   const original=await ctx.env.FILES.head(row.image_key);if(!original)return missing();
   const type=String(original.httpMetadata?.contentType||'').toLowerCase(),size=Number(original.size);

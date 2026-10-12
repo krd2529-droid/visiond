@@ -1,6 +1,7 @@
 import {json,requireAdmin} from '../../../../_lib.js';
 import {prepareShopeeImage} from '../../../../_toys_center_shopee_images.js';
 import {makeShopeeWorkbook} from '../../../../_toys_center_shopee_xlsx.js';
+import {stockStore} from '../../../../_stock.js';
 
 const responseHeaders={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const MAX_REQUEST_BYTES=2300000;
@@ -44,13 +45,14 @@ export function validateShopeeRow(product,images,{standardDelivery},origin){
 export async function onRequestPost(ctx){
   const auth=await requireAdmin(ctx);if(auth.error)return auth.error;
   const id=Number(ctx.params.id);if(!Number.isSafeInteger(id)||id<1)return json({error:'ไม่พบสินค้า'},404,responseHeaders);
+  const store=stockStore(ctx.request.url);if(!store)return json({error:'ร้านไม่ถูกต้อง'},400,responseHeaders);
   if(Number(ctx.request.headers.get('content-length')||0)>MAX_REQUEST_BYTES)return json({error:'ไฟล์เทมเพลต Shopee ใหญ่เกิน 2 MB'},413,responseHeaders);
   let form;try{form=await boundedFormData(ctx.request)}catch(error){return json({error:error.status===413?error.message:'อ่านฟอร์มส่งออก Shopee ไม่สำเร็จ'},error.status===413?413:400,responseHeaders)}
   const file=form?.get('template');
   if(!(file instanceof File)||!file.size||file.size>2*1024*1024||!String(file.name).toLowerCase().endsWith('.xlsx'))return json({error:'เลือกไฟล์ Excel .xlsx ตัวอย่าง Shopee ที่แนบมา (ไม่เกิน 2 MB)'},400,responseHeaders);
   const source=new Uint8Array(await file.arrayBuffer());
   if(source[0]!==0x50||source[1]!==0x4b)return json({error:'ไฟล์ที่เลือกไม่ใช่ Excel .xlsx'},400,responseHeaders);
-  const product=await ctx.env.DB.prepare('SELECT id,meta_id,title,description,price_cents,quantity,gtin,status,image_1_key,shopee_weight_g,shopee_package_width_mm,shopee_package_length_mm,shopee_package_height_mm FROM toys_center_products WHERE id=?').bind(id).first();
+  const product=await ctx.env.DB.prepare('SELECT id,meta_id,title,description,price_cents,quantity,gtin,status,image_1_key,shopee_weight_g,shopee_package_width_mm,shopee_package_length_mm,shopee_package_height_mm FROM toys_center_products WHERE id=? AND store_id=?').bind(id,store.id).first();
   if(!product)return json({error:'ไม่พบสินค้า'},404,responseHeaders);
   const gallery=(await ctx.env.DB.prepare('SELECT id,position,image_key FROM toys_center_product_images WHERE product_id=? ORDER BY position LIMIT 10').bind(id).all()).results||[];
   const selected=gallery.find(item=>item.image_key===product.image_1_key),seen=new Set(),ordered=[];

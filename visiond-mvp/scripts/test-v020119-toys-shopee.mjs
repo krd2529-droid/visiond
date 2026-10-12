@@ -16,6 +16,7 @@ sqlite.exec(await read('migrations/0071_toys_center.sql'));
 sqlite.exec(await read('migrations/0105_toys_center_product_line_series.sql'));sqlite.exec(await read('migrations/0106_toys_center_product_images.sql'));sqlite.exec(await read('migrations/0107_toys_center_product_cost.sql'));
 sqlite.prepare(`INSERT INTO toys_center_products(meta_id,slug,title,description,price_cents,brand,quantity,image_1_key,image_2_key,status,gtin,cost_cents) VALUES('LEGACY','legacy','MixedCase ของสะสมไทย','รายละเอียดเดิม',10000,'VisionD',1,'legacy-cover.jpg','legacy-meta.jpg','published','8850000000001',7654)`).run();
 sqlite.exec(await read('migrations/0110_toys_center_shopee_handoff.sql'));
+sqlite.exec(await read('migrations/0134_stock_stores.sql'));
 const columns=sqlite.prepare('PRAGMA table_info(toys_center_products)').all().map(row=>row.name);for(const name of['shopee_weight_g','shopee_package_width_mm','shopee_package_length_mm','shopee_package_height_mm'])assert.ok(columns.includes(name),name);
 for(const name of['shopee_weight_g','shopee_package_width_mm','shopee_package_length_mm','shopee_package_height_mm'])assert.equal(sqlite.prepare(`SELECT ${name} value FROM toys_center_products WHERE meta_id='LEGACY'`).get().value,null);
 assert.throws(()=>sqlite.prepare(`UPDATE toys_center_products SET shopee_weight_g=0 WHERE meta_id='LEGACY'`).run(),/CHECK/);

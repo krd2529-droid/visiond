@@ -3,7 +3,7 @@ const MAX_SHOPEE_BYTES=2*1024*1024;
 const supported=new Set(['image/jpeg','image/png']);
 const conversionInflight=new Map();
 export const shopeeDerivativeKey=id=>`toys-center/shopee/${id}.jpg`;
-export const shopeeImageUrl=(origin,productId,imageId,extension)=>`${origin}/api/toys-center/shopee-images/${productId}/${imageId}.${extension}`;
+export const shopeeImageUrl=(origin,productId,imageId,extension,store='toys-center')=>`${origin}/api/toys-center/shopee-images/${productId}/${imageId}.${extension}${store==='zippo'?'?store=zippo':''}`;
 const mime=object=>String(object?.httpMetadata?.contentType||'').split(';')[0].trim().toLowerCase();
 const validSize=(object,max=MAX_SHOPEE_BYTES)=>Number.isSafeInteger(Number(object?.size))&&Number(object.size)>0&&Number(object.size)<=max;
 const jpeg=bytes=>bytes.length>=64&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes.at(-2)===0xff&&bytes.at(-1)===0xd9;
@@ -37,14 +37,16 @@ async function makeDerivative(ctx,image,source,sourceType){
 }
 
 export async function prepareShopeeImage(ctx,productId,image,origin){
+  const store=stockStore(ctx.request.url)?.id||'toys-center';
   const source=await ctx.env.FILES?.head(image.image_key),sourceType=mime(source);
   if(!source||!validSize(source,MAX_SOURCE_BYTES)||!['image/jpeg','image/png','image/webp'].includes(sourceType))
     return{url:'',exists:Boolean(source),type:sourceType,size:Number(source?.size)};
   const direct=supported.has(sourceType)&&validSize(source);
-  if(direct)return{url:shopeeImageUrl(origin,productId,image.id,sourceType==='image/png'?'png':'jpg'),exists:true,type:sourceType,size:Number(source.size)};
+  if(direct)return{url:shopeeImageUrl(origin,productId,image.id,sourceType==='image/png'?'png':'jpg',store),exists:true,type:sourceType,size:Number(source.size)};
   const key=shopeeDerivativeKey(image.id);
   let pending=conversionInflight.get(key);
   if(!pending){pending=makeDerivative(ctx,image,source,sourceType).finally(()=>conversionInflight.delete(key));conversionInflight.set(key,pending)}
   const derivative=await pending;
-  return{url:shopeeImageUrl(origin,productId,image.id,'jpg'),exists:true,type:'image/jpeg',size:Number(derivative.size)};
+  return{url:shopeeImageUrl(origin,productId,image.id,'jpg',store),exists:true,type:'image/jpeg',size:Number(derivative.size)};
 }
+import {stockStore} from './_stock.js';

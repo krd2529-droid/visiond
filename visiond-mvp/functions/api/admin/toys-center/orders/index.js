@@ -1,9 +1,11 @@
 import {json,requireBoss} from '../../../../_lib.js';
 import {TOYS_ORDER_HEADERS,nextOrderCursor,orderCursor,privateOrderResponse} from '../../../../_toys_orders.js';
+import {stockStore} from '../../../../_stock.js';
 
 const allowedStatus=new Set(['awaiting_payment','paid','rejected']);
 export async function onRequestGet(ctx){
   const auth=await requireBoss(ctx);if(auth.error)return privateOrderResponse(auth.error);
+  if(stockStore(ctx.request.url)?.id!=='toys-center')return json({error:'ร้านนี้ไม่มีออเดอร์ Toys Center'},404,TOYS_ORDER_HEADERS);
   const url=new URL(ctx.request.url),limit=Math.min(24,Math.max(1,Math.floor(Number(url.searchParams.get('limit')))||24)),rawStatus=url.searchParams.get('status')||'',rawCursor=url.searchParams.get('cursor')||'';
   if(rawStatus&&!allowedStatus.has(rawStatus))return json({error:'สถานะออเดอร์ไม่ถูกต้อง'},400,TOYS_ORDER_HEADERS);
   const status=rawStatus,after=orderCursor(rawCursor);
