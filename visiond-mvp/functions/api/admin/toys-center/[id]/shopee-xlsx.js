@@ -8,10 +8,10 @@ export const SHOPEE_CATEGORY_ID=101394;
 const text=value=>String(value??'').trim();
 const length=value=>Array.from(value).length;
 const validInteger=(value,min,max)=>Number.isSafeInteger(Number(value))&&Number(value)>=min&&Number(value)<=max;
-export async function boundedFormData(request){
+export async function boundedFormData(request,maxBytes=MAX_REQUEST_BYTES){
   if(!request.body)return null;
   const reader=request.body.getReader(),chunks=[];let length=0,oversized=false;
-  try{for(;;){const {done,value}=await reader.read();if(done)break;if(oversized)continue;length+=value.length;if(length>MAX_REQUEST_BYTES){oversized=true;chunks.length=0}else chunks.push(value)}}finally{reader.releaseLock()}
+  try{for(;;){const {done,value}=await reader.read();if(done)break;if(oversized)continue;length+=value.length;if(length>maxBytes){oversized=true;chunks.length=0}else chunks.push(value)}}finally{reader.releaseLock()}
   if(oversized){const error=new Error('ไฟล์เทมเพลต Shopee ใหญ่เกิน 2 MB');error.status=413;throw error}
   const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}
   return new Request(request.url,{method:'POST',headers:{'content-type':request.headers.get('content-type')||''},body:bytes}).formData();

@@ -117,7 +117,7 @@ function replaceEntry(archive,directory,name,bytes,localOffset){
 
 export async function makeShopeeWorkbook(source,values){
   const rows=Array.isArray(values)?values:[values];
-  if(!rows.length||rows.length>24)throw new Error('เลือกสินค้า Shopee 1–24 รายการต่อไฟล์');
+  if(!rows.length||rows.length>200)throw new Error('เลือกสินค้า Shopee 1–200 รายการต่อไฟล์');
   const template=Uint8Array.from(source instanceof Uint8Array?source:new Uint8Array(source)),archive=locateEntries(template);
   await assertNoExternalRelationships(template,archive);
   await assertNoActiveFormulas(template,archive);

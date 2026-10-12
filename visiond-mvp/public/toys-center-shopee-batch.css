@@ -6,3 +6,37 @@
 .shopee-batch-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,220px) auto;gap:10px;align-items:end;padding:12px;border:1px solid var(--toy-line);border-radius:12px;background:#fff}
 .shopee-batch-row strong,.shopee-batch-row small{display:block;overflow-wrap:anywhere}.shopee-batch-row small{color:#476b68}.shopee-batch-row label{display:grid;gap:5px;font-weight:800}
 @media(max-width:700px){.shopee-result-wrap,.shopee-batch-row{grid-template-columns:1fr}.shopee-result-wrap>.shopee-batch-add,.shopee-batch-row>.vds-btn{width:100%}}
+
+/* Values used in the Shopee XLSX. Keep the shared parcel fields and optional GTIN visible. */
+.shopee-outline-key{margin:10px 0 0;color:#7d3200;font-weight:800}
+#productEditor input[name="image_1"],
+#productEditor input[name="meta_id"],
+#productEditor input[name="title"],
+#productEditor textarea[name="description"],
+#productEditor input[name="price"],
+#productEditor input[name="quantity"],
+#productEditor input[name="shopee_weight_kg"],
+#productEditor input[name="shopee_package_length_cm"],
+#productEditor input[name="shopee_package_width_cm"],
+#productEditor input[name="shopee_package_height_cm"],
+#productEditor input[name="gtin"],
+#shopeeWorkspace #shopeeBatchDelivery,
+#shopeeWorkspace #shopeeBatchTemplate,
+#shopeeWorkspace #shopeeStandardDelivery,
+#shopeeWorkspace #shopeeTemplateFile{border:2px solid #c65900;box-shadow:0 0 0 2px #fff0df}
+#productEditor input[name="gtin"]{border-style:dashed}
+#productEditor input[name="image_1"]:focus-visible,
+#productEditor input[name="meta_id"]:focus-visible,
+#productEditor input[name="title"]:focus-visible,
+#productEditor textarea[name="description"]:focus-visible,
+#productEditor input[name="price"]:focus-visible,
+#productEditor input[name="quantity"]:focus-visible,
+#productEditor input[name="shopee_weight_kg"]:focus-visible,
+#productEditor input[name="shopee_package_length_cm"]:focus-visible,
+#productEditor input[name="shopee_package_width_cm"]:focus-visible,
+#productEditor input[name="shopee_package_height_cm"]:focus-visible,
+#productEditor input[name="gtin"]:focus-visible,
+#shopeeWorkspace #shopeeBatchDelivery:focus-visible,
+#shopeeWorkspace #shopeeBatchTemplate:focus-visible,
+#shopeeWorkspace #shopeeStandardDelivery:focus-visible,
+#shopeeWorkspace #shopeeTemplateFile:focus-visible{outline:3px solid #9c3e00;outline-offset:2px}

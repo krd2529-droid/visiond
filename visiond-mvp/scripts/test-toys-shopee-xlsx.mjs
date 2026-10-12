@@ -29,7 +29,7 @@ sqlite.prepare('INSERT INTO toys_center_product_images(product_id,position,image
 
 const sqlSeen=[];class Bound{constructor(sql,args=[]){this.sql=sql;this.args=args}bind(...args){return new Bound(this.sql,args)}first(){sqlSeen.push(this.sql);return sqlite.prepare(this.sql).get(...this.args)}all(){sqlSeen.push(this.sql);return{results:sqlite.prepare(this.sql).all(...this.args)}}}
 const files=new Map([['other.jpg',{size:1000,httpMetadata:{contentType:'image/jpeg'}}],['second.jpg',{size:1200,httpMetadata:{contentType:'image/jpeg'}}],['cover.png',{size:1400,httpMetadata:{contentType:'image/png'}}]]);
-let headCount=0;const env={DB:{prepare:sql=>new Bound(sql)},FILES:{head:async key=>{headCount++;return files.get(key)||null}}};
+let headCount=0;const env={DB:{prepare:sql=>new Bound(sql)},FILES:{head:async key=>{headCount++;return files.get(key)||null}},VISIOND_CHANNEL_ENCRYPTION_KEY:'fixture-only-shopee-signing-key-32-characters'};
 const selectedImages=[{url:'https://fixture.test/cover.png',cover:true,exists:true,size:1400,type:'image/png'},{url:'https://fixture.test/other.jpg',cover:false,exists:true,size:1000,type:'image/jpeg'}];
 const row=sqlite.prepare('SELECT * FROM toys_center_products WHERE id=?').get(id);
 let validation=validateShopeeRow(row,selectedImages,{categoryId:'120039',standardDelivery:'เปิด'},'https://fixture.test');
@@ -66,7 +66,7 @@ const templatePath=process.env.SHOPEE_TEMPLATE_PATH;
   assert.match(sourcePlan,/PRIMARY KEY/);assert.match(galleryPlan,/idx_toys_center_product_images_product_position/);
   const output=process.env.SHOPEE_TEST_OUTPUT;if(output)await fs.writeFile(output,bytes);
   const allIds=[id],allTitles=[title];
-  for(let number=2;number<=24;number++){
+  for(let number=2;number<=200;number++){
     const meta=`TOY-SHOPEE-${String(number).padStart(3,'0')}`,name=`โมเดลของสะสมรายการทดสอบที่ ${number} สำหรับ Shopee`,cover=`batch-cover-${number}.jpg`;
     sqlite.prepare('INSERT INTO toys_center_products(meta_id,slug,title,description,price_cents,brand,quantity,image_1_key,image_2_key,status,gtin,shopee_weight_g,shopee_package_width_mm,shopee_package_length_mm,shopee_package_height_mm) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(meta,`toy-shopee-${number}`,name,description,10000+number,'VisionD',number,cover,`meta-${number}.jpg`,'published','',500,123,200,80);
     const addedId=Number(sqlite.prepare('SELECT last_insert_rowid() AS id').get().id);sqlite.prepare('INSERT INTO toys_center_product_images(product_id,position,image_key) VALUES(?,?,?)').run(addedId,0,cover);files.set(cover,{size:1000,httpMetadata:{contentType:'image/jpeg'}});allIds.push(addedId);allTitles.push(name);
@@ -80,7 +80,40 @@ const templatePath=process.env.SHOPEE_TEMPLATE_PATH;
   sqlite.prepare('UPDATE toys_center_products SET image_1_key=? WHERE id=?').run('missing.jpg',allIds[2]);result=await exportBatchXlsx({env,request:batchRequest('boss-session',batchForm(selected))});assert.equal(result.status,422);assert.match((await result.json()).errors.join(' '),/TOY-SHOPEE-003.*รูปปก/);sqlite.prepare('UPDATE toys_center_products SET image_1_key=? WHERE id=?').run('batch-cover-3.jpg',allIds[2]);
   sqlSeen.length=0;headCount=0;result=await exportBatchXlsx({env,request:batchRequest('boss-session',batchForm(selected))});assert.equal(result.status,200,result.status===200?'':await result.text());assert.match(result.headers.get('content-disposition'),/3-products\.xlsx/);const batchBytes=new Uint8Array(await result.arrayBuffer()),batchXml=zipEntry(batchBytes,'xl/worksheets/sheet2.xml');assert.match(batchXml,/<dimension ref="A1:AK9"/);assert.equal((batchXml.match(/<row r="(?:7|8|9)"/g)||[]).length,3);for(const [rowNumber,index] of [[7,2],[8,0],[9,1]]){const rowXml=batchXml.match(new RegExp(`<row r="${rowNumber}"[^>]*>([\\s\\S]*?)<\\/row>`))?.[1];assert.ok(rowXml,`row ${rowNumber}`);assert.ok(rowXml.includes(`<c r="A${rowNumber}"><v>101394</v></c>`));assert.ok(rowXml.includes(allTitles[index]));assert.ok(rowXml.includes(`<c r="Q${rowNumber}"><v>${index?index+1:0}</v></c>`)||rowXml.includes(`r="Q${rowNumber}"`))}assert.equal(sqlSeen.filter(sql=>/toys_center_products|toys_center_product_images/i.test(sql)).length,2);assert.equal(headCount,5);
   const batchSourcePlan=sqlite.prepare('EXPLAIN QUERY PLAN SELECT id FROM toys_center_products WHERE id IN (?,?,?) LIMIT 24').all(...allIds.slice(0,3)).map(x=>x.detail).join(' '),batchGalleryPlan=sqlite.prepare('EXPLAIN QUERY PLAN SELECT id FROM toys_center_product_images WHERE product_id IN (?,?,?) ORDER BY product_id,position LIMIT 240').all(...allIds.slice(0,3)).map(x=>x.detail).join(' ');assert.match(batchSourcePlan,/PRIMARY KEY/);assert.match(batchGalleryPlan,/idx_toys_center_product_images_product_position/);
-  result=await exportBatchXlsx({env,request:batchRequest('boss-session',batchForm(allIds.map((value,index)=>({id:value,categoryId:String(100000+index)}))))});assert.equal(result.status,200);const capBytes=new Uint8Array(await result.arrayBuffer()),capXml=zipEntry(capBytes,'xl/worksheets/sheet2.xml');assert.match(capXml,/<dimension ref="A1:AK30"/);assert.equal((capXml.match(/<row r="(?:[7-9]|1\d|2\d|30)"/g)||[]).length,24);assert.ok(capXml.includes('<c r="A30"><v>101394</v></c>'));assert.ok(capXml.includes(`r="B30"`)&&capXml.includes(allTitles[23]));const batchOutput=process.env.SHOPEE_BATCH_TEST_OUTPUT;if(batchOutput)await fs.writeFile(batchOutput,capBytes);
+  result=await exportBatchXlsx({env,request:batchRequest('boss-session',batchForm(allIds.slice(0,24).map((value,index)=>({id:value,categoryId:String(100000+index)}))))});assert.equal(result.status,200);const capBytes=new Uint8Array(await result.arrayBuffer()),capXml=zipEntry(capBytes,'xl/worksheets/sheet2.xml');assert.match(capXml,/<dimension ref="A1:AK30"/);assert.equal((capXml.match(/<row r="(?:[7-9]|1\d|2\d|30)"/g)||[]).length,24);assert.ok(capXml.includes('<c r="A30"><v>101394</v></c>'));assert.ok(capXml.includes(`r="B30"`)&&capXml.includes(allTitles[23]));const batchOutput=process.env.SHOPEE_BATCH_TEST_OUTPUT;if(batchOutput)await fs.writeFile(batchOutput,capBytes);
+  const preparedForm=ids=>{const data=new FormData();data.set('mode','prepare');data.set('items',JSON.stringify(ids.map(id=>({id}))));data.set('standard_delivery','เปิด');return data};
+  const compiledForm=(ids,chunks)=>{const data=new FormData();data.set('mode','compile');data.set('items',JSON.stringify(ids.map(id=>({id}))));data.set('chunks',JSON.stringify(chunks));data.set('template',new File([template],'template.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));return data};
+  for(const count of [1,24,50,200]){
+    const chosen=allIds.slice(0,count).reverse(),chunks=[];headCount=0;sqlSeen.length=0;
+    for(let start=0;start<chosen.length;start+=10){
+      const group=chosen.slice(start,start+10),prepared=await exportBatchXlsx({env,request:batchRequest('boss-session',preparedForm(group))});
+      assert.equal(prepared.status,200,prepared.status===200?'':await prepared.text());
+      const {chunk}=await prepared.json();assert.deepEqual(chunk.payload.ids,group);assert.equal(chunk.payload.rows.length,group.length);chunks.push(chunk);
+    }
+    const checkedHeads=headCount;assert.ok(checkedHeads<=count*9,'bounded R2 heads across ten-item preparations');
+    const compiled=await exportBatchXlsx({env,request:batchRequest('boss-session',compiledForm(chosen,chunks))});assert.equal(compiled.status,200,compiled.status===200?'':await compiled.text());
+    assert.equal(headCount,checkedHeads,'compile must not repeat R2 image subrequests');
+    const xml=zipEntry(new Uint8Array(await compiled.arrayBuffer()),'xl/worksheets/sheet2.xml');assert.match(xml,new RegExp(`<dimension ref="A1:AK${count+6}"`));
+    assert.equal([...xml.matchAll(/<row r="(\d+)"/g)].filter(match=>Number(match[1])>=7).length,count);
+    assert.ok(xml.includes(`<c r="A${count+6}"><v>101394</v></c>`));
+    assert.ok(xml.includes(allTitles[allIds.indexOf(chosen[0])])&&xml.includes(allTitles[allIds.indexOf(chosen.at(-1))]));
+    if(count===200){assert.ok(sqlSeen.some(sql=>/FROM toys_center_products WHERE id IN/i.test(sql)&&/LIMIT 200/.test(sql)));assert.ok(sqlSeen.some(sql=>/FROM toys_center_product_images WHERE product_id IN/i.test(sql)&&/LIMIT 2000/.test(sql)))}
+    if(count===1){
+      const forged=structuredClone(chunks);forged[0].payload.rows[0].categoryId=1;
+      const attackerKey=await crypto.subtle.importKey('raw',new TextEncoder().encode('boss-session'),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+      forged[0].signature=Buffer.from(await crypto.subtle.sign('HMAC',attackerKey,new TextEncoder().encode(`boss-session.${JSON.stringify(forged[0].payload)}`))).toString('hex');
+      const rejected=await exportBatchXlsx({env,request:batchRequest('boss-session',compiledForm(chosen,forged))});assert.equal(rejected.status,400,'tampered category must fail signature');
+      const before=sqlite.prepare('SELECT updated_at FROM toys_center_products WHERE id=?').get(chosen[0]).updated_at;
+      sqlite.prepare('UPDATE toys_center_products SET title=? WHERE id=?').run('เปลี่ยนชื่อในวินาทีเดียวกัน',chosen[0]);
+      assert.equal(sqlite.prepare('SELECT updated_at FROM toys_center_products WHERE id=?').get(chosen[0]).updated_at,before);
+      const stale=await exportBatchXlsx({env,request:batchRequest('boss-session',compiledForm(chosen,chunks))});assert.equal(stale.status,409,'same-second product mutation must fail exact snapshot');
+      sqlite.prepare('UPDATE toys_center_products SET title=? WHERE id=?').run(title,chosen[0]);
+      sqlite.prepare('UPDATE toys_center_product_images SET image_key=? WHERE product_id=? AND position=0').run('second.jpg',chosen[0]);
+      const staleGallery=await exportBatchXlsx({env,request:batchRequest('boss-session',compiledForm(chosen,chunks))});assert.equal(staleGallery.status,409,'same-second gallery mutation must fail exact snapshot');
+      sqlite.prepare('UPDATE toys_center_product_images SET image_key=? WHERE product_id=? AND position=0').run('other.jpg',chosen[0]);
+    }
+  }
+  console.log('PASS Shopee XLSX prepared batch 1/24/50/200 rows, signed chunks, order, stale snapshot and bounded image checks');
   console.log('PASS Shopee XLSX batch 3/24 rows, order, all-or-nothing validation, auth and indexed queries');
   console.log('PASS Shopee XLSX admin/auth/validation/ZIP payload/bounded indexed queries');
 }
