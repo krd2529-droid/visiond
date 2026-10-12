@@ -15,7 +15,7 @@ const publicRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.
 const frontTopbar = ['cart', 'course-basket-edit', 'course-rights-terms', 'dashboard', 'forgot-password', 'login', 'member', 'partner-commerce-claim', 'product', 'register', 'reset-password', 'vtools'];
 const frontStandalone = ['my-programs', 'toyscenter', 'vx-affiliate', 'blog/analyze-tiktok-shop-products', 'blog/create-powerpoint-online', 'blog/how-to-choose-tattoo-design', 'blog/popular-tattoo-styles', 'blog/tattoo-design-pdf-for-artists', 'blog/tiktok-open-collaboration-showcase'];
 const backStandalone = ['account-vault', 'ads-center', 'basket-visibility', 'bundle-preview-audit', 'daily-tasks', 'elon-page-admin', 'live-center', 'live-package-open', 'partner-api', 'prompt-library', 'sales-page-center', 'sales-page-variants', 'tiktok-analyzer', 'toys-center-admin', 'v12-connect', 'v12-settings', 'vision13-intake', 'vision14-library', 'vision14-mix', 'vision14-summary', 'vision4-edit', 'vision7-admin', 'vpage-admin', 'vsport', 'vx-affiliate-admin', 'webhook-hub', 'work-links', 'work-notes'];
-for (const name of frontTopbar) assert.match(fs.readFileSync(path.join(publicRoot, `${name}.html`), 'utf8'), /shared-nav\.js\?v=020176/, `${name} loads shared nav`);
+for (const name of frontTopbar) assert.match(fs.readFileSync(path.join(publicRoot, `${name}.html`), 'utf8'), /shared-nav\.js\?v=020187/, `${name} loads shared nav`);
 for (const name of frontStandalone) assert.match(fs.readFileSync(path.join(publicRoot, `${name}.html`), 'utf8'), /data-page-nav="front"/, `${name} loads front bridge`);
 for (const name of backStandalone) assert.match(fs.readFileSync(path.join(publicRoot, `${name}.html`), 'utf8'), /data-page-nav="back"/, `${name} loads back bridge`);
 

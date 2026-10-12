@@ -21,7 +21,7 @@ const consumers=fs.readdirSync(publicRoot).filter(name=>name.endsWith('.html')&&
 assert.deepEqual(consumers,expectedConsumers,'every canonical nav consumer is enumerated');
 for(const name of consumers){
   const source=read(name);
-  assert.equal((source.match(new RegExp(`shared-nav\\.js\\?v=${name==='vpage.html'?'020180':'020176'}`,'g'))||[]).length,1,`${name} loads the current shared nav once`);
+  assert.equal((source.match(/shared-nav\.js\?v=020187/g)||[]).length,1,`${name} loads the current shared nav once`);
   assert.doesNotMatch(source,/shared-nav\.js\?v=020(?:57|173)/,`${name} has no stale cache key`);
 }
 assert.doesNotMatch(shared,/'nav-vedit-link'|'\/vedit','Vedit'/,'canonical public nav omits Vedit');
@@ -29,7 +29,7 @@ assert.doesNotMatch(home,/class="nav-vedit-link"|href="\/vedit"/,'home first pai
 assert.doesNotMatch(html,/class="nav-vedit-link"|href="\/vedit"/,'Vedit first paint omits its public-nav self-link');
 assert.match(html,/id="veditImage"[^>]+accept="image\/jpeg,image\/png,image\/webp"/);
 assert.match(html,/vedit\.css\?v=020175[\s\S]*mobile-storefront\.css[\s\S]*header-shell\.css[\s\S]*frontend-theme\.css/,'stylesheet cascade follows the public header contract');
-assert.match(html,/vedit\.js\?v=020175[\s\S]*shared-nav\.js\?v=020176/);
+assert.match(html,/vedit\.js\?v=020175[\s\S]*shared-nav\.js\?v=020187/);
 assert.doesNotMatch(client,/\bfetch\s*\(|localStorage|sessionStorage|\/api\/|vpage|credit|D1|R2/i,'composer has no API, storage, Vpage or credit coupling');
 assert.match(client,/MIME_SIGNATURES/);
 assert.match(client,/selectionGeneration/);
