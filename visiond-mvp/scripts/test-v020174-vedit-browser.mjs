@@ -29,7 +29,8 @@ assert.doesNotMatch(home,/class="nav-vedit-link"|href="\/vedit"/,'home first pai
 assert.doesNotMatch(html,/class="nav-vedit-link"|href="\/vedit"/,'Vedit first paint omits its public-nav self-link');
 assert.match(html,/id="veditImage"[^>]+accept="image\/jpeg,image\/png,image\/webp"/);
 assert.match(html,/vedit\.css\?v=020175[\s\S]*mobile-storefront\.css[\s\S]*header-shell\.css[\s\S]*frontend-theme\.css/,'stylesheet cascade follows the public header contract');
-assert.match(html,/vedit\.js\?v=020175[\s\S]*shared-nav\.js\?v=020187/);
+assert.match(html,/vedit\.js\?v=020188[\s\S]*shared-nav\.js\?v=020187/);
+assert.doesNotMatch(html,/ขนาดต้นฉบับ|กรอบบน.ล่าง|ราคาแสดงบนภาพ/,'Vedit copy does not claim source-size output or a price overlay');
 assert.doesNotMatch(client,/\bfetch\s*\(|localStorage|sessionStorage|\/api\/|vpage|credit|D1|R2/i,'composer has no API, storage, Vpage or credit coupling');
 assert.match(client,/MIME_SIGNATURES/);
 assert.match(client,/selectionGeneration/);
@@ -54,11 +55,43 @@ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL||'chrome'});
 
-async function imageFixture(page,width,height,type='image/png'){
-  const dataUrl=await page.evaluate(({width,height,type})=>{
-    const fixture=document.createElement('canvas');fixture.width=width;fixture.height=height;const ctx=fixture.getContext('2d');ctx.fillStyle='#24855f';ctx.fillRect(0,0,width,height);ctx.fillStyle='#58a6ff';ctx.fillRect(width/2,0,width/2,height);return fixture.toDataURL(type,.9);
-  },{width,height,type});
+async function imageFixture(page,width,height,type='image/png',transparent=false){
+  const dataUrl=await page.evaluate(({width,height,type,transparent})=>{
+    const fixture=document.createElement('canvas');fixture.width=width;fixture.height=height;const ctx=fixture.getContext('2d');ctx.fillStyle='#24855f';ctx.fillRect(0,0,width,height);ctx.fillStyle='#58a6ff';ctx.fillRect(width/2,0,width/2,height);
+    const rows=ctx.createImageData(1,height);for(let y=0;y<height;y++){const i=y*4;rows.data[i]=y&255;rows.data[i+1]=(y>>8)&255;rows.data[i+2]=(y*17)&255;rows.data[i+3]=255}ctx.putImageData(rows,0,0);
+    ctx.fillStyle='#ffe066';ctx.fillRect(width-3,0,3,3);ctx.fillStyle='#e044dd';ctx.fillRect(2,height-3,3,3);
+    if(transparent)ctx.clearRect(12,12,24,24);
+    return fixture.toDataURL(type,.9);
+  },{width,height,type,transparent});
   return Buffer.from(dataUrl.split(',')[1],'base64');
+}
+async function inspectSourcePixels(page,sourceBytes,outputBytes){
+  return page.evaluate(async({sourceEncoded,outputEncoded})=>{
+    const decode=async encoded=>createImageBitmap(new Blob([Uint8Array.from(atob(encoded),char=>char.charCodeAt(0))],{type:'image/png'}));
+    const source=await decode(sourceEncoded),target=outputEncoded?await decode(outputEncoded):document.querySelector('#veditCanvas');
+    const sourceCanvas=document.createElement('canvas'),outputCanvas=document.createElement('canvas');
+    sourceCanvas.width=source.width;sourceCanvas.height=source.height;outputCanvas.width=target.width;outputCanvas.height=target.height;
+    sourceCanvas.getContext('2d').drawImage(source,0,0);outputCanvas.getContext('2d').drawImage(target,0,0);
+    const input=sourceCanvas.getContext('2d').getImageData(0,0,source.width,source.height).data;
+    const output=outputCanvas.getContext('2d').getImageData(0,0,target.width,target.height).data;
+    const top=target.height-source.height;let compared=0,mismatches=0;
+    for(let y=0;y<source.height;y++)for(let x=0;x<source.width;x++){
+      const i=(y*source.width+x)*4,o=((y+top)*target.width+x)*4;compared++;
+      if(input[i]!==output[o]||input[i+1]!==output[o+1]||input[i+2]!==output[o+2]||input[i+3]!==output[o+3])mismatches++;
+    }
+    const topPixel=[...output.slice(0,3)],bottomLeft=[...output.slice(((target.height-1)*target.width+10)*4,((target.height-1)*target.width+10)*4+3)],transparentAlpha=output[((20+top)*target.width+20)*4+3],result={width:target.width,height:target.height,sourceWidth:sourceCanvas.width,sourceHeight:sourceCanvas.height,top,compared,mismatches,topPixel,bottomLeft,transparentAlpha};
+    source.close();if(outputEncoded)target.close();
+    return result;
+  },{sourceEncoded:sourceBytes.toString('base64'),outputEncoded:outputBytes?.toString('base64')||null});
+}
+async function samePngPixels(page,firstBytes,secondBytes){
+  return page.evaluate(async({first,second})=>{
+    const decode=async encoded=>createImageBitmap(new Blob([Uint8Array.from(atob(encoded),char=>char.charCodeAt(0))],{type:'image/png'}));
+    const a=await decode(first),b=await decode(second);if(a.width!==b.width||a.height!==b.height){const result={same:false,firstSize:[a.width,a.height],secondSize:[b.width,b.height]};a.close();b.close();return result}
+    const pixels=bitmap=>{const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0);return ctx.getImageData(0,0,canvas.width,canvas.height).data};
+    const ap=pixels(a),bp=pixels(b);let mismatch=-1;for(let i=0;i<ap.length;i++)if(ap[i]!==bp[i]){mismatch=i;break}
+    const result={same:mismatch===-1,firstSize:[a.width,a.height],secondSize:[b.width,b.height],mismatch};a.close();b.close();return result;
+  },{first:firstBytes.toString('base64'),second:secondBytes.toString('base64')});
 }
 function inputZip(entries){
   const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let i=0;i<8;i++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0});
@@ -135,7 +168,7 @@ try{
       await file.setInputFiles({name:'slow-a.png',mimeType:'image/png',buffer:slowA});
       await page.waitForFunction(()=>globalThis.__veditAudit.slowStarted===true);
       await file.setInputFiles({name:'fast-b.png',mimeType:'image/png',buffer:fastB});
-      await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===800&&document.querySelector('#veditCanvas').height===600&&document.querySelector('#veditDownload').disabled===false);
+      await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===800&&document.querySelector('#veditCanvas').height===600+Number(document.querySelector('#veditCanvas').dataset.topHeight)&&document.querySelector('#veditDownload').disabled===false);
       await page.waitForFunction(()=>globalThis.__veditAudit.closed.some(item=>item.width===640&&item.height===640));
       assert.equal(await canvas.getAttribute('data-source-width'),'800','fast B wins the overlapping decode race');
       const overEdge=await imageFixture(page,12001,320);
@@ -148,46 +181,79 @@ try{
       assert.ok(cleanup.some(item=>item.width===12001&&item.height===320),'decoded over-limit bitmap is closed');
     }
 
-    const png=await imageFixture(page,1200,800);
+    const png=await imageFixture(page,1200,800,'image/png',true);
     await file.setInputFiles({name:'สินค้า ทดลอง.png',mimeType:'image/png',buffer:png});await canvas.waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('#veditDownload').disabled);
-    assert.deepEqual(await canvas.evaluate(node=>({width:node.width,height:node.height,sourceWidth:node.dataset.sourceWidth,sourceHeight:node.dataset.sourceHeight})),{width:1200,height:800,sourceWidth:'1200',sourceHeight:'800'});
+    const initialSize=await canvas.evaluate(node=>({width:node.width,height:node.height,top:Number(node.dataset.topHeight),sourceWidth:node.dataset.sourceWidth,sourceHeight:node.dataset.sourceHeight}));
+    assert.equal(initialSize.width,1200);assert.equal(initialSize.height,800+initialSize.top);assert.ok(initialSize.top>0);assert.equal(initialSize.sourceWidth,'1200');assert.equal(initialSize.sourceHeight,'800');
+    assert.match(await page.locator('#veditResolution').textContent(),new RegExp(`ต้นฉบับ 1,200 × 800 px.*ส่งออก 1,200 × ${initialSize.height.toLocaleString('en-US')} px`));
+    assert.match(await status.textContent(),/ชื่อและราคาอยู่ในกรอบด้านบน/);
     await page.locator('#veditProductName').fill('สินค้าไทยดีมาก'.repeat(14));await page.locator('#veditPriceText').fill('ราคาโปรพิเศษสุดคุ้ม'.repeat(8));
-    const geometry=await canvas.evaluate(node=>{const ctx=node.getContext('2d'),badgeX=Number(node.dataset.badgeX),badgeY=Number(node.dataset.badgeY);return{topLines:Number(node.dataset.topLines),badgeLines:Number(node.dataset.badgeLines),top:[...ctx.getImageData(1,1,1,1).data],badge:[...ctx.getImageData(badgeX+1,badgeY+1,1,1).data],badgeInside:badgeX>=0&&badgeY>=0&&badgeX+Number(node.dataset.badgeWidth)<=node.width&&badgeY+Number(node.dataset.badgeHeight)<=node.height}});
-    assert.ok(geometry.topLines>=1&&geometry.topLines<=3);assert.ok(geometry.badgeLines>=1&&geometry.badgeLines<=3);assert.deepEqual(geometry.top.slice(0,3),[181,18,27]);assert.deepEqual(geometry.badge.slice(0,3),[181,18,27]);assert.equal(geometry.badgeInside,true);
+    const geometry=await canvas.evaluate(node=>{const ctx=node.getContext('2d'),priceStart=Number(node.dataset.priceStart),topHeight=Number(node.dataset.topHeight);const whites=(start,end)=>{const pixels=ctx.getImageData(0,start,node.width,end-start).data;let count=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]>235&&pixels[i+1]>235&&pixels[i+2]>235)count++;return count};return{topLines:Number(node.dataset.topLines),priceLines:Number(node.dataset.priceLines),top:[...ctx.getImageData(1,1,1,1).data],topHeight,priceStart,nameWhites:whites(0,priceStart),priceWhites:whites(priceStart,topHeight)}});
+    assert.ok(geometry.topLines>=1&&geometry.topLines<=3);assert.ok(geometry.priceLines>=1&&geometry.priceLines<=3);assert.deepEqual(geometry.top.slice(0,3),[181,18,27]);assert.ok(geometry.nameWhites>100,'name is visible in the top band');assert.ok(geometry.priceWhites>100,'price is visible in the same top band');
+    const previewSource=await inspectSourcePixels(page,png,null);
+    assert.equal(previewSource.mismatches,0,'every original source pixel is unchanged in preview');
+    assert.equal(previewSource.compared,1200*800,'full source rectangle, including edges and corners, was checked without a mask');
+    assert.equal(previewSource.transparentAlpha,0,'preview preserves transparent PNG pixels');
+    assert.deepEqual(previewSource.topPixel,[181,18,27]);assert.deepEqual(previewSource.bottomLeft,[36,133,95],'no lower red band is added');
     await page.locator('#veditProductName').fill('');assert.equal(await button.isDisabled(),true,'blank required text disables export');await page.locator('#veditProductName').fill('ชื่อสินค้าใหม่');assert.equal(await button.isEnabled(),true);
     await page.locator('#veditProductName').focus();assert.equal(await page.evaluate(()=>document.activeElement?.id),'veditProductName','text editor is keyboard focusable');
 
     if(viewport.width===1440){
-      const previewPixels=await canvas.evaluate(node=>{const ctx=node.getContext('2d'),badgeX=Number(node.dataset.badgeX),badgeY=Number(node.dataset.badgeY);return{top:[...ctx.getImageData(1,1,1,1).data],badge:[...ctx.getImageData(badgeX+1,badgeY+1,1,1).data],image:[...ctx.getImageData(100,500,1,1).data],badgeX,badgeY}});
-      const downloadPromise=page.waitForEvent('download');await button.click();const download=await downloadPromise;assert.match(download.suggestedFilename(),/-vedit\.png$/);const stream=await download.createReadStream();const chunks=[];for await(const chunk of stream)chunks.push(chunk);const output=Buffer.concat(chunks);assert.deepEqual([...output.subarray(0,8)],[137,80,78,71,13,10,26,10]);assert.equal(output.readUInt32BE(16),1200);assert.equal(output.readUInt32BE(20),800);
-      const exportedPixels=await page.evaluate(async({encoded,badgeX,badgeY})=>{const bytes=Uint8Array.from(atob(encoded),char=>char.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'})),copy=document.createElement('canvas');copy.width=bitmap.width;copy.height=bitmap.height;const ctx=copy.getContext('2d');ctx.drawImage(bitmap,0,0);const pixels={top:[...ctx.getImageData(1,1,1,1).data],badge:[...ctx.getImageData(badgeX+1,badgeY+1,1,1).data],image:[...ctx.getImageData(100,500,1,1).data]};bitmap.close();return pixels},{encoded:output.toString('base64'),badgeX:previewPixels.badgeX,badgeY:previewPixels.badgeY});
-      assert.deepEqual(exportedPixels.top,previewPixels.top,'export top-bar pixel matches preview');assert.deepEqual(exportedPixels.badge,previewPixels.badge,'export badge pixel matches preview');assert.deepEqual(exportedPixels.image,previewPixels.image,'export product-image pixel matches preview');
+      const previewPixels=await canvas.evaluate(node=>{const ctx=node.getContext('2d'),topHeight=Number(node.dataset.topHeight);return{top:[...ctx.getImageData(1,1,1,1).data],image:[...ctx.getImageData(100,500+topHeight,1,1).data],topHeight}});
+      const previewPng=Buffer.from((await canvas.evaluate(node=>node.toDataURL('image/png'))).split(',')[1],'base64');
+      const downloadPromise=page.waitForEvent('download');await button.click();const download=await downloadPromise;assert.match(download.suggestedFilename(),/-vedit\.png$/);const stream=await download.createReadStream();const chunks=[];for await(const chunk of stream)chunks.push(chunk);const output=Buffer.concat(chunks);assert.deepEqual([...output.subarray(0,8)],[137,80,78,71,13,10,26,10]);assert.equal(output.readUInt32BE(16),1200);assert.equal(output.readUInt32BE(20),800+previewPixels.topHeight);
+      const pngMatch=await samePngPixels(page,previewPng,output);assert.equal(pngMatch.same,true,`single PNG matches preview: ${JSON.stringify(pngMatch)}`);
+      const pngSource=await inspectSourcePixels(page,png,output);assert.equal(pngSource.mismatches,0,'every source pixel is unchanged in downloaded PNG');assert.equal(pngSource.height,800+pngSource.top);assert.equal(pngSource.transparentAlpha,0,'single PNG preserves transparent source pixels');
       await page.waitForFunction(()=>globalThis.__veditAudit.createdUrls.length>0&&globalThis.__veditAudit.createdUrls.every(url=>globalThis.__veditAudit.revokedUrls.includes(url)));
       const urlAudit=await page.evaluate(()=>({created:globalThis.__veditAudit.createdUrls.length,revoked:globalThis.__veditAudit.revokedUrls.length}));assert.deepEqual(urlAudit,{created:1,revoked:1},'download object URL is revoked');
-      const jpeg=await imageFixture(page,900,600,'image/jpeg');await file.setInputFiles({name:'photo.jpg',mimeType:'image/jpeg',buffer:jpeg});await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===900&&document.querySelector('#veditDownload').disabled===false);
-      const webp=await imageFixture(page,720,960,'image/webp');await file.setInputFiles({name:'photo.webp',mimeType:'image/webp',buffer:webp});await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===720&&document.querySelector('#veditCanvas').height===960);
+      const tall=await imageFixture(page,320,12000);await file.setInputFiles({name:'tall.png',mimeType:'image/png',buffer:tall});
+      await page.waitForFunction(()=>document.querySelector('#veditCanvas').dataset.sourceHeight==='12000'&&document.querySelector('#veditCanvas').height===12000+Number(document.querySelector('#veditCanvas').dataset.topHeight));
+      const tallDownload=page.waitForEvent('download');await button.click();const tallFile=await tallDownload, tallStream=await tallFile.createReadStream(),tallChunks=[];for await(const chunk of tallStream)tallChunks.push(chunk);
+      const tallPixels=await inspectSourcePixels(page,tall,Buffer.concat(tallChunks));
+      assert.equal(tallPixels.width,320);assert.equal(tallPixels.sourceHeight,12000);assert.equal(tallPixels.height,12000+tallPixels.top);assert.equal(tallPixels.mismatches,0,'12,000px tall source is not cropped or scaled');
+      const jpeg=await imageFixture(page,900,600,'image/jpeg');await file.setInputFiles({name:'photo.jpg',mimeType:'image/jpeg',buffer:jpeg});await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===900&&document.querySelector('#veditCanvas').height===600+Number(document.querySelector('#veditCanvas').dataset.topHeight)&&document.querySelector('#veditDownload').disabled===false);
+      const webp=await imageFixture(page,720,960,'image/webp');await file.setInputFiles({name:'photo.webp',mimeType:'image/webp',buffer:webp});await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===720&&document.querySelector('#veditCanvas').height===960+Number(document.querySelector('#veditCanvas').dataset.topHeight));
     }
-    const archiveInput=page.locator('#veditArchive'),batchA=await imageFixture(page,640,480),batchB=await imageFixture(page,480,640),batchC=await imageFixture(page,800,600);
+    const archiveInput=page.locator('#veditArchive'),batchA=await imageFixture(page,640,480),batchB=await imageFixture(page,480,640),batchC=await imageFixture(page,800,600,'image/png',true);
     const goodZip=inputZip([{name:'front/photo.png',bytes:batchA},{name:'middle/view.png',bytes:batchB},{name:'back/photo.png',bytes:batchC}]);
     await archiveInput.setInputFiles({name:'one-product.zip',mimeType:'application/zip',buffer:goodZip});
     await page.waitForFunction(()=>document.querySelector('#veditStatus').dataset.state==='success'&&document.querySelector('#veditArchivePreview').options.length===3);
     assert.equal(await file.inputValue(),'','ZIP selection clears the single-image file');
     assert.match(await page.locator('#veditArchiveSummary').textContent(),/3 รูป.*ชื่อสินค้าและราคาเดียวกัน/);
-    await page.locator('#veditArchivePreview').selectOption('1');
-    await page.waitForFunction(()=>document.querySelector('#veditCanvas').width===480&&document.querySelector('#veditCanvas').height===640);
     await page.locator('#veditProductName').fill('สินค้าใน ZIP หนึ่งรายการ');await page.locator('#veditPriceText').fill('ราคา 259 บาท');
     assert.match(await button.textContent(),/ดาวน์โหลด ZIP/);
+    const batchSources=[batchA,batchB,batchC],batchSizes=[[640,480],[480,640],[800,600]],batchPreview=[];
+    for(let index=0;index<batchSources.length;index++){
+      await page.locator('#veditArchivePreview').selectOption(String(index));
+      await page.waitForFunction(([width,height])=>{const node=document.querySelector('#veditCanvas');return Number(node.dataset.sourceWidth)===width&&Number(node.dataset.sourceHeight)===height&&node.height===height+Number(node.dataset.topHeight)},batchSizes[index]);
+      const geometry=await canvas.evaluate(node=>({width:node.width,height:node.height,top:Number(node.dataset.topHeight),topLines:Number(node.dataset.topLines),priceLines:Number(node.dataset.priceLines)}));
+      assert.equal(geometry.width,batchSizes[index][0]);assert.equal(geometry.height,batchSizes[index][1]+geometry.top);
+      assert.ok(geometry.topLines>=1&&geometry.priceLines>=1);
+      const sourcePixels=await inspectSourcePixels(page,batchSources[index],null);
+      assert.equal(sourcePixels.mismatches,0,`ZIP preview ${index+1} preserves every source pixel`);
+      if(index===2)assert.equal(sourcePixels.transparentAlpha,0,'transparent ZIP preview preserves alpha');
+      batchPreview.push({...geometry,png:Buffer.from((await canvas.evaluate(node=>node.toDataURL('image/png'))).split(',')[1],'base64')});
+    }
+    await page.locator('#veditArchivePreview').selectOption('1');
+    await page.waitForFunction(()=>document.querySelector('#veditCanvas').dataset.sourceWidth==='480');
     const zipDownloadPromise=page.waitForEvent('download');await button.click();const zipDownload=await zipDownloadPromise;
     assert.match(zipDownload.suggestedFilename(),/^vedit-one-product\.zip$/);
     const zipStream=await zipDownload.createReadStream(),zipChunks=[];for await(const chunk of zipStream)zipChunks.push(chunk);
     const outZip=await inspectVeditZip(new File([Buffer.concat(zipChunks)],'result.zip'));
     assert.deepEqual(outZip.entries.map(entry=>entry.name),['001-photo-vedit.png','002-view-vedit.png','003-photo-vedit.png'],'duplicate source basenames become unique ordered output');
     const outputs=[];for(const entry of outZip.entries)outputs.push(Buffer.from(await (await outZip.extract(entry)).arrayBuffer()));
-    const outputPixels=await page.evaluate(async encoded=>{const result=[];for(const base64 of encoded){const bytes=Uint8Array.from(atob(base64),char=>char.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'})),copy=document.createElement('canvas');copy.width=bitmap.width;copy.height=bitmap.height;const ctx=copy.getContext('2d');ctx.drawImage(bitmap,0,0);result.push({width:bitmap.width,height:bitmap.height,top:[...ctx.getImageData(1,1,1,1).data].slice(0,3),badge:[...ctx.getImageData(bitmap.width-1,bitmap.height-1,1,1).data].slice(0,3),image:[...ctx.getImageData(20,Math.floor(bitmap.height/2),1,1).data].slice(0,3)});bitmap.close()}return result},outputs.map(item=>item.toString('base64')));
-    assert.deepEqual(outputPixels.map(item=>[item.width,item.height]),[[640,480],[480,640],[800,600]]);
-    assert.deepEqual(outputPixels.map(item=>item.top),[[181,18,27],[181,18,27],[181,18,27]],'same name overlay appears on first, middle and last output');
-    assert.deepEqual(outputPixels.map(item=>item.badge),[[181,18,27],[181,18,27],[181,18,27]],'same price badge appears on first, middle and last output');
-    assert.deepEqual(outputPixels.map(item=>item.image),[[36,133,95],[36,133,95],[36,133,95]],'source image pixels remain below the overlay');
+    const outputPixels=await page.evaluate(async encoded=>{const result=[];for(const base64 of encoded){const bytes=Uint8Array.from(atob(base64),char=>char.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'})),copy=document.createElement('canvas');copy.width=bitmap.width;copy.height=bitmap.height;const ctx=copy.getContext('2d');ctx.drawImage(bitmap,0,0);result.push({width:bitmap.width,height:bitmap.height,top:[...ctx.getImageData(1,1,1,1).data].slice(0,3),bottomRight:[...ctx.getImageData(bitmap.width-1,bitmap.height-1,1,1).data].slice(0,3),image:[...ctx.getImageData(20,Math.floor(bitmap.height/2),1,1).data].slice(0,3)});bitmap.close()}return result},outputs.map(item=>item.toString('base64')));
+    assert.deepEqual(outputPixels.map(item=>[item.width,item.height]),batchPreview.map(item=>[item.width,item.height]));
+    assert.deepEqual(outputPixels.map(item=>item.top),[[181,18,27],[181,18,27],[181,18,27]],'same red top band appears on first, middle and last output');
+    assert.deepEqual(outputPixels.map(item=>item.bottomRight),[[88,166,255],[88,166,255],[88,166,255]],'original lower-right source corner is not covered by price');
+    assert.deepEqual(outputPixels.map(item=>item.image),[[36,133,95],[36,133,95],[36,133,95]],'source image pixels remain below the top frame');
+    for(let index=0;index<outputs.length;index++){
+      const sourcePixels=await inspectSourcePixels(page,batchSources[index],outputs[index]);
+      assert.equal(sourcePixels.mismatches,0,`ZIP output ${index+1} preserves every source pixel`);
+      if(index===2)assert.equal(sourcePixels.transparentAlpha,0,'transparent ZIP output preserves alpha');
+      assert.equal(sourcePixels.height,batchSizes[index][1]+batchPreview[index].top,`ZIP output ${index+1} adds only its own top frame`);
+      const zipMatch=await samePngPixels(page,batchPreview[index].png,outputs[index]);assert.equal(zipMatch.same,true,`ZIP output ${index+1} matches its preview pixel-for-pixel: ${JSON.stringify(zipMatch)}`);
+    }
     await page.waitForFunction(()=>globalThis.__veditAudit.createdUrls.every(url=>globalThis.__veditAudit.revokedUrls.includes(url)));
     const unsafeZip=inputZip([{name:'good.png',bytes:batchA},{name:'../escape.png',bytes:batchB}]);
     await archiveInput.setInputFiles({name:'unsafe.zip',mimeType:'application/zip',buffer:unsafeZip});

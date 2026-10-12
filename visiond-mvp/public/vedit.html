@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vedit | แต่งภาพสินค้าบนเครื่องของคุณ</title>
-  <meta name="description" content="วางชื่อสินค้าและราคาบนภาพ ดูตัวอย่าง และดาวน์โหลดภาพความละเอียดต้นฉบับด้วย Vedit">
+  <meta name="description" content="เพิ่มกรอบชื่อสินค้าและราคาด้านบนภาพ ดูตัวอย่างและดาวน์โหลดด้วย Vedit โดยไม่บังภาพต้นฉบับ">
   <link rel="stylesheet" href="/style.css?v=02057">
   <link rel="stylesheet" href="/visiond-design-system.css?v=014407">
   <link rel="stylesheet" href="/vedit.css?v=020175">
@@ -33,8 +33,8 @@
   <main class="vedit-shell">
     <section class="vedit-intro">
       <p class="vedit-eyebrow">VISIOND VEDIT</p>
-      <h1>แต่งภาพสินค้า พร้อมดาวน์โหลดขนาดต้นฉบับ</h1>
-      <p>รูปและข้อความประมวลผลเฉพาะในเบราว์เซอร์ ไม่อัปโหลดไปยัง VisionD</p>
+      <h1>เพิ่มกรอบชื่อและราคาเหนือภาพสินค้า</h1>
+      <p>ภาพต้นฉบับคงขนาดเดิมใต้กรอบที่เพิ่มด้านบน ไม่มีข้อความทับภาพ · ประมวลผลเฉพาะในเบราว์เซอร์ ไม่อัปโหลดไปยัง VisionD</p>
     </section>
     <section class="vedit-workspace" aria-labelledby="veditEditorHeading">
       <form id="veditControls" class="vedit-controls" novalidate>
@@ -60,7 +60,7 @@
           <small><span data-count-for="veditPriceText">12</span>/120 ตัวอักษร</small>
         </label>
         <p id="veditStatus" class="vedit-status" role="status">เลือกรูปสินค้าเพื่อเริ่มแต่งภาพ</p>
-        <button id="veditDownload" class="vds-btn vds-btn--primary" type="button" disabled>ดาวน์โหลด PNG ขนาดต้นฉบับ</button>
+        <button id="veditDownload" class="vds-btn vds-btn--primary" type="button" disabled>ดาวน์โหลด PNG พร้อมกรอบชื่อและราคา</button>
         <button id="veditCancel" class="vds-btn" type="button" hidden>ยกเลิกการสร้าง ZIP</button>
       </form>
       <section class="vedit-preview-panel" aria-labelledby="veditPreviewHeading">
@@ -70,7 +70,7 @@
       </section>
     </section>
   </main>
-  <script src="/vedit.js?v=020175"></script>
+  <script src="/vedit.js?v=020188"></script>
   <script src="/shared-nav.js?v=020187"></script>
   <script src="/header-shell.js?v=014578" defer></script>
   <script src="/mobile-storefront.js?v=014407" defer></script>
