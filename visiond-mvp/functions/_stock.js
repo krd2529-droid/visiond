@@ -1,10 +1,10 @@
 export const STOCK_STORES={
   'toys-center':{id:'toys-center',name:'Toys Center',publicPath:'/toyscenter',feedPath:'/api/toys-center/feed.csv'},
-  zippo:{id:'zippo',name:'Zippo',publicPath:'/zippo',feedPath:'/api/stock/feed.csv?store=zippo'}
+  zippo:{id:'zippo',name:'Zippo',publicPath:'/zippoudon',feedPath:'/api/stock/feed.csv?store=zippo'}
 };
 export function stockStore(url,{defaultStore='toys-center'}={}){
   const value=new URL(url).searchParams.get('store')||defaultStore;
-  return STOCK_STORES[value]||null;
+  return Object.hasOwn(STOCK_STORES,value)?STOCK_STORES[value]:null;
 }
 export function storeSettings(row,store){return{
   storefront_mode:row?.storefront_mode||'unlisted',

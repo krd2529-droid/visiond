@@ -4,6 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath} from 'node:url';
 import {dirname,join} from 'node:path';
 import {onRequestGet as adminList,onRequestPost as createProduct} from '../functions/api/admin/toys-center/index.js';
+import {onRequestPost as moveProduct} from '../functions/api/admin/toys-center/[id]/move.js';
 import {onRequestPatch as patchProduct,onRequestPut as updateProduct} from '../functions/api/admin/toys-center/[id].js';
 import {onRequestGet as toysProducts} from '../functions/api/toys-center/products.js';
 import {onRequestGet as zippoProducts} from '../functions/api/stock/products.js';
@@ -21,7 +22,7 @@ import {onRequestGet as thaiMartExport} from '../functions/api/admin/toys-center
 const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const db=new DatabaseSync(':memory:');
 db.exec(readFileSync(join(root,'migrations/0071_toys_center.sql'),'utf8'));
-for(const migration of ['0105_toys_center_product_line_series.sql','0106_toys_center_product_images.sql','0107_toys_center_product_cost.sql','0110_toys_center_shopee_handoff.sql'])db.exec(readFileSync(join(root,'migrations',migration),'utf8'));
+for(const migration of ['0104_toys_center_orders.sql','0105_toys_center_product_line_series.sql','0106_toys_center_product_images.sql','0107_toys_center_product_cost.sql','0110_toys_center_shopee_handoff.sql'])db.exec(readFileSync(join(root,'migrations',migration),'utf8'));
 db.exec(readFileSync(join(root,'migrations/0134_stock_stores.sql'),'utf8'));
 const insert=db.prepare('INSERT INTO toys_center_products(store_id,meta_id,slug,title,description,brand,image_1_key,image_2_key,status,price_cents) VALUES(?,?,?,?,?,?,?,?,?,?)');
 for(let i=1;i<=26;i++)insert.run('toys-center',`TOY-${i}`,`toy-${i}`,`Toy ${String(i).padStart(2,'0')}`,'Toy description','Toy Brand',`toy-${i}-image`,`toy-${i}-meta`,'published',10000);
@@ -37,7 +38,7 @@ assert.equal(toys.items.length,24);assert(toys.items.every(item=>item.store_id==
 const second=await data(await toysProducts(context(`/api/toys-center/products?cursor=${encodeURIComponent(toys.pagination.next_cursor)}`)));
 assert.equal(second.items.length,2);assert.equal(new Set([...toys.items,...second.items].map(item=>item.id)).size,26);
 const zippo=await data(await zippoProducts(context('/api/stock/products?store=zippo')));
-assert.equal(zippo.items.length,2);assert(zippo.items.every(item=>item.store_id==='zippo'&&item.link.includes('/zippo?product=')));
+assert.equal(zippo.items.length,2);assert(zippo.items.every(item=>item.store_id==='zippo'&&item.link.includes('/zippoudon?product=')));
 assert.equal((await zippoProducts(context('/api/stock/products?store=zippo&slug=toy-1'))).status,404);
 const detail=await data(await zippoProducts(context('/api/stock/products?store=zippo&slug=zip-1')));
 assert.equal(detail.item.meta_id,'ZIP-1');
@@ -72,7 +73,7 @@ assert.equal((await checkout(context(`/api/toys-center/checkout?product_id=${zip
 const toyCsv=await (await toysFeed(context('/api/toys-center/feed.csv?store=zippo'))).text();
 const zipCsv=await (await zippoFeed(context('/api/stock/feed.csv?store=zippo'))).text();
 assert(toyCsv.includes('/toyscenter?product=toy-1'));assert(!toyCsv.includes('ZIP-1'));
-assert(zipCsv.includes('/zippo?product=zip-1'));assert(!zipCsv.includes('TOY-1'));
+assert(zipCsv.includes('/zippoudon?product=zip-1'));assert(!zipCsv.includes('TOY-1'));
 assert(zipCsv.includes('store=zippo'));
 
 const plan=db.prepare("EXPLAIN QUERY PLAN SELECT id FROM toys_center_products WHERE store_id='zippo' AND status='published' ORDER BY updated_at DESC,id DESC LIMIT 24").all().map(row=>row.detail).join(' ');
@@ -91,4 +92,40 @@ const edit=new FormData();for(const [key,value] of Object.entries({store_id:'zip
 assert.equal((await updateProduct(context(`/api/admin/toys-center/${newId}?store=toys-center`,{method:'PUT',body:edit,params:{id:String(newId)}}))).status,404);
 const updated=await updateProduct(context(`/api/admin/toys-center/${newId}?store=zippo`,{method:'PUT',body:edit,params:{id:String(newId)}}));assert.equal(updated.status,200,await updated.text());
 assert.equal(db.prepare('SELECT title FROM toys_center_products WHERE id=?').get(newId).title,'Zippo Updated');
-console.log('Stock store isolation, keyset pagination, feed links, Page status, and indexes PASS');
+const moveId=db.prepare("SELECT id FROM toys_center_products WHERE meta_id='TOY-1'").get().id;
+const movePath=`/api/admin/toys-center/${moveId}/move?store=toys-center`;
+const moveBody=JSON.stringify({destination_store_id:'zippo'});
+const moveCtx=(path=movePath,body=moveBody,id=moveId)=>context(path,{method:'POST',body,params:{id:String(id)}});
+const original=db.prepare('SELECT * FROM toys_center_products WHERE id=?').get(moveId);
+const moveGalleryId=Number(db.prepare('INSERT INTO toys_center_product_images(product_id,position,image_key) VALUES(?,?,?)').run(moveId,0,'toy-1-gallery').lastInsertRowid);
+const guest=moveCtx();guest.request=new Request(`https://visiondonline.com${movePath}`,{method:'POST',body:moveBody,headers:{'content-type':'application/json'}});
+assert.equal((await moveProduct(guest)).status,401);
+for(const invalid of ['null','{}',JSON.stringify({destination_store_id:'constructor'})])assert.equal((await moveProduct(moveCtx(movePath,invalid))).status,400);
+assert.equal((await moveProduct(moveCtx(`/api/admin/toys-center/${moveId}/move?store=constructor`))).status,400);
+assert.equal((await moveProduct(moveCtx(movePath,JSON.stringify({destination_store_id:'toys-center'})))).status,400);
+assert.equal((await moveProduct(moveCtx(`/api/admin/toys-center/${moveId}/move?store=zippo`,JSON.stringify({destination_store_id:'toys-center'})))).status,404);
+for(const conflict of ['meta_id','slug']){const ctx=moveCtx();ctx.env={...env,DB:{...env.DB,prepare(sql){if(sql.startsWith(`SELECT id FROM toys_center_products WHERE ${conflict}=`))return{bind(){return{first:async()=>({id:999})}}};return env.DB.prepare(sql)}}};assert.equal((await moveProduct(ctx)).status,409)}
+assert.equal(db.prepare('SELECT store_id FROM toys_center_products WHERE id=?').get(moveId).store_id,'toys-center');
+const orderId=Number(db.prepare(`INSERT INTO toys_center_orders(order_no,client_token_hash,request_hash,product_id,product_meta_id,product_slug,product_title,unit_price_cents,quantity,total_cents,customer_name,phone,shipping_address,payment_bank_name,payment_account_name,payment_account_number) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run('MOVE-1','token-move-1','hash-move-1',moveId,'TOY-1','toy-1','Toy 01',10000,1,10000,'Buyer','0812345678','Bangkok address','Bank','Account','123').lastInsertRowid);
+for(const status of ['awaiting_payment','confirming']){db.prepare('UPDATE toys_center_orders SET status=? WHERE id=?').run(status,orderId);assert.equal((await moveProduct(moveCtx())).status,409);assert.equal(db.prepare('SELECT store_id FROM toys_center_products WHERE id=?').get(moveId).store_id,'toys-center')}
+db.prepare("UPDATE toys_center_orders SET status='paid' WHERE id=?").run(orderId);
+const moved=await moveProduct(moveCtx());assert.equal(moved.status,200,await moved.text());assert.equal(moved.headers.get('cache-control'),'private, no-store');
+const after=db.prepare('SELECT * FROM toys_center_products WHERE id=?').get(moveId);
+assert.equal(after.store_id,'zippo');for(const field of ['id','meta_id','slug','title','description','image_1_key','image_2_key','price_cents','status'])assert.equal(after[field],original[field],field);
+assert.equal(db.prepare('SELECT image_key FROM toys_center_product_images WHERE id=?').get(moveGalleryId).image_key,'toy-1-gallery');
+assert.equal((await toysProducts(context('/api/toys-center/products?slug=toy-1'))).status,404);
+assert.equal((await zippoProducts(context('/api/stock/products?store=zippo&slug=toy-1'))).status,200);
+assert.equal((await publicImage(context(`/api/toys-center/images/${moveId}/2`,{params:{id:String(moveId),slot:'2'}}))).status,404);
+assert.equal((await publicImage(context(`/api/toys-center/images/${moveId}/2?store=zippo`,{params:{id:String(moveId),slot:'2'}}))).status,200);
+assert.equal((await publicGallery(context(`/api/toys-center/gallery/${moveId}/0?v=${moveGalleryId}&store=zippo`,{params:{id:String(moveId),position:'0'}}))).status,200);
+assert(!(await data(await adminList(context('/api/admin/toys-center?store=toys-center&q=TOY-1')))).items.some(item=>item.id===moveId));
+assert((await data(await adminList(context('/api/admin/toys-center?store=zippo&q=TOY-1')))).items.some(item=>item.id===moveId));
+assert(!(await (await toysFeed(context('/api/toys-center/feed.csv'))).text()).includes('"TOY-1",'));
+assert((await (await zippoFeed(context('/api/stock/feed.csv?store=zippo'))).text()).includes('/zippoudon?product=toy-1'));
+const orderPlan=db.prepare("EXPLAIN QUERY PLAN SELECT id FROM toys_center_orders WHERE product_id=? AND status IN ('awaiting_payment','confirming') LIMIT 1").all(moveId).map(row=>row.detail).join(' ');assert.match(orderPlan,/idx_toys_center_orders_product_status/);
+const movedBack=await moveProduct(moveCtx(`/api/admin/toys-center/${moveId}/move?store=zippo`,JSON.stringify({destination_store_id:'toys-center'})));assert.equal(movedBack.status,200,await movedBack.text());
+assert.equal(db.prepare('SELECT COUNT(*) total FROM toys_center_products WHERE id=?').get(moveId).total,1);
+assert.equal(db.prepare('SELECT store_id FROM toys_center_products WHERE id=?').get(moveId).store_id,'toys-center');
+const zippoPage=readFileSync(join(root,'public/zippoudon.html'),'utf8');assert.match(zippoPage,/data-store-id="zippo"/);assert.match(zippoPage,/id="storeProducts"/);assert.match(zippoPage,/toyscenter\.js\?v=020191/);
+assert.match(readFileSync(join(root,'public/zippo.html'),'utf8'),/data-store-id="zippo"/);
+console.log('Stock move, isolation, canonical route/feed, active-order guard, keyset pagination and indexes PASS');
