@@ -42,8 +42,8 @@ try{
   await page.locator('#stockStore').selectOption('toys-center');await page.waitForTimeout(800);
   assert.equal(await page.locator('#shopeePreview').isHidden(),true,'late Zippo preview must not reappear in Toys store');
   assert.equal(await page.locator('.shopee-result').count(),0);assert.match(await page.locator('.product-row').textContent(),/Toy Product/);
-  let confirmation='';page.once('dialog',dialog=>{confirmation=dialog.message();dialog.accept()});await page.getByRole('button',{name:'ย้ายไปเพจอื่น'}).click();await page.waitForFunction(()=>!document.querySelector('.product-row'));
-  assert.match(confirmation,/Toy Product/);assert.match(confirmation,/Zippo/);assert.equal(moveCalls,1);
+  let confirmation='';page.once('dialog',dialog=>{confirmation=dialog.message();dialog.accept()});await page.getByRole('button',{name:'ย้ายไปสต็อกร้านอื่น'}).click();await page.waitForFunction(()=>!document.querySelector('.product-row'));
+  assert.match(confirmation,/Toy Product/);assert.match(confirmation,/จากสต็อกร้าน Toys Center ไปสต็อกร้าน Zippo/);assert.match(confirmation,/ร้านต้นทาง/);assert.equal(moveCalls,1);
   await page.locator('#stockStore').selectOption('zippo');await page.waitForFunction(()=>document.querySelectorAll('.product-row').length===2);
   assert.match(await page.locator('#stockStorefrontLink').getAttribute('href'),/\/zippoudon$/);
   const storefront=await browser.newPage();await storefront.goto(`${base}/zippoudon`);await storefront.waitForSelector('.store-product');assert.equal(await storefront.locator('.store-product').count(),2);assert.match(await storefront.locator('.store-product').last().getAttribute('href'),/^\/zippoudon\?product=toy-product$/);
