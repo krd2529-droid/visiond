@@ -1,5 +1,5 @@
 import {json,requireAdmin} from '../../../_lib.js';
-import {clean,cleanupToyImages,publicProduct,putToyImage,putToyImages,readToyImage,resolveToyCoverIndex,resolveToyMetaIndex,toyProductFields} from '../../../_toys_center.js';
+import {clean,cleanupToyImages,publicProduct,putToyImage,putToyImages,readToyImage,resolveToyCoverIndex,toyProductFields} from '../../../_toys_center.js';
 import {draftGallery,draftRow} from '../../../_toys_center_drafts.js';
 import {stockStore,storeSettings} from '../../../_stock.js';
 
@@ -37,26 +37,25 @@ export async function onRequestPost(ctx){
   const f=toyProductFields(form),files=form.getAll('image_1').filter(file=>file instanceof File&&file.size),metaFiles=form.getAll('image_2').filter(file=>file instanceof File&&file.size),savedGallery=draft?draftGallery(draft):[],count=files.length||savedGallery.length;
   if(!count||count>10||files.length>10)return json({error:'รูปสำหรับ VisionD ต้องมี 1–10 รูป'},400,headers);
   if(metaFiles.length>1)return json({error:'รูป Meta เลือกได้เพียง 1 รูป'},400,headers);
-  const metaIndex=metaFiles.length?null:resolveToyMetaIndex(form,count);
-  if(metaIndex===-1)return json({error:'รูป Meta ที่เลือกไม่ถูกต้อง'},400,headers);
-  if(!metaFiles.length&&!draft?.meta_key&&metaIndex===null)return json({error:'กรุณาแนบรูป Meta หรือเลือกหนึ่งรูปจาก ZIP'},400,headers);
+  const metaSource=form.get('meta_source');
+  if(metaSource!==null&&!['cover','upload'].includes(metaSource))return json({error:'วิธีเลือกรูป Meta ไม่ถูกต้อง'},400,headers);
+  if(!metaFiles.length&&metaSource==='upload'&&!draft?.meta_key)return json({error:'กรุณาอัปโหลดรูป Meta แยก'},400,headers);
   if([f.shopeeWeightG,f.shopeePackageWidthMm,f.shopeePackageLengthMm,f.shopeePackageHeightMm].some(value=>value===-1))return json({error:'น้ำหนักหรือขนาดพัสดุไม่ถูกต้อง'},400,headers);
   if(!f.metaId||!f.title||!f.description||!f.brand||String(form.get('price')??'').trim()===''||f.priceCents<0||f.costCents<0)return json({error:'กรุณากรอก ID ชื่อ รายละเอียด ราคา และแบรนด์ให้ถูกต้อง'},400,headers);
-  const coverIndex=resolveToyCoverIndex(form,count);if(coverIndex<0)return json({error:'รูปปก VisionD ไม่ถูกต้อง'},400,headers);
-  let galleryKeys=[],metaKey='';
+  const coverIndex=resolveToyCoverIndex(form,count,draft?.cover_index||0);if(coverIndex<0)return json({error:'รูปปก VisionD ไม่ถูกต้อง'},400,headers);
+  let galleryKeys=[],uploadedMetaKey='';
   try{
     const [gallery,meta]=await Promise.all([Promise.all(files.map((file,index)=>readToyImage(file,`VisionD ${index+1}`))),readToyImage(metaFiles[0],'Meta',{required:false})]);
     galleryKeys=gallery.length?await putToyImages(ctx,gallery,'visiond'):savedGallery;
-    metaKey=meta?await putToyImage(ctx.env,meta,'meta'):'';
-    if(!metaKey&&metaIndex!==null){const selected=gallery[metaIndex];metaKey=selected?await putToyImage(ctx.env,selected,'meta'):galleryKeys[metaIndex]}
-    if(!metaKey)metaKey=draft?.meta_key||'';
+    uploadedMetaKey=meta?await putToyImage(ctx.env,meta,'meta'):'';
+    const metaKey=uploadedMetaKey||(metaSource==='upload'||metaSource===null&&draft?.meta_key?draft?.meta_key:'')||galleryKeys[coverIndex];
     const insert=ctx.env.DB.prepare(`INSERT INTO toys_center_products(store_id,meta_id,slug,title,description,availability,condition,price_cents,cost_cents,brand,product_line,series,quantity,image_1_key,image_2_key,google_product_category,fb_product_category,gtin,item_group_id,color,size,material,pattern,age_group,gender,product_tags,shopee_weight_g,shopee_package_width_mm,shopee_package_length_mm,shopee_package_height_mm,status,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(store.id,f.metaId,f.slug,f.title,f.description,f.availability,f.condition,f.priceCents,f.costCents,f.brand,f.productLine,f.series,f.quantity,galleryKeys[coverIndex],metaKey,f.google,f.facebook,f.gtin,f.group,f.color,f.size,f.material,f.pattern,f.age,f.gender,f.tags,f.shopeeWeightG,f.shopeePackageWidthMm,f.shopeePackageLengthMm,f.shopeePackageHeightMm,f.status,a.user.id);
     const children=galleryKeys.map((key,position)=>ctx.env.DB.prepare('INSERT INTO toys_center_product_images(product_id,position,image_key) SELECT id,?,? FROM toys_center_products WHERE store_id=? AND meta_id=?').bind(position,key,store.id,f.metaId));
     const statements=[insert,...children];if(draft)statements.push(ctx.env.DB.prepare('DELETE FROM toys_center_form_drafts WHERE id=? AND store_id=?').bind(draft.id,store.id));
     const result=await ctx.env.DB.batch(statements);
-    if(draft)await cleanupToyImages(ctx,[...savedGallery.filter(key=>!galleryKeys.includes(key)&&key!==metaKey),...(draft.meta_key&&draft.meta_key!==metaKey?[draft.meta_key]:[])]);
+    if(draft)await cleanupToyImages(ctx,[...savedGallery.filter(key=>!galleryKeys.includes(key)&&key!==metaKey),...(draft.meta_key&&draft.meta_key!==metaKey&&!galleryKeys.includes(draft.meta_key)?[draft.meta_key]:[])]);
     return json({ok:true,id:result[0]?.meta?.last_row_id,message:`เพิ่มสินค้า ${store.name} สำเร็จ`},201,headers);
-  }catch(error){await cleanupToyImages(ctx,[...(files.length?galleryKeys:[]),...(metaFiles.length||files.length&&metaIndex!==null?[metaKey]:[])]);return json({error:/unique/i.test(String(error))?'ID หรือ slug สินค้านี้มีอยู่แล้ว':String(error.message||error)},/unique/i.test(String(error))?409:400,headers)}
+  }catch(error){await cleanupToyImages(ctx,[...(files.length?galleryKeys:[]),uploadedMetaKey]);return json({error:/unique/i.test(String(error))?'ID หรือ slug สินค้านี้มีอยู่แล้ว':String(error.message||error)},/unique/i.test(String(error))?409:400,headers)}
 }
 
 export async function onRequestPatch(ctx){
