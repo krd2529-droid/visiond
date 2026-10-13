@@ -21,9 +21,7 @@
 #productEditor input[name="shopee_package_height_cm"],
 #productEditor input[name="gtin"],
 #shopeeWorkspace #shopeeBatchDelivery,
-#shopeeWorkspace #shopeeBatchTemplate,
-#shopeeWorkspace #shopeeStandardDelivery,
-#shopeeWorkspace #shopeeTemplateFile{border:2px solid #c65900;box-shadow:0 0 0 2px #fff0df}
+#shopeeWorkspace #shopeeStandardDelivery{border:2px solid #c65900;box-shadow:0 0 0 2px #fff0df}
 #productEditor input[name="gtin"]{border-style:dashed}
 #productEditor input[name="image_1"]:focus-visible,
 #productEditor input[name="meta_id"]:focus-visible,
@@ -37,6 +35,4 @@
 #productEditor input[name="shopee_package_height_cm"]:focus-visible,
 #productEditor input[name="gtin"]:focus-visible,
 #shopeeWorkspace #shopeeBatchDelivery:focus-visible,
-#shopeeWorkspace #shopeeBatchTemplate:focus-visible,
-#shopeeWorkspace #shopeeStandardDelivery:focus-visible,
-#shopeeWorkspace #shopeeTemplateFile:focus-visible{outline:3px solid #9c3e00;outline-offset:2px}
+#shopeeWorkspace #shopeeStandardDelivery:focus-visible{outline:3px solid #9c3e00;outline-offset:2px}

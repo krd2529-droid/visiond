@@ -1,6 +1,7 @@
 import {cookie,json,requireAdmin} from '../../../_lib.js';
 import {prepareShopeeImage} from '../../../_toys_center_shopee_images.js';
 import {makeShopeeWorkbook} from '../../../_toys_center_shopee_xlsx.js';
+import {loadShopeeTemplate} from '../../../_toys_center_shopee_template.js';
 import {boundedFormData,validateShopeeRow} from './[id]/shopee-xlsx.js';
 import {stockStore} from '../../../_stock.js';
 
@@ -57,7 +58,7 @@ async function selectedRows(ctx,items,delivery,store){
   return{errors,rows,snapshots};
 }
 
-async function compilePrepared(ctx,auth,form,items,source,store){
+async function compilePrepared(ctx,auth,form,items,store){
   let chunks;try{chunks=JSON.parse(form.get('chunks'))}catch{return json({error:'ชุดข้อมูลสินค้า Shopee ไม่ถูกต้อง'},400,headers)}
   if(!Array.isArray(chunks)||chunks.length<1||chunks.length>MAX_PRODUCTS)return json({error:'ชุดข้อมูลสินค้า Shopee ไม่ถูกต้อง'},400,headers);
   const origin=new URL(ctx.request.url).origin,now=Date.now(),rows=[],snapshots=[],ids=[];
@@ -74,6 +75,9 @@ async function compilePrepared(ctx,auth,form,items,source,store){
   const byId=new Map(current.map(item=>[Number(item.id),item])),byGallery=new Map();
   for(const image of gallery){const id=Number(image.product_id);if(!byGallery.has(id))byGallery.set(id,[]);byGallery.get(id).push(image)}
   for(const [index,id] of ids.entries())if(!byId.has(id)||await snapshot(byId.get(id),byGallery.get(id)||[])!==snapshots[index])return json({error:'ข้อมูลสินค้ามีการเปลี่ยนแปลง กรุณาตรวจและดาวน์โหลดใหม่'},409,headers);
+  const template=await loadShopeeTemplate(ctx.env,store);
+  if(template.error)return json({error:template.error},template.status,headers);
+  const source=template.source;
   try{const workbook=await makeShopeeWorkbook(source,rows);return new Response(workbook,{status:200,headers:{...headers,'content-type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','content-disposition':`attachment; filename="visiond-shopee-${rows.length}-products.xlsx"`}})}
   catch(error){return json({error:error.message||'สร้าง Excel Shopee ไม่สำเร็จ'},400,headers)}
 }
@@ -94,13 +98,12 @@ export async function onRequestPost(ctx){
     const payload={userId:auth.user.id,store:store.id,origin:new URL(ctx.request.url).origin,delivery:'เปิด',expires:Date.now()+CHUNK_TTL_MS,ids:items.map(item=>item.id),rows:result.rows,snapshots:result.snapshots};
     return json({chunk:await signChunk(ctx,payload)},200,headers);
   }
-  const file=form.get('template');
-  if(!(file instanceof File)||!file.size||file.size>2*1024*1024||!String(file.name).toLowerCase().endsWith('.xlsx'))return json({error:'เลือกไฟล์ Excel .xlsx ตัวอย่าง Shopee ไม่เกิน 2 MB'},400,headers);
-  const source=new Uint8Array(await file.arrayBuffer());
-  if(source[0]!==0x50||source[1]!==0x4b)return json({error:'ไฟล์ที่เลือกไม่ใช่ Excel .xlsx'},400,headers);
-  if(mode==='compile')return compilePrepared(ctx,auth,form,items,source,store.id);
+  if(mode==='compile')return compilePrepared(ctx,auth,form,items,store.id);
   const result=await selectedRows(ctx,items,form.get('standard_delivery'),store.id);
   if(result.errors.length)return json({error:'ข้อมูลสินค้า Shopee ยังไม่พร้อม',errors:result.errors},422,headers);
+  const template=await loadShopeeTemplate(ctx.env,store.id);
+  if(template.error)return json({error:template.error},template.status,headers);
+  const source=template.source;
   try{const workbook=await makeShopeeWorkbook(source,result.rows);return new Response(workbook,{status:200,headers:{...headers,'content-type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','content-disposition':`attachment; filename="visiond-shopee-${result.rows.length}-products.xlsx"`}})}
   catch(error){return json({error:error.message||'สร้าง Excel Shopee ไม่สำเร็จ'},400,headers)}
 }

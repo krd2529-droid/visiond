@@ -1,4 +1,4 @@
-// The seller supplies the Shopee workbook at export time. Never bundle or store its shop-bound metadata.
+// Use only the authorized store's private Shopee workbook; never bundle it or expose its shop-bound metadata.
 const decoder=new TextDecoder('utf-8',{fatal:true});
 const encoder=new TextEncoder();
 const TARGET='xl/worksheets/sheet2.xml';

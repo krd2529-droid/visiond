@@ -67,16 +67,15 @@ const normalizeShopeeQuery=value=>String(value||'').normalize('NFKC').trim().toL
 function shopeeCacheGet(cache,key){const entry=cache.get(key);if(!entry||Date.now()-entry.at>SHOPEE_CACHE_TTL){cache.delete(key);return null}return entry.value}
 async function shopeeCachedApi(path,cache,inflight,key){const cached=shopeeCacheGet(cache,key);if(cached)return cached;if(inflight.has(key))return inflight.get(key);const request=api(path,{cache:'no-store'}).then(value=>{cache.set(key,{at:Date.now(),value});return value}).finally(()=>inflight.delete(key));inflight.set(key,request);return request}
 function invalidateShopeeWorkspace(productId){shopeeGeneration++;shopeeSearchCache.clear();shopeePreviewCache.clear();if(Number(productId)===Number(selectedShopeeProduct?.id))clearShopeeSelection();if(shopeeQuery)scheduleShopeeSearch(0)}
-function resetShopeeExcelFields(){shopeeExcelAbort?.abort();shopeeExcelAbort=null;for(const id of ['#shopeeStandardDelivery','#shopeeTemplateFile'])$(id).value='';updateShopeeExcelState()}
+function resetShopeeExcelFields(){shopeeExcelAbort?.abort();shopeeExcelAbort=null;$('#shopeeStandardDelivery').value='';updateShopeeExcelState()}
 function clearShopeeSelection(){selectedShopeeProduct=null;selectedShopeeSnapshot=null;shopeePreviewIntent++;$('#shopeePreview').hidden=true;$('#clearShopeeProduct').hidden=true;resetShopeeExcelFields();for(const button of document.querySelectorAll('.shopee-result'))button.setAttribute('aria-selected','false')}
 function renderShopeeResults(){const root=$('#shopeeSearchResults');root.replaceChildren();for(const item of shopeeItems){const wrap=document.createElement('div'),button=document.createElement('button'),copy=document.createElement('span'),title=document.createElement('strong'),detail=document.createElement('small'),action=document.createElement('b'),add=document.createElement('button');wrap.className='shopee-result-wrap';button.type='button';button.className='shopee-result';button.dataset.productId=String(item.id);button.setAttribute('role','option');button.setAttribute('aria-selected',String(Number(selectedShopeeProduct?.id)===Number(item.id)));title.textContent=item.title;detail.textContent=`${item.meta_id} · ${item.status==='published'?'เผยแพร่':'ฉบับร่าง'}`;action.textContent='เลือก';copy.append(title,detail);button.append(copy,action);button.onclick=()=>selectShopeeProduct(item);add.type='button';add.className='vds-btn vds-btn--secondary shopee-batch-add';add.textContent=shopeeBatchItems.has(Number(item.id))?'เพิ่มแล้ว':'เพิ่มเข้า Excel';add.disabled=shopeeBatchItems.has(Number(item.id))||!validShopeeBatchLimit()||shopeeBatchItems.size>=shopeeBatchLimit();add.onclick=()=>addShopeeBatchItem(item);wrap.append(button,add);root.append(wrap)}$('#moreShopeeProducts').hidden=!shopeeCursor}
 async function loadShopeeProducts(reset=true){const query=normalizeShopeeQuery($('#shopeeSearchInput').value),intent=++shopeeIntent,generation=shopeeGeneration;if(!query){shopeeQuery='';shopeeCursor='';shopeeItems=[];renderShopeeResults();status('#shopeeSearchStatus','พิมพ์ชื่อเพื่อค้นหา');return}if(reset){shopeeQuery=query;shopeeCursor='';shopeeItems=[];renderShopeeResults()}const cursor=reset?'':shopeeCursor,key=`${generation}|${query}|${cursor}`,params=new URLSearchParams({q:query,limit:'24'});if(cursor)params.set('cursor',cursor);status('#shopeeSearchStatus',reset?'กำลังค้นหาชื่อสินค้า…':'กำลังโหลดชื่อถัดไป…');try{const data=await shopeeCachedApi(`/api/admin/toys-center/shopee-products?${params}`,shopeeSearchCache,shopeeSearchInflight,key);if(intent!==shopeeIntent||generation!==shopeeGeneration||query!==shopeeQuery)return;const known=new Set(shopeeItems.map(item=>Number(item.id)));shopeeItems.push(...data.items.filter(item=>!known.has(Number(item.id))));shopeeCursor=data.pagination.next_cursor||'';renderShopeeResults();status('#shopeeSearchStatus',shopeeItems.length?`พบ ${shopeeItems.length.toLocaleString('th-TH')} รายการ${shopeeCursor?' · มีชื่อถัดไป':''}`:'ไม่พบสินค้าที่ขึ้นต้นด้วยชื่อนี้')}catch(error){if(intent===shopeeIntent)status('#shopeeSearchStatus',error.message,true)}}
 function scheduleShopeeSearch(delay=300){clearTimeout(shopeeDebounceTimer);shopeeDebounceTimer=setTimeout(()=>loadShopeeProducts(true),delay)}
 function shopeeExcelIssues(){
-  const issues=[],data=selectedShopeeSnapshot,delivery=$('#shopeeStandardDelivery').value,file=$('#shopeeTemplateFile').files[0];
+  const issues=[],data=selectedShopeeSnapshot,delivery=$('#shopeeStandardDelivery').value;
   if(!selectedShopeeProduct||!data)return['เลือกสินค้า Shopee ก่อน'];
   if(delivery!=='เปิด')issues.push('เลือก Standard Delivery เป็น “เปิด”');
-  if(!file||!file.name.toLowerCase().endsWith('.xlsx')||file.size<1||file.size>2*1024*1024)issues.push('เลือกไฟล์ .xlsx ตัวอย่าง Shopee ไม่เกิน 2 MB');
   if(selectedShopeeProduct.status!=='published')issues.push('เผยแพร่สินค้าใน VisionD เพื่อให้ลิงก์รูปใช้งานได้');
   const product=data.product,name=String(product.page_1.name||''),description=String(product.page_2.description||''),sku=String(product.page_1.sku||''),gtin=String(product.page_1.gtin||'');
   if(Array.from(name).length<20||Array.from(name).length>120)issues.push('ชื่อสินค้า 20–120 ตัวอักษร');
@@ -94,7 +93,7 @@ function updateShopeeExcelState(){const issues=shopeeExcelIssues(),button=$('#do
 async function downloadShopeeXlsx(){
   if(shopeeExcelIssues().length){updateShopeeExcelState();return}
   const id=Number(selectedShopeeProduct.id),intent=shopeePreviewIntent,form=new FormData(),controller=new AbortController();
-  form.set('standard_delivery',$('#shopeeStandardDelivery').value);form.set('template',$('#shopeeTemplateFile').files[0]);
+  form.set('standard_delivery',$('#shopeeStandardDelivery').value);
   shopeeExcelAbort=controller;updateShopeeExcelState();
   try{
     const response=await fetch(stockUrl(`/api/admin/toys-center/${id}/shopee-xlsx`),{method:'POST',body:form,cache:'no-store',signal:controller.signal});
@@ -110,11 +109,11 @@ $('#shopeeSearchInput').addEventListener('input',()=>{clearShopeeSelection();sch
 $('#moreShopeeProducts').onclick=()=>loadShopeeProducts(false);
 $('#clearShopeeProduct').onclick=clearShopeeSelection;
 $('#downloadShopeeJson').onclick=downloadShopeeJson;
-for(const id of ['#shopeeStandardDelivery','#shopeeTemplateFile'])$(id).addEventListener('change',updateShopeeExcelState);
+$('#shopeeStandardDelivery').addEventListener('change',updateShopeeExcelState);
 $('#downloadShopeeXlsx').onclick=downloadShopeeXlsx;
 
 function shopeeBatchIssues(){
-  const issues=[],file=$('#shopeeBatchTemplate').files[0];
+  const issues=[];
   if(!validShopeeBatchLimit())issues.push('กำหนดจำนวนสูงสุด 50–200 รายการ');
   else if(shopeeBatchItems.size>shopeeBatchLimit())issues.push(`เลือกสินค้าเกินจำนวนสูงสุด ${shopeeBatchLimit()} รายการ กรุณานำออก`);
   if(!shopeeBatchItems.size)issues.push('เพิ่มสินค้าเข้า Excel อย่างน้อย 1 รายการ');
@@ -122,7 +121,6 @@ function shopeeBatchIssues(){
     if(item.status!=='published')issues.push(`${item.meta_id}: เผยแพร่สินค้าใน VisionD ก่อน`);
   }
   if($('#shopeeBatchDelivery').value!=='เปิด')issues.push('เลือก Standard Delivery เป็น “เปิด” สำหรับทุกสินค้า');
-  if(!file||!file.name.toLowerCase().endsWith('.xlsx')||file.size<1||file.size>2*1024*1024)issues.push('เลือกไฟล์ .xlsx ตัวอย่าง Shopee ไม่เกิน 2 MB');
   return issues;
 }
 function updateShopeeBatchState(){const issues=shopeeBatchIssues();$('#shopeeBatchDownload').disabled=Boolean(issues.length||shopeeBatchAbort);status('#shopeeBatchStatus',issues.length?`ยังส่งออกไม่ได้: ${issues.join(' · ')}`:shopeeBatchAbort?'กำลังตรวจสินค้าและสร้าง Excel รวม…':'พร้อมตรวจสินค้าทุกชิ้นและสร้าง Excel ไฟล์เดียว',Boolean(issues.length))}
@@ -130,7 +128,7 @@ function touchShopeeBatch(){shopeeBatchAbort?.abort();shopeeBatchAbort=null;shop
 function renderShopeeBatch(){const root=$('#shopeeBatchList');root.replaceChildren();$('#shopeeBatchCount').textContent=`เลือกแล้ว ${shopeeBatchItems.size}/${validShopeeBatchLimit()?shopeeBatchLimit():'—'} รายการ`;$('#shopeeBatchClear').disabled=!shopeeBatchItems.size;let order=0;for(const item of shopeeBatchItems.values()){
   const row=document.createElement('div'),info=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');row.className='shopee-batch-row';title.textContent=`${++order}. ${item.title}`;detail.textContent=`${item.meta_id} · ${item.status==='published'?'เผยแพร่':'ฉบับร่าง'}`;info.append(title,detail);remove.type='button';remove.className='vds-btn vds-btn--text';remove.textContent='เอาออก';remove.setAttribute('aria-label',`เอา ${item.meta_id} ออกจาก Excel`);remove.onclick=()=>{shopeeBatchItems.delete(item.id);touchShopeeBatch();renderShopeeBatch();renderShopeeResults()};row.append(info,remove);root.append(row)}updateShopeeBatchState()}
 function addShopeeBatchItem(item){const id=Number(item.id);if(!Number.isSafeInteger(id)||id<1||shopeeBatchItems.has(id))return;if(!validShopeeBatchLimit()||shopeeBatchItems.size>=shopeeBatchLimit()){status('#shopeeBatchStatus',`กำหนดจำนวนสูงสุด 50–200 รายการ และเลือกไม่เกิน ${validShopeeBatchLimit()?shopeeBatchLimit():200} รายการต่อไฟล์`,true);return}shopeeBatchItems.set(id,{id,title:String(item.title||''),meta_id:String(item.meta_id||''),status:item.status});touchShopeeBatch();renderShopeeBatch();renderShopeeResults()}
-function clearShopeeBatch(){shopeeBatchItems.clear();$('#shopeeBatchTemplate').value='';$('#shopeeBatchDelivery').value='';touchShopeeBatch();renderShopeeBatch();renderShopeeResults()}
+function clearShopeeBatch(){shopeeBatchItems.clear();$('#shopeeBatchDelivery').value='';touchShopeeBatch();renderShopeeBatch();renderShopeeResults()}
 function removeDeletedShopeeBatchItem(productId,action='ลบ'){const id=Number(productId);shopeeItems=shopeeItems.filter(item=>Number(item.id)!==id);if(shopeeBatchItems.delete(id)){touchShopeeBatch();renderShopeeBatch();status('#shopeeBatchStatus',`นำสินค้า #${id} ที่${action}แล้วออกจากคิว Excel`)}renderShopeeResults()}
 async function downloadShopeeBatch(){
   if(shopeeBatchIssues().length){updateShopeeBatchState();return}
@@ -145,7 +143,7 @@ async function downloadShopeeBatch(){
       if(!data.chunk)throw new Error('ชุดข้อมูลสินค้า Shopee ไม่ครบ');chunks.push(data.chunk);
       status('#shopeeBatchStatus',`ตรวจสินค้าแล้ว ${Math.min(start+10,items.length)}/${items.length} รายการ`);
     }
-    const form=new FormData();form.set('mode','compile');form.set('items',JSON.stringify(items));form.set('chunks',JSON.stringify(chunks));form.set('template',$('#shopeeBatchTemplate').files[0]);
+    const form=new FormData();form.set('mode','compile');form.set('items',JSON.stringify(items));form.set('chunks',JSON.stringify(chunks));
     const response=await fetch(stockUrl('/api/admin/toys-center/shopee-xlsx'),{method:'POST',body:form,cache:'no-store',signal:controller.signal});
     if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error((data.errors||[data.error||'สร้าง Excel รวมไม่สำเร็จ']).join(' · '))}
     if(!String(response.headers.get('content-type')||'').startsWith('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))throw new Error('เซิร์ฟเวอร์ไม่ได้ส่งไฟล์ Excel');
@@ -156,7 +154,6 @@ async function downloadShopeeBatch(){
 $('#shopeeBatchClear').onclick=clearShopeeBatch;
 $('#shopeeBatchLimit').addEventListener('input',()=>{touchShopeeBatch();renderShopeeBatch();renderShopeeResults()});
 $('#shopeeBatchDelivery').onchange=touchShopeeBatch;
-$('#shopeeBatchTemplate').onchange=touchShopeeBatch;
 $('#shopeeBatchDownload').onclick=downloadShopeeBatch;
 renderShopeeBatch();
 
