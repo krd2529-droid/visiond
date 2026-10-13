@@ -48,12 +48,27 @@
     if(lines.length>maxLines){lines=lines.slice(0,maxLines);let last=lines[maxLines-1];while(last&&ctx.measureText(`${last}…`).width>maxWidth)last=graphemes(last).slice(0,-1).join('');lines[maxLines-1]=`${last}…`}
     return{fontSize:minSize,lines};
   }
+  function fittedName(ctx,text,maxWidth,startSize,font='"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif'){
+    const name=clean(text);let fontSize=startSize;
+    ctx.font=`900 ${fontSize}px ${font}`;
+    if(ctx.measureText(name).width>maxWidth){
+      let low=0,high=startSize;
+      for(let i=0;i<20;i++){
+        const middle=(low+high)/2;
+        ctx.font=`900 ${middle}px ${font}`;
+        if(ctx.measureText(name).width<=maxWidth)low=middle;else high=middle;
+      }
+      fontSize=low;
+    }
+    ctx.font=`900 ${fontSize}px ${font}`;
+    return{fontSize,lines:[name]};
+  }
   function renderStyled(target,ctx,source,nameText,priceText,key,backdrop,preview){
     const style=STYLES[key],width=source.width,sourceHeight=source.height,scale=Math.min(width,sourceHeight),pad=Math.max(8,Math.round(scale*.025));
-    const top=fittedLines(ctx,nameText||'ชื่อสินค้า',width-pad*2,3,Math.max(18,Math.round(scale*.065)),Math.max(11,Math.round(scale*.03)),style.font);
+    const name=nameText||'ชื่อสินค้า',top=fittedName(ctx,name,width-pad*2,Math.max(18,Math.round(scale*.065)),style.font);
     const price=fittedLines(ctx,priceText||'ราคา',width-pad*2,3,Math.max(17,Math.round(scale*.055)),Math.max(10,Math.round(scale*.028)),style.font);
-    const nameLine=Math.round(top.fontSize*1.22),priceLine=Math.round(price.fontSize*1.22),gap=Math.max(4,Math.round(pad*.5));
-    const priceStart=pad+nameLine*top.lines.length+gap,topHeight=Math.max(Math.round(scale*.16),priceStart+priceLine*price.lines.length+pad);
+    const nameLine=Math.max(1,Math.round(top.fontSize*1.22)),priceLine=Math.round(price.fontSize*1.22),gap=Math.max(4,Math.round(pad*.5));
+    const priceStart=pad+nameLine+gap,topHeight=Math.max(Math.round(scale*.16),priceStart+priceLine*price.lines.length+pad);
     const brandSize=Math.max(17,Math.round(scale*.06)),bottomHeight=Math.max(Math.round(scale*.11),Math.round(brandSize*1.35)+pad*2),height=topHeight+sourceHeight+bottomHeight;
     target.width=width;target.height=height;
     ctx.fillStyle=style.bar;ctx.fillRect(0,0,width,topHeight);ctx.fillRect(0,topHeight+sourceHeight,width,bottomHeight);
@@ -65,7 +80,7 @@
     if(key==='street'){ctx.fillStyle='#171611';ctx.fillRect(0,topHeight-7,width,7);ctx.fillRect(0,height-bottomHeight,width,7)}
     else if(key==='premium'||key==='vintage'){ctx.fillStyle=style.ink;ctx.fillRect(pad,topHeight-6,width-pad*2,2);ctx.fillRect(pad,height-bottomHeight+5,width-pad*2,2)}
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=style.ink;
-    ctx.font=`900 ${top.fontSize}px ${style.font}`;top.lines.forEach((line,index)=>ctx.fillText(line,width/2,pad+nameLine*(index+.5),width-pad*2));
+    ctx.font=`900 ${top.fontSize}px ${style.font}`;ctx.fillText(top.lines[0],width/2,pad+nameLine/2,width-pad*2);
     ctx.font=`900 ${price.fontSize}px ${style.font}`;price.lines.forEach((line,index)=>ctx.fillText(line,width/2,priceStart+priceLine*(index+.5),width-pad*2));
     ctx.drawImage(source,0,topHeight,width,sourceHeight);
     ctx.font=`900 ${brandSize}px ${style.font}`;ctx.fillStyle=style.ink;ctx.fillText('Zippo Udon',width/2,height-bottomHeight/2,width-pad*2);
@@ -75,14 +90,14 @@
   function renderTo(target,ctx,source,nameText,priceText,preview=false,styleKey='legacy',backdrop=null){
     if(styleKey!=='legacy')return renderStyled(target,ctx,source,nameText,priceText,styleKey,backdrop,preview);
     const width=source.width,sourceHeight=source.height,scale=Math.min(width,sourceHeight),padding=Math.max(8,Math.round(scale*.025)),red='#b5121b';
-    const name=nameText||'ชื่อสินค้า',top=fittedLines(ctx,name,width-padding*2,3,Math.max(18,Math.round(scale*.065)),Math.max(11,Math.round(scale*.03))),topLine=Math.round(top.fontSize*1.22);
+    const name=nameText||'ชื่อสินค้า',top=fittedName(ctx,name,width-padding*2,Math.max(18,Math.round(scale*.065))),nameLine=Math.max(1,Math.round(top.fontSize*1.22));
     const price=priceText||'ราคา',priceTextLayout=fittedLines(ctx,price,width-padding*2,3,Math.max(17,Math.round(scale*.055)),Math.max(10,Math.round(scale*.028))),priceLine=Math.round(priceTextLayout.fontSize*1.22),gap=Math.max(4,Math.round(padding*.5));
-    const priceStart=padding+topLine*top.lines.length+gap,topHeight=Math.max(Math.round(scale*.16),priceStart+priceLine*priceTextLayout.lines.length+padding),height=topHeight+sourceHeight;
+    const priceStart=padding+nameLine+gap,topHeight=Math.max(Math.round(scale*.16),priceStart+priceLine*priceTextLayout.lines.length+padding),height=topHeight+sourceHeight;
     target.width=width;target.height=height;
     ctx.fillStyle=red;ctx.fillRect(0,0,width,topHeight);
     ctx.drawImage(source,0,topHeight);ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillStyle='#fff';
     ctx.font=`900 ${top.fontSize}px "Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif`;
-    top.lines.forEach((line,index)=>ctx.fillText(line,width/2,padding+topLine*(index+.5),width-padding*2));
+    ctx.fillText(top.lines[0],width/2,padding+nameLine/2,width-padding*2);
     ctx.font=`900 ${priceTextLayout.fontSize}px "Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif`;
     priceTextLayout.lines.forEach((line,index)=>ctx.fillText(line,width/2,priceStart+priceLine*(index+.5),width-padding*2));
     if(preview){Object.assign(target.dataset,{topLines:String(top.lines.length),priceLines:String(priceTextLayout.lines.length),priceStart:String(priceStart),sourceWidth:String(width),sourceHeight:String(sourceHeight),topHeight:String(topHeight)});target.setAttribute('aria-label',`ตัวอย่างภาพสินค้า ${width} คูณ ${height} พิกเซล ภาพต้นฉบับ ${width} คูณ ${sourceHeight} พิกเซล ชื่อ ${name} ข้อความ ${price}`)}

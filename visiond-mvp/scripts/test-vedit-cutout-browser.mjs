@@ -68,6 +68,15 @@ try {
   });
   assert.deepEqual(transparent, [0, 255], 'existing transparent product alpha is preserved');
 
+  await page.evaluate(() => {
+    const original = CanvasRenderingContext2D.prototype.fillText;
+    globalThis.__veditNameDraws = [];
+    CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxWidth) {
+      if (this.canvas.id === 'veditCanvas') globalThis.__veditNameDraws.push({ text: String(text), width: this.measureText(text).width, maxWidth, y });
+      return original.call(this, text, x, y, maxWidth);
+    };
+  });
+
   async function zipFixture(width, height) {
     const base64 = await page.evaluate(({ width, height }) => {
       const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
@@ -84,6 +93,22 @@ try {
   for (const [width, height, selectedStyle] of [[640, 640, 'metal'], [800, 500, 'premium'], [480, 720, 'vintage']]) {
     await page.locator('#veditArchive').setInputFiles({ name: 'product.zip', mimeType: 'application/zip', buffer: await zipFixture(width, height) });
     await page.waitForFunction(() => document.querySelector('#veditStatus').dataset.state === 'success' && !document.querySelector('#veditDownload').disabled, { timeout: 30000 });
+    for (const title of ['Zippo 270 Vintage Hi Pol Brass', 'ไฟแช็กซิปโป้รุ่นพิเศษคุณภาพดีมาก'.repeat(5)]) {
+      for (const style of ['plain', 'metal', 'street', 'premium', 'vintage']) {
+        await page.evaluate(() => { globalThis.__veditNameDraws = []; });
+        await page.locator('#veditStyle').selectOption(style);
+        await page.locator('#veditProductName').fill(title);
+        await page.waitForFunction(value => globalThis.__veditNameDraws.some(draw => draw.text === value), title);
+        const layout = await page.evaluate(() => {
+          const canvas = document.querySelector('#veditCanvas'), name = document.querySelector('#veditProductName').value;
+          return { lines: Number(canvas.dataset.topLines), priceLines: Number(canvas.dataset.priceLines), priceStart: Number(canvas.dataset.priceStart), topHeight: Number(canvas.dataset.topHeight), sourceHeight: Number(canvas.dataset.sourceHeight), bottomHeight: Number(canvas.dataset.bottomHeight), width: canvas.width, height: canvas.height, draws: globalThis.__veditNameDraws.filter(draw => draw.text === name) };
+        });
+        assert.equal(layout.lines, 1, `${style} keeps ${title} on one line`);
+        assert.ok(layout.draws.length > 0 && layout.draws.every(draw => draw.width <= draw.maxWidth + .01 && draw.y < layout.priceStart), `${style} draws the complete name within top-bar width above price: ${JSON.stringify(layout.draws)}`);
+        assert.ok(layout.priceLines >= 1 && layout.priceStart < layout.topHeight, `${style} keeps price on its own line`);
+        assert.equal(layout.width, width); assert.equal(layout.sourceHeight, height); assert.equal(layout.height, height + layout.topHeight + layout.bottomHeight);
+      }
+    }
     for (const style of ['plain', 'metal', 'street', 'premium', 'vintage']) {
       await page.locator('#veditStyle').selectOption(style);
       await page.waitForFunction(key => document.querySelector('#veditCanvas').dataset.style === key && !document.querySelector('#veditDownload').disabled, style);
@@ -104,6 +129,9 @@ try {
       assert.ok(sample.actual.slice(0, 3).every((channel, index) => Math.abs(channel - sample.expected[index]) < 3), `${style} uses centered cover crop at uncovered corner`);
     }
     await page.locator('#veditStyle').selectOption(selectedStyle);
+    const exportedTitle = width === 800 ? 'Zippo 270 Vintage Hi Pol Brass' : 'ไฟแช็กซิปโป้รุ่นพิเศษคุณภาพดีมาก'.repeat(5);
+    await page.locator('#veditProductName').fill(exportedTitle);
+    await page.waitForFunction(title => document.querySelector('#veditCanvas').getAttribute('aria-label').includes(title), exportedTitle);
     await page.waitForFunction(key => document.querySelector('#veditCanvas').dataset.style === key, selectedStyle);
     if (process.env.VEDIT_CAPTURE) await page.locator('#veditCanvas').screenshot({ path: process.env.VEDIT_CAPTURE.replace(/\.png$/, `-${selectedStyle}-${width}x${height}.png`) });
     const downloadPromise = page.waitForEvent('download'); await page.locator('#veditDownload').click(); const download = await downloadPromise;

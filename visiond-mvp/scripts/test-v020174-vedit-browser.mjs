@@ -29,7 +29,7 @@ assert.doesNotMatch(home,/class="nav-vedit-link"|href="\/vedit"/,'home first pai
 assert.doesNotMatch(html,/class="nav-vedit-link"|href="\/vedit"/,'Vedit first paint omits its public-nav self-link');
 assert.match(html,/id="veditImage"[^>]+accept="image\/jpeg,image\/png,image\/webp"/);
 assert.match(html,/vedit\.css\?v=020189[\s\S]*mobile-storefront\.css[\s\S]*header-shell\.css[\s\S]*frontend-theme\.css/,'stylesheet cascade follows the public header contract');
-assert.match(html,/vedit\.js\?v=020189[\s\S]*shared-nav\.js\?v=020187/);
+assert.match(html,/vedit\.js\?v=020190[\s\S]*shared-nav\.js\?v=020187/);
 assert.doesNotMatch(html,/ขนาดต้นฉบับ|กรอบบน.ล่าง|ราคาแสดงบนภาพ/,'Vedit copy does not claim source-size output or a price overlay');
 assert.doesNotMatch(client,/\bfetch\s*\(|localStorage|sessionStorage|\/api\/|vpage|credit|D1|R2/i,'composer has no API, storage, Vpage or credit coupling');
 assert.match(client,/MIME_SIGNATURES/);
@@ -187,9 +187,17 @@ try{
     assert.equal(initialSize.width,1200);assert.equal(initialSize.height,800+initialSize.top);assert.ok(initialSize.top>0);assert.equal(initialSize.sourceWidth,'1200');assert.equal(initialSize.sourceHeight,'800');
     assert.match(await page.locator('#veditResolution').textContent(),new RegExp(`ต้นฉบับ 1,200 × 800 px.*ส่งออก 1,200 × ${initialSize.height.toLocaleString('en-US')} px`));
     assert.match(await status.textContent(),/ชื่อและราคาอยู่ในกรอบด้านบน/);
-    await page.locator('#veditProductName').fill('สินค้าไทยดีมาก'.repeat(14));await page.locator('#veditPriceText').fill('ราคาโปรพิเศษสุดคุ้ม'.repeat(8));
+    const longThaiName='สินค้าไทยดีมาก'.repeat(10);
+    await page.evaluate(()=>{const original=CanvasRenderingContext2D.prototype.fillText;globalThis.__veditNameDraws=[];CanvasRenderingContext2D.prototype.fillText=function(text,x,y,maxWidth){if(this.canvas.id==='veditCanvas')globalThis.__veditNameDraws.push({text:String(text),width:this.measureText(text).width,maxWidth,y});return original.call(this,text,x,y,maxWidth)}});
+    const englishName='Zippo 270 Vintage Hi Pol Brass';
+    await page.locator('#veditProductName').fill(englishName);
+    const englishDraws=await page.evaluate(name=>globalThis.__veditNameDraws.filter(draw=>draw.text===name),englishName);
+    assert.ok(englishDraws.length>0&&englishDraws.every(draw=>draw.width<=draw.maxWidth+.01),'legacy renders the complete English name on one fitting line');
+    await page.locator('#veditProductName').fill(longThaiName);await page.locator('#veditPriceText').fill('ราคาโปรพิเศษสุดคุ้ม'.repeat(8));
+    const nameDraws=await page.evaluate(name=>globalThis.__veditNameDraws.filter(draw=>draw.text===name),longThaiName);
+    assert.ok(nameDraws.length>0&&nameDraws.every(draw=>draw.width<=draw.maxWidth+.01),'legacy renders the complete Thai name at a measured fitting font size');
     const geometry=await canvas.evaluate(node=>{const ctx=node.getContext('2d'),priceStart=Number(node.dataset.priceStart),topHeight=Number(node.dataset.topHeight);const whites=(start,end)=>{const pixels=ctx.getImageData(0,start,node.width,end-start).data;let count=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]>235&&pixels[i+1]>235&&pixels[i+2]>235)count++;return count};return{topLines:Number(node.dataset.topLines),priceLines:Number(node.dataset.priceLines),top:[...ctx.getImageData(1,1,1,1).data],topHeight,priceStart,nameWhites:whites(0,priceStart),priceWhites:whites(priceStart,topHeight)}});
-    assert.ok(geometry.topLines>=1&&geometry.topLines<=3);assert.ok(geometry.priceLines>=1&&geometry.priceLines<=3);assert.deepEqual(geometry.top.slice(0,3),[181,18,27]);assert.ok(geometry.nameWhites>100,'name is visible in the top band');assert.ok(geometry.priceWhites>100,'price is visible in the same top band');
+    assert.equal(geometry.topLines,1,'long Thai name stays on one full line');assert.ok(geometry.priceLines>=1&&geometry.priceLines<=3);assert.deepEqual(geometry.top.slice(0,3),[181,18,27]);assert.ok(geometry.nameWhites>0,'name is visible in the top band');assert.ok(geometry.priceWhites>100,'price is visible in the same top band');
     const previewSource=await inspectSourcePixels(page,png,null);
     assert.equal(previewSource.mismatches,0,'every original source pixel is unchanged in preview');
     assert.equal(previewSource.compared,1200*800,'full source rectangle, including edges and corners, was checked without a mask');
