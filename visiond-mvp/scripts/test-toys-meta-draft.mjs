@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {onRequestPost as createProduct} from '../functions/api/admin/toys-center/index.js';
+import {onRequestGet as listDrafts,onRequestPost as createDraft} from '../functions/api/admin/toys-center/drafts/index.js';
+import {onRequestGet as getDraft,onRequestPut as updateDraft} from '../functions/api/admin/toys-center/drafts/[id].js';
+import {onRequestGet as getDraftImage} from '../functions/api/admin/toys-center/drafts/[id]/images/[slot].js';
+import {onRequestPost as aiFill} from '../functions/api/admin/toys-center/ai-fill.js';
+import {getStockFeed} from '../functions/api/toys-center/feed.csv.js';
+import {resolveToyMetaIndex} from '../functions/_toys_center.js';
+
+const db=new DatabaseSync(':memory:');
+for(const file of ['0071_toys_center.sql','0105_toys_center_product_line_series.sql','0106_toys_center_product_images.sql','0107_toys_center_product_cost.sql','0110_toys_center_shopee_handoff.sql','0134_stock_stores.sql','0135_toys_center_form_drafts.sql'])db.exec(readFileSync(new URL(`../migrations/${file}`,import.meta.url),'utf8'));
+const DB={prepare(sql){let args=[];return{bind(...values){args=values;return this},async first(){if(sql.includes('FROM sessions s JOIN users'))return{id:1,role:'boss'};return db.prepare(sql).get(...args)||null},async all(){return{results:db.prepare(sql).all(...args)}},async run(){const result=db.prepare(sql).run(...args);return{meta:{last_row_id:Number(result.lastInsertRowid),changes:Number(result.changes)}}}}},async batch(statements){db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push(await statement.run());db.exec('COMMIT');return results}catch(error){db.exec('ROLLBACK');throw error}}};
+const objects=new Map(),FILES={async put(key,buffer,{httpMetadata}={}){objects.set(key,{bytes:Buffer.from(buffer),type:httpMetadata?.contentType||'application/octet-stream'})},async get(key){const object=objects.get(key);return object?{body:new Response(object.bytes).body,arrayBuffer:async()=>object.bytes,httpMetadata:{contentType:object.type}}:null},async delete(key){objects.delete(key)}};
+const png=Buffer.from('89504e470d0a1a0a00000000','hex'),red=new File([png,Buffer.from('red')],'red.png',{type:'image/png'}),blue=new File([png,Buffer.from('blue')],'blue.png',{type:'image/png'});
+const makeForm=(fields={},images=[],meta=null)=>{const form=new FormData();form.set('store_id','toys-center');for(const [key,value] of Object.entries(fields))form.set(key,String(value));for(const file of images)form.append('image_1',file);if(meta)form.set('image_2',meta);return form};
+const ctx=(path,method='GET',form=null,{auth=true,params={}}={})=>({request:new Request(`https://test.invalid/api/admin/toys-center${path}`,{method,headers:auth?{cookie:'vd_session=test'}:{},body:form}),env:{DB,FILES},params,waitUntil:promise=>promise});
+
+assert.equal(resolveToyMetaIndex(makeForm({meta_zip_index:'1'}),2),1);
+assert.equal(resolveToyMetaIndex(makeForm({meta_zip_index:'2'}),2),-1);
+assert.equal(resolveToyMetaIndex(makeForm(),2),null);
+let response=await createDraft(ctx('/drafts','POST',makeForm(),{auth:false}));assert.equal(response.status,401,'drafts require admin login');
+response=await createDraft(ctx('/drafts','POST',makeForm({title:'ยังกรอกไม่ครบ'})));assert.equal(response.status,201,'incomplete form saves');const draftId=(await response.json()).id;
+assert.equal(db.prepare('SELECT COUNT(*) total FROM toys_center_products').get().total,0,'draft is not a product');
+let feed=await getStockFeed({request:new Request('https://test.invalid/api/toys-center/feed.csv'),env:{DB}},'toys-center');assert.equal((await feed.text()).includes('ยังกรอกไม่ครบ'),false,'draft is absent from Meta feed');
+response=await updateDraft(ctx(`/drafts/${draftId}`,'PUT',makeForm({title:'ของเล่นร่าง',description:'รายละเอียดในร่าง',meta_zip_index:'1',visiond_cover_index:'0'},[red,blue]),{params:{id:String(draftId)}}));assert.equal(response.status,200);
+response=await getDraft(ctx(`/drafts/${draftId}`,'GET',null,{params:{id:String(draftId)}}));let draft=await response.json();assert.equal(draft.fields.description,'รายละเอียดในร่าง');assert.equal(draft.gallery_count,2);assert.equal(draft.meta_zip_index,1);
+response=await getDraftImage(ctx(`/drafts/${draftId}/images/1`,'GET',null,{params:{id:String(draftId),slot:'1'}}));assert.equal(response.status,200);assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.from(await blue.arrayBuffer()));
+response=await getDraftImage(ctx(`/drafts/${draftId}/images/1`,'GET',null,{auth:false,params:{id:String(draftId),slot:'1'}}));assert.equal(response.status,401,'draft image requires admin login');
+const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify({title:'AI ช่วยกรอก'})}]}}]}),{status:200,headers:{'content-type':'application/json'}});try{const aiContext=ctx('/ai-fill','POST',makeForm({draft_id:draftId,visiond_cover_index:'0'}));aiContext.env.GEMINI_API_KEY='test';response=await aiFill(aiContext);assert.equal(response.status,200);assert.equal((await response.json()).fields.title,'AI ช่วยกรอก')}finally{globalThis.fetch=originalFetch}
+response=await updateDraft(ctx(`/drafts/${draftId}`,'PUT',makeForm({meta_zip_index:'2'}),{params:{id:String(draftId)}}));assert.equal(response.status,400,'invalid selection is rejected');
+response=await createProduct(ctx('','POST',makeForm({draft_id:draftId,meta_zip_index:'1'})));assert.equal(response.status,400,'incomplete draft cannot become a product');
+assert.ok(db.prepare('SELECT id FROM toys_center_form_drafts WHERE id=?').get(draftId));
+response=await createProduct(ctx('','POST',makeForm({draft_id:draftId,meta_id:'TOY-DRAFT',title:'ของเล่นพร้อมขาย',description:'รายละเอียดครบ',brand:'VisionD',price:'100',status:'published',meta_zip_index:'1',visiond_cover_index:'0'})));assert.equal(response.status,201,await response.text());
+const product=db.prepare('SELECT * FROM toys_center_products WHERE meta_id=?').get('TOY-DRAFT');assert.equal(product.status,'published');assert.equal(objects.get(product.image_2_key).bytes.toString('hex'),Buffer.from(await blue.arrayBuffer()).toString('hex'),'selected ZIP image feeds Meta');assert.equal(db.prepare('SELECT COUNT(*) total FROM toys_center_form_drafts').get().total,0,'finalized draft is removed');
+feed=await getStockFeed({request:new Request('https://test.invalid/api/toys-center/feed.csv'),env:{DB}},'toys-center');const csv=await feed.text();assert.ok(csv.includes('TOY-DRAFT'));assert.ok(csv.includes(`/api/toys-center/images/${product.id}/2`));
+response=await createProduct(ctx('','POST',makeForm({meta_id:'TOY-UPLOAD',title:'แยก Meta',description:'ครบ',brand:'VisionD',price:'9',meta_zip_index:'1'},[red,blue],red)));assert.equal(response.status,201,await response.text());const uploaded=db.prepare('SELECT image_2_key FROM toys_center_products WHERE meta_id=?').get('TOY-UPLOAD');assert.deepEqual(objects.get(uploaded.image_2_key).bytes,Buffer.from(await red.arrayBuffer()),'separate Meta upload wins over ZIP index');
+response=await createProduct(ctx('','POST',makeForm({meta_id:'TOY-ZIP',title:'จาก ZIP',description:'ครบ',brand:'VisionD',price:'9',meta_zip_index:'1'},[red,blue])));assert.equal(response.status,201,await response.text());const fromZip=db.prepare('SELECT image_2_key FROM toys_center_products WHERE meta_id=?').get('TOY-ZIP');assert.deepEqual(objects.get(fromZip.image_2_key).bytes,Buffer.from(await blue.arrayBuffer()),'new product uses selected ZIP image when separate Meta upload is absent');
+response=await createProduct(ctx('','POST',makeForm({meta_id:'TOY-NO-META',title:'ขาด Meta',description:'ครบ',brand:'VisionD',price:'9'},[red])));assert.equal(response.status,400,'missing Meta source rejected');
+response=await createProduct(ctx('','POST',makeForm({meta_id:'TOY-BAD-INDEX',title:'Meta ไม่ถูก',description:'ครบ',brand:'VisionD',price:'9',meta_zip_index:'2'},[red])));assert.equal(response.status,400,'out of range Meta index rejected');
+response=await listDrafts(ctx('/drafts'));assert.equal(response.status,200);assert.deepEqual((await response.json()).items,[]);
+for(let index=0;index<25;index++)db.prepare("INSERT INTO toys_center_form_drafts(store_id,fields_json,created_by) VALUES('toys-center','{}',1)").run();
+response=await listDrafts(ctx('/drafts'));const firstPage=await response.json();assert.equal(firstPage.items.length,24);assert.ok(firstPage.next_cursor);
+response=await listDrafts(ctx(`/drafts?cursor=${encodeURIComponent(firstPage.next_cursor)}`));const secondPage=await response.json();assert.equal(secondPage.items.length,1);assert.equal(secondPage.next_cursor,null);assert.equal(new Set([...firstPage.items,...secondPage.items].map(item=>item.id)).size,25,'draft cursor pages have no duplicates or omissions');
+const plan=db.prepare('EXPLAIN QUERY PLAN SELECT * FROM toys_center_form_drafts WHERE store_id=? ORDER BY updated_at DESC,id DESC LIMIT 25').all('toys-center');assert.ok(plan.some(row=>String(row.detail).includes('idx_toys_center_form_drafts_store_updated')),'draft list uses store/update index');
+console.log('PASS Toys Meta ZIP precedence, invalid/missing selection, admin-only incomplete draft save/reopen/finalize, feed isolation, indexed draft list');

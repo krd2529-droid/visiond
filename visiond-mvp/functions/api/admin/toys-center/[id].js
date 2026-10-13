@@ -1,5 +1,5 @@
 import {json,requireAdmin} from '../../../_lib.js';
-import {cleanupToyImages,putToyImage,putToyImages,readToyImage,resolveToyCoverIndex,toyProductFields} from '../../../_toys_center.js';
+import {cleanupToyImages,putToyImage,putToyImages,readToyImage,resolveToyCoverIndex,resolveToyMetaIndex,toyProductFields} from '../../../_toys_center.js';
 import {stockStore} from '../../../_stock.js';
 import {shopeeDerivativeKey} from '../../../_toys_center_shopee_images.js';
 
@@ -36,21 +36,25 @@ export async function onRequestPut(ctx){
   const f=toyProductFields(form),files=form.getAll('image_1').filter(file=>file instanceof File&&file.size),metaFiles=form.getAll('image_2').filter(file=>file instanceof File&&file.size);
   if(files.length>10)return json({error:'รูปสำหรับ VisionD เลือกได้สูงสุด 10 รูป'},400,headers);
   if(metaFiles.length>1)return json({error:'รูปสำหรับ Meta Catalog เลือกได้ 1 รูป'},400,headers);
+  const metaIndex=metaFiles.length?null:resolveToyMetaIndex(form,files.length||oldGallery.length);
+  if(metaIndex===-1)return json({error:'รูป Meta ที่เลือกไม่ถูกต้อง'},400,headers);
   if([f.shopeeWeightG,f.shopeePackageWidthMm,f.shopeePackageLengthMm,f.shopeePackageHeightMm].some(value=>value===-1))return json({error:'น้ำหนักหรือขนาดพัสดุไม่ถูกต้อง'},400,headers);
-  if(!f.metaId||!f.title||!f.description||!f.brand||f.priceCents<0||f.costCents<0)return json({error:'กรุณากรอก ID ชื่อ รายละเอียด ราคา และแบรนด์ให้ถูกต้อง'},400,headers);
+  if(!f.metaId||!f.title||!f.description||!f.brand||String(form.get('price')??'').trim()===''||f.priceCents<0||f.costCents<0)return json({error:'กรุณากรอก ID ชื่อ รายละเอียด ราคา และแบรนด์ให้ถูกต้อง'},400,headers);
   const currentIndex=Math.max(0,oldGallery.findIndex(item=>item.image_key===old.image_1_key)),coverIndex=resolveToyCoverIndex(form,files.length||oldGallery.length,files.length?0:currentIndex);
   if(coverIndex<0)return json({error:'รูปปก VisionD ไม่ถูกต้อง'},400,headers);
   let galleryKeys=[],metaKey='';
   try{
     const [gallery,meta]=await Promise.all([Promise.all(files.map((file,index)=>readToyImage(file,`VisionD ${index+1}`))),readToyImage(metaFiles[0],'Meta',{required:false})]);
     galleryKeys=await putToyImages(ctx,gallery,'visiond');metaKey=await putToyImage(ctx.env,meta,'meta');
+    if(!metaKey&&metaIndex!==null){metaKey=gallery[metaIndex]?await putToyImage(ctx.env,gallery[metaIndex],'meta'):oldGallery[metaIndex]?.image_key||''}
+    const effectiveMetaKey=metaKey||old.image_2_key;
     const primary=galleryKeys.length?galleryKeys[coverIndex]:oldGallery[coverIndex]?.image_key||oldGallery[0]?.image_key||old.image_1_key;
-    const update=ctx.env.DB.prepare(`UPDATE toys_center_products SET meta_id=?,slug=?,title=?,description=?,availability=?,condition=?,price_cents=?,cost_cents=?,brand=?,product_line=?,series=?,quantity=?,image_1_key=?,image_2_key=?,google_product_category=?,fb_product_category=?,gtin=?,item_group_id=?,color=?,size=?,material=?,pattern=?,age_group=?,gender=?,product_tags=?,shopee_weight_g=?,shopee_package_width_mm=?,shopee_package_length_mm=?,shopee_package_height_mm=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND store_id=?`).bind(f.metaId,f.slug,f.title,f.description,f.availability,f.condition,f.priceCents,f.costCents,f.brand,f.productLine,f.series,f.quantity,primary,metaKey||old.image_2_key,f.google,f.facebook,f.gtin,f.group,f.color,f.size,f.material,f.pattern,f.age,f.gender,f.tags,f.shopeeWeightG,f.shopeePackageWidthMm,f.shopeePackageLengthMm,f.shopeePackageHeightMm,f.status,old.id,old.store_id);
+    const update=ctx.env.DB.prepare(`UPDATE toys_center_products SET meta_id=?,slug=?,title=?,description=?,availability=?,condition=?,price_cents=?,cost_cents=?,brand=?,product_line=?,series=?,quantity=?,image_1_key=?,image_2_key=?,google_product_category=?,fb_product_category=?,gtin=?,item_group_id=?,color=?,size=?,material=?,pattern=?,age_group=?,gender=?,product_tags=?,shopee_weight_g=?,shopee_package_width_mm=?,shopee_package_length_mm=?,shopee_package_height_mm=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND store_id=?`).bind(f.metaId,f.slug,f.title,f.description,f.availability,f.condition,f.priceCents,f.costCents,f.brand,f.productLine,f.series,f.quantity,primary,effectiveMetaKey,f.google,f.facebook,f.gtin,f.group,f.color,f.size,f.material,f.pattern,f.age,f.gender,f.tags,f.shopeeWeightG,f.shopeePackageWidthMm,f.shopeePackageLengthMm,f.shopeePackageHeightMm,f.status,old.id,old.store_id);
     const statements=[update];
     if(galleryKeys.length)statements.push(ctx.env.DB.prepare('DELETE FROM toys_center_product_images WHERE product_id=?').bind(old.id),...galleryKeys.map((key,position)=>ctx.env.DB.prepare('INSERT INTO toys_center_product_images(product_id,position,image_key) VALUES(?,?,?)').bind(old.id,position,key)));
     await ctx.env.DB.batch(statements);
-    const stale=[...(galleryKeys.length?(oldRows.length?oldRows.flatMap(item=>[item.image_key,shopeeDerivativeKey(item.id)]):[old.image_1_key]):[]),...(metaKey?[old.image_2_key]:[])];
+    const stale=[...(galleryKeys.length?(oldRows.length?oldRows.flatMap(item=>[item.image_key,shopeeDerivativeKey(item.id)]):[old.image_1_key]):[]),...(metaKey?[old.image_2_key]:[])].filter(key=>key!==effectiveMetaKey);
     await cleanupToyImages(ctx,stale);
     return json({ok:true,id:old.id,message:`แก้ไขสินค้า ${old.store_id==='zippo'?'Zippo':'Toys Center'} สำเร็จ`},200,headers);
-  }catch(error){await cleanupToyImages(ctx,[...galleryKeys,metaKey]);return json({error:/unique/i.test(String(error))?'ID หรือ slug สินค้านี้มีอยู่แล้ว':String(error.message||error)},/unique/i.test(String(error))?409:400,headers)}
+  }catch(error){await cleanupToyImages(ctx,[...galleryKeys,metaKey].filter(key=>key!==old.image_2_key&&!oldGallery.some(item=>item.image_key===key)));return json({error:/unique/i.test(String(error))?'ID หรือ slug สินค้านี้มีอยู่แล้ว':String(error.message||error)},/unique/i.test(String(error))?409:400,headers)}
 }
