@@ -88,6 +88,19 @@ async function fetchCh8Publication(item){
   finally{if(reader)await reader.cancel().catch(()=>{});else if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
 }
 
+async function savedCh8Candidates(db,owner,day,previous){
+  const candidates=[];
+  for(const newsDay of [day,previous]){
+    const rows=(await db.prepare("SELECT id,news_day,source,headline,source_url,observed_at FROM news_channel_items INDEXED BY idx_news_channel_owner_day_id WHERE owner_id=? AND news_day=? AND source='ช่อง 8' AND origin='index' AND published_at IS NULL ORDER BY id DESC LIMIT 6").bind(owner,newsDay).all()).results||[];
+    candidates.push(...rows);
+  }
+  const seen=new Set();
+  return candidates.filter(item=>{
+    if(sourceForUrl(item.source_url)?.source!=='ช่อง 8'||seen.has(item.source_url))return false;
+    seen.add(item.source_url);return true;
+  });
+}
+
 const rollingCursor=value=>{
   if(!value)return null;
   const match=String(value).match(/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)~(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)~(\d+)~(\d+)$/);
@@ -121,11 +134,12 @@ export async function rollingRefresh(ctx,owner,now=new Date()){
   if(!Number(claim.meta?.changes||0)){
     const recent=await db.prepare('SELECT state FROM news_channel_refresh WHERE owner_id=? AND news_day=?').bind(owner,key).first(),state=recent?.state||'running';
     const result=await rollingPage(db,owner,now);
-    return {...result,reused:true,state,sources:NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:state==='partial'?result.total:0,available:state==='partial',...(state==='unavailable'?{error_code:'recent_attempt'}:{})}:{name:source.name,found:0,available:false,error_code:'timestamp_unverified'}),message:state==='unavailable'?'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; รอ 2 นาทีแล้วลองค้นหาใหม่':state==='running'?'กำลังค้นข่าวอยู่ กรุณารอสักครู่':'ใช้ผลค้นหาล่าสุดชั่วคราว; ข่าวที่พ้น 24 ชั่วโมงถูกตัดออกแล้ว'};
+    return {...result,reused:true,state,sources:NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:state==='partial'||state==='partial_saved'?result.total:0,available:state==='partial',...(state==='partial_saved'?{limited:true,error_code:'recent_attempt'}:state==='unavailable'?{error_code:'recent_attempt'}:{})}:{name:source.name,found:0,available:false,error_code:'timestamp_unverified'}),message:state==='unavailable'?'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; รอ 2 นาทีแล้วลองค้นหาใหม่':state==='running'?'กำลังค้นข่าวอยู่ กรุณารอสักครู่':state==='partial_saved'?'ตรวจเวลาเผยแพร่จากลิงก์ข่าวที่เคยพบได้บางส่วน; รายการข่าวใหม่จากต้นทางยังไม่พร้อม':'ใช้ผลค้นหาล่าสุดชั่วคราว; ข่าวที่พ้น 24 ชั่วโมงถูกตัดออกแล้ว'};
   }
   const listing=await fetchCh8Listing(day,previous,nowIso),verified=[];
-  if(listing.items)for(let index=0;index<listing.items.length;index+=5){
-    const batch=await Promise.all(listing.items.slice(index,index+5).map(async item=>({item,published:await fetchCh8Publication(item)})));
+  const candidates=listing.items||await savedCh8Candidates(db,owner,day,previous);
+  for(let index=0;index<candidates.length;index+=5){
+    const batch=await Promise.all(candidates.slice(index,index+5).map(async item=>({item,published:await fetchCh8Publication(item)})));
     for(const {item,published} of batch){
       if(!published||bangkokDay(new Date(published))!==item.news_day||published<window.start||published>window.end)continue;
       verified.push({...item,published_at:published});
@@ -141,10 +155,11 @@ export async function rollingRefresh(ctx,owner,now=new Date()){
     const result=await db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(?,?,?,?,?,?,?,'index') ON CONFLICT(owner_id,news_day,source_url) DO NOTHING").bind(owner,item.news_day,item.source,item.headline,item.source_url,item.observed_at,item.published_at).run();
     if(Number(result.meta?.changes||0))stored++;
   }
-  const state=listing.error_code?'unavailable':'partial';
+  const state=listing.error_code?(stored?'partial_saved':'unavailable'):'partial';
   await db.prepare('UPDATE news_channel_refresh SET state=?,refreshed_at=?,lease_until=NULL WHERE owner_id=? AND news_day=?').bind(state,nowIso,owner,key).run();
-  const sources=NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:stored,available:!listing.error_code,...(listing.error_code?{error_code:listing.error_code}:{})}:{name:source.name,found:0,available:false,error_code:'timestamp_unverified'});
-  return {...await rollingPage(db,owner,now),state,sources,message:listing.error_code?'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; ไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด':stored?'แสดงเฉพาะข่าวที่ยืนยันเวลาเผยแพร่จากต้นทางใน 24 ชั่วโมงล่าสุด':'ยังไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด'};
+  const sources=NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:stored,available:!listing.error_code,...(listing.error_code?{error_code:listing.error_code,...(stored?{limited:true}:{})}:{})}:{name:source.name,found:0,available:false,error_code:'timestamp_unverified'});
+  const result=await rollingPage(db,owner,now);
+  return {...result,state,sources,message:state==='partial_saved'?'ตรวจเวลาเผยแพร่จากลิงก์ข่าวที่เคยพบได้บางส่วน; รายการข่าวใหม่จากต้นทางยังไม่พร้อม':listing.error_code?result.total?'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; แสดงเฉพาะข่าวที่เคยยืนยันเวลาเผยแพร่ไว้':'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; ไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด':stored?'แสดงเฉพาะข่าวที่ยืนยันเวลาเผยแพร่จากต้นทางใน 24 ชั่วโมงล่าสุด':'ยังไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด'};
 }
 
 async function refresh(ctx,owner,day){

@@ -24,11 +24,11 @@ assert.equal(parseCh8PublishedAt('<h1>ข่าวหลักไม่มีเ
 assert.equal(parseCh8PublishedAt('<h1>ข่าวหลัก</h1><div>14 ตุลาคม 2569</div>'),null,'date-only article is not timed');
 assert.equal(parseCh8PublishedAt(detail('31 กุมภาพันธ์ 2569','17:34')),null,'invalid publisher calendar date');
 let listing=[card(145074),card(145074),card(145068),card(145080),card(145081),card(145082,'15 ตุลาคม 2569'),card(145083,'15 ตุลาคม 2569'),card(145089,'15 ตุลาคม 2569'),card(145084),card(145085),card(145090),card(145091)].join('');
-const details=new Map([[145074,detail('14 ตุลาคม 2569','17:34')],[145068,detail('14 ตุลาคม 2569','06:38')],[145080,detail('14 ตุลาคม 2569','08:00')],[145081,detail('14 ตุลาคม 2569','07:59')],[145082,detail('15 ตุลาคม 2569','08:01')],[145083,detail('15 ตุลาคม 2569','07:59')],[145089,detail('15 ตุลาคม 2569','08:00')],[145084,'<h1>ข่าวหลักไม่มีเวลา</h1>'],[145085,'<h1>ข่าวหลักไม่มีเวลา</h1><div>ไม่มีเวลา</div>'+(' '.repeat(1100))+detail('14 ตุลาคม 2569','17:34')],[145090,'redirect'],[145091,'oversize']]);
+const details=new Map([[145074,detail('14 ตุลาคม 2569','17:34')],[145068,detail('14 ตุลาคม 2569','06:38')],[145080,detail('14 ตุลาคม 2569','08:00')],[145081,detail('14 ตุลาคม 2569','07:59')],[145082,detail('15 ตุลาคม 2569','08:01')],[145083,detail('15 ตุลาคม 2569','07:59')],[145089,detail('15 ตุลาคม 2569','08:00')],[145084,'<h1>ข่าวหลักไม่มีเวลา</h1>'],[145085,'<h1>ข่าวหลักไม่มีเวลา</h1><div>ไม่มีเวลา</div>'+(' '.repeat(1100))+detail('14 ตุลาคม 2569','17:34')],[145090,'redirect'],[145091,'oversize'],[145092,'timeout'],[145093,'http']]);
 let listingCalls=0,detailCalls=0,detailCancelled=0,listingFailure=false;
 globalThis.fetch=async(url,options={})=>{
   if(String(url)==='https://www.thaich8.com/news'){listingCalls++;assert.equal(options.redirect,'manual');return listingFailure?new Response('upstream unavailable',{status:503}):new Response(listing,{status:200})}
-  const id=Number(String(url).match(/\/news_detail\/(\d+)/)?.[1]);assert.ok(details.has(id),'only allowlisted CH8 article routes are fetched');assert.equal(options.redirect,'manual');detailCalls++;if(id===145090)return new Response(null,{status:302,headers:{location:'https://evil.example/news_detail/999999'}});if(id===145091)return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(131073))},cancel(){detailCancelled++}}),{status:200});return new Response(details.get(id),{status:200});
+  const id=Number(String(url).match(/\/news_detail\/(\d+)/)?.[1]);assert.ok(details.has(id),'only allowlisted CH8 article routes are fetched');assert.equal(options.redirect,'manual');detailCalls++;if(id===145090)return new Response(null,{status:302,headers:{location:'https://evil.example/news_detail/999999'}});if(id===145091)return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(131073))},cancel(){detailCancelled++}}),{status:200});if(id===145092)throw new DOMException('timeout','AbortError');if(id===145093)return new Response('denied',{status:403});return new Response(details.get(id),{status:200});
 };
 db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(1,'2026-10-14','ช่อง 8','ข่าวเก่าที่ต้องยืนยันใหม่','https://www.thaich8.com/news_detail/145074/story','2026-10-14T12:00:00.000Z',NULL,'index')").run();
 db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(1,'2026-10-14','ไทยรัฐ','ลิงก์ที่ผู้ใช้เพิ่มเองเมื่อคืน','https://www.thairath.co.th/news/society/9999999','2026-10-14T16:50:00.000Z',NULL,'manual')").run();
@@ -82,6 +82,29 @@ const cooled=await rollingRefresh({env:{DB:D1}},1,new Date('2026-10-15T08:10:01+
 assert.equal(cooled.reused,true);assert.equal(cooled.state,'unavailable');assert.match(cooled.message,/รอ 2 นาที/);assert.equal(listingCalls,failedBefore+1,'repeated click after source failure does not refetch during cooldown');
 await rollingRefresh({env:{DB:D1}},1,new Date('2026-10-15T08:12:01+07:00'));
 assert.equal(listingCalls,failedBefore+2,'failed source may retry after bounded cooldown');listingFailure=false;
+for(const id of [145074,145068,145080,145081,145084,145085])db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(2,'2026-10-14','ช่อง 8',?,?,'2026-10-14T12:00:00.000Z',NULL,'index')").run(`ข่าวช่องแปดหมายเลข ${id} มีพาดหัวครบถ้วน`,`https://www.thaich8.com/news_detail/${id}/story`);
+listingFailure=true;
+const savedDetailBefore=detailCalls;
+const fromSavedLinks=await rollingRefresh({env:{DB:D1}},2,now);
+assert.deepEqual(new Set(fromSavedLinks.items.map(item=>Number(item.source_url.match(/\/news_detail\/(\d+)/)[1]))),new Set([145074,145080]),'when official listing is unavailable, previously indexed official links are verified against publisher article time');
+assert.equal(fromSavedLinks.total,2,'stale and untimed saved links are excluded from rolling results');
+assert.equal(detailCalls-savedDetailBefore,6,'fallback checks at most the six saved prior-day links for this owner');
+assert.equal(fromSavedLinks.state,'partial_saved');assert.equal(fromSavedLinks.sources[3].limited,true);assert.equal(fromSavedLinks.sources[3].available,false);assert.equal(fromSavedLinks.sources[3].error_code,'http_503','source-listing failure code stays sanitized in normal response');
+assert.equal(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=2 AND published_at IS NOT NULL").get().n,2,'only verified source timestamps are written');
+assert.equal(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=2 AND origin='index'").get().n,6,'saved official links are updated in place under their existing unique keys');
+assert.equal(db.prepare("SELECT id FROM news_channel_items WHERE owner_id=2 AND source_url LIKE '%145074%'").get().id,fromSavedLinks.items.find(item=>item.source_url.includes('145074')).id,'verified saved article keeps its existing row ID');
+const savedCalls=detailCalls,savedReused=await rollingRefresh({env:{DB:D1}},2,now);
+assert.equal(savedReused.reused,true);assert.equal(savedReused.state,'partial_saved');assert.equal(savedReused.sources[3].limited,true);assert.equal(savedReused.total,2);assert.equal(detailCalls,savedCalls,'saved-link fallback shares the rolling cooldown');
+const savedPlan=db.prepare("EXPLAIN QUERY PLAN SELECT id FROM news_channel_items INDEXED BY idx_news_channel_owner_day_id WHERE owner_id=? AND news_day=? AND source='ช่อง 8' AND origin='index' AND published_at IS NULL ORDER BY id DESC LIMIT 6").all(2,'2026-10-14').map(row=>row.detail).join(' ');
+assert.match(savedPlan,/idx_news_channel_owner_day_id/,'saved-link fallback uses owner/day index');
+for(const id of [145068,145084,145090,145091,145092,145093])db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(3,'2026-10-14','ช่อง 8',?,?,'2026-10-14T12:00:00.000Z',NULL,'index')").run(`ข่าวช่องแปดหมายเลข ${id} มีพาดหัวครบถ้วน`,`https://www.thaich8.com/news_detail/${id}/story`);
+db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(3,'2026-10-14','ช่อง 8','ลิงก์ต่างโดเมน','https://evil.example/news_detail/999999','2026-10-14T12:00:00.000Z',NULL,'index')").run();
+db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(3,'2026-10-14','ช่อง 8','ลิงก์เพิ่มเอง','https://www.thaich8.com/news_detail/145074/manual','2026-10-14T12:00:00.000Z',NULL,'manual')").run();
+const failedDetailBefore=detailCalls,failedSaved=await rollingRefresh({env:{DB:D1}},3,now);
+assert.equal(failedSaved.state,'unavailable');assert.equal(failedSaved.total,0,'stale, undated, redirect, oversized, timeout and 403 details never become rolling news');
+assert.ok(detailCalls-failedDetailBefore<=6,'saved-link detail fanout is bounded');
+assert.equal(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=3 AND published_at IS NOT NULL").get().n,0,'unverified fallback makes no publication writes');
+listingFailure=false;
 const unauthorized=await onRequestGet({request:new Request('https://visiondonline.com/api/admin/news-channel'),env:{DB:D1}});
 assert.equal(unauthorized.status,401,'rolling GET remains authenticated');
 console.log('news-channel rolling: real-source timestamp precedence, crossover, expiry, manual backlog and indexed reads PASS');
