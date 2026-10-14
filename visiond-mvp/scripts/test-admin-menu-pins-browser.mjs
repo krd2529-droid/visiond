@@ -42,7 +42,16 @@ try{
     const page=await context.newPage();
     await page.goto(`${base}/admin.html`);
     await page.waitForSelector('.admin-menu-item .admin-pin-toggle');
-    assert.equal(await page.locator('.admin-menu-item').count(),37,'static plus middleware destinations');
+    const newsShortcut=page.locator('#adminPanel > .admin-news-shortcut[href="/news-channel.html"]');
+    assert.equal(await newsShortcut.isVisible(),true,'news shortcut is visible above personal pins');
+    assert.equal(await page.evaluate(()=>document.querySelector('.admin-news-shortcut').getBoundingClientRect().top<document.querySelector('.admin-pinned-heading').getBoundingClientRect().top),true,'news shortcut precedes the pinned-menu heading');
+    assert.equal(await page.locator('.admin-menu-item:has(> a[href="/news-channel.html"])').count(),1,'news stays in pinnable all-menu');
+    const newsPage=await context.newPage();
+    await newsPage.goto(`${base}/admin.html`);
+    await newsPage.locator('.admin-news-shortcut').click();
+    await newsPage.waitForURL('**/news-channel.html');
+    await newsPage.close();
+    assert.equal(await page.locator('.admin-menu-item').count(),38,'static plus middleware destinations, including news');
     const vedit=page.locator('.admin-menu-item:has(> a[href="/vedit"])');
     assert.equal(await vedit.count(),1,'Vedit is available in the admin all-menu grid');
     await vedit.locator('.admin-pin-toggle').click();
@@ -110,7 +119,14 @@ try{
     await page.reload();await page.waitForSelector('.admin-menu-item .admin-pin-toggle');
     assert.equal(await page.locator('.admin-tabs > [data-admin-pinned-id]').count(),0);
     assert.equal(await page.locator('#adminPinnedEmpty').isVisible(),true,'empty state visible');
-    assert.equal(await page.locator('.admin-menu-item').count(),33,'Admin has every non-Boss destination');
+    assert.equal(await newsShortcut.isVisible(),true,'news shortcut remains visible with no saved pins');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'news shortcut does not overflow viewport');
+    if(process.env.ADMIN_NAV_SCREENSHOTS){
+      fs.mkdirSync(process.env.ADMIN_NAV_SCREENSHOTS,{recursive:true});
+      await page.evaluate(()=>scrollTo(0,0));
+      await page.screenshot({path:path.join(process.env.ADMIN_NAV_SCREENSHOTS,`admin-news-shortcut-${width}.png`),fullPage:false});
+    }
+    assert.equal(await page.locator('.admin-menu-item').count(),34,'Admin has every non-Boss destination, including news');
     assert.equal(await page.locator('.admin-menu-item:has(> a[href="/vedit"])').count(),1,'Admin role can reach Vedit menu');
     assert.equal(await page.evaluate(()=>document.querySelector('.admin-menu-board').scrollWidth>document.querySelector('.admin-menu-board').clientWidth),false,'all-menu grid fits viewport');
     await context.close();
