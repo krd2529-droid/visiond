@@ -14,6 +14,23 @@ async function page(db,owner,day,cursor=0){
   return {items:rows.slice(0,24),next_cursor:rows.length>24?rows[23].id:null,total:Number(count?.n||0),limit:maxItems};
 }
 
+async function probeSource(day){
+  const simple=new URL('https://api.gdeltproject.org/api/v2/doc/doc');
+  simple.search=new URLSearchParams({query:'domainis:thairath.co.th',mode:'artlist',format:'json',maxrecords:'1',timespan:'1d'}).toString();
+  const run=async(variant,url)=>{
+    const started=Date.now();let status=null,error_code=null;
+    try{
+      const response=await fetch(url,{signal:AbortSignal.timeout(8000),headers:{accept:'application/json'}});
+      status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:null;
+      if(Number(response.headers.get('content-length')||0)>1_500_000)error_code='too_large';
+      else if(response.ok){const body=await response.text();if(body.length>1_500_000)error_code='too_large'}
+      else await response.body?.cancel();
+    }catch(error){error_code=error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network'}
+    return {variant,status,duration_ms:Math.min(30000,Math.max(0,Date.now()-started)),...(error_code?{error_code}:{})};
+  };
+  return {probes:[await run('simple',simple.toString()),await run('current',gdeltUrl(day,NEWS_SOURCES[0].domain))]};
+}
+
 async function refresh(ctx,owner,day){
   const db=ctx.env.DB,now=new Date(),nowIso=now.toISOString(),lease=new Date(now.getTime()+60000).toISOString(),stale=new Date(now.getTime()-30*60000).toISOString();
   const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,day,lease,nowIso,stale).run();
@@ -74,4 +91,4 @@ async function script(ctx,owner,body){
 }
 
 export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url),day=safeDay(url.searchParams.get('day')||bangkokDay()),cursor=Number(url.searchParams.get('cursor')||0);if(!day||!Number.isSafeInteger(cursor)||cursor<0)return reply({error:'วันหรือ cursor ไม่ถูกต้อง'},400);return reply({...await page(ctx.env.DB,auth.user.id,day,cursor),day,styles:NEWS_STYLES});}
-export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
+export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}

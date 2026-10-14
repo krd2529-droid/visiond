@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
-import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltWindow,parseGdeltArticles,sourceForUrl} from '../functions/_news-channel.js';
+import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltUrl,gdeltWindow,parseGdeltArticles,sourceForUrl} from '../functions/_news-channel.js';
 import {onRequestGet,onRequestPost} from '../functions/api/admin/news-channel.js';
 
 const db=new DatabaseSync(':memory:');
@@ -40,9 +40,9 @@ assert.equal((await onRequestGet(context('GET',undefined,null,false))).status,40
 
 const indexed=Array.from({length:30},(_,i)=>({url:`https://www.thairath.co.th/news/society/${3000000+i}`,title:`หัวข้อข่าวที่ตรวจจากดัชนี ${i}`,seendate:'20261014T010000Z'}));
 assert.equal(parseGdeltArticles({articles:[...indexed,{...indexed[0]},{url:'https://evil.example/news',title:'fake',seendate:'20261014T010000Z'},{url:'https://www.thairath.co.th/news/society/2999999',title:'old',seendate:'20261013T010000Z'}]},day,NEWS_SOURCES[0]).length,30);
-let indexCalls=0,manualCalls=0,failureMode=null;
+let indexCalls=0,manualCalls=0,failureMode=null,probeCapture=false,probeUrls=[];
 globalThis.fetch=async(url,options={})=>{
-  if(String(url).includes('api.gdeltproject.org')){indexCalls++;const query=new URL(url).searchParams.get('query');if(failureMode==='mixed'&&!query.includes('thairath'))return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='http_503')return new Response('SECRET UPSTREAM BODY',{status:503});if(failureMode==='http_429')return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='timeout')throw Object.assign(new Error('SECRET TIMEOUT'),{name:'TimeoutError'});if(failureMode==='network')throw new Error('SECRET NETWORK');if(failureMode==='bad_json')return new Response('SECRET NOT JSON',{status:200});if(failureMode==='too_large')return new Response('SECRET',{status:200,headers:{'content-length':'1500001'}});return new Response(JSON.stringify({articles:query.includes('thairath')?indexed:[]}),{status:200,headers:{'content-type':'application/json'}})}
+  if(String(url).includes('api.gdeltproject.org')){indexCalls++;if(probeCapture)probeUrls.push(String(url));const query=new URL(url).searchParams.get('query');if(failureMode==='mixed'&&!query.includes('thairath'))return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='http_503')return new Response('SECRET UPSTREAM BODY',{status:503});if(failureMode==='http_429')return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='timeout')throw Object.assign(new Error('SECRET TIMEOUT'),{name:'TimeoutError'});if(failureMode==='network')throw new Error('SECRET NETWORK');if(failureMode==='bad_json')return new Response('SECRET NOT JSON',{status:200});if(failureMode==='too_large')return new Response('SECRET',{status:200,headers:{'content-length':'1500001'}});return new Response(JSON.stringify({articles:query.includes('thairath')?indexed:[]}),{status:200,headers:{'content-type':'application/json'}})}
   if(String(url).includes('generativelanguage.googleapis.com'))return new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify({scenes:Array.from({length:4},(_,i)=>({label:`ฉาก ${i+1}`,text:'สมถุ๋ยรายงานจากข้อมูลที่ตรวจแล้ว ขอให้ทุกคนอ่านแหล่งข่าวต้นฉบับประกอบ',video_direction:'สมถุ๋ยยืนหน้าปกนิ่ง แสดงสีหน้าและขยับมือเท่านั้น',vfx:'แสงเน้นใบหน้า',sfx_type:'เสียงเคาะข่าว',sfx_at_seconds:4.5}))})}]}}]}),{status:200});
   manualCalls++;if(options.method==='HEAD')return new Response(null,{status:405});return new Response('',{status:206});
 };
@@ -73,6 +73,20 @@ for(const [mode,testDay] of [['http_503','2026-10-12'],['http_429','2026-10-11']
 }
 failureMode=null;
 failureMode='mixed';const partial=await json(await post({action:'refresh',day:'2026-10-06'}));assert.equal(partial.state,'partial');assert.equal(partial.sources[0].available,true);assert.equal(partial.sources[0].error_code,undefined);assert.deepEqual(partial.sources.slice(1).map(source=>source.error_code),['http_429','http_429','http_429']);failureMode=null;
+const beforeProbeRows=db.prepare('SELECT COUNT(*) n FROM news_channel_refresh').get().n;
+probeCapture=true;const probe=await json(await post({action:'probe',day}));probeCapture=false;
+assert.deepEqual(probe.probes.map(item=>item.variant),['simple','current']);
+assert.equal(probe.probes.every(item=>item.status===200&&item.duration_ms>=0&&item.duration_ms<=30000),true);
+assert.equal(probeUrls.length,2,'probe makes only two sequential provider requests');
+assert.equal(new URL(probeUrls[0]).searchParams.get('maxrecords'),'1');
+assert.equal(new URL(probeUrls[0]).searchParams.get('timespan'),'1d');
+assert.equal(probeUrls[1],gdeltUrl(day,NEWS_SOURCES[0].domain),'current variant is the unchanged retrieval query');
+assert.equal(db.prepare('SELECT COUNT(*) n FROM news_channel_refresh').get().n,beforeProbeRows,'probe writes no refresh checkpoint');
+assert.equal((await post({action:'probe',day:'invalid'})).status,400);
+const beforeUnauthProbe=indexCalls;assert.equal((await onRequestPost(context('POST',undefined,{action:'probe',day},false))).status,401);assert.equal(indexCalls,beforeUnauthProbe,'unauthenticated probe makes no provider calls');
+failureMode='timeout';const timedProbe=await json(await post({action:'probe',day}));failureMode=null;
+assert.deepEqual(timedProbe.probes.map(item=>({status:item.status,error_code:item.error_code})),[{status:null,error_code:'timeout'},{status:null,error_code:'timeout'}]);
+assert.doesNotMatch(JSON.stringify(timedProbe),/SECRET|gdeltproject|https?:/i,'probe response contains no raw upstream details');
 assert.equal((await post({action:'script',id:manual.items[0].id,style:NEWS_STYLES[0],notes:'สั้น'})).status,422,'script requires factual notes');
 assert.equal((await post({action:'script',id:manual.items[0].id,style:'invented',notes:'ข้อมูลที่ตรวจจากข่าวต้นฉบับมีรายละเอียดเพียงพอสำหรับร่างบท'})).status,422,'style allowlist');
 const script=await json(await post({action:'script',id:manual.items[0].id,style:NEWS_STYLES[0],notes:'ข้อมูลที่ตรวจจากข่าวต้นฉบับมีรายละเอียดเพียงพอสำหรับร่างบท'}));
