@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
-import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltUrl,gdeltWindow,parseGdeltArticles,sourceForUrl} from '../functions/_news-channel.js';
+import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltUrl,gdeltWindow,parseGdeltArticles,parseCh8Listing,sourceForUrl} from '../functions/_news-channel.js';
 import {onRequestGet,onRequestPost} from '../functions/api/admin/news-channel.js';
 
 const db=new DatabaseSync(':memory:');
@@ -40,10 +40,25 @@ assert.equal((await onRequestGet(context('GET',undefined,null,false))).status,40
 
 const indexed=Array.from({length:30},(_,i)=>({url:`https://www.thairath.co.th/news/society/${3000000+i}`,title:`หัวข้อข่าวที่ตรวจจากดัชนี ${i}`,seendate:'20261014T010000Z'}));
 assert.equal(parseGdeltArticles({articles:[...indexed,{...indexed[0]},{url:'https://evil.example/news',title:'fake',seendate:'20261014T010000Z'},{url:'https://www.thairath.co.th/news/society/2999999',title:'old',seendate:'20261013T010000Z'}]},day,NEWS_SOURCES[0]).length,30);
+const ch8Card=(id,date='14 ตุลาคม 2569',headline=`พาดหัวข่าวช่องแปดหมายเลข ${id}`,href=`/news_detail/${id}/story`)=>`<div class="news-post image-post2"><a href="${href}"><img alt="PHOTO IS NOT COPIED"></a><h2><a href="${href}">${headline}</a></h2><div class="dateline"><span class="date"><i class="fa fa-calendar"></i>&nbsp;${date}</span><span><i class="fa fa-eye"></i>&nbsp;244</span></div></div>`;
+const ch8Standard=(id,headline=`ข่าวเพิ่มเติมช่องแปดหมายเลข ${id}`)=>`<div class="news-post standard-post2"><h3><a href="/news_detail/${id}/story">${headline}</a></h3><div class="hidden-sm dateline"><span><i class="fa fa-calendar"></i>&nbsp;14 ตุลาคม 2569</span></div></div>`;
+assert.equal(parseCh8Listing(ch8Card(145301)+ch8Standard(145302)+ch8Standard(145303,'ข่าวที่ถูกตัด...'),day).items.length,2,'image and standard cards are accepted only with complete headlines');
+const fixtureHtml=[...Array.from({length:28},(_,i)=>ch8Card(145100+i)),ch8Card(145100),ch8Card(145200,'13 ตุลาคม 2569'),ch8Card(145201,'15 ตุลาคม 2569'),ch8Card(145202,'14 ตุลาคม 2569','หัวข้อปลอมจากโฮสต์อื่น','https://evil.example/news_detail/145202'),ch8Card(145203,'14 ตุลาคม 2569','หัวข้อไม่ใช่บทความ','/condition'),ch8Card(145204,'14 ตุลาคม 2569','หัวข้อถูกตัด…'),ch8Card(145205,'31 กุมภาพันธ์ 2569')].join('');
+const parsedCh8=parseCh8Listing(fixtureHtml,day,'2026-10-14T10:00:00.000Z');
+assert.equal(parsedCh8.items.length,25,'first-party listing is capped at 25');
+assert.equal(new Set(parsedCh8.items.map(item=>item.source_url)).size,25,'duplicate article links are removed');
+assert.equal(parsedCh8.items.every(item=>item.source==='ช่อง 8'&&item.headline.startsWith('พาดหัวข่าว')&&item.published_at===null),true,'only verified headline/date/link metadata is retained');
+assert.equal(parseCh8Listing(ch8Card(145300,'13 ตุลาคม 2569'),day).items.length,0,'stale news is not relabelled as today');
+assert.equal(parseCh8Listing(ch8Card(145301,'15 ตุลาคม 2569'),day).items.length,0,'future-dated news is not relabelled as today');
+assert.equal(parseCh8Listing(ch8Card(145301,'15 ตุลาคม 2569'),'2026-10-15','2026-10-14T10:00:00.000Z').items.length,0,'a future calendar day is rejected even when requested explicitly');
+assert.equal(parseCh8Listing(ch8Card(145302,'31 กุมภาพันธ์ 2569'),day).items.length,0,'invalid Thai calendar dates are discarded');
+assert.equal(parseCh8Listing(ch8Card(145303,undefined,'ข่าวที่ถูกตัด...'),day).items.length,0,'truncated heading is not claimed as complete');
+assert.equal(parseCh8Listing(ch8Card(145304,undefined,'หัวข้อปลอมจากโฮสต์อื่น','https://evil.example/news_detail/145304'),day).items.length,0,'fake publisher host is rejected');
+assert.equal(parseCh8Listing(ch8Card(145305,undefined,'หัวข้อที่ไม่ใช่บทความ','/condition'),day).items.length,0,'non-article publisher route is rejected');
 let indexCalls=0,manualCalls=0,failureMode=null,probeCapture=false,probeUrls=[],publisherMode=null,publisherUrls=[],publisherOptions=[],streamCancelled=0;
 globalThis.fetch=async(url,options={})=>{
   if(String(url).includes('api.gdeltproject.org')){indexCalls++;if(probeCapture)probeUrls.push(String(url));const query=new URL(url).searchParams.get('query');if(failureMode==='mixed'&&!query.includes('thairath'))return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='http_503')return new Response('SECRET UPSTREAM BODY',{status:503});if(failureMode==='http_429')return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='timeout')throw Object.assign(new Error('SECRET TIMEOUT'),{name:'TimeoutError'});if(failureMode==='network')throw new Error('SECRET NETWORK');if(failureMode==='bad_json')return new Response('SECRET NOT JSON',{status:200});if(failureMode==='too_large')return new Response('SECRET',{status:200,headers:{'content-length':'1500001'}});return new Response(JSON.stringify({articles:query.includes('thairath')?indexed:[]}),{status:200,headers:{'content-type':'application/json'}})}
-  if(String(url).includes('one31.net/news')||String(url).includes('thaich8.com/news')){publisherUrls.push(String(url));publisherOptions.push(options);if(publisherMode==='timeout')throw Object.assign(new Error('SECRET PUBLISHER TIMEOUT'),{name:'TimeoutError'});if(publisherMode==='too_large')return new Response('SECRET',{status:200,headers:{'content-length':'1500001'}});if(publisherMode==='redirect')return new Response(null,{status:302,headers:{location:'https://evil.example/SECRET?token=SECRET'}});if(publisherMode==='forbidden')return new Response('SECRET FORBIDDEN BODY',{status:403});if(publisherMode==='stream_large')return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(900_000));controller.enqueue(new Uint8Array(900_000))},cancel(){streamCancelled++}}),{status:200});const html=String(url).includes('one31.net')?'<a href="/news/detail/80476">ARTICLE TITLE MUST NOT LEAK</a><a href="https://evil.example/news/detail/44444">fake</a>':'<a href="/news_detail/145015/story">CH8 TITLE MUST NOT LEAK</a><a href="/condition">terms</a>';return new Response(html,{status:200,headers:{'content-type':'text/html'}})}
+  if(String(url).includes('one31.net/news')||String(url).includes('thaich8.com/news')){publisherUrls.push(String(url));publisherOptions.push(options);if(publisherMode==='timeout')throw Object.assign(new Error('SECRET PUBLISHER TIMEOUT'),{name:'TimeoutError'});if(publisherMode==='too_large')return new Response('SECRET',{status:200,headers:{'content-length':'1500001'}});if(publisherMode==='redirect')return new Response(null,{status:302,headers:{location:'https://evil.example/SECRET?token=SECRET'}});if(publisherMode==='forbidden')return new Response('SECRET FORBIDDEN BODY',{status:403});if(publisherMode==='stream_large')return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(900_000));controller.enqueue(new Uint8Array(900_000))},cancel(){streamCancelled++}}),{status:200});const html=publisherMode==='fallback'&&String(url).includes('thaich8.com')?fixtureHtml.replaceAll('14 ตุลาคม 2569','5 ตุลาคม 2569'):publisherMode==='stale'&&String(url).includes('thaich8.com')?ch8Card(145300,'13 ตุลาคม 2569'):String(url).includes('one31.net')?'<a href="/news/detail/80476">ARTICLE TITLE MUST NOT LEAK</a><a href="https://evil.example/news/detail/44444">fake</a>':'<a href="/news_detail/145015/story">CH8 TITLE MUST NOT LEAK</a><a href="/condition">terms</a>';return new Response(html,{status:200,headers:{'content-type':'text/html'}})}
   if(String(url).includes('generativelanguage.googleapis.com'))return new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify({scenes:Array.from({length:4},(_,i)=>({label:`ฉาก ${i+1}`,text:'สมถุ๋ยรายงานจากข้อมูลที่ตรวจแล้ว ขอให้ทุกคนอ่านแหล่งข่าวต้นฉบับประกอบ',video_direction:'สมถุ๋ยยืนหน้าปกนิ่ง แสดงสีหน้าและขยับมือเท่านั้น',vfx:'แสงเน้นใบหน้า',sfx_type:'เสียงเคาะข่าว',sfx_at_seconds:4.5}))})}]}}]}),{status:200});
   manualCalls++;if(options.method==='HEAD')return new Response(null,{status:405});return new Response('',{status:206});
 };
@@ -55,6 +70,7 @@ const second=await json(await get(day,first.next_cursor));
 assert.equal(second.items.length,1);
 assert.equal(new Set([...first.items,...second.items].map(x=>x.id)).size,25);
 assert.equal(indexCalls,4,'one index request per source');
+assert.equal(publisherUrls.length,0,'successful GDELT never triggers publisher fallback');
 await post({action:'refresh',day});assert.equal(indexCalls,4,'refresh within TTL reuses checkpoint');
 assert.equal((await post({action:'manual',day,url:'https://www.thairath.co.th/terms-condition',headline:'พาดหัวที่ผู้ใช้กรอกเองแต่ลิงก์ไม่ใช่ข่าว'})).status,422,'manual terms page is not an article');
 assert.equal((await post({action:'manual',day,url:'https://www.thairath.co.th/news/society/9999999',headline:'ข่าวใหม่ที่มีข้อมูลจริง'})).status,409,'manual cannot exceed daily cap');
@@ -73,6 +89,18 @@ for(const [mode,testDay] of [['http_503','2026-10-12'],['http_429','2026-10-11']
   assert.doesNotMatch(JSON.stringify(unavailable),/SECRET|api\.gdeltproject|stack/i,'upstream details are never echoed');
 }
 failureMode=null;
+failureMode='timeout';publisherMode='fallback';const beforeFallbackCalls=publisherUrls.length;
+const fallback=await json(await post({action:'refresh',day:'2026-10-05'}));
+assert.equal(fallback.state,'partial');assert.equal(fallback.total,25);assert.equal(fallback.sources[3].available,true);assert.equal(fallback.sources[3].discovery,'publisher');assert.equal(fallback.sources[3].index_error_code,'timeout');assert.equal(fallback.sources[3].found,25);
+assert.deepEqual(fallback.sources.slice(0,3).map(item=>item.error_code),['timeout','timeout','timeout'],'other three sources remain unavailable');
+assert.equal(fallback.items.every(item=>item.source==='ช่อง 8'&&item.origin==='index'&&item.news_day==='2026-10-05'),true);
+assert.deepEqual(publisherUrls.slice(beforeFallbackCalls),['https://www.thaich8.com/news'],'fallback fetches only fixed CH8 listing');
+assert.equal(publisherOptions.at(-1).redirect,'manual');
+publisherMode='stale';const stale=await json(await post({action:'refresh',day:'2026-10-04'}));assert.equal(stale.total,0);assert.equal(stale.sources[3].available,true);assert.equal(stale.sources[3].found,0,'old dated article is not promoted to requested day');
+publisherMode='forbidden';const blocked=await json(await post({action:'refresh',day:'2026-10-03'}));assert.equal(blocked.state,'unavailable');assert.equal(blocked.sources[3].error_code,'timeout');assert.equal(blocked.sources[3].fallback_error_code,'http_403');
+publisherMode='redirect';const redirected=await json(await post({action:'refresh',day:'2026-10-02'}));assert.equal(redirected.sources[3].fallback_error_code,'http_302');assert.equal(redirected.total,0,'foreign redirect is never followed as news');
+publisherMode='too_large';const oversized=await json(await post({action:'refresh',day:'2026-10-01'}));assert.equal(oversized.sources[3].fallback_error_code,'too_large');assert.equal(oversized.total,0,'oversized listing is not parsed');
+publisherMode=null;failureMode=null;
 failureMode='mixed';const partial=await json(await post({action:'refresh',day:'2026-10-06'}));assert.equal(partial.state,'partial');assert.equal(partial.sources[0].available,true);assert.equal(partial.sources[0].error_code,undefined);assert.deepEqual(partial.sources.slice(1).map(source=>source.error_code),['http_429','http_429','http_429']);failureMode=null;
 const beforeProbeRows=db.prepare('SELECT COUNT(*) n FROM news_channel_refresh').get().n;
 probeCapture=true;const probe=await json(await post({action:'probe',day}));probeCapture=false;
@@ -93,7 +121,7 @@ const publishers=await json(await post({action:'publisher_probe'}));
 assert.deepEqual(publishers.probes.map(item=>item.publisher),['ช่องวัน','ช่อง 8']);
 assert.deepEqual(publishers.probes.map(item=>item.article_links),[1,1],'counts only allowlisted article links');
 assert.equal(publishers.probes.every(item=>item.status===200&&item.duration_ms>=0&&item.duration_ms<=20000),true);
-assert.deepEqual(publisherUrls,['https://www.one31.net/news','https://www.thaich8.com/news'],'only fixed first-party listings are fetched');
+assert.deepEqual(publisherUrls.slice(-2),['https://www.one31.net/news','https://www.thaich8.com/news'],'publisher probe fetches only fixed first-party listings');
 assert.equal(publisherOptions.every(options=>options.redirect==='manual'),true,'publisher redirects are never followed');
 assert.equal(db.prepare('SELECT COUNT(*) n FROM news_channel_refresh').get().n,beforePublisherRows,'publisher probe writes no checkpoint');
 assert.doesNotMatch(JSON.stringify(publishers),/ARTICLE TITLE|CH8 TITLE|https?:|SECRET/i,'publisher titles, URLs and bodies are never returned');

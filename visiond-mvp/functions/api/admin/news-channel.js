@@ -1,6 +1,6 @@
 import {json,requireAdmin} from '../../_lib.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
-import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltUrl,parseGdeltArticles,sourceForUrl} from '../../_news-channel.js';
+import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltUrl,parseGdeltArticles,parseCh8Listing,sourceForUrl} from '../../_news-channel.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const reply=(value,status=200)=>json(value,status,headers);
@@ -58,6 +58,22 @@ async function probePublishers(){
   return {probes:await Promise.all(listings.map(run))};
 }
 
+async function fetchCh8Listing(day){
+  let response;
+  try{
+    response=await fetch('https://www.thaich8.com/news',{redirect:'manual',signal:AbortSignal.timeout(6000),headers:{accept:'text/html'}});
+    if(!response.ok)return {error_code:Number.isInteger(response.status)&&response.status>=100&&response.status<=599?`http_${response.status}`:'http_error'};
+    if(Number(response.headers.get('content-length')||0)>1_500_000)return {error_code:'too_large'};
+    const reader=response.body?.getReader();if(!reader)return {error_code:'parse_error'};
+    const decoder=new TextDecoder(),parts=[];let size=0;
+    while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1_500_000){await reader.cancel();return {error_code:'too_large'}}parts.push(decoder.decode(value,{stream:true}))}
+    parts.push(decoder.decode());
+    let parsed;try{parsed=parseCh8Listing(parts.join(''),day)}catch{return {error_code:'parse_error'}}
+    return parsed.dated?{items:parsed.items}:{error_code:'parse_error'};
+  }catch(error){return {error_code:error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network'}}
+  finally{if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
+}
+
 async function refresh(ctx,owner,day){
   const db=ctx.env.DB,now=new Date(),nowIso=now.toISOString(),lease=new Date(now.getTime()+60000).toISOString(),stale=new Date(now.getTime()-30*60000).toISOString();
   const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,day,lease,nowIso,stale).run();
@@ -73,6 +89,12 @@ async function refresh(ctx,owner,day){
       try{return {source:source.name,items:parseGdeltArticles(payload,day,source)}}catch{return failed('parse_error')}
     }catch(error){return failed(error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network')};
   }));
+  const ch8=outcomes.find(item=>item.source==='ช่อง 8');
+  if(ch8?.error_code){
+    const fallback=await fetchCh8Listing(day);
+    if(fallback.items){ch8.index_error_code=ch8.error_code;delete ch8.error_code;ch8.items=fallback.items;ch8.discovery='publisher'}
+    else ch8.fallback_error_code=fallback.error_code;
+  }
   const candidates=outcomes.flatMap(x=>x.items).sort((a,b)=>b.observed_at.localeCompare(a.observed_at));
   const known=new Set(((await db.prepare('SELECT source_url FROM news_channel_items WHERE owner_id=? AND news_day=? ORDER BY id LIMIT 25').bind(owner,day).all()).results||[]).map(row=>row.source_url));
   for(const item of candidates){
@@ -84,7 +106,7 @@ async function refresh(ctx,owner,day){
   }
   const failed=outcomes.filter(x=>x.error_code),state=failed.length===NEWS_SOURCES.length?'unavailable':failed.length?'partial':'ready';
   await db.prepare('UPDATE news_channel_refresh SET state=?,refreshed_at=?,lease_until=NULL WHERE owner_id=? AND news_day=?').bind(state,state==='unavailable'?null:nowIso,owner,day).run();
-  return {...await page(db,owner,day),state,sources:outcomes.map(x=>({name:x.source,found:x.items.length,available:!x.error_code,...(x.error_code?{error_code:x.error_code}:{})})),message:state==='unavailable'?'แหล่งค้นข่าวไม่พร้อมใช้งาน เพิ่มลิงก์ข่าวเองได้':failed.length?'ค้นข่าวได้บางแหล่ง; เพิ่มลิงก์เองได้':''};
+  return {...await page(db,owner,day),state,sources:outcomes.map(x=>({name:x.source,found:x.items.length,available:!x.error_code,...(x.discovery?{discovery:x.discovery,index_error_code:x.index_error_code}:{}),...(x.error_code?{error_code:x.error_code}:{}),...(x.fallback_error_code?{fallback_error_code:x.fallback_error_code}:{})})),message:state==='unavailable'?'แหล่งค้นข่าวไม่พร้อมใช้งาน เพิ่มลิงก์ข่าวเองได้':failed.length?'ค้นข่าวได้บางแหล่ง; เพิ่มลิงก์เองได้':''};
 }
 
 async function manual(ctx,owner,body){
