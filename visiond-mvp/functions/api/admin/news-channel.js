@@ -31,6 +31,33 @@ async function probeSource(day){
   return {probes:[await run('simple',simple.toString()),await run('current',gdeltUrl(day,NEWS_SOURCES[0].domain))]};
 }
 
+async function probePublishers(){
+  const listings=[{name:'ช่องวัน',url:'https://www.one31.net/news'},{name:'ช่อง 8',url:'https://www.thaich8.com/news'}];
+  const run=async({name,url})=>{
+    const started=Date.now();let status=null,error_code=null,article_links=0;
+    try{
+      const response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(6000),headers:{accept:'text/html'}});
+      status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:null;
+      if(response.ok){
+        if(Number(response.headers.get('content-length')||0)>1_500_000)error_code='too_large';
+        else{
+          const reader=response.body?.getReader(),decoder=new TextDecoder(),parts=[];let size=0;
+          if(reader){while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1_500_000){error_code='too_large';await reader.cancel();break}parts.push(decoder.decode(value,{stream:true}))}}
+          if(!error_code){parts.push(decoder.decode());const html=parts.join(''),found=new Set();let checked=0;
+            for(const match of html.matchAll(/href\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)){
+              if(++checked>1000||found.size>=100)break;
+              try{const candidate=sourceForUrl(new URL((match[1]||match[2]).replace(/&amp;/gi,'&'),url).toString());if(candidate?.source===name)found.add(candidate.url)}catch{}
+            }
+            article_links=found.size;
+          }
+        }
+      }else await response.body?.cancel();
+    }catch(error){error_code=error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network'}
+    return {publisher:name,status,duration_ms:Math.min(20000,Math.max(0,Date.now()-started)),article_links,...(error_code?{error_code}:{})};
+  };
+  return {probes:await Promise.all(listings.map(run))};
+}
+
 async function refresh(ctx,owner,day){
   const db=ctx.env.DB,now=new Date(),nowIso=now.toISOString(),lease=new Date(now.getTime()+60000).toISOString(),stale=new Date(now.getTime()-30*60000).toISOString();
   const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,day,lease,nowIso,stale).run();
@@ -91,4 +118,4 @@ async function script(ctx,owner,body){
 }
 
 export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url),day=safeDay(url.searchParams.get('day')||bangkokDay()),cursor=Number(url.searchParams.get('cursor')||0);if(!day||!Number.isSafeInteger(cursor)||cursor<0)return reply({error:'วันหรือ cursor ไม่ถูกต้อง'},400);return reply({...await page(ctx.env.DB,auth.user.id,day,cursor),day,styles:NEWS_STYLES});}
-export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
+export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='publisher_probe')return reply(await probePublishers());if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
