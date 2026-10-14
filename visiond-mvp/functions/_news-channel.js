@@ -47,7 +47,7 @@ export function parseCh8Listing(html,day,observedAt=new Date().toISOString()){
   gdeltWindow(day);
   const observationDay=bangkokDay(new Date(observedAt));
   const cleaned=String(html||'').replace(/<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>/gi,'');
-  const starts=[...cleaned.matchAll(/<div\b[^>]*class\s*=\s*(?:"([^"]*)"|'([^']*)')[^>]*>/gi)].filter(match=>/\bnews-post\b/.test(match[1]||match[2])&&/\b(?:image-post2|standard-post2)\b/.test(match[1]||match[2]));
+  const starts=[...cleaned.matchAll(/<div\b[^>]*class\s*=\s*(?:"([^"]*)"|'([^']*)')[^>]*>/gi)].filter(match=>/\bnews-post\b/.test(match[1]||match[2])&&/\b(?:image-post2|standard-post2|standard-main-post2)\b/.test(match[1]||match[2]));
   const seen=new Set(),items=[];let dated=0;
   for(let index=0;index<Math.min(starts.length,100);index++){
     const card=cleaned.slice(starts[index].index,starts[index+1]?.index||cleaned.length).slice(0,16000);

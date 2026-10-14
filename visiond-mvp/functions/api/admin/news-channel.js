@@ -32,11 +32,11 @@ async function probeSource(day){
 }
 
 async function probePublishers(){
-  const listings=[{name:'ช่องวัน',url:'https://www.one31.net/news'},{name:'ช่อง 8',url:'https://www.thaich8.com/news'}];
-  const run=async({name,url})=>{
+  const listings=[{name:'ไทยรัฐ',url:'https://www.thairath.co.th/news'},{name:'ช่อง 3',url:'https://ch3plus.com/news'},{name:'ช่องวัน',url:'https://www.one31.net/news'},{name:'ช่องวัน sitemap',source:'ช่องวัน',url:'https://www.one31.net/sitemap.xml',xml:true},{name:'ช่อง 8',url:'https://www.thaich8.com/news'}];
+  const run=async({name,source=name,url,xml=false})=>{
     const started=Date.now();let status=null,error_code=null,article_links=0;
     try{
-      const response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(6000),headers:{accept:'text/html'}});
+      const response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(6000),headers:{accept:xml?'application/xml':'text/html'}});
       status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:null;
       if(response.ok){
         if(Number(response.headers.get('content-length')||0)>1_500_000)error_code='too_large';
@@ -44,9 +44,9 @@ async function probePublishers(){
           const reader=response.body?.getReader(),decoder=new TextDecoder(),parts=[];let size=0;
           if(reader){while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1_500_000){error_code='too_large';await reader.cancel();break}parts.push(decoder.decode(value,{stream:true}))}}
           if(!error_code){parts.push(decoder.decode());const html=parts.join(''),found=new Set();let checked=0;
-            for(const match of html.matchAll(/href\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)){
+            for(const match of html.matchAll(xml?/<loc\b[^>]*>([^<]*)<\/loc>/gi:/href\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)){
               if(++checked>1000||found.size>=100)break;
-              try{const candidate=sourceForUrl(new URL((match[1]||match[2]).replace(/&amp;/gi,'&'),url).toString());if(candidate?.source===name)found.add(candidate.url)}catch{}
+              try{const candidate=sourceForUrl(new URL((match[1]||match[2]).replace(/&amp;/gi,'&'),url).toString());if(candidate?.source===source)found.add(candidate.url)}catch{}
             }
             article_links=found.size;
           }
