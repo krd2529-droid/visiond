@@ -44,6 +44,11 @@ const htmlText=value=>String(value||'').replace(/<[^>]*>/g,' ').replace(/&(?:amp
   if(decimal||hex){const code=Number.parseInt(decimal||hex,hex?16:10);return code>0&&code<=0x10ffff?String.fromCodePoint(code):' '}
   return {amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[match.slice(1,-1).toLowerCase()]||' ';
 }).replace(/\s+/gu,' ').trim();
+export function parseCh8Headline(html){
+  const clean=String(html||'').slice(0,131072).replace(/<!--[^]*?-->|<script\b[^>]*>[^]*?<\/script>|<style\b[^>]*>[^]*?<\/style>/gi,'');
+  const title=clean.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
+  return title?htmlText(title[1]):null;
+}
 export function parseCh8PublishedAt(html){
   // Prefer the publisher-visible "วันที่ลงข่าว" header over article:published_time when they disagree.
   const clean=String(html||'').slice(0,131072).replace(/<!--[^]*?-->|<script\b[^>]*>[^]*?<\/script>|<style\b[^>]*>[^]*?<\/style>/gi,'');
@@ -60,7 +65,7 @@ export function parseCh8PublishedAt(html){
   const timestamp=Date.parse(`${local}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00+07:00`);
   return Number.isFinite(timestamp)&&bangkokDay(new Date(timestamp))===local?new Date(timestamp).toISOString():null;
 }
-export function parseCh8Listing(html,day,observedAt=new Date().toISOString()){
+export function parseCh8Listing(html,day,observedAt=new Date().toISOString(),allowTruncated=false){
   gdeltWindow(day);
   const observationDay=bangkokDay(new Date(observedAt));
   const cleaned=String(html||'').replace(/<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>/gi,'');
@@ -82,8 +87,9 @@ export function parseCh8Listing(html,day,observedAt=new Date().toISOString()){
     dated++;
     if(listedDay!==day||listedDay>observationDay||seen.has(link.url))continue;
     const headline=htmlText(anchor[3]);
-    if(headline.length<8||headline.length>240||/(?:\.{3}|…)$/.test(headline))continue;
-    seen.add(link.url);items.push({source:'ช่อง 8',headline,source_url:link.url,news_day:listedDay,observed_at:observedAt,published_at:null,origin:'index'});
+    const incomplete=/(?:\.{3}|…)$/.test(headline);
+    if(headline.length<8||headline.length>240||(incomplete&&!allowTruncated))continue;
+    seen.add(link.url);items.push({source:'ช่อง 8',headline,source_url:link.url,news_day:listedDay,observed_at:observedAt,published_at:null,origin:'index',...(incomplete?{headline_incomplete:true}:{})});
     if(items.length>=25)break;
   }
   return {items,dated};

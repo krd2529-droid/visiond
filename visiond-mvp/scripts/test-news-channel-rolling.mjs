@@ -18,16 +18,18 @@ const D1={prepare(sql){const statement=db.prepare(sql);return {bind(...values){r
 const now=new Date('2026-10-15T08:00:00+07:00'),window=rollingWindow(now);
 assert.equal(window.start,'2026-10-14T01:00:00.000Z');
 const card=(id,date='14 ตุลาคม 2569')=>`<div class="news-post image-post2"><h2><a href="/news_detail/${id}/story">ข่าวช่องแปดหมายเลข ${id} มีพาดหัวครบถ้วน</a></h2><div class="dateline"><span><i class="fa fa-calendar"></i>&nbsp;${date}</span></div></div>`;
-const detail=(date,time,meta='2026-10-14 17:29:00')=>`<html><head><meta property="article:published_time" content="${meta}"></head><body><h1>ข่าวช่องแปดจากต้นฉบับ</h1><div class="col-xs-12 col-md-6 nopadding_side"><i class="fa fa-calendar"></i>&nbsp;วันที่ลงข่าว ${date} เวลา ${time} น.&nbsp;<i class="fa fa-eye"></i></div></body></html>`;
+const categoryCard=(id,date='14 ตุลาคม 2569',headline=`ข่าวช่องแปดหมายเลข ${id} มีพาดหัวครบถ้วน`,url=`https://www.thaich8.com/news_detail/${id}/story`)=>`<div class="news-post standard-main-post2"><div class="standard-main-post post-title"><h2><a href="${url}">${headline}</a></h2><div class="post-content"><div class="dateline"><span><i class="fa fa-calendar"></i>&nbsp;${date}</span></div></div></div></div>`;
+const detail=(date,time,meta='2026-10-14 17:29:00',headline='ข่าวช่องแปดจากต้นฉบับ')=>`<html><head><meta property="article:published_time" content="${meta}"></head><body><h1>${headline}</h1><div class="col-xs-12 col-md-6 nopadding_side"><i class="fa fa-calendar"></i>&nbsp;วันที่ลงข่าว ${date} เวลา ${time} น.&nbsp;<i class="fa fa-eye"></i></div></body></html>`;
 assert.equal(parseCh8PublishedAt(detail('14 ตุลาคม 2569','17:34')),'2026-10-14T10:34:00.000Z','visible publisher time wins over conflicting unzoned meta');
 assert.equal(parseCh8PublishedAt('<h1>ข่าวหลักไม่มีเวลา</h1>'+(' '.repeat(1100))+detail('14 ตุลาคม 2569','17:34')),null,'related-story calendar must not lend a time to primary article');
 assert.equal(parseCh8PublishedAt('<h1>ข่าวหลัก</h1><div>14 ตุลาคม 2569</div>'),null,'date-only article is not timed');
 assert.equal(parseCh8PublishedAt(detail('31 กุมภาพันธ์ 2569','17:34')),null,'invalid publisher calendar date');
 let listing=[card(145074),card(145074),card(145068),card(145080),card(145081),card(145082,'15 ตุลาคม 2569'),card(145083,'15 ตุลาคม 2569'),card(145089,'15 ตุลาคม 2569'),card(145084),card(145085),card(145090),card(145091)].join('');
 const details=new Map([[145074,detail('14 ตุลาคม 2569','17:34')],[145068,detail('14 ตุลาคม 2569','06:38')],[145080,detail('14 ตุลาคม 2569','08:00')],[145081,detail('14 ตุลาคม 2569','07:59')],[145082,detail('15 ตุลาคม 2569','08:01')],[145083,detail('15 ตุลาคม 2569','07:59')],[145089,detail('15 ตุลาคม 2569','08:00')],[145084,'<h1>ข่าวหลักไม่มีเวลา</h1>'],[145085,'<h1>ข่าวหลักไม่มีเวลา</h1><div>ไม่มีเวลา</div>'+(' '.repeat(1100))+detail('14 ตุลาคม 2569','17:34')],[145090,'redirect'],[145091,'oversize'],[145092,'timeout'],[145093,'http']]);
-let listingCalls=0,detailCalls=0,detailCancelled=0,listingFailure=false;
+let listingCalls=0,categoryCalls=0,categoryTimeouts=0,detailCalls=0,detailCancelled=0,listingFailure=false,categoryFailure=true,categoryHtml='';
 globalThis.fetch=async(url,options={})=>{
   if(String(url)==='https://www.thaich8.com/news'){listingCalls++;assert.equal(options.redirect,'manual');return listingFailure?new Response('upstream unavailable',{status:503}):new Response(listing,{status:200})}
+  if(String(url)==='https://www.thaich8.com/news_list/20'){categoryCalls++;assert.equal(options.redirect,'manual');if(categoryFailure==='timeout'){categoryTimeouts++;throw new DOMException('timeout','AbortError')}return categoryFailure?new Response('unavailable',{status:503}):new Response(categoryHtml,{status:200})}
   const id=Number(String(url).match(/\/news_detail\/(\d+)/)?.[1]);assert.ok(details.has(id),'only allowlisted CH8 article routes are fetched');assert.equal(options.redirect,'manual');detailCalls++;if(id===145090)return new Response(null,{status:302,headers:{location:'https://evil.example/news_detail/999999'}});if(id===145091)return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(131073))},cancel(){detailCancelled++}}),{status:200});if(id===145092)throw new DOMException('timeout','AbortError');if(id===145093)return new Response('denied',{status:403});return new Response(details.get(id),{status:200});
 };
 db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(1,'2026-10-14','ช่อง 8','ข่าวเก่าที่ต้องยืนยันใหม่','https://www.thaich8.com/news_detail/145074/story','2026-10-14T12:00:00.000Z',NULL,'index')").run();
@@ -104,6 +106,34 @@ const failedDetailBefore=detailCalls,failedSaved=await rollingRefresh({env:{DB:D
 assert.equal(failedSaved.state,'unavailable');assert.equal(failedSaved.total,0,'stale, undated, redirect, oversized, timeout and 403 details never become rolling news');
 assert.ok(detailCalls-failedDetailBefore<=6,'saved-link detail fanout is bounded');
 assert.equal(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=3 AND published_at IS NOT NULL").get().n,0,'unverified fallback makes no publication writes');
+listingFailure=false;
+const categoryH2='"น้องฟ้าใส" ปัดเจอหน้าแม่! อยู่บ้านพักเด็ก 3 เดือน ดับฝันอินฟลูฯรออายุครบ 18 ปี ด้าน "แม่ดา"...';
+const categoryH1='"น้องฟ้าใส" ปัดเจอหน้าแม่! อยู่บ้านพักเด็ก 3 เดือน ดับฝันอินฟลูฯรออายุครบ 18 ปี ด้าน "แม่ดา" รับลูกเปลี่ยนไป ไม่สามารถเลี้ยงดูน้องได้';
+const categoryUrl='https://www.thaich8.com/news_detail/145075/น้องฟ้าใส-ปัดเจอหน้าแม่-อยู่บ้านพักเด็ก-3-เดือน-ดับฝันอินฟลูฯรออายุครบ-18-ปี-ด้าน-แม่ดา-รับลูกเปลี่ยนไป-ไม่สามารถเลี้ยงดูน้องได้';
+listingFailure=true;categoryFailure=false;details.set(145075,detail('14 ตุลาคม 2569','19:11','2026-10-14 19:06:00',categoryH1));details.set(145097,detail('14 ตุลาคม 2569','19:12','2026-10-14 19:12:00','หัวข้ออื่นที่ไม่ตรงลิงก์'));
+categoryHtml=[categoryCard(145075,'14 ตุลาคม 2569',categoryH2,categoryUrl),categoryCard(145068,'13 ตุลาคม 2569'),categoryCard(145084),categoryCard(145090),categoryCard(145091),categoryCard(145097,'14 ตุลาคม 2569','พาดหัวที่อ้างว่าเป็นข่าว...'),categoryCard(145096,'14 ตุลาคม 2569','ข่าวต่างโดเมนที่ต้องปฏิเสธ','https://evil.example/news_detail/145096/story')].join('');
+const categoryBefore=categoryCalls;
+const newlyDiscovered=await rollingRefresh({env:{DB:D1}},4,now);
+assert.equal(newlyDiscovered.total,1,'a new official article on the current first-party category listing is discovered when /news fails');
+assert.equal(newlyDiscovered.items[0].source_url,new URL(categoryUrl).toString());
+assert.equal(newlyDiscovered.items[0].headline,categoryH1,'truncated category H2 is replaced only with matching official article H1');
+assert.equal(newlyDiscovered.items[0].published_at,'2026-10-14T12:11:00.000Z');
+assert.equal(newlyDiscovered.state,'partial_general');assert.equal(newlyDiscovered.sources[3].limited_kind,'general');assert.equal(newlyDiscovered.sources[3].error_code,'http_503');
+assert.equal(categoryCalls-categoryBefore,1,'one fixed alternate listing request, not an open-ended crawl');
+categoryHtml=categoryCard(145095,'13 ตุลาคม 2569');
+const staleCategory=await rollingRefresh({env:{DB:D1}},5,now);
+assert.equal(staleCategory.total,0);assert.equal(staleCategory.state,'no_recent');assert.equal(staleCategory.sources[3].available,false);assert.equal(staleCategory.sources[3].error_code,'stale_listing');
+categoryHtml=categoryCard(145097,'14 ตุลาคม 2569','พาดหัวที่อ้างว่าเป็นข่าว...');
+const unverifiedCategory=await rollingRefresh({env:{DB:D1}},6,now);
+assert.equal(unverifiedCategory.total,0);assert.equal(unverifiedCategory.state,'unverified');assert.equal(unverifiedCategory.sources[3].available,false);assert.equal(unverifiedCategory.sources[3].error_code,'timestamp_unverified');
+categoryFailure='timeout';
+const timedOutCategory=await rollingRefresh({env:{DB:D1}},7,now);
+assert.equal(timedOutCategory.total,0);assert.equal(timedOutCategory.state,'unavailable');assert.equal(timedOutCategory.sources[3].available,false);
+assert.equal(categoryTimeouts,1,'secondary listing timeout branch throws AbortError instead of returning an HTTP response');
+categoryFailure=false;categoryHtml=Array.from({length:20},(_,index)=>{const id=146000+index;details.set(id,detail('14 ตุลาคม 2569','19:11'));return categoryCard(id)}).join('');
+const cappedDetailBefore=detailCalls,cappedCategory=await rollingRefresh({env:{DB:D1}},8,now);
+assert.equal(cappedCategory.total,6,'category-only fallback explicitly caps newly fetched article headers');
+assert.equal(detailCalls-cappedDetailBefore,6,'bounded category fanout never fetches all twenty candidates');
 listingFailure=false;
 const unauthorized=await onRequestGet({request:new Request('https://visiondonline.com/api/admin/news-channel'),env:{DB:D1}});
 assert.equal(unauthorized.status,401,'rolling GET remains authenticated');
