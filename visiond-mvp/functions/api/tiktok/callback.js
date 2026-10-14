@@ -23,10 +23,10 @@ async function channelPlanForProfile(ctx,auth,requestedChannelId,profile,limit){
     const channel=await env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL').bind(requestedChannelId,userId).first();
     return channel?.id?{channelId:channel.id,statement:null,kind:'existing'}:null;
   }
-  const linked=await env.DB.prepare('SELECT c.channel_id FROM tiktok_connections c JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.open_id=? AND ch.created_by=? LIMIT 1').bind(userId,clean(profile.open_id,200),userId).first();
+  const linked=await env.DB.prepare('SELECT c.channel_id,ch.archived_at FROM tiktok_connections c JOIN tiktok_channels ch ON ch.id=c.channel_id WHERE c.user_id=? AND c.open_id=? AND ch.created_by=? LIMIT 1').bind(userId,clean(profile.open_id,200),userId).first();
   if(linked?.channel_id){
     if(!await vxWorkspaceAccessStillCurrent(ctx,auth))throw new Error('VX_ACCESS_EXPIRED');
-    return{channelId:linked.channel_id,statement:vxChannelRestore(env,userId,limit,linked.channel_id,clean(profile.display_name,120)||'TikTok Creator'),kind:'restore'};
+    return{channelId:linked.channel_id,statement:vxChannelRestore(env,userId,limit,linked.channel_id,clean(profile.display_name,120)||'TikTok Creator'),kind:'restore',archived:Boolean(linked.archived_at)};
   }
   const channelId=crypto.randomUUID();
   if(!await vxWorkspaceAccessStillCurrent(ctx,auth))throw new Error('VX_ACCESS_EXPIRED');
@@ -52,12 +52,16 @@ export async function onRequestGet(ctx){
     if(!await vxWorkspaceAccessStillCurrent(ctx,auth))return done('access_expired','',channelId);
     const prepared=await prepareTikTokConnection(ctx.env,ownerId,channelId,token,profile),statements=[];
     const existingBinding=await ctx.env.DB.prepare('SELECT slot_id,user_id,channel_id,provider_open_id FROM tiktok_browser_profile_bindings WHERE channel_id=? OR (user_id=? AND provider_open_id=?) LIMIT 1').bind(channelId,ownerId,prepared.openId).first();
+    // A deleted channel keeps its original immutable Chrome profile. A fresh "+ channel" handoff may restore it, but must not bind that identity to the temporary new slot.
+    const restoringBoundProfile=Boolean(plan.kind==='restore'&&plan.archived&&auth.handoff?.intent==='new'&&profileSlotId&&existingBinding&&existingBinding.slot_id!==profileSlotId&&Number(existingBinding.user_id)===Number(ownerId)&&existingBinding.channel_id===channelId&&existingBinding.provider_open_id===prepared.openId);
+    if(profileSlotId&&existingBinding&&existingBinding.slot_id!==profileSlotId&&!restoringBoundProfile)return done('profile_conflict','',channelId);
     if(!profileSlotId&&existingBinding&&(Number(existingBinding.user_id)!==Number(ownerId)||existingBinding.channel_id!==channelId||existingBinding.provider_open_id!==prepared.openId))return done('profile_conflict','',channelId);
     if(!profileSlotId&&plan.kind==='existing'&&!await ctx.env.DB.prepare('SELECT id FROM tiktok_channels WHERE id=? AND created_by=? AND archived_at IS NULL').bind(channelId,ownerId).first())return done('channel_unavailable','',channelId);
     if(!await vxWorkspaceAccessStillCurrent(ctx,auth))return done('access_expired','',channelId);
     if(plan.statement)statements.push(plan.statement);
     statements.push(prepared.statement);
-    if(profileSlotId)statements.push(tikTokProfileBindingStatement(ctx.env,{slotId:profileSlotId,userId:ownerId,channelId,openId:prepared.openId,profileKind:auth.handoff?.profile_kind||'slot'}));
+    if(profileSlotId&&!restoringBoundProfile)statements.push(tikTokProfileBindingStatement(ctx.env,{slotId:profileSlotId,userId:ownerId,channelId,openId:prepared.openId,profileKind:auth.handoff?.profile_kind||'slot'}));
+    if(restoringBoundProfile)statements.push(ctx.env.DB.prepare("UPDATE tiktok_oauth_handoffs SET channel_id=? WHERE id=? AND status='complete' AND intent='new' AND channel_id=''").bind(channelId,auth.handoff.id));
     const continuation=handoff?await prepareHandoffContinuation(ctx.env,auth,channelId):null;
     if(continuation)statements.push(...continuation.statements);
     let results=[];

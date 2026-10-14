@@ -69,7 +69,7 @@ export async function launcherRoute(ctx){
   }
   if(action==='status'){
    const id=url.searchParams.get('command_id');if(!uuid(id))return fail();
-   const row=await ctx.env.DB.prepare(`SELECT c.id command_id,h.port,c.status,c.error_code,c.expires_at,c.intent,f.id handoff_id,f.slot_id,f.status oauth_status,CASE WHEN f.provider IN ('tiktok','shop') THEN f.provider ELSE NULL END oauth_provider,CASE WHEN f.continuation IN ('shop','') THEN f.continuation ELSE NULL END oauth_continuation,CASE WHEN f.status='complete' THEN b.channel_id ELSE '' END channel_id,
+   const row=await ctx.env.DB.prepare(`SELECT c.id command_id,h.port,c.status,c.error_code,c.expires_at,c.intent,f.id handoff_id,f.slot_id,f.status oauth_status,CASE WHEN f.provider IN ('tiktok','shop') THEN f.provider ELSE NULL END oauth_provider,CASE WHEN f.continuation IN ('shop','') THEN f.continuation ELSE NULL END oauth_continuation,CASE WHEN f.status='complete' THEN COALESCE(b.channel_id,NULLIF(f.channel_id,''),'') ELSE '' END channel_id,
     CASE WHEN c.expires_at<=CURRENT_TIMESTAMP THEN 1 ELSE 0 END expired
     FROM browser_launcher_commands c JOIN browser_launcher_helpers h ON h.id=c.helper_id AND h.user_id=COALESCE(c.actor_user_id,c.user_id) AND h.status='active' LEFT JOIN tiktok_oauth_handoffs f ON f.id=c.handoff_id LEFT JOIN tiktok_browser_profile_bindings b ON b.slot_id=f.slot_id AND b.user_id=COALESCE(c.workspace_owner_user_id,c.user_id)
     WHERE c.id=? AND COALESCE(c.actor_user_id,c.user_id)=? AND COALESCE(c.workspace_owner_user_id,c.user_id)=? AND c.session_id=?`).bind(id,auth.user.id,ownerId,session(request)).first();
