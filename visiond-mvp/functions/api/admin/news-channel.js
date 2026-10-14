@@ -1,0 +1,75 @@
+import {json,requireAdmin} from '../../_lib.js';
+import {requestWorkNotesAI} from '../../_work-notes-ai.js';
+import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,gdeltUrl,parseGdeltArticles,sourceForUrl} from '../../_news-channel.js';
+
+const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
+const reply=(value,status=200)=>json(value,status,headers);
+const safeDay=value=>/^\d{4}-\d{2}-\d{2}$/.test(String(value||''))&&Math.abs(Date.parse(`${value}T00:00:00Z`)-Date.now())<92*86400000?String(value):null;
+const maxItems=25;
+const ownedItem=(db,owner,id)=>db.prepare('SELECT id,news_day,source,headline,source_url,observed_at,published_at,origin FROM news_channel_items WHERE owner_id=? AND id=?').bind(owner,id).first();
+
+async function page(db,owner,day,cursor=0){
+  const rows=(await db.prepare('SELECT id,news_day,source,headline,source_url,observed_at,published_at,origin FROM news_channel_items WHERE owner_id=? AND news_day=? AND id>? ORDER BY id LIMIT 25').bind(owner,day,cursor).all()).results||[];
+  const count=await db.prepare('SELECT COUNT(*) AS n FROM news_channel_items WHERE owner_id=? AND news_day=?').bind(owner,day).first();
+  return {items:rows.slice(0,24),next_cursor:rows.length>24?rows[23].id:null,total:Number(count?.n||0),limit:maxItems};
+}
+
+async function refresh(ctx,owner,day){
+  const db=ctx.env.DB,now=new Date(),nowIso=now.toISOString(),lease=new Date(now.getTime()+60000).toISOString(),stale=new Date(now.getTime()-30*60000).toISOString();
+  const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,day,lease,nowIso,stale).run();
+  if(!Number(claim.meta?.changes||0))return {...await page(db,owner,day),reused:true,message:'ใช้ผลค้นหาที่เก็บไว้ชั่วคราว; ลองรีเฟรชอีกครั้งภายหลัง'};
+  const outcomes=await Promise.all(NEWS_SOURCES.map(async source=>{
+    try{
+      const response=await fetch(gdeltUrl(day,source.domain),{signal:AbortSignal.timeout(8000),headers:{accept:'application/json'}});
+      if(!response.ok)throw new Error(`HTTP_${response.status}`);
+      if(Number(response.headers.get('content-length')||0)>1_500_000)throw new Error('TOO_LARGE');
+      const body=await response.text();if(body.length>1_500_000)throw new Error('TOO_LARGE');
+      return {source:source.name,items:parseGdeltArticles(JSON.parse(body),day,source)};
+    }catch(error){return {source:source.name,items:[],error:String(error?.message||'unavailable').slice(0,80)}};
+  }));
+  const candidates=outcomes.flatMap(x=>x.items).sort((a,b)=>b.observed_at.localeCompare(a.observed_at));
+  const known=new Set(((await db.prepare('SELECT source_url FROM news_channel_items WHERE owner_id=? AND news_day=? ORDER BY id LIMIT 25').bind(owner,day).all()).results||[]).map(row=>row.source_url));
+  for(const item of candidates){
+    if(known.size>=maxItems)break;
+    if(known.has(item.source_url))continue;
+    const result=await db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) SELECT ?,?,?,?,?,?,NULL,'index' WHERE (SELECT COUNT(*) FROM news_channel_items WHERE owner_id=? AND news_day=?)<? ON CONFLICT(owner_id,news_day,source_url) DO NOTHING").bind(owner,day,item.source,item.headline,item.source_url,item.observed_at,owner,day,maxItems).run();
+    if(Number(result.meta?.changes||0))known.add(item.source_url);
+    else if(Number((await db.prepare('SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=? AND news_day=?').bind(owner,day).first())?.n||0)>=maxItems)break;
+  }
+  const failed=outcomes.filter(x=>x.error),state=failed.length===NEWS_SOURCES.length?'unavailable':failed.length?'partial':'ready';
+  await db.prepare('UPDATE news_channel_refresh SET state=?,refreshed_at=?,lease_until=NULL WHERE owner_id=? AND news_day=?').bind(state,state==='unavailable'?null:nowIso,owner,day).run();
+  return {...await page(db,owner,day),state,sources:outcomes.map(x=>({name:x.source,found:x.items.length,available:!x.error})),message:state==='unavailable'?'แหล่งค้นข่าวไม่พร้อมใช้งาน เพิ่มลิงก์ข่าวเองได้':failed.length?'ค้นข่าวได้บางแหล่ง; เพิ่มลิงก์เองได้':''};
+}
+
+async function manual(ctx,owner,body){
+  const day=safeDay(body.day),link=sourceForUrl(body.url),headline=String(body.headline||'').replace(/\s+/gu,' ').trim().slice(0,240);
+  if(!day)return reply({error:'วันที่ข่าวไม่ถูกต้อง'},422);
+  if(!link)return reply({error:'ลิงก์นี้ไม่ใช่ URL บทความที่รองรับจากไทยรัฐ ช่อง 3 ช่องวัน หรือช่อง 8'},422);
+  if(headline.length<8)return reply({error:'กรุณาใส่พาดหัวจากต้นฉบับอย่างน้อย 8 ตัวอักษร'},422);
+  let response;try{
+    response=await fetch(link.url,{method:'HEAD',redirect:'manual',signal:AbortSignal.timeout(6000)});
+    if(response.status===405||response.status===403){response=await fetch(link.url,{method:'GET',redirect:'manual',signal:AbortSignal.timeout(6000),headers:{range:'bytes=0-0'}});await response.body?.cancel()}
+  }catch{return reply({error:'ตรวจลิงก์ต้นทางไม่ได้ กรุณาลองอีกครั้ง'},502)}
+  if(!response.ok||response.redirected)return reply({error:'ลิงก์ต้นทางเปิดตรวจสอบไม่ได้ กรุณาตรวจ URL บทความ'},422);
+  const result=await ctx.env.DB.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) SELECT ?,?,?,?,?,?,NULL,'manual' WHERE (SELECT COUNT(*) FROM news_channel_items WHERE owner_id=? AND news_day=?)<? ON CONFLICT(owner_id,news_day,source_url) DO NOTHING").bind(owner,day,link.source,headline,link.url,new Date().toISOString(),owner,day,maxItems).run();
+  if(!Number(result.meta?.changes||0))return reply({error:'ข่าวนี้มีอยู่แล้ว หรือคิววันนี้ครบ 25 เรื่อง'},409);
+  return reply({...await page(ctx.env.DB,owner,day),message:'เพิ่มลิงก์แล้ว; พาดหัวนี้ผู้ใช้กรอกเอง กรุณาตรวจต้นฉบับก่อนสร้างบท'});
+}
+
+async function script(ctx,owner,body){
+  const id=Number(body.id),style=String(body.style||'').trim().slice(0,80);
+  if(!Number.isSafeInteger(id)||id<1||!NEWS_STYLES.includes(style))return reply({error:'เลือกข่าวและสไตล์ก่อน'},422);
+  const story=await ownedItem(ctx.env.DB,owner,id);if(!story)return reply({error:'ไม่พบข่าวที่เลือก'},404);
+  const notes=String(body.notes||'').trim().slice(0,1200);
+  if(notes.length<40)return reply({error:'กรุณาอ่านข่าวต้นฉบับและกรอกข้อเท็จจริงที่ตรวจแล้วอย่างน้อย 40 ตัวอักษรก่อนร่างบท'},422);
+  const prompt=`คุณเป็นบรรณาธิการบทข่าวสั้นภาษาไทย เขียนตาราง 4 ฉากให้ผู้ประกาศควายผู้ชายชื่อ สมถุ๋ย ในสไตล์ ${style} บทพูดแต่ละฉากประมาณ 25–35 พยางค์ รวม 90–120 พยางค์ ใช้คำแทนตนว่า "สมถุ๋ย" อย่างน้อยหนึ่งฉาก ห้ามแต่งรายละเอียด ตัวเลข ชื่อบุคคล คำพูด สาเหตุ หรือผลลัพธ์ที่ไม่อยู่ในพาดหัว/บันทึกผู้ใช้ ถ้าข้อมูลไม่พอให้ตอบ {"insufficient":true} แทนการเติมเนื้อหาเอง แยก 5 ช่องทุกฉาก: label, text (บทพูด), video_direction (สมถุ๋ยยืนพูดอยู่หน้าปก 9:16 ที่นิ่งสนิท ถ้าปกมีรูปสมถุ๋ยนิ่ง ให้ตัวผู้ประกาศที่เคลื่อนไหววางทับตำแหน่งนั้นเพื่อไม่เห็นควายซ้ำ ขยับได้เฉพาะตัว/สีหน้า/ท่าทาง), vfx (เอฟเฟกต์ภาพที่สอดคล้องอารมณ์ ไม่ทำให้พื้นหลังเคลื่อน), sfx_type (ชนิดเสียงที่ผู้ใช้จะหาเอง ไม่มีไฟล์เสียง), sfx_at_seconds (วินาทีภายในฉาก สอดคล้องท่าทาง 0–12) ห้ามนำเสียง SFX ไปใส่ในบทพูดหรือคำกำกับภาพ ตอบ JSON object เท่านั้น {"scenes":[{"label":"เปิดข่าว","text":"...","video_direction":"...","vfx":"...","sfx_type":"...","sfx_at_seconds":4.5},...]} พาดหัว: ${story.headline}\nสำนักข่าว: ${story.source}\nลิงก์อ้างอิง: ${story.source_url}\nบันทึกข้อเท็จจริงที่ผู้ใช้ตรวจจากต้นฉบับ: ${notes}`;
+  try{
+    const raw=await requestWorkNotesAI(ctx.env,prompt,{jsonMode:true,maxTokens:2200,deadlineMs:20000,validate:value=>{try{const parsed=JSON.parse(value),scenes=parsed.scenes;return parsed.insufficient===true||Array.isArray(scenes)&&scenes.length>=3&&scenes.length<=4&&scenes.every(x=>typeof x.text==='string'&&x.text.length>=20&&x.text.length<=400&&typeof x.video_direction==='string'&&typeof x.vfx==='string'&&typeof x.sfx_type==='string'&&Number.isFinite(Number(x.sfx_at_seconds))&&Number(x.sfx_at_seconds)>=0&&Number(x.sfx_at_seconds)<=12)}catch{return false}}});
+    const parsed=JSON.parse(raw);if(parsed.insufficient)return reply({error:'ข้อมูลข้อเท็จจริงยังไม่พอสำหรับบท 3–4 ฉาก กรุณาเพิ่มบันทึกจากต้นฉบับ'},422);
+    const scenes=parsed.scenes.map((scene,index)=>({label:String(scene.label||`ฉาก ${index+1}`).slice(0,40),text:String(scene.text).trim(),video_direction:`พื้นหลัง: ปก 9:16 นิ่งสนิท; สมถุ๋ยที่เคลื่อนไหวทับตำแหน่งตัวละครนิ่งในปกเพื่อไม่ให้ซ้ำ; ${String(scene.video_direction).trim()}`,vfx:String(scene.vfx).trim(),sfx_type:String(scene.sfx_type).trim(),sfx_at_seconds:Number(scene.sfx_at_seconds)}));
+    return reply({scenes,grounding:'พาดหัวและบันทึกผู้ใช้เท่านั้น; ตรวจเทียบกับลิงก์ต้นฉบับก่อนเผยแพร่'});
+  }catch(error){return reply({error:String(error?.message)==='AI_NOT_CONFIGURED'?'ยังไม่ได้เชื่อม Gemini สำหรับร่างบท':'ร่างบทไม่สำเร็จ กรุณาลองใหม่หรือเขียนเอง',code:'script_unavailable'},503)}
+}
+
+export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url),day=safeDay(url.searchParams.get('day')||bangkokDay()),cursor=Number(url.searchParams.get('cursor')||0);if(!day||!Number.isSafeInteger(cursor)||cursor<0)return reply({error:'วันหรือ cursor ไม่ถูกต้อง'},400);return reply({...await page(ctx.env.DB,auth.user.id,day,cursor),day,styles:NEWS_STYLES});}
+export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
