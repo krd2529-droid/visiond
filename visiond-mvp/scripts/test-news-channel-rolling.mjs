@@ -112,9 +112,11 @@ const categoryH1='"น้องฟ้าใส" ปัดเจอหน้า�
 const categoryUrl='https://www.thaich8.com/news_detail/145075/น้องฟ้าใส-ปัดเจอหน้าแม่-อยู่บ้านพักเด็ก-3-เดือน-ดับฝันอินฟลูฯรออายุครบ-18-ปี-ด้าน-แม่ดา-รับลูกเปลี่ยนไป-ไม่สามารถเลี้ยงดูน้องได้';
 listingFailure=true;categoryFailure=false;details.set(145075,detail('14 ตุลาคม 2569','19:11','2026-10-14 19:06:00',categoryH1));details.set(145097,detail('14 ตุลาคม 2569','19:12','2026-10-14 19:12:00','หัวข้ออื่นที่ไม่ตรงลิงก์'));
 categoryHtml=[categoryCard(145075,'14 ตุลาคม 2569',categoryH2,categoryUrl),categoryCard(145068,'13 ตุลาคม 2569'),categoryCard(145084),categoryCard(145090),categoryCard(145091),categoryCard(145097,'14 ตุลาคม 2569','พาดหัวที่อ้างว่าเป็นข่าว...'),categoryCard(145096,'14 ตุลาคม 2569','ข่าวต่างโดเมนที่ต้องปฏิเสธ','https://evil.example/news_detail/145096/story')].join('');
+for(const [id,publishedAt] of [[145073,'2026-10-14T10:00:00.000Z'],[145072,'2026-10-14T09:00:00.000Z']])db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(4,'2026-10-14','ช่อง 8',?,?,'2026-10-14T12:00:00.000Z',?,'index')").run(`ข่าวที่เคยยืนยันแล้ว ${id}`,`https://www.thaich8.com/news_detail/${id}/story`,publishedAt);
 const categoryBefore=categoryCalls;
 const newlyDiscovered=await rollingRefresh({env:{DB:D1}},4,now);
-assert.equal(newlyDiscovered.total,1,'a new official article on the current first-party category listing is discovered when /news fails');
+assert.equal(newlyDiscovered.total,3,'a new official article joins two previously verified visible stories');
+assert.equal(newlyDiscovered.sources[3].found,3,'source status counts the three visible verified stories, not only the one checked in this refresh');
 assert.equal(newlyDiscovered.items[0].source_url,new URL(categoryUrl).toString());
 assert.equal(newlyDiscovered.items[0].headline,categoryH1,'truncated category H2 is replaced only with matching official article H1');
 assert.equal(newlyDiscovered.items[0].published_at,'2026-10-14T12:11:00.000Z');
