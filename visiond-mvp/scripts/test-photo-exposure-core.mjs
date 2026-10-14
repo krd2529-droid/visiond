@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {PHOTO_LIMITS,validatePhotoFiles,estimateAutoStrength,liftShadows,outputDimensions,outputName,withinOutputBudget} from '../public/photo-exposure-core.js';
+
+const pixels=(width,height,r,g,b)=>{const data=new Uint8ClampedArray(width*height*4);for(let i=0;i<data.length;i+=4){data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=255}return data};
+const dark=pixels(100,100,105,75,60),bright=pixels(100,100,205,185,165);
+const auto=estimateAutoStrength(dark,100,100);assert.ok(auto>=35&&auto<=85,`dark midtones need a bounded auto lift, got ${auto}`);
+assert.equal(estimateAutoStrength(bright,100,100),0,'already bright photo is a true auto no-op');
+const low=liftShadows(dark.slice(),25),high=liftShadows(dark.slice(),80);assert.ok(low[0]>dark[0]&&high[0]>low[0],'manual adjustment increases monotonically');
+assert.ok(high[0]<160&&high[1]<120,'shadow lift is bounded and does not bleach the sample skin tone');
+assert.ok(Math.abs(high[0]/high[1]-dark[0]/dark[1])<.03,'RGB scaling preserves approximate hue');
+const highlights=pixels(10,10,245,235,220);assert.deepEqual(liftShadows(highlights.slice(),100),highlights,'highlights are protected at maximum strength');
+assert.deepEqual(liftShadows(bright.slice(),0),bright,'zero manual strength does nothing');
+assert.deepEqual(outputDimensions(5000,4000),{width:2400,height:1920});
+assert.throws(()=>outputDimensions(9000,5000),/40 ล้าน/);
+assert.equal(validatePhotoFiles([{name:'portrait.JPG',type:'image/jpeg',size:9_860_096}]).length,1,'a provided-size JPG below 20 MB is accepted');
+assert.throws(()=>validatePhotoFiles([{name:'bad.txt',type:'text/plain',size:100}]),/ไม่รองรับ/);
+assert.throws(()=>validatePhotoFiles([{name:'huge.jpg',type:'image/jpeg',size:20_000_001}]),/20 MB/);
+assert.equal(outputName('หน้า:เด็ก?.JPG',0),'001-หน้า_เด็ก_-brightened.png');
+assert.equal(outputName('same.jpg',1),'002-same-brightened.png','index disambiguates duplicate original names');
+const longThai=outputName(`${'ก'.repeat(90)}.jpg`,0);
+assert.ok(longThai.startsWith('001-ก'),'a long Thai filename keeps a recognizable original prefix');
+assert.ok(new TextEncoder().encode(longThai).length<=240,'ZIP name bound is UTF-8 bytes, not Unicode characters');
+assert.equal(withinOutputBudget(19*8*1024*1024,8*1024*1024),true);
+assert.equal(withinOutputBudget(20*8*1024*1024,8*1024*1024),false,'aggregate output cannot exceed the 160 MiB ZIP budget');
+assert.equal(PHOTO_LIMITS.outputBytes,160*1024*1024);
+console.log('photo exposure core: dark/bright/manual/highlight/hue/limits PASS');

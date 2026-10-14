@@ -45,13 +45,18 @@ try{
     const newsShortcut=page.locator('#adminPanel > .admin-news-shortcut[href="/news-channel.html"]');
     assert.equal(await newsShortcut.isVisible(),true,'news shortcut is visible above personal pins');
     assert.equal(await page.evaluate(()=>document.querySelector('.admin-news-shortcut').getBoundingClientRect().top<document.querySelector('.admin-pinned-heading').getBoundingClientRect().top),true,'news shortcut precedes the pinned-menu heading');
+    const photoShortcut=page.locator('#adminPanel > .admin-news-shortcut[href="/photo-exposure.html"]');
+    assert.equal(await photoShortcut.isVisible(),true,'batch photo tool is visible independently of saved pins');
+    assert.equal(await page.evaluate(()=>document.querySelector('a[href="/photo-exposure.html"].admin-news-shortcut').getBoundingClientRect().top<document.querySelector('.admin-pinned-heading').getBoundingClientRect().top),true,'photo shortcut appears before personal pins');
     assert.equal(await page.locator('.admin-menu-item:has(> a[href="/news-channel.html"])').count(),1,'news stays in pinnable all-menu');
+    assert.equal(await page.locator('.admin-menu-item:has(> a[href="/photo-exposure.html"])').count(),1,'photo tool stays in pinnable all-menu');
     const newsPage=await context.newPage();
     await newsPage.goto(`${base}/admin.html`);
-    await newsPage.locator('.admin-news-shortcut').click();
+    await newsPage.locator('.admin-news-shortcut[href="/news-channel.html"]').click();
     await newsPage.waitForURL('**/news-channel.html');
     await newsPage.close();
-    assert.equal(await page.locator('.admin-menu-item').count(),38,'static plus middleware destinations, including news');
+    const photoPage=await context.newPage();await photoPage.goto(`${base}/admin.html`);await photoPage.locator('.admin-news-shortcut[href="/photo-exposure.html"]').click();await photoPage.waitForURL('**/photo-exposure.html');await photoPage.close();
+    assert.equal(await page.locator('.admin-menu-item').count(),39,'static plus middleware destinations, including news and photo exposure');
     const vedit=page.locator('.admin-menu-item:has(> a[href="/vedit"])');
     assert.equal(await vedit.count(),1,'Vedit is available in the admin all-menu grid');
     await vedit.locator('.admin-pin-toggle').click();
@@ -120,13 +125,14 @@ try{
     assert.equal(await page.locator('.admin-tabs > [data-admin-pinned-id]').count(),0);
     assert.equal(await page.locator('#adminPinnedEmpty').isVisible(),true,'empty state visible');
     assert.equal(await newsShortcut.isVisible(),true,'news shortcut remains visible with no saved pins');
+    assert.equal(await photoShortcut.isVisible(),true,'photo shortcut remains visible with no saved pins');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'news shortcut does not overflow viewport');
     if(process.env.ADMIN_NAV_SCREENSHOTS){
       fs.mkdirSync(process.env.ADMIN_NAV_SCREENSHOTS,{recursive:true});
       await page.evaluate(()=>scrollTo(0,0));
       await page.screenshot({path:path.join(process.env.ADMIN_NAV_SCREENSHOTS,`admin-news-shortcut-${width}.png`),fullPage:false});
     }
-    assert.equal(await page.locator('.admin-menu-item').count(),34,'Admin has every non-Boss destination, including news');
+    assert.equal(await page.locator('.admin-menu-item').count(),35,'Admin has every non-Boss destination, including news and photo exposure');
     assert.equal(await page.locator('.admin-menu-item:has(> a[href="/vedit"])').count(),1,'Admin role can reach Vedit menu');
     assert.equal(await page.evaluate(()=>document.querySelector('.admin-menu-board').scrollWidth>document.querySelector('.admin-menu-board').clientWidth),false,'all-menu grid fits viewport');
     await context.close();
