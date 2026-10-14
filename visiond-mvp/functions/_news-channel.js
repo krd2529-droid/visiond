@@ -6,6 +6,7 @@ export const NEWS_SOURCES=Object.freeze([
 ]);
 export const NEWS_STYLES=Object.freeze(['ข่าวด่วน','ผู้ประกาศข่าวมืออาชีพ','เล่าข่าวแบบเพื่อนคุย','ข่าวสายแซ่บ','ข่าวสายฮา','ข่าวลึกลับ','ข่าวสืบสวน','ข่าววิเคราะห์','ข่าวเล่าเป็นเรื่อง','ข่าวประเด็นฮิต','ข่าวสรุป 30 วินาที','ข่าวแบบตั้งคำถาม','ข่าวสองพิธีกร','ข่าวสารคดี','ข่าวเล่าจากหลายมุม']);
 export const bangkokDay=(date=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+export const rollingWindow=(date=new Date())=>({start:new Date(date.getTime()-86400000).toISOString(),end:date.toISOString()});
 export function sourceForUrl(value){
   let url;try{url=new URL(value)}catch{return null}
   if(url.protocol!=='https:'||url.username||url.password||url.port||url.searchParams.has('url'))return null;
@@ -43,6 +44,22 @@ const htmlText=value=>String(value||'').replace(/<[^>]*>/g,' ').replace(/&(?:amp
   if(decimal||hex){const code=Number.parseInt(decimal||hex,hex?16:10);return code>0&&code<=0x10ffff?String.fromCodePoint(code):' '}
   return {amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[match.slice(1,-1).toLowerCase()]||' ';
 }).replace(/\s+/gu,' ').trim();
+export function parseCh8PublishedAt(html){
+  // Prefer the publisher-visible "วันที่ลงข่าว" header over article:published_time when they disagree.
+  const clean=String(html||'').slice(0,131072).replace(/<!--[^]*?-->|<script\b[^>]*>[^]*?<\/script>|<style\b[^>]*>[^]*?<\/style>/gi,'');
+  const title=clean.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/i);if(!title)return null;
+  const afterTitle=clean.slice((title.index||0)+title[0].length,(title.index||0)+title[0].length+1024);
+  const calendar=afterTitle.match(/<div\b[^>]*>(?:(?!<\/div>)[^])*?<i\b[^>]*class\s*=\s*(?:"[^"]*\bfa-calendar\b[^"]*"|'[^']*\bfa-calendar\b[^']*')[^>]*>(?:(?!<\/div>)[^])*?<\/div>/i);
+  if(!calendar)return null;
+  const header=htmlText(calendar[0]);
+  const match=header.match(/วันที่ลงข่าว\s+(\d{1,2})\s+([ก-๙]+)\s+(\d{4})\s+เวลา\s+(\d{1,2}):(\d{2})\s*น\.?/u);
+  if(!match||!thaiMonths[match[2]])return null;
+  const year=Number(match[3])-543,month=thaiMonths[match[2]],day=Number(match[1]),hour=Number(match[4]),minute=Number(match[5]);
+  if(year<2000||hour>23||minute>59)return null;
+  const local=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const timestamp=Date.parse(`${local}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00+07:00`);
+  return Number.isFinite(timestamp)&&bangkokDay(new Date(timestamp))===local?new Date(timestamp).toISOString():null;
+}
 export function parseCh8Listing(html,day,observedAt=new Date().toISOString()){
   gdeltWindow(day);
   const observationDay=bangkokDay(new Date(observedAt));
@@ -66,7 +83,7 @@ export function parseCh8Listing(html,day,observedAt=new Date().toISOString()){
     if(listedDay!==day||listedDay>observationDay||seen.has(link.url))continue;
     const headline=htmlText(anchor[3]);
     if(headline.length<8||headline.length>240||/(?:\.{3}|…)$/.test(headline))continue;
-    seen.add(link.url);items.push({source:'ช่อง 8',headline,source_url:link.url,observed_at:observedAt,published_at:null,origin:'index'});
+    seen.add(link.url);items.push({source:'ช่อง 8',headline,source_url:link.url,news_day:listedDay,observed_at:observedAt,published_at:null,origin:'index'});
     if(items.length>=25)break;
   }
   return {items,dated};
