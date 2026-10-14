@@ -40,9 +40,9 @@ assert.equal((await onRequestGet(context('GET',undefined,null,false))).status,40
 
 const indexed=Array.from({length:30},(_,i)=>({url:`https://www.thairath.co.th/news/society/${3000000+i}`,title:`หัวข้อข่าวที่ตรวจจากดัชนี ${i}`,seendate:'20261014T010000Z'}));
 assert.equal(parseGdeltArticles({articles:[...indexed,{...indexed[0]},{url:'https://evil.example/news',title:'fake',seendate:'20261014T010000Z'},{url:'https://www.thairath.co.th/news/society/2999999',title:'old',seendate:'20261013T010000Z'}]},day,NEWS_SOURCES[0]).length,30);
-let indexCalls=0,manualCalls=0,outage=false;
+let indexCalls=0,manualCalls=0,failureMode=null;
 globalThis.fetch=async(url,options={})=>{
-  if(String(url).includes('api.gdeltproject.org')){indexCalls++;if(outage)return new Response('',{status:503});const query=new URL(url).searchParams.get('query');return new Response(JSON.stringify({articles:query.includes('thairath')?indexed:[]}),{status:200,headers:{'content-type':'application/json'}})}
+  if(String(url).includes('api.gdeltproject.org')){indexCalls++;const query=new URL(url).searchParams.get('query');if(failureMode==='mixed'&&!query.includes('thairath'))return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='http_503')return new Response('SECRET UPSTREAM BODY',{status:503});if(failureMode==='http_429')return new Response('SECRET UPSTREAM BODY',{status:429});if(failureMode==='timeout')throw Object.assign(new Error('SECRET TIMEOUT'),{name:'TimeoutError'});if(failureMode==='network')throw new Error('SECRET NETWORK');if(failureMode==='bad_json')return new Response('SECRET NOT JSON',{status:200});if(failureMode==='too_large')return new Response('SECRET',{status:200,headers:{'content-length':'1500001'}});return new Response(JSON.stringify({articles:query.includes('thairath')?indexed:[]}),{status:200,headers:{'content-type':'application/json'}})}
   if(String(url).includes('generativelanguage.googleapis.com'))return new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify({scenes:Array.from({length:4},(_,i)=>({label:`ฉาก ${i+1}`,text:'สมถุ๋ยรายงานจากข้อมูลที่ตรวจแล้ว ขอให้ทุกคนอ่านแหล่งข่าวต้นฉบับประกอบ',video_direction:'สมถุ๋ยยืนหน้าปกนิ่ง แสดงสีหน้าและขยับมือเท่านั้น',vfx:'แสงเน้นใบหน้า',sfx_type:'เสียงเคาะข่าว',sfx_at_seconds:4.5}))})}]}}]}),{status:200});
   manualCalls++;if(options.method==='HEAD')return new Response(null,{status:405});return new Response('',{status:206});
 };
@@ -63,7 +63,16 @@ const manual=await json(await post({action:'manual',day:previous,url:'https://ww
 assert.equal(manual.total,1);
 assert.equal(manual.items[0].origin,'manual');
 assert.equal((await json(await get(day))).total,25,'other day remains isolated');
-outage=true;const unavailable=await json(await post({action:'refresh',day:'2026-10-12'}));assert.equal(unavailable.state,'unavailable');assert.equal(unavailable.total,0);outage=false;
+for(const [mode,testDay] of [['http_503','2026-10-12'],['http_429','2026-10-11'],['timeout','2026-10-10'],['bad_json','2026-10-09'],['too_large','2026-10-08'],['network','2026-10-07']]){
+  failureMode=mode;
+  const unavailable=await json(await post({action:'refresh',day:testDay}));
+  assert.equal(unavailable.state,'unavailable');assert.equal(unavailable.total,0);
+  assert.deepEqual(unavailable.sources.map(source=>source.error_code),Array(4).fill(mode),'each source exposes only its bounded failure code');
+  assert.equal(unavailable.sources.every(source=>source.available===false),true);
+  assert.doesNotMatch(JSON.stringify(unavailable),/SECRET|api\.gdeltproject|stack/i,'upstream details are never echoed');
+}
+failureMode=null;
+failureMode='mixed';const partial=await json(await post({action:'refresh',day:'2026-10-06'}));assert.equal(partial.state,'partial');assert.equal(partial.sources[0].available,true);assert.equal(partial.sources[0].error_code,undefined);assert.deepEqual(partial.sources.slice(1).map(source=>source.error_code),['http_429','http_429','http_429']);failureMode=null;
 assert.equal((await post({action:'script',id:manual.items[0].id,style:NEWS_STYLES[0],notes:'สั้น'})).status,422,'script requires factual notes');
 assert.equal((await post({action:'script',id:manual.items[0].id,style:'invented',notes:'ข้อมูลที่ตรวจจากข่าวต้นฉบับมีรายละเอียดเพียงพอสำหรับร่างบท'})).status,422,'style allowlist');
 const script=await json(await post({action:'script',id:manual.items[0].id,style:NEWS_STYLES[0],notes:'ข้อมูลที่ตรวจจากข่าวต้นฉบับมีรายละเอียดเพียงพอสำหรับร่างบท'}));

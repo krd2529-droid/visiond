@@ -19,13 +19,15 @@ async function refresh(ctx,owner,day){
   const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,day,lease,nowIso,stale).run();
   if(!Number(claim.meta?.changes||0))return {...await page(db,owner,day),reused:true,message:'ใช้ผลค้นหาที่เก็บไว้ชั่วคราว; ลองรีเฟรชอีกครั้งภายหลัง'};
   const outcomes=await Promise.all(NEWS_SOURCES.map(async source=>{
+    const failed=error_code=>({source:source.name,items:[],error_code});
     try{
       const response=await fetch(gdeltUrl(day,source.domain),{signal:AbortSignal.timeout(8000),headers:{accept:'application/json'}});
-      if(!response.ok)throw new Error(`HTTP_${response.status}`);
-      if(Number(response.headers.get('content-length')||0)>1_500_000)throw new Error('TOO_LARGE');
-      const body=await response.text();if(body.length>1_500_000)throw new Error('TOO_LARGE');
-      return {source:source.name,items:parseGdeltArticles(JSON.parse(body),day,source)};
-    }catch(error){return {source:source.name,items:[],error:String(error?.message||'unavailable').slice(0,80)}};
+      if(!response.ok)return failed(Number.isInteger(response.status)&&response.status>=100&&response.status<=599?`http_${response.status}`:'http_error');
+      if(Number(response.headers.get('content-length')||0)>1_500_000)return failed('too_large');
+      const body=await response.text();if(body.length>1_500_000)return failed('too_large');
+      let payload;try{payload=JSON.parse(body)}catch{return failed('bad_json')}
+      try{return {source:source.name,items:parseGdeltArticles(payload,day,source)}}catch{return failed('parse_error')}
+    }catch(error){return failed(error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network')};
   }));
   const candidates=outcomes.flatMap(x=>x.items).sort((a,b)=>b.observed_at.localeCompare(a.observed_at));
   const known=new Set(((await db.prepare('SELECT source_url FROM news_channel_items WHERE owner_id=? AND news_day=? ORDER BY id LIMIT 25').bind(owner,day).all()).results||[]).map(row=>row.source_url));
@@ -36,9 +38,9 @@ async function refresh(ctx,owner,day){
     if(Number(result.meta?.changes||0))known.add(item.source_url);
     else if(Number((await db.prepare('SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=? AND news_day=?').bind(owner,day).first())?.n||0)>=maxItems)break;
   }
-  const failed=outcomes.filter(x=>x.error),state=failed.length===NEWS_SOURCES.length?'unavailable':failed.length?'partial':'ready';
+  const failed=outcomes.filter(x=>x.error_code),state=failed.length===NEWS_SOURCES.length?'unavailable':failed.length?'partial':'ready';
   await db.prepare('UPDATE news_channel_refresh SET state=?,refreshed_at=?,lease_until=NULL WHERE owner_id=? AND news_day=?').bind(state,state==='unavailable'?null:nowIso,owner,day).run();
-  return {...await page(db,owner,day),state,sources:outcomes.map(x=>({name:x.source,found:x.items.length,available:!x.error})),message:state==='unavailable'?'แหล่งค้นข่าวไม่พร้อมใช้งาน เพิ่มลิงก์ข่าวเองได้':failed.length?'ค้นข่าวได้บางแหล่ง; เพิ่มลิงก์เองได้':''};
+  return {...await page(db,owner,day),state,sources:outcomes.map(x=>({name:x.source,found:x.items.length,available:!x.error_code,...(x.error_code?{error_code:x.error_code}:{})})),message:state==='unavailable'?'แหล่งค้นข่าวไม่พร้อมใช้งาน เพิ่มลิงก์ข่าวเองได้':failed.length?'ค้นข่าวได้บางแหล่ง; เพิ่มลิงก์เองได้':''};
 }
 
 async function manual(ctx,owner,body){
