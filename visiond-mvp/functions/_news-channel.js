@@ -108,6 +108,24 @@ const htmlText=value=>String(value||'').replace(/<[^>]*>/g,' ').replace(/&(?:amp
   if(decimal||hex){const code=Number.parseInt(decimal||hex,hex?16:10);return code>0&&code<=0x10ffff?String.fromCodePoint(code):' '}
   return {amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[match.slice(1,-1).toLowerCase()]||' ';
 }).replace(/\s+/gu,' ').trim();
+export function extractNewsArticleImage(html,headline,articleUrl){
+  const source=sourceForUrl(articleUrl);if(!source)return null;
+  const page=String(html||'').slice(0,450_000);
+  const meta=(name)=>{for(const tag of page.match(/<meta\b[^>]*>/gi)||[]){if(!new RegExp(`(?:property|name)=["']${name}["']`,'i').test(tag))continue;return tag.match(/\bcontent=["']([^"']+)["']/i)?.[1]||''}return ''};
+  let nuxtTitle='';
+  if(source.source==='ช่องวัน'){
+    const id=new URL(source.url).pathname.match(/^\/news\/detail\/(\d+)/)?.[1];
+    const start=id?page.indexOf(`newsDetail:{id:${id},`):-1,end=start<0?-1:page.indexOf('newsDetailList:',start);
+    if(end>start&&end-start<250_000){const encoded=page.slice(start,end).match(/\btitle:("(?:\\.|[^"\\])*")/)?.[1];try{nuxtTitle=JSON.parse(encoded||'""')}catch{}}
+  }
+  const expected=htmlText(headline).toLowerCase(),actual=htmlText(meta('og:title')||nuxtTitle).toLowerCase();
+  if(expected.length<8||actual.length<8||(!actual.includes(expected)&&!expected.includes(actual)))return null;
+  const candidate=meta('og:image')||meta('twitter:image');let url;try{url=new URL(htmlText(candidate),source.url)}catch{return null}
+  const publisher=new URL(source.url).hostname.replace(/^www\./,'');
+  const permitted=url.hostname===publisher||url.hostname.endsWith(`.${publisher}`)||source.source==='ช่องวัน'&&url.hostname==='image.onehd.net';
+  if(!permitted||url.protocol!=='https:'||url.username||url.password||url.port||url.href.length>1000||!/^\/(?!\/)[^?#]+\.(?:jpe?g|png|webp)$/i.test(url.pathname)||/(?:logo|placeholder|default|favicon)/i.test(url.pathname)||url.search||url.hash)return null;
+  return {url:url.toString(),source:source.source,article_url:source.url};
+}
 export function extractNewsArticleBody(html,headline){
   const source=String(html||'').slice(0,450_000),expected=htmlText(headline).toLowerCase();
   if(expected.length<8)return null;

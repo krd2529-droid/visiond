@@ -1,7 +1,7 @@
 import {json,requireAdmin} from '../../_lib.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
 import {countNewsSyllables} from '../../../public/news-syllables.js';
-import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,rollingWindow,gdeltUrl,parseGdeltArticles,parseCh8Listing,parseCh8PublishedAt,parseCh8Headline,parseCh3Listing,parseCh3Detail,parseOneSitemap,parseOneDetail,parseThaiRathListing,parseThaiRathDetail,sourceForUrl,extractNewsArticleBody} from '../../_news-channel.js';
+import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,rollingWindow,gdeltUrl,parseGdeltArticles,parseCh8Listing,parseCh8PublishedAt,parseCh8Headline,parseCh3Listing,parseCh3Detail,parseOneSitemap,parseOneDetail,parseThaiRathListing,parseThaiRathDetail,sourceForUrl,extractNewsArticleBody,extractNewsArticleImage} from '../../_news-channel.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const reply=(value,status=200)=>json(value,status,headers);
@@ -100,6 +100,31 @@ async function officialText(url,limit,timeout=5000){
     while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit)return {error_code:'too_large'};parts.push(decoder.decode(value,{stream:true}))}
     parts.push(decoder.decode());return {text:parts.join('')};
   }catch(error){return {error_code:error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network'}}
+  finally{if(reader)await reader.cancel().catch(()=>{});else if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
+}
+async function articlePhoto(ctx,owner,id){
+  if(!Number.isSafeInteger(id)||id<1)return null;
+  const story=await ownedItem(ctx.env.DB,owner,id),source=sourceForUrl(story?.source_url);
+  if(!story||!source||source.source!==story.source)return null;
+  const article=await officialText(source.url,450_000,6000);
+  if(!article.text)return {unavailable:true,message:'เปิดบทความต้นฉบับเพื่อตรวจภาพไม่ได้ กรุณาลองใหม่หรืออัปโหลดภาพที่มีสิทธิ์ใช้'};
+  return extractNewsArticleImage(article.text,story.headline,source.url);
+}
+async function photoBytes(ctx,owner,id){
+  const photo=await articlePhoto(ctx,owner,id);
+  if(!photo?.url)return reply({error:photo?.message||'ไม่พบภาพข่าวจากบทความต้นฉบับ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'},404);
+  let response,reader;
+  try{
+    response=await fetch(photo.url,{redirect:'manual',signal:AbortSignal.timeout(8000),headers:{accept:'image/jpeg,image/png,image/webp'}});
+    const type=String(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
+    if(!response.ok||response.redirected||!/^image\/(?:jpeg|png|webp)$/.test(type)||Number(response.headers.get('content-length')||0)>8_000_000)return reply({error:'ภาพต้นฉบับเปิดใช้ไม่ได้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'},422);
+    reader=response.body?.getReader();if(!reader)return reply({error:'ภาพต้นฉบับเปิดใช้ไม่ได้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'},422);
+    const chunks=[];let size=0;
+    while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>8_000_000)return reply({error:'ภาพต้นฉบับใหญ่เกิน 8 MB กรุณาอัปโหลดภาพอื่น'},422);chunks.push(value)}
+    if(size<100)return reply({error:'ภาพต้นฉบับไม่สมบูรณ์ กรุณาอัปโหลดภาพอื่น'},422);
+    const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+    return new Response(bytes,{headers:{...headers,'content-type':type}});
+  }catch{return reply({error:'เปิดภาพต้นฉบับไม่ได้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'},502)}
   finally{if(reader)await reader.cancel().catch(()=>{});else if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
 }
 async function fetchCh3Recent(nowIso,window){
@@ -324,4 +349,4 @@ async function script(ctx,owner,body){
 }
 
 export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url);if(url.searchParams.has('manual_cursor')){const cursor=Number(url.searchParams.get('manual_cursor'));return Number.isSafeInteger(cursor)&&cursor>0?reply(await manualPage(ctx.env.DB,auth.user.id,cursor)):reply({error:'cursor ไม่ถูกต้อง'},400)}if(!url.searchParams.has('day')){try{return reply({...await rollingPage(ctx.env.DB,auth.user.id,new Date(),url.searchParams.get('cursor')),styles:NEWS_STYLES})}catch(error){if(error?.message==='INVALID_CURSOR')return reply({error:'cursor ไม่ถูกต้อง'},400);throw error}}const day=safeDay(url.searchParams.get('day')),cursor=Number(url.searchParams.get('cursor')||0);if(!day||!Number.isSafeInteger(cursor)||cursor<0)return reply({error:'วันหรือ cursor ไม่ถูกต้อง'},400);return reply({...await page(ctx.env.DB,auth.user.id,day,cursor),day,styles:NEWS_STYLES});}
-export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='rolling_refresh')return reply(await rollingRefresh(ctx,auth.user.id));if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='publisher_probe')return reply(await probePublishers());if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
+export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='photo'){const photo=await articlePhoto(ctx,auth.user.id,Number(body.id));return reply(photo||{unavailable:true,message:'ไม่พบภาพข่าวที่ยืนยันว่าเป็นของบทความนี้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'})}if(body.action==='photo_bytes')return body.rights_confirmed===true?photoBytes(ctx,auth.user.id,Number(body.id)):reply({error:'กรุณายืนยันสิทธิ์ใช้ภาพก่อนทำปก'},422);if(body.action==='rolling_refresh')return reply(await rollingRefresh(ctx,auth.user.id));if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='publisher_probe')return reply(await probePublishers());if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
