@@ -108,6 +108,31 @@ const htmlText=value=>String(value||'').replace(/<[^>]*>/g,' ').replace(/&(?:amp
   if(decimal||hex){const code=Number.parseInt(decimal||hex,hex?16:10);return code>0&&code<=0x10ffff?String.fromCodePoint(code):' '}
   return {amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[match.slice(1,-1).toLowerCase()]||' ';
 }).replace(/\s+/gu,' ').trim();
+export function extractNewsArticleBody(html,headline){
+  const source=String(html||'').slice(0,450_000),expected=htmlText(headline).toLowerCase();
+  if(expected.length<8)return null;
+  const nuxtStart=source.indexOf('newsDetail:{id:');
+  const nuxtEnd=nuxtStart<0?-1:source.indexOf('newsDetailList:',nuxtStart);
+  const nuxt=nuxtEnd>nuxtStart&&nuxtEnd-nuxtStart<250_000?source.slice(nuxtStart,nuxtEnd):'';
+  const encodedTitle=nuxt.match(/\btitle:("(?:\\.|[^"\\])*")/)?.[1];
+  const encodedContent=nuxt.match(/\bcontent:("(?:\\.|[^"\\])*")/)?.[1];
+  let nuxtTitle='',nuxtContent='';
+  try{nuxtTitle=JSON.parse(encodedTitle||'""');nuxtContent=JSON.parse(encodedContent||'""')}catch{}
+  const title=nuxtTitle||source.match(/<meta\b[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i)?.[1]
+    ||source.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1];
+  const actual=htmlText(title).toLowerCase();
+  if(!actual||(!actual.includes(expected)&&!expected.includes(actual)&&!(expected.slice(0,20)&&actual.includes(expected.slice(0,20)))))return null;
+  const candidates=[nuxtContent];
+  for(const match of source.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)){
+    try{const visit=(value,depth=0)=>{if(depth>5||!value||typeof value!=='object')return;if(Array.isArray(value)){value.forEach(item=>visit(item,depth+1));return}if(typeof value.articleBody==='string')candidates.push(value.articleBody);for(const key of ['@graph','mainEntity'])visit(value[key],depth+1)};visit(JSON.parse(match[1]))}catch{}
+  }
+  const clean=source.replace(/<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<nav\b[^>]*>[\s\S]*?<\/nav>|<footer\b[^>]*>[\s\S]*?<\/footer>|<header\b[^>]*>[\s\S]*?<\/header>/gi,' ');
+  const article=clean.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1]||'';
+  const paragraphs=[...article.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map(match=>htmlText(match[1])).filter(text=>text.length>=35);
+  candidates.push(paragraphs.join('\n'));
+  const body=candidates.map(value=>htmlText(value).slice(0,9000)).find(value=>value.length>=180&&value!==actual);
+  return body?body.slice(0,6500):null;
+}
 export function parseCh8Headline(html){
   const clean=String(html||'').slice(0,131072).replace(/<!--[^]*?-->|<script\b[^>]*>[^]*?<\/script>|<style\b[^>]*>[^]*?<\/style>/gi,'');
   const title=clean.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
