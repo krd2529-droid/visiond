@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>คลังโพสต์ขายของ · VisionD</title>
+<link rel="stylesheet" href="/toy-post-library.css?v=0138"></head>
+<body><header><a href="/admin.html">← หลังบ้าน</a><strong>คลังโพสต์ขายของ</strong></header>
+<main id="app" hidden>
+  <p class="notice">คลังนี้แยกจากสต็อก Toys Center · ระบบนี้เตรียมข้อความและรูปให้ตรวจเท่านั้น ยังไม่เผยแพร่ลง Facebook</p>
+  <section><h1>เตรียมโพสต์</h1><form id="composeForm"><label>หัวโพสต์ใหม่<input id="heading" required maxlength="1000" placeholder="มือ1 รวมส่ง"></label><label>ไลน์สินค้า<select id="composeLine" required></select></label><button>เตรียมโพสต์</button></form><p id="composeStatus" role="status"></p><div id="preview" hidden><h2>ตรวจโพสต์ก่อนนำไปใช้</h2><p id="previewDestinations"></p><pre id="previewText"></pre><div id="previewPhotos" class="photos"></div><p>ยังไม่ได้เผยแพร่ลง Facebook</p></div></section>
+  <section><h2>ไลน์และปลายทาง</h2><form id="lineForm"><label>ชื่อไลน์ใหม่<input id="lineName" maxlength="100" required placeholder="กันดั้ม"></label><button>เพิ่มไลน์</button></form><div id="lineRows"></div><button id="moreLines" type="button" hidden>โหลดไลน์เพิ่ม</button></section>
+  <section><h2>สินค้าในคลัง</h2><label>เลือกไลน์<select id="productLine"></select></label><form id="productForm"><label>รายละเอียดสินค้า (ชื่อและข้อมูลตามที่ต้องการโพสต์)<textarea id="productDetail" required maxlength="10000" rows="4"></textarea></label><label>รูปสินค้า 1 รูป<input id="productPhoto" type="file" accept="image/jpeg,image/png,image/webp" required></label><button>เพิ่มสินค้า</button></form><p id="productStatus" role="status"></p><div id="productRows"></div><button id="moreProducts" type="button" hidden>โหลดเพิ่ม</button></section>
+</main><p id="denied" hidden>กรุณาเข้าสู่ระบบด้วยบัญชีแอดมิน</p><script type="module" src="/toy-post-library.js?v=0138"></script></body></html>
