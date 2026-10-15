@@ -1,6 +1,6 @@
 import {json,requireAdmin} from '../../_lib.js';
 import {requestWorkNotesAI} from '../../_work-notes-ai.js';
-import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,rollingWindow,gdeltUrl,parseGdeltArticles,parseCh8Listing,parseCh8PublishedAt,parseCh8Headline,sourceForUrl} from '../../_news-channel.js';
+import {NEWS_SOURCES,NEWS_STYLES,bangkokDay,rollingWindow,gdeltUrl,parseGdeltArticles,parseCh8Listing,parseCh8PublishedAt,parseCh8Headline,parseCh3Listing,parseCh3Detail,parseOneSitemap,parseOneDetail,parseThaiRathListing,parseThaiRathDetail,sourceForUrl} from '../../_news-channel.js';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const reply=(value,status=200)=>json(value,status,headers);
@@ -88,6 +88,66 @@ async function fetchCh8Publication(item){
   finally{if(reader)await reader.cancel().catch(()=>{});else if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
 }
 
+async function officialText(url,limit,timeout=5000){
+  let response,reader;
+  try{
+    response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(timeout),headers:{accept:'text/html,application/xml'}});
+    if(!response.ok||response.redirected)return {error_code:Number.isInteger(response.status)?`http_${response.status}`:'http_error'};
+    if(Number(response.headers.get('content-length')||0)>limit)return {error_code:'too_large'};
+    reader=response.body?.getReader();if(!reader)return {error_code:'parse_error'};
+    const decoder=new TextDecoder(),parts=[];let size=0;
+    while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit)return {error_code:'too_large'};parts.push(decoder.decode(value,{stream:true}))}
+    parts.push(decoder.decode());return {text:parts.join('')};
+  }catch(error){return {error_code:error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network'}}
+  finally{if(reader)await reader.cancel().catch(()=>{});else if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
+}
+async function fetchCh3Recent(nowIso,window){
+  const listing=await officialText('https://ch3plus.com/news',500_000,6000);
+  if(listing.error_code)return {name:'ช่อง 3',items:[],error_code:listing.error_code};
+  const candidates=parseCh3Listing(listing.text,nowIso);
+  if(!candidates)return {name:'ช่อง 3',items:[],error_code:'parse_error'};
+  const recent=candidates.filter(item=>item.published_at>=window.start&&item.published_at<=window.end).slice(0,8),items=[];
+  for(let i=0;i<recent.length;i+=4){
+    const batch=await Promise.all(recent.slice(i,i+4).map(async item=>{
+      const detail=await officialText(item.source_url,250_000,4000),id=Number(item.source_url.match(/\/(\d{5,8})(?:\/|$)/)?.[1]);
+      const parsed=detail.text?parseCh3Detail(detail.text,id):null;
+      return parsed&&parsed.headline===item.headline&&parsed.published_at===item.published_at?item:null;
+    }));items.push(...batch.filter(Boolean));
+  }
+  return {name:'ช่อง 3',items,error_code:items.length?null:recent.length?'timestamp_unverified':'stale_listing'};
+}
+async function fetchThaiRathRecent(nowIso,window){
+  const listing=await officialText('https://www.thairath.co.th/news',1_200_000,6000);
+  if(listing.error_code)return {name:'ไทยรัฐ',items:[],error_code:listing.error_code};
+  const candidates=parseThaiRathListing(listing.text,nowIso).slice(0,8);
+  if(!candidates.length)return {name:'ไทยรัฐ',items:[],error_code:'parse_error'};
+  const items=[];
+  for(let i=0;i<candidates.length;i+=4){
+    const batch=await Promise.all(candidates.slice(i,i+4).map(async item=>{
+      const detail=await officialText(item.source_url,300_000,4000),parsed=detail.text?parseThaiRathDetail(detail.text):null;
+      if(!parsed||parsed.source_url!==item.source_url||parsed.headline!==item.headline||parsed.published_at<window.start||parsed.published_at>window.end)return null;
+      return {...item,news_day:bangkokDay(new Date(parsed.published_at)),published_at:parsed.published_at,origin:'index'};
+    }));items.push(...batch.filter(Boolean));
+  }
+  return {name:'ไทยรัฐ',items,error_code:items.length?null:'timestamp_unverified'};
+}
+async function fetchOneRecent(nowIso,window){
+  const listing=await officialText('https://www.one31.net/sitemap-news-1.xml',900_000,6000);
+  if(listing.error_code)return {name:'ช่องวัน',items:[],error_code:listing.error_code};
+  const candidates=parseOneSitemap(listing.text).slice(0,8);
+  if(!candidates.length)return {name:'ช่องวัน',items:[],error_code:'parse_error'};
+  const items=[];
+  for(let i=0;i<candidates.length;i+=4){
+    const batch=await Promise.all(candidates.slice(i,i+4).map(async source_url=>{
+      const detail=await officialText(source_url,450_000,4000),id=Number(source_url.match(/\/news\/detail\/(\d+)/)?.[1]);
+      const parsed=detail.text?parseOneDetail(detail.text,id):null;
+      if(!parsed||parsed.published_at<window.start||parsed.published_at>window.end)return null;
+      return {source:'ช่องวัน',headline:parsed.headline,source_url,news_day:bangkokDay(new Date(parsed.published_at)),observed_at:nowIso,published_at:parsed.published_at,origin:'index'};
+    }));items.push(...batch.filter(Boolean));
+  }
+  return {name:'ช่องวัน',items,error_code:items.length?null:'timestamp_unverified'};
+}
+
 async function savedCh8Candidates(db,owner,day,previous){
   const candidates=[];
   for(const newsDay of [day,previous]){
@@ -122,6 +182,10 @@ export async function rollingPage(db,owner,now=new Date(),cursor=null){
   const items=rows.slice(0,take),seen=(point?.seen||0)+items.length;
   return {items,...manual,next_cursor:rows.length>take&&seen<25?`${window.end}~${items.at(-1).published_at}~${items.at(-1).id}~${seen}`:null,total:Number(count?.n||0),limit:maxItems,window_start:window.start,window_end:window.end};
 }
+async function rollingSourceCounts(db,owner,window){
+  const rows=(await db.prepare("SELECT source,COUNT(*) AS n FROM (SELECT source FROM news_channel_items WHERE owner_id=? AND origin='index' AND published_at>=? AND published_at<=? ORDER BY published_at DESC,id DESC LIMIT 25) GROUP BY source").bind(owner,window.start,window.end).all()).results||[];
+  return new Map(rows.map(row=>[row.source,Number(row.n||0)]));
+}
 async function manualPage(db,owner,cursor=null){
   const rows=(await db.prepare(`SELECT id,news_day,source,headline,source_url,observed_at,published_at,origin FROM news_channel_items WHERE owner_id=? AND origin='manual'${cursor?' AND id<?':''} ORDER BY id DESC LIMIT 25`).bind(owner,...(cursor?[cursor]:[])).all()).results||[];
   return {manual_items:rows.slice(0,24),manual_next_cursor:rows.length>24?rows[23].id:null};
@@ -133,9 +197,10 @@ export async function rollingRefresh(ctx,owner,now=new Date()){
   const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,key,lease,nowIso,stale).run();
   if(!Number(claim.meta?.changes||0)){
     const recent=await db.prepare('SELECT state FROM news_channel_refresh WHERE owner_id=? AND news_day=?').bind(owner,key).first(),state=recent?.state||'running';
-    const result=await rollingPage(db,owner,now);
-    return {...result,reused:true,state,sources:NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:['partial','partial_saved','partial_general'].includes(state)?result.total:0,available:state==='partial'||state==='partial_general',...(state==='partial_general'?{limited:true,limited_kind:'general',error_code:'recent_attempt'}:state==='partial_saved'?{limited:true,error_code:'recent_attempt'}:state==='no_recent'?{error_code:'stale_listing'}:state==='unverified'?{error_code:'timestamp_unverified'}:state==='unavailable'?{error_code:'recent_attempt'}:{})}:{name:source.name,found:0,available:false,error_code:'timestamp_unverified'}),message:state==='unavailable'?'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; รอ 2 นาทีแล้วลองค้นหาใหม่':state==='running'?'กำลังค้นข่าวอยู่ กรุณารอสักครู่':state==='partial_general'?'ตรวจข่าวได้จากหมวดทั่วไปและลิงก์เดิม; รายการข่าวรวมยังไม่พร้อม':state==='partial_saved'?'ตรวจเวลาเผยแพร่จากลิงก์ข่าวที่เคยพบได้บางส่วน; รายการข่าวใหม่จากต้นทางยังไม่พร้อม':state==='no_recent'?'หมวดข่าวทั่วไปเปิดได้ แต่ไม่มีลิงก์ข่าวในวันที่ค้น; รายการข่าวรวมยังไม่พร้อม':state==='unverified'?'หมวดข่าวทั่วไปเปิดได้ แต่ยังยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงไม่ได้':'ใช้ผลค้นหาล่าสุดชั่วคราว; ข่าวที่พ้น 24 ชั่วโมงถูกตัดออกแล้ว'};
+    const result=await rollingPage(db,owner,now),counts=await rollingSourceCounts(db,owner,window);
+    return {...result,reused:true,state,sources:NEWS_SOURCES.map(source=>({name:source.name,found:counts.get(source.name)||0,available:false,limited:true,limited_kind:'cached',error_code:'recent_attempt'})),message:state==='running'?'กำลังค้นข่าวอยู่ กรุณารอสักครู่':'ใช้ผลค้นหาล่าสุดชั่วคราว; รอ 2 นาทีแล้วค้นใหม่ได้'};
   }
+  const extraPromise=Promise.all([fetchThaiRathRecent(nowIso,window),fetchCh3Recent(nowIso,window),fetchOneRecent(nowIso,window)]);
   const primary=await fetchCh8Listing(day,previous,nowIso);
   const secondary=primary.error_code?await fetchCh8Listing(day,previous,nowIso,true):null;
   const generalItems=secondary?.items?.length?secondary.items.slice(0,6).map(item=>({...item,from_general:true})):[];
@@ -156,23 +221,26 @@ export async function rollingRefresh(ctx,owner,now=new Date()){
       verified.push({...item,headline,published_at:timestamp});
     }
   }
+  const extra=await extraPromise;
+  verified.push(...extra.flatMap(outcome=>outcome.items));
   verified.sort((a,b)=>b.published_at.localeCompare(a.published_at));
-  let stored=0,generalStored=0;
+  let stored=0,ch8Stored=0,generalStored=0;
   for(const item of verified.slice(0,25)){
     const existing=await db.prepare('SELECT id,origin FROM news_channel_items WHERE owner_id=? AND source_url=? ORDER BY id DESC LIMIT 1').bind(owner,item.source_url).first();
     if(existing?.origin==='index'){
       if(item.headline_incomplete)await db.prepare('UPDATE news_channel_items SET headline=?,published_at=?,observed_at=? WHERE owner_id=? AND id=?').bind(item.headline,item.published_at,item.observed_at,owner,existing.id).run();
       else await db.prepare('UPDATE news_channel_items SET published_at=?,observed_at=? WHERE owner_id=? AND id=?').bind(item.published_at,item.observed_at,owner,existing.id).run();
-      stored++;if(item.from_general)generalStored++;continue;
+      stored++;if(item.source==='ช่อง 8')ch8Stored++;if(item.from_general)generalStored++;continue;
     }
     const result=await db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(?,?,?,?,?,?,?,'index') ON CONFLICT(owner_id,news_day,source_url) DO NOTHING").bind(owner,item.news_day,item.source,item.headline,item.source_url,item.observed_at,item.published_at).run();
-    if(Number(result.meta?.changes||0)){stored++;if(item.from_general)generalStored++}
+    if(Number(result.meta?.changes||0)){stored++;if(item.source==='ช่อง 8')ch8Stored++;if(item.from_general)generalStored++}
   }
-  const state=!primary.error_code?'partial':generalStored?'partial_general':stored?'partial_saved':secondary?.items?.length?'unverified':secondary?.items?'no_recent':'unavailable';
+  const ch8State=!primary.error_code?'partial':generalStored?'partial_general':ch8Stored?'partial_saved':secondary?.items?.length?'unverified':secondary?.items?'no_recent':'unavailable';
+  const state=ch8State==='unavailable'&&extra.some(outcome=>outcome.items.length)?'partial':ch8State;
   await db.prepare('UPDATE news_channel_refresh SET state=?,refreshed_at=?,lease_until=NULL WHERE owner_id=? AND news_day=?').bind(state,nowIso,owner,key).run();
-  const result=await rollingPage(db,owner,now);
-  const sources=NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:result.total,available:state==='partial'||state==='partial_general',...(state==='partial_general'?{limited:true,limited_kind:'general',error_code:primary.error_code}:state==='partial_saved'?{limited:true,error_code:primary.error_code}:state==='no_recent'?{error_code:'stale_listing'}:state==='unverified'?{error_code:'timestamp_unverified'}:state==='unavailable'?{error_code:primary.error_code}:{})}:{name:source.name,found:0,available:false,error_code:'timestamp_unverified'});
-  return {...result,state,sources,message:state==='partial_general'?'ตรวจข่าวได้จากหมวดทั่วไปและลิงก์เดิม; รายการข่าวรวมยังไม่พร้อม':state==='partial_saved'?'ตรวจเวลาเผยแพร่จากลิงก์ข่าวที่เคยพบได้บางส่วน; รายการข่าวใหม่จากต้นทางยังไม่พร้อม':state==='no_recent'?'หมวดข่าวทั่วไปเปิดได้ แต่ไม่มีลิงก์ข่าวในวันที่ค้น; รายการข่าวรวมยังไม่พร้อม':state==='unverified'?'หมวดข่าวทั่วไปเปิดได้ แต่ยังยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงไม่ได้':state==='unavailable'?result.total?'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; แสดงเฉพาะข่าวที่เคยยืนยันเวลาเผยแพร่ไว้':'ยังเปิดรายการข่าวช่อง 8 ไม่ได้; ไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด':stored?'แสดงเฉพาะข่าวที่ยืนยันเวลาเผยแพร่จากต้นทางใน 24 ชั่วโมงล่าสุด':'ยังไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด'};
+  const result=await rollingPage(db,owner,now),counts=await rollingSourceCounts(db,owner,window);
+  const sources=NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:counts.get(source.name)||0,available:ch8State==='partial'||ch8State==='partial_general',...(ch8State==='partial_general'?{limited:true,limited_kind:'general',error_code:primary.error_code}:ch8State==='partial_saved'?{limited:true,error_code:primary.error_code}:ch8State==='no_recent'?{error_code:'stale_listing'}:ch8State==='unverified'?{error_code:'timestamp_unverified'}:ch8State==='unavailable'?{error_code:primary.error_code}:{})}:(()=>{const outcome=extra.find(item=>item.name===source.name);return {name:source.name,found:counts.get(source.name)||0,available:!outcome.error_code,...(outcome.error_code?{error_code:outcome.error_code}:{})}})());
+  return {...result,state,sources,message:result.total?'แสดงเฉพาะข่าวที่ยืนยันเวลาเผยแพร่จากต้นทางใน 24 ชั่วโมงล่าสุด':'ยังไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด'};
 }
 
 async function refresh(ctx,owner,day){

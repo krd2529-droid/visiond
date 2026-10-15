@@ -7,6 +7,70 @@ export const NEWS_SOURCES=Object.freeze([
 export const NEWS_STYLES=Object.freeze(['ข่าวด่วน','ผู้ประกาศข่าวมืออาชีพ','เล่าข่าวแบบเพื่อนคุย','ข่าวสายแซ่บ','ข่าวสายฮา','ข่าวลึกลับ','ข่าวสืบสวน','ข่าววิเคราะห์','ข่าวเล่าเป็นเรื่อง','ข่าวประเด็นฮิต','ข่าวสรุป 30 วินาที','ข่าวแบบตั้งคำถาม','ข่าวสองพิธีกร','ข่าวสารคดี','ข่าวเล่าจากหลายมุม']);
 export const bangkokDay=(date=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
 export const rollingWindow=(date=new Date())=>({start:new Date(date.getTime()-86400000).toISOString(),end:date.toISOString()});
+const exactTime=value=>{
+  if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:\+07:00|Z)$/.test(String(value||'')))return null;
+  const time=new Date(value);return Number.isFinite(time.getTime())&&bangkokDay(time)===String(value).slice(0,10)?time.toISOString():null;
+};
+const completeTitle=value=>{const title=String(value||'').replace(/\s+/gu,' ').trim();return title.length>=8&&title.length<=240&&!/(?:\.{3}|…)$/.test(title)?title:null};
+export function parseCh3Listing(html,observedAt){
+  const script=String(html||'').match(/<script\b[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(!script||script[1].length>1_000_000)return null;
+  let categories;try{categories=JSON.parse(script[1]).props.initialState.newsHome2021Reducer.category}catch{return null}
+  if(!Array.isArray(categories))return null;
+  const seen=new Set(),items=[];
+  for(const category of categories.slice(0,12))for(const row of Array.isArray(category?.data)?category.data.slice(0,12):[]){
+    if(!Number.isSafeInteger(row?.id)||!/^\d{5,8}$/.test(String(row.id)))continue;
+    if(!/^[a-z0-9_-]+$/i.test(row.category_permalink||'')||!/^[a-z0-9_-]+$/i.test(row.program_permalink||''))continue;
+    const link=sourceForUrl(`https://ch3plus.com/news/${row.category_permalink}/${row.program_permalink}/${row.id}`);
+    const title=completeTitle(row.title),published=exactTime(row.date);
+    if(!link||link.source!=='ช่อง 3'||!title||!published||seen.has(link.url))continue;
+    seen.add(link.url);items.push({source:'ช่อง 3',headline:title,source_url:link.url,news_day:bangkokDay(new Date(published)),observed_at:observedAt,published_at:published,origin:'index'});
+  }
+  return items.sort((a,b)=>b.published_at.localeCompare(a.published_at)).slice(0,12);
+}
+export function parseCh3Detail(html,id){
+  const script=String(html||'').match(/<script\b[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(!script||script[1].length>500_000)return null;
+  let row;try{row=JSON.parse(script[1]).props.initialState.newsDetail2021.data}catch{return null}
+  return row?.id===id&&completeTitle(row.title)&&exactTime(row.date)?{headline:completeTitle(row.title),published_at:exactTime(row.date)}:null;
+}
+export function parseOneSitemap(xml){
+  const items=[],seen=new Set();
+  for(const match of String(xml||'').matchAll(/<loc\b[^>]*>([^<]+)<\/loc>/gi)){
+    const link=sourceForUrl(match[1].replace(/&amp;/g,'&'));
+    if(link?.source==='ช่องวัน'&&!seen.has(link.url)){seen.add(link.url);items.push(link.url)}
+    if(items.length>=12)break;
+  }
+  return items;
+}
+export function parseOneDetail(html,id){
+  const text=String(html||'');const start=text.indexOf(`newsDetail:{id:${id},`);
+  if(start<0)return null;
+  const end=text.indexOf('newsDetailList:',start);if(end<0||end-start>20000)return null;
+  const block=text.slice(start,end),titleMatch=block.match(/\btitle:("(?:\\.|[^"\\])*")/),timeMatch=block.match(/\bcreatedTime:"([^"]+)"/);
+  if(!titleMatch||!timeMatch||!/\bparentCategoryId:151\b/.test(block)||!/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$/.test(timeMatch[1]))return null;
+  let title;try{title=JSON.parse(titleMatch[1])}catch{return null}
+  const published=exactTime(`${timeMatch[1]}+07:00`);
+  return completeTitle(title)&&published?{headline:completeTitle(title),published_at:published}:null;
+}
+export function parseThaiRathListing(html,observedAt){
+  const seen=new Set(),items=[];
+  for(const match of String(html||'').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*title=["']([^"']+)["'][^>]*>/gi)){
+    let link;try{link=sourceForUrl(new URL(htmlText(match[1]),'https://www.thairath.co.th/news').toString())}catch{continue}
+    const headline=completeTitle(htmlText(match[2]));
+    if(link?.source!=='ไทยรัฐ'||!headline||seen.has(link.url))continue;
+    seen.add(link.url);items.push({source:'ไทยรัฐ',headline,source_url:link.url,observed_at:observedAt});
+    if(items.length>=12)break;
+  }
+  return items;
+}
+export function parseThaiRathDetail(html){
+  const text=String(html||''),time=text.match(/<meta\b[^>]*property=["']article:published_time["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+  const title=text.match(/<meta\b[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+  const canonical=text.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i);
+  const published=exactTime(time?.[1]),headline=completeTitle(htmlText(title?.[1])),link=sourceForUrl(canonical?.[1]);
+  return published&&headline&&link?.source==='ไทยรัฐ'?{published_at:published,headline,source_url:link.url}:null;
+}
 export function sourceForUrl(value){
   let url;try{url=new URL(value)}catch{return null}
   if(url.protocol!=='https:'||url.username||url.password||url.port||url.searchParams.has('url'))return null;

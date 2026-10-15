@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
-import {parseCh8PublishedAt,rollingWindow} from '../functions/_news-channel.js';
+import {parseCh8PublishedAt,parseCh3Listing,parseCh3Detail,parseOneSitemap,parseOneDetail,parseThaiRathListing,parseThaiRathDetail,rollingWindow} from '../functions/_news-channel.js';
 import {rollingPage,rollingRefresh,onRequestGet} from '../functions/api/admin/news-channel.js';
 
 const db=new DatabaseSync(':memory:');
@@ -28,6 +28,7 @@ let listing=[card(145074),card(145074),card(145068),card(145080),card(145081),ca
 const details=new Map([[145074,detail('14 ตุลาคม 2569','17:34')],[145068,detail('14 ตุลาคม 2569','06:38')],[145080,detail('14 ตุลาคม 2569','08:00')],[145081,detail('14 ตุลาคม 2569','07:59')],[145082,detail('15 ตุลาคม 2569','08:01')],[145083,detail('15 ตุลาคม 2569','07:59')],[145089,detail('15 ตุลาคม 2569','08:00')],[145084,'<h1>ข่าวหลักไม่มีเวลา</h1>'],[145085,'<h1>ข่าวหลักไม่มีเวลา</h1><div>ไม่มีเวลา</div>'+(' '.repeat(1100))+detail('14 ตุลาคม 2569','17:34')],[145090,'redirect'],[145091,'oversize'],[145092,'timeout'],[145093,'http']]);
 let listingCalls=0,categoryCalls=0,categoryTimeouts=0,detailCalls=0,detailCancelled=0,listingFailure=false,categoryFailure=true,categoryHtml='';
 globalThis.fetch=async(url,options={})=>{
+  if(['https://www.thairath.co.th/news','https://ch3plus.com/news','https://www.one31.net/sitemap-news-1.xml'].includes(String(url)))return new Response('official listing unavailable',{status:503});
   if(String(url)==='https://www.thaich8.com/news'){listingCalls++;assert.equal(options.redirect,'manual');return listingFailure?new Response('upstream unavailable',{status:503}):new Response(listing,{status:200})}
   if(String(url)==='https://www.thaich8.com/news_list/20'){categoryCalls++;assert.equal(options.redirect,'manual');if(categoryFailure==='timeout'){categoryTimeouts++;throw new DOMException('timeout','AbortError')}return categoryFailure?new Response('unavailable',{status:503}):new Response(categoryHtml,{status:200})}
   const id=Number(String(url).match(/\/news_detail\/(\d+)/)?.[1]);assert.ok(details.has(id),'only allowlisted CH8 article routes are fetched');assert.equal(options.redirect,'manual');detailCalls++;if(id===145090)return new Response(null,{status:302,headers:{location:'https://evil.example/news_detail/999999'}});if(id===145091)return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(131073))},cancel(){detailCancelled++}}),{status:200});if(id===145092)throw new DOMException('timeout','AbortError');if(id===145093)return new Response('denied',{status:403});return new Response(details.get(id),{status:200});
@@ -48,7 +49,9 @@ assert.equal(manualFirst.manual_items.length,24);assert.ok(manualFirst.manual_ne
 const manualSecond=await onRequestGet({request:new Request(`https://visiondonline.com/api/admin/news-channel?manual_cursor=${manualFirst.manual_next_cursor}`,{headers:{cookie:'vd_session=rolling-session'}}),env:{DB:D1}});
 assert.equal(manualSecond.status,200);const manualSecondData=await manualSecond.json();assert.equal(manualSecondData.manual_items.length,3);assert.equal(manualSecondData.manual_next_cursor,null);
 assert.equal(new Set([...manualFirst.manual_items,...manualSecondData.manual_items].map(item=>item.id)).size,27,'manual keyset has no duplicates or omissions');
-assert.equal(refreshed.sources.slice(0,3).every(source=>source.available===false&&source.error_code==='timestamp_unverified'),true);
+assert.equal(refreshed.sources[0].error_code,'http_503');
+assert.equal(refreshed.sources[1].error_code,'http_503');
+assert.equal(refreshed.sources[2].error_code,'http_503');
 await rollingRefresh({env:{DB:D1}},1,now);assert.equal(listingCalls,1,'same rolling checkpoint reuses bounded fetch');
 while(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=1 AND news_day='2026-10-14'").get().n<25){const id=4000000+db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=1 AND news_day='2026-10-14'").get().n;db.prepare("INSERT INTO news_channel_items(owner_id,news_day,source,headline,source_url,observed_at,published_at,origin) VALUES(1,'2026-10-14','ช่อง 8','ข่าวเดิมที่ยังไม่มีเวลา',?,'2026-10-14T12:00:00.000Z',NULL,'index')").run(`https://www.thaich8.com/news_detail/${id}/old`)}
 listing=card(145999)+listing;details.set(145999,detail('14 ตุลาคม 2569','23:34'));
@@ -75,6 +78,8 @@ const metaEdge=new Date('2026-10-15T17:30:00+07:00');
 assert.equal('2026-10-14T10:34:00.000Z'>=rollingWindow(metaEdge).start,true,'visible 17:34 qualifies when conflicting meta 17:29 would not');
 const plan=db.prepare("EXPLAIN QUERY PLAN SELECT id FROM news_channel_items WHERE owner_id=? AND origin='index' AND published_at>=? AND published_at<=? ORDER BY published_at DESC,id DESC LIMIT 25").all(1,window.start,window.end).map(row=>row.detail).join(' ');
 assert.match(plan,/idx_news_channel_owner_published_id/,'rolling range uses publication index');
+const sourcePlan=db.prepare("EXPLAIN QUERY PLAN SELECT source,COUNT(*) FROM (SELECT source FROM news_channel_items WHERE owner_id=? AND origin='index' AND published_at>=? AND published_at<=? ORDER BY published_at DESC,id DESC LIMIT 25) GROUP BY source").all(1,window.start,window.end).map(row=>row.detail).join(' ');
+assert.match(sourcePlan,/idx_news_channel_owner_published_id/,'per-source visible totals use the bounded publication index');
 const manualPlan=db.prepare("EXPLAIN QUERY PLAN SELECT id FROM news_channel_items WHERE owner_id=? AND origin='manual' ORDER BY id DESC LIMIT 25").all(1).map(row=>row.detail).join(' ');
 assert.match(manualPlan,/idx_news_channel_owner_manual_id/,'manual backlog stays indexed');
 listingFailure=true;const failedBefore=listingCalls;
@@ -139,4 +144,72 @@ assert.equal(detailCalls-cappedDetailBefore,6,'bounded category fanout never fet
 listingFailure=false;
 const unauthorized=await onRequestGet({request:new Request('https://visiondonline.com/api/admin/news-channel'),env:{DB:D1}});
 assert.equal(unauthorized.status,401,'rolling GET remains authenticated');
+const thaiUrl='https://www.thairath.co.th/news/politic/2966339',ch3Url='https://ch3plus.com/news/political/middaynews/472647',oneUrl='https://www.one31.net/news/detail/80493';
+const thaiTitle='นายกฯ หารือประธานาธิบดีสมาพันธรัฐสวิส แลกเปลี่ยนเทคโนโลยี';
+const thaiListing=`<a href="/news/politic/2966339" title="${thaiTitle}">ข่าว</a><a href="https://evil.example/news/politic/9999999" title="ข่าวปลอมจากเว็บอื่น">ข่าว</a>`;
+const thaiDetail=`<link rel="canonical" href="${thaiUrl}"/><meta property="og:title" content="${thaiTitle}"/><meta property="article:published_time" content="2026-10-14T18:02:00+07:00"/>`;
+assert.equal(parseThaiRathListing(thaiListing,now.toISOString()).length,1);
+assert.equal(parseThaiRathDetail(thaiDetail).published_at,'2026-10-14T11:02:00.000Z');
+assert.equal(parseThaiRathDetail(thaiDetail.replace(thaiUrl,'https://evil.example/news/politic/2966339')),null,'ThaiRath canonical must stay on official article');
+const ch3Row={id:472647,title:'ชุมนุมเดือด ต่อต้านประชุม IMF ตร.เตือนเลี่ยงเส้นทางรอบศูนย์สิริกิติ์',date:'2026-10-14T17:34:00+07:00',category_permalink:'political',program_permalink:'middaynews'};
+const nextScript=value=>`<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({props:{initialState:value}})}</script>`;
+const ch3Listing=nextScript({newsHome2021Reducer:{category:[{data:[ch3Row,{...ch3Row,id:472646,date:'2026-10-14T07:59:00+07:00'}, {...ch3Row,id:472645,date:'2026-10-15T08:01:00+07:00'}]}]}});
+const ch3Detail=nextScript({newsDetail2021:{data:ch3Row}});
+const oneDetail=`<script>window.__NUXT__=({data:[{newsDetail:{id:80493,categoryId:f,title:${JSON.stringify('เครือข่ายต้าน IMF เผชิญหน้าตำรวจแยกคลองเตย')},content:"ignored",createdTime:"2026-10-14T19:11:00",views:1,parentCategoryId:151},newsDetailList:[]} ]})</script>`;
+assert.equal(parseCh3Listing(ch3Listing,now.toISOString()).length,3,'CH3 official SSR category has stable route and exact offset dates');
+assert.equal(parseCh3Detail(ch3Detail,472647).published_at,'2026-10-14T10:34:00.000Z');
+assert.equal(parseCh3Detail(ch3Detail,472646),null,'CH3 detail ID cannot be borrowed from related item');
+assert.deepEqual(parseOneSitemap(`<urlset><loc>${oneUrl}</loc><loc>https://evil.example/news/detail/80493</loc></urlset>`),[oneUrl]);
+assert.equal(parseOneDetail(oneDetail,80493).published_at,'2026-10-14T12:11:00.000Z');
+assert.equal(parseOneDetail(oneDetail,80492),null,'ONE detail ID cannot be borrowed');
+assert.equal(parseOneDetail(oneDetail.replace('parentCategoryId:151','parentCategoryId:152'),80493),null,'ONE entertainment section is not presented as One News');
+const oldFetch=globalThis.fetch,requested=[];
+listingFailure=true;categoryFailure=true;
+globalThis.fetch=async(url,options={})=>{
+  requested.push(String(url));assert.equal(options.redirect,'manual','publisher fetch never follows a redirect');
+  if(String(url)==='https://www.thairath.co.th/news')return new Response(thaiListing);
+  if(String(url)===thaiUrl)return new Response(thaiDetail);
+  if(String(url)==='https://ch3plus.com/news')return new Response(ch3Listing);
+  if(String(url)===ch3Url)return new Response(ch3Detail);
+  if(String(url)==='https://www.one31.net/sitemap-news-1.xml')return new Response(`<urlset><loc>${oneUrl}</loc><loc>https://evil.example/news/detail/99999</loc></urlset>`);
+  if(String(url)===oneUrl)return new Response(oneDetail);
+  return oldFetch(url,options);
+};
+const otherSources=await rollingRefresh({env:{DB:D1}},9,now);
+assert.equal(otherSources.total,3,'normal rolling refresh stores current verified ThaiRath, CH3 and ONE articles when CH8 is unavailable');
+assert.deepEqual(new Set(otherSources.items.map(item=>item.source)),new Set(['ไทยรัฐ','ช่อง 3','ช่องวัน']));
+assert.equal(otherSources.sources[0].found,1);assert.equal(otherSources.sources[0].available,true);
+assert.equal(otherSources.sources[1].found,1);assert.equal(otherSources.sources[2].found,1);
+assert.equal(otherSources.sources[1].available,true);assert.equal(otherSources.sources[2].available,true);
+assert.equal(otherSources.sources[3].available,false,'CH8 failure remains truthful when other outlets work');
+const cachedOther=await rollingRefresh({env:{DB:D1}},9,now);
+assert.equal(cachedOther.reused,true);assert.equal(cachedOther.total,3);
+assert.deepEqual(cachedOther.sources.slice(0,3).map(source=>source.found),[1,1,1],'cached per-source counts reflect indexed visible top 25');
+assert.ok(cachedOther.sources.every(source=>source.limited_kind==='cached'),'cooldown describes cached results, not a failed website');
+assert.ok(requested.includes(thaiUrl)&&requested.includes(ch3Url)&&requested.includes(oneUrl),'official detail publication times were fetched before insertion');
+assert.equal(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=9 AND origin='index'").get().n,3,'stale/future CH3 cards are excluded');
+globalThis.fetch=async(url,options={})=>{
+  assert.equal(options.redirect,'manual');
+  if(String(url)==='https://www.thairath.co.th/news')return new Response(thaiListing);
+  if(String(url)===thaiUrl)return new Response(null,{status:302,headers:{location:'https://evil.example/news/politic/9999999'}});
+  if(String(url)==='https://ch3plus.com/news')return new Response(ch3Listing);
+  if(String(url)===ch3Url)return new Response(ch3Detail.replace(ch3Row.title,'พาดหัวบทความอื่นที่ไม่ตรงต้นทาง'));
+  if(String(url)==='https://www.one31.net/sitemap-news-1.xml')return new Response(`<urlset><loc>${oneUrl}</loc></urlset>`);
+  if(String(url)===oneUrl)return new Response(oneDetail.replace('parentCategoryId:151','parentCategoryId:152'));
+  return oldFetch(url,options);
+};
+const rejected=await rollingRefresh({env:{DB:D1}},10,now);
+assert.equal(rejected.total,0,'redirect, title mismatch and non-news ONE category yield no stored news');
+assert.equal(db.prepare("SELECT COUNT(*) n FROM news_channel_items WHERE owner_id=10").get().n,0);
+assert.equal(rejected.sources[0].error_code,'timestamp_unverified');assert.equal(rejected.sources[1].error_code,'timestamp_unverified');assert.equal(rejected.sources[2].error_code,'timestamp_unverified');
+let largeCancelled=0;
+globalThis.fetch=async(url,options={})=>{
+  if(String(url)==='https://www.thairath.co.th/news')return new Response(new ReadableStream({start(controller){controller.enqueue(new Uint8Array(1_200_001))},cancel(){largeCancelled++}}),{status:200});
+  if(String(url)==='https://ch3plus.com/news'||String(url)==='https://www.one31.net/sitemap-news-1.xml')return new Response('unavailable',{status:503});
+  return oldFetch(url,options);
+};
+const oversized=await rollingRefresh({env:{DB:D1}},11,now);
+assert.equal(oversized.sources[0].error_code,'too_large','ThaiRath listing remains bounded above the observed 822KB page size');
+assert.equal(largeCancelled,1,'oversized official listing stream is cancelled');
+assert.equal(oversized.total,0,'oversized listing cannot insert unverified metadata');
 console.log('news-channel rolling: real-source timestamp precedence, crossover, expiry, manual backlog and indexed reads PASS');
