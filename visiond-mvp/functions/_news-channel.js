@@ -6,7 +6,7 @@ export const NEWS_SOURCES=Object.freeze([
 ]);
 export const NEWS_STYLES=Object.freeze(['ข่าวด่วน','ผู้ประกาศข่าวมืออาชีพ','เล่าข่าวแบบเพื่อนคุย','ข่าวสายแซ่บ','ข่าวสายฮา','ข่าวลึกลับ','ข่าวสืบสวน','ข่าววิเคราะห์','ข่าวเล่าเป็นเรื่อง','ข่าวประเด็นฮิต','ข่าวสรุป 30 วินาที','ข่าวแบบตั้งคำถาม','ข่าวสองพิธีกร','ข่าวสารคดี','ข่าวเล่าจากหลายมุม']);
 export const bangkokDay=(date=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
-export const rollingWindow=(date=new Date())=>({start:new Date(date.getTime()-86400000).toISOString(),end:date.toISOString()});
+export const rollingWindow=(date=new Date(),hours=24)=>({start:new Date(date.getTime()-hours*3600000).toISOString(),end:date.toISOString()});
 const exactTime=value=>{
   if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:\+07:00|Z)$/.test(String(value||'')))return null;
   const time=new Date(value);return Number.isFinite(time.getTime())&&bangkokDay(time)===String(value).slice(0,10)?time.toISOString():null;

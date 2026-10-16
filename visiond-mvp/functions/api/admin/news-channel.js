@@ -7,6 +7,9 @@ const headers={'cache-control':'private, no-store','x-content-type-options':'nos
 const reply=(value,status=200)=>json(value,status,headers);
 const safeDay=value=>/^\d{4}-\d{2}-\d{2}$/.test(String(value||''))&&Math.abs(Date.parse(`${value}T00:00:00Z`)-Date.now())<92*86400000?String(value):null;
 const maxItems=25;
+const newsHours=value=>value===24||value==='24'?24:value===48||value==='48'?48:null;
+const newsQuery=value=>typeof value==='string'&&value.length<=100?value.replace(/\s+/gu,' ').trim():null;
+const titlePattern=value=>`%${value.replace(/[\\%_]/g,'\\$&')}%`;
 const ownedItem=(db,owner,id)=>db.prepare('SELECT id,news_day,source,headline,source_url,observed_at,published_at,origin FROM news_channel_items WHERE owner_id=? AND id=?').bind(owner,id).first();
 
 async function page(db,owner,day,cursor=0){
@@ -59,7 +62,7 @@ async function probePublishers(){
   return {probes:await Promise.all(listings.map(run))};
 }
 
-async function fetchCh8Listing(day,otherDay=null,observedAt=new Date().toISOString(),generalCategory=false){
+async function fetchCh8Listing(day,otherDay=null,observedAt=new Date().toISOString(),generalCategory=false,thirdDay=null,perDayLimit=25){
   let response;
   try{
     response=await fetch(generalCategory?'https://www.thaich8.com/news_list/20':'https://www.thaich8.com/news',{redirect:'manual',signal:AbortSignal.timeout(6000),headers:{accept:'text/html'}});
@@ -69,7 +72,7 @@ async function fetchCh8Listing(day,otherDay=null,observedAt=new Date().toISOStri
     const decoder=new TextDecoder(),parts=[];let size=0;
     while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1_500_000){await reader.cancel();return {error_code:'too_large'}}parts.push(decoder.decode(value,{stream:true}))}
     parts.push(decoder.decode());
-    let parsed;try{const html=parts.join('');parsed=parseCh8Listing(html,day,observedAt,generalCategory);if(otherDay&&otherDay!==day){const earlier=parseCh8Listing(html,otherDay,observedAt,generalCategory),seen=new Set();parsed={items:[...parsed.items,...earlier.items].filter(item=>{if(seen.has(item.source_url))return false;seen.add(item.source_url);return true}).slice(0,25),dated:parsed.dated+earlier.dated}}}catch{return {error_code:'parse_error'}}
+    let parsed;try{const html=parts.join(''),days=[...new Set([day,otherDay,thirdDay].filter(Boolean))],results=days.map(value=>parseCh8Listing(html,value,observedAt,generalCategory)),seen=new Set();parsed={items:results.flatMap(result=>result.items.slice(0,perDayLimit)).filter(item=>{if(seen.has(item.source_url))return false;seen.add(item.source_url);return true}),dated:results.reduce((sum,result)=>sum+result.dated,0)}}catch{return {error_code:'parse_error'}}
     return parsed.dated?{items:parsed.items}:{error_code:'parse_error'};
   }catch(error){return {error_code:error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':'network'}}
   finally{if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
@@ -127,12 +130,12 @@ async function photoBytes(ctx,owner,id){
   }catch{return reply({error:'เปิดภาพต้นฉบับไม่ได้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'},502)}
   finally{if(reader)await reader.cancel().catch(()=>{});else if(response&&!response.bodyUsed)await response.body?.cancel().catch(()=>{})}
 }
-async function fetchCh3Recent(nowIso,window){
+async function fetchCh3Recent(nowIso,window,hours=24){
   const listing=await officialText('https://ch3plus.com/news',500_000,6000);
   if(listing.error_code)return {name:'ช่อง 3',items:[],error_code:listing.error_code};
   const candidates=parseCh3Listing(listing.text,nowIso);
   if(!candidates)return {name:'ช่อง 3',items:[],error_code:'parse_error'};
-  const recent=candidates.filter(item=>item.published_at>=window.start&&item.published_at<=window.end).slice(0,8),items=[];
+  const recent=candidates.filter(item=>item.published_at>=window.start&&item.published_at<=window.end).slice(0,hours===48?12:8),items=[];
   for(let i=0;i<recent.length;i+=4){
     const batch=await Promise.all(recent.slice(i,i+4).map(async item=>{
       const detail=await officialText(item.source_url,250_000,4000),id=Number(item.source_url.match(/\/(\d{5,8})(?:\/|$)/)?.[1]);
@@ -142,10 +145,10 @@ async function fetchCh3Recent(nowIso,window){
   }
   return {name:'ช่อง 3',items,error_code:items.length?null:recent.length?'timestamp_unverified':'stale_listing'};
 }
-async function fetchThaiRathRecent(nowIso,window){
+async function fetchThaiRathRecent(nowIso,window,hours=24){
   const listing=await officialText('https://www.thairath.co.th/news',1_200_000,6000);
   if(listing.error_code)return {name:'ไทยรัฐ',items:[],error_code:listing.error_code};
-  const candidates=parseThaiRathListing(listing.text,nowIso).slice(0,8);
+  const candidates=parseThaiRathListing(listing.text,nowIso).slice(0,hours===48?12:8);
   if(!candidates.length)return {name:'ไทยรัฐ',items:[],error_code:'parse_error'};
   const items=[];
   for(let i=0;i<candidates.length;i+=4){
@@ -157,10 +160,10 @@ async function fetchThaiRathRecent(nowIso,window){
   }
   return {name:'ไทยรัฐ',items,error_code:items.length?null:'timestamp_unverified'};
 }
-async function fetchOneRecent(nowIso,window){
+async function fetchOneRecent(nowIso,window,hours=24){
   const listing=await officialText('https://www.one31.net/sitemap-news-1.xml',900_000,6000);
   if(listing.error_code)return {name:'ช่องวัน',items:[],error_code:listing.error_code};
-  const candidates=parseOneSitemap(listing.text).slice(0,8);
+  const candidates=parseOneSitemap(listing.text).slice(0,hours===48?12:8);
   if(!candidates.length)return {name:'ช่องวัน',items:[],error_code:'parse_error'};
   const items=[];
   for(let i=0;i<candidates.length;i+=4){
@@ -174,9 +177,9 @@ async function fetchOneRecent(nowIso,window){
   return {name:'ช่องวัน',items,error_code:items.length?null:'timestamp_unverified'};
 }
 
-async function savedCh8Candidates(db,owner,day,previous){
+async function savedCh8Candidates(db,owner,day,previous,third=null){
   const candidates=[];
-  for(const newsDay of [day,previous]){
+  for(const newsDay of [...new Set([day,previous,third].filter(Boolean))]){
     const rows=(await db.prepare("SELECT id,news_day,source,headline,source_url,observed_at FROM news_channel_items INDEXED BY idx_news_channel_owner_day_id WHERE owner_id=? AND news_day=? AND source='ช่อง 8' AND origin='index' AND published_at IS NULL ORDER BY id DESC LIMIT 6").bind(owner,newsDay).all()).results||[];
     candidates.push(...rows);
   }
@@ -189,27 +192,34 @@ async function savedCh8Candidates(db,owner,day,previous){
 
 const rollingCursor=value=>{
   if(!value)return null;
-  const match=String(value).match(/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)~(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)~(\d+)~(\d+)$/);
+  const match=String(value).match(/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)~(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)~(\d+)~(\d+)~(24|48)~(.*)$/);
   if(!match||!Number.isSafeInteger(Number(match[3]))||Number(match[3])<1||Number(match[4])<1||Number(match[4])>24||!Number.isFinite(Date.parse(match[1]))||!Number.isFinite(Date.parse(match[2])))return false;
-  return {end:match[1],at:match[2],id:Number(match[3]),seen:Number(match[4])};
+  let query;try{query=decodeURIComponent(match[6])}catch{return false}
+  if(newsQuery(query)!==query)return false;
+  return {end:match[1],at:match[2],id:Number(match[3]),seen:Number(match[4]),hours:Number(match[5]),query};
 };
-export async function rollingPage(db,owner,now=new Date(),cursor=null){
+export async function rollingPage(db,owner,now=new Date(),cursor=null,hours=24,search=''){
+  hours=newsHours(hours);
+  const queryText=newsQuery(search);
+  if(!hours||queryText===null)throw new Error('INVALID_FILTER');
   const point=rollingCursor(cursor);if(point===false)throw new Error('INVALID_CURSOR');
-  const window=rollingWindow(point?new Date(point.end):now);
-  if(point&&(point.end>now.toISOString()||Date.parse(point.end)<now.getTime()-300000||point.at<window.start||point.at>window.end))throw new Error('INVALID_CURSOR');
-  const filter="owner_id=? AND origin='index' AND published_at>=? AND published_at<=?";
+  const window=rollingWindow(point?new Date(point.end):now,hours);
+  if(point&&(point.hours!==hours||point.query!==queryText||point.end>now.toISOString()||Date.parse(point.end)<now.getTime()-300000||point.at<window.start||point.at>window.end))throw new Error('INVALID_CURSOR');
+  const filter=`owner_id=? AND origin='index' AND published_at>=? AND published_at<=?${queryText?" AND headline LIKE ? ESCAPE '\\'":''}`;
   const order=' ORDER BY published_at DESC,id DESC LIMIT ?';
   const remaining=25-(point?.seen||0),take=Math.min(24,remaining);
   const query=`SELECT id,news_day,source,headline,source_url,observed_at,published_at,origin FROM news_channel_items WHERE ${filter}${point?' AND (published_at<? OR (published_at=? AND id<?))':''}${order}`;
-  const args=[owner,window.start,window.end,...(point?[point.at,point.at,point.id]:[]),take+1];
+  const baseArgs=[owner,window.start,window.end,...(queryText?[titlePattern(queryText)]:[])];
+  const args=[...baseArgs,...(point?[point.at,point.at,point.id]:[]),take+1];
   const rows=(await db.prepare(query).bind(...args).all()).results||[];
-  const count=await db.prepare(`SELECT COUNT(*) AS n FROM (SELECT id FROM news_channel_items WHERE ${filter} ORDER BY published_at DESC,id DESC LIMIT 25)`).bind(owner,window.start,window.end).first();
+  const count=await db.prepare(`SELECT COUNT(*) AS n FROM (SELECT id FROM news_channel_items WHERE ${filter} ORDER BY published_at DESC,id DESC LIMIT 25)`).bind(...baseArgs).first();
   const manual=await manualPage(db,owner);
   const items=rows.slice(0,take),seen=(point?.seen||0)+items.length;
-  return {items,...manual,next_cursor:rows.length>take&&seen<25?`${window.end}~${items.at(-1).published_at}~${items.at(-1).id}~${seen}`:null,total:Number(count?.n||0),limit:maxItems,window_start:window.start,window_end:window.end};
+  return {items,...manual,next_cursor:rows.length>take&&seen<25?`${window.end}~${items.at(-1).published_at}~${items.at(-1).id}~${seen}~${hours}~${encodeURIComponent(queryText)}`:null,total:Number(count?.n||0),limit:maxItems,window_start:window.start,window_end:window.end,hours,query:queryText};
 }
-async function rollingSourceCounts(db,owner,window){
-  const rows=(await db.prepare("SELECT source,COUNT(*) AS n FROM (SELECT source FROM news_channel_items WHERE owner_id=? AND origin='index' AND published_at>=? AND published_at<=? ORDER BY published_at DESC,id DESC LIMIT 25) GROUP BY source").bind(owner,window.start,window.end).all()).results||[];
+async function rollingSourceCounts(db,owner,window,search=''){
+  const filter=search?" AND headline LIKE ? ESCAPE '\\'":'';
+  const rows=(await db.prepare(`SELECT source,COUNT(*) AS n FROM (SELECT source FROM news_channel_items WHERE owner_id=? AND origin='index' AND published_at>=? AND published_at<=?${filter} ORDER BY published_at DESC,id DESC LIMIT 25) GROUP BY source`).bind(owner,window.start,window.end,...(search?[titlePattern(search)]:[])).all()).results||[];
   return new Map(rows.map(row=>[row.source,Number(row.n||0)]));
 }
 async function manualPage(db,owner,cursor=null){
@@ -217,22 +227,24 @@ async function manualPage(db,owner,cursor=null){
   return {manual_items:rows.slice(0,24),manual_next_cursor:rows.length>24?rows[23].id:null};
 }
 
-export async function rollingRefresh(ctx,owner,now=new Date()){
-  const db=ctx.env.DB,day=bangkokDay(now),previous=bangkokDay(new Date(now.getTime()-86400000)),nowIso=now.toISOString(),window=rollingWindow(now),key=`rolling:${day}`;
+export async function rollingRefresh(ctx,owner,now=new Date(),hours=24,search=''){
+  const queryText=newsQuery(search);
+  if(!newsHours(hours)||queryText===null)throw new Error('INVALID_FILTER');
+  const db=ctx.env.DB,day=bangkokDay(now),previous=bangkokDay(new Date(now.getTime()-86400000)),third=hours===48?bangkokDay(new Date(now.getTime()-2*86400000)):null,nowIso=now.toISOString(),window=rollingWindow(now,hours),key=`rolling:${day}:${hours}`;
   const lease=new Date(now.getTime()+60000).toISOString(),stale=new Date(now.getTime()-2*60000).toISOString();
   const claim=await db.prepare("INSERT INTO news_channel_refresh(owner_id,news_day,lease_until,state) VALUES(?, ?, ?, 'running') ON CONFLICT(owner_id,news_day) DO UPDATE SET lease_until=excluded.lease_until,state='running' WHERE (lease_until IS NULL OR lease_until<?) AND (refreshed_at IS NULL OR refreshed_at<?)").bind(owner,key,lease,nowIso,stale).run();
   if(!Number(claim.meta?.changes||0)){
     const recent=await db.prepare('SELECT state FROM news_channel_refresh WHERE owner_id=? AND news_day=?').bind(owner,key).first(),state=recent?.state||'running';
-    const result=await rollingPage(db,owner,now),counts=await rollingSourceCounts(db,owner,window);
+    const result=await rollingPage(db,owner,now,null,hours,queryText),counts=await rollingSourceCounts(db,owner,window,queryText);
     return {...result,reused:true,state,sources:NEWS_SOURCES.map(source=>({name:source.name,found:counts.get(source.name)||0,available:false,limited:true,limited_kind:'cached',error_code:'recent_attempt'})),message:state==='running'?'กำลังค้นข่าวอยู่ กรุณารอสักครู่':'ใช้ผลค้นหาล่าสุดชั่วคราว; รอ 2 นาทีแล้วค้นใหม่ได้'};
   }
-  const extraPromise=Promise.all([fetchThaiRathRecent(nowIso,window),fetchCh3Recent(nowIso,window),fetchOneRecent(nowIso,window)]);
-  const primary=await fetchCh8Listing(day,previous,nowIso);
-  const secondary=primary.error_code?await fetchCh8Listing(day,previous,nowIso,true):null;
+  const extraPromise=Promise.all([fetchThaiRathRecent(nowIso,window,hours),fetchCh3Recent(nowIso,window,hours),fetchOneRecent(nowIso,window,hours)]);
+  const primary=await fetchCh8Listing(day,previous,nowIso,false,third,hours===48?8:25);
+  const secondary=primary.error_code?await fetchCh8Listing(day,previous,nowIso,true,third,hours===48?8:25):null;
   const generalItems=secondary?.items?.length?secondary.items.slice(0,6).map(item=>({...item,from_general:true})):[];
-  const saved=primary.error_code?await savedCh8Candidates(db,owner,day,previous):[];
+  const saved=primary.error_code?await savedCh8Candidates(db,owner,day,previous,third):[];
   const seenCandidates=new Set(),verified=[];
-  const candidates=(primary.error_code?[...generalItems,...saved]:primary.items||[]).filter(item=>{if(seenCandidates.has(item.source_url))return false;seenCandidates.add(item.source_url);return true}).slice(0,primary.error_code?12:25);
+  const candidates=(primary.error_code?[...generalItems,...saved]:primary.items||[]).filter(item=>{if(seenCandidates.has(item.source_url))return false;seenCandidates.add(item.source_url);return true}).slice(0,primary.error_code?(hours===48?24:12):25);
   for(let index=0;index<candidates.length;index+=5){
     const batch=await Promise.all(candidates.slice(index,index+5).map(async item=>({item,published:await fetchCh8Publication(item)})));
     for(const {item,published} of batch){
@@ -250,9 +262,11 @@ export async function rollingRefresh(ctx,owner,now=new Date()){
   const extra=await extraPromise;
   verified.push(...extra.flatMap(outcome=>outcome.items));
   verified.sort((a,b)=>b.published_at.localeCompare(a.published_at));
+  const knownRows=verified.length?(await db.prepare(`SELECT id,origin,source_url FROM news_channel_items WHERE owner_id=? AND source_url IN (${verified.map(()=>'?').join(',')})`).bind(owner,...verified.map(item=>item.source_url)).all()).results||[]:[];
+  const knownByUrl=new Map();for(const row of knownRows)if(!knownByUrl.has(row.source_url)||knownByUrl.get(row.source_url).id<row.id)knownByUrl.set(row.source_url,row);
   let stored=0,ch8Stored=0,generalStored=0;
-  for(const item of verified.slice(0,25)){
-    const existing=await db.prepare('SELECT id,origin FROM news_channel_items WHERE owner_id=? AND source_url=? ORDER BY id DESC LIMIT 1').bind(owner,item.source_url).first();
+  for(const item of verified){
+    const existing=knownByUrl.get(item.source_url);
     if(existing?.origin==='index'){
       if(item.headline_incomplete)await db.prepare('UPDATE news_channel_items SET headline=?,published_at=?,observed_at=? WHERE owner_id=? AND id=?').bind(item.headline,item.published_at,item.observed_at,owner,existing.id).run();
       else await db.prepare('UPDATE news_channel_items SET published_at=?,observed_at=? WHERE owner_id=? AND id=?').bind(item.published_at,item.observed_at,owner,existing.id).run();
@@ -264,9 +278,9 @@ export async function rollingRefresh(ctx,owner,now=new Date()){
   const ch8State=!primary.error_code?'partial':generalStored?'partial_general':ch8Stored?'partial_saved':secondary?.items?.length?'unverified':secondary?.items?'no_recent':'unavailable';
   const state=ch8State==='unavailable'&&extra.some(outcome=>outcome.items.length)?'partial':ch8State;
   await db.prepare('UPDATE news_channel_refresh SET state=?,refreshed_at=?,lease_until=NULL WHERE owner_id=? AND news_day=?').bind(state,nowIso,owner,key).run();
-  const result=await rollingPage(db,owner,now),counts=await rollingSourceCounts(db,owner,window);
+  const result=await rollingPage(db,owner,now,null,hours,queryText),counts=await rollingSourceCounts(db,owner,window,queryText);
   const sources=NEWS_SOURCES.map(source=>source.name==='ช่อง 8'?{name:source.name,found:counts.get(source.name)||0,available:ch8State==='partial'||ch8State==='partial_general',...(ch8State==='partial_general'?{limited:true,limited_kind:'general',error_code:primary.error_code}:ch8State==='partial_saved'?{limited:true,error_code:primary.error_code}:ch8State==='no_recent'?{error_code:'stale_listing'}:ch8State==='unverified'?{error_code:'timestamp_unverified'}:ch8State==='unavailable'?{error_code:primary.error_code}:{})}:(()=>{const outcome=extra.find(item=>item.name===source.name);return {name:source.name,found:counts.get(source.name)||0,available:!outcome.error_code,...(outcome.error_code?{error_code:outcome.error_code}:{})}})());
-  return {...result,state,sources,message:result.total?'แสดงเฉพาะข่าวที่ยืนยันเวลาเผยแพร่จากต้นทางใน 24 ชั่วโมงล่าสุด':'ยังไม่มีข่าวที่ยืนยันเวลาเผยแพร่ใน 24 ชั่วโมงล่าสุด'};
+  return {...result,state,sources,message:result.total?`แสดงเฉพาะข่าวที่ยืนยันเวลาเผยแพร่ใน ${hours} ชั่วโมงจากรายการเว็บข่าวที่เข้าถึงได้`:`ยังไม่พบข่าวที่ยืนยันเวลาเผยแพร่${queryText?'ตรงคำค้น':''}ใน ${hours} ชั่วโมงจากรายการเว็บข่าวที่เข้าถึงได้`};
 }
 
 async function refresh(ctx,owner,day){
@@ -348,5 +362,5 @@ async function script(ctx,owner,body){
   }catch(error){const reason=String(error?.message||'');return reply({error:reason==='AI_NOT_CONFIGURED'?'ยังไม่ได้เชื่อม Gemini สำหรับร่างบท':reason.includes('INVALID_OUTPUT')&&overSyllableLimit?'บทพูดที่ร่างยังเกิน 30 พยางค์ต่อฉาก กรุณาลองร่างอีกครั้ง':reason.includes('INVALID_OUTPUT')?'ร่างบทไม่ผ่านการตรวจข้อเท็จจริง กรุณาลองใหม่หรือเลือกข่าวอื่น':'ร่างบทไม่สำเร็จ กรุณาลองใหม่',code:'script_unavailable'},503)}
 }
 
-export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url);if(url.searchParams.has('manual_cursor')){const cursor=Number(url.searchParams.get('manual_cursor'));return Number.isSafeInteger(cursor)&&cursor>0?reply(await manualPage(ctx.env.DB,auth.user.id,cursor)):reply({error:'cursor ไม่ถูกต้อง'},400)}if(!url.searchParams.has('day')){try{return reply({...await rollingPage(ctx.env.DB,auth.user.id,new Date(),url.searchParams.get('cursor')),styles:NEWS_STYLES})}catch(error){if(error?.message==='INVALID_CURSOR')return reply({error:'cursor ไม่ถูกต้อง'},400);throw error}}const day=safeDay(url.searchParams.get('day')),cursor=Number(url.searchParams.get('cursor')||0);if(!day||!Number.isSafeInteger(cursor)||cursor<0)return reply({error:'วันหรือ cursor ไม่ถูกต้อง'},400);return reply({...await page(ctx.env.DB,auth.user.id,day,cursor),day,styles:NEWS_STYLES});}
-export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='photo'){const photo=await articlePhoto(ctx,auth.user.id,Number(body.id));return reply(photo||{unavailable:true,message:'ไม่พบภาพข่าวที่ยืนยันว่าเป็นของบทความนี้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'})}if(body.action==='photo_bytes')return body.rights_confirmed===true?photoBytes(ctx,auth.user.id,Number(body.id)):reply({error:'กรุณายืนยันสิทธิ์ใช้ภาพก่อนทำปก'},422);if(body.action==='rolling_refresh')return reply(await rollingRefresh(ctx,auth.user.id));if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='publisher_probe')return reply(await probePublishers());if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
+export async function onRequestGet(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const url=new URL(ctx.request.url);if(url.searchParams.has('manual_cursor')){const cursor=Number(url.searchParams.get('manual_cursor'));return Number.isSafeInteger(cursor)&&cursor>0?reply(await manualPage(ctx.env.DB,auth.user.id,cursor)):reply({error:'cursor ไม่ถูกต้อง'},400)}if(!url.searchParams.has('day')){try{return reply({...await rollingPage(ctx.env.DB,auth.user.id,new Date(),url.searchParams.get('cursor'),url.searchParams.get('hours')||'24',url.searchParams.get('q')||''),styles:NEWS_STYLES})}catch(error){if(error?.message==='INVALID_CURSOR')return reply({error:'cursor ไม่ถูกต้อง'},400);if(error?.message==='INVALID_FILTER')return reply({error:'คำค้นหรือช่วงเวลาไม่ถูกต้อง'},400);throw error}}const day=safeDay(url.searchParams.get('day')),cursor=Number(url.searchParams.get('cursor')||0);if(!day||!Number.isSafeInteger(cursor)||cursor<0)return reply({error:'วันหรือ cursor ไม่ถูกต้อง'},400);return reply({...await page(ctx.env.DB,auth.user.id,day,cursor),day,styles:NEWS_STYLES});}
+export async function onRequestPost(ctx){const auth=await requireAdmin(ctx);if(auth.error)return auth.error;const body=await ctx.request.json().catch(()=>null);if(!body||typeof body!=='object')return reply({error:'ข้อมูลคำขอไม่ถูกต้อง'},400);if(body.action==='photo'){const photo=await articlePhoto(ctx,auth.user.id,Number(body.id));return reply(photo||{unavailable:true,message:'ไม่พบภาพข่าวที่ยืนยันว่าเป็นของบทความนี้ กรุณาอัปโหลดภาพที่มีสิทธิ์ใช้'})}if(body.action==='photo_bytes')return body.rights_confirmed===true?photoBytes(ctx,auth.user.id,Number(body.id)):reply({error:'กรุณายืนยันสิทธิ์ใช้ภาพก่อนทำปก'},422);if(body.action==='rolling_refresh'){const hours=newsHours(body.hours??24),query=newsQuery(body.q??'');return hours&&query!==null?reply(await rollingRefresh(ctx,auth.user.id,new Date(),hours,query)):reply({error:'คำค้นหรือช่วงเวลาไม่ถูกต้อง'},400)}if(body.action==='refresh'){const day=safeDay(body.day||bangkokDay());return day?reply(await refresh(ctx,auth.user.id,day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='probe'){const day=safeDay(body.day||bangkokDay());return day?reply(await probeSource(day)):reply({error:'วันที่ไม่ถูกต้อง'},400)}if(body.action==='publisher_probe')return reply(await probePublishers());if(body.action==='manual')return manual(ctx,auth.user.id,body);if(body.action==='script')return script(ctx,auth.user.id,body);return reply({error:'คำสั่งไม่ถูกต้อง'},400)}
