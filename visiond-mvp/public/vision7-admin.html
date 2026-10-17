@@ -143,7 +143,7 @@
     <dialog id="keyDialog" aria-labelledby="keyDialogTitle">
       <form id="keyForm">
         <h2 id="keyDialogTitle">ออกคีย์ใหม่</h2>
-        <label>ประเภทคีย์<select name="key_mode" id="keyMode"><option value="test">คีย์ทดสอบ — ไม่มีค่าใช้จ่าย</option><option value="customer">คีย์ลูกค้า — คิดราคาตามแพ็กเกจ</option></select></label>
+        <label>ประเภทคีย์<select name="key_mode" id="keyMode"><option value="test">คีย์ทดสอบ — ไม่มีค่าใช้จ่าย</option><option value="customer">คีย์ลูกค้า — คิดราคาตามแพ็กเกจ</option><option value="vsms_manual" hidden>คีย์ VSMS โดยแอดมิน — ไม่มีการชำระเงิน</option></select></label>
         <div id="keyCustomerFields" hidden><label
           >ค้นหาลูกค้า<input
             id="userSearch"
@@ -177,6 +177,6 @@
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js?v=02062" type="module"></script>
+    <script src="/vision7-admin.js?v=02063" type="module"></script>
   </body>
 </html>

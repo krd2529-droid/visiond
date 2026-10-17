@@ -76,6 +76,7 @@ const plans = (p) => {
     return [];
   }
 };
+const programDisplayName = (x) => x.code === "sms-mix" ? "VSMS" : `${x.platform_type === "veasy" ? "V Easy · " : ""}${x.product_title || x.code}`;
 function programOptions(target) {
   target.innerHTML = programs
     .map(
@@ -88,10 +89,16 @@ function planOptions() {
   const program = programs.find(
     (x) => Number(x.id) === Number(keyProgram.value),
   );
+  const vsms = program?.code === "sms-mix";
+  keyMode.querySelector('[value="vsms_manual"]').hidden = !vsms;
+  keyMode.querySelector('[value="test"]').hidden = vsms;
+  keyMode.querySelector('[value="customer"]').hidden = vsms;
+  if (vsms) keyMode.value = "vsms_manual";
+  else if (keyMode.value === "vsms_manual") keyMode.value = "test";
   keyPlan.innerHTML =
-    '<option value="">ไม่กำหนด</option>' +
+    `<option value="">${vsms ? "เลือกแพ็กเกจ VSMS" : "ไม่กำหนด"}</option>` +
     plans(program || {})
-      .filter((x) => x.active !== 0)
+      .filter((x) => x.active !== 0 && (!vsms || (x.code === "monthly" && Number(x.duration_days) === 30) || (x.code === "yearly" && Number(x.duration_days) === 365)))
       .map(
         (x) =>
           `<option value="${x.id}">${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}${x.offer_price != null ? ` · ${(Number(x.offer_price)/100).toLocaleString("th-TH")} บาท` : " · ยังไม่มีราคาขาย"}</option>`,
@@ -102,7 +109,8 @@ function planOptions() {
   keyBindingPreview.textContent = veasy
     ? "คีย์ V Easy นี้ออกแยกจาก APK · เริ่มสถานะ ‘รอผูกร้าน’ ลูกค้านำไปกรอกใน Settings และผูกได้ 1 ร้าน"
     : "";
-  updateKeyCost();
+  userOptions(userSearch.value);
+  syncKeyMode();
 }
 function syncReleaseForm() {
   const program = programs.find((x) => Number(x.id) === Number(releaseProgram.value));
@@ -115,6 +123,10 @@ function syncReleaseForm() {
   }
 }
 function updateKeyCost() {
+  if (keyMode.value === "vsms_manual") {
+    keyCostSummary.textContent = "คีย์ VSMS โดยแอดมิน · ไม่มีการชำระเงิน · 1 คีย์ต่อ 1 เครื่อง";
+    return;
+  }
   if (keyMode.value === "test") {
     keyCostSummary.textContent = "คีย์ทดสอบ · ไม่มีค่าใช้จ่าย";
     return;
@@ -125,9 +137,11 @@ function updateKeyCost() {
 }
 function syncKeyMode() {
   const testMode = keyMode.value === "test";
+  const manualVsms = keyMode.value === "vsms_manual";
   keyCustomerFields.hidden = testMode;
   keyPackageField.hidden = testMode;
   testDurationField.hidden = !testMode;
+  testDuration.disabled = !testMode;
   keyUser.required = !testMode;
   keyPlan.required = !testMode;
   if (testMode && operatorUserId) keyUser.value = String(operatorUserId);
@@ -135,7 +149,7 @@ function syncKeyMode() {
 }
 function userOptions(q = "") {
   const needle = q.trim().toLowerCase();
-  keyUser.innerHTML = users
+  keyUser.innerHTML = (keyMode.value === "vsms_manual" ? '<option value="">เลือกผู้รับคีย์ VSMS</option>' : "") + users
     .filter(
       (x) =>
         !needle ||
@@ -167,7 +181,7 @@ function renderLicenses() {
       ).map((x) => x.program_code === "sms-mix" ? { ...x, max_devices: 1 } : x);
   const ageLabel = (x) => { let days=x.duration_days;if(x.issuance_type==="test"&&x.expires_at&&x.starts_at)days=Math.round((Date.parse(String(x.expires_at).replace(" ","T")+"Z")-Date.parse(String(x.starts_at).replace(" ","T")+"Z"))/86400000);return days==null?"ตลอดอายุ":Number(days)===30?"30 วัน":Number(days)===365?"1 ปี":`${Number(days)} วัน`;};
   const dateLabel = (value) => value ? new Intl.DateTimeFormat("th-TH",{dateStyle:"short",timeStyle:"short"}).format(new Date(String(value).replace(" ","T")+"Z")) : "-";
-  licensesEl.innerHTML = filtered.length ? `<div class="license-table-wrap"><table class="license-table"><thead><tr><th>ลูกค้า</th><th>แอป / เลขคีย์</th><th>แพ็กเกจ / อายุคีย์</th><th>ค่าใช้จ่าย</th><th>วันที่ออก</th><th>ผู้ออก</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${filtered.map((x)=>`<tr><td><b>#${Number(x.user_id)}</b><br>${esc(x.user_name)}<br><small>${esc(x.email||"")}</small></td><td><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title||x.program_code)}</b><br><code>${esc(x.key_masked)}</code></td><td>${esc(x.plan_name||"ไม่กำหนดแพ็กเกจ")}<br><b>${ageLabel(x)}</b></td><td><b>${Number(x.display_cost||0).toLocaleString("th-TH")} บาท</b><br><small>${x.issuance_type === "test" ? "คีย์ทดสอบ" : x.order_id ? "จากออเดอร์" : "คีย์ลูกค้า"}</small></td><td>${dateLabel(x.created_at)}</td><td>${esc(x.issuer_name||"ระบบ")}</td><td><span class="status">${esc(effectiveStatus(x))}</span><br><small>${Number(x.active_devices)}/${Number(x.max_devices)||3} เครื่อง</small>${x.platform_type === "veasy"&&x.binding_state === "unbound"?'<br><span class="binding-unbound">รอผูกร้าน</span>':""}</td><td><div class="license-actions"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended"?`<button data-status="active" data-id="${x.id}">เปิดคืน</button>`:`<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">ไม่พบคีย์</p>';
+  licensesEl.innerHTML = filtered.length ? `<div class="license-table-wrap"><table class="license-table"><thead><tr><th>ลูกค้า</th><th>แอป / เลขคีย์</th><th>แพ็กเกจ / อายุคีย์</th><th>ค่าใช้จ่าย</th><th>วันที่ออก</th><th>ผู้ออก</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${filtered.map((x)=>`<tr><td><b>#${Number(x.user_id)}</b><br>${esc(x.user_name)}<br><small>${esc(x.email||"")}</small></td><td><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.program_title||x.program_code)}</b><br><code>${esc(x.key_masked)}</code></td><td>${esc(x.plan_name||"ไม่กำหนดแพ็กเกจ")}<br><b>${ageLabel(x)}</b></td><td><b>${Number(x.display_cost||0).toLocaleString("th-TH")} บาท</b><br><small>${x.issuance_type === "admin_manual" ? "แอดมินออกให้ · ไม่มีการชำระเงิน" : x.issuance_type === "test" ? "คีย์ทดสอบ" : x.order_id ? "จากออเดอร์" : "คีย์ลูกค้า"}</small></td><td>${dateLabel(x.created_at)}</td><td>${esc(x.issuer_name||"ระบบ")}</td><td><span class="status">${esc(effectiveStatus(x))}</span><br><small>${Number(x.active_devices)}/${Number(x.max_devices)||3} เครื่อง</small>${x.platform_type === "veasy"&&x.binding_state === "unbound"?'<br><span class="binding-unbound">รอผูกร้าน</span>':""}</td><td><div class="license-actions"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended"?`<button data-status="active" data-id="${x.id}">เปิดคืน</button>`:`<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">ไม่พบคีย์</p>';
   for (const license of filtered) if (Number(license.active_devices) > 0) {
     const historyButton = licensesEl.querySelector(`[data-history="${CSS.escape(String(license.id))}"]`), resetButton = document.createElement("button");
     resetButton.type = "button";resetButton.className = "danger";resetButton.dataset.resetSlots = license.id;resetButton.dataset.deviceCount = String(license.active_devices);resetButton.textContent = `ล้างสล็อตคีย์ (${license.active_devices})`;historyButton?.before(resetButton);
@@ -276,7 +290,7 @@ async function load() {
     programs
       .map(
         (x) =>
-          `<section class="program-row"><div><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><code>${esc(x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions">${x.code === "sms-mix" ? '<button type="button" disabled title="คีย์ VSMS ออกอัตโนมัติหลังชำระเงินเท่านั้น">ออกคีย์</button>' : `<button type="button" data-issue-program="${x.id}">ออกคีย์</button>`}${x.code === "sms-mix" ? '<button type="button" class="secondary-action" disabled title="VSMS ต้องใช้ขั้นตอนตรวจ APK และลายเซ็นเฉพาะก่อนอัปเดต">จัดการเวอร์ชัน</button>' : `<button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
+          `<section class="program-row"><div><b>${esc(programDisplayName(x))}</b><code>${esc(x.code === "sms-mix" ? "VSMS" : x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button>${x.code === "sms-mix" ? '<button type="button" class="secondary-action" disabled title="VSMS ต้องใช้ขั้นตอนตรวจ APK และลายเซ็นเฉพาะก่อนอัปเดต">จัดการเวอร์ชัน</button>' : `<button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
       )
       .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
@@ -439,6 +453,8 @@ function openKeyDialog(programId) {
     return alert("ยังไม่มีโปรแกรม กรุณากด ‘เพิ่มโปรแกรม’ ก่อนออกคีย์");
   if (programId) keyProgram.value = String(programId);
   planOptions();
+  keyForm.dataset.manualConfirmed = "";
+  issueKeySubmit.textContent = "ออกคีย์";
   issuedKey.hidden = true;
   keyDialog.showModal();
 }
@@ -469,6 +485,8 @@ keyProgram.onchange = planOptions;
 releaseProgram.onchange = syncReleaseForm;
 keyPlan.onchange = updateKeyCost;
 keyMode.onchange = syncKeyMode;
+keyForm.addEventListener("change", () => { keyForm.dataset.manualConfirmed = ""; issueKeySubmit.textContent = "ออกคีย์"; });
+keyForm.addEventListener("input", () => { keyForm.dataset.manualConfirmed = ""; issueKeySubmit.textContent = "ออกคีย์"; });
 testDuration.onchange = updateKeyCost;
 userSearch.oninput = () => userOptions(userSearch.value);
 licenseSearch.oninput = renderLicenses;
@@ -644,19 +662,32 @@ programForm.querySelectorAll('[name^="price_"]').forEach((input) => input.addEve
 }));
 keyForm.onsubmit = async (e) => {
   e.preventDefault();
-  if (keyMode.value === "customer" && !keyPlan.value) return alert("คีย์ลูกค้าต้องเลือกแพ็กเกจก่อน เพื่อแสดงค่าใช้จ่ายให้ถูกต้อง");
+  if (["customer", "vsms_manual"].includes(keyMode.value) && !keyPlan.value) {
+    if (keyMode.value === "vsms_manual") keyCostSummary.textContent = "กรุณาเลือกแพ็กเกจ VSMS ก่อนออกคีย์";
+    else alert("กรุณาเลือกแพ็กเกจก่อนออกคีย์");
+    return;
+  }
   const selectedUser = users.find(
       (x) => Number(x.id) === Number(keyUser.value),
     ),
     selectedProgram = programs.find(
       (x) => Number(x.id) === Number(keyProgram.value),
     );
-  if (
+  if (keyMode.value === "vsms_manual") {
+    if (!selectedUser || selectedProgram?.code !== "sms-mix") return;
+    if (keyForm.dataset.manualConfirmed !== "true") {
+      const chosenPlan = plans(selectedProgram).find((p) => Number(p.id) === Number(keyPlan.value));
+      if (!((chosenPlan?.code === "monthly" && Number(chosenPlan.duration_days) === 30) || (chosenPlan?.code === "yearly" && Number(chosenPlan.duration_days) === 365))) return;
+      keyCostSummary.textContent = `ยืนยันออกคีย์ VSMS ให้ ${selectedUser.name} · ${Number(chosenPlan.duration_days) === 30 ? "30 วัน" : "1 ปี"} · ไม่มีการชำระเงิน · 1 เครื่อง`;
+      keyForm.dataset.manualConfirmed = "true";
+      issueKeySubmit.textContent = "ยืนยันออกคีย์ VSMS";
+      return;
+    }
+  } else if (
     !confirm(
-      `${keyMode.value === "test" ? `ยืนยันออกคีย์ทดสอบ ${testDuration.options[testDuration.selectedIndex].text} · ไม่มีค่าใช้จ่าย` : `ยืนยันออกคีย์ให้ ${selectedUser?.name || "ลูกค้า"}`}\nโปรแกรม ${selectedProgram?.product_title || selectedProgram?.code || "-"}${selectedProgram?.platform_type === "veasy" ? "\nV Easy: คีย์นี้จะผูกได้ 1 ร้าน" : ""}`,
+      `${keyMode.value === "test" ? `ยืนยันออกคีย์ทดสอบ ${testDuration.options[testDuration.selectedIndex].text} · ไม่มีค่าใช้จ่าย` : `ยืนยันออกคีย์ให้ ${selectedUser?.name || "ลูกค้า"}`}\nโปรแกรม ${selectedProgram?.code === "sms-mix" ? "VSMS · ไม่มีการชำระเงิน · 1 เครื่อง" : selectedProgram?.product_title || selectedProgram?.code || "-"}${selectedProgram?.platform_type === "veasy" ? "\nV Easy: คีย์นี้จะผูกได้ 1 ร้าน" : ""}`,
     )
-  )
-    return;
+  ) return;
   issueKeySubmit.disabled = true;
   issueKeySubmit.textContent = "กำลังออกคีย์…";
   try {
@@ -676,8 +707,10 @@ keyForm.onsubmit = async (e) => {
     };
     await load();
   } catch (error) {
-    alert(error.message || "ออกคีย์ไม่สำเร็จ");
+    if (keyMode.value === "vsms_manual") keyCostSummary.textContent = error.message || "ออกคีย์ไม่สำเร็จ";
+    else alert(error.message || "ออกคีย์ไม่สำเร็จ");
   } finally {
+    keyForm.dataset.manualConfirmed = "";
     issueKeySubmit.disabled = false;
     issueKeySubmit.textContent = "ออกคีย์";
   }

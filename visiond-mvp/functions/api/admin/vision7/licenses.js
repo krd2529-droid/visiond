@@ -29,6 +29,7 @@ export async function onRequestGet(ctx) {
   ).all();
   const items = (rows.results || []).map((x) => ({
       ...x,
+      display_cost: x.issuance_type === "admin_manual" ? 0 : x.display_cost,
       key_masked: maskedLicense(x),
     })),
     summary = {
@@ -64,7 +65,7 @@ export async function onRequestPost(ctx) {
       503,
     );
   const b = await ctx.request.json().catch(() => ({})),
-    issuanceType = b.key_mode === "test" ? "test" : "customer",
+    issuanceType = b.key_mode === "vsms_manual" ? "admin_manual" : b.key_mode === "test" ? "test" : "customer",
     userId = issuanceType === "test" ? Number(a.user.id) : Number(b.user_id),
     programId = Number(b.program_id);
   let planId = issuanceType === "test" ? null : Number(b.plan_id) || null;
@@ -79,7 +80,10 @@ export async function onRequestPost(ctx) {
       .bind(programId)
       .first();
   if (!user || !program) return json({ error: "ไม่พบผู้ใช้หรือโปรแกรม" }, 404);
-  if (program.code === 'sms-mix') return json({ error: "VSMS ออกคีย์ผ่านออเดอร์ที่ชำระเงินแล้วเท่านั้น" }, 403);
+  if (program.code === 'sms-mix' && issuanceType !== "admin_manual") return json({ error: "VSMS ต้องเลือกการออกคีย์แอดมินพร้อมแพ็กเกจ 30 วันหรือ 1 ปี" }, 403);
+  if (program.code !== 'sms-mix' && issuanceType === "admin_manual") return json({ error: "โหมดออกคีย์นี้ใช้กับ VSMS เท่านั้น" }, 400);
+  if (issuanceType === "admin_manual" && (!Number.isSafeInteger(Number(b.user_id)) || Number(b.user_id) <= 0 || !planId || b.test_duration || b.order_id))
+    return json({ error: "กรุณาเลือกผู้รับและแพ็กเกจ VSMS ที่ถูกต้อง" }, 400);
   let expiresAt = null, issueCost = 0;
   if (issuanceType === "test") {
     const testDuration = String(b.test_duration || "30");
@@ -88,12 +92,14 @@ export async function onRequestPost(ctx) {
   }
   if (planId) {
     const p = await ctx.env.DB.prepare(
-      "SELECT q.duration_days,COALESCE(q.offer_price,x.price,q.price,0) issue_cost FROM vision7_plans q LEFT JOIN products x ON x.id=q.product_id WHERE q.id=? AND q.program_id=? AND q.active=1",
+      "SELECT q.plan_code,q.duration_days,COALESCE(q.offer_price,x.price,q.price,0) issue_cost FROM vision7_plans q LEFT JOIN products x ON x.id=q.product_id WHERE q.id=? AND q.program_id=? AND q.active=1",
     )
       .bind(planId, programId)
       .first();
     if (!p) return json({ error: "ไม่พบแพ็กเกจ" }, 404);
-    issueCost = issuanceType === "test" ? 0 : Math.max(0, Math.round(Number(p.issue_cost) || 0));
+    if (issuanceType === "admin_manual" && !((p.plan_code === "monthly" && Number(p.duration_days) === 30) || (p.plan_code === "yearly" && Number(p.duration_days) === 365)))
+      return json({ error: "VSMS ออกคีย์แอดมินได้เฉพาะ 30 วันหรือ 1 ปี" }, 400);
+    issueCost = ["test", "admin_manual"].includes(issuanceType) ? 0 : Math.max(0, Math.round(Number(p.issue_cost) || 0));
     if (p.duration_days)
       expiresAt = sqlTime(
         new Date(Date.now() + Number(p.duration_days) * 86400000),
@@ -106,8 +112,8 @@ export async function onRequestPost(ctx) {
       programId,
       planId,
       status: "active",
-      maxDevices: Number(program.max_devices) || 3,
-      source: "admin",
+      maxDevices: issuanceType === "admin_manual" ? 1 : Number(program.max_devices) || 3,
+      source: issuanceType === "admin_manual" ? "admin_manual" : "admin",
       note: text(b.note),
       createdBy: a.user.id,
       expiresAt,
