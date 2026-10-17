@@ -38,6 +38,11 @@ const esc = (s) =>
   vsmsForm = document.querySelector("#vsmsForm"),
   vsmsState = document.querySelector("#vsmsState"),
   saveVsms = document.querySelector("#saveVsms"),
+  vsmsPublishDialog = document.querySelector("#vsmsPublishDialog"),
+  vsmsPublishForm = document.querySelector("#vsmsPublishForm"),
+  vsmsPublishHash = document.querySelector("#vsmsPublishHash"),
+  vsmsPublishState = document.querySelector("#vsmsPublishState"),
+  vsmsPublishSubmit = document.querySelector("#vsmsPublishSubmit"),
   newKey = document.querySelector("#newKey"),
   programForm = document.querySelector("#programForm"),
   programState = document.querySelector("#programState"),
@@ -61,7 +66,8 @@ let programs = [],
   users = [],
   encryptionReady = false,
   licenseFilter = "all",
-  operatorUserId = 0;
+  operatorUserId = 0,
+  publishVsmsTarget = null;
 window.__licenses = [];
 const plans = (p) => {
   try {
@@ -316,29 +322,16 @@ async function load() {
       button.disabled = false;
     }
   });
-  programsEl.querySelectorAll("[data-publish-vsms]").forEach((button) => button.onclick = async () => {
+  programsEl.querySelectorAll("[data-publish-vsms]").forEach((button) => button.onclick = () => {
     const program = programs.find((x) => x.code === "sms-mix" && String(x.id) === button.dataset.publishVsms);
     if (!program) return;
-    const entered = prompt("วาง SHA-256 (64 ตัวอักษรฐานสิบหก) ของ APK VSMS 0.5.4 ที่ตรวจลายเซ็นสำหรับจำหน่ายแล้ว");
-    if (entered === null) return;
-    const apkHash = entered.trim().toLowerCase();
-    if (!/^[a-f0-9]{64}$/.test(apkHash)) return alert("SHA-256 ของ APK ไม่ถูกต้อง");
-    if (!confirm(`ยืนยันเผยแพร่ VSMS 0.5.4 ให้ลูกค้าซื้อและดาวน์โหลด?\nAndroid · 1 คีย์/1 เครื่อง · 30 วัน 999 บาท / 365 วัน 9,999 บาท\nSHA-256 ${apkHash}`)) return;
-    const state = button.closest(".program-row").querySelector("[data-publish-state]");
-    button.disabled = true;
-    state.className = "muted";
-    state.textContent = "กำลังตรวจ APK, SHA-256 และแพ็กเกจก่อนเผยแพร่…";
-    try {
-      const response = await fetch("/api/admin/vision7/smsmix-publish", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({program_id:program.id,confirm:"publish-vsms",apk_sha256:apkHash})});
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || `เผยแพร่ไม่สำเร็จ (${response.status})`);
-      state.textContent = "เผยแพร่ VSMS แล้ว";
-      await load();
-    } catch (error) {
-      state.className = "muted error";
-      state.textContent = error.message || "เผยแพร่ VSMS ไม่สำเร็จ";
-      button.disabled = false;
-    }
+    publishVsmsTarget = { program, button };
+    vsmsPublishForm.reset();
+    vsmsPublishState.className = "muted";
+    vsmsPublishState.textContent = "";
+    vsmsPublishSubmit.disabled = false;
+    vsmsPublishDialog.showModal();
+    vsmsPublishHash.focus();
   });
   renderLicenses();
   releases.innerHTML =
@@ -485,6 +478,36 @@ document
     (b) =>
       (b.onclick = () => document.querySelector("#" + b.dataset.close).close()),
   );
+vsmsPublishForm.onsubmit = async (event) => {
+  event.preventDefault();
+  if (!publishVsmsTarget) return;
+  const { program, button } = publishVsmsTarget;
+  const apkHash = vsmsPublishHash.value.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(apkHash)) {
+    vsmsPublishState.className = "muted error";
+    vsmsPublishState.textContent = "SHA-256 ของ APK ต้องเป็นอักษรฐานสิบหก 64 ตัว";
+    return;
+  }
+  const state = button.closest(".program-row").querySelector("[data-publish-state]");
+  button.disabled = true;
+  vsmsPublishSubmit.disabled = true;
+  state.className = vsmsPublishState.className = "muted";
+  state.textContent = vsmsPublishState.textContent = "กำลังตรวจ APK, SHA-256 และแพ็กเกจก่อนเผยแพร่…";
+  try {
+    const response = await fetch("/api/admin/vision7/smsmix-publish", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({program_id:program.id,confirm:"publish-vsms",apk_sha256:apkHash})});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `เผยแพร่ไม่สำเร็จ (${response.status})`);
+    state.textContent = "เผยแพร่ VSMS แล้ว";
+    vsmsPublishDialog.close();
+    publishVsmsTarget = null;
+    await load();
+  } catch (error) {
+    state.className = vsmsPublishState.className = "muted error";
+    state.textContent = vsmsPublishState.textContent = error.message || "เผยแพร่ VSMS ไม่สำเร็จ";
+    button.disabled = false;
+    vsmsPublishSubmit.disabled = false;
+  }
+};
 programForm.onsubmit = async (e) => {
   e.preventDefault();
   if (!programForm.reportValidity()) return;
