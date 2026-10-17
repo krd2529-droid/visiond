@@ -81,7 +81,7 @@ function programOptions(target) {
   target.innerHTML = programs
     .map(
       (x) =>
-        `<option value="${x.id}">${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</option>`,
+        `<option value="${x.id}">${esc(programDisplayName(x))}</option>`,
     )
     .join("");
 }
@@ -101,7 +101,7 @@ function planOptions() {
       .filter((x) => x.active !== 0 && (!vsms || (x.code === "monthly" && Number(x.duration_days) === 30) || (x.code === "yearly" && Number(x.duration_days) === 365)))
       .map(
         (x) =>
-          `<option value="${x.id}">${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}${x.offer_price != null ? ` · ${(Number(x.offer_price)/100).toLocaleString("th-TH")} บาท` : " · ยังไม่มีราคาขาย"}</option>`,
+          `<option value="${x.id}">${vsms ? Number(x.duration_days) === 30 ? "30 วัน" : "1 ปี" : `${esc(x.name)}${x.duration_days ? ` · ${x.duration_days} วัน` : " · ตลอดชีพ"}${x.offer_price != null ? ` · ${(Number(x.offer_price)/100).toLocaleString("th-TH")} บาท` : " · ยังไม่มีราคาขาย"}`}</option>`,
       )
       .join("");
   const veasy = program?.platform_type === "veasy";

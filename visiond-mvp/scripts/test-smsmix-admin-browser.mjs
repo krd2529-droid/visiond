@@ -19,7 +19,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/admin/vision7/programs' && req.method === 'POST') {
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
     createBody = Buffer.concat(chunks).toString('latin1');
-    program = { id: 74, code: 'sms-mix', app_name: 'VSMS', platform_type: 'android', current_version: '0.5.4', active: 0, plans: JSON.stringify([{ id: 501, name: '30 days', duration_days: 30, code: 'monthly', product_id: 401 }, { id: 502, name: '1 year', duration_days: 365, code: 'yearly', product_id: 402 }]) };
+    program = { id: 74, code: 'sms-mix', app_name: 'VSMS', platform_type: 'android', current_version: '0.5.4', active: 0, plans: JSON.stringify([{ id: 501, name: 'คีย์ 30 วัน', duration_days: 30, code: 'monthly', product_id: 401 }, { id: 502, name: 'คีย์ 365 วัน', duration_days: 365, code: 'yearly', product_id: 402 }]) };
     res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ ok: true, id: 74 })); return;
   }
   if (pathname === '/api/admin/vision7/licenses' && req.method === 'POST') {
@@ -97,7 +97,9 @@ try {
   assert.equal(nativeDialogs, 0, 'VSMS publish never uses unsupported native prompts');
   await vsmsRow.getByRole('button', { name: 'ออกคีย์' }).click();
   assert.equal(await page.locator('#keyMode').inputValue(), 'vsms_manual');
+  assert.equal(await page.locator('#keyProgram option:checked').innerText(), 'VSMS');
   assert.deepEqual(await page.locator('#keyPlan option').evaluateAll(options => options.map(x => x.value)), ['', '501', '502']);
+  assert.deepEqual(await page.locator('#keyPlan option').evaluateAll(options => options.map(x => x.textContent)), ['เลือกแพ็กเกจ VSMS', '30 วัน', '1 ปี']);
   assert.equal(await page.locator('#keyUser').inputValue(), '', 'recipient must be selected');
   await page.locator('#keyUser').selectOption('91');
   await page.locator('#keyPlan').selectOption('501');
