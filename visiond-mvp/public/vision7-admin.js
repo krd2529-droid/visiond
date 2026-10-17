@@ -24,6 +24,7 @@ const esc = (s) =>
   historyContent = document.querySelector("#historyContent"),
   issuedKey = document.querySelector("#issuedKey"),
   releaseForm = document.querySelector("#releaseForm"),
+  vrecordReleaseHint = document.querySelector("#vrecordReleaseHint"),
   releaseState = document.querySelector("#releaseState"),
   releases = document.querySelector("#releases"),
   newProgram = document.querySelector("#newProgram"),
@@ -91,6 +92,16 @@ function planOptions() {
     ? "คีย์ V Easy นี้ออกแยกจาก APK · เริ่มสถานะ ‘รอผูกร้าน’ ลูกค้านำไปกรอกใน Settings และผูกได้ 1 ร้าน"
     : "";
   updateKeyCost();
+}
+function syncReleaseForm() {
+  const program = programs.find((x) => Number(x.id) === Number(releaseProgram.value));
+  const replacing = program?.code === "v-record" && Number(program.active) === 0;
+  vrecordReleaseHint.hidden = !replacing;
+  if (replacing) {
+    releaseForm.elements.version.value = "0.6.0";
+    releaseForm.elements.minimum_version.value = "0.6.0";
+    releaseForm.elements.mandatory.checked = false;
+  }
 }
 function updateKeyCost() {
   if (keyMode.value === "test") {
@@ -258,6 +269,7 @@ async function load() {
       )
       .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
+  syncReleaseForm();
   programOptions(keyProgram);
   userOptions();
   syncKeyMode();
@@ -278,7 +290,7 @@ async function load() {
   if(hasPrograms && rows.length) workflow[2].classList.add("current");
   programsEl.querySelectorAll("[data-first-program]").forEach((x)=>x.onclick=openProgramDialog);
   programsEl.querySelectorAll("[data-issue-program]").forEach((x)=>x.onclick=()=>openKeyDialog(x.dataset.issueProgram));
-  programsEl.querySelectorAll("[data-release-program]").forEach((x)=>x.onclick=()=>{releaseProgram.value=x.dataset.releaseProgram;releaseDetails.open=true;releaseDetails.scrollIntoView({behavior:"smooth",block:"start"});});
+  programsEl.querySelectorAll("[data-release-program]").forEach((x)=>x.onclick=()=>{releaseProgram.value=x.dataset.releaseProgram;syncReleaseForm();releaseDetails.open=true;releaseDetails.scrollIntoView({behavior:"smooth",block:"start"});});
   programsEl.querySelectorAll("[data-publish-vrecord]").forEach((button) => button.onclick = async () => {
     const program = programs.find((x) => x.code === "v-record" && String(x.id) === button.dataset.publishVrecord);
     if (!program || !confirm(`ยืนยันเผยแพร่ V-Record 0.6.0 ให้ลูกค้าซื้อและดาวน์โหลด?\nรหัส ${program.code} · Windows · รายเดือน 199 บาท / รายปี 999 บาท`)) return;
@@ -424,6 +436,7 @@ releaseDetails.querySelector("summary").addEventListener("click", (event) => {
   }
 });
 keyProgram.onchange = planOptions;
+releaseProgram.onchange = syncReleaseForm;
 keyPlan.onchange = updateKeyCost;
 keyMode.onchange = syncKeyMode;
 testDuration.onchange = updateKeyCost;
@@ -577,16 +590,21 @@ releaseForm.onsubmit = async (e) => {
   e.preventDefault();
   const state = releaseState,
     button = releaseForm.querySelector("button");
+  const selected = programs.find((x) => Number(x.id) === Number(releaseProgram.value));
+  const replacing = selected?.code === "v-record" && Number(selected.active) === 0;
+  if (replacing && !confirm("ยืนยันแทนที่ไฟล์รีลีส V-Record 0.6.0 ที่ยังไม่เปิดขาย? ไฟล์เดิมจะเก็บไว้ระหว่างตรวจสอบ")) return;
   button.disabled = true;
-  state.textContent = "กำลังอัปโหลด กรุณาอย่าปิดหน้านี้";
+  state.textContent = replacing ? "กำลังอัปโหลดและตรวจไฟล์ใหม่ รีลีสเดิมยังอยู่…" : "กำลังอัปโหลด กรุณาอย่าปิดหน้านี้";
   try {
+    const body = new FormData(releaseForm);
+    if (replacing) { body.set("replace_inactive", "1"); body.delete("mandatory"); }
     const r = await fetch("/api/admin/vision7/releases", {
         method: "POST",
-        body: new FormData(releaseForm),
+        body,
       }),
       d = await r.json();
     if (!r.ok) throw new Error(d.error || "เผยแพร่ไม่สำเร็จ");
-    state.textContent = `เผยแพร่แล้ว · SHA-256 ${d.sha256}`;
+    state.textContent = `${replacing ? "แทนที่รีลีสที่ยังไม่เปิดขายแล้ว" : "เผยแพร่แล้ว"} · SHA-256 ${d.sha256}`;
     releaseForm.reset();
     await load();
   } catch (error) {

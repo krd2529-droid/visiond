@@ -23,10 +23,11 @@ finally { privateInput.fill(0); }
 const jwk = createPublicKey(privateKey).export({ format: 'jwk' });
 const derivedXml = `<RSAKeyValue><Modulus>${Buffer.from(jwk.n, 'base64url').toString('base64')}</Modulus><Exponent>${Buffer.from(jwk.e, 'base64url').toString('base64')}</Exponent></RSAKeyValue>`;
 if (derivedXml !== publicXml) throw new Error('Signing key does not match the reviewed public XML');
+if (existsSync(join(root, 'tools', 'ffmpeg.exe'))) throw new Error('Do not sign a package containing a vendor FFmpeg executable');
 const files = {};
-for (const name of ['V-Record.exe', 'V-Record.Updater.exe', 'tools/ffmpeg.exe']) {
+for (const name of ['V-Record.exe', 'V-Record.Updater.exe', 'Install-FFmpeg.ps1', 'README.txt']) {
   const file = join(root, name), info = statSync(file);
-  if (!info.isFile() || info.size < 10000 || info.size > 200 * 1024 * 1024) throw new Error(`Invalid package component: ${name}`);
+  if (!info.isFile() || info.size < (name.endsWith('.exe') ? 10000 : 100) || info.size > 200 * 1024 * 1024) throw new Error(`Invalid package component: ${name}`);
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(file)) hash.update(chunk);
   files[name] = hash.digest('hex');

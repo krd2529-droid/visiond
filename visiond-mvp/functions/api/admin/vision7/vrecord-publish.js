@@ -24,8 +24,10 @@ export async function onRequestPost(ctx) {
   const release = await ctx.env.DB.prepare("SELECT object_key,file_size,sha256 FROM vision7_releases WHERE program_id=? AND status='published' AND version='0.6.0' ORDER BY id DESC LIMIT 1").bind(programId).first();
   if (!release || !Number.isSafeInteger(Number(release.file_size)) || Number(release.file_size) < 100000 || Number(release.file_size) > 95 * 1024 * 1024 || !/^[a-f0-9]{64}$/i.test(String(release.sha256))) return json({ error: 'ยังไม่มีแพ็กเกจ V-Record ที่พร้อมเผยแพร่' }, 409);
   const file = await ctx.env.FILES.head(release.object_key);
-  if (!file || Number(file.size) !== Number(release.file_size)) return json({ error: 'ไฟล์รีลีสในคลังไม่ครบ' }, 409);
-  await ctx.env.DB.prepare("UPDATE vision7_programs SET active=1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND code='v-record' AND active=0").bind(programId).run();
+  if (!file || Number(file.size) !== Number(release.file_size) || file.customMetadata?.sha256 !== release.sha256) return json({ error: 'ไฟล์รีลีสในคลังไม่ครบ' }, 409);
+  const activated = await ctx.env.DB.prepare("UPDATE vision7_programs SET active=1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND code='v-record' AND active=0 AND EXISTS (SELECT 1 FROM vision7_releases WHERE program_id=? AND version='0.6.0' AND status='published' AND object_key=? AND file_size=? AND sha256=?)")
+    .bind(programId, programId, release.object_key, release.file_size, release.sha256).run();
+  if (Number(activated.meta?.changes) !== 1) return json({ error: 'รีลีสเปลี่ยนระหว่างตรวจสอบ กรุณาตรวจสอบแล้วเผยแพร่อีกครั้ง' }, 409);
   try { await syncVision7KeyProducts(ctx.env, programId); }
   catch (error) {
     await ctx.env.DB.prepare("UPDATE vision7_programs SET active=0,updated_at=CURRENT_TIMESTAMP WHERE id=? AND code='v-record'").bind(programId).run();

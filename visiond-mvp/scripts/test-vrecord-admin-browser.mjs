@@ -12,7 +12,7 @@ for (const candidate of [process.env.PLAYWRIGHT_PACKAGE, 'C:/Users/User/.cache/c
 if (!chromium) throw new Error('Playwright unavailable');
 
 const root = path.resolve('public');
-let program = null, createBody = '', publishBody = null, publishCalls = 0;
+let program = null, createBody = '', replaceBody = '', publishBody = null, publishCalls = 0;
 const server = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
   if (pathname === '/api/admin/vision7/programs' && req.method === 'POST') {
@@ -31,6 +31,12 @@ const server = http.createServer(async (req, res) => {
     if (publishCalls === 1) { res.statusCode = 409; res.end(JSON.stringify({ error: 'ไฟล์รีลีสในคลังไม่ครบ' })); }
     else { program.active = 1; res.end(JSON.stringify({ ok: true, program_id: 73 })); }
     return;
+  }
+  if (pathname === '/api/admin/vision7/releases' && req.method === 'POST') {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    replaceBody = Buffer.concat(chunks).toString('latin1');
+    res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ ok: true, replaced: true, sha256: 'a'.repeat(64) })); return;
   }
   const api = {
     '/api/admin/vision7/programs': { items: program ? [program] : [], product_options: [], product_options_available: true },
@@ -64,6 +70,14 @@ try {
   assert.ok(!createBody.includes('lifetime'), 'no lifetime plan is submitted');
   assert.equal(await page.locator('#newVRecord').isDisabled(), true, 'duplicate creation disabled');
   assert.match(await page.locator('#programs').innerText(), /ยังไม่เปิดขาย/);
+  await page.locator('[data-release-program="73"]').click();
+  assert.equal(await page.locator('#vrecordReleaseHint').isVisible(), true);
+  assert.equal(await page.locator('#releaseForm [name="version"]').inputValue(), '0.6.0');
+  await page.locator('#releaseForm [name="file"]').setInputFiles({ name: 'replacement.zip', mimeType: 'application/zip', buffer: Buffer.from('new zip') });
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#releaseForm button[type="submit"]').click();
+  await page.locator('#releaseState').getByText('แทนที่รีลีสที่ยังไม่เปิดขายแล้ว', { exact: false }).waitFor();
+  for (const value of ['replace_inactive', '0.6.0', 'replacement.zip']) assert.ok(replaceBody.includes(value), `replacement request includes ${value}`);
   page.once('dialog', (dialog) => dialog.dismiss());
   await page.locator('[data-publish-vrecord="73"]').click();
   assert.equal(publishCalls, 0, 'cancelled confirmation does not publish');
