@@ -109,7 +109,7 @@ export async function onRequestPost(ctx) {
     }
     const r = await ctx.env.DB.prepare(
       `INSERT INTO vision7_programs(product_id,code,app_name,app_description,cover_url,platform_type,current_version,minimum_version,requires_online,force_update,max_devices,trial_hours,active) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,3,24,b.active === false ? 0 : 1).run();
+    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,code === 'v-record' ? 1 : 3,code === 'v-record' ? 168 : 24,b.active === false ? 0 : 1).run();
     id = Number(r.meta.last_row_id);
     for (const p of plans) {
       await ctx.env.DB.prepare(

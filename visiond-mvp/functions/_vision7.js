@@ -14,10 +14,27 @@ export const safeDeviceName=value=>clean(value,80);
 export const safePlatform=value=>clean(value,40).toLowerCase();
 export const safeVersion=value=>/^\d+(?:\.\d+){0,3}(?:[-+][a-z0-9.-]+)?$/i.test(String(value||''))?String(value):'';
 
-export async function issueLicense(env,{userId,programId,planId=null,orderId=null,status='active',maxDevices=3,source='admin',note='',createdBy=null,expiresAt=null,issuanceType=null,issueCost=0}={}){
+export async function issueLicense(env,{userId,programId,planId=null,orderId=null,status='active',maxDevices=3,source='admin',note='',createdBy=null,expiresAt=null,issuanceType=null,issueCost=0,atomicTrialHours=null,atomicOrderItemId=null}={}){
   const random=crypto.getRandomValues(new Uint8Array(18)),raw=`VD7-${b64url(random).toUpperCase()}`,id=crypto.randomUUID(),hash=await hashLicenseKey(raw),ciphertext=await encryptVision7Key(env,raw),last4=raw.slice(-4);
   for(const sql of ["ALTER TABLE vision7_licenses ADD COLUMN issuance_type TEXT NOT NULL DEFAULT 'legacy'","ALTER TABLE vision7_licenses ADD COLUMN issue_cost INTEGER NOT NULL DEFAULT 0"])await env.DB.prepare(sql).run().catch(()=>{});
   const kind=clean(issuanceType||(orderId?'order':'admin'),20),cost=Math.max(0,Math.round(Number(issueCost)||0));
+  if(atomicTrialHours!==null){
+    if(source!=='trial'||status!=='trial'||Number(atomicTrialHours)!==168||!expiresAt||!env.DB.batch)throw new Error('Invalid atomic trial issuance');
+    const issued=env.DB.prepare(`INSERT INTO vision7_licenses(id,key_hash,key_ciphertext,key_last4,user_id,program_id,plan_id,order_id,status,expires_at,max_devices,source,note,created_by,issuance_type,issue_cost) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,hash,ciphertext,last4,userId,programId,planId,orderId,status,expiresAt,1,'trial',clean(note,300),createdBy,kind,cost);
+    const claim=env.DB.prepare(`INSERT INTO vision7_trial_entitlements(user_id,program_id,license_id,started_at,expires_at) VALUES(?,?,?,CURRENT_TIMESTAMP,?)`).bind(userId,programId,id,expiresAt);
+    const event=(type,detail)=>env.DB.prepare('INSERT INTO vision7_license_events(license_id,actor_user_id,event_type,detail) VALUES(?,?,?,?)').bind(id,createdBy||null,type,JSON.stringify(detail));
+    await env.DB.batch([issued,claim,event('issued',{source,status,max_devices:1,order_id:null}),event('trial_started',{hours:168})]);
+    return {id,key:raw,key_last4:last4};
+  }
+  if(atomicOrderItemId!==null){
+    if(source!=='paid_order'||status!=='active'||!orderId||!env.DB.batch)throw new Error('Invalid atomic order issuance');
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO vision7_licenses(id,key_hash,key_ciphertext,key_last4,user_id,program_id,plan_id,order_id,status,expires_at,max_devices,source,note,created_by,issuance_type,issue_cost) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,hash,ciphertext,last4,userId,programId,planId,orderId,status,expiresAt,1,source,clean(note,300),createdBy,kind,cost),
+      env.DB.prepare(`INSERT INTO vision7_order_fulfillments(order_item_id,order_id,license_id,action) VALUES(?,?,?,'issued')`).bind(atomicOrderItemId,orderId,id),
+      env.DB.prepare('INSERT INTO vision7_license_events(license_id,actor_user_id,event_type,detail) VALUES(?,?,?,?)').bind(id,createdBy||null,'issued',JSON.stringify({source,status,max_devices:1,order_id:orderId})),
+    ]);
+    return {id,key:raw,key_last4:last4};
+  }
   await env.DB.prepare(`INSERT INTO vision7_licenses(id,key_hash,key_ciphertext,key_last4,user_id,program_id,plan_id,order_id,status,expires_at,max_devices,source,note,created_by,issuance_type,issue_cost) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,hash,ciphertext,last4,userId,programId,planId,orderId,status,expiresAt,Math.max(1,Math.min(50,Number(maxDevices)||3)),clean(source,40),clean(note,300),createdBy,kind,cost).run();
   try {
     await licenseEvent(env,id,createdBy,'issued',{source,status,max_devices:maxDevices,order_id:orderId||null});
