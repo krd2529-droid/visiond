@@ -21,6 +21,7 @@ public class QueueTest {
     @Before public void setup() {
         c = RuntimeEnvironment.getApplication();
         Store.file(c).delete();
+        c.deleteDatabase("message-history.db");
         LicenseClient.setVerifierForTests(context -> true);
     }
     @After public void teardown() { LicenseClient.setVerifierForTests(null); Scheduler.setHandoffForTests(null); }

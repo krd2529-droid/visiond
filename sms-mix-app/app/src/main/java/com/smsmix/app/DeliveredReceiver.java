@@ -16,15 +16,26 @@ public class DeliveredReceiver extends BroadcastReceiver {
     static void record(Context c,Intent intent,int status){
         synchronized(Scheduler.LOCK){
         JSONObject d=Store.load(c);
-        if(!d.optString("id").equals(intent.getStringExtra("id")))return;
-        JSONObject row=Store.rows(d).optJSONObject(intent.getIntExtra("row",-1));
-        if(row==null)return;
-        JSONArray parts=row.optJSONArray("deliveryParts");int p=intent.getIntExtra("part",-1);
-        if(parts==null || p<0 || p>=parts.length() || parts.optInt(p)==0)return;
-        try{parts.put(p,status);}catch(JSONException e){throw new IllegalStateException(e);}
+        String id=intent.getStringExtra("id");
+        int index=intent.getIntExtra("row",-1), part=intent.getIntExtra("part",-1);
+        if(id==null || index<0)return;
+        if(!d.optString("id").equals(id)){
+            MessageHistory.recordDelivery(c,id,index,part,status);
+            return;
+        }
+        JSONObject row=Store.rows(d).optJSONObject(index);
+        if(row==null || !apply(row,part,status))return;
+        Store.save(c,d);SuccessLog.record(c,d);MessageHistory.recordRow(c,d,index);
+        }
+    }
+    static boolean apply(JSONObject row,int part,int status){
+        String send=row.optString("status");
+        if(!"SENDING".equals(send) && !"SENT".equals(send) && !"UNKNOWN".equals(send))return false;
+        JSONArray parts=row.optJSONArray("deliveryParts");
+        if(parts==null || part<0 || part>=parts.length() || parts.optInt(part)==0)return false;
+        try{parts.put(part,status);}catch(JSONException e){throw new IllegalStateException(e);}
         boolean all=true;for(int n=0;n<parts.length();n++)if(parts.optInt(n)!=0)all=false;
         if(all)Store.put(row,"deliveredAt",System.currentTimeMillis());
-        Store.save(c,d);SuccessLog.record(c,d);
-        }
+        return true;
     }
 }

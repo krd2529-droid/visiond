@@ -172,6 +172,7 @@ final class Scheduler {
             }
             Store.put(d, "note", "ข้ามเบอร์ที่ซิมไม่พร้อม — ทำต่อด้วยซิมที่ใช้งานได้ ไม่ส่งเบอร์เดิมซ้ำ");
             Store.save(c, d);
+            MessageHistory.recordRow(c, d, i);
             if (next < 0) pauseLocked(c, d, "ครบรายการแล้ว");
             else alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false);
             return;
@@ -210,6 +211,7 @@ final class Scheduler {
         Store.put(d, "nextAt", alternating(d) && d.optInt("fallbackSim", -1) < 0 && i % 2 == 0
                 ? now : now + CampaignCore.delay(RANDOM));
         Store.save(c, d); // Persist before telephony side effect, never automatically retry SENDING.
+        MessageHistory.recordRow(c, d, i);
         try {
             alarm(c, d, row.optLong("deadline"), true);
             Handoff handoff = testHandoff;
@@ -221,6 +223,7 @@ final class Scheduler {
             Store.put(row, "status", "UNKNOWN");
             Store.put(row, "resultAt", System.currentTimeMillis());
             pauseLocked(c, d, "ไม่ทราบผลการส่ง: " + e.getMessage() + " — ไม่มีการส่งซ้ำอัตโนมัติ");
+            MessageHistory.recordRow(c, d, i);
         }
         }
         } finally { CHECKING_QUEUES.remove(id); }
@@ -287,6 +290,7 @@ final class Scheduler {
         } else if (d.optBoolean("running")) Store.put(d, "note", "ส่งสำเร็จ — รอส่งเบอร์ถัดไป");
         Store.save(c, d);
         SuccessLog.record(c, d);
+        MessageHistory.recordRow(c, d, i);
         if (noServiceWithoutFallback) pauseLocked(c, d, "ซิมไม่มีสัญญาณและไม่มีซิมสำรองที่ใช้งานได้ — หยุดคิว");
         else if (Store.pending(d) < 0) pause(c, d, "ครบรายการแล้ว");
         else if (d.optBoolean("running")) alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false);
@@ -308,6 +312,7 @@ final class Scheduler {
         Store.put(row, "status", "UNKNOWN");
         Store.put(row, "resultAt", System.currentTimeMillis());
         pauseLocked(c, d, "ไม่ได้รับผล SMS ภายใน 5 นาที — หยุดคิวและไม่ส่งเบอร์นี้ซ้ำ");
+        MessageHistory.recordRow(c, d, i);
     }
     static void bootPause(Context c) {
         synchronized (LOCK) {
@@ -318,6 +323,7 @@ final class Scheduler {
                 JSONObject row = Store.rows(d).optJSONObject(i);
                 Store.put(row, "status", "UNKNOWN");
                 Store.put(row, "resultAt", System.currentTimeMillis());
+                MessageHistory.recordRow(c, d, i);
             }
             pauseLocked(c, d, "เครื่องรีสตาร์ต กรุณาเปิดแอปและกดทำต่อ");
         }

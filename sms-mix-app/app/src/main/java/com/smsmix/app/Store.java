@@ -7,6 +7,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 final class Store {
+    private static boolean failNextSaveForTests;
+    static synchronized void failNextSaveForTests() { failNextSaveForTests = true; }
     static void put(JSONObject object, String key, Object value) {
         try { object.put(key, value); } catch (JSONException e) { throw new IllegalStateException(e); }
     }
@@ -29,6 +31,10 @@ final class Store {
         }
     }
     static synchronized void save(Context c, JSONObject data) {
+        if (failNextSaveForTests) {
+            failNextSaveForTests = false;
+            throw new IllegalStateException("synthetic queue write failure");
+        }
         AtomicFile f = file(c);
         FileOutputStream out = null;
         try {

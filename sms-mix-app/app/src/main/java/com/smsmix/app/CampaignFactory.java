@@ -45,6 +45,7 @@ final class CampaignFactory {
                 : RecipientSampler.fromFile(imported, used, count, random);
         JSONObject data = Store.object();
         Store.put(data, "id", UUID.randomUUID().toString());
+        Store.put(data, "createdAt", System.currentTimeMillis());
         Store.put(data, "sim", sim); Store.put(data, "simLabel", simLabel);
         if (alternateSim >= 0) {
             if (sim == alternateSim) throw new IllegalStateException("ต้องใช้ SIM 1 และ SIM 2 คนละซิม");
@@ -70,7 +71,19 @@ final class CampaignFactory {
         used.addAll(selected);
         Store.put(data, "drawnPhones", new JSONArray(used));
         Store.put(data, "rows", rows);
-        Store.save(context, data); // One atomic commit reserves history and publishes the queue.
+        String previousId = previous.optString("id");
+        if (!previousId.isEmpty()) Store.put(data, "previousCampaignId", previousId);
+        synchronized (Scheduler.LOCK) {
+            JSONObject latest = Store.load(context);
+            if (!previousId.equals(latest.optString("id")) || latest.optBoolean("running")
+                    || Store.sending(latest) >= 0)
+                throw new IllegalStateException("คิวเปลี่ยน กรุณาตรวจพรีวิวใหม่");
+            MessageHistory.reconcileReplacement(context, latest);
+            MessageHistory.recordCampaign(context, latest);
+            Store.save(context, data); // One atomic commit reserves history and publishes the queue.
+            MessageHistory.finishReplaced(context, previousId);
+            MessageHistory.recordCampaign(context, data);
+        }
         return data;
     }
 }
