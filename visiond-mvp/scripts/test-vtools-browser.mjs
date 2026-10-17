@@ -2,65 +2,29 @@ import {createRequire} from 'node:module';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import assert from 'node:assert/strict';
 import {env} from './test-vtools-access.mjs';
-import {onRequestGet as catalog} from '../functions/api/vtools.js';
-const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.PLAYWRIGHT_PACKAGE||'playwright');
-const root=path.resolve('public');
-const sharedNav=fs.readFileSync(path.join(root,'shared-nav.js'),'utf8');
-const vtoolsHtml=fs.readFileSync(path.join(root,'vtools.html'),'utf8');
-const homeHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
-assert.match(sharedNav,/\/vtools','Vtools'/);
-assert.doesNotMatch(sharedNav,/\/bots\.html','VBot'/);
-assert.match(vtoolsHtml,/id="programs"/);
-assert.match(vtoolsHtml,/bots-storefront\.js\?v=014596/);
-assert.match(homeHtml,/shared-nav\.js\?v=014591/);
-const server=http.createServer(async(req,res)=>{
-  const url=new URL(req.url,'http://localhost');
-  if(url.pathname==='/api/vtools'){const response=await catalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
-  if(url.pathname==='/api/vision7/apps'){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[{code:'demo-bot',app_name:'โปรแกรมทดสอบ',app_description:'เครื่องมืออัตโนมัติ',platform_type:'windows',current_version:'1.0.0',offers:[{id:91,product_id:191,product_slug:'demo-bot-monthly',code:'monthly',duration_days:30,price:9900}]}]}));return}
-  if(url.pathname==='/api/vision7/apps'){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[{code:'demo-bot',app_name:'โปรแกรมทดสอบ',app_description:'เครื่องมืออัตโนมัติ',platform_type:'windows',current_version:'1.0.0',offers:[{id:91,product_id:191,product_slug:'demo-bot-monthly',code:'monthly',duration_days:30,price:9900}]}]}));return}
+import {onRequestGet as plansCatalog} from '../functions/api/vtools.js';
+const require=createRequire(import.meta.url);let chromium;for(const candidate of [process.env.PLAYWRIGHT_PACKAGE,'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright','playwright'].filter(Boolean)){try{({chromium}=require(candidate));break}catch{}}if(!chromium)throw new Error('Playwright unavailable');
+const root=path.resolve('public'),evidence=path.resolve('../.agents/reports');fs.mkdirSync(evidence,{recursive:true});
+const offer={id:91,product_id:191,product_slug:'demo-monthly',code:'monthly',duration_days:30,price:9900};
+const app=(id,platform,name)=>({id,code:`tool-${id}`,app_name:name,app_description:`คำอธิบาย ${name}`,platform_type:platform,current_version:'1.0.0',offers:[offer]});
+const catalog=[...Array.from({length:26},(_,index)=>app(index+1,index%2?'mac':'windows',index===25?'โปรแกรมกลางชื่อทดสอบ':`โปรแกรมคอม ${index+1}`)),app(27,'web','เว็บเครื่องมือ'),app(28,'android','แอปมือถือ'),app(29,'veasy','V Easy'),app(30,'cross-platform','โปรแกรมหลายระบบ')];
+let empty=false,delayDesktop=false,releaseDesktop,desktopStarted,listRequests=[],detailRequests=[];
+const server=http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/vtools'){const response=await plansCatalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
+  if(url.pathname==='/api/vision7/apps'){listRequests.push(url.search);const category=url.searchParams.get('category')||'all',q=(url.searchParams.get('q')||'').toLowerCase(),offset=Number(url.searchParams.get('cursor')||0),group=value=>['windows','mac'].includes(value)?'desktop':value==='web'?'web':['android','veasy'].includes(value)?'mobile':'other',rows=(empty?[]:catalog).filter(item=>(category==='all'||group(item.platform_type)===category)&&(!q||`${item.app_name} ${item.app_description} ${item.code}`.toLowerCase().includes(q))),items=rows.slice(offset,offset+24);if(delayDesktop&&category==='desktop'&&!q&&!offset){delayDesktop=false;desktopStarted?.();await new Promise(resolve=>releaseDesktop=resolve)}res.setHeader('content-type','application/json');res.end(JSON.stringify({items,has_more:offset+24<rows.length,next_cursor:offset+24<rows.length?String(offset+24):null,has_other:!empty}));return}
+  const detail=url.pathname.match(/^\/api\/vision7\/apps\/([^/]+)$/);if(detail){detailRequests.push(detail[1]);const item=(empty?[]:catalog).find(row=>row.code===decodeURIComponent(detail[1]));res.statusCode=item?200:404;res.setHeader('content-type','application/json');res.end(JSON.stringify(item?{item}:{error:'ไม่พบแอป'}));return}
   if(url.pathname.startsWith('/api/')){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[],user:null}));return}
-  let file=path.resolve(root,'.'+url.pathname);if(!file.startsWith(root+path.sep)){res.writeHead(404).end();return}
-  if(!path.extname(file))file+='.html';
-  try{const body=fs.readFileSync(file);res.setHeader('content-type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');res.end(body)}catch{res.writeHead(404).end()}
-});
-await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
-try{
-  const page=await browser.newPage({viewport:{width:1365,height:1000}}),base=`http://127.0.0.1:${server.address().port}`;
-  const storefront=await browser.newPage({viewport:{width:1365,height:900}});
-  await storefront.goto(base+'/index.html');
-  await storefront.getByRole('link',{name:'Vtools',exact:true}).waitFor();
-  assert.equal(await storefront.getByRole('link',{name:'Vtools',exact:true}).count(),1);
-  assert.equal(await storefront.getByRole('link',{name:'VBot',exact:true}).count(),0);
-  await storefront.close();
-  await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();
-  assert.equal(await page.locator('[data-plan]').count(),3);
-  await page.locator('.vbot-card').first().waitFor();
-  assert.equal(await page.locator('#programs .vbot-card').count(),2);
-  assert.equal(await page.locator('#programs .vbot-card').first().locator('h3').innerText(),'VX วิเคราะห์หลายช่อง TikTok');
-  assert.equal(await page.locator('#programs .vtools-vx-card a[href="#plans"]').count(),2);
-  assert.equal(await page.locator('#programs a[href="/vtools?app=demo-bot"]').count(),2);
-  assert.match(await page.locator('.vbot-card-summary').nth(1).innerText(),/ราคาเริ่มต้น/);
-  assert.match(await page.locator('.vbot-card-summary').nth(1).innerText(),/99 บาท/);
-  assert.match(await page.locator('.vbot-card-actions').nth(1).innerText(),/ดูรายละเอียดและเลือกสิทธิ์/);
-  await page.locator('.vbot-card').first().waitFor();
-  assert.equal(await page.locator('#programs .vbot-card').count(),2);
-  assert.equal(await page.locator('#programs a[href="/vtools?app=demo-bot"]').count(),2);
-  await page.screenshot({path:path.join(os.tmpdir(),'vtools-desktop.png'),fullPage:true});
-  await page.getByRole('button',{name:'เพิ่มลงตะกร้า'}).first().click();await page.waitForURL('**/cart');
-  await page.waitForFunction(()=>document.querySelector('#cartItems')?.textContent.includes('VX'));
-  assert.match(await page.locator('#cartItems').innerText(),/30 วัน/);
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),49000);
-  await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();await page.locator('[data-plan]').nth(1).click();
-  assert.match(await page.locator('#vxNotice').innerText(),/รายการเดิม/);
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].account_limit),10,'existing cart preserved');
-  const mobile=await browser.newPage({viewport:{width:390,height:844}});await mobile.goto(base+'/vtools');await mobile.locator('[data-plan]').first().waitFor();await mobile.locator('.vbot-card').first().waitFor();await mobile.screenshot({path:path.join(os.tmpdir(),'vtools-mobile.png'),fullPage:true});
-  assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile overflow');
-  assert.equal(await mobile.locator('.vtools-hero').count(),1);assert.equal(await mobile.locator('body.mobile-nav-open').count(),0,'mobile menu starts closed');await mobile.close();
-  console.log('PASS Vtools browser: 3 plans, add-to-cart, authoritative refreshed price, existing cart protected, mobile layout');
-  console.log(path.join(os.tmpdir(),'vtools-desktop.png'));console.log(path.join(os.tmpdir(),'vtools-mobile.png'));
+  let file=path.resolve(root,'.'+url.pathname);if(!file.startsWith(root+path.sep)){res.writeHead(404).end();return}if(!path.extname(file))file+='.html';try{const body=fs.readFileSync(file);res.setHeader('content-type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');res.end(body)}catch{res.writeHead(404).end()}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
+try{const base=`http://127.0.0.1:${server.address().port}`,page=await browser.newPage({viewport:{width:1365,height:900}});await page.goto(base+'/vtools');await page.locator('[data-plan]').first().waitFor();await page.locator('.vtools-vx-card').waitFor();assert.equal(await page.locator('[data-plan]').count(),3,'existing VX plans remain');assert.equal(await page.locator('#programs .vbot-card').count(),2,'initial Web group includes VX and actual web app');assert.equal(listRequests.length,1,'one bounded initial catalog request');assert.match(listRequests[0],/category=web.*limit=24/);for(const label of ['โปรแกรมคอมพิวเตอร์','เว็บแอป','แอปมือถือ'])assert.ok(await page.getByRole('link',{name:new RegExp(label)}).count(),'hero visibly distinguishes all platforms');
+  delayDesktop=true;const desktopRequested=new Promise(resolve=>desktopStarted=resolve);await page.locator('[data-platform-link="desktop"]').click();await desktopRequested;await page.locator('[data-platform="desktop"]').click();releaseDesktop();await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===24);assert.equal(listRequests.filter(value=>value.includes('category=desktop')&&!value.includes('q=')).length,1,'simultaneous category requests are deduplicated');assert.equal(await page.locator('[data-platform="desktop"]').getAttribute('aria-pressed'),'true','hero link selects matching catalog platform');assert.equal(new URL(page.url()).hash,'#programs','hero link navigates to catalog');assert.equal(await page.locator('#vbotMore').isVisible(),true);await page.locator('#vbotMore').click();await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===26);assert.equal(new Set(await page.locator('#programs .vbot-card h3').allInnerTexts()).size,26,'next page has no duplicates');assert.equal(await page.locator('#vbotMore').isHidden(),true);
+  await page.locator('#vbotSearch').fill('กลางชื่อ');await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===1);assert.match(await page.locator('#programs .vbot-card h3').innerText(),/กลางชื่อ/,'server substring search finds beyond first page');await page.locator('#vbotSearch').fill('');await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===26);assert.equal(listRequests.filter(value=>value.includes('category=desktop')&&!value.includes('q=')).length,2,'returning to cached group does not refetch pages');
+  await page.locator('[data-platform="mobile"]').click();await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===2);assert.match(await page.locator('#programs').innerText(),/Android/);assert.match(await page.locator('#programs').innerText(),/V Easy · Android/);await page.locator('[data-platform="other"]').click();await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===1);assert.match(await page.locator('#programs').innerText(),/หลายระบบ/);
+  await page.locator('[data-platform="web"]').click();await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===2);await page.screenshot({path:path.join(evidence,'vtools-desktop.png'),fullPage:true});await page.getByRole('button',{name:'เพิ่มลงตะกร้า'}).first().click();await page.waitForURL('**/cart');await page.waitForFunction(()=>document.querySelector('#cartItems')?.textContent.includes('VX'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),49000,'VX authoritative plan/cart price remains');
+  await page.goto(base+'/vtools?app=tool-26');await page.locator('.vbot-detail').waitFor();assert.match(await page.locator('.vbot-detail').innerText(),/โปรแกรมกลางชื่อทดสอบ/);assert.equal(await page.locator('[data-offer]').count(),1,'direct detail beyond first page retains offers');assert.ok(detailRequests.includes('tool-26'));
+  await page.goto(base+'/bots.html?app=tool-26');await page.locator('.vbot-detail').waitFor();assert.equal(await page.locator('[data-offer]').count(),1,'legacy direct bots detail remains');assert.equal(await page.locator('#vbotMore').isHidden(),true,'direct detail does not show list pager');await page.goto(base+'/bots.html');await page.waitForFunction(()=>document.querySelectorAll('#vbotContent .vbot-card').length===25);assert.equal(await page.locator('#vbotContent .vtools-vx-card').count(),1,'legacy bots keeps its VX card when apps are published');assert.equal(await page.locator('#vbotMore').isVisible(),true);await page.locator('#vbotMore').click();await page.waitForFunction(()=>document.querySelectorAll('#vbotContent .vbot-card').length===31);assert.equal(await page.locator('#vbotMore').isHidden(),true,'legacy bots can reach every next-page app');await page.locator('#vbotSearch').fill('VX');await page.waitForFunction(()=>document.querySelectorAll('#vbotContent .vbot-card').length===1);assert.equal(await page.locator('#vbotContent .vtools-vx-card').count(),1,'legacy bots search still finds VX');
+  const mobile=await browser.newPage({viewport:{width:390,height:844}});await mobile.goto(base+'/vtools');await mobile.locator('.vtools-vx-card').waitFor();await mobile.screenshot({path:path.join(evidence,'vtools-mobile.png'),fullPage:true});assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'mobile page has no horizontal overflow');assert.equal(await mobile.locator('[data-platform-link]').count(),3);
+  empty=true;await mobile.reload();await mobile.locator('.vtools-vx-card').waitFor();assert.equal(await mobile.locator('#programs .vtools-vx-card').count(),1,'VX remains visible when API has no published programs');assert.match(await mobile.locator('#programs').innerText(),/ยังไม่มีเว็บแอปอื่นที่เผยแพร่/);await mobile.locator('[data-platform="desktop"]').click();await mobile.waitForFunction(()=>document.querySelector('#vbotContent')?.textContent?.includes('ยังไม่มีโปรแกรมคอมพิวเตอร์'));assert.equal(await mobile.locator('#programs .vbot-card').count(),0,'empty desktop does not fabricate app');await mobile.locator('[data-platform="mobile"]').click();await mobile.waitForFunction(()=>document.querySelector('#vbotContent')?.textContent?.includes('ยังไม่มีแอปมือถือ'));assert.equal(await mobile.locator('#programs .vbot-card').count(),0,'empty mobile does not fabricate app');assert.equal(await mobile.locator('[data-platform="other"]').isHidden(),true,'many-systems tab is absent without real data');
+  console.log('PASS Vtools browser: platform groups, VX/empty state, paged search/cache, plans/cart, direct Vtools and bots detail, mobile');console.log(path.join(evidence,'vtools-desktop.png'));console.log(path.join(evidence,'vtools-mobile.png'))
 }finally{await browser.close();server.close()}

@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vtools · เครื่องมือสำหรับครีเอเตอร์จาก VisionD</title>
-  <meta name="description" content="รวมเครื่องมือสำหรับครีเอเตอร์ เริ่มต้นด้วย VX ระบบจัดการและวิเคราะห์หลายช่อง TikTok ในที่เดียว">
+  <meta name="description" content="Vtools รวมโปรแกรมสำหรับคอมพิวเตอร์ เว็บแอป และแอปมือถือจาก VisionD เลือกเครื่องมือให้ตรงอุปกรณ์ที่ใช้">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/mobile-storefront.css?v=014407">
   <link rel="stylesheet" href="/frontend-theme.css?v=014407">
   <link rel="stylesheet" href="/header-shell.css?v=014578">
-  <link rel="stylesheet" href="/vtools.css?v=014599">
+  <link rel="stylesheet" href="/vtools.css?v=014600">
   <link rel="stylesheet" href="/bots-storefront.css?v=014596">
   <script src="/nav-account.js?v=02057" type="module"></script>
   <script src="/mobile-storefront.js?v=014407" defer></script>
   <script src="/header-shell.js?v=014578" defer></script>
   <script src="/vtools.js?v=014599" type="module"></script>
-  <script src="/bots-storefront.js?v=014596" type="module"></script>
+  <script src="/bots-storefront.js?v=014597" type="module"></script>
 </head>
 <body class="vd-frontend vtools-page">
   <header class="topbar">
@@ -27,25 +27,24 @@
     <section class="vtools-hero" aria-labelledby="vtoolsTitle">
       <div class="vtools-hero-copy">
         <p class="eyebrow">VTOOLS FOR CREATORS</p>
-        <span class="vtools-pill">เครื่องมือแรกของ Vtools</span>
-        <h1 id="vtoolsTitle">ดูครบทุกช่อง<br><strong>จัดการจบใน VX</strong></h1>
-        <p class="vtools-lead">รวมข้อมูลหลายช่องไว้ในหน้าจอเดียว ดูค่าคอมมิชชัน เปรียบเทียบผลงาน จัดเกรดสินค้า A–F และค้นหา “สินค้านางฟ้า” ที่ควรทำต่อ</p>
-        <div class="vtools-actions"><a class="button primary-action" href="#plans">เลือกแพ็กเกจ VX</a><a class="button secondary-action" href="/tiktok-analyzer">เปิดใช้งาน VX</a></div>
-        <div class="vtools-benefits"><span>✓ ภาพรวมหลายช่อง</span><span>✓ ค่าคอมรายวันและ 30 วัน</span><span>✓ Ranking A–F</span><span>✓ จัดการสินค้า Showcase</span></div>
+        <span class="vtools-pill">เลือกตามอุปกรณ์ที่ใช้งาน</span>
+        <h1 id="vtoolsTitle">เครื่องมือทำงาน<br><strong>ในที่เดียว</strong></h1>
+        <p class="vtools-lead">ค้นหาโปรแกรมคอมพิวเตอร์ เว็บแอป และแอปมือถือจาก VisionD ได้ตรงประเภท ดูรายละเอียดและสิทธิ์ใช้งานก่อนเลือกซื้อ</p>
+        <div class="vtools-actions"><a class="button primary-action" href="#programs">เลือกหมวดเครื่องมือ</a></div>
       </div>
-      <div class="vtools-hero-visual" aria-label="VX by Vtools">
-        <div class="visual-glow"></div><img src="/assets/vx-vtools.svg" alt="VX by Vtools" width="420" height="420">
-        <div class="visual-card visual-card-top"><small>ภาพรวมทุกช่อง</small><strong>ครบในที่เดียว</strong></div>
-        <div class="visual-card visual-card-bottom"><small>วิเคราะห์สินค้า</small><strong>A–F</strong></div>
+      <div class="vtools-platform-links" aria-label="เลือกประเภทเครื่องมือ">
+        <a href="#programs" data-platform-link="desktop"><span aria-hidden="true">⌨</span><strong>โปรแกรมคอมพิวเตอร์</strong><small>Windows และ macOS</small></a>
+        <a href="#programs" data-platform-link="web"><span aria-hidden="true">◫</span><strong>เว็บแอป</strong><small>ใช้งานผ่านเบราว์เซอร์ · มี VX</small></a>
+        <a href="#programs" data-platform-link="mobile"><span aria-hidden="true">▣</span><strong>แอปมือถือ</strong><small>Android และ V Easy</small></a>
       </div>
     </section>
+    <section class="vbot-catalog" id="programs" aria-labelledby="vbotHeading"><header class="vbot-section-head"><div><p class="eyebrow">VTOOLS CATALOG</p><h2 id="vbotHeading">เลือกเครื่องมือให้ตรงแพลตฟอร์ม</h2><p>รายการที่เผยแพร่จริง แยกตามอุปกรณ์ที่ใช้งาน</p></div><label class="vbot-search">ค้นหาชื่อเครื่องมือ<input id="vbotSearch" type="search" maxlength="80" placeholder="พิมพ์ชื่อเครื่องมือ" autocomplete="off"></label></header><nav class="vtools-platform-tabs" aria-label="ประเภทเครื่องมือ"><button type="button" data-platform="desktop" aria-pressed="false">คอมพิวเตอร์</button><button type="button" data-platform="web" aria-pressed="true">เว็บแอป</button><button type="button" data-platform="mobile" aria-pressed="false">มือถือ</button><button type="button" data-platform="other" aria-pressed="false" hidden>หลายระบบ</button></nav><div id="vbotContent" aria-live="polite"><div class="vbot-loading" role="status"><span></span><b>กำลังโหลดแคตตาล็อก Vtools…</b></div></div><button id="vbotMore" class="vtools-more" type="button" hidden>ดูเพิ่ม</button></section>
     <section class="access" aria-live="polite" id="vxAccess">กำลังตรวจสอบสิทธิ์ใช้งาน…</section>
     <section class="pricing-section" id="plans" aria-labelledby="plansTitle">
       <div class="section-heading"><div><p class="eyebrow">VX ACCESS · 30 DAYS</p><h2 id="plansTitle">เลือกจำนวนบัญชีที่เหมาะกับคุณ</h2></div><p>ทุกแพ็กเกจได้ฟังก์ชัน VX ครบ ต่างกันเฉพาะจำนวนบัญชีที่เชื่อมได้</p></div>
       <div class="plans" id="vxPlans" aria-live="polite">กำลังโหลดแพ็กเกจ…</div>
       <div class="payment-note"><span aria-hidden="true">✓</span><div><b>ตรวจสลิปอัตโนมัติผ่าน EasySlip</b><p>เริ่มสิทธิ์เมื่อยอดเงิน บัญชีผู้รับ และสลิปผ่านการตรวจสอบครบ</p></div></div>
     </section>
-    <section class="vbot-catalog" id="programs" aria-labelledby="vbotHeading"><header class="vbot-section-head"><div><p class="eyebrow">VTOOLS CATALOG</p><h2 id="vbotHeading">เครื่องมือทั้งหมดจาก Vtools</h2><p>เลือกดูรายละเอียด ราคา และอายุสิทธิ์ก่อนสั่งซื้อ</p></div><label class="vbot-search">ค้นหาเครื่องมือ<input id="vbotSearch" type="search" placeholder="พิมพ์ชื่อเครื่องมือ" autocomplete="off"></label></header><div id="vbotContent" aria-live="polite"><div class="vbot-loading" role="status"><span></span><b>กำลังโหลดแคตตาล็อก Vtools…</b></div></div></section>
     <section class="terms"><div><p class="eyebrow">CLEAR & SIMPLE</p><h2>สิทธิ์ใช้งาน VX ทำงานอย่างไร</h2></div><ul><li><b>อายุ 30 วัน</b><span>ไม่มีการต่ออายุอัตโนมัติ</span></li><li><b>เริ่มหลังตรวจชำระ</b><span>สิทธิ์ใหม่ต่อจากวันหมดอายุเดิมได้</span></li><li><b>โควตาตามแพ็กเกจ</b><span>10, 20 หรือ 30 บัญชี TikTok</span></li><li><b>ข้อมูลเดิมไม่หาย</b><span>หมดอายุแล้วระบบระงับสิทธิ์ แต่ไม่ลบช่อง</span></li></ul><p class="terms-footnote">การเชื่อม TikTok และ TikTok Shop ต้องได้รับอนุญาตจากเจ้าของบัญชี และขึ้นอยู่กับสิทธิ์ API ที่ TikTok เปิดให้แอป</p></section>
     <p id="vxNotice" role="status"></p>
   </main>
