@@ -59,7 +59,7 @@ export function validVRecordDraft({ name, platform, version, minimumVersion, act
     plans.some((p) => p.plan_code === "yearly" && Number(p.price) === 999 && !p.product_id && p.active !== false);
 }
 export function validSmsMixDraft({ name, platform, version, minimumVersion, active, rawPlans, plans, productId, multipart, hasCover, hasInstaller }) {
-  return multipart && hasCover && hasInstaller && name === "VSMS" && platform === "android" && version === "0.5.2" && minimumVersion === "0.5.2" && active === "false" && !productId &&
+  return multipart && hasCover && hasInstaller && name === "VSMS" && platform === "android" && version === "0.5.4" && minimumVersion === "0.5.4" && active === "false" && !productId &&
     Array.isArray(rawPlans) && rawPlans.length === 2 && plans.length === 2 &&
     plans.some((p) => p.plan_code === "monthly" && Number(p.price) === 999 && (p.duration_days == null || Number(p.duration_days) === 30) && !p.product_id && p.active !== false) &&
     plans.some((p) => p.plan_code === "yearly" && Number(p.price) === 9999 && (p.duration_days == null || Number(p.duration_days) === 365) && !p.product_id && p.active !== false);
@@ -100,7 +100,7 @@ export async function onRequestPost(ctx) {
   if (code === "v-record" && !validVRecordDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
     return json({ error: "V-Record ต้องมีรูปปกและไฟล์ติดตั้ง พร้อม Windows 0.6.0 แบบไม่เปิดขายและแพ็กเกจ 30 วัน 199 บาท / 1 ปี 999 บาทเท่านั้น" }, 400);
   if (code === "sms-mix" && !validSmsMixDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
-    return json({ error: "VSMS ต้องมีรูปปกและ APK พร้อม Android 0.5.2 แบบยังไม่เปิดขายและแพ็กเกจ 30 วัน 999 บาท / 365 วัน 9,999 บาทเท่านั้น" }, 400);
+    return json({ error: "VSMS ต้องมีรูปปกและ APK พร้อม Android 0.5.4 แบบยังไม่เปิดขายและแพ็กเกจ 30 วัน 999 บาท / 365 วัน 9,999 บาทเท่านั้น" }, 400);
   if (code === "sms-mix" && !/\.apk$/i.test(installer.name)) return json({ error: "ไฟล์ติดตั้ง VSMS ต้องเป็น APK" }, 400);
   if ([productId, ...plans.map((p) => p.product_id)].some(Number.isNaN))
     return json({ error: "Product ID ต้องเป็นเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป หรือเว้นว่าง" }, 400);

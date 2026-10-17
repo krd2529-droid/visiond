@@ -319,11 +319,11 @@ async function load() {
   programsEl.querySelectorAll("[data-publish-vsms]").forEach((button) => button.onclick = async () => {
     const program = programs.find((x) => x.code === "sms-mix" && String(x.id) === button.dataset.publishVsms);
     if (!program) return;
-    const entered = prompt("วาง SHA-256 (64 ตัวอักษรฐานสิบหก) ของ APK VSMS 0.5.2 ที่ตรวจลายเซ็นสำหรับจำหน่ายแล้ว");
+    const entered = prompt("วาง SHA-256 (64 ตัวอักษรฐานสิบหก) ของ APK VSMS 0.5.4 ที่ตรวจลายเซ็นสำหรับจำหน่ายแล้ว");
     if (entered === null) return;
     const apkHash = entered.trim().toLowerCase();
     if (!/^[a-f0-9]{64}$/.test(apkHash)) return alert("SHA-256 ของ APK ไม่ถูกต้อง");
-    if (!confirm(`ยืนยันเผยแพร่ VSMS 0.5.2 ให้ลูกค้าซื้อและดาวน์โหลด?\nAndroid · 1 คีย์/1 เครื่อง · 30 วัน 999 บาท / 365 วัน 9,999 บาท\nSHA-256 ${apkHash}`)) return;
+    if (!confirm(`ยืนยันเผยแพร่ VSMS 0.5.4 ให้ลูกค้าซื้อและดาวน์โหลด?\nAndroid · 1 คีย์/1 เครื่อง · 30 วัน 999 บาท / 365 วัน 9,999 บาท\nSHA-256 ${apkHash}`)) return;
     const state = button.closest(".program-row").querySelector("[data-publish-state]");
     button.disabled = true;
     state.className = "muted";
@@ -588,8 +588,8 @@ vsmsForm.onsubmit = async (e) => {
   const body = new FormData(vsmsForm);
   body.set("code", "sms-mix");
   body.set("platform_type", "android");
-  body.set("current_version", "0.5.2");
-  body.set("minimum_version", "0.5.2");
+  body.set("current_version", "0.5.4");
+  body.set("minimum_version", "0.5.4");
   body.set("active", "false");
   body.set("plans", JSON.stringify([
     {plan_code:"monthly",name:"คีย์ 30 วัน",price:999,duration_days:30},

@@ -18,7 +18,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/admin/vision7/programs' && req.method === 'POST') {
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
     createBody = Buffer.concat(chunks).toString('latin1');
-    program = { id: 74, code: 'sms-mix', app_name: 'VSMS', platform_type: 'android', current_version: '0.5.2', active: 0, plans: JSON.stringify([{ plan_code: 'monthly', product_id: 401 }, { plan_code: 'yearly', product_id: 402 }]) };
+    program = { id: 74, code: 'sms-mix', app_name: 'VSMS', platform_type: 'android', current_version: '0.5.4', active: 0, plans: JSON.stringify([{ plan_code: 'monthly', product_id: 401 }, { plan_code: 'yearly', product_id: 402 }]) };
     res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ ok: true, id: 74 })); return;
   }
   if (pathname === '/api/admin/vision7/smsmix-publish' && req.method === 'POST') {
@@ -51,18 +51,19 @@ try {
   assert.equal(await page.locator('#vsmsDialog').evaluate(el => el.open), true);
   await page.locator('#vsmsForm [name="description"]').fill('VSMS สำหรับลูกค้าที่มีคีย์ VisionD');
   await page.locator('#vsmsForm [name="cover"]').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: Buffer.from('cover') });
-  await page.locator('#vsmsForm [name="installer"]').setInputFiles({ name: 'VSMS-0.5.2.apk', mimeType: 'application/vnd.android.package-archive', buffer: Buffer.from('apk') });
+  await page.locator('#vsmsForm [name="installer"]').setInputFiles({ name: 'VSMS-0.5.4.apk', mimeType: 'application/vnd.android.package-archive', buffer: Buffer.from('apk') });
   await page.locator('#saveVsms').click();
   await page.locator('[data-publish-vsms="74"]').waitFor();
-  for (const value of ['sms-mix', 'android', '0.5.2', 'false', 'monthly', 'yearly', '999', '9999', 'duration_days', '30', '365', 'cover.png', 'VSMS-0.5.2.apk']) assert.ok(createBody.includes(value), `create request includes ${value}`);
+  for (const value of ['sms-mix', 'android', '0.5.4', 'false', 'monthly', 'yearly', '999', '9999', 'duration_days', '30', '365', 'cover.png', 'VSMS-0.5.4.apk']) assert.ok(createBody.includes(value), `create request includes ${value}`);
   assert.ok(!createBody.includes('lifetime'), 'no lifetime or trial offer submitted');
   assert.equal(await page.locator('#newVsms').isDisabled(), true);
   assert.match(await page.locator('#programs').innerText(), /ยังไม่เปิดขาย/);
-  const dialogAnswers = [];
-  page.on('dialog', dialog => { const answer = dialogAnswers.shift(); if (answer === null) dialog.dismiss(); else dialog.accept(answer); });
+  const dialogAnswers = [], dialogMessages = [];
+  page.on('dialog', dialog => { dialogMessages.push(dialog.message()); const answer = dialogAnswers.shift(); if (answer === null) dialog.dismiss(); else dialog.accept(answer); });
   dialogAnswers.push(null);
   await page.locator('[data-publish-vsms="74"]').click();
   assert.equal(publishCalls, 0, 'cancelled hash prompt does not publish');
+  assert.match(dialogMessages[0], /VSMS 0\.5\.4/, 'publish prompt requires the inspected current APK');
   dialogAnswers.push('bad-hash', undefined);
   await page.locator('[data-publish-vsms="74"]').click();
   assert.equal(publishCalls, 0, 'invalid hash does not publish');

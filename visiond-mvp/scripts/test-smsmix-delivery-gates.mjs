@@ -20,7 +20,7 @@ CREATE INDEX idx_order_items_product_retention ON order_items(product_id,order_i
 CREATE INDEX idx_v7_license_program ON vision7_licenses(program_id,status,created_at DESC);
 ALTER TABLE vision7_licenses ADD COLUMN key_hash TEXT;
 CREATE UNIQUE INDEX idx_v7_license_key_hash ON vision7_licenses(key_hash);
-INSERT INTO vision7_releases VALUES(7,9,'published','vsms.apk','VSMS.apk','application/vnd.android.package-archive',3,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','0.5.2');
+INSERT INTO vision7_releases VALUES(7,9,'published','vsms.apk','VSMS.apk','application/vnd.android.package-archive',3,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','0.5.4');
 INSERT INTO vision7_licenses(id,user_id,program_id,status,expires_at,created_at,key_hash) VALUES('old-active',1,9,'active','2099-01-01 00:00:00','2026-01-01 00:00:00','key-one'),('new-refunded',1,9,'refunded','2099-01-01 00:00:00','2026-02-01 00:00:00','key-two');
 INSERT INTO vision7_programs VALUES(9,'sms-mix','android');
 INSERT INTO vision7_plans VALUES(10,9,11);
@@ -52,7 +52,7 @@ const env = { FILES: {
   },
 }; } } };
 const adminHeaders = { cookie: 'vd_session=test' };
-const form = new FormData(); form.set('program_id','9'); form.set('version','0.5.2'); form.set('minimum_version','0.5.2'); form.set('file',new File([new Uint8Array([1])],'VSMS.apk',{type:'application/vnd.android.package-archive'}));
+const form = new FormData(); form.set('program_id','9'); form.set('version','0.5.4'); form.set('minimum_version','0.5.4'); form.set('file',new File([new Uint8Array([1])],'VSMS.apk',{type:'application/vnd.android.package-archive'}));
 const upload = await uploadRelease({ env, request: new Request('https://visiondonline.com/api/admin/vision7/releases', { method:'POST', headers:adminHeaders, body:form }) });
 assert.equal(upload.status, 409, 'generic VSMS release upload blocked');
 assert.equal(storageWrites, 0, 'rejected upload never writes APK');

@@ -6,8 +6,8 @@ android {
         applicationId 'com.smsmix.app'
         minSdk 26
         targetSdk 35
-        versionCode 10
-        versionName '0.5.3'
+        versionCode 11
+        versionName '0.5.4'
     }
     testOptions { unitTests.includeAndroidResources = true }
     compileOptions {
@@ -18,6 +18,9 @@ android {
         release {
             def store = System.getenv('VSMS_RELEASE_STORE_FILE')
             if (store) {
+                for (def name : ['VSMS_RELEASE_STORE_PASSWORD', 'VSMS_RELEASE_KEY_ALIAS', 'VSMS_RELEASE_KEY_PASSWORD']) {
+                    if (!System.getenv(name)) throw new GradleException("Missing ${name} for VSMS signed release")
+                }
                 storeFile file(store)
                 storePassword System.getenv('VSMS_RELEASE_STORE_PASSWORD')
                 keyAlias System.getenv('VSMS_RELEASE_KEY_ALIAS')

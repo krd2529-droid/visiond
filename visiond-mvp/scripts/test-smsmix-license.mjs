@@ -55,6 +55,9 @@ async function request(handler, key, device_id, device_name = 'Test Android') {
 const key = 'VD7-SMSMIX-TEST-ONLY';
 sqlite.prepare('INSERT INTO vision7_licenses VALUES(?,?,?,?,?)').run('one', await hashLicenseKey(key), 1, 'active', null);
 sqlite.prepare('INSERT INTO vision7_licenses VALUES(?,?,?,?,?)').run('other', await hashLicenseKey('VD7-OTHER-TEST-ONLY'), 2, 'active', null);
+sqlite.prepare('UPDATE vision7_programs SET active=0 WHERE id=1').run();
+assert.equal((await request(activate, key, 'device-A-1234')).status, 403, 'unpublished VSMS stays unactivatable');
+sqlite.prepare('UPDATE vision7_programs SET active=1 WHERE id=1').run();
 assert.equal((await request(check, key, 'device-A-1234')).status, 403, 'check never activates');
 assert.equal((await request(activate, key, 'device-A-1234', 'Pixel <7>\u0001')).status, 200);
 assert.equal(sqlite.prepare('SELECT device_name FROM vision7_smsmix_bindings WHERE license_id=?').get('one').device_name, 'Pixel  7');

@@ -65,10 +65,10 @@ public class MainActivity extends Activity {
             activate.setEnabled(false);
             state.setText("กำลังตรวจคีย์กับ VisionD...");
             new Thread(() -> {
-                boolean accepted = LicenseClient.activate(this, key);
+                LicenseClient.ActivationResult result = LicenseClient.activate(this, key);
                 runOnUiThread(() -> {
-                    if (accepted) renderApp();
-                    else { state.setText("เปิดใช้งานไม่ได้ กรุณาตรวจคีย์ เครื่องที่ผูกไว้ และอินเทอร์เน็ต"); activate.setEnabled(true); }
+                    if (result == LicenseClient.ActivationResult.ACTIVE) renderApp();
+                    else { state.setText(result.message()); activate.setEnabled(true); }
                 });
             }, "vsms-activation").start();
         });
@@ -197,7 +197,7 @@ public class MainActivity extends Activity {
         button("บันทึกไฟล์เบอร์ + ลิงก์ที่ส่งสำเร็จ (CSV)", () -> startActivityForResult(
                 new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/csv")
                         .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "smsmix-success.csv"), EXPORT_SUCCESS));
-        label("VSMS 0.5.3 • ข้อมูลเก็บในเครื่อง\nซิมเดียว: เว้น 10–30 นาทีต่อเบอร์ (ส่งล้มเหลว 5–10 นาที)\nสลับซิม: SIM 1 → SIM 2 หลังทราบผล → เว้น 10–30 นาทีต่อรอบ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ");
+        label("VSMS 0.5.4 • ข้อมูลเก็บในเครื่อง\nซิมเดียว: เว้น 10–30 นาทีต่อเบอร์ (ส่งล้มเหลว 5–10 นาที)\nสลับซิม: SIM 1 → SIM 2 หลังทราบผล → เว้น 10–30 นาทีต่อรอบ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ");
         loadSims();
     }
 

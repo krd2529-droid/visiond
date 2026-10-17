@@ -18,6 +18,25 @@ import java.util.UUID;
 import java.util.concurrent.*;
 
 final class LicenseClient {
+    enum ActivationResult {
+        ACTIVE(""),
+        INVALID_FORMAT("รูปแบบคีย์ไม่ถูกต้อง กรุณาตรวจคีย์ VisionD แล้วกรอกใหม่"),
+        NOT_ELIGIBLE("คีย์นี้ยังเปิดใช้ VSMS ไม่ได้ กรุณาตรวจว่าเป็นคีย์ VSMS ที่ชำระแล้ว เปิดใช้งานอยู่ ไม่หมดอายุ และไม่ผูกเครื่องอื่น หากยังไม่ได้เปิดขายให้ติดต่อ VisionD"),
+        RATE_LIMITED("ลองเปิดใช้คีย์บ่อยเกินไป กรุณารอ 15 นาทีแล้วลองอีกครั้ง"),
+        UNAVAILABLE("ติดต่อระบบสิทธิ์ VisionD ไม่ได้ กรุณาตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง"),
+        DEVICE_ERROR("อ่านรหัสเครื่องไม่ได้ กรุณาตรวจการตั้งค่าเครื่องแล้วลองอีกครั้ง"),
+        STORAGE_ERROR("บันทึกคีย์ในเครื่องไม่ได้ กรุณาตรวจพื้นที่เก็บข้อมูลแล้วลองอีกครั้ง");
+        private final String message;
+        ActivationResult(String message) { this.message = message; }
+        String message() { return message; }
+        static ActivationResult fromHttpStatus(int status) {
+            if (status == 200) return ACTIVE;
+            if (status == 400) return INVALID_FORMAT;
+            if (status == 403) return NOT_ELIGIBLE;
+            if (status == 429) return RATE_LIMITED;
+            return UNAVAILABLE;
+        }
+    }
     private static final String BASE = "https://visiondonline.com/api/vision7/sms-mix/";
     private static final String PREFS = "smsmix_license";
     private static final Object FLIGHT_LOCK = new Object();
@@ -81,7 +100,7 @@ final class LicenseClient {
             else {
                 try { pending = CHECKS.submit(() -> {
                     if (verifier != null) return verifier.verify(context);
-                    try { return request("check", key, device, appVersion(context)); }
+                    try { return request("check", key, device, appVersion(context)) == 200; }
                     catch (IOException | RuntimeException error) { return false; }
                 }); } catch (RejectedExecutionException error) { return false; }
                 checkFlight = pending; checkIdentity = identity; checkStartedNanos = System.nanoTime();
@@ -106,23 +125,25 @@ final class LicenseClient {
     static void requireCurrent(Context context) {
         if (!checkCurrent(context)) throw new IllegalStateException("ยืนยันสิทธิ์ออนไลน์ไม่ได้ คิวถูกหยุด กรุณาตรวจอินเทอร์เน็ตและคีย์");
     }
-    static boolean activate(Context context, String key) {
+    static ActivationResult activate(Context context, String key) {
         String candidate = String.valueOf(key).trim();
-        if (candidate.length() < 12 || candidate.length() > 200) return false;
-        Future<Boolean> pending;
+        if (candidate.length() < 12 || candidate.length() > 200) return ActivationResult.INVALID_FORMAT;
+        Future<Integer> pending;
         try {
             String device = deviceId(context), version = appVersion(context);
             pending = CHECKS.submit(() -> request("activate", candidate, device, version, deviceName()));
-        } catch (IOException | RuntimeException error) { return false; }
+        } catch (IOException | RuntimeException error) { return ActivationResult.DEVICE_ERROR; }
         try {
-            if (!pending.get(5, TimeUnit.SECONDS)) return false;
+            int status = pending.get(5, TimeUnit.SECONDS);
+            if (status != 200) return ActivationResult.fromHttpStatus(status);
             synchronized (FLIGHT_LOCK) {
                 if (checkFlight != null) checkFlight.cancel(true);
                 checkFlight = null; checkIdentity = null;
-                return prefs(context).edit().putString("key", candidate).commit();
+                return prefs(context).edit().putString("key", candidate).commit()
+                        ? ActivationResult.ACTIVE : ActivationResult.STORAGE_ERROR;
             }
-        } catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
-        catch (ExecutionException | TimeoutException | CancellationException error) { return false; }
+        } catch (InterruptedException error) { Thread.currentThread().interrupt(); return ActivationResult.UNAVAILABLE; }
+        catch (ExecutionException | TimeoutException | CancellationException error) { return ActivationResult.UNAVAILABLE; }
         finally { pending.cancel(true); }
     }
     private static String appVersion(Context context) throws IOException {
@@ -133,10 +154,10 @@ final class LicenseClient {
         String name = (Build.MANUFACTURER + " " + Build.MODEL).replaceAll("[\\p{Cntrl}<>]", " ").trim();
         return name.isEmpty() ? "Android" : name.substring(0, Math.min(name.length(), 80));
     }
-    private static boolean request(String path, String key, String deviceId, String version) throws IOException {
+    private static int request(String path, String key, String deviceId, String version) throws IOException {
         return request(path, key, deviceId, version, null);
     }
-    private static boolean request(String path, String key, String deviceId, String version, String deviceName) throws IOException {
+    private static int request(String path, String key, String deviceId, String version, String deviceName) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(BASE + path).openConnection();
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(2000);
@@ -153,7 +174,8 @@ final class LicenseClient {
             byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
             connection.setFixedLengthStreamingMode(bytes.length);
             try (OutputStream out = connection.getOutputStream()) { out.write(bytes); }
-            if (connection.getResponseCode() != 200) return false;
+            int status = connection.getResponseCode();
+            if (status != 200) return status;
             try (InputStream in = connection.getInputStream()) {
                 byte[] response = new byte[4096];
                 int used = 0, n;
@@ -163,7 +185,7 @@ final class LicenseClient {
                 }
                 JSONObject result = new JSONObject(new String(response, 0, used, StandardCharsets.UTF_8));
                 if (result.optBoolean("ok")) expiresAt = result.optString("expires_at", "");
-                return result.optBoolean("ok");
+                return result.optBoolean("ok") ? 200 : 403;
             } catch (Exception error) { throw new IOException("อ่านผลสิทธิ์ไม่ได้", error); }
         } finally { connection.disconnect(); }
     }
