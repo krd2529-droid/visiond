@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private Spinner simSpinner;
     private LinearLayout content;
     private final List<Integer> simIds = new ArrayList<>();
+    private int sim1Id = -1, sim2Id = -1;
     private List<String> phones = new ArrayList<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable refresh = new Runnable() {
@@ -196,7 +197,7 @@ public class MainActivity extends Activity {
         button("บันทึกไฟล์เบอร์ + ลิงก์ที่ส่งสำเร็จ (CSV)", () -> startActivityForResult(
                 new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/csv")
                         .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "smsmix-success.csv"), EXPORT_SUCCESS));
-        label("VSMS 0.5.2 • ข้อมูลเก็บในเครื่อง\nส่งไม่สำเร็จ: รอสุ่ม 5–10 นาที ส่งเบอร์ถัดไป\nส่งสำเร็จ: รอสุ่ม 10–30 นาที\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ");
+        label("VSMS 0.5.3 • ข้อมูลเก็บในเครื่อง\nซิมเดียว: เว้น 10–30 นาทีต่อเบอร์ (ส่งล้มเหลว 5–10 นาที)\nสลับซิม: SIM 1 → SIM 2 หลังทราบผล → เว้น 10–30 นาทีต่อรอบ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ");
         loadSims();
     }
 
@@ -304,12 +305,23 @@ public class MainActivity extends Activity {
         int old = simSpinner.getSelectedItemPosition();
         int selected = old >= 0 && old < simIds.size() ? simIds.get(old) : -1;
         simIds.clear(); List<String> names = new ArrayList<>();
+        sim1Id = -1; sim2Id = -1;
         if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
             SubscriptionManager sm = getSystemService(SubscriptionManager.class);
-            List<SubscriptionInfo> active = sm == null ? null : sm.getActiveSubscriptionInfoList();
-            if (active != null) for (SubscriptionInfo s : active) {
-                simIds.add(s.getSubscriptionId()); names.add("SIM " + (s.getSimSlotIndex() + 1) + " · " + s.getDisplayName());
+            List<SubscriptionInfo> current = sm == null ? null : sm.getActiveSubscriptionInfoList();
+            if (current != null) {
+                List<SubscriptionInfo> active = new ArrayList<>(current);
+                active.sort(Comparator.comparingInt(SubscriptionInfo::getSimSlotIndex));
+                for (SubscriptionInfo s : active) {
+                    int slot = s.getSimSlotIndex(), id = s.getSubscriptionId();
+                    if (slot == 0) sim1Id = id;
+                    if (slot == 1) sim2Id = id;
+                    simIds.add(id); names.add("SIM " + (slot + 1) + " · " + s.getDisplayName());
+                }
             }
+        }
+        if (sim1Id >= 0 && sim2Id >= 0 && sim1Id != sim2Id) {
+            simIds.add(-2); names.add("สลับอัตโนมัติ: SIM 1 → SIM 2 → พักหนึ่งรอบ");
         }
         if (names.isEmpty()) names.add("ยังไม่พบซิม / ยังไม่ได้ให้สิทธิ์");
         simSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
@@ -330,13 +342,19 @@ public class MainActivity extends Activity {
         List<String> l = CampaignCore.lines(links.getText().toString(), true);
         int selected = simSpinner.getSelectedItemPosition();
         if (selected < 0 || selected >= simIds.size()) throw new IllegalStateException("กรุณาอนุญาตและเลือกซิมก่อน");
-        int sim = simIds.get(selected);
+        int sim = simIds.get(selected), alternateSim = -1;
+        if (sim == -2) {
+            if (sim1Id < 0 || sim2Id < 0 || sim1Id == sim2Id)
+                throw new IllegalStateException("ต้องมี SIM 1 และ SIM 2 ที่ใช้งานอยู่ก่อนสร้างคิวสลับซิม");
+            sim = sim1Id; alternateSim = sim2Id;
+        }
         String simLabel = simSpinner.getSelectedItem().toString();
         JSONObject old = Store.load(this);
         if (old.optBoolean("running") || Store.sending(old) >= 0)
             throw new IllegalStateException("หยุดคิวและรอผลข้อความปัจจุบันก่อนสร้างคิวใหม่");
+        final int firstSim = sim, secondSim = alternateSim;
         Runnable create = () -> {
-            CampaignFactory.create(this, range, imported, first, last, count, c, l, sim, simLabel, Scheduler.RANDOM);
+            CampaignFactory.create(this, range, imported, first, last, count, c, l, firstSim, secondSim, simLabel, Scheduler.RANDOM);
             saveDraft(); updateStatus(); preview();
         };
         if (Store.rows(old).length() > 0)
@@ -353,7 +371,10 @@ public class MainActivity extends Activity {
         String[] items = new String[rows.length()];
         for (int i = 0; i < rows.length(); i++) {
             JSONObject row = rows.optJSONObject(i);
-            items[i] = (i + 1) + ". " + row.optString("phone") + " · " + statusName(row.optString("status"));
+            items[i] = (i + 1) + ". " + row.optString("phone")
+                    + (row.optString("usedSimLabel", row.optString("simLabel")).isEmpty() ? ""
+                    : " · " + row.optString("usedSimLabel", row.optString("simLabel")))
+                    + " · " + statusName(row.optString("status"));
         }
         new AlertDialog.Builder(this).setTitle("คิว " + rows.length() + " เบอร์ · แตะดูข้อความ")
                 .setItems(items, (dialog, which) -> {
@@ -373,11 +394,12 @@ public class MainActivity extends Activity {
         JSONObject d = Store.load(this);
         if (d.optBoolean("running")) { message("คิวกำลังทำงานอยู่"); return; }
         if (Store.pending(d) < 0) { message("ไม่มีเบอร์ค้างส่ง กรุณาสร้างคิวก่อน"); return; }
-        Scheduler.checkPermissions(this, d.optInt("sim", -1));
+        Scheduler.checkPermissions(this, d);
         String id = d.optString("id");
         new AlertDialog.Builder(this).setTitle("ยืนยันส่ง SMS")
                 .setMessage(d.optString("simLabel") + "\nส่งข้อความตามพรีวิวผ่านซิมจริง มีค่าบริการตามแพ็กเกจ\n"
-                        + "เริ่มเบอร์แรกทันที แล้วสุ่มรอ 10–30 นาทีระหว่างเบอร์\n"
+                        + (Scheduler.alternating(d) ? "SIM 1 ส่งก่อน รอผลแล้ว SIM 2 ส่งต่อทันที จากนั้นพัก 10–30 นาทีหนึ่งรอบ หากซิมหนึ่งใช้ไม่ได้จะข้ามเบอร์นั้นและทำต่อด้วยอีกซิม\n"
+                        : "เริ่มเบอร์แรกทันที แล้วสุ่มรอ 10–30 นาทีระหว่างเบอร์\n")
                         + "รายการส่งแล้ว / ล้มเหลว / ไม่ทราบผล จะไม่ถูกส่งซ้ำเมื่อทำต่อ")
                 .setNegativeButton("ยกเลิก", null)
                 .setPositiveButton("เริ่มส่ง", (a,b) -> guarded(() -> {
@@ -393,6 +415,7 @@ public class MainActivity extends Activity {
             case "SENDING": return "รอผลจากระบบ";
             case "SENT": return "ส่งสำเร็จ";
             case "FAILED": return "ส่งไม่สำเร็จ / บางส่วน";
+            case "SKIPPED": return "ข้าม: ซิมไม่พร้อม ไม่ได้ส่ง";
             case "UNKNOWN": return "ไม่ทราบผล (ไม่ส่งซ้ำ)";
             default: return s;
         }

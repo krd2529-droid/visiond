@@ -77,7 +77,7 @@ public class CampaignService extends Service {
         handler.removeCallbacks(monitor);
         if(!d.optBoolean("running")){stopSelf();return START_NOT_STICKY;}
         try {
-            Scheduler.checkPermissions(this,d.optInt("sim",-1));
+            Scheduler.checkPermissions(this,d);
             Scheduler.recoverTimeout(this,d);
             if(!d.optBoolean("running")){stopSelf();return START_NOT_STICKY;}
             int sending=Store.sending(d);

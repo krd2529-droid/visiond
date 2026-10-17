@@ -25,6 +25,13 @@ final class CampaignFactory {
     static synchronized JSONObject create(Context context, boolean rangeMode, List<String> imported,
             String first, String last, int count, List<String> captions, List<String> links,
             int sim, String simLabel, Random random) {
+        return create(context, rangeMode, imported, first, last, count, captions, links,
+                sim, -1, simLabel, random);
+    }
+
+    static synchronized JSONObject create(Context context, boolean rangeMode, List<String> imported,
+            String first, String last, int count, List<String> captions, List<String> links,
+            int sim, int alternateSim, String simLabel, Random random) {
         JSONObject previous = Store.load(context);
         SuccessLog.record(context, previous);
         if (previous.optBoolean("running") || Store.sending(previous) >= 0)
@@ -39,11 +46,21 @@ final class CampaignFactory {
         JSONObject data = Store.object();
         Store.put(data, "id", UUID.randomUUID().toString());
         Store.put(data, "sim", sim); Store.put(data, "simLabel", simLabel);
+        if (alternateSim >= 0) {
+            if (sim == alternateSim) throw new IllegalStateException("ต้องใช้ SIM 1 และ SIM 2 คนละซิม");
+            Store.put(data, "simMode", "alternate");
+            Store.put(data, "alternateSim", alternateSim);
+        }
         Store.put(data, "running", false); Store.put(data, "note", "พร้อมตรวจพรีวิว");
         Store.put(data, "recipientMode", rangeMode ? "range" : "file");
         JSONArray rows = new JSONArray();
         for (String phone : selected) {
             JSONObject row = Store.object();
+            if (alternateSim >= 0) {
+                boolean firstSlot = rows.length() % 2 == 0;
+                Store.put(row, "sim", firstSlot ? sim : alternateSim);
+                Store.put(row, "simLabel", firstSlot ? "SIM 1" : "SIM 2");
+            }
             Store.put(row, "phone", phone);
             Store.put(row, "body", CampaignCore.pair(captions, links, random));
             String body = row.optString("body");
