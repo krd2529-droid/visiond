@@ -65,8 +65,8 @@ export async function onRequestPost(ctx) {
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
     `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,p.member_category,p.member_duration_months,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
-      (SELECT q.id FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
-      (SELECT q.offer_price FROM vision7_plans q WHERE q.product_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
+      (SELECT q.id FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code<>'sms-mix' OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
+      (SELECT q.offer_price FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code<>'sms-mix' OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.course_type='online_course'
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
   )

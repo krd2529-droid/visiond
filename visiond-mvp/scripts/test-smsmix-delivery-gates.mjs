@@ -1,9 +1,30 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { onRequestPost as uploadRelease } from '../functions/api/admin/vision7/releases.js';
 import { onRequestGet as downloadRelease } from '../functions/api/vision7/releases/[id]/download.js';
 import { onRequestPost as reconcileOrder } from '../functions/api/admin/vision7/smsmix-reconcile.js';
 import { onRequestGet as missingOrders } from '../functions/api/admin/vision7/smsmix-missing.js';
+
+const checkoutSource = readFileSync(new URL('../functions/api/orders/index.js', import.meta.url), 'utf8');
+const planExpression = checkoutSource.match(/(\(SELECT q\.id FROM vision7_plans q[^\n]*?LIMIT 1\)) vision7_plan_id,/)?.[1];
+const priceExpression = checkoutSource.match(/(\(SELECT q\.offer_price FROM vision7_plans q[^\n]*?LIMIT 1\)) vision7_offer_price/)?.[1];
+assert.ok(planExpression, 'checkout plan lookup exists');
+assert.ok(priceExpression, 'checkout offer price lookup exists');
+const saleGate = new DatabaseSync(':memory:');
+saleGate.exec(`CREATE TABLE products(id INTEGER PRIMARY KEY,status TEXT);
+CREATE TABLE vision7_programs(id INTEGER PRIMARY KEY,code TEXT,active INTEGER);
+CREATE TABLE vision7_plans(id INTEGER PRIMARY KEY,program_id INTEGER,product_id INTEGER,active INTEGER,plan_code TEXT,offer_price INTEGER);
+CREATE UNIQUE INDEX idx_sale_gate_plan_product ON vision7_plans(product_id);
+INSERT INTO products VALUES(11,'published');
+INSERT INTO vision7_programs VALUES(9,'sms-mix',0);
+INSERT INTO vision7_plans VALUES(10,9,11,1,'monthly',99900);`);
+const eligiblePlan = saleGate.prepare(`SELECT ${planExpression} plan_id,${priceExpression} offer_price FROM products p WHERE p.id=11`);
+assert.deepEqual({ ...eligiblePlan.get() }, { plan_id: null, offer_price: null }, 'inactive VSMS program cannot become payable even if a product remains published');
+saleGate.prepare('UPDATE vision7_programs SET active=1 WHERE id=9').run();
+assert.deepEqual({ ...eligiblePlan.get() }, { plan_id: 10, offer_price: 99900 }, 'published VSMS program exposes the paid plan');
+assert.match(saleGate.prepare(`EXPLAIN QUERY PLAN SELECT ${planExpression} plan_id FROM products p WHERE p.id=11`).all().map(row => row.detail).join(' '), /idx_sale_gate_plan_product/, 'checkout probes an indexed product-plan relation');
+saleGate.close();
 
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec(`CREATE TABLE vision7_licenses(id TEXT PRIMARY KEY,user_id INTEGER,program_id INTEGER,status TEXT,expires_at TEXT,created_at TEXT);
