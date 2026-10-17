@@ -36,6 +36,11 @@ android {
             if (System.getenv('VSMS_RELEASE_STORE_FILE')) signingConfig signingConfigs.release
         }
     }
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == 'release') {
+            variant.outputs.all { outputFileName = "VSMS-v${variant.versionName}-release.apk" }
+        }
+    }
 }
 
 dependencies {
