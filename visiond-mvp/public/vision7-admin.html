@@ -31,6 +31,7 @@
       <div class="bar primary-actions">
         <button id="newProgram">＋ เพิ่มโปรแกรมแรก</button
         ><button id="newVRecord" class="secondary-action" type="button">＋ เพิ่ม V-Record</button
+        ><button id="newVsms" class="secondary-action" type="button">＋ เพิ่ม VSMS</button
         ><button id="newKey" class="secondary-action" disabled>🔑 ออกคีย์ทดสอบ</button>
       </div>
       <section class="key-workspace">
@@ -118,6 +119,18 @@
         <footer class="dialog-actions"><button type="button" class="secondary-action" data-close="vrecordDialog">ยกเลิก</button><button id="saveVRecord" type="submit">บันทึก V-Record ที่ยังไม่เปิดขาย</button></footer>
       </form>
     </dialog>
+    <dialog id="vsmsDialog" class="app-builder-dialog" aria-labelledby="vsmsDialogTitle">
+      <form id="vsmsForm" enctype="multipart/form-data">
+        <header class="app-builder-heading"><div><small>VSMS · ANDROID</small><h2 id="vsmsDialogTitle">เพิ่ม VSMS 0.5.2</h2><p>สร้างเป็นรายการที่ยังไม่เปิดขาย · คีย์ 30 วัน 999 บาท / 365 วัน 9,999 บาท · 1 คีย์ต่อ 1 เครื่อง · ไม่มีทดลองใช้</p></div><button type="button" class="dialog-close" data-close="vsmsDialog" aria-label="ปิด">×</button></header>
+        <section class="app-builder-section">
+          <label>ชื่อโปรแกรม<input name="name" value="VSMS" required readonly /></label>
+          <label>รายละเอียดโปรแกรม<textarea name="description" required maxlength="2000" rows="4" placeholder="อธิบายความสามารถ VSMS ให้ลูกค้า"></textarea></label>
+          <div class="app-builder-grid"><label>รูปปก<input name="cover" type="file" accept="image/png,image/jpeg,image/webp" required /><small>JPG, PNG หรือ WebP ไม่เกิน 5 MB</small></label><label>APK Android 0.5.2 ที่เซ็นสำหรับจำหน่าย<input name="installer" type="file" accept=".apk,application/vnd.android.package-archive" required /><small>ตรวจลายเซ็นและ SHA-256 ของ APK ก่อนอัปโหลด · ไม่เกิน 95 MB</small></label></div>
+        </section>
+        <p id="vsmsState" class="muted" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button type="button" class="secondary-action" data-close="vsmsDialog">ยกเลิก</button><button id="saveVsms" type="submit">บันทึก VSMS ที่ยังไม่เปิดขาย</button></footer>
+      </form>
+    </dialog>
     <dialog id="keyDialog" aria-labelledby="keyDialogTitle">
       <form id="keyForm">
         <h2 id="keyDialogTitle">ออกคีย์ใหม่</h2>
@@ -155,6 +168,6 @@
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js?v=02059" type="module"></script>
+    <script src="/vision7-admin.js?v=02060" type="module"></script>
   </body>
 </html>

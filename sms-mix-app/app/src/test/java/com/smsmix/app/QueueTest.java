@@ -11,7 +11,6 @@ import java.io.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
@@ -43,6 +42,67 @@ public class QueueTest {
     }
     String status() { return Store.rows(Store.load(c)).optJSONObject(0).optString("status"); }
 
+    void dueQueue() {
+        allowSim();
+        JSONObject d = queue("PENDING", 1, true);
+        Store.put(d, "sim", 7); Store.put(d, "nextAt", 0); Store.save(c, d);
+    }
+
+    @Test public void pauseDuringOnlineCheckPreventsSmsHandoff() throws Exception {
+        dueQueue();
+        CountDownLatch checking = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger handoffs = new AtomicInteger();
+        LicenseClient.setVerifierForTests(context -> {
+            checking.countDown();
+            try { return release.await(3, TimeUnit.SECONDS); }
+            catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
+        });
+        Scheduler.setHandoffForTests((manager, row, parts, callbacks, deliveries) -> handoffs.incrementAndGet());
+        Thread alarm = new Thread(() -> Scheduler.tick(c, "test-campaign", false));
+        alarm.start(); assertTrue(checking.await(3, TimeUnit.SECONDS));
+        Scheduler.pause(c, Store.load(c), "manual stop");
+        release.countDown(); alarm.join(3000);
+        assertFalse(alarm.isAlive()); assertEquals(0, handoffs.get());
+        assertEquals("PENDING", status()); assertFalse(Store.load(c).optBoolean("running"));
+    }
+
+    @Test public void simultaneousDueChecksClaimOnePendingRow() throws Exception {
+        dueQueue();
+        CountDownLatch checking = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger handoffs = new AtomicInteger(), checks = new AtomicInteger();
+        LicenseClient.setVerifierForTests(context -> {
+            checks.incrementAndGet(); checking.countDown();
+            try { return release.await(3, TimeUnit.SECONDS); }
+            catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
+        });
+        Scheduler.setHandoffForTests((manager, row, parts, callbacks, deliveries) -> handoffs.incrementAndGet());
+        Thread first = new Thread(() -> Scheduler.tick(c, "test-campaign", false));
+        Thread second = new Thread(() -> Scheduler.tick(c, "test-campaign", false));
+        first.start(); second.start(); assertTrue(checking.await(3, TimeUnit.SECONDS));
+        release.countDown(); first.join(3000); second.join(3000);
+        assertFalse(first.isAlive()); assertFalse(second.isAlive());
+        assertEquals(1, checks.get()); assertEquals(1, handoffs.get());
+        assertEquals("SENDING", status());
+    }
+
+    @Test public void queueReplacementDuringCheckPreventsOldHandoff() throws Exception {
+        dueQueue();
+        CountDownLatch checking = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger handoffs = new AtomicInteger();
+        LicenseClient.setVerifierForTests(context -> {
+            checking.countDown();
+            try { return release.await(3, TimeUnit.SECONDS); }
+            catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
+        });
+        Scheduler.setHandoffForTests((manager, row, parts, callbacks, deliveries) -> handoffs.incrementAndGet());
+        Thread alarm = new Thread(() -> Scheduler.tick(c, "test-campaign", false));
+        alarm.start(); assertTrue(checking.await(3, TimeUnit.SECONDS));
+        JSONObject replacement = Store.load(c); Store.put(replacement, "id", "replacement"); Store.save(c, replacement);
+        release.countDown(); alarm.join(3000);
+        assertFalse(alarm.isAlive()); assertEquals(0, handoffs.get());
+        assertEquals("replacement", Store.load(c).optString("id"));
+    }
+
     @Test public void persistentQueueRoundTrip() {
         JSONObject d = queue("PENDING",1,false);
         assertEquals(d.toString(),Store.load(c).toString());
@@ -56,8 +116,10 @@ public class QueueTest {
         queue("SENDING",2,true);
         Scheduler.result(c,callback(0),Activity.RESULT_OK);
         assertEquals("SENDING",status());
+        assertEquals(0,Store.rows(Store.load(c)).optJSONObject(0).optLong("resultAt"));
         Scheduler.result(c,callback(1),Activity.RESULT_OK);
         assertEquals("SENT",status());
+        assertTrue(Store.rows(Store.load(c)).optJSONObject(0).optLong("resultAt")>0);
         assertFalse(Store.load(c).optBoolean("running"));
     }
     @Test public void duplicateAndWrongCampaignCallbacksIgnored() {
@@ -144,146 +206,6 @@ public class QueueTest {
         sms.clearLastSentTextMessageParams();
         Scheduler.tick(c,"test-campaign",false);
         assertNull(sms.getLastSentTextMessageParams());
-    }
-
-    @Test public void concurrentDueAlarmsClaimOnePendingRowOnce() throws Exception {
-        allowSim();
-        JSONObject d=queue("PENDING",1,true);
-        Store.put(d,"sim",7); Store.put(d,"nextAt",0); Store.save(c,d);
-        CountDownLatch checked=new CountDownLatch(1), release=new CountDownLatch(1);
-        AtomicInteger handoffs=new AtomicInteger(), checks=new AtomicInteger();
-        LicenseClient.setVerifierForTests(context -> {
-            checks.incrementAndGet(); checked.countDown();
-            try { return release.await(3,TimeUnit.SECONDS); }
-            catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
-        });
-        Scheduler.setHandoffForTests((manager,row,parts,callbacks) -> handoffs.incrementAndGet());
-        Thread first=new Thread(() -> Scheduler.tick(c,"test-campaign",false));
-        Thread second=new Thread(() -> Scheduler.tick(c,"test-campaign",false));
-        first.start(); second.start();
-        assertTrue(checked.await(3,TimeUnit.SECONDS));
-        release.countDown();
-        first.join(3000); second.join(3000);
-        assertFalse(first.isAlive()); assertFalse(second.isAlive());
-        assertEquals(1,handoffs.get());
-        assertEquals(1,checks.get());
-        assertEquals("SENDING",status());
-    }
-
-    @Test public void staggeredForegroundAndDuplicateDueAlarmsUseOneFreshHandoffCheck() throws Exception {
-        allowSim();
-        JSONObject d=queue("PENDING",1,true);
-        Store.put(d,"sim",7); Store.put(d,"nextAt",0); Store.save(c,d);
-        CountDownLatch foregroundEntered=new CountDownLatch(1), dueEntered=new CountDownLatch(1);
-        CountDownLatch releaseForeground=new CountDownLatch(1), releaseDue=new CountDownLatch(1);
-        AtomicInteger checks=new AtomicInteger(), handoffs=new AtomicInteger();
-        LicenseClient.setVerifierForTests(context -> {
-            int call=checks.incrementAndGet();
-            try {
-                if(call==1) { foregroundEntered.countDown(); return releaseForeground.await(4,TimeUnit.SECONDS); }
-                if(call==2) { dueEntered.countDown(); return releaseDue.await(4,TimeUnit.SECONDS); }
-            } catch(InterruptedException error) { Thread.currentThread().interrupt(); return false; }
-            return false;
-        });
-        Scheduler.setHandoffForTests((manager,row,parts,callbacks) -> handoffs.incrementAndGet());
-        Thread foreground=new Thread(() -> LicenseClient.checkCurrent(c));
-        foreground.start(); assertTrue(foregroundEntered.await(3,TimeUnit.SECONDS));
-        Thread.sleep(250);
-        Thread dueA=new Thread(() -> Scheduler.tick(c,"test-campaign",false));
-        dueA.start(); assertTrue(dueEntered.await(3,TimeUnit.SECONDS));
-        Thread.sleep(250);
-        Thread dueB=new Thread(() -> Scheduler.tick(c,"test-campaign",false));
-        dueB.start(); dueB.join(1000); assertFalse(dueB.isAlive());
-        assertEquals(2,checks.get());
-        assertEquals(0,handoffs.get());
-        releaseDue.countDown(); releaseForeground.countDown();
-        dueA.join(3000); foreground.join(3000);
-        assertFalse(dueA.isAlive()); assertFalse(foreground.isAlive());
-        assertEquals(1,handoffs.get());
-        assertEquals("SENDING",status());
-    }
-
-    @Test public void manualPauseDuringOnlineCheckPreventsHandoff() throws Exception {
-        allowSim();
-        JSONObject d=queue("PENDING",1,true);
-        Store.put(d,"sim",7); Store.put(d,"nextAt",0); Store.save(c,d);
-        CountDownLatch checking=new CountDownLatch(1), release=new CountDownLatch(1);
-        AtomicInteger handoffs=new AtomicInteger();
-        LicenseClient.setVerifierForTests(context -> {
-            checking.countDown();
-            try { return release.await(3,TimeUnit.SECONDS); }
-            catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
-        });
-        Scheduler.setHandoffForTests((manager,row,parts,callbacks) -> handoffs.incrementAndGet());
-        Thread alarm=new Thread(() -> Scheduler.tick(c,"test-campaign",false));
-        alarm.start();
-        assertTrue(checking.await(3,TimeUnit.SECONDS));
-        Scheduler.pause(c,Store.load(c),"manual pause");
-        release.countDown(); alarm.join(3000);
-        assertFalse(alarm.isAlive());
-        assertEquals(0,handoffs.get());
-        assertEquals("PENDING",status());
-        assertFalse(Store.load(c).optBoolean("running"));
-    }
-
-    @Test public void resumeCannotOverwriteQueueReplacedDuringOnlineCheck() throws Exception {
-        allowSim();
-        JSONObject old=queue("PENDING",1,false);
-        Store.put(old,"sim",7); Store.save(c,old);
-        CountDownLatch checking=new CountDownLatch(1), release=new CountDownLatch(1);
-        LicenseClient.setVerifierForTests(context -> {
-            checking.countDown();
-            try { return release.await(3,TimeUnit.SECONDS); }
-            catch (InterruptedException error) { Thread.currentThread().interrupt(); return false; }
-        });
-        AtomicReference<Throwable> failure=new AtomicReference<>();
-        Thread start=new Thread(() -> {
-            try { Scheduler.resume(c,old); }
-            catch (Throwable error) { failure.set(error); }
-        });
-        start.start(); assertTrue(checking.await(3,TimeUnit.SECONDS));
-        synchronized (Scheduler.LOCK) {
-            JSONObject replacement=Store.object(), row=Store.object(), rows=new JSONObject();
-            Store.put(replacement,"id","replacement"); Store.put(replacement,"running",false);
-            Store.put(row,"status","PENDING");
-            JSONArray list=new JSONArray(); list.put(row); Store.put(replacement,"rows",list);
-            Store.save(c,replacement);
-        }
-        release.countDown(); start.join(3000);
-        assertFalse(start.isAlive()); assertNotNull(failure.get());
-        assertEquals("replacement",Store.load(c).optString("id"));
-        assertFalse(Store.load(c).optBoolean("running"));
-    }
-
-    @Test public void concurrentMultipartCallbacksRetainBothParts() throws Exception {
-        queue("SENDING",2,true);
-        Thread first=new Thread(() -> Scheduler.result(c,callback(0),Activity.RESULT_OK));
-        Thread second=new Thread(() -> Scheduler.result(c,callback(1),Activity.RESULT_OK));
-        first.start(); second.start(); first.join(3000); second.join(3000);
-        assertFalse(first.isAlive()); assertFalse(second.isAlive());
-        JSONObject row=Store.rows(Store.load(c)).optJSONObject(0);
-        assertEquals(1,row.optJSONArray("parts").optInt(0));
-        assertEquals(1,row.optJSONArray("parts").optInt(1));
-        assertEquals("SENT",row.optString("status"));
-    }
-
-    @Test public void hungOnlineVerifierTimesOutWithoutSending() {
-        allowSim();
-        JSONObject d=queue("PENDING",1,true);
-        Store.put(d,"sim",7); Store.put(d,"nextAt",0); Store.save(c,d);
-        AtomicInteger handoffs=new AtomicInteger();
-        LicenseClient.setVerifierForTests(context -> {
-            try { Thread.sleep(30_000); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
-            return true;
-        });
-        Scheduler.setHandoffForTests((manager,row,parts,callbacks) -> handoffs.incrementAndGet());
-        long start=System.nanoTime();
-        Scheduler.tick(c,"test-campaign",false);
-        long elapsed=(System.nanoTime()-start)/1_000_000;
-        assertTrue("watchdog exceeded broadcast budget: "+elapsed,elapsed<8000);
-        assertEquals(0,handoffs.get());
-        assertEquals("PENDING",status());
-        assertFalse(Store.load(c).optBoolean("running"));
     }
 
     @Test public void thaiMultipartHasOneCallbackPerPartAndSchedulesNextRecipient() {

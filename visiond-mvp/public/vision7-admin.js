@@ -29,10 +29,15 @@ const esc = (s) =>
   releases = document.querySelector("#releases"),
   newProgram = document.querySelector("#newProgram"),
   newVRecord = document.querySelector("#newVRecord"),
+  newVsms = document.querySelector("#newVsms"),
   vrecordDialog = document.querySelector("#vrecordDialog"),
   vrecordForm = document.querySelector("#vrecordForm"),
   vrecordState = document.querySelector("#vrecordState"),
   saveVRecord = document.querySelector("#saveVRecord"),
+  vsmsDialog = document.querySelector("#vsmsDialog"),
+  vsmsForm = document.querySelector("#vsmsForm"),
+  vsmsState = document.querySelector("#vsmsState"),
+  saveVsms = document.querySelector("#saveVsms"),
   newKey = document.querySelector("#newKey"),
   programForm = document.querySelector("#programForm"),
   programState = document.querySelector("#programState"),
@@ -265,7 +270,7 @@ async function load() {
     programs
       .map(
         (x) =>
-          `<section class="program-row"><div><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><code>${esc(x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${x.code === "v-record" ? 2 : 3} แพ็กเกจขาย${x.code === "v-record" ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${x.code === "v-record" ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button><button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button>${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}</div></section>`,
+          `<section class="program-row"><div><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><code>${esc(x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions">${x.code === "sms-mix" ? '<button type="button" disabled title="คีย์ VSMS ออกอัตโนมัติหลังชำระเงินเท่านั้น">ออกคีย์</button>' : `<button type="button" data-issue-program="${x.id}">ออกคีย์</button>`}${x.code === "sms-mix" ? '<button type="button" class="secondary-action" disabled title="VSMS ต้องใช้ขั้นตอนตรวจ APK และลายเซ็นเฉพาะก่อนอัปเดต">จัดการเวอร์ชัน</button>' : `<button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
       )
       .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
@@ -278,6 +283,7 @@ async function load() {
   const hasPrograms = programs.length > 0;
   newProgram.textContent = hasPrograms ? "＋ เพิ่มโปรแกรม" : "＋ เพิ่มโปรแกรมแรก";
   newVRecord.disabled = programs.some((x) => x.code === "v-record");
+  newVsms.disabled = programs.some((x) => x.code === "sms-mix");
   newKey.toggleAttribute("disabled", !hasPrograms);
   newKey.setAttribute("aria-disabled", String(!hasPrograms || !encryptionReady));
   releaseDetails.dataset.blocked = String(!hasPrograms);
@@ -307,6 +313,30 @@ async function load() {
     } catch (error) {
       state.className = "muted error";
       state.textContent = error.message || "เผยแพร่ V-Record ไม่สำเร็จ";
+      button.disabled = false;
+    }
+  });
+  programsEl.querySelectorAll("[data-publish-vsms]").forEach((button) => button.onclick = async () => {
+    const program = programs.find((x) => x.code === "sms-mix" && String(x.id) === button.dataset.publishVsms);
+    if (!program) return;
+    const entered = prompt("วาง SHA-256 (64 ตัวอักษรฐานสิบหก) ของ APK VSMS 0.5.2 ที่ตรวจลายเซ็นสำหรับจำหน่ายแล้ว");
+    if (entered === null) return;
+    const apkHash = entered.trim().toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(apkHash)) return alert("SHA-256 ของ APK ไม่ถูกต้อง");
+    if (!confirm(`ยืนยันเผยแพร่ VSMS 0.5.2 ให้ลูกค้าซื้อและดาวน์โหลด?\nAndroid · 1 คีย์/1 เครื่อง · 30 วัน 999 บาท / 365 วัน 9,999 บาท\nSHA-256 ${apkHash}`)) return;
+    const state = button.closest(".program-row").querySelector("[data-publish-state]");
+    button.disabled = true;
+    state.className = "muted";
+    state.textContent = "กำลังตรวจ APK, SHA-256 และแพ็กเกจก่อนเผยแพร่…";
+    try {
+      const response = await fetch("/api/admin/vision7/smsmix-publish", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({program_id:program.id,confirm:"publish-vsms",apk_sha256:apkHash})});
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `เผยแพร่ไม่สำเร็จ (${response.status})`);
+      state.textContent = "เผยแพร่ VSMS แล้ว";
+      await load();
+    } catch (error) {
+      state.className = "muted error";
+      state.textContent = error.message || "เผยแพร่ VSMS ไม่สำเร็จ";
       button.disabled = false;
     }
   });
@@ -427,6 +457,13 @@ newVRecord.onclick = () => {
   vrecordDialog.showModal();
   vrecordForm.elements.description.focus();
 };
+newVsms.onclick = () => {
+  vsmsForm.reset();
+  vsmsState.className = "muted";
+  vsmsState.textContent = "";
+  vsmsDialog.showModal();
+  vsmsForm.elements.description.focus();
+};
 document.querySelectorAll("[data-open-program]").forEach((x)=>x.onclick=openProgramDialog);
 newKey.onclick = () => openKeyDialog();
 releaseDetails.querySelector("summary").addEventListener("click", (event) => {
@@ -537,6 +574,42 @@ vrecordForm.onsubmit = async (e) => {
     vrecordState.textContent = error.message || "สร้าง V-Record ไม่สำเร็จ";
   } finally {
     saveVRecord.disabled = false;
+  }
+};
+vsmsForm.onsubmit = async (e) => {
+  e.preventDefault();
+  if (!vsmsForm.reportValidity()) return;
+  const cover = vsmsForm.elements.cover.files[0], installer = vsmsForm.elements.installer.files[0];
+  if (cover.size > 5 * 1024 * 1024 || installer.size > 95 * 1024 * 1024 || !/\.apk$/i.test(installer.name)) {
+    vsmsState.className = "muted error";
+    vsmsState.textContent = !/\.apk$/i.test(installer.name) ? "ไฟล์ติดตั้ง VSMS ต้องเป็น APK" : cover.size > 5 * 1024 * 1024 ? "รูปปกต้องไม่เกิน 5 MB" : "APK ต้องไม่เกิน 95 MB";
+    return;
+  }
+  const body = new FormData(vsmsForm);
+  body.set("code", "sms-mix");
+  body.set("platform_type", "android");
+  body.set("current_version", "0.5.2");
+  body.set("minimum_version", "0.5.2");
+  body.set("active", "false");
+  body.set("plans", JSON.stringify([
+    {plan_code:"monthly",name:"คีย์ 30 วัน",price:999,duration_days:30},
+    {plan_code:"yearly",name:"คีย์ 365 วัน",price:9999,duration_days:365},
+  ]));
+  saveVsms.disabled = true;
+  vsmsState.className = "muted";
+  vsmsState.textContent = "กำลังอัปโหลด APK และบันทึก VSMS เป็นรายการที่ยังไม่เปิดขาย…";
+  try {
+    const response = await fetch("/api/admin/vision7/programs", {method:"POST",body});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `สร้าง VSMS ไม่สำเร็จ (${response.status})`);
+    vsmsState.textContent = "บันทึก VSMS แล้ว · ยังไม่เปิดขาย";
+    vsmsDialog.close();
+    await load();
+  } catch (error) {
+    vsmsState.className = "muted error";
+    vsmsState.textContent = error.message || "สร้าง VSMS ไม่สำเร็จ";
+  } finally {
+    saveVsms.disabled = false;
   }
 };
 programForm.elements.platform_type.addEventListener("change", (e) => {

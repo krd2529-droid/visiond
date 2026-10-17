@@ -139,5 +139,8 @@ dist
 # Live multi-agent coordination state; local and continuously updated.
 /.agents/WORKBOARD.md
 
+# Local release signing keys and credentials (never commit).
+/.secrets/
+
 # Cloudflare Wrangler local runtime state, databases, caches and temporary bundles
 **/.wrangler/

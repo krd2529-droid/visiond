@@ -1,4 +1,4 @@
-import { json, requireAdmin } from "../../../_lib.js";
+import { json, requireAdmin, requireBoss } from "../../../_lib.js";
 import { ensureDatabase } from "../../../_schema.js";
 import { ensureVision7Schema } from "../../../_vision7_schema.js";
 import { safeVersion, validPlanCode } from "../../../_vision7.js";
@@ -58,6 +58,12 @@ export function validVRecordDraft({ name, platform, version, minimumVersion, act
     plans.some((p) => p.plan_code === "monthly" && Number(p.price) === 199 && !p.product_id && p.active !== false) &&
     plans.some((p) => p.plan_code === "yearly" && Number(p.price) === 999 && !p.product_id && p.active !== false);
 }
+export function validSmsMixDraft({ name, platform, version, minimumVersion, active, rawPlans, plans, productId, multipart, hasCover, hasInstaller }) {
+  return multipart && hasCover && hasInstaller && name === "VSMS" && platform === "android" && version === "0.5.2" && minimumVersion === "0.5.2" && active === "false" && !productId &&
+    Array.isArray(rawPlans) && rawPlans.length === 2 && plans.length === 2 &&
+    plans.some((p) => p.plan_code === "monthly" && Number(p.price) === 999 && (p.duration_days == null || Number(p.duration_days) === 30) && !p.product_id && p.active !== false) &&
+    plans.some((p) => p.plan_code === "yearly" && Number(p.price) === 9999 && (p.duration_days == null || Number(p.duration_days) === 365) && !p.product_id && p.active !== false);
+}
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   await ensureVision7Schema(ctx.env);
@@ -78,6 +84,10 @@ export async function onRequestPost(ctx) {
     platform = allowedPlatforms.includes(String(b.platform_type)) ? String(b.platform_type) : "windows";
   if (!code || !version)
     return json({ error: "รหัสโปรแกรมหรือเวอร์ชันไม่ถูกต้อง" }, 400);
+  if (code === "sms-mix") {
+    const boss = await requireBoss(ctx);
+    if (boss.error) return boss.error;
+  }
   if (multipart && (!appName || !appDescription)) return json({ error: "กรุณากรอกชื่อและรายละเอียดแอป" }, 400);
   if (multipart && (!(cover instanceof File) || !cover.size || !(installer instanceof File) || !installer.size)) return json({ error: "กรุณาแนบรูปปกและไฟล์ติดตั้ง" }, 400);
   if (cover instanceof File && cover.size && (cover.size > 5 * 1024 * 1024 || !imageTypes.has(cover.type))) return json({ error: "รูปปกต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB" }, 413);
@@ -89,6 +99,9 @@ export async function onRequestPost(ctx) {
     productIds = [productId, ...plans.map((p) => p.product_id)].filter(Boolean);
   if (code === "v-record" && !validVRecordDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
     return json({ error: "V-Record ต้องมีรูปปกและไฟล์ติดตั้ง พร้อม Windows 0.6.0 แบบไม่เปิดขายและแพ็กเกจ 30 วัน 199 บาท / 1 ปี 999 บาทเท่านั้น" }, 400);
+  if (code === "sms-mix" && !validSmsMixDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
+    return json({ error: "VSMS ต้องมีรูปปกและ APK พร้อม Android 0.5.2 แบบยังไม่เปิดขายและแพ็กเกจ 30 วัน 999 บาท / 365 วัน 9,999 บาทเท่านั้น" }, 400);
+  if (code === "sms-mix" && !/\.apk$/i.test(installer.name)) return json({ error: "ไฟล์ติดตั้ง VSMS ต้องเป็น APK" }, 400);
   if ([productId, ...plans.map((p) => p.product_id)].some(Number.isNaN))
     return json({ error: "Product ID ต้องเป็นเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป หรือเว้นว่าง" }, 400);
   if (new Set(productIds).size !== productIds.length)
@@ -117,7 +130,7 @@ export async function onRequestPost(ctx) {
     }
     const r = await ctx.env.DB.prepare(
       `INSERT INTO vision7_programs(product_id,code,app_name,app_description,cover_url,platform_type,current_version,minimum_version,requires_online,force_update,max_devices,trial_hours,active) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,code === 'v-record' ? 1 : 3,code === 'v-record' ? 168 : 24,b.active === false || (code === 'v-record' && b.active === 'false') ? 0 : 1).run();
+    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,code === 'sms-mix' ? 1 : b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,['v-record','sms-mix'].includes(code) ? 1 : 3,code === 'v-record' ? 168 : code === 'sms-mix' ? 0 : 24,b.active === false || (['v-record','sms-mix'].includes(code) && b.active === 'false') ? 0 : 1).run();
     id = Number(r.meta.last_row_id);
     for (const p of plans) {
       await ctx.env.DB.prepare(
@@ -135,8 +148,9 @@ export async function onRequestPost(ctx) {
       const bytes = await installer.arrayBuffer();
       const sha256 = hex(await crypto.subtle.digest("SHA-256", bytes));
       installerKey = `vision7/releases/${id}/${version}-${crypto.randomUUID()}`;
-      await ctx.env.FILES.put(installerKey, bytes, { httpMetadata: { contentType: installer.type || "application/octet-stream" }, customMetadata: { sha256, version } });
-      await ctx.env.DB.prepare(`INSERT INTO vision7_releases(program_id,version,minimum_version,mandatory,object_key,file_name,mime_type,file_size,sha256,release_notes,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(id,version,safeVersion(b.minimum_version || version) || version,0,installerKey,safeFileName(installer.name,`${code}-${version}.bin`),installer.type||"application/octet-stream",installer.size,sha256,text(b.release_notes || appDescription,2000),a.user.id).run();
+      const installerMime = code === 'sms-mix' ? 'application/vnd.android.package-archive' : installer.type || 'application/octet-stream';
+      await ctx.env.FILES.put(installerKey, bytes, { httpMetadata: { contentType: installerMime }, customMetadata: { sha256, version } });
+      await ctx.env.DB.prepare(`INSERT INTO vision7_releases(program_id,version,minimum_version,mandatory,object_key,file_name,mime_type,file_size,sha256,release_notes,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(id,version,safeVersion(b.minimum_version || version) || version,0,installerKey,safeFileName(installer.name,`${code}-${version}.bin`),installerMime,installer.size,sha256,text(b.release_notes || appDescription,2000),a.user.id).run();
     }
     return json({ ok: true, id }, 201);
   } catch (error) {

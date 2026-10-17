@@ -1,6 +1,5 @@
 package com.smsmix.app;
 
-import java.net.URI;
 import java.util.*;
 
 public final class CampaignCore {
@@ -15,16 +14,6 @@ public final class CampaignCore {
             String text = line.trim();
             if (text.isEmpty()) continue;
             if (text.length() > 1000) throw new IllegalArgumentException("แต่ละรายการยาวได้ไม่เกิน 1,000 ตัวอักษร");
-            if (links) {
-                try {
-                    URI u = new URI(text);
-                    if (!("https".equalsIgnoreCase(u.getScheme()) || "http".equalsIgnoreCase(u.getScheme()))
-                            || u.getHost() == null || u.getUserInfo() != null)
-                        throw new Exception();
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("ลิงก์ไม่ถูกต้อง: " + text);
-                }
-            }
             result.add(text);
         }
         if (result.size() < 10 || result.size() > 100)

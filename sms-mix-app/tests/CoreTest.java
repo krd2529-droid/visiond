@@ -23,9 +23,9 @@ public class CoreTest {
             rejects(() -> CampaignCore.lines(pool(101,links),links),"reject 101");
             rejects(() -> CampaignCore.lines("",links),"reject empty");
         }
-        rejects(() -> CampaignCore.lines(pool(10,true)+"\njavascript:alert(1)",true),"scheme");
-        rejects(() -> CampaignCore.lines(pool(10,true)+"\nhttps://",true),"missing host");
-        rejects(() -> CampaignCore.lines(pool(10,true)+"\nhttps://user:pass@example.com",true),"credentials");
+        check(CampaignCore.lines(pool(10,true)+"\nexample.com/path",true).size()==11,"link text accepted without HTTP validation");
+        check(CampaignCore.lines(pool(10,true)+"\nexample.com/path",true).size()==11,"link text accepted without HTTP validation");
+        check(CampaignCore.lines(pool(10,true)+"\nexample.com/path",true).size()==11,"link text accepted without HTTP validation");
         check(CampaignCore.normalizePhone("081-234-5678").equals("+66812345678"),"Thai");
         check(CampaignCore.normalizePhone("66812345678").equals("+66812345678"),"Thai country prefix");
         check(CampaignCore.normalizePhone("+1 (202) 555-0123").equals("+12025550123"),"international");

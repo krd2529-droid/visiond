@@ -33,6 +33,7 @@ export async function onRequestPost(ctx) {
     .bind(programId)
     .first();
   if (!program) return json({ error: "ไม่พบโปรแกรม" }, 404);
+  if (program.code === 'sms-mix') return json({ error: "VSMS เปิดใช้งานด้วยคีย์ที่ซื้อเท่านั้น" }, 403);
   if (program.code !== 'v-record' && device.length < 8) return json({ error: "ข้อมูลโปรแกรมหรือเครื่องไม่ถูกต้อง" }, 400);
   if (program.code === 'v-record' && Number(program.trial_hours) !== 168) return json({ error: "ระยะทดลอง V-Record ยังไม่พร้อม" }, 503);
   const hours = Math.max(1, Math.min(168, Number(program.trial_hours) || 24)),

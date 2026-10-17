@@ -1536,6 +1536,40 @@ async function savePaymentSettings(e) {
   returnAdminHome("บันทึกการตั้งค่าชำระเงินเรียบร้อย");
 }
 
+let vsmsMissingRows = [], vsmsMissingCursor = null;
+async function loadVsmsMissing(reset = true) {
+  if (viewer?.role !== "boss") return;
+  const target = document.querySelector("#vsmsMissingOrders");
+  if (reset) { vsmsMissingRows = []; vsmsMissingCursor = null; }
+  const url = "/api/admin/vision7/smsmix-missing" + (vsmsMissingCursor ? `?cursor=${encodeURIComponent(vsmsMissingCursor)}` : "");
+  try {
+    const response = await fetch(url), data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "ตรวจคีย์ VSMS ที่ชำระแล้วไม่สำเร็จ");
+    vsmsMissingRows.push(...(data.items || []));
+    vsmsMissingCursor = data.next_cursor || null;
+    target.innerHTML = vsmsMissingRows.length ? `<section class="admin-card order-admin-card"><h3>⚠️ VSMS ชำระแล้ว แต่ยังไม่ได้ออกคีย์</h3><p>ตรวจออเดอร์และกดออกคีย์ที่ชำระแล้วอีกครั้ง ไม่มีการเรียกเก็บเงินซ้ำ</p>${vsmsMissingRows.map(o => `<div class="order-wait-note rejected"><b>${esc(o.order_no)} · ${esc(o.customer_name || o.customer_email || "ลูกค้า")}</b><span>ออเดอร์ #${Number(o.order_id)} · ${money(o.total)}</span><button type="button" data-vsms-reconcile="${Number(o.order_id)}">ออกคีย์ที่ชำระแล้วอีกครั้ง</button><small data-vsms-reconcile-state="${Number(o.order_id)}" role="status"></small></div>`).join("")}${vsmsMissingCursor ? '<button type="button" data-vsms-more>โหลดออเดอร์ VSMS ที่เก่ากว่า</button>' : ""}</section>` : "";
+    target.querySelector("[data-vsms-more]")?.addEventListener("click", event => { event.currentTarget.disabled = true; loadVsmsMissing(false); });
+    target.querySelectorAll("[data-vsms-reconcile]").forEach(button => button.onclick = async () => {
+      const orderId = Number(button.dataset.vsmsReconcile);
+      if (!confirm(`ยืนยันตรวจและออกคีย์ VSMS ที่ชำระแล้วอีกครั้งสำหรับออเดอร์ #${orderId}?`)) return;
+      const state = button.parentElement.querySelector("[data-vsms-reconcile-state]");
+      button.disabled = true;
+      state.textContent = "กำลังตรวจออเดอร์และออกคีย์…";
+      try {
+        const result = await fetch("/api/admin/vision7/smsmix-reconcile", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ order_id: orderId }) });
+        const body = await result.json().catch(() => ({}));
+        if (!result.ok) throw new Error(body.error || "กู้คีย์ไม่สำเร็จ");
+        await loadVsmsMissing(true);
+      } catch (error) {
+        state.textContent = error.message || "กู้คีย์ไม่สำเร็จ";
+        button.disabled = false;
+      }
+    });
+  } catch (error) {
+    target.innerHTML = `<div class="order-wait-note rejected"><b>⚠️ ตรวจออเดอร์ VSMS ที่ชำระแล้วไม่สำเร็จ</b><span>${esc(error.message)}</span><button type="button" data-vsms-missing-retry>ลองตรวจอีกครั้ง</button></div>`;
+    target.querySelector("[data-vsms-missing-retry]").onclick = () => loadVsmsMissing(true);
+  }
+}
 async function loadOrders() {
   const r = await fetch("/api/admin/orders");
   const d = await r.json();
@@ -1580,6 +1614,7 @@ async function loadOrders() {
   clearSelectedOrders.onclick=()=>clearOldOrders('selected',selected());
   clearAllOrders.onclick=()=>clearOldOrders('all',[]);
   syncSelected();
+  await loadVsmsMissing(true);
 }
 async function clearOldOrders(mode,ids){
   const count=mode==='all'?'ทั้งหมด':`${ids.length} รายการที่เลือก`;

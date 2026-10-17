@@ -15,7 +15,7 @@ final class Scheduler {
     static final Random RANDOM = new java.security.SecureRandom();
     static final Object LOCK = new Object();
     private static final Set<String> CHECKING_QUEUES = ConcurrentHashMap.newKeySet();
-    interface Handoff { void send(SmsManager manager, JSONObject row, ArrayList<String> parts, ArrayList<PendingIntent> callbacks); }
+    interface Handoff { void send(SmsManager manager, JSONObject row, ArrayList<String> parts, ArrayList<PendingIntent> callbacks, ArrayList<PendingIntent> deliveries); }
     private static volatile Handoff testHandoff;
     static void setHandoffForTests(Handoff handoff) { testHandoff = handoff; }
     static boolean exactAllowed(Context c) {
@@ -46,6 +46,7 @@ final class Scheduler {
         Store.put(d, "note", note);
         Store.save(c, d);
         cancel(c, d, false);
+        CampaignService.stop(c);
     }
     static void checkPermissions(Context c, int sim) {
         if (c.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED
@@ -59,18 +60,18 @@ final class Scheduler {
     static void resume(Context c, JSONObject d) {
         LicenseClient.requireCurrent(c);
         synchronized (LOCK) {
-            JSONObject fresh = Store.load(c);
-            if (!d.optString("id").equals(fresh.optString("id"))) throw new IllegalStateException("คิวเปลี่ยน กรุณาตรวจพรีวิวใหม่");
-            d = fresh;
-            checkPermissions(c, d.optInt("sim", -1));
-            recoverTimeoutLocked(c, d);
-            if (Store.sending(d) >= 0) throw new IllegalStateException("กำลังรอผล SMS ปัจจุบัน");
-            if (Store.pending(d) < 0) throw new IllegalStateException("ไม่มีเบอร์ค้างส่ง");
-            Store.put(d, "running", true);
-            Store.put(d, "note", "กำลังทำงาน");
-            Store.save(c, d);
-            try { alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false); }
-            catch (RuntimeException e) { pauseLocked(c, d, e.getMessage()); throw e; }
+        JSONObject fresh = Store.load(c);
+        if (!d.optString("id").equals(fresh.optString("id"))) throw new IllegalStateException("คิวเปลี่ยน กรุณาตรวจพรีวิวใหม่");
+        d = fresh;
+        checkPermissions(c, d.optInt("sim", -1));
+        recoverTimeout(c, d);
+        if (Store.sending(d) >= 0) throw new IllegalStateException("กำลังรอผล SMS ปัจจุบัน");
+        if (Store.pending(d) < 0) throw new IllegalStateException("ไม่มีเบอร์ค้างส่ง");
+        Store.put(d, "running", true);
+        Store.put(d, "note", "กำลังทำงาน");
+        Store.save(c, d);
+        try { CampaignService.start(c); alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false); }
+        catch (RuntimeException e) { pauseLocked(c, d, e.getMessage()); throw e; }
         }
     }
     static SmsManager sms(int sim) { return SmsManager.getSmsManagerForSubscriptionId(sim); }
@@ -96,48 +97,58 @@ final class Scheduler {
             synchronized (LOCK) {
                 JSONObject latest = Store.load(c);
                 if (id.equals(latest.optString("id")) && latest.optBoolean("running") && Store.pending(latest) >= 0)
-                    pauseLocked(c, latest, "ยืนยันสิทธิ์ออนไลน์ไม่ได้ คิวหยุดโดยไม่ส่งเบอร์ที่รออยู่");
+                    pauseLocked(c, latest, "ยืนยันสิทธิ์ออนไลน์ไม่ได้ คิวถูกหยุด กรุณาตรวจอินเทอร์เน็ตและคีย์");
             }
             return;
         }
         synchronized (LOCK) {
-            d = Store.load(c);
-            if (!id.equals(d.optString("id")) || !d.optBoolean("running") || Store.sending(d) >= 0) return;
-            if (System.currentTimeMillis() < d.optLong("nextAt")) { alarm(c, d, d.optLong("nextAt"), false); return; }
-            i = Store.pending(d);
-            if (i < 0) { pauseLocked(c, d, "ครบรายการแล้ว"); return; }
-            checkPermissions(c, d.optInt("sim", -1));
-            SmsManager sm = sms(d.optInt("sim"));
-            JSONObject row = Store.rows(d).optJSONObject(i);
-            ArrayList<String> parts = sm.divideMessage(row.optString("body"));
-            JSONArray results = new JSONArray();
-            ArrayList<PendingIntent> callbacks = new ArrayList<>();
-            for (int p = 0; p < parts.size(); p++) {
-                results.put(0);
-                Intent result = new Intent(c, SentReceiver.class)
-                        .setData(Uri.parse("smsmix://sent/" + id + "/" + i + "/" + p))
-                        .putExtra("id", id).putExtra("row", i).putExtra("part", p);
-                callbacks.add(PendingIntent.getBroadcast(c, 0, result,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-            }
-            long now = System.currentTimeMillis();
-            Store.put(row, "status", "SENDING");
-            Store.put(row, "parts", results);
-            Store.put(row, "sentAt", now);
-            Store.put(row, "deadline", now + 5 * 60_000L);
-            Store.put(d, "nextAt", now + CampaignCore.delay(RANDOM));
-            Store.save(c, d); // Persist before telephony side effect, never automatically retry SENDING.
-            try {
-                alarm(c, d, row.optLong("deadline"), true);
-                Handoff handoff = testHandoff;
-                if (handoff != null) handoff.send(sm, row, parts, callbacks);
-                else if (parts.size() == 1)
-                    sm.sendTextMessage(row.optString("phone"), null, parts.get(0), callbacks.get(0), null);
-                else sm.sendMultipartTextMessage(row.optString("phone"), null, parts, callbacks, null);
-            } catch (RuntimeException e) {
-                Store.put(row, "status", "UNKNOWN");
-                pauseLocked(c, d, "ไม่ทราบผลการส่ง: " + e.getMessage() + " — ไม่มีการส่งซ้ำอัตโนมัติ");
-            }
+        d = Store.load(c);
+        if (!id.equals(d.optString("id")) || !d.optBoolean("running") || Store.sending(d) >= 0) return;
+        if (System.currentTimeMillis() < d.optLong("nextAt")) { alarm(c, d, d.optLong("nextAt"), false); return; }
+        i = Store.pending(d);
+        if (i < 0) { pauseLocked(c, d, "ครบรายการแล้ว"); return; }
+        checkPermissions(c, d.optInt("sim", -1));
+        SmsManager sm = sms(d.optInt("sim"));
+        JSONObject row = Store.rows(d).optJSONObject(i);
+        ArrayList<String> parts = sm.divideMessage(row.optString("body"));
+        JSONArray results = new JSONArray();
+        ArrayList<PendingIntent> callbacks = new ArrayList<>();
+        ArrayList<PendingIntent> deliveries = new ArrayList<>();
+        JSONArray deliveryParts = new JSONArray();
+        for (int p = 0; p < parts.size(); p++) {
+            results.put(0);
+            deliveryParts.put(-1);
+            Intent delivered = new Intent(c, DeliveredReceiver.class)
+                    .setData(Uri.parse("smsmix://delivered/" + id + "/" + i + "/" + p))
+                    .putExtra("id", id).putExtra("row", i).putExtra("part", p);
+            deliveries.add(PendingIntent.getBroadcast(c, 0, delivered, PendingIntent.FLAG_UPDATE_CURRENT
+                    | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0)));
+            Intent result = new Intent(c, SentReceiver.class)
+                    .setData(Uri.parse("smsmix://sent/" + id + "/" + i + "/" + p))
+                    .putExtra("id", id).putExtra("row", i).putExtra("part", p);
+            callbacks.add(PendingIntent.getBroadcast(c, 0, result,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        }
+        long now = System.currentTimeMillis();
+        Store.put(row, "status", "SENDING");
+        Store.put(row, "parts", results);
+        Store.put(row, "deliveryParts", deliveryParts);
+        Store.put(row, "sentAt", now);
+        Store.put(row, "deadline", now + 5 * 60_000L);
+        Store.put(d, "nextAt", now + CampaignCore.delay(RANDOM));
+        Store.save(c, d); // Persist before telephony side effect, never automatically retry SENDING.
+        try {
+            alarm(c, d, row.optLong("deadline"), true);
+            Handoff handoff = testHandoff;
+            if (handoff != null) handoff.send(sm, row, parts, callbacks, deliveries);
+            else if (parts.size() == 1)
+                sm.sendTextMessage(row.optString("phone"), null, parts.get(0), callbacks.get(0), deliveries.get(0));
+            else sm.sendMultipartTextMessage(row.optString("phone"), null, parts, callbacks, deliveries);
+        } catch (RuntimeException e) {
+            Store.put(row, "status", "UNKNOWN");
+            Store.put(row, "resultAt", System.currentTimeMillis());
+            pauseLocked(c, d, "ไม่ทราบผลการส่ง: " + e.getMessage() + " — ไม่มีการส่งซ้ำอัตโนมัติ");
+        }
         }
         } finally { CHECKING_QUEUES.remove(id); }
     }
@@ -163,18 +174,23 @@ final class Scheduler {
         if (!complete) return;
         cancel(c, d, true);
         Store.put(row, "status", ok ? "SENT" : "FAILED");
-        if (!ok) { pauseLocked(c, d, "ส่งไม่สำเร็จ/ไม่ครบทุกส่วน หยุดคิวเพื่อตรวจสอบ"); return; }
+        Store.put(row, "resultAt", System.currentTimeMillis());
+        if (!ok) {
+            Store.put(d, "nextAt", System.currentTimeMillis() + (5 + RANDOM.nextInt(6)) * 60_000L);
+            if (d.optBoolean("running")) Store.put(d, "note", "ส่งไม่สำเร็จ — รอ 5–10 นาทีแล้วส่งเบอร์ถัดไป ไม่ส่งเบอร์เดิมซ้ำ");
+        } else if (d.optBoolean("running")) Store.put(d, "note", "ส่งสำเร็จ — รอส่งเบอร์ถัดไป");
         Store.save(c, d);
-        if (Store.pending(d) < 0) pauseLocked(c, d, "ครบรายการแล้ว");
+        SuccessLog.record(c, d);
+        if (Store.pending(d) < 0) pause(c, d, "ครบรายการแล้ว");
         else if (d.optBoolean("running")) alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false);
         }
     }
 
     static void recoverTimeout(Context c, JSONObject d) {
         synchronized (LOCK) {
-            JSONObject latest = Store.load(c);
-            if (!d.optString("id").equals(latest.optString("id"))) return;
-            recoverTimeoutLocked(c, latest);
+        JSONObject latest = Store.load(c);
+        if (!d.optString("id").equals(latest.optString("id"))) return;
+        recoverTimeoutLocked(c, latest);
         }
     }
     private static void recoverTimeoutLocked(Context c, JSONObject d) {
@@ -183,6 +199,7 @@ final class Scheduler {
         JSONObject row = Store.rows(d).optJSONObject(i);
         if (System.currentTimeMillis() < row.optLong("deadline")) return;
         Store.put(row, "status", "UNKNOWN");
+        Store.put(row, "resultAt", System.currentTimeMillis());
         pauseLocked(c, d, "ไม่ได้รับผล SMS ภายใน 5 นาที — หยุดคิวและไม่ส่งเบอร์นี้ซ้ำ");
     }
     static void bootPause(Context c) {
@@ -190,7 +207,11 @@ final class Scheduler {
             JSONObject d = Store.load(c);
             if (d.optString("id").isEmpty()) return;
             int i = Store.sending(d);
-            if (i >= 0) Store.put(Store.rows(d).optJSONObject(i), "status", "UNKNOWN");
+            if (i >= 0) {
+                JSONObject row = Store.rows(d).optJSONObject(i);
+                Store.put(row, "status", "UNKNOWN");
+                Store.put(row, "resultAt", System.currentTimeMillis());
+            }
             pauseLocked(c, d, "เครื่องรีสตาร์ต กรุณาเปิดแอปและกดทำต่อ");
         }
     }

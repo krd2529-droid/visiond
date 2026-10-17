@@ -29,6 +29,7 @@ export async function onRequestPost(ctx) {
   if (file.size > 95 * 1024 * 1024) return json({ error: 'ไฟล์ติดตั้งต้องไม่เกิน 95 MB ต่อรีลีส' }, 413);
   const program = await ctx.env.DB.prepare('SELECT id,code,active FROM vision7_programs WHERE id=?').bind(programId).first();
   if (!program) return json({ error: 'ไม่พบโปรแกรม' }, 404);
+  if (program.code === 'sms-mix') return json({ error: 'VSMS ต้องใช้ขั้นตอนตรวจ APK และลายเซ็นเฉพาะก่อนอัปเดตรีลีส' }, 409, { 'cache-control': 'private, no-store' });
   const replaceInactive = form.get('replace_inactive') === '1';
   let previous = null;
   if (replaceInactive) {

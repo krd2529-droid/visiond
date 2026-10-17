@@ -41,9 +41,9 @@ export async function activateSmsMix(ctx) {
     WHERE l.id=? AND l.status='active' AND (l.expires_at IS NULL OR l.expires_at>datetime('now'))
       AND p.code='sms-mix' AND p.platform_type='android' AND p.active=1
     ON CONFLICT(license_id) DO UPDATE SET
-      generation=vision7_smsmix_bindings.generation+CASE WHEN vision7_smsmix_bindings.device_hash=excluded.device_hash THEN 0 ELSE 1 END,
-      device_hash=excluded.device_hash,device_name=excluded.device_name,activated_at=CURRENT_TIMESTAMP
-    WHERE EXISTS(SELECT 1 FROM vision7_licenses l JOIN vision7_programs p ON p.id=l.program_id
+      device_name=excluded.device_name
+    WHERE vision7_smsmix_bindings.device_hash=excluded.device_hash
+      AND EXISTS(SELECT 1 FROM vision7_licenses l JOIN vision7_programs p ON p.id=l.program_id
       WHERE l.id=excluded.license_id AND l.status='active' AND (l.expires_at IS NULL OR l.expires_at>datetime('now'))
         AND p.code='sms-mix' AND p.platform_type='android' AND p.active=1)
     RETURNING device_hash,generation`).bind(data.deviceHash, data.deviceName, row.id).first();

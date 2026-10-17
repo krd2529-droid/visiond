@@ -62,18 +62,18 @@ const bindingPlan = sqlite.prepare(`EXPLAIN QUERY PLAN SELECT b.device_name FROM
   JOIN vision7_smsmix_bindings b ON b.license_id=l.id WHERE l.key_hash=?`).all(await hashLicenseKey(key));
 assert.match(bindingPlan.map(x => x.detail).join(' '), /sqlite_autoindex_vision7_smsmix_bindings_1/, 'bound-device detail uses binding PK');
 assert.equal((await request(check, key, 'device-A-1234')).status, 200);
-assert.equal((await request(activate, key, 'device-B-1234')).status, 200);
+assert.equal((await request(activate, key, 'device-B-1234')).status, 403, 'second device cannot replace first binding');
 const afterB = sqlite.prepare('SELECT device_hash,generation FROM vision7_smsmix_bindings WHERE license_id=?').get('one');
-assert.equal(afterB.generation, 2);
-assert.equal(sqlite.prepare('SELECT device_name FROM vision7_smsmix_bindings WHERE license_id=?').get('one').device_name, 'Test Android');
+assert.equal(afterB.generation, 1);
+assert.equal(sqlite.prepare('SELECT device_name FROM vision7_smsmix_bindings WHERE license_id=?').get('one').device_name, 'Pixel  7');
 const changesBeforeCheck = sqlite.prepare('SELECT total_changes() changes').get().changes;
-assert.equal((await request(check, key, 'device-A-1234')).status, 403, 'old device cannot reclaim on check');
+assert.equal((await request(check, key, 'device-A-1234')).status, 200, 'first device remains active');
 assert.deepEqual(sqlite.prepare('SELECT device_hash,generation FROM vision7_smsmix_bindings WHERE license_id=?').get('one'), afterB, 'check is read only');
-assert.equal((await request(check, key, 'device-B-1234')).status, 200);
+assert.equal((await request(check, key, 'device-B-1234')).status, 403);
 assert.equal(sqlite.prepare('SELECT total_changes() changes').get().changes, changesBeforeCheck, 'routine check makes zero DB writes');
 assert.equal((await request(activate, key, 'device-A-1234')).status, 200);
 assert.equal((await request(check, key, 'device-B-1234')).status, 403);
-assert.equal(sqlite.prepare('SELECT generation FROM vision7_smsmix_bindings WHERE license_id=?').get('one').generation, 3);
+assert.equal(sqlite.prepare('SELECT generation FROM vision7_smsmix_bindings WHERE license_id=?').get('one').generation, 1);
 assert.equal((await request(activate, 'VD7-OTHER-TEST-ONLY', 'device-A-1234')).status, 403, 'wrong program key');
 sqlite.prepare("UPDATE vision7_licenses SET expires_at=datetime('now','-1 minute') WHERE id='one'").run();
 assert.equal((await request(check, key, 'device-A-1234')).status, 403, 'monthly expiry enforced');
@@ -81,22 +81,8 @@ sqlite.prepare("UPDATE vision7_licenses SET expires_at=NULL,status='revoked' WHE
 assert.equal((await request(check, key, 'device-A-1234')).status, 403, 'revocation enforced');
 
 sqlite.prepare("UPDATE vision7_licenses SET status='active' WHERE id='one'").run();
-let releaseA, aWrote;
-const aWritten = new Promise(resolve => { aWrote = resolve; });
-const waitA = new Promise(resolve => { releaseA = resolve; });
-firstHook = async (sql, args) => {
-  if (sql.includes('RETURNING device_hash,generation') && args[0] === await import('../functions/_lib.js').then(({ sha256 }) => sha256('device-A-1234'))) {
-    firstHook = null;
-    aWrote();
-    await waitA;
-  }
-};
-const racingA = request(activate, key, 'device-A-1234');
-await aWritten;
-assert.equal((await request(activate, key, 'device-B-1234')).status, 200);
-releaseA();
-assert.equal((await racingA).status, 403, 'stale activation response rejected after takeover');
-assert.equal((await request(check, key, 'device-B-1234')).status, 200);
+assert.equal((await request(activate, key, 'device-B-1234')).status, 403, 'activation never transfers a bound key');
+assert.equal((await request(check, key, 'device-A-1234')).status, 200);
 
 firstHook = async (sql) => {
   if (sql.includes('SELECT l.id,l.status,l.expires_at,p.active program_active')) {
@@ -139,12 +125,15 @@ assert.equal(ownerBound.smsmix_device_name, 'Test Android');
 assert.equal(adminBound.smsmix_device_name, 'Test Android');
 assert.equal(ownerBound.smsmix_hash_suffix, adminBound.smsmix_hash_suffix);
 assert.equal(ownerBound.smsmix_generation, adminBound.smsmix_generation);
-assert.equal((await request(check, key, 'device-B-1234')).status, 200);
+assert.equal((await request(check, key, 'device-A-1234')).status, 200);
 const adminSource = readFileSync(new URL('../functions/api/admin/vision7/licenses.js', import.meta.url), 'utf8');
 const resetSql = adminSource.match(/DB\.prepare\("(DELETE FROM vision7_smsmix_bindings WHERE license_id=\?)"\)/)?.[1];
 assert.ok(resetSql, 'admin reset must delete SMS Mix binding');
 sqlite.prepare(resetSql).run('one');
-assert.equal((await request(check, key, 'device-B-1234')).status, 403, 'admin reset revokes old device');
+assert.equal((await request(check, key, 'device-A-1234')).status, 403, 'admin reset revokes old device');
 assert.equal(sqlite.prepare(ownerSql).get(7).smsmix_device_name, null, 'owner sees no bound device after reset');
 assert.equal(sqlite.prepare(adminSql).get('one').smsmix_device_name, null, 'admin sees no bound device after reset');
+assert.equal((await request(activate, key, 'device-B-1234')).status, 200, 'admin reset permits replacement device');
+assert.equal((await request(check, key, 'device-A-1234')).status, 403);
+assert.equal((await request(check, key, 'device-B-1234')).status, 200);
 console.log('PASS SMS Mix key-only single-device activation/check');

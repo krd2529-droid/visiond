@@ -74,11 +74,12 @@ export async function onRequestPost(ctx) {
       .bind(userId)
       .first(),
     program = await ctx.env.DB.prepare(
-      "SELECT id,platform_type,max_devices FROM vision7_programs WHERE id=? AND active=1",
+      "SELECT id,code,platform_type,max_devices FROM vision7_programs WHERE id=? AND active=1",
     )
       .bind(programId)
       .first();
   if (!user || !program) return json({ error: "ไม่พบผู้ใช้หรือโปรแกรม" }, 404);
+  if (program.code === 'sms-mix') return json({ error: "VSMS ออกคีย์ผ่านออเดอร์ที่ชำระเงินแล้วเท่านั้น" }, 403);
   let expiresAt = null, issueCost = 0;
   if (issuanceType === "test") {
     const testDuration = String(b.test_duration || "30");
@@ -163,6 +164,8 @@ export async function onRequestPatch(ctx) {
   if (action === "status") {
     const status = validLicenseStatus(b.status);
     if (!status) return json({ error: "สถานะไม่ถูกต้อง" }, 400);
+    if (license.program_code === "sms-mix" && ["active", "trial"].includes(status))
+      return json({ error: "VSMS เปิดสิทธิ์ได้จากออเดอร์ที่ชำระเงินแล้วเท่านั้น" }, 403);
     await ctx.env.DB.prepare(
       `UPDATE vision7_licenses SET status=?,note=CASE WHEN ?='' THEN note ELSE ? END,updated_at=CURRENT_TIMESTAMP WHERE id=?`,
     )
@@ -176,6 +179,8 @@ export async function onRequestPatch(ctx) {
     return json({ ok: true, status });
   }
   if (action === "renew") {
+    if (license.program_code === "sms-mix")
+      return json({ error: "VSMS ต่ออายุผ่านออเดอร์ที่ชำระเงินแล้วเท่านั้น" }, 403);
     const planId = Number(b.plan_id) || Number(license.plan_id) || 0,
       plan =
         planId &&

@@ -12,24 +12,31 @@ export async function fulfillVision7Order(env,order,actor={},programCode=''){
     const done=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();
     if(done){output.push({...done,existing:true});continue}
     if(item.vision7_renew_license_id){
-      const license=await env.DB.prepare(`SELECT id,user_id,program_id,plan_id,status,expires_at FROM vision7_licenses WHERE id=? AND user_id=? AND program_id=? AND plan_id=?`).bind(item.vision7_renew_license_id,order.user_id,item.program_id,item.plan_id).first();
+      const smsMix=item.program_code==='sms-mix';
+      const license=await env.DB.prepare(smsMix
+        ? `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.status,l.expires_at FROM vision7_licenses l JOIN vision7_plans old_plan ON old_plan.id=l.plan_id WHERE l.id=? AND l.user_id=? AND l.program_id=? AND old_plan.program_id=l.program_id AND old_plan.plan_code<>'lifetime'`
+        : `SELECT id,user_id,program_id,plan_id,status,expires_at FROM vision7_licenses WHERE id=? AND user_id=? AND program_id=? AND plan_id=?`)
+        .bind(...(smsMix?[item.vision7_renew_license_id,order.user_id,item.program_id]:[item.vision7_renew_license_id,order.user_id,item.program_id,item.plan_id])).first();
       if(!license)throw new Error('VISION7_RENEW_LICENSE_INVALID');
       const days=Number(item.duration_days);if(!days)throw new Error('VISION7_LIFETIME_RENEW_NOT_REQUIRED');
       const expiresAt=addDays(license.expires_at,days);
-      if(item.program_code==='v-record'){
+      if(item.program_code==='v-record'||item.program_code==='sms-mix'){
         try{await env.DB.batch([
           env.DB.prepare(`INSERT INTO vision7_order_fulfillments(order_item_id,order_id,license_id,action) VALUES(?,?,?,'renewed')`).bind(item.order_item_id,order.id,license.id),
-          env.DB.prepare(`UPDATE vision7_licenses SET status='active',expires_at=?,renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(expiresAt,license.id),
-          env.DB.prepare('INSERT INTO vision7_license_events(license_id,actor_user_id,event_type,detail) VALUES(?,?,?,?)').bind(license.id,actor.id||null,'renewed',JSON.stringify({order_id:order.id,order_item_id:item.order_item_id,duration_days:days,expires_at:expiresAt})),
+          smsMix
+            ? env.DB.prepare(`UPDATE vision7_licenses SET plan_id=?,status='active',expires_at=datetime(CASE WHEN expires_at>CURRENT_TIMESTAMP THEN expires_at ELSE CURRENT_TIMESTAMP END,'+' || ? || ' days'),renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(item.plan_id,days,license.id)
+            : env.DB.prepare(`UPDATE vision7_licenses SET plan_id=?,status='active',expires_at=?,renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(item.plan_id,expiresAt,license.id),
+          env.DB.prepare('INSERT INTO vision7_license_events(license_id,actor_user_id,event_type,detail) VALUES(?,?,?,?)').bind(license.id,actor.id||null,'renewed',JSON.stringify({order_id:order.id,order_item_id:item.order_item_id,old_plan_id:license.plan_id,new_plan_id:item.plan_id,duration_days:days,...(smsMix?{}:{expires_at:expiresAt})})),
         ])}catch(error){const winner=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();if(winner){output.push({...winner,existing:true});continue}throw error}
-        output.push({license_id:license.id,action:'renewed',expires_at:expiresAt});continue;
+        const finalExpiry=smsMix?(await env.DB.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').bind(license.id).first())?.expires_at:expiresAt;
+        output.push({license_id:license.id,action:'renewed',expires_at:finalExpiry});continue;
       }
       const claimed=await env.DB.prepare(`INSERT INTO vision7_order_fulfillments(order_item_id,order_id,license_id,action) SELECT ?,?,?,'renewed' WHERE NOT EXISTS(SELECT 1 FROM vision7_order_fulfillments WHERE order_item_id=?)`).bind(item.order_item_id,order.id,license.id,item.order_item_id).run();
       if(claimed.meta?.changes){await env.DB.prepare(`UPDATE vision7_licenses SET status='active',expires_at=?,renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(expiresAt,license.id).run();await licenseEvent(env,license.id,actor.id||null,'renewed',{order_id:order.id,order_item_id:item.order_item_id,duration_days:days,expires_at:expiresAt})}
       output.push({license_id:license.id,action:'renewed',expires_at:expiresAt});continue;
     }
     const expiresAt=item.duration_days?addDays(null,item.duration_days):null;
-    if(item.program_code==='v-record'){
+    if(item.program_code==='v-record'||item.program_code==='sms-mix'){
       try{const issued=await issueLicense(env,{userId:order.user_id,programId:item.program_id,planId:item.plan_id,orderId:order.id,status:'active',maxDevices:1,source:'paid_order',createdBy:actor.id||null,expiresAt,atomicOrderItemId:item.order_item_id});output.push({license_id:issued.id,action:'issued',key:issued.key,expires_at:expiresAt})}
       catch(error){const winner=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();if(winner){output.push({...winner,existing:true});continue}throw error}
       continue;

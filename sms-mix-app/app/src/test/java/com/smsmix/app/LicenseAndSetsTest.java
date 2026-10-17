@@ -9,11 +9,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.reflect.Field;
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
@@ -51,6 +53,21 @@ public class LicenseAndSetsTest {
         assertFalse(after.optBoolean("running"));
         assertEquals("PENDING", Store.rows(after).optJSONObject(0).optString("status"));
         assertEquals(-1, Store.sending(after));
+    }
+
+    @Test public void returningWithoutKeyHidesEditorAndPausesPendingQueue() throws Exception {
+        try (var controller = Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity = controller.get();
+            activity.renderApp();
+            pendingQueue();
+            controller.pause().resume();
+            Field field = MainActivity.class.getDeclaredField("status");
+            field.setAccessible(true);
+            assertNull("editor must be hidden until the online license check passes", field.get(activity));
+            JSONObject after = Store.load(context);
+            assertFalse(after.optBoolean("running"));
+            assertEquals("PENDING", Store.rows(after).optJSONObject(0).optString("status"));
+        }
     }
 
     @Test public void savedSetsCapUpdateAndQueuePreservation() {
