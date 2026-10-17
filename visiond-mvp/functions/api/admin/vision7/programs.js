@@ -52,6 +52,12 @@ const optionalProductId = (value) => {
   const id = Number(value);
   return Number.isSafeInteger(id) ? id : NaN;
 };
+export function validVRecordDraft({ name, platform, version, minimumVersion, active, rawPlans, plans, productId, multipart, hasCover, hasInstaller }) {
+  return multipart && hasCover && hasInstaller && name === "V-Record" && platform === "windows" && version === "0.6.0" && minimumVersion === "0.6.0" && active === "false" && !productId &&
+    Array.isArray(rawPlans) && rawPlans.length === 2 && plans.length === 2 &&
+    plans.some((p) => p.plan_code === "monthly" && Number(p.price) === 199 && !p.product_id && p.active !== false) &&
+    plans.some((p) => p.plan_code === "yearly" && Number(p.price) === 999 && !p.product_id && p.active !== false);
+}
 export async function onRequestPost(ctx) {
   await ensureDatabase(ctx.env);
   await ensureVision7Schema(ctx.env);
@@ -81,6 +87,8 @@ export async function onRequestPost(ctx) {
       .filter((p) => p.plan_code),
     productId = optionalProductId(b.product_id),
     productIds = [productId, ...plans.map((p) => p.product_id)].filter(Boolean);
+  if (code === "v-record" && !validVRecordDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
+    return json({ error: "V-Record ต้องมีรูปปกและไฟล์ติดตั้ง พร้อม Windows 0.6.0 แบบไม่เปิดขายและแพ็กเกจ 30 วัน 199 บาท / 1 ปี 999 บาทเท่านั้น" }, 400);
   if ([productId, ...plans.map((p) => p.product_id)].some(Number.isNaN))
     return json({ error: "Product ID ต้องเป็นเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป หรือเว้นว่าง" }, 400);
   if (new Set(productIds).size !== productIds.length)
@@ -109,7 +117,7 @@ export async function onRequestPost(ctx) {
     }
     const r = await ctx.env.DB.prepare(
       `INSERT INTO vision7_programs(product_id,code,app_name,app_description,cover_url,platform_type,current_version,minimum_version,requires_online,force_update,max_devices,trial_hours,active) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,code === 'v-record' ? 1 : 3,code === 'v-record' ? 168 : 24,b.active === false ? 0 : 1).run();
+    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,code === 'v-record' ? 1 : 3,code === 'v-record' ? 168 : 24,b.active === false || (code === 'v-record' && b.active === 'false') ? 0 : 1).run();
     id = Number(r.meta.last_row_id);
     for (const p of plans) {
       await ctx.env.DB.prepare(

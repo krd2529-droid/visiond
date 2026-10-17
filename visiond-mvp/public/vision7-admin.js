@@ -27,6 +27,11 @@ const esc = (s) =>
   releaseState = document.querySelector("#releaseState"),
   releases = document.querySelector("#releases"),
   newProgram = document.querySelector("#newProgram"),
+  newVRecord = document.querySelector("#newVRecord"),
+  vrecordDialog = document.querySelector("#vrecordDialog"),
+  vrecordForm = document.querySelector("#vrecordForm"),
+  vrecordState = document.querySelector("#vrecordState"),
+  saveVRecord = document.querySelector("#saveVRecord"),
   newKey = document.querySelector("#newKey"),
   programForm = document.querySelector("#programForm"),
   programState = document.querySelector("#programState"),
@@ -249,7 +254,7 @@ async function load() {
     programs
       .map(
         (x) =>
-          `<section class="program-row"><div><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><code>${esc(x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/3 แพ็กเกจขาย</span></div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button><button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button></div></section>`,
+          `<section class="program-row"><div><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(x.product_title || x.code)}</b><code>${esc(x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${x.code === "v-record" ? 2 : 3} แพ็กเกจขาย${x.code === "v-record" ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${x.code === "v-record" ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button><button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button>${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}</div></section>`,
       )
       .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
@@ -260,6 +265,7 @@ async function load() {
   syncKeyMode();
   const hasPrograms = programs.length > 0;
   newProgram.textContent = hasPrograms ? "＋ เพิ่มโปรแกรม" : "＋ เพิ่มโปรแกรมแรก";
+  newVRecord.disabled = programs.some((x) => x.code === "v-record");
   newKey.toggleAttribute("disabled", !hasPrograms);
   newKey.setAttribute("aria-disabled", String(!hasPrograms || !encryptionReady));
   releaseDetails.dataset.blocked = String(!hasPrograms);
@@ -273,6 +279,25 @@ async function load() {
   programsEl.querySelectorAll("[data-first-program]").forEach((x)=>x.onclick=openProgramDialog);
   programsEl.querySelectorAll("[data-issue-program]").forEach((x)=>x.onclick=()=>openKeyDialog(x.dataset.issueProgram));
   programsEl.querySelectorAll("[data-release-program]").forEach((x)=>x.onclick=()=>{releaseProgram.value=x.dataset.releaseProgram;releaseDetails.open=true;releaseDetails.scrollIntoView({behavior:"smooth",block:"start"});});
+  programsEl.querySelectorAll("[data-publish-vrecord]").forEach((button) => button.onclick = async () => {
+    const program = programs.find((x) => x.code === "v-record" && String(x.id) === button.dataset.publishVrecord);
+    if (!program || !confirm(`ยืนยันเผยแพร่ V-Record 0.6.0 ให้ลูกค้าซื้อและดาวน์โหลด?\nรหัส ${program.code} · Windows · รายเดือน 199 บาท / รายปี 999 บาท`)) return;
+    const state = button.closest(".program-row").querySelector("[data-publish-state]");
+    button.disabled = true;
+    state.className = "muted";
+    state.textContent = "กำลังตรวจไฟล์ แพ็กเกจ และ signer ก่อนเผยแพร่…";
+    try {
+      const response = await fetch("/api/admin/vision7/vrecord-publish", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({program_id:program.id,confirm:"publish-v-record"})});
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `เผยแพร่ไม่สำเร็จ (${response.status})`);
+      state.textContent = "เผยแพร่ V-Record แล้ว";
+      await load();
+    } catch (error) {
+      state.className = "muted error";
+      state.textContent = error.message || "เผยแพร่ V-Record ไม่สำเร็จ";
+      button.disabled = false;
+    }
+  });
   renderLicenses();
   releases.innerHTML =
     (rd.items || [])
@@ -383,6 +408,13 @@ function openKeyDialog(programId) {
   keyDialog.showModal();
 }
 newProgram.onclick = openProgramDialog;
+newVRecord.onclick = () => {
+  vrecordForm.reset();
+  vrecordState.className = "muted";
+  vrecordState.textContent = "";
+  vrecordDialog.showModal();
+  vrecordForm.elements.description.focus();
+};
 document.querySelectorAll("[data-open-program]").forEach((x)=>x.onclick=openProgramDialog);
 newKey.onclick = () => openKeyDialog();
 releaseDetails.querySelector("summary").addEventListener("click", (event) => {
@@ -456,6 +488,42 @@ programForm.onsubmit = async (e) => {
     programState.textContent = error.message || "สร้างแอปไม่สำเร็จ";
   } finally {
     saveProgram.disabled = false;
+  }
+};
+vrecordForm.onsubmit = async (e) => {
+  e.preventDefault();
+  if (!vrecordForm.reportValidity()) return;
+  const cover = vrecordForm.elements.cover.files[0], installer = vrecordForm.elements.installer.files[0];
+  if (cover.size > 5 * 1024 * 1024 || installer.size > 95 * 1024 * 1024) {
+    vrecordState.className = "muted error";
+    vrecordState.textContent = cover.size > 5 * 1024 * 1024 ? "รูปปกต้องไม่เกิน 5 MB" : "ไฟล์ติดตั้งต้องไม่เกิน 95 MB";
+    return;
+  }
+  const body = new FormData(vrecordForm);
+  body.set("code", "v-record");
+  body.set("platform_type", "windows");
+  body.set("current_version", "0.6.0");
+  body.set("minimum_version", "0.6.0");
+  body.set("active", "false");
+  body.set("plans", JSON.stringify([
+    {plan_code:"monthly",name:"คีย์ 30 วัน",price:199},
+    {plan_code:"yearly",name:"คีย์ 1 ปี",price:999},
+  ]));
+  saveVRecord.disabled = true;
+  vrecordState.className = "muted";
+  vrecordState.textContent = "กำลังอัปโหลด V-Record และบันทึกเป็นรายการที่ยังไม่เปิดขาย…";
+  try {
+    const response = await fetch("/api/admin/vision7/programs", {method:"POST",body});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `สร้าง V-Record ไม่สำเร็จ (${response.status})`);
+    vrecordState.textContent = "บันทึก V-Record แล้ว · ยังไม่เปิดขาย";
+    vrecordDialog.close();
+    await load();
+  } catch (error) {
+    vrecordState.className = "muted error";
+    vrecordState.textContent = error.message || "สร้าง V-Record ไม่สำเร็จ";
+  } finally {
+    saveVRecord.disabled = false;
   }
 };
 programForm.elements.platform_type.addEventListener("change", (e) => {

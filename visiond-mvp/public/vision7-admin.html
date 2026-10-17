@@ -30,6 +30,7 @@
       ></section>
       <div class="bar primary-actions">
         <button id="newProgram">＋ เพิ่มโปรแกรมแรก</button
+        ><button id="newVRecord" class="secondary-action" type="button">＋ เพิ่ม V-Record</button
         ><button id="newKey" class="secondary-action" disabled>🔑 ออกคีย์ทดสอบ</button>
       </div>
       <section class="key-workspace">
@@ -104,6 +105,18 @@
         <footer class="dialog-actions"><button type="button" class="secondary-action" data-close="programDialog">ยกเลิก</button><button id="saveProgram" type="submit">สร้างแอป VBot ฟรี</button></footer>
       </form>
     </dialog>
+    <dialog id="vrecordDialog" class="app-builder-dialog" aria-labelledby="vrecordDialogTitle">
+      <form id="vrecordForm" enctype="multipart/form-data">
+        <header class="app-builder-heading"><div><small>V-RECORD · WINDOWS</small><h2 id="vrecordDialogTitle">เพิ่ม V-Record 0.6.0</h2><p>สร้างเป็นรายการที่ยังไม่เปิดขาย · คีย์รายเดือน 199 บาท / รายปี 999 บาท · ทดลอง 7 วันต่อบัญชี</p></div><button type="button" class="dialog-close" data-close="vrecordDialog" aria-label="ปิด">×</button></header>
+        <section class="app-builder-section">
+          <label>ชื่อโปรแกรม<input name="name" value="V-Record" required readonly /></label>
+          <label>รายละเอียดโปรแกรม<textarea name="description" required maxlength="2000" rows="4" placeholder="อธิบายฟังก์ชันบันทึกหน้าจอสำหรับลูกค้า"></textarea></label>
+          <div class="app-builder-grid"><label>รูปปก<input name="cover" type="file" accept="image/png,image/jpeg,image/webp" required /><small>JPG, PNG หรือ WebP ไม่เกิน 5 MB</small></label><label>แพ็กเกจติดตั้ง Windows 0.6.0<input name="installer" type="file" accept=".zip,application/zip,application/x-zip-compressed" required /><small>ZIP ที่ตรวจสอบและเซ็น manifest แล้ว ไม่เกิน 95 MB</small></label></div>
+        </section>
+        <p id="vrecordState" class="muted" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button type="button" class="secondary-action" data-close="vrecordDialog">ยกเลิก</button><button id="saveVRecord" type="submit">บันทึก V-Record ที่ยังไม่เปิดขาย</button></footer>
+      </form>
+    </dialog>
     <dialog id="keyDialog" aria-labelledby="keyDialogTitle">
       <form id="keyForm">
         <h2 id="keyDialogTitle">ออกคีย์ใหม่</h2>
@@ -141,6 +154,6 @@
         <button type="button" data-close="historyDialog">ปิด</button>
       </section>
     </dialog>
-    <script src="/vision7-admin.js?v=02057" type="module"></script>
+    <script src="/vision7-admin.js?v=02058" type="module"></script>
   </body>
 </html>
