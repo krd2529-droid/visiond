@@ -49,6 +49,8 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/vision7-admin.html`);
   await page.locator('#newVsms').click();
   assert.equal(await page.locator('#vsmsDialog').evaluate(el => el.open), true);
+  assert.match(await page.locator('#vsmsDialogTitle').innerText(), /เพิ่ม VSMS 0\.5\.4/);
+  assert.match(await page.locator('#vsmsForm [name="installer"]').locator('..').innerText(), /APK Android 0\.5\.4 ที่เซ็นสำหรับจำหน่าย/);
   await page.locator('#vsmsForm [name="description"]').fill('VSMS สำหรับลูกค้าที่มีคีย์ VisionD');
   await page.locator('#vsmsForm [name="cover"]').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: Buffer.from('cover') });
   await page.locator('#vsmsForm [name="installer"]').setInputFiles({ name: 'VSMS-0.5.4.apk', mimeType: 'application/vnd.android.package-archive', buffer: Buffer.from('apk') });
