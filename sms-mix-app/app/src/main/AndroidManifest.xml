@@ -22,6 +22,7 @@
         <service android:name=".CampaignService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started scheduled SMS queue monitoring with visible progress and stop action" />
         </service>
+        <service android:name=".SuccessfulSendJob" android:exported="false" android:permission="android.permission.BIND_JOB_SERVICE" />
         <receiver android:name=".StopCampaignReceiver" android:exported="false" />
         <receiver android:name=".SendReceiver" android:exported="false" />
         <receiver android:name=".SentReceiver" android:exported="false" />

@@ -21,6 +21,9 @@ public class LicenseActivationUiTest {
                 LicenseClient.ActivationResult.fromHttpStatus(400));
         assertEquals(LicenseClient.ActivationResult.NOT_ELIGIBLE,
                 LicenseClient.ActivationResult.fromHttpStatus(403));
+        assertEquals(LicenseClient.ActivationResult.BOUND_OTHER_DEVICE,
+                LicenseClient.ActivationResult.fromHttpStatus(409));
+        assertTrue(LicenseClient.ActivationResult.BOUND_OTHER_DEVICE.message().contains("เครื่องอื่น"));
         assertEquals(LicenseClient.ActivationResult.RATE_LIMITED,
                 LicenseClient.ActivationResult.fromHttpStatus(429));
         assertEquals(LicenseClient.ActivationResult.UNAVAILABLE,

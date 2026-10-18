@@ -61,7 +61,7 @@ const env = { FILES: {
   async first() {
     if (sql.includes('runtime_schema_state')) return { version: 999999 };
     if (sql.includes('FROM sessions')) return { id: 1, role: 'boss' };
-    if (sql.startsWith('SELECT id,code,active FROM vision7_programs')) return { id: 9, code: 'sms-mix', active: 1 };
+    if (sql.startsWith('SELECT id,code,active,current_version,minimum_version,force_update FROM vision7_programs')) return { id: 9, code: 'sms-mix', active: 1, current_version:'0.5.4', minimum_version:'0.5.4', force_update:0 };
     if (sql.includes("FROM orders WHERE id=? AND status='paid'")) return this.args[0] === 88 ? { id: 88, user_id: 1, status: 'paid' } : null;
     if (sql.includes("p.code='sms-mix' LIMIT 1")) return { found: 1 };
     if (sql.includes('FROM vision7_order_fulfillments WHERE order_item_id=')) { reconciled++; return { license_id: 'old-active', action: 'issued' }; }

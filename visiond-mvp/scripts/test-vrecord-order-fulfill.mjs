@@ -31,6 +31,8 @@ const env = { VISION7_LICENSE_ENCRYPTION_KEY: 'local-test-only-vision7-crypto-ke
 } };
 // Build the same local schema that the production fulfillment function ensures.
 await fulfillVision7Order(env, { id: 999, user_id: 1 });
+sqlite.exec(`ALTER TABLE vision7_licenses ADD COLUMN smsmix_first_activated_at TEXT;
+ALTER TABLE vision7_licenses ADD COLUMN smsmix_pending_days INTEGER NOT NULL DEFAULT 0;`);
 sqlite.exec(`INSERT INTO vision7_programs(id,code,platform_type,max_devices,trial_hours,active) VALUES(7,'v-record','windows',1,168,1);
 INSERT INTO vision7_plans(id,program_id,product_id,plan_code,name,price,offer_price,duration_days,active) VALUES(8,7,10,'monthly','Monthly',19900,19900,30,1);
 INSERT INTO order_items VALUES(20,1,10,NULL);`);
@@ -74,7 +76,8 @@ const smsIssued = (await fulfillVision7Order(env, smsOrder))[0];
 assert.equal(sqlite.prepare('SELECT user_id,max_devices,source FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).max_devices, 1);
 assert.equal((await fulfillVision7Order(env, smsOrder))[0].license_id, smsIssued.license_id, 'VSMS issue replay preserves the key');
 const smsExpiry = sqlite.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).expires_at;
-assert.ok(Date.parse(smsExpiry.replace(' ', 'T') + 'Z') > Date.now() + 29 * 86400000);
+assert.equal(smsExpiry,null,'new VSMS term starts only on first online lock');
+assert.equal(sqlite.prepare('SELECT smsmix_pending_days FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).smsmix_pending_days,30);
 sqlite.prepare('UPDATE order_items SET vision7_renew_license_id=? WHERE id=31').run(smsIssued.license_id);
 const smsRenewOrder = { id: 4, user_id: 1 };
 for (failAt of [1, 2, 3]) {
@@ -85,10 +88,13 @@ for (failAt of [1, 2, 3]) {
 failAt = 0;
 assert.equal((await fulfillVision7Order(env, smsRenewOrder))[0].action, 'renewed');
 const renewedSmsExpiry = sqlite.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).expires_at;
-assert.ok(Date.parse(renewedSmsExpiry.replace(' ', 'T') + 'Z') > Date.parse(smsExpiry.replace(' ', 'T') + 'Z') + 364 * 86400000);
+assert.equal(renewedSmsExpiry,null);
+assert.equal(sqlite.prepare('SELECT smsmix_pending_days FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).smsmix_pending_days,395,'pre-activation renewal keeps all paid days');
 assert.equal(sqlite.prepare('SELECT plan_id FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).plan_id, 11, '30→365 renewal switches entitlement plan');
 assert.equal((await fulfillVision7Order(env, smsRenewOrder))[0].existing, true);
 assert.equal(sqlite.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).expires_at, renewedSmsExpiry);
+sqlite.prepare("UPDATE vision7_licenses SET smsmix_first_activated_at=CURRENT_TIMESTAMP,expires_at=datetime('now','+395 days'),smsmix_pending_days=0 WHERE id=?").run(smsIssued.license_id);
+const boundExpiry = sqlite.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').get(smsIssued.license_id).expires_at;
 sqlite.prepare('UPDATE order_items SET vision7_renew_license_id=? WHERE id=33').run(smsIssued.license_id);
 const smsBackOrder = { id: 6, user_id: 1 };
 for (failAt of [1, 2, 3]) {
@@ -99,7 +105,7 @@ failAt = 0;
 assert.equal((await fulfillVision7Order(env, smsBackOrder))[0].action, 'renewed');
 const smsBack = sqlite.prepare('SELECT expires_at,plan_id FROM vision7_licenses WHERE id=?').get(smsIssued.license_id);
 assert.equal(smsBack.plan_id, 10, '365→30 renewal switches entitlement plan');
-assert.ok(Date.parse(smsBack.expires_at.replace(' ', 'T') + 'Z') > Date.parse(renewedSmsExpiry.replace(' ', 'T') + 'Z') + 29 * 86400000);
+assert.ok(Date.parse(smsBack.expires_at.replace(' ', 'T') + 'Z') > Date.parse(boundExpiry.replace(' ', 'T') + 'Z') + 29 * 86400000);
 assert.equal((await fulfillVision7Order(env, smsBackOrder))[0].existing, true);
 sqlite.prepare("INSERT INTO orders VALUES(8,1,'paid')").run();
 sqlite.prepare("INSERT INTO orders VALUES(9,1,'paid')").run();
@@ -111,7 +117,16 @@ const afterParallel = sqlite.prepare('SELECT expires_at FROM vision7_licenses WH
 assert.ok(Date.parse(afterParallel.replace(' ', 'T') + 'Z') > Date.parse(beforeParallel.replace(' ', 'T') + 'Z') + 59 * 86400000, 'two paid renewals extend twice without stale-expiry loss');
 const yearly = (await fulfillVision7Order(env, { id: 5, user_id: 1 }))[0];
 const yearlyExpiry = sqlite.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').get(yearly.license_id).expires_at;
-assert.ok(Date.parse(yearlyExpiry.replace(' ', 'T') + 'Z') > Date.now() + 364 * 86400000);
+assert.equal(yearlyExpiry,null);
+assert.equal(sqlite.prepare('SELECT smsmix_pending_days FROM vision7_licenses WHERE id=?').get(yearly.license_id).smsmix_pending_days,365);
+sqlite.prepare("UPDATE vision7_licenses SET expires_at=datetime('now','+400 days'),smsmix_pending_days=400 WHERE id=?").run(yearly.license_id);
+const legacyLowerBound=sqlite.prepare('SELECT expires_at FROM vision7_licenses WHERE id=?').get(yearly.license_id).expires_at;
+sqlite.exec("INSERT INTO orders VALUES(10,1,'paid')");
+sqlite.prepare('INSERT INTO order_items VALUES(37,10,11,?)').run(yearly.license_id);
+assert.equal((await fulfillVision7Order(env,{id:10,user_id:1},{},'sms-mix'))[0].action,'renewed');
+const legacyRenewed=sqlite.prepare('SELECT expires_at,smsmix_pending_days FROM vision7_licenses WHERE id=?').get(yearly.license_id);
+assert.equal(legacyRenewed.expires_at,legacyLowerBound,'unbound legacy finite expiry remains a lower bound');
+assert.equal(legacyRenewed.smsmix_pending_days,430,'legacy paid days plus renewal are retained for first lock');
 sqlite.exec("INSERT INTO orders VALUES(7,1,'paid'); INSERT INTO order_items VALUES(34,7,11,NULL);");
 failAt = 2;
 await assert.rejects(fulfillVision7Order(env, { id: 7, user_id: 1 }, {}, 'sms-mix'), /injected batch step/);

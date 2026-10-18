@@ -70,6 +70,36 @@ let programs = [],
   operatorUserId = 0,
   publishVsmsTarget = null;
 window.__licenses = [];
+let vsmsSuccessCursor = null, vsmsSuccessFlight = null;
+const vsmsSuccessRows = document.querySelector("#vsmsSuccessRows"),
+  vsmsSuccessState = document.querySelector("#vsmsSuccessState"),
+  vsmsSuccessMore = document.querySelector("#vsmsSuccessMore");
+async function loadVsmsSuccess(reset = false) {
+  if (vsmsSuccessFlight) return vsmsSuccessFlight;
+  const cursor = reset ? null : vsmsSuccessCursor;
+  vsmsSuccessState.textContent = "กำลังโหลด…";
+  vsmsSuccessFlight = (async () => {
+    try {
+      const response = await fetch(`/api/admin/vision7/smsmix-successful-sends${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const html = (data.items || []).map(x => `<tr><td>${esc(x.recipient_phone)}</td><td>${esc(new Date(Number(x.sent_at)).toLocaleString("th-TH"))}</td><td>${esc(x.device_name || "อุปกรณ์ VSMS")}</td><td>${esc(x.user_name || x.user_email || "")}</td><td><code>${esc(x.license_id)}</code></td></tr>`).join("");
+      if (reset) vsmsSuccessRows.innerHTML = "";
+      if (html) {
+        if (!vsmsSuccessRows.querySelector("table")) vsmsSuccessRows.innerHTML = '<div class="license-table-wrap"><table class="license-table"><thead><tr><th>เบอร์ผู้รับ</th><th>ส่งสำเร็จเมื่อ</th><th>เครื่อง</th><th>เจ้าของคีย์</th><th>คีย์</th></tr></thead><tbody></tbody></table></div>';
+        vsmsSuccessRows.querySelector("tbody").insertAdjacentHTML("beforeend", html);
+      }
+      vsmsSuccessCursor = data.next_cursor;
+      vsmsSuccessMore.hidden = !vsmsSuccessCursor;
+      vsmsSuccessMore.style.setProperty("display", vsmsSuccessCursor ? "" : "none", "important");
+      vsmsSuccessState.textContent = vsmsSuccessRows.querySelector("tbody") ? "ผลส่งสำเร็จที่รายงานจากแอป VSMS" : "ยังไม่มีรายการส่งสำเร็จ";
+    } catch (error) { vsmsSuccessState.textContent = `โหลดรายการไม่สำเร็จ: ${error.message}`; }
+    finally { vsmsSuccessFlight = null; }
+  })();
+  return vsmsSuccessFlight;
+}
+document.querySelector("#loadVsmsSuccess").onclick = () => loadVsmsSuccess(true);
+vsmsSuccessMore.onclick = () => loadVsmsSuccess(false);
 const plans = (p) => {
   try {
     return typeof p.plans === "string" ? JSON.parse(p.plans) : p.plans || [];
@@ -79,6 +109,7 @@ const plans = (p) => {
 };
 const programDisplayName = (x) => x.code === "sms-mix" ? "VSMS" : `${x.platform_type === "veasy" ? "V Easy · " : ""}${x.product_title || x.code}`;
 const licenseProgramDisplayName = (code, title) => code === "sms-mix" ? "VSMS" : title || code;
+const vsmsNextVersion = (program) => program?.current_version === "0.5.4" ? "0.5.5" : program?.current_version === "0.5.5" ? "0.5.6" : null;
 function programOptions(target) {
   target.innerHTML = programs
     .map(
@@ -120,13 +151,14 @@ function syncReleaseForm() {
   const vsms = program?.code === "sms-mix";
   vrecordReleaseHint.hidden = !replacing;
   vsmsReleaseHint.hidden = !vsms;
+  if (vsms) vsmsReleaseHint.textContent = `VSMS ${vsmsNextVersion(program) || program.current_version}: ใช้เฉพาะ APK ที่ตรวจแพ็กเกจ เวอร์ชัน และลายเซ็นแล้ว · อัปเดตเสริมจาก ${program.current_version} · คีย์และรีลีสเดิมยังใช้ได้`;
   if (replacing) {
     releaseForm.elements.version.value = "0.6.0";
     releaseForm.elements.minimum_version.value = "0.6.0";
     releaseForm.elements.mandatory.checked = false;
   }
   if (vsms) {
-    releaseForm.elements.version.value = "0.5.5";
+    releaseForm.elements.version.value = vsmsNextVersion(program) || program.current_version;
     releaseForm.elements.minimum_version.value = "0.5.4";
     releaseForm.elements.mandatory.checked = false;
   }
@@ -193,7 +225,7 @@ function renderLicenses() {
       ).map((x) => x.program_code === "sms-mix" ? { ...x, max_devices: 1 } : x);
   const ageLabel = (x) => { let days=x.duration_days;if(x.issuance_type==="test"&&x.expires_at&&x.starts_at)days=Math.round((Date.parse(String(x.expires_at).replace(" ","T")+"Z")-Date.parse(String(x.starts_at).replace(" ","T")+"Z"))/86400000);return days==null?"ตลอดอายุ":Number(days)===30?"30 วัน":Number(days)===365?"1 ปี":`${Number(days)} วัน`;};
   const dateLabel = (value) => value ? new Intl.DateTimeFormat("th-TH",{dateStyle:"short",timeStyle:"short"}).format(new Date(String(value).replace(" ","T")+"Z")) : "-";
-  licensesEl.innerHTML = filtered.length ? `<div class="license-table-wrap"><table class="license-table"><thead><tr><th>ลูกค้า</th><th>แอป / เลขคีย์</th><th>แพ็กเกจ / อายุคีย์</th><th>ค่าใช้จ่าย</th><th>วันที่ออก</th><th>ผู้ออก</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${filtered.map((x)=>`<tr><td><b>#${Number(x.user_id)}</b><br>${esc(x.user_name)}<br><small>${esc(x.email||"")}</small></td><td><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(licenseProgramDisplayName(x.program_code, x.program_title))}</b><br><code>${esc(x.key_masked)}</code></td><td>${esc(x.plan_name||"ไม่กำหนดแพ็กเกจ")}<br><b>${ageLabel(x)}</b></td><td><b>${Number(x.display_cost||0).toLocaleString("th-TH")} บาท</b><br><small>${x.issuance_type === "admin_manual" ? "แอดมินออกให้ · ไม่มีการชำระเงิน" : x.issuance_type === "test" ? "คีย์ทดสอบ" : x.order_id ? "จากออเดอร์" : "คีย์ลูกค้า"}</small></td><td>${dateLabel(x.created_at)}</td><td>${esc(x.issuer_name||"ระบบ")}</td><td><span class="status">${esc(effectiveStatus(x))}</span><br><small>${Number(x.active_devices)}/${Number(x.max_devices)||3} เครื่อง</small>${x.platform_type === "veasy"&&x.binding_state === "unbound"?'<br><span class="binding-unbound">รอผูกร้าน</span>':""}</td><td><div class="license-actions"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended"?`<button data-status="active" data-id="${x.id}">เปิดคืน</button>`:`<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">ไม่พบคีย์</p>';
+  licensesEl.innerHTML = filtered.length ? `<div class="license-table-wrap"><table class="license-table"><thead><tr><th>ลูกค้า</th><th>แอป / เลขคีย์</th><th>แพ็กเกจ / อายุคีย์</th><th>ค่าใช้จ่าย</th><th>วันที่ออก</th><th>ผู้ออก</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${filtered.map((x)=>`<tr><td><b>#${Number(x.user_id)}</b><br>${esc(x.user_name)}<br><small>${esc(x.email||"")}</small></td><td><b>${x.platform_type === "veasy" ? "V Easy · " : ""}${esc(licenseProgramDisplayName(x.program_code, x.program_title))}</b><br><code>${esc(x.key_masked)}</code></td><td>${esc(x.plan_name||"ไม่กำหนดแพ็กเกจ")}<br><b>${ageLabel(x)}</b></td><td><b>${Number(x.display_cost||0).toLocaleString("th-TH")} บาท</b><br><small>${x.issuance_type === "admin_manual" ? "แอดมินออกให้ · ไม่มีการชำระเงิน" : x.issuance_type === "test" ? "คีย์ทดสอบ" : x.order_id ? "จากออเดอร์" : "คีย์ลูกค้า"}</small></td><td>${dateLabel(x.created_at)}</td><td>${esc(x.issuer_name||"ระบบ")}</td><td><span class="status">${esc(effectiveStatus(x))}</span><br><small>${Number(x.active_devices)}/${Number(x.max_devices)||3} เครื่อง</small>${x.platform_type === "veasy"&&x.binding_state === "unbound"?'<br><span class="binding-unbound">รอผูกร้าน</span>':""}${x.program_code === "sms-mix"&&!x.expires_at&&!x.smsmix_first_activated_at?'<br><small>รอผูกเครื่อง/ยังไม่เริ่มนับวัน</small>':""}</td><td><div class="license-actions"><button data-renew="${x.id}" data-program="${x.program_id}">ต่ออายุ</button>${x.status === "suspended"?`<button data-status="active" data-id="${x.id}">เปิดคืน</button>`:`<button class="danger" data-status="suspended" data-id="${x.id}">ระงับ</button>`}<button data-history="${x.id}">ประวัติ</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">ไม่พบคีย์</p>';
   for (const license of filtered) if (Number(license.active_devices) > 0) {
     const historyButton = licensesEl.querySelector(`[data-history="${CSS.escape(String(license.id))}"]`), resetButton = document.createElement("button");
     resetButton.type = "button";resetButton.className = "danger";resetButton.dataset.resetSlots = license.id;resetButton.dataset.deviceCount = String(license.active_devices);resetButton.textContent = `ล้างสล็อตคีย์ (${license.active_devices})`;historyButton?.before(resetButton);
@@ -302,7 +334,7 @@ async function load() {
     programs
       .map(
         (x) =>
-          `<section class="program-row"><div><b>${esc(programDisplayName(x))}</b><code>${esc(x.code === "sms-mix" ? "VSMS" : x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button>${x.code === "sms-mix" && x.current_version !== "0.5.4" ? '<button type="button" class="secondary-action" disabled>VSMS 0.5.5 เผยแพร่แล้ว</button>' : `<button type="button" class="secondary-action" data-release-program="${x.id}">${x.code === "sms-mix" ? "อัปเดต VSMS 0.5.5" : "จัดการเวอร์ชัน"}</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
+          `<section class="program-row"><div><b>${esc(programDisplayName(x))}</b><code>${esc(x.code === "sms-mix" ? "VSMS" : x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button>${x.code === "sms-mix" && !vsmsNextVersion(x) ? `<button type="button" class="secondary-action" disabled>VSMS ${esc(x.current_version)} เผยแพร่แล้ว</button>` : `<button type="button" class="secondary-action" data-release-program="${x.id}">${x.code === "sms-mix" ? `อัปเดต VSMS ${vsmsNextVersion(x)}` : "จัดการเวอร์ชัน"}</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
       )
       .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
@@ -416,7 +448,7 @@ function bindLicenseActions() {
             plan_id: Number(planId),
             note: "ต่ออายุโดยผู้ดูแล",
           });
-          alert(`ต่ออายุแล้ว หมดอายุ ${d.expires_at || "ไม่หมดอายุ"}`);
+          alert(`ต่ออายุแล้ว ${d.expires_at ? `หมดอายุ ${d.expires_at}` : "รอผูกเครื่อง/ยังไม่เริ่มนับวัน"}`);
           load();
         } catch (e) {
           alert(e.message);

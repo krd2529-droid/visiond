@@ -127,11 +127,11 @@ final class Scheduler {
         if (i < 0) { pause(c, d, "ครบรายการแล้ว"); return; }
         if (!CHECKING_QUEUES.add(id)) return;
         try {
-        if (!LicenseClient.checkCurrent(c, true)) {
+        if (!LicenseClient.locallyCurrent(c)) {
             synchronized (LOCK) {
                 JSONObject latest = Store.load(c);
                 if (id.equals(latest.optString("id")) && latest.optBoolean("running") && Store.pending(latest) >= 0)
-                    pauseLocked(c, latest, "ยืนยันสิทธิ์ออนไลน์ไม่ได้ คิวถูกหยุด กรุณาตรวจอินเทอร์เน็ตและคีย์");
+                    pauseLocked(c, latest, "สิทธิ์ VSMS ในเครื่องหมดอายุหรือไม่ถูกต้อง กรุณาเชื่อมต่ออินเทอร์เน็ตเพื่อยืนยันคีย์ใหม่");
             }
             return;
         }
@@ -199,6 +199,7 @@ final class Scheduler {
         }
         long now = System.currentTimeMillis();
         Store.put(row, "status", "SENDING");
+        Store.put(row, "reportIdentity", LicenseClient.reportIdentity(c));
         if (alternating(d)) {
             Store.put(row, "usedSim", selectedSim);
             Store.put(row, "usedSimLabel", selectedSim == d.optInt("sim") ? "SIM 1" : "SIM 2");
@@ -289,6 +290,7 @@ final class Scheduler {
             if (d.optBoolean("running")) Store.put(d, "note", "ส่งไม่สำเร็จ — รอ 5–10 นาทีแล้วส่งเบอร์ถัดไป ไม่ส่งเบอร์เดิมซ้ำ");
         } else if (d.optBoolean("running")) Store.put(d, "note", "ส่งสำเร็จ — รอส่งเบอร์ถัดไป");
         Store.save(c, d);
+        if (ok) SuccessfulSendOutbox.record(c, d, i);
         SuccessLog.record(c, d);
         MessageHistory.recordRow(c, d, i);
         if (noServiceWithoutFallback) pauseLocked(c, d, "ซิมไม่มีสัญญาณและไม่มีซิมสำรองที่ใช้งานได้ — หยุดคิว");

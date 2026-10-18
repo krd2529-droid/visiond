@@ -25,7 +25,7 @@ export async function onRequestGet(ctx) {
   if (a.error) return a.error;
   for (const sql of ["ALTER TABLE vision7_licenses ADD COLUMN issuance_type TEXT NOT NULL DEFAULT 'legacy'", "ALTER TABLE vision7_licenses ADD COLUMN issue_cost INTEGER NOT NULL DEFAULT 0"]) await ctx.env.DB.prepare(sql).run().catch(() => {});
   const rows = await ctx.env.DB.prepare(
-    `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.order_id,l.key_last4,l.status,l.starts_at,l.expires_at,l.renewed_at,l.max_devices,l.binding_state,l.source,l.note,l.created_at,l.issuance_type,l.issue_cost,u.name user_name,u.email,p.code program_code,p.platform_type,x.title program_title,q.name plan_name,q.duration_days,COALESCE(NULLIF(l.issue_cost,0),CASE WHEN l.order_id IS NOT NULL THEN COALESCE((SELECT oi.price FROM order_items oi WHERE oi.order_id=l.order_id AND oi.product_id=q.product_id LIMIT 1),0) WHEN l.issuance_type='test' THEN 0 ELSE COALESCE(px.price,q.price,0) END,0) display_cost,COALESCE(issuer.name,issuer.username,CASE WHEN l.order_id IS NOT NULL THEN 'ระบบ/ออเดอร์' ELSE 'ระบบ' END) issuer_name,CASE WHEN p.code='sms-mix' THEN (SELECT COUNT(*) FROM vision7_smsmix_bindings b WHERE b.license_id=l.id) ELSE (SELECT COUNT(*) FROM vision7_license_devices d WHERE d.license_id=l.id AND d.revoked_at IS NULL) END active_devices FROM vision7_licenses l JOIN users u ON u.id=l.user_id JOIN vision7_programs p ON p.id=l.program_id LEFT JOIN products x ON x.id=p.product_id LEFT JOIN vision7_plans q ON q.id=l.plan_id LEFT JOIN products px ON px.id=q.product_id LEFT JOIN users issuer ON issuer.id=l.created_by ORDER BY l.created_at DESC`,
+    `SELECT l.id,l.user_id,l.program_id,l.plan_id,l.order_id,l.key_last4,l.status,l.starts_at,l.expires_at,l.smsmix_first_activated_at,l.renewed_at,l.max_devices,l.binding_state,l.source,l.note,l.created_at,l.issuance_type,l.issue_cost,u.name user_name,u.email,p.code program_code,p.platform_type,x.title program_title,q.name plan_name,q.duration_days,COALESCE(NULLIF(l.issue_cost,0),CASE WHEN l.order_id IS NOT NULL THEN COALESCE((SELECT oi.price FROM order_items oi WHERE oi.order_id=l.order_id AND oi.product_id=q.product_id LIMIT 1),0) WHEN l.issuance_type='test' THEN 0 ELSE COALESCE(px.price,q.price,0) END,0) display_cost,COALESCE(issuer.name,issuer.username,CASE WHEN l.order_id IS NOT NULL THEN 'ระบบ/ออเดอร์' ELSE 'ระบบ' END) issuer_name,CASE WHEN p.code='sms-mix' THEN (SELECT COUNT(*) FROM vision7_smsmix_bindings b WHERE b.license_id=l.id) ELSE (SELECT COUNT(*) FROM vision7_license_devices d WHERE d.license_id=l.id AND d.revoked_at IS NULL) END active_devices FROM vision7_licenses l JOIN users u ON u.id=l.user_id JOIN vision7_programs p ON p.id=l.program_id LEFT JOIN products x ON x.id=p.product_id LEFT JOIN vision7_plans q ON q.id=l.plan_id LEFT JOIN products px ON px.id=q.product_id LEFT JOIN users issuer ON issuer.id=l.created_by ORDER BY l.created_at DESC`,
   ).all();
   const items = (rows.results || []).map((x) => ({
       ...x,
@@ -84,7 +84,7 @@ export async function onRequestPost(ctx) {
   if (program.code !== 'sms-mix' && issuanceType === "admin_manual") return json({ error: "โหมดออกคีย์นี้ใช้กับ VSMS เท่านั้น" }, 400);
   if (issuanceType === "admin_manual" && (!Number.isSafeInteger(Number(b.user_id)) || Number(b.user_id) <= 0 || !planId || b.test_duration || b.order_id))
     return json({ error: "กรุณาเลือกผู้รับและแพ็กเกจ VSMS ที่ถูกต้อง" }, 400);
-  let expiresAt = null, issueCost = 0;
+  let expiresAt = null, issueCost = 0, smsmixPendingDays = 0;
   if (issuanceType === "test") {
     const testDuration = String(b.test_duration || "30");
     if (!new Set(["30", "365", "lifetime"]).has(testDuration)) return json({ error: "อายุคีย์ทดสอบไม่ถูกต้อง" }, 400);
@@ -99,6 +99,7 @@ export async function onRequestPost(ctx) {
     if (!p) return json({ error: "ไม่พบแพ็กเกจ" }, 404);
     if (issuanceType === "admin_manual" && !((p.plan_code === "monthly" && Number(p.duration_days) === 30) || (p.plan_code === "yearly" && Number(p.duration_days) === 365)))
       return json({ error: "VSMS ออกคีย์แอดมินได้เฉพาะ 30 วันหรือ 1 ปี" }, 400);
+    if (issuanceType === "admin_manual") smsmixPendingDays = Number(p.duration_days);
     issueCost = ["test", "admin_manual"].includes(issuanceType) ? 0 : Math.max(0, Math.round(Number(p.issue_cost) || 0));
     if (p.duration_days)
       expiresAt = sqlTime(
@@ -116,7 +117,8 @@ export async function onRequestPost(ctx) {
       source: issuanceType === "admin_manual" ? "admin_manual" : "admin",
       note: text(b.note),
       createdBy: a.user.id,
-      expiresAt,
+      expiresAt: issuanceType === "admin_manual" ? null : expiresAt,
+      smsmixPendingDays,
       issuanceType,
       issueCost,
     });

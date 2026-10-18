@@ -63,7 +63,7 @@ public class LicenseAndSetsTest {
             controller.pause().resume();
             Field field = MainActivity.class.getDeclaredField("status");
             field.setAccessible(true);
-            assertNull("editor must be hidden until the online license check passes", field.get(activity));
+            assertNull("editor must be hidden until a local or online entitlement is valid", field.get(activity));
             JSONObject after = Store.load(context);
             assertFalse(after.optBoolean("running"));
             assertEquals("PENDING", Store.rows(after).optJSONObject(0).optString("status"));
@@ -139,5 +139,66 @@ public class LicenseAndSetsTest {
         releaseForeground.countDown(); foreground.join(3000);
         assertTrue(foregroundAnswer.get());
         assertEquals(2, calls.get());
+    }
+
+    @Test public void staleCheckCannotOverwriteNewlyActivatedKey() throws Exception {
+        LicenseClient.setVerifierForTests(null);
+        android.provider.Settings.Secure.putString(context.getContentResolver(),android.provider.Settings.Secure.ANDROID_ID,"race-android-id");
+        android.content.SharedPreferences state=context.getSharedPreferences("smsmix_license",Context.MODE_PRIVATE);
+        state.edit().clear().putString("key","VD7-OLD-KEY-ONLY").commit();
+        java.lang.reflect.Method method=LicenseClient.class.getDeclaredMethod("deviceId",Context.class);
+        method.setAccessible(true);
+        String device=(String)method.invoke(null,context);
+        long now=System.currentTimeMillis();
+        JSONObject oldReply=new JSONObject().put("ok",true).put("activated_at","2026-01-01 00:00:00")
+                .put("expires_at","2099-01-01 00:00:00").put("server_time",now);
+        JSONObject newReply=new JSONObject().put("ok",true).put("activated_at","2026-01-01 00:00:00")
+                .put("expires_at","2099-12-01 00:00:00").put("server_time",now);
+        CountDownLatch ready=new CountDownLatch(1), release=new CountDownLatch(1);
+        AtomicBoolean staleAccepted=new AtomicBoolean(true);
+        Thread oldCheck=new Thread(()->{
+            ready.countDown();
+            try { release.await(3,TimeUnit.SECONDS); }
+            catch (InterruptedException error) { Thread.currentThread().interrupt(); return; }
+            staleAccepted.set(LicenseClient.storeCheckedEntitlement(context,"VD7-OLD-KEY-ONLY",device,oldReply));
+        });
+        try {
+            oldCheck.start(); assertTrue(ready.await(3,TimeUnit.SECONDS));
+            assertTrue(state.edit().putString("key","VD7-NEW-KEY-ONLY").commit());
+            assertTrue(LicenseClient.storeCheckedEntitlement(context,"VD7-NEW-KEY-ONLY",device,newReply));
+            release.countDown(); oldCheck.join(3000);
+            assertFalse(oldCheck.isAlive()); assertFalse(staleAccepted.get());
+            assertEquals("VD7-NEW-KEY-ONLY",state.getString("key",""));
+            assertEquals("2099-12-01 00:00:00",state.getString("entitlement_expiry",""));
+        } finally { release.countDown(); state.edit().clear().commit(); }
+    }
+
+    @Test public void lateFailedForegroundCheckDoesNotPauseNewEntitlementQueue() throws Exception {
+        pendingQueue();
+        android.content.SharedPreferences state=context.getSharedPreferences("smsmix_license",Context.MODE_PRIVATE);
+        state.edit().clear().putString("key","VD7-OLD-KEY-ONLY").commit();
+        CountDownLatch checking=new CountDownLatch(1),release=new CountDownLatch(1);
+        AtomicInteger calls=new AtomicInteger();
+        LicenseClient.setVerifierForTests(c->{
+            if(calls.incrementAndGet()==1)return false;
+            checking.countDown();
+            while(true){
+                try { return release.await(3,TimeUnit.SECONDS) && false; }
+                catch(InterruptedException ignored) { /* A canceled HTTP request may still finish late. */ }
+            }
+        });
+        try(var controller=Robolectric.buildActivity(MainActivity.class).setup()){
+            assertTrue(checking.await(3,TimeUnit.SECONDS));
+            state.edit().putString("key","VD7-NEW-KEY-ONLY").commit();
+            LicenseClient.setVerifierForTests(c->true);
+            release.countDown();
+            for(int i=0;i<100;i++){
+                org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+                if(controller.get().findViewById(android.R.id.content)!=null && calls.get()>=2)Thread.sleep(10);
+            }
+            Field statusField=MainActivity.class.getDeclaredField("status");statusField.setAccessible(true);
+            assertNotNull("late callback must render the valid new entitlement",statusField.get(controller.get()));
+            assertTrue("new valid entitlement must keep the queue running",Store.load(context).optBoolean("running"));
+        } finally { release.countDown(); state.edit().clear().commit(); }
     }
 }

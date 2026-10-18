@@ -49,6 +49,33 @@ public class QueueTest {
         Store.put(d, "sim", 7); Store.put(d, "nextAt", 0); Store.save(c, d);
     }
 
+    @Test public void activatedOfflineEntitlementAllowsDueHandoffWithoutServerCheck() {
+        dueQueue();
+        LicenseClient.setVerifierForTests(null);
+        android.provider.Settings.Secure.putString(c.getContentResolver(),android.provider.Settings.Secure.ANDROID_ID,"offline-android-test");
+        android.content.SharedPreferences state=c.getSharedPreferences("smsmix_license",Context.MODE_PRIVATE);
+        long now=System.currentTimeMillis();
+        assertTrue(state.edit().putString("key","VD7-OFFLINE-TEST-ONLY").commit());
+        String identity=LicenseClient.reportIdentity(c);
+        assertTrue(state.edit().putString("entitlement_identity",identity)
+                .putString("entitlement_expiry","2099-01-01 00:00:00")
+                .putLong("entitlement_until",now+3600000).putLong("entitlement_server_time",now)
+                .putLong("entitlement_wall_at_sync",now).putLong("entitlement_elapsed_at_sync",android.os.SystemClock.elapsedRealtime())
+                .putLong("entitlement_last_wall",now).commit());
+        AtomicInteger handoffs=new AtomicInteger();
+        Scheduler.setHandoffForTests((manager,row,parts,callbacks,deliveries)->handoffs.incrementAndGet());
+        try {
+            Scheduler.tick(c,"test-campaign",false);
+            assertEquals(1,handoffs.get());
+            assertEquals("SENDING",status());
+            assertTrue(LicenseClient.locallyCurrent(c));
+            assertTrue(state.edit().putLong("entitlement_last_wall",now+300000).commit());
+            assertFalse("clock rollback needs online refresh",LicenseClient.locallyCurrent(c));
+            assertTrue(state.edit().putLong("entitlement_last_wall",now).putLong("entitlement_until",now).commit());
+            assertFalse("expiry boundary is exclusive",LicenseClient.locallyCurrent(c));
+        } finally { state.edit().clear().commit(); }
+    }
+
     @Test public void pauseDuringOnlineCheckPreventsSmsHandoff() throws Exception {
         dueQueue();
         CountDownLatch checking = new CountDownLatch(1), release = new CountDownLatch(1);

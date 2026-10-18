@@ -70,6 +70,7 @@ final class MessageHistory extends SQLiteOpenHelper {
         }
     }
     static synchronized void recordCampaign(Context c, JSONObject campaign) {
+        SuccessfulSendOutbox.reconcile(c, campaign);
         String id = campaign.optString("id");
         if (id.isEmpty()) return;
         try (MessageHistory helper = new MessageHistory(c)) {

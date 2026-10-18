@@ -24,7 +24,10 @@ export async function fulfillVision7Order(env,order,actor={},programCode=''){
         try{await env.DB.batch([
           env.DB.prepare(`INSERT INTO vision7_order_fulfillments(order_item_id,order_id,license_id,action) VALUES(?,?,?,'renewed')`).bind(item.order_item_id,order.id,license.id),
           smsMix
-            ? env.DB.prepare(`UPDATE vision7_licenses SET plan_id=?,status='active',expires_at=datetime(CASE WHEN expires_at>CURRENT_TIMESTAMP THEN expires_at ELSE CURRENT_TIMESTAMP END,'+' || ? || ' days'),renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(item.plan_id,days,license.id)
+            ? env.DB.prepare(`UPDATE vision7_licenses SET plan_id=?,status='active',
+                smsmix_pending_days=CASE WHEN smsmix_first_activated_at IS NULL THEN CASE WHEN expires_at IS NOT NULL AND expires_at<=CURRENT_TIMESTAMP THEN ? ELSE smsmix_pending_days+? END ELSE smsmix_pending_days END,
+                expires_at=CASE WHEN smsmix_first_activated_at IS NULL THEN CASE WHEN expires_at>CURRENT_TIMESTAMP THEN expires_at ELSE NULL END ELSE datetime(CASE WHEN expires_at>CURRENT_TIMESTAMP THEN expires_at ELSE CURRENT_TIMESTAMP END,'+' || ? || ' days') END,
+                renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(item.plan_id,days,days,days,license.id)
             : env.DB.prepare(`UPDATE vision7_licenses SET plan_id=?,status='active',expires_at=?,renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(item.plan_id,expiresAt,license.id),
           env.DB.prepare('INSERT INTO vision7_license_events(license_id,actor_user_id,event_type,detail) VALUES(?,?,?,?)').bind(license.id,actor.id||null,'renewed',JSON.stringify({order_id:order.id,order_item_id:item.order_item_id,old_plan_id:license.plan_id,new_plan_id:item.plan_id,duration_days:days,...(smsMix?{}:{expires_at:expiresAt})})),
         ])}catch(error){const winner=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();if(winner){output.push({...winner,existing:true});continue}throw error}
@@ -35,9 +38,9 @@ export async function fulfillVision7Order(env,order,actor={},programCode=''){
       if(claimed.meta?.changes){await env.DB.prepare(`UPDATE vision7_licenses SET status='active',expires_at=?,renewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(expiresAt,license.id).run();await licenseEvent(env,license.id,actor.id||null,'renewed',{order_id:order.id,order_item_id:item.order_item_id,duration_days:days,expires_at:expiresAt})}
       output.push({license_id:license.id,action:'renewed',expires_at:expiresAt});continue;
     }
-    const expiresAt=item.duration_days?addDays(null,item.duration_days):null;
+    const expiresAt=item.program_code==='sms-mix'?null:item.duration_days?addDays(null,item.duration_days):null;
     if(item.program_code==='v-record'||item.program_code==='sms-mix'){
-      try{const issued=await issueLicense(env,{userId:order.user_id,programId:item.program_id,planId:item.plan_id,orderId:order.id,status:'active',maxDevices:1,source:'paid_order',createdBy:actor.id||null,expiresAt,atomicOrderItemId:item.order_item_id});output.push({license_id:issued.id,action:'issued',key:issued.key,expires_at:expiresAt})}
+      try{const issued=await issueLicense(env,{userId:order.user_id,programId:item.program_id,planId:item.plan_id,orderId:order.id,status:'active',maxDevices:1,source:'paid_order',createdBy:actor.id||null,expiresAt,smsmixPendingDays:item.program_code==='sms-mix'?Number(item.duration_days):0,atomicOrderItemId:item.order_item_id});output.push({license_id:issued.id,action:'issued',key:issued.key,expires_at:expiresAt})}
       catch(error){const winner=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();if(winner){output.push({...winner,existing:true});continue}throw error}
       continue;
     }

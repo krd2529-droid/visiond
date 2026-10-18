@@ -39,6 +39,8 @@ public class MainActivity extends Activity {
     }
 
     void showLicenseGate() {
+        try { SuccessfulSendOutbox.reconcile(this, Store.load(this)); }
+        catch (RuntimeException ignored) { /* Local queue remains available for recovery. */ }
         status = null;
         simSpinner = null;
         LinearLayout gate = new LinearLayout(this);
@@ -67,20 +69,26 @@ public class MainActivity extends Activity {
             new Thread(() -> {
                 LicenseClient.ActivationResult result = LicenseClient.activate(this, key);
                 runOnUiThread(() -> {
-                    if (result == LicenseClient.ActivationResult.ACTIVE) renderApp();
+                    if (result == LicenseClient.ActivationResult.ACTIVE) {
+                        SuccessfulSendOutbox.schedule(this);
+                        renderApp();
+                    }
                     else { state.setText(result.message()); activate.setEnabled(true); }
                 });
             }, "vsms-activation").start();
         });
-        if (LicenseClient.hasKey(this)) {
+        if (LicenseClient.locallyCurrent(this)) {
+            SuccessfulSendOutbox.schedule(this);
+            renderApp();
+        } else if (LicenseClient.hasKey(this)) {
             state.setText("กำลังตรวจสิทธิ์ออนไลน์...");
             new Thread(() -> {
                 boolean accepted = LicenseClient.checkCurrent(this);
                 runOnUiThread(() -> {
-                    if (accepted) renderApp();
+                    if (accepted || LicenseClient.locallyCurrent(this)) renderApp();
                     else {
                         pauseForLicense();
-                        state.setText("ยืนยันสิทธิ์ไม่ได้ กรุณาตรวจอินเทอร์เน็ต อายุคีย์ หรือเครื่องที่ผูกไว้");
+                        state.setText("ยืนยันสิทธิ์ไม่ได้ กรุณาเชื่อมต่ออินเทอร์เน็ตเพื่อต่ออายุหรือเปิดใช้คีย์อีกครั้ง");
                     }
                 });
             }, "vsms-license-check").start();
@@ -90,7 +98,7 @@ public class MainActivity extends Activity {
     void pauseForLicense() {
         try {
             JSONObject queue = Store.load(this);
-            if (queue.optBoolean("running")) Scheduler.pause(this, queue, "หยุดคิว: ยืนยันสิทธิ์ออนไลน์ไม่ได้");
+            if (queue.optBoolean("running")) Scheduler.pause(this, queue, "หยุดคิว: สิทธิ์ VSMS ในเครื่องหมดอายุหรือไม่ถูกต้อง");
         } catch (RuntimeException ignored) { /* The send path remains fail-closed. */ }
     }
 
