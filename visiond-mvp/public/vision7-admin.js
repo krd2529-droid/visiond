@@ -25,6 +25,7 @@ const esc = (s) =>
   issuedKey = document.querySelector("#issuedKey"),
   releaseForm = document.querySelector("#releaseForm"),
   vrecordReleaseHint = document.querySelector("#vrecordReleaseHint"),
+  vsmsReleaseHint = document.querySelector("#vsmsReleaseHint"),
   releaseState = document.querySelector("#releaseState"),
   releases = document.querySelector("#releases"),
   newProgram = document.querySelector("#newProgram"),
@@ -115,12 +116,22 @@ function planOptions() {
 function syncReleaseForm() {
   const program = programs.find((x) => Number(x.id) === Number(releaseProgram.value));
   const replacing = program?.code === "v-record" && Number(program.active) === 0;
+  const vsms = program?.code === "sms-mix";
   vrecordReleaseHint.hidden = !replacing;
+  vsmsReleaseHint.hidden = !vsms;
   if (replacing) {
     releaseForm.elements.version.value = "0.6.0";
     releaseForm.elements.minimum_version.value = "0.6.0";
     releaseForm.elements.mandatory.checked = false;
   }
+  if (vsms) {
+    releaseForm.elements.version.value = "0.5.5";
+    releaseForm.elements.minimum_version.value = "0.5.4";
+    releaseForm.elements.mandatory.checked = false;
+  }
+  releaseForm.elements.version.readOnly = vsms || replacing;
+  releaseForm.elements.minimum_version.readOnly = vsms || replacing;
+  releaseForm.elements.mandatory.disabled = vsms || replacing;
 }
 function updateKeyCost() {
   if (keyMode.value === "vsms_manual") {
@@ -290,11 +301,10 @@ async function load() {
     programs
       .map(
         (x) =>
-          `<section class="program-row"><div><b>${esc(programDisplayName(x))}</b><code>${esc(x.code === "sms-mix" ? "VSMS" : x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button>${x.code === "sms-mix" ? '<button type="button" class="secondary-action" disabled title="VSMS ต้องใช้ขั้นตอนตรวจ APK และลายเซ็นเฉพาะก่อนอัปเดต">จัดการเวอร์ชัน</button>' : `<button type="button" class="secondary-action" data-release-program="${x.id}">จัดการเวอร์ชัน</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
+          `<section class="program-row"><div><b>${esc(programDisplayName(x))}</b><code>${esc(x.code === "sms-mix" ? "VSMS" : x.code)}</code><span>${esc(x.platform_type)} · v${esc(x.current_version)} · ${plans(x).filter((p)=>p.product_id).length}/${["v-record","sms-mix"].includes(x.code) ? 2 : 3} แพ็กเกจขาย${["v-record","sms-mix"].includes(x.code) ? (Number(x.active) === 0 ? " · ยังไม่เปิดขาย" : " · เผยแพร่แล้ว") : ""}</span>${["v-record","sms-mix"].includes(x.code) ? '<small class="muted" data-publish-state role="status" aria-live="polite"></small>' : ""}</div><div class="program-actions"><button type="button" data-issue-program="${x.id}">ออกคีย์</button>${x.code === "sms-mix" && x.current_version !== "0.5.4" ? '<button type="button" class="secondary-action" disabled>VSMS 0.5.5 เผยแพร่แล้ว</button>' : `<button type="button" class="secondary-action" data-release-program="${x.id}">${x.code === "sms-mix" ? "อัปเดต VSMS 0.5.5" : "จัดการเวอร์ชัน"}</button>`}${x.code === "v-record" && Number(x.active) === 0 ? `<button type="button" data-publish-vrecord="${x.id}">เผยแพร่ V-Record</button>` : ""}${x.code === "sms-mix" && Number(x.active) === 0 ? `<button type="button" data-publish-vsms="${x.id}">เผยแพร่ VSMS</button>` : ""}</div></section>`,
       )
       .join("") || '<section class="v7-empty"><span aria-hidden="true">1</span><h3>เริ่มจากสร้างโปรแกรมแรก</h3><p>กำหนดแพลตฟอร์มก่อน จึงจะออกคีย์และเผยแพร่ตัวติดตั้งได้</p><button type="button" data-first-program>สร้างโปรแกรมแรก</button></section>';
   programOptions(releaseProgram);
-  syncReleaseForm();
   programOptions(keyProgram);
   userOptions();
   syncKeyMode();
@@ -308,6 +318,7 @@ async function load() {
   newKey.setAttribute("aria-disabled", String(!hasPrograms || !encryptionReady));
   releaseDetails.dataset.blocked = String(!hasPrograms);
   releaseForm.querySelectorAll("input,select,textarea,button").forEach((x)=>x.disabled=!hasPrograms);
+  if (hasPrograms) syncReleaseForm();
   nextAction.textContent = !hasPrograms ? "ขั้นถัดไป: สร้างโปรแกรมแรกก่อนออกคีย์" : !rows.length ? "ขั้นถัดไป: ออกคีย์ทดสอบให้โปรแกรมที่สร้างแล้ว" : "ระบบพร้อมใช้งาน · เพิ่มรีลีสใหม่เมื่อมี APK หรือตัวติดตั้งเวอร์ชันใหม่";
   document.querySelectorAll("[data-workflow-step]").forEach((x)=>x.classList.remove("current","complete"));
   const workflow = document.querySelectorAll("[data-workflow-step]");
@@ -353,7 +364,7 @@ async function load() {
       .slice(0, 10)
       .map(
         (x) =>
-          `<section class="release-row"><b>${esc(x.program_code)} v${esc(x.version)}</b>${x.mandatory ? " · บังคับอัปเดต" : ""}<small>${esc(x.file_name)}</small><details><summary>ดู SHA-256</summary><code>${esc(x.sha256)}</code></details></section>`,
+          `<section class="release-row"><b>${esc(x.program_code === "sms-mix" ? "VSMS" : x.program_code)} v${esc(x.version)}</b>${x.mandatory ? " · บังคับอัปเดต" : ""}<small>${esc(x.file_name)}</small><details><summary>ดู SHA-256</summary><code>${esc(x.sha256)}</code></details></section>`,
       )
       .join("") || `<p class="muted">${releaseResult.status === "rejected" ? "โหลดรีลีสไม่สำเร็จ กรุณาลองใหม่" : "ยังไม่มีรีลีส"}</p>`;
   if (licenseResult.status === "rejected") licensesEl.innerHTML = '<p class="muted error">โหลดรายการคีย์ไม่สำเร็จ แต่ยังเพิ่มโปรแกรมได้</p>';

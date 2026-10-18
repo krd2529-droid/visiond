@@ -95,6 +95,15 @@ try {
   assert.equal(await page.locator('[data-publish-vsms]').count(), 0);
   assert.equal(publishCalls, 2);
   assert.equal(nativeDialogs, 0, 'VSMS publish never uses unsupported native prompts');
+  await vsmsRow.getByRole('button', { name: 'อัปเดต VSMS 0.5.5' }).click();
+  assert.equal(await page.locator('#releaseDetails').evaluate(el => el.open), true);
+  assert.equal(await page.locator('#releaseProgram').inputValue(), '74');
+  assert.equal(await page.locator('#releaseForm [name="version"]').inputValue(), '0.5.5');
+  assert.equal(await page.locator('#releaseForm [name="minimum_version"]').inputValue(), '0.5.4');
+  assert.equal(await page.locator('#releaseForm [name="mandatory"]').isDisabled(), true);
+  assert.match(await page.locator('#vsmsReleaseHint').innerText(), /อัปเดตเสริมจาก 0\.5\.4/);
+  await page.locator('#releaseProgram').selectOption('75');
+  assert.equal(await page.locator('#releaseForm [name="mandatory"]').isEnabled(), true, 'generic release form remains available');
   await vsmsRow.getByRole('button', { name: 'ออกคีย์' }).click();
   assert.equal(await page.locator('#keyMode').inputValue(), 'vsms_manual');
   assert.equal(await page.locator('#keyProgram option:checked').innerText(), 'VSMS');
