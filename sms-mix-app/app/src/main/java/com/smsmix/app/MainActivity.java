@@ -19,7 +19,8 @@ import java.text.DateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private static final int IMPORT = 41, EXPORT = 42, PERMISSIONS = 43, SHORT_LINKS = 44, EXPORT_SUCCESS = 46;
+    private static final int IMPORT = 41, EXPORT = 42, PERMISSIONS = 43, SHORT_LINKS = 44, EXPORT_SUCCESS = 46,
+            EXPORT_SETS = 47, IMPORT_SETS = 48;
     private EditText captions, links, manualOriginal, rangeStart, rangeEnd, drawCount;
     private Spinner recipientMode;
     private TextView recipientInfo, status;
@@ -35,6 +36,12 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        try { LibraryTransfer.recover(this); }
+        catch (RuntimeException e) {
+            new AlertDialog.Builder(this).setMessage("กู้คืนชุดที่บันทึกไว้ไม่สำเร็จ: " + e.getMessage())
+                    .setPositiveButton("ปิดแอป",(dialog,which)->finish()).setCancelable(false).show();
+            return;
+        }
         showLicenseGate();
     }
 
@@ -166,6 +173,13 @@ public class MainActivity extends Activity {
         button("เซฟชุดลิงก์ที่วางเอง / ตั้งชื่อ", this::saveManualLinks);
         button("สร้างลิงก์ด้วย Shrinkrl", () -> startActivityForResult(new Intent(this, ShortLinksActivity.class), SHORT_LINKS));
         button("เลือกชุดลิงก์ที่บันทึกไว้", () -> LinkSetDialogs.chooseBundle(this, this::applyLinkBundle));
+        button("ส่งออกชุดแคปชั่นและลิงก์เป็นไฟล์", () -> startActivityForResult(
+                new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/json")
+                        .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "VSMS-saved-sets.json"), EXPORT_SETS));
+        button("นำเข้าชุดแคปชั่นและลิงก์จากไฟล์", () -> startActivityForResult(
+                new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json")
+                        .addCategory(Intent.CATEGORY_OPENABLE), IMPORT_SETS));
+        label("ไฟล์ชุดเป็นข้อความอ่านได้ เก็บเฉพาะชุดแคปชั่นและลิงก์ ไม่รวมเบอร์/คีย์/คิว คุณเป็นผู้ย้ายไฟล์เอง");
         captions.setText(getPreferences(0).getString("captions", ""));
         links.setText(getPreferences(0).getString("links", ""));
         String imported = getPreferences(0).getString("phones", "");
@@ -483,7 +497,60 @@ public class MainActivity extends Activity {
         }
         if (data.getData() == null) return;
         Uri uri = data.getData();
-        if (request == IMPORT) {
+        if (request == EXPORT_SETS) {
+            new Thread(() -> {
+                try {
+                    byte[] bytes=LibraryTransfer.export(this);
+                    try(OutputStream out=getContentResolver().openOutputStream(uri,"wt")) {
+                        if(out==null)throw new IOException("เปิดไฟล์ปลายทางไม่ได้");
+                        out.write(bytes);
+                    }
+                    runOnUiThread(() -> { if(!isFinishing()&&!isDestroyed()) message("ส่งออกชุดแคปชั่นและลิงก์แล้ว คุณสามารถย้ายไฟล์ไปอีกเครื่องเอง"); });
+                } catch(Exception e) {
+                    runOnUiThread(() -> { if(!isFinishing()&&!isDestroyed()) message("ส่งออกชุดไม่สำเร็จ: "+e.getMessage()); });
+                }
+            },"sets-export").start();
+        } else if (request == IMPORT_SETS) {
+            new Thread(() -> {
+                try(InputStream in=getContentResolver().openInputStream(uri)) {
+                    if(in==null)throw new IOException("เปิดไฟล์ไม่ได้");
+                    LibraryTransfer.Snapshot incoming=LibraryTransfer.parse(in);
+                    LibraryTransfer.Preview preview=LibraryTransfer.preview(this,incoming);
+                    runOnUiThread(() -> {
+                        if(isFinishing()||isDestroyed())return;
+                        String summary="พบแคปชั่น "+preview.captions+" ชุด และลิงก์ "+preview.links+" ชุด"
+                                + (preview.conflicts>0?" • ชื่อซ้ำ "+preview.conflicts+" ชุด":"")
+                                + "\nร่าง เบอร์ และคิวปัจจุบันจะไม่เปลี่ยน";
+                        String[] choices=preview.conflicts>0
+                                ?new String[]{"ข้ามชื่อซ้ำ เก็บชุดเดิม", "แทนที่ชุดชื่อซ้ำ", "ยกเลิก"}
+                                :new String[]{"นำเข้าชุด", "ยกเลิก"};
+                        new AlertDialog.Builder(this).setTitle("นำเข้าชุดจากไฟล์?").setMessage(summary)
+                                .setItems(choices,(dialog,which)->{
+                                    if((preview.conflicts>0&&which==2)||(preview.conflicts==0&&which==1))return;
+                                    int mode=preview.conflicts==0?LibraryTransfer.REJECT_CONFLICTS
+                                            :which==0?LibraryTransfer.SKIP_CONFLICTS:LibraryTransfer.OVERWRITE_CONFLICTS;
+                                    new Thread(() -> {
+                                        try {
+                                            LibraryTransfer.apply(this,incoming,mode);
+                                            runOnUiThread(() -> { if(!isFinishing()&&!isDestroyed()) message("นำเข้าชุดสำเร็จ เลือกใช้จากชุดที่บันทึกไว้ได้เลย"); });
+                                        } catch(Exception e) {
+                                            boolean recoveryNeeded=LibraryTransfer.journalPending(this);
+                                            runOnUiThread(() -> {
+                                                if(isFinishing()||isDestroyed())return;
+                                                if(recoveryNeeded) new AlertDialog.Builder(this)
+                                                        .setMessage("นำเข้าชุดไม่สำเร็จและยังกู้คืนไม่ครบ กรุณาปิดแอปและตรวจพื้นที่เก็บข้อมูลก่อนเปิดใหม่: "+e.getMessage())
+                                                        .setPositiveButton("ปิดแอป",(d,w)->finish()).setCancelable(false).show();
+                                                else message("นำเข้าชุดไม่สำเร็จ ข้อมูลเดิมยังอยู่: "+e.getMessage());
+                                            });
+                                        }
+                                    },"sets-apply").start();
+                                }).show();
+                    });
+                } catch(Exception e) {
+                    runOnUiThread(() -> { if(!isFinishing()&&!isDestroyed()) message("อ่านไฟล์ชุดไม่ได้ ข้อมูลเดิมยังอยู่: "+e.getMessage()); });
+                }
+            },"sets-import").start();
+        } else if (request == IMPORT) {
             recipientInfo.setText("กำลังอ่านไฟล์…");
             new Thread(() -> {
                 try (InputStream in = getContentResolver().openInputStream(uri)) {

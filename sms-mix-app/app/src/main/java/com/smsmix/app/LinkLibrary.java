@@ -65,7 +65,8 @@ final class LinkLibrary {
                 throw new IllegalArgumentException("ลิงก์ในชุดเสียหาย");
         }
     }
-    static synchronized SortedMap<String,JSONObject> load(Context c) {
+    static SortedMap<String,JSONObject> load(Context c) {
+        synchronized (LibraryTransfer.class) {
         AtomicFile f=file(c);
         try(InputStream in=f.openRead()) {
             ByteArrayOutputStream out=new ByteArrayOutputStream(); byte[] buffer=new byte[8192]; int n;
@@ -83,8 +84,10 @@ final class LinkLibrary {
             if(!f.getBaseFile().exists() && !new File(f.getBaseFile().getPath()+".bak").exists()) return new TreeMap<>();
             throw new IllegalStateException("อ่านชุดลิงก์ไม่ได้",e);
         } catch(Exception e) {throw new IllegalStateException("อ่านชุดลิงก์ไม่ได้ ข้อมูลเดิมจะไม่ถูกเขียนทับ",e);}
+        }
     }
-    static synchronized void save(Context c,String title,JSONObject entry,boolean overwrite) {
+    static void save(Context c,String title,JSONObject entry,boolean overwrite) {
+        synchronized (LibraryTransfer.class) {
         String name=CaptionLibrary.name(title); validate(entry);
         SortedMap<String,JSONObject> all=load(c);
         if(all.containsKey(name) && !overwrite) throw new IllegalArgumentException("ชื่อซ้ำ กรุณายืนยันก่อนบันทึกทับ");
@@ -96,6 +99,7 @@ final class LinkLibrary {
         } catch(Exception e) {
             if(out!=null)f.failWrite(out);
             throw new IllegalStateException("บันทึกชุดลิงก์ไม่สำเร็จ",e);
+        }
         }
     }
     static String shortText(JSONObject entry) {

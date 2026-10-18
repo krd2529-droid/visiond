@@ -17,7 +17,8 @@ final class CaptionLibrary {
             throw new IllegalArgumentException("ชื่อชุดต้องมี 1–60 ตัวอักษร และไม่มีอักขระขึ้นบรรทัดใหม่");
         return name;
     }
-    static synchronized SortedMap<String,String> load(Context c) {
+    static SortedMap<String,String> load(Context c) {
+        synchronized (LibraryTransfer.class) {
         AtomicFile file = file(c);
         try (InputStream in = file.openRead()) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -42,8 +43,10 @@ final class CaptionLibrary {
         } catch (Exception e) {
             throw new IllegalStateException("อ่านชุดแคปชั่นไม่ได้ ข้อมูลเดิมจะไม่ถูกเขียนทับ", e);
         }
+        }
     }
-    static synchronized void save(Context c, String title, String text, boolean overwrite) {
+    static void save(Context c, String title, String text, boolean overwrite) {
+        synchronized (LibraryTransfer.class) {
         String key = name(title);
         String normalized = String.join("\n", CampaignCore.lines(text, false));
         SortedMap<String,String> all = load(c);
@@ -59,6 +62,7 @@ final class CaptionLibrary {
         } catch (Exception e) {
             if (out != null) file.failWrite(out);
             throw new IllegalStateException("บันทึกชุดแคปชั่นไม่สำเร็จ", e);
+        }
         }
     }
 }

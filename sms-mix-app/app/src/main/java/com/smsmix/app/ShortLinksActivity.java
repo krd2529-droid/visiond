@@ -18,6 +18,12 @@ public class ShortLinksActivity extends Activity {
     };
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        try { LibraryTransfer.recover(this); }
+        catch (RuntimeException e) {
+            new AlertDialog.Builder(this).setMessage("กู้คืนชุดลิงก์ไม่สำเร็จ: "+e.getMessage())
+                    .setPositiveButton("ปิด",(dialog,which)->finish()).setCancelable(false).show();
+            return;
+        }
         ScrollView scroll=new ScrollView(this);
         LinearLayout layout=new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL);
         int p=(int)(20*getResources().getDisplayMetrics().density); layout.setPadding(p,p,p,p);
