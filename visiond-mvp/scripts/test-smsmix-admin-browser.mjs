@@ -14,8 +14,18 @@ if (!chromium) throw new Error('Playwright unavailable');
 const root = path.resolve('public'), hash = 'a'.repeat(64);
 let program = null, createBody = '', publishBody = null, publishCalls = 0, issueBody = null, issueCalls = 0;
 const otherProgram = { id: 75, code: 'other-app', product_title: 'Other App', platform_type: 'windows', current_version: '1.0', active: 1, plans: '[]' };
+const licenseRows = [
+  { id: 201, program_id: 74, program_code: 'sms-mix', program_title: '', platform_type: 'android', user_id: 91, user_name: 'VSMS Recipient', email: 'vsms@example.test', key_masked: 'VD7-****-1111', key_last4: '1111', status: 'active', active_devices: 0, max_devices: 1 },
+  { id: 202, program_id: 75, program_code: 'other-app', program_title: 'Other App', platform_type: 'windows', user_id: 92, user_name: 'Other Recipient', email: 'other@example.test', key_masked: 'VD7-****-2222', key_last4: '2222', status: 'active', active_devices: 0, max_devices: 3 },
+];
 const server = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
+  const historyId = /^\/api\/admin\/vision7\/licenses\/(201|202)\/history$/.exec(pathname)?.[1];
+  if (historyId) {
+    const license = licenseRows.find(x => String(x.id) === historyId);
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ license, events: [], devices: [] })); return;
+  }
   if (pathname === '/api/admin/vision7/programs' && req.method === 'POST') {
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
     createBody = Buffer.concat(chunks).toString('latin1');
@@ -38,7 +48,7 @@ const server = http.createServer(async (req, res) => {
   }
   const api = {
     '/api/admin/vision7/programs': { items: program ? [program, otherProgram] : [], product_options: [], product_options_available: true },
-    '/api/admin/vision7/licenses': { items: [], encryption_ready: true, operator: { id: 1 } },
+    '/api/admin/vision7/licenses': { items: licenseRows, encryption_ready: true, operator: { id: 1 } },
     '/api/admin/vision7/releases': { items: [] },
     '/api/admin/users': { items: [{ id: 91, name: 'Recipient', username: 'recipient', email: 'recipient@example.test' }] },
   }[pathname];
@@ -54,6 +64,26 @@ const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIG
 try {
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.address().port}/vision7-admin.html`);
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    const vsmsLicense = page.locator('#licenses [data-history="201"]').locator('xpath=ancestor::tr');
+    const otherLicense = page.locator('#licenses [data-history="202"]').locator('xpath=ancestor::tr');
+    await vsmsLicense.waitFor();
+    assert.equal(await vsmsLicense.locator('td').nth(1).locator('b').innerText(), 'VSMS');
+    assert.equal(await otherLicense.locator('td').nth(1).locator('b').innerText(), 'Other App');
+    await vsmsLicense.locator('[data-history]').click();
+    await page.locator('#historyContent > p').first().getByText('VSMS Recipient · VSMS · VD7-****-1111').waitFor();
+    assert.equal(await page.locator('#historyContent > p').first().innerText(), 'VSMS Recipient · VSMS · VD7-****-1111');
+    await page.locator('#historyDialog [data-close]').click();
+    await otherLicense.locator('[data-history]').click();
+    await page.locator('#historyContent > p').first().getByText('Other Recipient · other-app · VD7-****-2222').waitFor();
+    assert.equal(await page.locator('#historyContent > p').first().innerText(), 'Other Recipient · other-app · VD7-****-2222');
+    await page.locator('#historyDialog [data-close]').click();
+    await page.locator('#licenseSearch').fill('sms-mix');
+    assert.equal(await page.locator('#licenses tbody tr').count(), 1, 'internal code remains searchable');
+    assert.equal(await page.locator('#licenses tbody tr td').nth(1).locator('b').innerText(), 'VSMS');
+    await page.locator('#licenseSearch').fill('');
+  }
   await page.locator('#newVsms').click();
   assert.equal(await page.locator('#vsmsDialog').evaluate(el => el.open), true);
   assert.match(await page.locator('#vsmsDialogTitle').innerText(), /เพิ่ม VSMS 0\.5\.4/);
