@@ -157,5 +157,15 @@ try {
   await page.locator('#keyDialog [data-close]').click();
   await page.locator('#newProgram').click();
   assert.equal(await page.locator('#programForm [name="price_lifetime"]').count(), 1, 'generic builder preserved');
+  program.current_version = '0.5.6';
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    await page.locator('#programs .program-row').first().getByRole('button', { name: 'อัปเดต VSMS 0.5.7' }).click();
+    assert.equal(await page.locator('#releaseForm [name="version"]').inputValue(), '0.5.7');
+    assert.equal(await page.locator('#releaseForm [name="minimum_version"]').inputValue(), '0.5.4');
+    assert.equal(await page.locator('#releaseForm [name="mandatory"]').isDisabled(), true);
+    assert.match(await page.locator('#vsmsReleaseHint').innerText(), /อัปเดตเสริมจาก 0\.5\.6/);
+  }
   console.log('PASS SMS Mix admin browser: staged exact plans, guarded hash publish and retry, generic builder preserved');
 } finally { await browser.close(); server.close(); }

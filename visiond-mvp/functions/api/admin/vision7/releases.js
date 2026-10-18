@@ -9,6 +9,8 @@ const hex = (buffer) => [...new Uint8Array(buffer)].map((part) => part.toString(
 const approvedVsms055Sha256 = '6aae4a221b58b28146eea5e68e5a35147ef2f97211d2692122625436d9013713';
 // Commercial-signed VSMS 0.5.6: com.smsmix.app, versionCode 13, same approved signer.
 const approvedVsms056Sha256 = '2427b59b21433381486b06fd6455aeac1ed1638c06e036986785c2abbc5fc666';
+// Commercial-signed VSMS 0.5.7: com.smsmix.app, versionCode 14, same approved signer.
+const approvedVsms057Sha256 = '8e54310a4ff955e70a1fac689904d9e87de5c9476cf549e576136f36852f9327';
 
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
@@ -38,7 +40,9 @@ export async function onRequestPost(ctx) {
   const vsmsRelease = vsmsUpdate && program.current_version === '0.5.4'
     ? { previous: '0.5.4', version: '0.5.5', sha256: approvedVsms055Sha256 }
     : vsmsUpdate && program.current_version === '0.5.5'
-      ? { previous: '0.5.5', version: '0.5.6', sha256: approvedVsms056Sha256 } : null;
+      ? { previous: '0.5.5', version: '0.5.6', sha256: approvedVsms056Sha256 }
+      : vsmsUpdate && program.current_version === '0.5.6'
+        ? { previous: '0.5.6', version: '0.5.7', sha256: approvedVsms057Sha256 } : null;
   if (vsmsUpdate) {
     const boss = await requireBoss(ctx);
     if (boss.error) return boss.error;

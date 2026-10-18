@@ -205,8 +205,17 @@ public class MainActivity extends Activity {
         button("บันทึกไฟล์เบอร์ + ลิงก์ที่ส่งสำเร็จ (CSV)", () -> startActivityForResult(
                 new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/csv")
                         .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "smsmix-success.csv"), EXPORT_SUCCESS));
-        label("VSMS 0.5.4 • ข้อมูลเก็บในเครื่อง\nซิมเดียว: เว้น 10–30 นาทีต่อเบอร์ (ส่งล้มเหลว 5–10 นาที)\nสลับซิม: SIM 1 → SIM 2 หลังทราบผล → เว้น 10–30 นาทีต่อรอบ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ");
+        label(footerText());
         loadSims();
+    }
+
+    String footerText() {
+        String version = "ไม่ทราบเวอร์ชัน";
+        try {
+            String installed = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            if (installed != null && !installed.isEmpty()) version = installed;
+        } catch (PackageManager.NameNotFoundException ignored) { /* Never claim a stale hard-coded version. */ }
+        return "VSMS " + version + " • ข้อมูลเก็บในเครื่อง\nซิมเดียว: เว้น 10–30 นาทีต่อเบอร์ (ส่งล้มเหลว 5–10 นาที)\nสลับซิม: SIM 1 → SIM 2 หลังทราบผล → เว้น 10–30 นาทีต่อรอบ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ";
     }
 
     int dp(int value) { return (int) (value * getResources().getDisplayMetrics().density); }

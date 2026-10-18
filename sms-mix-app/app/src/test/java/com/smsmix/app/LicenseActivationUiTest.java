@@ -5,6 +5,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.view.View;
+import android.view.ViewGroup;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -16,6 +18,29 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 28)
 public class LicenseActivationUiTest {
+    private static boolean hasFooter(View view, String expected) {
+        if (view instanceof TextView && ((TextView)view).getText().toString().startsWith(expected)) return true;
+        if (view instanceof ViewGroup) {
+            ViewGroup group=(ViewGroup)view;
+            for (int i=0;i<group.getChildCount();i++) if (hasFooter(group.getChildAt(i),expected)) return true;
+        }
+        return false;
+    }
+
+    @Test public void footerShowsInstalledPackageVersion() throws Exception {
+        try (var controller=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity=controller.get();
+            String installed=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
+            assertNotEquals("0.5.4",installed);
+            activity.renderApp();
+            String expected="VSMS "+installed+" • ข้อมูลเก็บในเครื่อง";
+            assertTrue(activity.footerText().startsWith(expected));
+            assertTrue("visible footer must show the installed version",
+                    hasFooter(activity.findViewById(android.R.id.content),expected));
+            assertFalse(activity.footerText().startsWith("VSMS 0.5.4 •"));
+        }
+    }
+
     @Test public void serverFailuresAreActionableWithoutExposingKeyExistence() {
         assertEquals(LicenseClient.ActivationResult.INVALID_FORMAT,
                 LicenseClient.ActivationResult.fromHttpStatus(400));
