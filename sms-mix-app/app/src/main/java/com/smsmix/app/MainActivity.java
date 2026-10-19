@@ -200,6 +200,7 @@ public class MainActivity extends Activity {
         heading("คิวปัจจุบัน", 20);
         status = label("");
         button("เบอร์ที่สุ่มได้ / พรีวิวและผลส่งทุกเบอร์", this::preview);
+        button("ทำงานอีกครั้ง (สุ่มเบอร์ใหม่จากช่วงเดิม)", this::repeatCampaign);
         button("เริ่มส่ง / ทำต่อ", this::confirmStart);
         button("สถานะการส่งรายเบอร์ / เบอร์ส่งสำเร็จ", () -> startActivity(new Intent(this, SendStatusActivity.class)));
         button("ตั้งค่าแบตเตอรี่สำหรับส่งขณะปิดจอ", () -> {
@@ -412,6 +413,23 @@ public class MainActivity extends Activity {
                     JSONObject row = rows.optJSONObject(which);
                     message(SendStatus.detail(row));
                 }).setNegativeButton("ปิด", null).show();
+    }
+
+    void repeatCampaign() {
+        JSONObject previous=Store.load(this);
+        CampaignFactory.requireTerminal(previous);
+        CampaignFactory.RepeatSource source=CampaignFactory.repeatSource(previous);
+        CampaignFactory.requireSim(this,previous);
+        String id=previous.optString("id");
+        new AlertDialog.Builder(this).setTitle("ทำงานอีกครั้ง?")
+                .setMessage("สุ่มใหม่ "+source.count+" เบอร์จากช่วง "+source.first+" ถึง "+source.last
+                        +" โดยไม่ใช้เบอร์ที่เคยสุ่ม ใช้แคปชั่นและลิงก์ต้นทางของคิวเดิม\n"
+                        +"ขั้นตอนนี้สร้างคิวและแสดงพรีวิวเท่านั้น ยังไม่ส่ง SMS")
+                .setNegativeButton("ยกเลิก",null)
+                .setPositiveButton("สร้างคิวใหม่",(dialog,which)->guarded(()->{
+                    CampaignFactory.repeat(this,id,Scheduler.RANDOM);
+                    updateStatus(); preview();
+                })).show();
     }
 
     void confirmStart() {

@@ -13,6 +13,8 @@ const approvedVsms056Sha256 = '2427b59b21433381486b06fd6455aeac1ed1638c06e036986
 const approvedVsms057Sha256 = '8e54310a4ff955e70a1fac689904d9e87de5c9476cf549e576136f36852f9327';
 // Commercial-signed VSMS 0.5.8: com.smsmix.app, versionCode 15, same approved signer.
 const approvedVsms058Sha256 = '2f90801d6184d26a9be8baf2ae3788f47f8d1d94134bbb140d1ce4671836f21d';
+// Commercial-signed VSMS 0.5.9: com.smsmix.app, versionCode 16, same approved signer.
+const approvedVsms059Sha256 = '9cbc37bd8740ac4a5eed4d9ad0e6768e393968105579c7bf6d0abc993ab8c52b';
 
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
@@ -46,7 +48,9 @@ export async function onRequestPost(ctx) {
       : vsmsUpdate && program.current_version === '0.5.6'
         ? { previous: '0.5.6', version: '0.5.7', sha256: approvedVsms057Sha256 }
         : vsmsUpdate && program.current_version === '0.5.7'
-          ? { previous: '0.5.7', version: '0.5.8', sha256: approvedVsms058Sha256 } : null;
+          ? { previous: '0.5.7', version: '0.5.8', sha256: approvedVsms058Sha256 }
+          : vsmsUpdate && program.current_version === '0.5.8'
+            ? { previous: '0.5.8', version: '0.5.9', sha256: approvedVsms059Sha256 } : null;
   if (vsmsUpdate) {
     const boss = await requireBoss(ctx);
     if (boss.error) return boss.error;
