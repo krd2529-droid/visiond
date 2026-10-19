@@ -1,11 +1,11 @@
 # Active patch: VSMS combined import populates visible editors
 
-- Status: PATCH_READY (2026-10-19); implementation/tests/signature passed, scoped delivery pending.
+- Status: PATCH_DELIVERED (2026-10-19).
 - Outcome: import one combined file → copy its caption and link lines into both visible editor fields immediately, persist draft, enable immediate queue creation without separate picker. Warn/confirm before replacing nonempty drafts; existing queue unchanged.
 - Evidence/contract: `.agents/WORKBOARD.md` CURRENT PATCH. Exact fixture 50 captions/51 links; 0.5.11 hydrates only when fields empty.
 - Scope: Android import/editor behavior, tests, 0.5.12/code19 signed APK; no web release or real SMS.
-- Verification/delivery: red regression on 0.5.11; fixed exact-file path PASS; independent full Android 139/139; signed release build PASS. APK 0.5.12/code19 SHA-256 `243E6D7EA6EB57E848CC25ECDBADA2DA057D51530D585994036B7E976662FB6D` with unchanged commercial certificate. Scoped commit/push/copy pending; no live handset or SMS test.
-- Next action: Jarvis copy APK to Downloads, scoped commit/push, report installed-user flow.
+- Verification/delivery: red regression on 0.5.11; fixed exact-file path PASS; independent full Android 139/139; signed release build PASS. APK 0.5.12/code19 SHA-256 `243E6D7EA6EB57E848CC25ECDBADA2DA057D51530D585994036B7E976662FB6D` with unchanged commercial certificate. Fix commit `1f1065c1` pushed to `origin/main`; APK copied and hash-verified at `C:/Users/User/Downloads/VSMS-v0.5.12-release.apk`. No live handset or SMS test, no website APK update.
+- Next action: user installs commercial 0.5.12 and chooses replace draft on combined import; report handset-specific outcome.
 
 # Previous active patch: VSMS combined import available in Step 2/3 pickers
 
