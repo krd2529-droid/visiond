@@ -1,4 +1,13 @@
-# Active patch: VSMS imported sets visible on new phone
+# Active patch: VSMS combined import available in Step 2/3 pickers
+
+- Status: PATCH_BLOCKED (2026-10-19) on affected-handset evidence; no product-code failure reproduced.
+- Outcome: after importing one combined captions+links file, both Step 2 caption-set and Step 3 link-set pickers offer those sets. No separate import files required.
+- Evidence/contract: `.agents/WORKBOARD.md` CURRENT PATCH; user reports missing options on handset, but installed version and phone file are unverified. Exact local combined export has 50 captions and 51 links. Current 0.5.11 has both pickers in Step 2, Step 3 is SIM.
+- Scope: diagnose exact import→library→picker flow; fix only if reproduced. Preserve drafts/queue/SMS and avoid web release.
+- Verification/delivery: exact-file licensed Robolectric document-return import→preview→both pickers PASS; full Android 137/137 and Mark independent focused 1/1 PASS. No app-code change or new APK justified. Test-only commit/push pending.
+- Next action: user supplies handset footer version and screenshot of preview/success or error after importing; then reproduce exact failed branch and patch if needed. No physical handset test or real SMS.
+
+# Previous active patch: VSMS imported sets visible on new phone
 
 - Status: PATCH_DELIVERED (2026-10-19).
 - Outcome: new commercial-signed 0.5.11 APK makes a fresh phone visibly load imported caption/link sets, preserving all entries and existing non-empty drafts/queue; newly requested unequal counts pair in order and wrap shorter list.

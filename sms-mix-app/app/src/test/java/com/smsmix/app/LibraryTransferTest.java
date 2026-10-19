@@ -375,4 +375,45 @@ public class LibraryTransferTest {
                     "วางลิงก์ย่อ บรรทัดละลิงก์").getText().toString());
         }
     }
+    @Test public void combinedFileImportExposesBothActualPickersAfterDocumentReturn() throws Exception {
+        byte[] bytes;
+        String fixture=System.getenv("VSMS_IMPORT_FIXTURE");
+        if(fixture==null || fixture.isEmpty()) {
+            CaptionLibrary.save(first,"caption set",lines("caption ",50),false);
+            LinkLibrary.save(first,"link set",LinkLibrary.manual("",lines("https://example.com/",51)),false);
+            bytes=LibraryTransfer.export(first);
+        } else bytes=Files.readAllBytes(new File(fixture).toPath());
+        LibraryTransfer.Snapshot expected=parse(bytes);
+        assertEquals(1,expected.captions.size()); assertEquals(1,expected.links.size());
+        File portable=new File(RuntimeEnvironment.getApplication().getCacheDir(),"combined-"+System.nanoTime()+".json");
+        Files.write(portable.toPath(),bytes);
+        LicenseClient.setVerifierForTests(context->true);
+        try(var controller=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity=controller.get(); activity.renderApp();
+            Button importButton=button(activity.getWindow().getDecorView(),"นำเข้าชุดแคปชั่นและลิงก์จากไฟล์");
+            assertNotNull(importButton); importButton.performClick();
+            assertEquals(Intent.ACTION_OPEN_DOCUMENT,
+                    Shadows.shadowOf(activity).getNextStartedActivityForResult().intent.getAction());
+            controller.pause();
+            activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+            controller.resume();
+            awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("50 ข้อความ")
+                    && dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("51 ลิงก์"));
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->CaptionLibrary.load(activity).size()==1 && LinkLibrary.load(activity).size()==1);
+            assertEquals(expected.captions,CaptionLibrary.load(activity));
+            assertEquals(LinkLibrary.shortText(expected.links.get(expected.links.firstKey())),
+                    LinkLibrary.shortText(LinkLibrary.load(activity).get(expected.links.firstKey())));
+            Button captionPicker=button(activity.getWindow().getDecorView(),"เลือกชุดแคปชั่นที่บันทึกไว้");
+            Button linkPicker=button(activity.getWindow().getDecorView(),"เลือกชุดลิงก์ที่บันทึกไว้");
+            assertNotNull(captionPicker); assertNotNull(linkPicker);
+            captionPicker.performClick();
+            assertEquals(1,ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getCount());
+            assertEquals(expected.captions.firstKey(),ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getItem(0));
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            linkPicker.performClick();
+            assertEquals(1,ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getCount());
+            assertEquals(expected.links.firstKey(),ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getItem(0));
+        } finally { LicenseClient.setVerifierForTests(null); }
+    }
 }
