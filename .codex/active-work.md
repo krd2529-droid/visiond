@@ -1,11 +1,11 @@
 # Active patch: คลังเบอร์ VSMS แยกจากศูนย์คีย์
 
-- Status: PATCH_READY (2026-10-19).
+- Status: PATCH_DELIVERED (2026-10-19).
 - Outcome: link/button `คลังเบอร์ VSMS` in `/admin.html` opens dedicated successful-SMS archive; remove buried key-center card, preserve boss-only data/API and pagination; show `ไม่แสดง` for current logged-in owner's name, without exposing that name in self-row API responses.
 - Evidence/contract: `.agents/WORKBOARD.md` CURRENT PATCH. No SMS, license, Android, schema, or customer data mutation.
 - Scope: main admin menu, dedicated archive HTML/CSS/JS, self-owner API masking, removal of old card/client, focused tests/cache token if needed.
-- Verification: focused API/auth/self-mask/other-owner/index/paging PASS; desktop and 390px browser menu navigation, pagination, labels, empty/error, key-center removal PASS; independent Mark rerun PASS; JS syntax and diff check PASS. Production pending.
-- Next action: Jarvis scoped commit/push `origin main`, then production read-only verification.
+- Verification: focused API/auth/self-mask/other-owner/index/paging PASS; desktop and 390px browser menu navigation, pagination, labels, empty/error, key-center removal PASS; independent Mark rerun PASS; JS syntax and diff check PASS. Production main admin/new archive/key center HTTP checks PASS; authenticated archive loaded real rows and showed `ไม่แสดง` for self owner without error.
+- Delivery: commit `d05fb78b` pushed to `origin/main`; new page `https://visiondonline.com/vsms-successful-sends` live. No Android/SMS/data mutation.
 
 # Previous active patch: VSMS import confirmation controls visible on Android
 
