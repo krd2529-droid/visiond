@@ -1,10 +1,10 @@
 # Active patch: VSMS move to next recipient one minute after confirmed failed SMS
 
-- Status: PATCH_READY (2026-10-20) — user corrected the earlier interpretation; no same-number retry. Source, independent verification, and signed local APK pass; scoped commit/push still pending.
+- Status: PATCH_DELIVERED (2026-10-20) — user corrected the earlier interpretation; no same-number retry. Source commit `55bbd14d` pushed non-force to `origin/main`; signed local APK delivered. No web release or real SMS.
 - Outcome: confirmed failed sent callback marks current recipient FAILED, waits 60 seconds, then sends next unsent recipient; never sends failed number again. Existing success cadence and dual-SIM handoff otherwise preserved.
 - Contract/evidence: `.agents/WORKBOARD.md` CURRENT PATCH. Scope Android failure cadence, directly related UI text/tests/version, signed local APK; no website publish or live SMS. Elon only code writer; Mark independent verification.
 - Verification: old-source red 3/3, new-source focused and full offline Android 141/141, Mark independent rerun 141/141, release assemble/signature/version/hash PASS. APK `C:/Users/User/Downloads/VSMS-v0.5.14-release.apk` SHA-256 `D7EACE4AEA070DD6DA65703D744862FCFDD170004F6013C094C81F0196BFD922`, commercial signer unchanged. No live handset/SMS or website upload.
-- Next: scoped commit/push `origin main`, verify clean worktree and delivery status.
+- Delivery: `C:/Users/User/Downloads/VSMS-v0.5.14-release.apk`, code21, SHA-256 `D7EACE4AEA070DD6DA65703D744862FCFDD170004F6013C094C81F0196BFD922`; signed with unchanged commercial cert. Final status-only commit/push is next; physical handset/cellular result remains unverified.
 
 # Previous active patch: คลังเบอร์ VSMS แยกจากศูนย์คีย์
 
