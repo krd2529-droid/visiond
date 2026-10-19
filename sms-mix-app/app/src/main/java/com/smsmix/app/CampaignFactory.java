@@ -88,10 +88,15 @@ final class CampaignFactory {
                 sourceLines(value,"captions",false),sourceLines(value,"links",true));
     }
     static void requireTerminal(JSONObject queue) {
+        if(queue.optBoolean("running"))
+            throw new IllegalStateException("รอให้คิวปัจจุบันจบทุกเบอร์ก่อนทำงานอีกครั้ง");
+        requireFinished(queue);
+    }
+    static void requireFinished(JSONObject queue) {
         JSONArray rows=Store.rows(queue);
         if(queue.optString("id").isEmpty() || rows.length()==0)
             throw new IllegalStateException("ยังไม่มีคิวที่ทำงานจบให้ทำซ้ำ");
-        if(queue.optBoolean("running") || Store.pending(queue)>=0 || Store.sending(queue)>=0)
+        if(Store.pending(queue)>=0 || Store.sending(queue)>=0)
             throw new IllegalStateException("รอให้คิวปัจจุบันจบทุกเบอร์ก่อนทำงานอีกครั้ง");
         for(int i=0;i<rows.length();i++) {
             JSONObject row=rows.optJSONObject(i);
@@ -120,6 +125,13 @@ final class CampaignFactory {
             if(!used.contains(CampaignCore.normalizePhone(rows.optJSONObject(i).optString("phone"))))
                 throw new IllegalStateException("ประวัติเบอร์ที่เคยสุ่มไม่ครบ หยุดเพื่อป้องกันเบอร์ซ้ำ");
         return used;
+    }
+    static void validateNextRound(Context context, JSONObject previous) {
+        RepeatSource source=repeatSource(previous);
+        requireSim(context,previous);
+        Set<String> used=repeatHistory(previous);
+        // Check exhaustion before arming; the actual selection is made only after this queue finishes.
+        RecipientSampler.fromRange(source.first,source.last,used,source.count,new Random(0));
     }
     static void requireSim(Context context, JSONObject queue) {
         if(context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE)!=PackageManager.PERMISSION_GRANTED)
@@ -234,19 +246,26 @@ final class CampaignFactory {
             if(!expectedId.equals(previous.optString("id")))
                 throw new IllegalStateException("คิวเปลี่ยน กรุณาตรวจพรีวิวใหม่");
             requireTerminal(previous);
-            RepeatSource source=repeatSource(previous);
-            requireSim(context,previous);
-            Set<String> used=repeatHistory(previous);
-            List<String> selected=RecipientSampler.fromRange(source.first,source.last,used,source.count,random);
-            JSONObject data=build(previous,true,source.first,source.last,source.count,source.captions,source.links,
-                    previous.optInt("sim",-1),Scheduler.alternating(previous)?previous.optInt("alternateSim",-1):-1,
-                    previous.optString("simLabel"),selected,used,random);
+            JSONObject data=repeatCandidate(context,previous,random);
             // No history/archive mutation before the atomic queue write: failed repeat keeps both untouched.
             Store.save(context,data);
-            try {SuccessLog.record(context,previous);} catch(RuntimeException ignored) { /* Existing queue callbacks also archive. */ }
-            try {MessageHistory.recordCampaign(context,previous); MessageHistory.recordCampaign(context,data);}
-            catch(RuntimeException ignored) { /* Current queue remains authoritative for later reconciliation. */ }
+            recordRepeat(context,previous,data);
             return data;
         }
+    }
+    static JSONObject repeatCandidate(Context context, JSONObject previous, Random random) {
+        requireFinished(previous);
+        RepeatSource source=repeatSource(previous);
+        requireSim(context,previous);
+        Set<String> used=repeatHistory(previous);
+        List<String> selected=RecipientSampler.fromRange(source.first,source.last,used,source.count,random);
+        return build(previous,true,source.first,source.last,source.count,source.captions,source.links,
+                previous.optInt("sim",-1),Scheduler.alternating(previous)?previous.optInt("alternateSim",-1):-1,
+                previous.optString("simLabel"),selected,used,random);
+    }
+    static void recordRepeat(Context context, JSONObject previous, JSONObject data) {
+        try {SuccessLog.record(context,previous);} catch(RuntimeException ignored) { /* Existing queue callbacks also archive. */ }
+        try {MessageHistory.recordCampaign(context,previous); MessageHistory.recordCampaign(context,data);}
+        catch(RuntimeException ignored) { /* Current queue remains authoritative for later reconciliation. */ }
     }
 }

@@ -417,19 +417,16 @@ public class MainActivity extends Activity {
 
     void repeatCampaign() {
         JSONObject previous=Store.load(this);
-        CampaignFactory.requireTerminal(previous);
-        CampaignFactory.RepeatSource source=CampaignFactory.repeatSource(previous);
-        CampaignFactory.requireSim(this,previous);
         String id=previous.optString("id");
-        new AlertDialog.Builder(this).setTitle("ทำงานอีกครั้ง?")
-                .setMessage("สุ่มใหม่ "+source.count+" เบอร์จากช่วง "+source.first+" ถึง "+source.last
-                        +" โดยไม่ใช้เบอร์ที่เคยสุ่ม ใช้แคปชั่นและลิงก์ต้นทางของคิวเดิม\n"
-                        +"ขั้นตอนนี้สร้างคิวและแสดงพรีวิวเท่านั้น ยังไม่ส่ง SMS")
-                .setNegativeButton("ยกเลิก",null)
-                .setPositiveButton("สร้างคิวใหม่",(dialog,which)->guarded(()->{
-                    CampaignFactory.repeat(this,id,Scheduler.RANDOM);
-                    updateStatus(); preview();
-                })).show();
+        if(previous.optBoolean("running") && (Store.pending(previous)>=0 || Store.sending(previous)>=0)) {
+            Scheduler.armNextRound(this,id);
+            updateStatus();
+            message("จองรอบถัดไป 1 รอบแล้ว เมื่อคิวนี้จบจะสุ่มเบอร์ใหม่และเริ่มส่งอัตโนมัติ กดหยุดชั่วคราวเพื่อยกเลิก");
+        } else {
+            Scheduler.startNextRound(this,id);
+            updateStatus();
+            message("สร้างคิวใหม่และเริ่มทำงานแล้ว ตรวจรายการและสถานะได้ในคิวปัจจุบัน");
+        }
     }
 
     void confirmStart() {
@@ -480,7 +477,9 @@ public class MainActivity extends Activity {
             }
             StringBuilder text = new StringBuilder(d.optBoolean("running") ? "● กำลังทำงาน" : "○ หยุด / ยังไม่เริ่ม");
             text.append("\n").append(d.optString("simLabel")).append("\n").append(d.optString("note"));
-            text.append("\nประวัติเบอร์ที่ไม่สุ่มซ้ำ: ").append(CampaignFactory.history(d).size()).append(" เบอร์");
+            text.append("\nคิวปัจจุบัน: ").append(rows.length()).append(" เบอร์");
+            text.append("\nประวัติเบอร์ที่ไม่สุ่มซ้ำสะสม: ").append(CampaignFactory.history(d).size()).append(" เบอร์");
+            if(d.optBoolean("repeatArmed"))text.append("\nจองรอบถัดไป 1 รอบ — เริ่มอัตโนมัติเมื่อคิวนี้จบ (กดหยุดชั่วคราวเพื่อยกเลิก)");
             for (Map.Entry<String,Integer> e : counts.entrySet()) text.append("\n").append(statusName(e.getKey())).append(": ").append(e.getValue());
             if (d.optBoolean("running") && Store.pending(d) >= 0) {
                 long next = d.optLong("nextAt");

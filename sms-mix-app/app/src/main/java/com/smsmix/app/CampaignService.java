@@ -83,7 +83,7 @@ public class CampaignService extends Service {
             int sending=Store.sending(d);
             if(sending>=0)Scheduler.alarm(this,d,Store.rows(d).optJSONObject(sending).optLong("deadline"),true);
             else if(Store.pending(d)>=0)Scheduler.alarm(this,d,Math.max(System.currentTimeMillis()+1000,d.optLong("nextAt")),false);
-            else {Scheduler.pause(this,d,"ครบรายการแล้ว");return START_NOT_STICKY;}
+            else {Scheduler.complete(this,d);return START_NOT_STICKY;}
             handler.postDelayed(monitor,30000);
             return START_STICKY;
         }catch(RuntimeException e){Scheduler.failClosed(this,e);stopSelf();return START_NOT_STICKY;}

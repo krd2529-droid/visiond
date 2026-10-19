@@ -109,7 +109,7 @@ const plans = (p) => {
 };
 const programDisplayName = (x) => x.code === "sms-mix" ? "VSMS" : `${x.platform_type === "veasy" ? "V Easy · " : ""}${x.product_title || x.code}`;
 const licenseProgramDisplayName = (code, title) => code === "sms-mix" ? "VSMS" : title || code;
-const vsmsNextVersion = (program) => program?.current_version === "0.5.4" ? "0.5.5" : program?.current_version === "0.5.5" ? "0.5.6" : program?.current_version === "0.5.6" ? "0.5.7" : program?.current_version === "0.5.7" ? "0.5.8" : program?.current_version === "0.5.8" ? "0.5.9" : null;
+const vsmsNextVersion = (program) => program?.current_version === "0.5.4" ? "0.5.5" : program?.current_version === "0.5.5" ? "0.5.6" : program?.current_version === "0.5.6" ? "0.5.7" : program?.current_version === "0.5.7" ? "0.5.8" : program?.current_version === "0.5.8" ? "0.5.10" : null;
 function programOptions(target) {
   target.innerHTML = programs
     .map(

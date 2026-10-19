@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 final class Scheduler {
     static final Random RANDOM = new java.security.SecureRandom();
     static final Object LOCK = new Object();
+    private static boolean failNextRepeatStartForTests;
+    static void failNextRepeatStartForTests() {failNextRepeatStartForTests=true;}
     private static final Set<String> CHECKING_QUEUES = ConcurrentHashMap.newKeySet();
     interface Handoff { void send(SmsManager manager, JSONObject row, ArrayList<String> parts, ArrayList<PendingIntent> callbacks, ArrayList<PendingIntent> deliveries); }
     private static volatile Handoff testHandoff;
@@ -43,10 +45,77 @@ final class Scheduler {
     }
     private static void pauseLocked(Context c, JSONObject d, String note) {
         Store.put(d, "running", false);
+        d.remove("repeatArmed");
         Store.put(d, "note", note);
         Store.save(c, d);
         cancel(c, d, false);
         CampaignService.stop(c);
+    }
+    static void armNextRound(Context c, String expectedId) {
+        synchronized (LOCK) {
+            JSONObject d=Store.load(c);
+            if(!expectedId.equals(d.optString("id")))throw new IllegalStateException("คิวเปลี่ยน กรุณาตรวจพรีวิวใหม่");
+            if(!d.optBoolean("running") || Store.pending(d)<0 && Store.sending(d)<0)
+                throw new IllegalStateException("คิวไม่ได้กำลังทำงาน กรุณาทำคิวเดิมให้จบก่อน");
+            if(d.optBoolean("repeatArmed"))throw new IllegalStateException("จองรอบถัดไปไว้แล้ว กดหยุดชั่วคราวเพื่อยกเลิก");
+            LicenseClient.requireCurrent(c);
+            checkNotifications(c);
+            checkPermissions(c,d);
+            CampaignFactory.validateNextRound(c,d);
+            Store.put(d,"repeatArmed",true);
+            Store.save(c,d);
+        }
+    }
+    static JSONObject startNextRound(Context c, String expectedId) {
+        synchronized (LOCK) {
+            JSONObject d=Store.load(c);
+            if(!expectedId.equals(d.optString("id")))throw new IllegalStateException("คิวเปลี่ยน กรุณาตรวจพรีวิวใหม่");
+            CampaignFactory.requireFinished(d);
+            return startNextRoundLocked(c,d,false);
+        }
+    }
+    private static JSONObject startNextRoundLocked(Context c, JSONObject previous, boolean automatic) {
+        CampaignFactory.requireFinished(previous);
+        LicenseClient.requireCurrent(c);
+        checkNotifications(c);
+        checkPermissions(c,previous);
+        JSONObject next=CampaignFactory.repeatCandidate(c,previous,RANDOM);
+        Store.put(next,"running",true);
+        Store.put(next,"note","กำลังทำงาน — รอบใหม่จากช่วงเดิม");
+        long now=System.currentTimeMillis();
+        long due=automatic ? previous.optLong("nextAt") : now+1000;
+        if(automatic && due<=now)due=now+CampaignCore.delay(RANDOM);
+        Store.put(next,"nextAt",due);
+        Store.save(c,next);
+        try {
+            alarm(c,next,next.optLong("nextAt"),false);
+            if(failNextRepeatStartForTests) {
+                failNextRepeatStartForTests=false;
+                throw new IllegalStateException("synthetic repeat start failure");
+            }
+            CampaignService.start(c);
+        } catch(RuntimeException error) {
+            try {cancel(c,next,false);} catch(RuntimeException ignored) { /* Roll back the queue regardless. */ }
+            try {CampaignService.stop(c);} catch(RuntimeException ignored) { /* No SMS handoff was requested. */ }
+            Store.save(c,previous);
+            throw error;
+        }
+        CampaignFactory.recordRepeat(c,previous,next);
+        return next;
+    }
+    static void complete(Context c, JSONObject d) {
+        synchronized (LOCK) {
+            JSONObject latest=Store.load(c);
+            if(!d.optString("id").equals(latest.optString("id")) || !latest.optBoolean("running"))return;
+            completeLocked(c,latest);
+        }
+    }
+    private static void completeLocked(Context c, JSONObject d) {
+        if(!d.optBoolean("running"))return;
+        if(Store.pending(d)>=0 || Store.sending(d)>=0)return;
+        if(!d.optBoolean("repeatArmed")) {pauseLocked(c,d,"ครบรายการแล้ว");return;}
+        try {startNextRoundLocked(c,d,true);}
+        catch(RuntimeException error) {pauseLocked(c,d,"รอบถัดไปไม่เริ่ม: "+error.getMessage());}
     }
     static void checkPermissions(Context c, int sim) {
         if (c.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED
@@ -56,6 +125,14 @@ final class Scheduler {
         SubscriptionManager sm = c.getSystemService(SubscriptionManager.class);
         if (sm == null || sm.getActiveSubscriptionInfo(sim) == null)
             throw new IllegalStateException("ไม่พบซิมที่เลือก กรุณาตรวจสอบซิมก่อน");
+    }
+    static void checkNotifications(Context c) {
+        if(Build.VERSION.SDK_INT>=33 && c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                !=PackageManager.PERMISSION_GRANTED)
+            throw new IllegalStateException("กรุณาอนุญาตการแจ้งเตือนก่อนเริ่มรอบถัดไป เพื่อให้เห็นสถานะและปุ่มหยุด");
+        NotificationManager notifications=c.getSystemService(NotificationManager.class);
+        if(notifications==null || !notifications.areNotificationsEnabled())
+            throw new IllegalStateException("กรุณาเปิดการแจ้งเตือน VSMS ก่อนเริ่มรอบถัดไป เพื่อให้เห็นสถานะและปุ่มหยุด");
     }
     static boolean alternating(JSONObject d) { return "alternate".equals(d.optString("simMode")); }
     private static boolean activeSim(Context c, int id, int slot) {
@@ -124,7 +201,7 @@ final class Scheduler {
             return;
         }
         int i = Store.pending(d);
-        if (i < 0) { pause(c, d, "ครบรายการแล้ว"); return; }
+        if (i < 0) { complete(c, d); return; }
         if (!CHECKING_QUEUES.add(id)) return;
         try {
         if (!LicenseClient.locallyCurrent(c)) {
@@ -140,7 +217,7 @@ final class Scheduler {
         if (!id.equals(d.optString("id")) || !d.optBoolean("running") || Store.sending(d) >= 0) return;
         if (System.currentTimeMillis() < d.optLong("nextAt")) { alarm(c, d, d.optLong("nextAt"), false); return; }
         i = Store.pending(d);
-        if (i < 0) { pauseLocked(c, d, "ครบรายการแล้ว"); return; }
+        if (i < 0) { completeLocked(c, d); return; }
         JSONObject row = Store.rows(d).optJSONObject(i);
         final int selectedSim;
         try {
@@ -173,7 +250,7 @@ final class Scheduler {
             Store.put(d, "note", "ข้ามเบอร์ที่ซิมไม่พร้อม — ทำต่อด้วยซิมที่ใช้งานได้ ไม่ส่งเบอร์เดิมซ้ำ");
             Store.save(c, d);
             MessageHistory.recordRow(c, d, i);
-            if (next < 0) pauseLocked(c, d, "ครบรายการแล้ว");
+            if (next < 0) completeLocked(c, d);
             else alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false);
             return;
         }
@@ -294,7 +371,7 @@ final class Scheduler {
         SuccessLog.record(c, d);
         MessageHistory.recordRow(c, d, i);
         if (noServiceWithoutFallback) pauseLocked(c, d, "ซิมไม่มีสัญญาณและไม่มีซิมสำรองที่ใช้งานได้ — หยุดคิว");
-        else if (Store.pending(d) < 0) pause(c, d, "ครบรายการแล้ว");
+        else if (Store.pending(d) < 0) completeLocked(c, d);
         else if (d.optBoolean("running")) alarm(c, d, Math.max(System.currentTimeMillis() + 1000, d.optLong("nextAt")), false);
         }
     }
@@ -327,7 +404,9 @@ final class Scheduler {
                 Store.put(row, "resultAt", System.currentTimeMillis());
                 MessageHistory.recordRow(c, d, i);
             }
-            pauseLocked(c, d, "เครื่องรีสตาร์ต กรุณาเปิดแอปและกดทำต่อ");
+            pauseLocked(c, d, d.optBoolean("repeatArmed")
+                    ? "เครื่องรีสตาร์ต ยกเลิกรอบถัดไปที่จองไว้ กรุณาเปิดแอป กดทำต่อ และจองรอบใหม่"
+                    : "เครื่องรีสตาร์ต กรุณาเปิดแอปและกดทำต่อ");
         }
     }
     static void failClosed(Context c, RuntimeException error) {

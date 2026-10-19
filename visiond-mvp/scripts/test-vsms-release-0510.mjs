@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { onRequestPost } from '../functions/api/admin/vision7/releases.js';
 
-const apk=await readFile(new URL('../../sms-mix-app/app/build/outputs/apk/release/VSMS-v0.5.9-release.apk',import.meta.url));
-const expected='9cbc37bd8740ac4a5eed4d9ad0e6768e393968105579c7bf6d0abc993ab8c52b';
+const apk=await readFile(new URL('../../sms-mix-app/app/build/outputs/apk/release/VSMS-v0.5.10-release.apk',import.meta.url));
+const expected='9d545f3dc8d8be7dc5dc2fd41cee9f8be8a293740b1dc1869c328f7095caa547';
 assert.equal(createHash('sha256').update(apk).digest('hex'),expected,'gate pins exact inspected signed APK');
 let role='boss',current='0.5.8',minimum='0.5.4',force=0,old=true,badHead=false,ignoreAdvance=false;
 const sqlite=new DatabaseSync(':memory:');
@@ -33,7 +33,7 @@ const db={
   };},
   async batch(statements){
     assert.equal(statements.length,3);
-    assert.deepEqual(statements[0].__query.args.slice(0,4),[9,'0.5.9','0.5.4',0]);
+    assert.deepEqual(statements[0].__query.args.slice(0,4),[9,'0.5.10','0.5.4',0]);
     assert.equal(statements[0].__query.args[8],expected);
     sqlite.exec('BEGIN');
     try{
@@ -52,7 +52,7 @@ const env={DB:db,FILES:{
   async head(key){const x=objects.get(key);return badHead&&x?{...x,size:x.size-1}:x;},
   async delete(key){objects.delete(key);}
 }};
-function context({version='0.5.9',minimum_version='0.5.4',mandatory=false,bytes=apk,name='VSMS-v0.5.9-release.apk'}={}){
+function context({version='0.5.10',minimum_version='0.5.4',mandatory=false,bytes=apk,name='VSMS-v0.5.10-release.apk'}={}){
   const form=new FormData();form.set('program_id','9');form.set('version',version);form.set('minimum_version',minimum_version);
   if(mandatory)form.set('mandatory','1');
   form.set('file',new File([bytes],name,{type:'application/vnd.android.package-archive'}));
@@ -61,13 +61,15 @@ function context({version='0.5.9',minimum_version='0.5.4',mandatory=false,bytes=
 const status=async options=>(await onRequestPost(context(options))).status;
 role='admin';assert.equal(await status(),403);role='boss';
 assert.equal(await status({version:'0.5.8'}),409);
-assert.equal(await status({version:'0.5.10'}),409);
+assert.equal(await status({version:'0.5.9'}),409,'unpublished buggy 0.5.9 cannot be published');
+assert.equal(await status({version:'0.5.11'}),409);
 assert.equal(await status({minimum_version:'0.5.5'}),409);
 assert.equal(await status({mandatory:true}),409);
 assert.equal(await status({name:'wrong.zip'}),409);
 const altered=Buffer.from(apk);altered[100]^=1;assert.equal(await status({bytes:altered}),409);
 minimum='0.5.5';assert.equal(await status(),409);minimum='0.5.4';
 force=1;assert.equal(await status(),409);force=0;
+current='0.5.9';assert.equal(await status(),409,'0.5.9 is not a required intermediate release');current='0.5.8';
 old=false;assert.equal(await status(),409);old=true;
 assert.equal(objects.size,5);
 badHead=true;assert.equal(await status(),502);badHead=false;
@@ -77,8 +79,8 @@ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM vision7_releases').get().n,5
 assert.equal(objects.size,5);
 const response=await onRequestPost(context());assert.equal(response.status,201);
 assert.equal((await response.json()).sha256,expected);
-assert.equal(current,'0.5.9');assert.equal(minimum,'0.5.4');assert.equal(force,0);
+assert.equal(current,'0.5.10');assert.equal(minimum,'0.5.4');assert.equal(force,0);
 assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM vision7_releases').get().n,6,'0.5.4–0.5.8 releases preserved');
 assert.ok(['old-054','old-055','old-056','old-057','old-058'].every(key=>objects.has(key)));
-assert.equal(await status(),409,'no second 0.5.9 upload');
-console.log('VSMS 0.5.9 pinned signed release PASS');
+assert.equal(await status(),409,'no second 0.5.10 upload');
+console.log('VSMS 0.5.10 direct 0.5.8 upgrade pinned signed release PASS');
