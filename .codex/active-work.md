@@ -1,4 +1,13 @@
-# Active patch: Remove channel-direction result card
+# Active patch: VSMS imported sets visible on new phone
+
+- Status: PATCH_READY (2026-10-19); signed APK verified, scoped commit/push pending.
+- Outcome: new commercial-signed 0.5.11 APK makes a fresh phone visibly load imported caption/link sets, preserving all entries and existing non-empty drafts/queue; newly requested unequal counts pair in order and wrap shorter list.
+- Acceptance and evidence: see `.agents/WORKBOARD.md` CURRENT PATCH. Local export contains 50 caption lines and 51 link URLs; do not falsely call it 50 links.
+- Scope: Android import/new-queue pairing/UI/tests/version; no actual SMS transmission or website release.
+- Verification: Android 136/136 and core 20,027 PASS; release build PASS; signed APK 0.5.11/code18 SHA-256 `1ABD37623734421D9EBBE39C457BCE4605CADC86E888CBA25630AADBB8D163DB`, one signer commercial cert unchanged. No live handset/SMS test. Scoped commit/push pending.
+- Next action: Jarvis scoped commit/push and deliver local APK; no web release requested.
+
+# Previous active patch: Remove channel-direction result card
 
 - Status: PATCH_DELIVERED — v0.20.92/cache02151, exact18-file commit `ade55e48` pushed to `origin/main`; Cloudflare Production `ce8810cc-c6f0-41f4-ba18-f68ee3283c91` Active.
 - Outcome: the visible `ทิศทางช่อง` result card and its dead client/CSS references are removed.

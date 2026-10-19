@@ -27,9 +27,10 @@ final class LibraryTransfer {
         }
     }
     static final class Preview {
-        final int captions, links, conflicts;
-        Preview(int captions, int links, int conflicts) {
-            this.captions = captions; this.links = links; this.conflicts = conflicts;
+        final int captions, links, captionLines, linkUrls, conflicts;
+        Preview(int captions, int links, int captionLines, int linkUrls, int conflicts) {
+            this.captions = captions; this.links = links;
+            this.captionLines = captionLines; this.linkUrls = linkUrls; this.conflicts = conflicts;
         }
     }
 
@@ -159,11 +160,14 @@ final class LibraryTransfer {
     static synchronized Preview preview(Context c, Snapshot incoming) {
         recover(c);
         int conflicts=0;
+        int captionLines=0, linkUrls=0;
         SortedMap<String,String> existingCaptions=CaptionLibrary.load(c);
         SortedMap<String,JSONObject> existingLinks=LinkLibrary.load(c);
         for (String name:incoming.captions.keySet()) if(existingCaptions.containsKey(name)) conflicts++;
         for (String name:incoming.links.keySet()) if(existingLinks.containsKey(name)) conflicts++;
-        return new Preview(incoming.captions.size(),incoming.links.size(),conflicts);
+        for (String value:incoming.captions.values()) captionLines+=CampaignCore.lines(value,false).size();
+        for (JSONObject entry:incoming.links.values()) linkUrls+=entry.optJSONArray("short_urls").length();
+        return new Preview(incoming.captions.size(),incoming.links.size(),captionLines,linkUrls,conflicts);
     }
     private static byte[] old(AtomicFile file, int limit) throws IOException {
         try(InputStream in=file.openRead()) { return read(in, limit); }

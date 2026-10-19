@@ -46,12 +46,13 @@ public class CoreTest {
         for(int i=0;i<10000;i++) {
             long d = CampaignCore.delay(random); delays.add(d);
             check(d>=600000L && d<=1800000L,"delay bounds");
-            String p = CampaignCore.pair(captions,links,random); pairs.add(p);
+            String p = CampaignCore.pair(captions,links,i); pairs.add(p);
             String[] parts=p.split("\n");
-            check(parts.length==2 && captions.contains(parts[0]) && links.contains(parts[1]),"pair membership");
+            check(parts.length==2 && parts[0].equals(captions.get(i%captions.size()))
+                    && parts[1].equals(links.get(i%links.size())),"ordered pair");
         }
         check(delays.size()==21,"all minute delays");
-        check(pairs.size()>900,"independent pairing");
+        check(pairs.size()==100,"ordered cycle");
         System.out.println("PASS " + checks + " checks");
     }
 }

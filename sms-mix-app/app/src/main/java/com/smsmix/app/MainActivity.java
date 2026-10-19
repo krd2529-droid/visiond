@@ -503,6 +503,58 @@ public class MainActivity extends Activity {
         else apply.run();
     }
 
+    private String importedSetCounts(LibraryTransfer.Preview preview) {
+        return "แคปชั่น " + preview.captions + " ชุด (" + preview.captionLines + " ข้อความ) และลิงก์ "
+                + preview.links + " ชุด (" + preview.linkUrls + " ลิงก์)";
+    }
+
+    private String showImportedSets(LibraryTransfer.Snapshot incoming) {
+        int loaded=0;
+        if(captions!=null && incoming.captions.size()==1 && captions.getText().toString().trim().isEmpty()) {
+            String name=incoming.captions.firstKey();
+            String saved=CaptionLibrary.load(this).get(name);
+            if(incoming.captions.get(name).equals(saved)) { captions.setText(saved); loaded++; }
+        }
+        if(links!=null && manualOriginal!=null && incoming.links.size()==1
+                && links.getText().toString().trim().isEmpty()
+                && manualOriginal.getText().toString().trim().isEmpty()) {
+            String name=incoming.links.firstKey();
+            JSONObject entry=LinkLibrary.load(this).get(name);
+            JSONObject selected=incoming.links.get(name);
+            if(entry!=null && entry.optString("original_url").equals(selected.optString("original_url"))
+                    && LinkLibrary.shortText(entry).equals(LinkLibrary.shortText(selected))) {
+                links.setText(LinkLibrary.shortText(entry));
+                manualOriginal.setText(entry.optString("original_url"));
+                loaded++;
+            }
+        }
+        if(loaded>0) saveDraft();
+        return loaded==2 ? "เติมข้อความและลิงก์ลงช่องว่างแล้ว" : loaded==1
+                ? "เติมชุดลงช่องว่างแล้ว อีกชุดเลือกใช้จากชุดที่บันทึกไว้"
+                : "เลือกใช้จากชุดที่บันทึกไว้ได้ โดยร่างเดิมไม่เปลี่ยน";
+    }
+
+    private void saveImportedSetsForNextLaunch(LibraryTransfer.Snapshot incoming) {
+        SharedPreferences drafts=getPreferences(0);
+        SharedPreferences.Editor edit=drafts.edit();
+        if(incoming.captions.size()==1 && drafts.getString("captions","").trim().isEmpty()) {
+            String name=incoming.captions.firstKey();
+            String saved=CaptionLibrary.load(this).get(name);
+            if(incoming.captions.get(name).equals(saved))edit.putString("captions",saved);
+        }
+        if(incoming.links.size()==1 && drafts.getString("links","").trim().isEmpty()
+                && drafts.getString("manualOriginal","").trim().isEmpty()) {
+            String name=incoming.links.firstKey();
+            JSONObject entry=LinkLibrary.load(this).get(name), selected=incoming.links.get(name);
+            if(entry!=null && entry.optString("original_url").equals(selected.optString("original_url"))
+                    && LinkLibrary.shortText(entry).equals(LinkLibrary.shortText(selected))) {
+                edit.putString("links",LinkLibrary.shortText(entry));
+                edit.putString("manualOriginal",entry.optString("original_url"));
+            }
+        }
+        edit.apply();
+    }
+
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (result != RESULT_OK || data == null) return;
@@ -535,9 +587,9 @@ public class MainActivity extends Activity {
                     LibraryTransfer.Preview preview=LibraryTransfer.preview(this,incoming);
                     runOnUiThread(() -> {
                         if(isFinishing()||isDestroyed())return;
-                        String summary="พบแคปชั่น "+preview.captions+" ชุด และลิงก์ "+preview.links+" ชุด"
+                        String summary="พบ"+importedSetCounts(preview)
                                 + (preview.conflicts>0?" • ชื่อซ้ำ "+preview.conflicts+" ชุด":"")
-                                + "\nร่าง เบอร์ และคิวปัจจุบันจะไม่เปลี่ยน";
+                                + "\nช่องร่างที่ว่างจะเติมจากไฟล์เมื่อมีชุดเดียวต่อประเภท ร่างที่มีข้อมูล เบอร์ และคิวปัจจุบันจะไม่เปลี่ยน";
                         String[] choices=preview.conflicts>0
                                 ?new String[]{"ข้ามชื่อซ้ำ เก็บชุดเดิม", "แทนที่ชุดชื่อซ้ำ", "ยกเลิก"}
                                 :new String[]{"นำเข้าชุด", "ยกเลิก"};
@@ -549,7 +601,15 @@ public class MainActivity extends Activity {
                                     new Thread(() -> {
                                         try {
                                             LibraryTransfer.apply(this,incoming,mode);
-                                            runOnUiThread(() -> { if(!isFinishing()&&!isDestroyed()) message("นำเข้าชุดสำเร็จ เลือกใช้จากชุดที่บันทึกไว้ได้เลย"); });
+                                            runOnUiThread(() -> {
+                                                try {
+                                                    if(isFinishing()||isDestroyed()) saveImportedSetsForNextLaunch(incoming);
+                                                    else message("นำเข้าสำเร็จ ไฟล์มี"+importedSetCounts(preview)+"\n"+showImportedSets(incoming));
+                                                }
+                                                catch(RuntimeException e) {
+                                                    if(!isFinishing()&&!isDestroyed())message("นำเข้าชุดแล้ว แต่แสดงในช่องไม่ได้: "+e.getMessage());
+                                                }
+                                            });
                                         } catch(Exception e) {
                                             boolean recoveryNeeded=LibraryTransfer.journalPending(this);
                                             runOnUiThread(() -> {

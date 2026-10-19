@@ -165,6 +165,30 @@ public class RecipientHistoryTest {
         assertThrows(IllegalArgumentException.class,()->CampaignFactory.repeat(c,third.optString("id"),new Random(5)));
         assertEquals(before,Store.load(c).toString());
     }
+    @Test public void unequalSetsContinueOrderedPairsAcrossPersistedFortyRowRounds() {
+        captions.clear(); links.clear();
+        for(int i=0;i<50;i++)captions.add("caption "+(i+1));
+        for(int i=0;i<51;i++)links.add("https://example.com/"+(i+1));
+        JSONObject first=CampaignFactory.create(c,true,List.of(),"0800000000","0800000199",40,
+                captions,links,7,"SIM test",new Random(2));
+        assertEquals(0,first.optInt("pairOffset"));
+        assertEquals("caption 1\nhttps://example.com/1",Store.rows(first).optJSONObject(0).optString("body"));
+        assertEquals("caption 40\nhttps://example.com/40",Store.rows(first).optJSONObject(39).optString("body"));
+        String oldBody=Store.rows(first).optJSONObject(39).optString("body");
+        complete(first);
+        JSONObject reloaded=Store.load(c);
+        JSONObject second=CampaignFactory.repeat(c,reloaded.optString("id"),new Random(3));
+        assertEquals(40,second.optInt("pairOffset"));
+        assertEquals("caption 41\nhttps://example.com/41",Store.rows(second).optJSONObject(0).optString("body"));
+        assertEquals("caption 50\nhttps://example.com/50",Store.rows(second).optJSONObject(9).optString("body"));
+        assertEquals("caption 1\nhttps://example.com/51",Store.rows(second).optJSONObject(10).optString("body"));
+        assertEquals("caption 2\nhttps://example.com/1",Store.rows(second).optJSONObject(11).optString("body"));
+        assertEquals(oldBody,Store.rows(first).optJSONObject(39).optString("body"));
+        complete(second);
+        JSONObject third=CampaignFactory.repeat(c,Store.load(c).optString("id"),new Random(4));
+        assertEquals(80,third.optInt("pairOffset"));
+        assertEquals("caption 31\nhttps://example.com/30",Store.rows(third).optJSONObject(0).optString("body"));
+    }
     @Test public void repeatRefusesPendingRunningLegacyFileAndCorruptHistory() throws Exception {
         JSONObject range=create(true,List.of(),2);
         String pending=Store.load(c).toString();

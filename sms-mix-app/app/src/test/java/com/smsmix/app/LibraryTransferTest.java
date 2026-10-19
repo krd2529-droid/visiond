@@ -9,6 +9,8 @@ import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import org.json.JSONObject;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -36,6 +38,11 @@ public class LibraryTransferTest {
         for(int i=0;i<10;i++) {if(i>0)out.append('\n');out.append(prefix).append(i);}
         return out.toString();
     }
+    String lines(String prefix, int count) {
+        StringBuilder out=new StringBuilder();
+        for(int i=0;i<count;i++) {if(i>0)out.append('\n');out.append(prefix).append(i);}
+        return out.toString();
+    }
     Context device(Context base, String name) {
         String identity="transfer-test-"+name+"-"+System.nanoTime();
         File dir=new File(base.getCacheDir(),identity);
@@ -57,6 +64,17 @@ public class LibraryTransferTest {
             Button found=button(((ViewGroup)view).getChildAt(i),title); if(found!=null)return found;
         }
         return null;
+    }
+    EditText editor(View view, String hint) {
+        if(view instanceof EditText && hint.equals(((EditText)view).getHint().toString()))return (EditText)view;
+        if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++) {
+            EditText found=editor(((ViewGroup)view).getChildAt(i),hint); if(found!=null)return found;
+        }
+        return null;
+    }
+    String dialogMessage(android.app.AlertDialog dialog) {
+        TextView message=dialog==null?null:dialog.findViewById(android.R.id.message);
+        return message==null?"":message.getText().toString();
     }
     void awaitUi(BooleanSupplier condition) throws Exception {
         for(int i=0;i<100;i++) {
@@ -264,6 +282,97 @@ public class LibraryTransferTest {
             ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
             awaitUi(()->CaptionLibrary.load(activity).containsKey("พกพา"));
             assertEquals(captions("portable"),CaptionLibrary.load(activity).get("พกพา"));
+        }
+    }
+    @Test public void pickerImportShowsEveryLineOnFreshPhoneAndPreservesPopulatedDraftAndQueue() throws Exception {
+        String captionLines=lines("ข้อความ ",50), linkLines=lines("https://example.com/l/",51);
+        CaptionLibrary.save(first,"แคปชั่นย้ายเครื่อง",captionLines,false);
+        LinkLibrary.save(first,"ลิงก์ย้ายเครื่อง",LinkLibrary.manual("",linkLines),false);
+        byte[] exported=LibraryTransfer.export(first);
+        File portable=new File(RuntimeEnvironment.getApplication().getCacheDir(),"sets-"+System.nanoTime()+".json");
+        Files.write(portable.toPath(),exported);
+        try(var controller=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity=controller.get(); activity.renderApp();
+            EditText captionEditor=editor(activity.getWindow().getDecorView(),"แคปชั่น 10–100 รายการ บรรทัดละรายการ");
+            EditText linkEditor=editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์");
+            assertNotNull(captionEditor); assertNotNull(linkEditor);
+            captionEditor.setText(""); linkEditor.setText("");
+            activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+            awaitUi(()->{
+                android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+                return dialog!=null && dialog.getListView()!=null
+                        && dialogMessage(dialog).contains("50 ข้อความ")
+                        && dialogMessage(dialog).contains("51 ลิงก์");
+            });
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->captionLines.contentEquals(captionEditor.getText()) && linkLines.contentEquals(linkEditor.getText()));
+            assertEquals(50,captionEditor.getText().toString().split("\\n").length);
+            assertEquals(51,linkEditor.getText().toString().split("\\n").length);
+            assertTrue(dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("51 ลิงก์"));
+            assertEquals(captionLines,activity.getPreferences(0).getString("captions",null));
+            assertEquals(linkLines,activity.getPreferences(0).getString("links",null));
+
+            captionEditor.setText("ร่างข้อความเดิม"); linkEditor.setText("https://old.example");
+            JSONObject queue=Store.object(); Store.put(queue,"marker","KEEP-QUEUE"); Store.save(activity,queue);
+            activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+            awaitUi(()->{
+                android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+                return dialog!=null && dialog.getListView()!=null
+                        && dialogMessage(dialog).contains("ชื่อซ้ำ 2 ชุด");
+            });
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("นำเข้าสำเร็จ"));
+            assertEquals("ร่างข้อความเดิม",captionEditor.getText().toString());
+            assertEquals("https://old.example",linkEditor.getText().toString());
+            assertEquals("KEEP-QUEUE",Store.load(activity).getString("marker"));
+        }
+    }
+    @Test public void pickerImportKeepsMultipleSetsSelectableWithoutChoosingOneForDrafts() throws Exception {
+        CaptionLibrary.save(first,"ชุด A",captions("A"),false);
+        CaptionLibrary.save(first,"ชุด B",captions("B"),false);
+        LinkLibrary.save(first,"ลิงก์ A",links("https://a.test"),false);
+        LinkLibrary.save(first,"ลิงก์ B",links("https://b.test"),false);
+        File portable=new File(RuntimeEnvironment.getApplication().getCacheDir(),"multi-"+System.nanoTime()+".json");
+        Files.write(portable.toPath(),LibraryTransfer.export(first));
+        try(var controller=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity=controller.get(); activity.renderApp();
+            EditText captionEditor=editor(activity.getWindow().getDecorView(),"แคปชั่น 10–100 รายการ บรรทัดละรายการ");
+            EditText linkEditor=editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์");
+            captionEditor.setText(""); linkEditor.setText("");
+            activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+            awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("แคปชั่น 2 ชุด"));
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->CaptionLibrary.load(activity).size()==2 && LinkLibrary.load(activity).size()==2);
+            assertEquals("",captionEditor.getText().toString());
+            assertEquals("",linkEditor.getText().toString());
+            button(activity.getWindow().getDecorView(),"เลือกชุดแคปชั่นที่บันทึกไว้").performClick();
+            assertEquals(2,ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getCount());
+            button(activity.getWindow().getDecorView(),"เลือกชุดลิงก์ที่บันทึกไว้").performClick();
+            assertEquals(2,ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getCount());
+        }
+    }
+    @Test public void importFinishingDuringApplyRestoresEmptyDraftsOnNextLaunch() throws Exception {
+        String captionLines=lines("caption ",50), linkLines=lines("https://example.com/",51);
+        CaptionLibrary.save(first,"single",captionLines,false);
+        LinkLibrary.save(first,"single",LinkLibrary.manual("",linkLines),false);
+        File portable=new File(RuntimeEnvironment.getApplication().getCacheDir(),"reopen-"+System.nanoTime()+".json");
+        Files.write(portable.toPath(),LibraryTransfer.export(first));
+        var controller=Robolectric.buildActivity(MainActivity.class).setup();
+        MainActivity activity=controller.get(); activity.renderApp();
+        editor(activity.getWindow().getDecorView(),"แคปชั่น 10–100 รายการ บรรทัดละรายการ").setText("");
+        editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์").setText("");
+        activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+        awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("50 ข้อความ"));
+        ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+        controller.pause().stop().destroy();
+        awaitUi(()->captionLines.equals(activity.getPreferences(0).getString("captions",null))
+                && linkLines.equals(activity.getPreferences(0).getString("links",null)));
+        try(var next=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity reopened=next.get(); reopened.renderApp();
+            assertEquals(captionLines,editor(reopened.getWindow().getDecorView(),
+                    "แคปชั่น 10–100 รายการ บรรทัดละรายการ").getText().toString());
+            assertEquals(linkLines,editor(reopened.getWindow().getDecorView(),
+                    "วางลิงก์ย่อ บรรทัดละลิงก์").getText().toString());
         }
     }
 }

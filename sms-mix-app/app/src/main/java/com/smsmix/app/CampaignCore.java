@@ -88,8 +88,8 @@ public final class CampaignCore {
         return out;
     }
 
-    public static String pair(List<String> captions, List<String> links, Random random) {
-        return captions.get(random.nextInt(captions.size())) + "\n" + links.get(random.nextInt(links.size()));
+    public static String pair(List<String> captions, List<String> links, int position) {
+        return captions.get(position % captions.size()) + "\n" + links.get(position % links.size());
     }
 
     public static long delay(Random random) {

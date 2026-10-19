@@ -184,7 +184,7 @@ final class CampaignFactory {
         List<String> selected = rangeMode
                 ? RecipientSampler.fromRange(first, last, used, count, random)
                 : RecipientSampler.fromFile(imported, used, count, random);
-        JSONObject data = build(previous,rangeMode,first,last,count,captions,links,sim,alternateSim,simLabel,selected,used,random);
+        JSONObject data = build(previous,rangeMode,first,last,count,captions,links,sim,alternateSim,simLabel,selected,used,0);
         String previousId = previous.optString("id");
         synchronized (Scheduler.LOCK) {
             JSONObject latest = Store.load(context);
@@ -202,7 +202,7 @@ final class CampaignFactory {
 
     private static JSONObject build(JSONObject previous, boolean rangeMode, String first, String last, int count,
             List<String> captions, List<String> links, int sim, int alternateSim, String simLabel,
-            List<String> selected, Set<String> used, Random random) {
+            List<String> selected, Set<String> used, int pairOffset) {
         JSONObject data = Store.object();
         Store.put(data, "id", UUID.randomUUID().toString());
         Store.put(data, "createdAt", System.currentTimeMillis());
@@ -214,6 +214,7 @@ final class CampaignFactory {
         }
         Store.put(data, "running", false); Store.put(data, "note", "พร้อมตรวจพรีวิว");
         Store.put(data, "recipientMode", rangeMode ? "range" : "file");
+        Store.put(data, "pairOffset", pairOffset);
         if(rangeMode)Store.put(data,"repeatSource",source(first,last,count,captions,links));
         JSONArray rows = new JSONArray();
         for (String phone : selected) {
@@ -224,7 +225,7 @@ final class CampaignFactory {
                 Store.put(row, "simLabel", firstSlot ? "SIM 1" : "SIM 2");
             }
             Store.put(row, "phone", phone);
-            Store.put(row, "body", CampaignCore.pair(captions, links, random));
+            Store.put(row, "body", CampaignCore.pair(captions, links, pairOffset + rows.length()));
             String body = row.optString("body");
             Store.put(row, "link", body.substring(body.lastIndexOf('\n') + 1));
             Store.put(row, "status", "PENDING"); rows.put(row);
@@ -259,9 +260,28 @@ final class CampaignFactory {
         requireSim(context,previous);
         Set<String> used=repeatHistory(previous);
         List<String> selected=RecipientSampler.fromRange(source.first,source.last,used,source.count,random);
+        int pairOffset=nextPairOffset(previous,source.captions.size(),source.links.size());
         return build(previous,true,source.first,source.last,source.count,source.captions,source.links,
                 previous.optInt("sim",-1),Scheduler.alternating(previous)?previous.optInt("alternateSim",-1):-1,
-                previous.optString("simLabel"),selected,used,random);
+                previous.optString("simLabel"),selected,used,pairOffset);
+    }
+    private static int nextPairOffset(JSONObject previous, int captions, int links) {
+        int cycle=captions / gcd(captions,links) * links;
+        int offset=0;
+        if(previous.has("pairOffset")) {
+            Object value=previous.opt("pairOffset");
+            if(!(value instanceof Number) || !Double.isFinite(((Number)value).doubleValue())
+                    || ((Number)value).doubleValue()!=Math.rint(((Number)value).doubleValue())
+                    || ((Number)value).doubleValue()<0 || ((Number)value).doubleValue()>=cycle)
+                throw new IllegalStateException("ตำแหน่งข้อความ/ลิงก์ของคิวเสียหาย");
+            offset=((Number)value).intValue();
+        }
+        // A pre-0.5.11 queue has no offset; count its rows as the first sequence.
+        return (offset+Store.rows(previous).length())%cycle;
+    }
+    private static int gcd(int a, int b) {
+        while(b!=0) { int next=a%b; a=b; b=next; }
+        return a;
     }
     static void recordRepeat(Context context, JSONObject previous, JSONObject data) {
         try {SuccessLog.record(context,previous);} catch(RuntimeException ignored) { /* Existing queue callbacks also archive. */ }
