@@ -89,6 +89,16 @@ DB.role='boss';
 const p1=await page(null),p2=await page(p1.body.next_cursor);
 assert.equal(p1.body.items.length,24);assert.equal(p2.body.items.length,3);
 assert.equal(new Set([...p1.body.items,...p2.body.items].map(x=>x.id)).size,27,'keyset has no duplicate/gap');
+const allRows=[...p1.body.items,...p2.body.items];
+assert.equal(allRows.filter(x=>x.license_id==='A').length,26);
+for(const row of allRows.filter(x=>x.license_id==='A')) {
+  assert.equal(row.user_name,'ไม่แสดง','logged-in owner name is masked in API');
+  assert.equal(row.user_email,null,'logged-in owner email is masked in API');
+  assert.equal('user_id' in row,false,'internal comparison ID is not exposed');
+}
+const other=allRows.find(x=>x.license_id==='B');
+assert.equal(other.user_name,'Owner B');
+assert.equal(other.user_email,'b@example.test');
 assert.equal(p2.body.next_cursor,null);
 assert.equal(p1.response.headers.get('cache-control'),'private, no-store');
 const sql=`SELECT s.id FROM vision7_smsmix_successful_sends s WHERE s.id<? ORDER BY s.id DESC LIMIT 25`;

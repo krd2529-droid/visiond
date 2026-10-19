@@ -7,7 +7,7 @@ export async function onRequestGet(ctx) {
   const cursor = text == null ? null : Number(text);
   const headers = { 'cache-control': 'private, no-store' };
   if (text != null && (!Number.isSafeInteger(cursor) || cursor < 1)) return json({ error: 'invalid cursor' }, 400, headers);
-  const select = `SELECT s.id,s.recipient_phone,s.sent_at,s.received_at,s.license_id,
+  const select = `SELECT s.id,s.user_id,s.recipient_phone,s.sent_at,s.received_at,s.license_id,
       u.name user_name,u.email user_email,b.device_name
     FROM vision7_smsmix_successful_sends s
     JOIN users u ON u.id=s.user_id
@@ -15,6 +15,9 @@ export async function onRequestGet(ctx) {
     ${cursor == null ? '' : 'WHERE s.id<?'} ORDER BY s.id DESC LIMIT 25`;
   const query = ctx.env.DB.prepare(select);
   const rows = (await (cursor == null ? query : query.bind(cursor)).all()).results || [];
-  const items = rows.slice(0,24);
+  const items = rows.slice(0,24).map(({ user_id, ...row }) =>
+    String(user_id) === String(auth.user.id)
+      ? { ...row, user_name: 'ไม่แสดง', user_email: null }
+      : row);
   return json({ items, next_cursor: rows.length > 24 ? items.at(-1).id : null }, 200, headers);
 }

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>คลังเบอร์ VSMS · VisionD</title>
+    <link rel="icon" href="/favicon.svg?v=014428" type="image/svg+xml" />
+    <link rel="stylesheet" href="/vision7.css?v=014119" />
+    <link rel="stylesheet" href="/vsms-successful-sends.css?v=1" />
+  </head>
+  <body class="v7-admin vsms-archive">
+    <header class="top"><b>คลังเบอร์ VSMS</b><a href="/admin.html">กลับหน้าผู้ดูแล</a></header>
+    <main class="wrap">
+      <section class="card" aria-labelledby="archiveTitle">
+        <header class="card-heading">
+          <div><small>VSMS</small><h1 id="archiveTitle">เบอร์ที่ส่ง SMS สำเร็จ</h1><p class="muted">ผลส่งจาก Android ทุกเครื่องที่มีคีย์ · ไม่ใช่สถานะอ่านหรือรับปลายทาง</p></div>
+          <button id="loadVsmsSuccess" class="compact-action" type="button">โหลดใหม่</button>
+        </header>
+        <p id="vsmsSuccessState" role="status" aria-live="polite">กำลังโหลด…</p>
+        <div class="vsms-table-wrap">
+          <table class="vsms-table" aria-label="เบอร์ที่ส่ง SMS สำเร็จ">
+            <thead><tr><th>เบอร์ผู้รับ</th><th>ส่งสำเร็จเมื่อ</th><th>เครื่อง</th><th>เจ้าของคีย์</th><th>คีย์</th></tr></thead>
+            <tbody id="vsmsSuccessRows"></tbody>
+          </table>
+        </div>
+        <button id="vsmsSuccessMore" type="button" hidden>ดูรายการก่อนหน้า</button>
+      </section>
+    </main>
+    <script src="/vsms-successful-sends.js?v=1" type="module"></script>
+  </body>
+</html>

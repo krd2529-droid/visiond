@@ -39,29 +39,46 @@ const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CH
 try {
   for(const viewport of [{width:1280,height:800},{width:390,height:844}]) {
     const page=await browser.newPage({viewport});
-    await page.goto(`http://127.0.0.1:${server.address().port}/vision7-admin.html`);
-    await page.locator('#loadVsmsSuccess').waitFor();
+    const base=`http://127.0.0.1:${server.address().port}`;
+    await page.goto(`${base}/admin.html`);
+    const link=page.locator('.admin-menu-board a[href="/vsms-successful-sends.html"]');
+    assert.equal(await link.getAttribute('href'),'/vsms-successful-sends.html');
+    assert.equal(await link.isVisible(),false,'non-boss cannot see archive menu');
+    await page.locator('#adminPanel').evaluate(panel=>{panel.hidden=false;});
+    await page.evaluate(()=>document.body.classList.add('viewer-is-boss'));
+    assert.equal(await link.isVisible(),true,'management menu shows archive link');
+    await link.click();
+    assert.equal(new URL(page.url()).pathname,'/vsms-successful-sends.html','menu opens dedicated archive');
+    await page.locator('#vsmsSuccessRows tr').first().waitFor();
+    calls=[];
+    await page.goto(`${base}/vision7-admin.html`);
+    assert.equal(await page.locator('#loadVsmsSuccess').count(),0,'key center no longer embeds archive');
     await page.getByRole('button',{name:'อัปเดต VSMS 0.5.6'}).click();
     assert.equal(await page.locator('#releaseForm [name="version"]').inputValue(),'0.5.6');
     assert.equal(await page.locator('#releaseForm [name="minimum_version"]').inputValue(),'0.5.4');
-    assert.equal(calls.length,0,'lazy panel makes no initial request');
-    await page.locator('#loadVsmsSuccess').click();
-    await page.locator('#vsmsSuccessRows tbody tr').nth(23).waitFor();
-    assert.equal(await page.locator('#vsmsSuccessRows tbody tr').count(),24);
+    assert.equal(calls.length,0,'key center makes no archive request');
+    await page.goto(`${base}/vsms-successful-sends.html`);
+    await page.locator('#vsmsSuccessRows tr').nth(23).waitFor();
+    assert.equal(await page.locator('#vsmsSuccessRows tr').count(),24);
     assert.equal(await page.locator('#vsmsSuccessMore').isVisible(),true);
     await page.locator('#vsmsSuccessMore').click();
-    await page.locator('#vsmsSuccessRows tbody tr').nth(25).waitFor();
+    await page.locator('#vsmsSuccessRows tr').nth(25).waitFor();
     await page.locator('#vsmsSuccessMore').waitFor({state:'hidden'});
-    assert.equal(await page.locator('#vsmsSuccessRows tbody tr').count(),26);
+    assert.equal(await page.locator('#vsmsSuccessRows tr').count(),26);
     assert.equal(await page.locator('#vsmsSuccessMore').isVisible(),false);
     assert.deepEqual(calls.slice(-2),[null,'3']);
-    assert.equal(await page.locator('#vsmsSuccessRows tbody tr').first().locator('td').first().innerText(),'0800000000');
-    assert.equal(await page.locator('#vsmsSuccessRows tbody tr').last().locator('td').first().innerText(),'0800000025');
+    assert.equal(await page.locator('#vsmsSuccessRows tr').first().locator('td').first().innerText(),'0800000000');
+    assert.equal(await page.locator('#vsmsSuccessRows tr').last().locator('td').first().innerText(),'0800000025');
+    if(viewport.width<760) {
+      const labels=await page.locator('#vsmsSuccessRows tr').first().locator('td').evaluateAll(cells=>cells.map(cell=>({label:cell.dataset.label,shown:getComputedStyle(cell,'::before').content})));
+      assert.deepEqual(labels.map(x=>x.label),['เบอร์ผู้รับ','ส่งสำเร็จเมื่อ','เครื่อง','เจ้าของคีย์','คีย์']);
+      for(const x of labels) assert.ok(x.shown.includes(x.label),`mobile label ${x.label}`);
+    }
     mode='error';await page.locator('#loadVsmsSuccess').click();
     await page.locator('#vsmsSuccessState').getByText(/โหลดรายการไม่สำเร็จ/).waitFor();
     mode='empty';await page.locator('#loadVsmsSuccess').click();
     await page.locator('#vsmsSuccessState').getByText('ยังไม่มีรายการส่งสำเร็จ').waitFor();
-    assert.equal(await page.locator('#vsmsSuccessRows tbody tr').count(),0);
+    assert.equal(await page.locator('#vsmsSuccessRows tr').count(),0);
     await page.close();mode='rows';calls=[];
   }
   console.log('VSMS successful-send admin browser PASS');

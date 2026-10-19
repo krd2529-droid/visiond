@@ -70,36 +70,6 @@ let programs = [],
   operatorUserId = 0,
   publishVsmsTarget = null;
 window.__licenses = [];
-let vsmsSuccessCursor = null, vsmsSuccessFlight = null;
-const vsmsSuccessRows = document.querySelector("#vsmsSuccessRows"),
-  vsmsSuccessState = document.querySelector("#vsmsSuccessState"),
-  vsmsSuccessMore = document.querySelector("#vsmsSuccessMore");
-async function loadVsmsSuccess(reset = false) {
-  if (vsmsSuccessFlight) return vsmsSuccessFlight;
-  const cursor = reset ? null : vsmsSuccessCursor;
-  vsmsSuccessState.textContent = "กำลังโหลด…";
-  vsmsSuccessFlight = (async () => {
-    try {
-      const response = await fetch(`/api/admin/vision7/smsmix-successful-sends${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      const html = (data.items || []).map(x => `<tr><td>${esc(x.recipient_phone)}</td><td>${esc(new Date(Number(x.sent_at)).toLocaleString("th-TH"))}</td><td>${esc(x.device_name || "อุปกรณ์ VSMS")}</td><td>${esc(x.user_name || x.user_email || "")}</td><td><code>${esc(x.license_id)}</code></td></tr>`).join("");
-      if (reset) vsmsSuccessRows.innerHTML = "";
-      if (html) {
-        if (!vsmsSuccessRows.querySelector("table")) vsmsSuccessRows.innerHTML = '<div class="license-table-wrap"><table class="license-table"><thead><tr><th>เบอร์ผู้รับ</th><th>ส่งสำเร็จเมื่อ</th><th>เครื่อง</th><th>เจ้าของคีย์</th><th>คีย์</th></tr></thead><tbody></tbody></table></div>';
-        vsmsSuccessRows.querySelector("tbody").insertAdjacentHTML("beforeend", html);
-      }
-      vsmsSuccessCursor = data.next_cursor;
-      vsmsSuccessMore.hidden = !vsmsSuccessCursor;
-      vsmsSuccessMore.style.setProperty("display", vsmsSuccessCursor ? "" : "none", "important");
-      vsmsSuccessState.textContent = vsmsSuccessRows.querySelector("tbody") ? "ผลส่งสำเร็จที่รายงานจากแอป VSMS" : "ยังไม่มีรายการส่งสำเร็จ";
-    } catch (error) { vsmsSuccessState.textContent = `โหลดรายการไม่สำเร็จ: ${error.message}`; }
-    finally { vsmsSuccessFlight = null; }
-  })();
-  return vsmsSuccessFlight;
-}
-document.querySelector("#loadVsmsSuccess").onclick = () => loadVsmsSuccess(true);
-vsmsSuccessMore.onclick = () => loadVsmsSuccess(false);
 const plans = (p) => {
   try {
     return typeof p.plans === "string" ? JSON.parse(p.plans) : p.plans || [];
