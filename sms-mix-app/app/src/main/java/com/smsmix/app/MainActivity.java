@@ -605,6 +605,17 @@ public class MainActivity extends Activity {
         },"sets-apply").start();
     }
 
+    private void confirmImportedSets(LibraryTransfer.Snapshot incoming, LibraryTransfer.Preview preview, int mode) {
+        ImportDrafts before=currentImportDrafts();
+        if(hasImportDrafts(incoming))
+            new AlertDialog.Builder(this).setTitle("แทนร่างเดิมหลังนำเข้า?")
+                    .setMessage("ร่างเดิมในช่องแคปชั่นหรือลิงก์จะถูกแทนที่เฉพาะเมื่อเลือกแทนร่าง เบอร์และคิวไม่เปลี่ยน")
+                    .setPositiveButton("แทนร่างเดิม",(dialog,which)->applyImportedSets(incoming,preview,mode,true,before))
+                    .setNeutralButton("เก็บร่างเดิม",(dialog,which)->applyImportedSets(incoming,preview,mode,false,before))
+                    .setNegativeButton("ยกเลิก",null).show();
+        else applyImportedSets(incoming,preview,mode,false,before);
+    }
+
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (result != RESULT_OK || data == null) return;
@@ -643,24 +654,16 @@ public class MainActivity extends Activity {
                                 ? "\nมีร่างเดิมในช่องแก้ไข หากเลือกแทนร่าง ข้อความและลิงก์เดิมจะถูกแทนที่หลังนำเข้า"
                                 : "\nช่องร่างที่ว่างจะเติมจากไฟล์เมื่อมีชุดเดียวต่อประเภท")
                                 + "\nเบอร์และคิวปัจจุบันจะไม่เปลี่ยน";
-                        String[] choices=preview.conflicts>0
-                                ?new String[]{"ข้ามชื่อซ้ำ เก็บชุดเดิม", "แทนที่ชุดชื่อซ้ำ", "ยกเลิก"}
-                                :new String[]{"นำเข้าชุด", "ยกเลิก"};
-                        new AlertDialog.Builder(this).setTitle("นำเข้าชุดจากไฟล์?").setMessage(summary)
-                                .setItems(choices,(dialog,which)->{
-                                    if((preview.conflicts>0&&which==2)||(preview.conflicts==0&&which==1))return;
-                                    int mode=preview.conflicts==0?LibraryTransfer.REJECT_CONFLICTS
-                                            :which==0?LibraryTransfer.SKIP_CONFLICTS:LibraryTransfer.OVERWRITE_CONFLICTS;
-                                    ImportDrafts before=currentImportDrafts();
-                                    if(hasImportDrafts(incoming))
-                                        new AlertDialog.Builder(this).setTitle("แทนร่างเดิมหลังนำเข้า?")
-                                                .setMessage("ร่างเดิมในช่องแคปชั่นหรือลิงก์จะถูกแทนที่เฉพาะเมื่อเลือกแทนร่าง เบอร์และคิวไม่เปลี่ยน")
-                                                .setItems(new String[]{"นำเข้าและแทนร่างเดิม", "นำเข้าแต่เก็บร่างเดิม", "ยกเลิก"},
-                                                        (choiceDialog,draftChoice)->{
-                                                            if(draftChoice<2)applyImportedSets(incoming,preview,mode,draftChoice==0,before);
-                                                        }).show();
-                                    else applyImportedSets(incoming,preview,mode,false,before);
-                                }).show();
+                        AlertDialog.Builder confirm=new AlertDialog.Builder(this).setTitle("นำเข้าชุดจากไฟล์?")
+                                .setMessage(summary).setNegativeButton("ยกเลิก",null);
+                        if(preview.conflicts>0)confirm
+                                .setPositiveButton("ข้ามชื่อซ้ำ",(dialog,which)->confirmImportedSets(
+                                        incoming,preview,LibraryTransfer.SKIP_CONFLICTS))
+                                .setNeutralButton("แทนที่ชื่อซ้ำ",(dialog,which)->confirmImportedSets(
+                                        incoming,preview,LibraryTransfer.OVERWRITE_CONFLICTS));
+                        else confirm.setPositiveButton("นำเข้าชุด",(dialog,which)->confirmImportedSets(
+                                incoming,preview,LibraryTransfer.REJECT_CONFLICTS));
+                        confirm.show();
                     });
                 } catch(Exception e) {
                     runOnUiThread(() -> { if(!isFinishing()&&!isDestroyed()) message("อ่านไฟล์ชุดไม่ได้ ข้อมูลเดิมยังอยู่: "+e.getMessage()); });

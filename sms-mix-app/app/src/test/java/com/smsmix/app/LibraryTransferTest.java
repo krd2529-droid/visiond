@@ -76,6 +76,14 @@ public class LibraryTransferTest {
         TextView message=dialog==null?null:dialog.findViewById(android.R.id.message);
         return message==null?"":message.getText().toString();
     }
+    Button dialogButton(int which, String title) {
+        android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+        Button action=dialog==null?null:dialog.getButton(which);
+        assertNotNull("missing visible import action: "+title,action);
+        assertEquals(title,action.getText().toString());
+        assertEquals(View.VISIBLE,action.getVisibility());
+        return action;
+    }
     void awaitUi(BooleanSupplier condition) throws Exception {
         for(int i=0;i<100;i++) {
             Shadows.shadowOf(Looper.getMainLooper()).idle();
@@ -276,10 +284,10 @@ public class LibraryTransferTest {
             activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(uri));
             awaitUi(()->{
                 android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
-                return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter()!=null
-                        && dialog.getListView().getAdapter().getCount()==2;
+                return dialog!=null && dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)!=null
+                        && "นำเข้าชุด".equals(dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).getText().toString());
             });
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
             awaitUi(()->CaptionLibrary.load(activity).containsKey("พกพา"));
             assertEquals(captions("portable"),CaptionLibrary.load(activity).get("พกพา"));
         }
@@ -300,11 +308,11 @@ public class LibraryTransferTest {
             activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
             awaitUi(()->{
                 android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
-                return dialog!=null && dialog.getListView()!=null
+                return dialog!=null
                         && dialogMessage(dialog).contains("50 ข้อความ")
                         && dialogMessage(dialog).contains("51 ลิงก์");
             });
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
             awaitUi(()->captionLines.contentEquals(captionEditor.getText()) && linkLines.contentEquals(linkEditor.getText()));
             assertEquals(50,captionEditor.getText().toString().split("\\n").length);
             assertEquals(51,linkEditor.getText().toString().split("\\n").length);
@@ -317,16 +325,19 @@ public class LibraryTransferTest {
             activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
             awaitUi(()->{
                 android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
-                return dialog!=null && dialog.getListView()!=null
-                        && dialogMessage(dialog).contains("ชื่อซ้ำ 2 ชุด");
+                return dialog!=null && dialogMessage(dialog).contains("ชื่อซ้ำ 2 ชุด");
             });
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_NEUTRAL,"แทนที่ชื่อซ้ำ");
+            dialogButton(android.app.AlertDialog.BUTTON_NEGATIVE,"ยกเลิก");
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"ข้ามชื่อซ้ำ").performClick();
             awaitUi(()->{
                 android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
-                return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter().getCount()==3
-                        && "นำเข้าแต่เก็บร่างเดิม".equals(dialog.getListView().getAdapter().getItem(1));
+                return dialog!=null && dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL)!=null
+                        && "เก็บร่างเดิม".equals(dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL).getText().toString());
             });
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,1,1);
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"แทนร่างเดิม");
+            dialogButton(android.app.AlertDialog.BUTTON_NEGATIVE,"ยกเลิก");
+            dialogButton(android.app.AlertDialog.BUTTON_NEUTRAL,"เก็บร่างเดิม").performClick();
             awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("นำเข้าสำเร็จ"));
             assertEquals("ร่างข้อความเดิม",captionEditor.getText().toString());
             assertEquals("https://old.example",linkEditor.getText().toString());
@@ -347,7 +358,7 @@ public class LibraryTransferTest {
             captionEditor.setText(""); linkEditor.setText("");
             activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
             awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("แคปชั่น 2 ชุด"));
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
             awaitUi(()->CaptionLibrary.load(activity).size()==2 && LinkLibrary.load(activity).size()==2);
             assertEquals("",captionEditor.getText().toString());
             assertEquals("",linkEditor.getText().toString());
@@ -369,7 +380,7 @@ public class LibraryTransferTest {
         editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์").setText("");
         activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
         awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("50 ข้อความ"));
-        ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+        dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
         controller.pause().stop().destroy();
         awaitUi(()->captionLines.equals(activity.getPreferences(0).getString("captions",null))
                 && linkLines.equals(activity.getPreferences(0).getString("links",null)));
@@ -405,7 +416,8 @@ public class LibraryTransferTest {
             controller.resume();
             awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("50 ข้อความ")
                     && dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("51 ลิงก์"));
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_NEGATIVE,"ยกเลิก");
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
             awaitUi(()->CaptionLibrary.load(activity).size()==1 && LinkLibrary.load(activity).size()==1);
             assertEquals(expected.captions,CaptionLibrary.load(activity));
             assertEquals(LinkLibrary.shortText(expected.links.get(expected.links.firstKey())),
@@ -450,13 +462,15 @@ public class LibraryTransferTest {
             EditText visibleLinks=editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์");
             awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("50 ข้อความ"));
             assertTrue(dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("แทนร่าง"));
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
             awaitUi(()->{
                 android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
-                return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter().getCount()==3
-                        && "นำเข้าและแทนร่างเดิม".equals(dialog.getListView().getAdapter().getItem(0));
+                return dialog!=null && dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)!=null
+                        && "แทนร่างเดิม".equals(dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).getText().toString());
             });
-            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            dialogButton(android.app.AlertDialog.BUTTON_NEGATIVE,"ยกเลิก");
+            dialogButton(android.app.AlertDialog.BUTTON_NEUTRAL,"เก็บร่างเดิม");
+            dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"แทนร่างเดิม").performClick();
             awaitUi(()->importedCaptions.contentEquals(visibleCaptions.getText())
                     && importedLinks.contentEquals(visibleLinks.getText()));
             assertEquals("KEEP-QUEUE",Store.load(activity).getString("marker"));
@@ -484,13 +498,16 @@ public class LibraryTransferTest {
             for(int choice:new int[]{2,1}) {
                 activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
                 awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("พบแคปชั่น 1 ชุด"));
-                ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+                dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"นำเข้าชุด").performClick();
                 awaitUi(()->{
                     android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
-                    return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter().getCount()==3
-                            && "นำเข้าแต่เก็บร่างเดิม".equals(dialog.getListView().getAdapter().getItem(1));
+                    return dialog!=null && dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL)!=null
+                            && "เก็บร่างเดิม".equals(dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL).getText().toString());
                 });
-                ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,choice,choice);
+                dialogButton(android.app.AlertDialog.BUTTON_POSITIVE,"แทนร่างเดิม");
+                dialogButton(android.app.AlertDialog.BUTTON_NEGATIVE,"ยกเลิก");
+                if(choice==2)dialogButton(android.app.AlertDialog.BUTTON_NEGATIVE,"ยกเลิก").performClick();
+                else dialogButton(android.app.AlertDialog.BUTTON_NEUTRAL,"เก็บร่างเดิม").performClick();
                 if(choice==2) {
                     assertTrue(CaptionLibrary.load(activity).isEmpty());
                     assertTrue(LinkLibrary.load(activity).isEmpty());

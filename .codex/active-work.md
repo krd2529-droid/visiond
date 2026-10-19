@@ -1,4 +1,13 @@
-# Active patch: VSMS combined import populates visible editors
+# Active patch: VSMS import confirmation controls visible on Android
+
+- Status: PATCH_READY (2026-10-19).
+- Outcome: user photo shows valid 50/51 preview but no action control; replace `setMessage`+`setItems` import/secondary dialogs with visible buttons, then import fills both editor fields.
+- Evidence/contract: `.agents/WORKBOARD.md` CURRENT PATCH; exact screenshot `C:/Users/User/Downloads/S__21569539.jpg`, exact combined JSON file. No real SMS or web upload.
+- Scope: Android dialog controls/tests/version 0.5.13/code20; preserve drafts/queue/library and prior 0.5.12 editor hydration.
+- Verification: old-code visible-button red reproduced; 0.5.13 exact-file import/buttons green, full offline Android 139/139 and independent rerun PASS. Signed APK package `com.smsmix.app` versionCode20/versionName0.5.13, commercial cert unchanged, SHA-256 `FD6D64FF873E51F67D1D6AA116E407DD0F10A68E79D95B5B2579D311A72E8A39`; copied and hash-verified at `C:/Users/User/Downloads/VSMS-v0.5.13-release.apk`. No live handset/SMS or web upload.
+- Next action: scoped commit/push `origin main`, then report installable APK.
+
+# Previous active patch: VSMS combined import populates visible editors
 
 - Status: PATCH_DELIVERED (2026-10-19).
 - Outcome: import one combined file → copy its caption and link lines into both visible editor fields immediately, persist draft, enable immediate queue creation without separate picker. Warn/confirm before replacing nonempty drafts; existing queue unchanged.
