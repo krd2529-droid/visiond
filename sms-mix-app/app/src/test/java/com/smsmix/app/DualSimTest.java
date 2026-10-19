@@ -148,13 +148,15 @@ public class DualSimTest {
         assertEquals(3,handoffs.get()); assertEquals(7,row(2).optInt("sim"));
     }
 
-    @Test public void oneFailureStillGivesOtherSimTurnThenSuccessfulRoundDelay() {
+    @Test public void firstFailureWaitsOneMinuteThenGivesOtherSimTurn() {
         queue(3);
         Scheduler.setHandoffForTests((manager,item,parts,callbacks,deliveries) -> {});
         Scheduler.tick(c,"dual-test",false);
         result(0,Activity.RESULT_CANCELED);
         assertEquals("FAILED",row(0).optString("status"));
-        assertTrue(saved().optLong("nextAt") - System.currentTimeMillis() < 1000);
+        assertEquals(row(0).optLong("resultAt")+60_000L,saved().optLong("nextAt"));
+        delayBetween(1,1);
+        assertEquals(1,Store.pending(saved()));
         due(); assertEquals("SENDING",row(1).optString("status"));
         result(1,Activity.RESULT_OK);
         delayBetween(10,30);
@@ -162,18 +164,20 @@ public class DualSimTest {
         assertEquals("FAILED",row(0).optString("status")); // Never requeued.
     }
 
-    @Test public void secondFailureUsesFirstSuccessRoundDelayAndBothFailuresBackOff() {
+    @Test public void secondFailureWaitsOneMinuteEvenAfterFirstSuccess() {
         queue(3);
         Scheduler.setHandoffForTests((manager,item,parts,callbacks,deliveries) -> {});
         Scheduler.tick(c,"dual-test",false); result(0,Activity.RESULT_OK);
         due(); result(1,Activity.RESULT_CANCELED);
-        delayBetween(10,30);
+        delayBetween(1,1);
         assertEquals("FAILED",row(1).optString("status"));
+        assertEquals(row(1).optLong("resultAt")+60_000L,saved().optLong("nextAt"));
         assertEquals(-1,saved().optInt("fallbackSim",-1));
         queue(3);
         Scheduler.tick(c,"dual-test",false); result(0,Activity.RESULT_CANCELED);
+        delayBetween(1,1);
         due(); result(1,Activity.RESULT_CANCELED);
-        delayBetween(5,10);
+        delayBetween(1,1);
         assertTrue(saved().optBoolean("running"));
         due(); assertEquals("SENDING",row(2).optString("status"));
     }
@@ -187,7 +191,8 @@ public class DualSimTest {
         result(1,SmsManager.RESULT_ERROR_NO_SERVICE);
         assertEquals("FAILED",row(1).optString("status"));
         assertEquals(7,saved().optInt("fallbackSim"));
-        delayBetween(10,30);
+        assertEquals(row(1).optLong("resultAt")+60_000L,saved().optLong("nextAt"));
+        delayBetween(1,1);
         due(); assertEquals("SENDING",row(2).optString("status"));
         result(2,Activity.RESULT_OK); delayBetween(10,30);
         due(); assertEquals("SENDING",row(3).optString("status"));
@@ -196,13 +201,13 @@ public class DualSimTest {
         assertEquals(4,handoffs.get());
     }
 
-    @Test public void noServiceOnFirstTurnAllowsImmediatePartnerThenOneSimCadence() {
+    @Test public void noServiceOnFirstTurnWaitsOneMinuteForPartnerThenOneSimCadence() {
         queue(3);
         Scheduler.setHandoffForTests((manager,item,parts,callbacks,deliveries) -> {});
         Scheduler.tick(c,"dual-test",false);
         result(0,SmsManager.RESULT_ERROR_NO_SERVICE);
         assertEquals(8,saved().optInt("fallbackSim"));
-        assertTrue(saved().optLong("nextAt") - System.currentTimeMillis() < 1000);
+        delayBetween(1,1);
         due(); assertEquals(8,row(1).optInt("usedSim"));
         result(1,Activity.RESULT_OK); delayBetween(10,30);
         due(); assertEquals(8,row(2).optInt("usedSim"));
@@ -267,8 +272,9 @@ public class DualSimTest {
         due(); assertEquals("SENDING",row(2).optString("status"));
         result(2,Activity.RESULT_CANCELED);
         assertEquals("FAILED",row(2).optString("status"));
+        assertEquals(row(2).optLong("resultAt")+60_000L,saved().optLong("nextAt"));
         assertTrue(saved().optBoolean("running"));
-        delayBetween(10,30);
+        delayBetween(1,1);
         due(); assertEquals("SENDING",row(3).optString("status"));
         assertEquals(7,row(3).optInt("usedSim"));
         assertEquals(3,handoffs.get());

@@ -131,7 +131,7 @@ public class MainActivity extends Activity {
         content.addView(logo, new LinearLayout.LayoutParams(dp(88), dp(88)));
         heading("VSMS", 30);
         label(LicenseClient.statusText());
-        label("ส่งผ่านซิม • สุ่มข้อความ • เว้นช่วง 10–30 นาที");
+        label("ส่งผ่านซิม • สุ่มข้อความ • ส่งสำเร็จเว้น 10–30 นาที • ล้มเหลวรอ 1 นาทีก่อนเบอร์ถัดไป");
         heading("1  สุ่มเบอร์ผู้รับแบบไม่ซ้ำ", 20);
         recipientMode = new Spinner(this);
         recipientMode.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
@@ -196,7 +196,7 @@ public class MainActivity extends Activity {
             else message("เปิดสิทธิ์ตั้งเวลาแล้ว");
         });
         button("สร้างคิวและพรีวิว", this::prepare);
-        label("เบอร์แรกส่งหลังยืนยันทันที เบอร์ถัดไปสุ่มรอ 10–30 นาทีใหม่ทุกครั้ง ข้อความยาวอาจคิดค่าบริการหลาย SMS");
+        label("เบอร์แรกส่งหลังยืนยันทันที ส่งสำเร็จแล้วสุ่มรอ 10–30 นาที; ส่งไม่สำเร็จรอ 1 นาทีก่อนเบอร์ถัดไป ข้อความยาวอาจคิดค่าบริการหลาย SMS");
         heading("คิวปัจจุบัน", 20);
         status = label("");
         button("เบอร์ที่สุ่มได้ / พรีวิวและผลส่งทุกเบอร์", this::preview);
@@ -230,7 +230,7 @@ public class MainActivity extends Activity {
             String installed = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             if (installed != null && !installed.isEmpty()) version = installed;
         } catch (PackageManager.NameNotFoundException ignored) { /* Never claim a stale hard-coded version. */ }
-        return "VSMS " + version + " • ข้อมูลเก็บในเครื่อง\nซิมเดียว: เว้น 10–30 นาทีต่อเบอร์ (ส่งล้มเหลว 5–10 นาที)\nสลับซิม: SIM 1 → SIM 2 หลังทราบผล → เว้น 10–30 นาทีต่อรอบ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ";
+        return "VSMS " + version + " • ข้อมูลเก็บในเครื่อง\nส่งสำเร็จ: เว้น 10–30 นาทีต่อเบอร์/รอบ (สลับซิม: SIM 1 → SIM 2 หลังผลสำเร็จ)\nส่งไม่สำเร็จ: รอ 1 นาทีแล้วส่งเบอร์ถัดไป ไม่ส่งเบอร์เดิมซ้ำ\nหากซิมหนึ่งใช้ไม่ได้ จะข้ามเบอร์นั้นแล้วทำต่อด้วยอีกซิม เว้น 10–30 นาทีต่อเบอร์\nSMS ไม่มีสถานะอ่านแล้ว การรับขึ้นกับรายงานจากเครือข่าย\nหลังรีสตาร์ตเครื่อง ให้เปิดแอปและกดทำต่อ";
     }
 
     int dp(int value) { return (int) (value * getResources().getDisplayMetrics().density); }
@@ -444,8 +444,8 @@ public class MainActivity extends Activity {
         String id = d.optString("id");
         new AlertDialog.Builder(this).setTitle("ยืนยันส่ง SMS")
                 .setMessage(d.optString("simLabel") + "\nส่งข้อความตามพรีวิวผ่านซิมจริง มีค่าบริการตามแพ็กเกจ\n"
-                        + (Scheduler.alternating(d) ? "SIM 1 ส่งก่อน รอผลแล้ว SIM 2 ส่งต่อทันที จากนั้นพัก 10–30 นาทีหนึ่งรอบ หากซิมหนึ่งใช้ไม่ได้จะข้ามเบอร์นั้นและทำต่อด้วยอีกซิม\n"
-                        : "เริ่มเบอร์แรกทันที แล้วสุ่มรอ 10–30 นาทีระหว่างเบอร์\n")
+                        + (Scheduler.alternating(d) ? "SIM 1 ส่งก่อน หากสำเร็จ SIM 2 ส่งต่อทันที แล้วพัก 10–30 นาทีหนึ่งรอบ; หากส่งล้มเหลวรอ 1 นาทีก่อนเบอร์ถัดไป\n"
+                        : "เริ่มเบอร์แรกทันที ส่งสำเร็จแล้วรอ 10–30 นาที; ส่งล้มเหลวรอ 1 นาทีก่อนเบอร์ถัดไป\n")
                         + "รายการส่งแล้ว / ล้มเหลว / ไม่ทราบผล จะไม่ถูกส่งซ้ำเมื่อทำต่อ")
                 .setNegativeButton("ยกเลิก", null)
                 .setPositiveButton("เริ่มส่ง", (a,b) -> guarded(() -> {

@@ -21,13 +21,13 @@ public class OutcomeTest {
         JSONObject next=Store.object();Store.put(next,"phone","+66800000001");Store.put(next,"body","next");Store.put(next,"status","PENDING");
         Store.rows(d).put(next);Store.save(f.c,d);return d;
     }
-    @Test public void failedMultipartAdvancesAfterFiveToTenMinutesAndNeverRetries(){
+    @Test public void failedMultipartAdvancesAfterOneMinuteAndNeverRetries(){
         two(true);Scheduler.result(f.c,f.callback(0),Activity.RESULT_CANCELED);
         assertEquals("SENDING",f.status());
         Scheduler.result(f.c,f.callback(1),Activity.RESULT_OK);
         JSONObject d=Store.load(f.c);assertEquals("FAILED",f.status());assertTrue(d.optBoolean("running"));
         long wait=d.optLong("nextAt")-Store.rows(d).optJSONObject(0).optLong("resultAt");
-        assertTrue(wait>=300000 && wait<=600000);assertEquals(1,Store.pending(d));
+        assertEquals(60_000L,wait);assertEquals(1,Store.pending(d));
         assertEquals(d.optLong("nextAt"),Shadows.shadowOf(f.c.getSystemService(AlarmManager.class)).peekNextScheduledAlarm().getTriggerAtMs());
         Scheduler.tick(f.c,d.optString("id"),false);assertEquals("PENDING",Store.rows(Store.load(f.c)).optJSONObject(1).optString("status"));
         Store.put(d,"nextAt",0);Store.save(f.c,d);Scheduler.tick(f.c,d.optString("id"),false);

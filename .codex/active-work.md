@@ -1,4 +1,12 @@
-# Active patch: คลังเบอร์ VSMS แยกจากศูนย์คีย์
+# Active patch: VSMS move to next recipient one minute after confirmed failed SMS
+
+- Status: PATCH_READY (2026-10-20) — user corrected the earlier interpretation; no same-number retry. Source, independent verification, and signed local APK pass; scoped commit/push still pending.
+- Outcome: confirmed failed sent callback marks current recipient FAILED, waits 60 seconds, then sends next unsent recipient; never sends failed number again. Existing success cadence and dual-SIM handoff otherwise preserved.
+- Contract/evidence: `.agents/WORKBOARD.md` CURRENT PATCH. Scope Android failure cadence, directly related UI text/tests/version, signed local APK; no website publish or live SMS. Elon only code writer; Mark independent verification.
+- Verification: old-source red 3/3, new-source focused and full offline Android 141/141, Mark independent rerun 141/141, release assemble/signature/version/hash PASS. APK `C:/Users/User/Downloads/VSMS-v0.5.14-release.apk` SHA-256 `D7EACE4AEA070DD6DA65703D744862FCFDD170004F6013C094C81F0196BFD922`, commercial signer unchanged. No live handset/SMS or website upload.
+- Next: scoped commit/push `origin main`, verify clean worktree and delivery status.
+
+# Previous active patch: คลังเบอร์ VSMS แยกจากศูนย์คีย์
 
 - Status: PATCH_DELIVERED (2026-10-19).
 - Outcome: link/button `คลังเบอร์ VSMS` in `/admin.html` opens dedicated successful-SMS archive; remove buried key-center card, preserve boss-only data/API and pagination; show `ไม่แสดง` for current logged-in owner's name, without exposing that name in self-row API responses.

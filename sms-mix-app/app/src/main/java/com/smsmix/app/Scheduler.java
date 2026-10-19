@@ -344,27 +344,25 @@ final class Scheduler {
                     Store.put(d, "fallbackAtIndex", i);
                 }
             }
-            if (i % 2 == 0 && next == i + 1
+            if (!ok) {
+                Store.put(d, "nextAt", row.optLong("resultAt") + 60_000L);
+                if (d.optBoolean("running")) Store.put(d, "note", "ส่งไม่สำเร็จ — รอ 1 นาทีแล้วส่งเบอร์ถัดไป ไม่ส่งเบอร์เดิมซ้ำ");
+            } else if (i % 2 == 0 && next == i + 1
                     && (d.optInt("fallbackSim", -1) < 0 || d.optInt("fallbackAtIndex", -1) == i)) {
                 // Never overlap handoffs: only the completed result unlocks SIM 2.
                 Store.put(d, "nextAt", System.currentTimeMillis());
                 if (d.optBoolean("running")) Store.put(d, "note", "SIM 1 เสร็จแล้ว — ส่ง SIM 2 ต่อทันที ไม่ส่งเบอร์เดิมซ้ำ");
             } else {
-                JSONObject first = i % 2 == 1 ? Store.rows(d).optJSONObject(i - 1) : null;
-                boolean oneSucceeded = ok || first != null && "SENT".equals(first.optString("status"));
                 boolean oneSimCadence = d.optInt("fallbackSim", -1) >= 0
                         && i > d.optInt("fallbackAtIndex", Integer.MAX_VALUE);
-                long delay = oneSimCadence || oneSucceeded ? CampaignCore.delay(RANDOM)
-                        : (5 + RANDOM.nextInt(6)) * 60_000L;
-                Store.put(d, "nextAt", System.currentTimeMillis() + delay);
+                Store.put(d, "nextAt", System.currentTimeMillis() + CampaignCore.delay(RANDOM));
                 if (d.optBoolean("running")) Store.put(d, "note", oneSimCadence
                         ? "ทำต่อด้วยซิมที่ใช้งานได้ — รอ 10–30 นาทีต่อเบอร์ ไม่ส่งเบอร์เดิมซ้ำ"
-                        : oneSucceeded ? "จบรอบ SIM 1 / SIM 2 — รอ 10–30 นาที ก่อนรอบถัดไป"
-                        : "ทั้งรอบส่งไม่สำเร็จ — รอ 5–10 นาที ไม่ส่งเบอร์เดิมซ้ำ");
+                        : "จบรอบ SIM 1 / SIM 2 — รอ 10–30 นาที ก่อนรอบถัดไป");
             }
         } else if (!ok) {
-            Store.put(d, "nextAt", System.currentTimeMillis() + (5 + RANDOM.nextInt(6)) * 60_000L);
-            if (d.optBoolean("running")) Store.put(d, "note", "ส่งไม่สำเร็จ — รอ 5–10 นาทีแล้วส่งเบอร์ถัดไป ไม่ส่งเบอร์เดิมซ้ำ");
+            Store.put(d, "nextAt", row.optLong("resultAt") + 60_000L);
+            if (d.optBoolean("running")) Store.put(d, "note", "ส่งไม่สำเร็จ — รอ 1 นาทีแล้วส่งเบอร์ถัดไป ไม่ส่งเบอร์เดิมซ้ำ");
         } else if (d.optBoolean("running")) Store.put(d, "note", "ส่งสำเร็จ — รอส่งเบอร์ถัดไป");
         Store.save(c, d);
         if (ok) SuccessfulSendOutbox.record(c, d, i);

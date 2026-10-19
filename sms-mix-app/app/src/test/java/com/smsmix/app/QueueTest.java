@@ -166,6 +166,56 @@ public class QueueTest {
         assertEquals("FAILED",status());
         assertFalse(Store.load(c).optBoolean("running"));
     }
+    @Test public void confirmedFailureWaitsOneMinuteThenSendsOnlyNextRecipient() {
+        dueQueue();
+        JSONObject d=Store.load(c);
+        JSONObject next=Store.object();
+        Store.put(next,"phone","+66800000001"); Store.put(next,"body","next"); Store.put(next,"status","PENDING");
+        Store.rows(d).put(next); Store.save(c,d);
+        AtomicInteger handoffs=new AtomicInteger();
+        Scheduler.setHandoffForTests((manager,row,parts,callbacks,deliveries)->handoffs.incrementAndGet());
+        Scheduler.tick(c,"test-campaign",false);
+        assertEquals(1,handoffs.get());
+        long failedAt=System.currentTimeMillis();
+        Scheduler.result(c,callback(0),Activity.RESULT_CANCELED);
+        JSONObject failed=Store.load(c);
+        assertEquals("FAILED",Store.rows(failed).optJSONObject(0).optString("status"));
+        assertEquals(1,Store.pending(failed));
+        assertEquals(Store.rows(failed).optJSONObject(0).optLong("resultAt")+60_000L,failed.optLong("nextAt"));
+        assertTrue(failed.optLong("nextAt")-failedAt>=60_000L);
+        assertTrue(failed.optLong("nextAt")-failedAt<61_000L);
+        assertEquals(failed.optLong("nextAt"),Shadows.shadowOf(c.getSystemService(AlarmManager.class)).peekNextScheduledAlarm().getTriggerAtMs());
+        Scheduler.tick(c,"test-campaign",false);
+        assertEquals(1,handoffs.get());
+        new BootReceiver().onReceive(c,new Intent(Intent.ACTION_BOOT_COMPLETED));
+        JSONObject paused=Store.load(c);
+        assertFalse(paused.optBoolean("running"));
+        assertEquals(failed.optLong("nextAt"),paused.optLong("nextAt"));
+        Scheduler.resume(c,paused);
+        assertEquals(failed.optLong("nextAt"),Store.load(c).optLong("nextAt"));
+        Scheduler.tick(c,"test-campaign",false);
+        assertEquals(1,handoffs.get());
+        Store.put(failed,"nextAt",0); Store.save(c,failed); // Simulate the 60-second alarm without SMS/network.
+        Scheduler.tick(c,"test-campaign",false);
+        assertEquals(2,handoffs.get());
+        assertEquals("FAILED",Store.rows(Store.load(c)).optJSONObject(0).optString("status"));
+        assertEquals("SENDING",Store.rows(Store.load(c)).optJSONObject(1).optString("status"));
+    }
+    @Test public void mixedMultipartResultFailsWithoutResendingDeliveredPart() {
+        JSONObject d=queue("SENDING",2,true);
+        JSONObject next=Store.object(); Store.put(next,"phone","+66800000001");
+        Store.put(next,"body","next"); Store.put(next,"status","PENDING");
+        Store.rows(d).put(next); Store.save(c,d);
+        Scheduler.result(c,callback(0),Activity.RESULT_OK);
+        assertEquals("SENDING",status());
+        Scheduler.result(c,callback(1),Activity.RESULT_CANCELED);
+        JSONObject failed=Store.load(c);
+        assertEquals("FAILED",status());
+        assertEquals(1,Store.pending(failed));
+        assertEquals(Store.rows(failed).optJSONObject(0).optLong("resultAt")+60_000L,failed.optLong("nextAt"));
+        Scheduler.result(c,callback(1),Activity.RESULT_OK); // Late duplicate cannot revive the failed row.
+        assertEquals("FAILED",status());
+    }
     @Test public void expiredSendingBecomesUnknownAndNeverPending() {
         JSONObject d=queue("SENDING",1,true);
         Store.put(Store.rows(d).optJSONObject(0),"deadline",System.currentTimeMillis()-1);
