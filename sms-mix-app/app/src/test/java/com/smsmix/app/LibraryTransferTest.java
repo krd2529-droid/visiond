@@ -321,6 +321,12 @@ public class LibraryTransferTest {
                         && dialogMessage(dialog).contains("ชื่อซ้ำ 2 ชุด");
             });
             ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->{
+                android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+                return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter().getCount()==3
+                        && "นำเข้าแต่เก็บร่างเดิม".equals(dialog.getListView().getAdapter().getItem(1));
+            });
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,1,1);
             awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("นำเข้าสำเร็จ"));
             assertEquals("ร่างข้อความเดิม",captionEditor.getText().toString());
             assertEquals("https://old.example",linkEditor.getText().toString());
@@ -415,5 +421,84 @@ public class LibraryTransferTest {
             assertEquals(1,ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getCount());
             assertEquals(expected.links.firstKey(),ShadowAlertDialog.getLatestAlertDialog().getListView().getAdapter().getItem(0));
         } finally { LicenseClient.setVerifierForTests(null); }
+    }
+    @Test public void combinedImportExplicitlyReplacesPopulatedDraftsAndKeepsQueue() throws Exception {
+        byte[] bytes;
+        String fixture=System.getenv("VSMS_IMPORT_FIXTURE");
+        if(fixture==null || fixture.isEmpty()) {
+            CaptionLibrary.save(first,"caption set",lines("caption ",50),false);
+            LinkLibrary.save(first,"link set",LinkLibrary.manual("",lines("https://example.com/",51)),false);
+            bytes=LibraryTransfer.export(first);
+        } else bytes=Files.readAllBytes(new File(fixture).toPath());
+        LibraryTransfer.Snapshot expected=parse(bytes);
+        String importedCaptions=expected.captions.get(expected.captions.firstKey());
+        String importedLinks=LinkLibrary.shortText(expected.links.get(expected.links.firstKey()));
+        File portable=new File(RuntimeEnvironment.getApplication().getCacheDir(),"replace-"+System.nanoTime()+".json");
+        Files.write(portable.toPath(),bytes);
+        LicenseClient.setVerifierForTests(context->true);
+        try(var controller=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity=controller.get(); activity.renderApp();
+            EditText captionEditor=editor(activity.getWindow().getDecorView(),"แคปชั่น 10–100 รายการ บรรทัดละรายการ");
+            EditText linkEditor=editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์");
+            captionEditor.setText("ร่างข้อความเดิม"); linkEditor.setText("https://draft.example");
+            JSONObject queue=Store.object(); Store.put(queue,"marker","KEEP-QUEUE"); Store.save(activity,queue);
+            button(activity.getWindow().getDecorView(),"นำเข้าชุดแคปชั่นและลิงก์จากไฟล์").performClick();
+            controller.pause();
+            activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+            controller.resume();
+            EditText visibleCaptions=editor(activity.getWindow().getDecorView(),"แคปชั่น 10–100 รายการ บรรทัดละรายการ");
+            EditText visibleLinks=editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์");
+            awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("50 ข้อความ"));
+            assertTrue(dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("แทนร่าง"));
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->{
+                android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+                return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter().getCount()==3
+                        && "นำเข้าและแทนร่างเดิม".equals(dialog.getListView().getAdapter().getItem(0));
+            });
+            ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+            awaitUi(()->importedCaptions.contentEquals(visibleCaptions.getText())
+                    && importedLinks.contentEquals(visibleLinks.getText()));
+            assertEquals("KEEP-QUEUE",Store.load(activity).getString("marker"));
+            controller.pause().stop().destroy();
+            try(var next=Robolectric.buildActivity(MainActivity.class).setup()) {
+                MainActivity reopened=next.get(); reopened.renderApp();
+                assertEquals(importedCaptions,editor(reopened.getWindow().getDecorView(),
+                        "แคปชั่น 10–100 รายการ บรรทัดละรายการ").getText().toString());
+                assertEquals(importedLinks,editor(reopened.getWindow().getDecorView(),
+                        "วางลิงก์ย่อ บรรทัดละลิงก์").getText().toString());
+            }
+        } finally { LicenseClient.setVerifierForTests(null); }
+    }
+    @Test public void importDraftChoiceCancelAndKeepNeverOverwriteExistingText() throws Exception {
+        CaptionLibrary.save(first,"single",captions("incoming"),false);
+        LinkLibrary.save(first,"single",links("https://incoming.test"),false);
+        File portable=new File(RuntimeEnvironment.getApplication().getCacheDir(),"keep-"+System.nanoTime()+".json");
+        Files.write(portable.toPath(),LibraryTransfer.export(first));
+        try(var controller=Robolectric.buildActivity(MainActivity.class).setup()) {
+            MainActivity activity=controller.get(); activity.renderApp();
+            EditText captionEditor=editor(activity.getWindow().getDecorView(),"แคปชั่น 10–100 รายการ บรรทัดละรายการ");
+            EditText linkEditor=editor(activity.getWindow().getDecorView(),"วางลิงก์ย่อ บรรทัดละลิงก์");
+            captionEditor.setText("keep caption"); linkEditor.setText("https://keep.test");
+            JSONObject queue=Store.object(); Store.put(queue,"marker","KEEP-QUEUE"); Store.save(activity,queue);
+            for(int choice:new int[]{2,1}) {
+                activity.onActivityResult(48,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(portable)));
+                awaitUi(()->dialogMessage(ShadowAlertDialog.getLatestAlertDialog()).contains("พบแคปชั่น 1 ชุด"));
+                ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,0,0);
+                awaitUi(()->{
+                    android.app.AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+                    return dialog!=null && dialog.getListView()!=null && dialog.getListView().getAdapter().getCount()==3
+                            && "นำเข้าแต่เก็บร่างเดิม".equals(dialog.getListView().getAdapter().getItem(1));
+                });
+                ShadowAlertDialog.getLatestAlertDialog().getListView().performItemClick(null,choice,choice);
+                if(choice==2) {
+                    assertTrue(CaptionLibrary.load(activity).isEmpty());
+                    assertTrue(LinkLibrary.load(activity).isEmpty());
+                } else awaitUi(()->CaptionLibrary.load(activity).size()==1 && LinkLibrary.load(activity).size()==1);
+                assertEquals("keep caption",captionEditor.getText().toString());
+                assertEquals("https://keep.test",linkEditor.getText().toString());
+                assertEquals("KEEP-QUEUE",Store.load(activity).getString("marker"));
+            }
+        }
     }
 }

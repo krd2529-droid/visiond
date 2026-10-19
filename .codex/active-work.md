@@ -1,4 +1,13 @@
-# Active patch: VSMS combined import available in Step 2/3 pickers
+# Active patch: VSMS combined import populates visible editors
+
+- Status: PATCH_READY (2026-10-19); implementation/tests/signature passed, scoped delivery pending.
+- Outcome: import one combined file → copy its caption and link lines into both visible editor fields immediately, persist draft, enable immediate queue creation without separate picker. Warn/confirm before replacing nonempty drafts; existing queue unchanged.
+- Evidence/contract: `.agents/WORKBOARD.md` CURRENT PATCH. Exact fixture 50 captions/51 links; 0.5.11 hydrates only when fields empty.
+- Scope: Android import/editor behavior, tests, 0.5.12/code19 signed APK; no web release or real SMS.
+- Verification/delivery: red regression on 0.5.11; fixed exact-file path PASS; independent full Android 139/139; signed release build PASS. APK 0.5.12/code19 SHA-256 `243E6D7EA6EB57E848CC25ECDBADA2DA057D51530D585994036B7E976662FB6D` with unchanged commercial certificate. Scoped commit/push/copy pending; no live handset or SMS test.
+- Next action: Jarvis copy APK to Downloads, scoped commit/push, report installed-user flow.
+
+# Previous active patch: VSMS combined import available in Step 2/3 pickers
 
 - Status: PATCH_BLOCKED (2026-10-19) on affected-handset evidence; no product-code failure reproduced.
 - Outcome: after importing one combined captions+links file, both Step 2 caption-set and Step 3 link-set pickers offer those sets. No separate import files required.
