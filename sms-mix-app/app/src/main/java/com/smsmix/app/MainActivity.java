@@ -407,9 +407,10 @@ public class MainActivity extends Activity {
                 active.sort(Comparator.comparingInt(SubscriptionInfo::getSimSlotIndex));
                 for (SubscriptionInfo s : active) {
                     int slot = s.getSimSlotIndex(), id = s.getSubscriptionId();
+                    if (slot != 0 && slot != 1) continue;
                     if (slot == 0) sim1Id = id;
                     if (slot == 1) sim2Id = id;
-                    simIds.add(id); names.add("SIM " + (slot + 1) + " · " + s.getDisplayName());
+                    simIds.add(id); names.add("ซิมเดียว: SIM " + (slot + 1) + " · " + s.getDisplayName());
                 }
             }
         }
@@ -477,7 +478,9 @@ public class MainActivity extends Activity {
                     : " · " + row.optString("usedSimLabel", row.optString("simLabel")))
                     + " · " + statusName(row.optString("status"));
         }
-        new AlertDialog.Builder(this).setTitle("คิว " + rows.length() + " เบอร์ · แตะดูข้อความ")
+        String previewTitle = "คิว " + rows.length() + " เบอร์ · " + d.optString("simLabel");
+        if (!Scheduler.alternating(d)) previewTitle += "\nซิมเดียว: เบอร์แรกทันที สำเร็จรอ 10–30 นาที ล้มเหลวรอ 1 นาที";
+        new AlertDialog.Builder(this).setTitle(previewTitle)
                 .setItems(items, (dialog, which) -> {
                     JSONObject row = rows.optJSONObject(which);
                     message(SendStatus.detail(row));
@@ -515,7 +518,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("ยืนยันส่ง SMS")
                 .setMessage(d.optString("simLabel") + "\nส่งข้อความตามพรีวิวผ่านซิมจริง มีค่าบริการตามแพ็กเกจ\n"
                         + (Scheduler.alternating(d) ? "SIM 1 ส่งก่อน หากสำเร็จ SIM 2 ส่งต่อทันที แล้วพัก 10–30 นาทีหนึ่งรอบ; หากส่งล้มเหลวรอ 1 นาทีก่อนเบอร์ถัดไป\n"
-                        : "เริ่มเบอร์แรกทันที ส่งสำเร็จแล้วรอ 10–30 นาที; ส่งล้มเหลวรอ 1 นาทีก่อนเบอร์ถัดไป\n")
+                        : "โหมดซิมเดียว: เริ่มเบอร์แรกทันที ส่งสำเร็จแล้วรอ 10–30 นาที; ส่งล้มเหลวรอ 1 นาทีก่อนเบอร์ถัดไป\n")
                         + "รายการส่งแล้ว / ล้มเหลว / ไม่ทราบผล จะไม่ถูกส่งซ้ำเมื่อทำต่อ")
                 .setNegativeButton("ยกเลิก", null)
                 .setPositiveButton("เริ่มส่ง", (a,b) -> guarded(() -> {

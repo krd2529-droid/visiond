@@ -135,6 +135,13 @@ final class Scheduler {
             throw new IllegalStateException("กรุณาเปิดการแจ้งเตือน VSMS ก่อนเริ่มรอบถัดไป เพื่อให้เห็นสถานะและปุ่มหยุด");
     }
     static boolean alternating(JSONObject d) { return "alternate".equals(d.optString("simMode")); }
+    static int singleSimSlot(JSONObject d) {
+        Object value=d.opt("singleSimSlot");
+        if (!(value instanceof Number) || (((Number)value).intValue()!=0 && ((Number)value).intValue()!=1)
+                || ((Number)value).doubleValue()!=((Number)value).intValue())
+            throw new IllegalStateException("ข้อมูลช่องซิมเดียวของคิวไม่ถูกต้อง");
+        return ((Number)value).intValue();
+    }
     private static boolean activeSim(Context c, int id, int slot) {
         if (c.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
             return false;
@@ -144,7 +151,12 @@ final class Scheduler {
     }
     static void checkPermissions(Context c, JSONObject d) {
         int first = d.optInt("sim", -1);
-        if (!alternating(d)) { checkPermissions(c, first); return; } // Existing one-SIM queues.
+        if (!alternating(d)) {
+            checkPermissions(c, first);
+            if (d.has("singleSimSlot") && !activeSim(c, first, singleSimSlot(d)))
+                throw new IllegalStateException("ซิมเดียวที่เลือกถูกย้ายช่อง หยุดคิวก่อนส่ง");
+            return; // Pre-0.5.17 queues without a slot retain ID-only validation.
+        }
         if (c.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED
                 || c.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
             throw new IllegalStateException("กรุณาอนุญาต SMS และการอ่านข้อมูลซิม");

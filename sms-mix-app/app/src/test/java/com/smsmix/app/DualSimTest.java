@@ -99,8 +99,8 @@ public class DualSimTest {
             spinnerField.setAccessible(true);
             Spinner spinner = (Spinner)spinnerField.get(activity);
             assertEquals(3,spinner.getCount());
-            assertTrue(spinner.getItemAtPosition(0).toString().startsWith("SIM 1"));
-            assertTrue(spinner.getItemAtPosition(1).toString().startsWith("SIM 2"));
+            assertTrue(spinner.getItemAtPosition(0).toString().startsWith("ซิมเดียว: SIM 1"));
+            assertTrue(spinner.getItemAtPosition(1).toString().startsWith("ซิมเดียว: SIM 2"));
             assertTrue(spinner.getItemAtPosition(2).toString().contains("สลับอัตโนมัติ"));
         }
     }

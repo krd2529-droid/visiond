@@ -145,6 +145,17 @@ final class CampaignFactory {
             if(second<0 || first==second || one.getSimSlotIndex()!=0 || two==null || two.getSimSlotIndex()!=1)
                 throw new IllegalStateException("SIM 1 / SIM 2 เดิมไม่พร้อมสำหรับคิวสลับซิม");
         } else if(queue.has("alternateSim")) throw new IllegalStateException("ข้อมูลซิมของคิวเสียหาย");
+        else if (queue.has("singleSimSlot") && one.getSimSlotIndex() != Scheduler.singleSimSlot(queue))
+            throw new IllegalStateException("ซิมเดียวที่เลือกถูกย้ายช่อง กรุณาตรวจสอบซิมก่อน");
+    }
+    private static int selectedSlot(Context context, int subscriptionId) {
+        if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
+            throw new IllegalStateException("กรุณาอนุญาตการอ่านซิมก่อนสร้างคิว");
+        SubscriptionManager manager=context.getSystemService(SubscriptionManager.class);
+        SubscriptionInfo selected=manager==null?null:manager.getActiveSubscriptionInfo(subscriptionId);
+        int slot=selected==null?-1:selected.getSimSlotIndex();
+        if (slot != 0 && slot != 1) throw new IllegalStateException("SIM 1 / SIM 2 ที่เลือกไม่พร้อม กรุณาโหลดรายการซิมใหม่");
+        return slot;
     }
     static Set<String> history(JSONObject previous) {
         Set<String> used = new LinkedHashSet<>();
@@ -185,6 +196,7 @@ final class CampaignFactory {
                 ? RecipientSampler.fromRange(first, last, used, count, random)
                 : RecipientSampler.fromFile(imported, used, count, random);
         JSONObject data = build(previous,rangeMode,first,last,count,captions,links,sim,alternateSim,simLabel,selected,used,0);
+        if (alternateSim < 0) Store.put(data, "singleSimSlot", selectedSlot(context, sim));
         String previousId = previous.optString("id");
         synchronized (Scheduler.LOCK) {
             JSONObject latest = Store.load(context);
@@ -261,9 +273,11 @@ final class CampaignFactory {
         Set<String> used=repeatHistory(previous);
         List<String> selected=RecipientSampler.fromRange(source.first,source.last,used,source.count,random);
         int pairOffset=nextPairOffset(previous,source.captions.size(),source.links.size());
-        return build(previous,true,source.first,source.last,source.count,source.captions,source.links,
+        JSONObject data=build(previous,true,source.first,source.last,source.count,source.captions,source.links,
                 previous.optInt("sim",-1),Scheduler.alternating(previous)?previous.optInt("alternateSim",-1):-1,
                 previous.optString("simLabel"),selected,used,pairOffset);
+        if (previous.has("singleSimSlot")) Store.put(data,"singleSimSlot",Scheduler.singleSimSlot(previous));
+        return data;
     }
     private static int nextPairOffset(JSONObject previous, int captions, int links) {
         int cycle=captions / gcd(captions,links) * links;
