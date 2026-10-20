@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>VisionD Social Work</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand"><div class="brand-mark">V</div><div><strong>VisionD</strong><small>Social Work</small></div></div>
+      <div class="rail-label">พื้นที่ทำงาน</div>
+      <nav id="nav" aria-label="เมนูหลัก">
+        <button data-view="overview" class="selected">⌂ <span>ภาพรวม</span></button>
+        <button data-view="command">✦ <span>สั่งงาน AI</span></button>
+        <button data-view="approval">◇ <span>คิวรออนุมัติ</span></button>
+        <button data-view="library">▣ <span>คลังงาน</span></button>
+        <button data-view="workspaces">◫ <span>พื้นที่ช่อง</span></button>
+        <button data-view="settings">⚙ <span>ตั้งค่า</span></button>
+      </nav>
+      <div class="rail-footer"><span class="status-dot"></span> ทำงานในเครื่องเท่านั้น<br><small>ยังไม่เชื่อมบัญชีโซเชียล</small></div>
+    </aside>
+    <main>
+      <header class="topbar"><div><div class="eyebrow">ศูนย์จัดการงานบนคอมพิวเตอร์</div><h1 id="title">ภาพรวม</h1></div><div class="top-right"><span id="api-pill" class="pill">กำลังตรวจ OpenAI</span><span class="avatar">V</span></div></header>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <section id="overview" class="view active">
+        <div class="hero"><div><span class="eyebrow">คุณตรวจและอนุมัติทุกชิ้นงาน</span><h2>วางแผนงาน ตรวจร่าง ก่อนนำไปใช้</h2><p>ให้ OpenAI ช่วยร่างข้อความ ตรวจเนื้อหาจริง และดูประวัติในเครื่อง แอปยังไม่สามารถตั้งเวลาหรือเผยแพร่ลงแพลตฟอร์มโซเชียล</p><button class="primary" data-goto="command">สร้างงานใหม่ →</button></div><div class="hero-art">✦<small>AI ช่วยร่าง<br>คุณเป็นผู้อนุมัติ</small></div></div>
+        <div id="metric-grid" class="metrics"></div>
+        <div class="section-heading"><div><h2>พื้นที่ทำงานรายช่อง</h2><p>แยกร่างและผลลัพธ์ของแต่ละช่อง</p></div><button class="subtle" data-goto="workspaces">จัดการพื้นที่ →</button></div>
+        <div id="overview-workspaces" class="cards"></div>
+      </section>
+      <section id="command" class="view">
+        <div class="page-intro"><h2>สั่งงาน AI</h2><p>อธิบายงานที่ต้องการ OpenAI จะช่วยร่างให้ตรวจ ไม่มีการโพสต์ออกไป</p></div>
+        <div class="two-col"><div class="panel"><label for="command-workspace">พื้นที่ช่อง</label><select id="command-workspace"></select><label for="instruction">ให้ OpenAI เตรียมอะไร?</label><textarea id="instruction" rows="8" maxlength="5000" placeholder="ตัวอย่าง: ร่างคำอธิบายวิดีโอ YouTube สั้น ๆ เกี่ยวกับ ..."></textarea><p class="hint">แอปอ่านสิทธิ์ OpenAI API จาก OPENAI_API_KEY ในโปรเซสหลัก คำสั่งและร่างงานบันทึกในเครื่อง</p><button id="create-job" class="primary">สร้างงานร่าง</button></div><div class="panel guide"><div class="guide-icon">✦</div><h3>ขั้นตอนตรวจงาน</h3><ol><li>สร้างงานในพื้นที่ช่อง</li><li>ให้ AI ร่างหรือเขียนร่างเอง</li><li>ส่งตรวจและอนุมัติข้อความที่เห็นจริง</li><li>บันทึกแพ็กงานที่อนุมัติไว้ในเครื่อง</li></ol><div class="callout">YouTube, TikTok และ Facebook Page ยังไม่เชื่อมต่อ แอปนี้ยังตั้งเวลาหรือเผยแพร่ไม่ได้</div></div></div>
+      </section>
+      <section id="approval" class="view"><div class="page-intro"><h2>คิวรออนุมัติ</h2><p>อ่านข้อความก่อนอนุมัติ หากแก้ร่าง การอนุมัติเดิมจะถูกล้าง</p></div><div id="approval-list" class="list"></div><button id="approval-more" class="subtle more" hidden>โหลดเพิ่ม</button></section>
+      <section id="library" class="view"><div class="page-intro"><h2>คลังงาน</h2><p>ประวัติงาน ร่าง การอนุมัติ และผลลัพธ์ในเครื่อง รายการที่นี่ไม่ใช่โพสต์บนโซเชียล</p></div><div class="filter-row"><label for="library-workspace">พื้นที่ช่อง</label><select id="library-workspace"></select><label for="library-status">สถานะ</label><select id="library-status"><option value="">ทั้งหมด</option><option value="draft">ร่าง</option><option value="generating">AI กำลังร่าง</option><option value="awaiting_approval">รออนุมัติ</option><option value="approved">อนุมัติแล้ว</option><option value="executing">กำลังเตรียมในเครื่อง</option><option value="prepared_locally">เตรียมในเครื่องแล้ว</option><option value="failed">ล้มเหลว</option><option value="cancelled">ยกเลิก</option></select></div><div id="library-list" class="list"></div><button id="library-more" class="subtle more" hidden>โหลดเพิ่ม</button></section>
+      <section id="workspaces" class="view"><div class="page-intro"><h2>พื้นที่ทำงานรายช่อง</h2><p>แต่ละช่องมีคิวงานและประวัติของตนเอง</p></div><div class="two-col"><div class="panel"><h3>เพิ่มพื้นที่ช่อง</h3><label for="new-platform">แพลตฟอร์ม</label><select id="new-platform"><option value="youtube">YouTube</option><option value="tiktok">TikTok</option><option value="facebook_page">Facebook Page</option></select><label for="new-name">ชื่อช่องหรือเพจ</label><input id="new-name" maxlength="100" placeholder="ชื่อช่องของคุณ"><button id="create-workspace" class="primary">เพิ่มพื้นที่ช่อง</button></div><div><div id="workspace-list" class="list"></div><button id="workspace-more" class="subtle more" hidden>โหลดพื้นที่เพิ่ม</button></div></div></section>
+      <section id="settings" class="view"><div class="page-intro"><h2>ตั้งค่าและการเชื่อมต่อ</h2><p>แสดงสถานะตามความสามารถที่ใช้งานได้จริง</p></div><div class="panel settings-panel"><h3>ร่างข้อความด้วย OpenAI</h3><p id="api-status"></p><p class="hint">ตั้งค่า OPENAI_API_KEY ใน environment ก่อนเปิดแอป คีย์จะไม่ถูกบันทึกในฐานข้อมูลหรือส่งมายังหน้านี้</p><hr><h3>แพลตฟอร์มโซเชียล</h3><div class="connection">YouTube <span>ยังไม่เชื่อมต่อ · โพสต์ไม่ได้</span></div><div class="connection">TikTok <span>ยังไม่เชื่อมต่อ · โพสต์ไม่ได้</span></div><div class="connection">Facebook Page <span>ยังไม่เชื่อมต่อ · โพสต์ไม่ได้</span></div></div></section>
+    </main>
+  </div>
+  <dialog id="detail"><div class="dialog-header"><div><div class="eyebrow">รายละเอียดงาน</div><h2 id="detail-title"></h2></div><button id="close-detail" class="icon-button" aria-label="ปิด">×</button></div><div id="detail-meta" class="detail-meta"></div><label for="draft-text">เนื้อหาร่าง</label><textarea id="draft-text" rows="12" maxlength="30000"></textarea><div id="detail-actions" class="actions"></div><div id="detail-result" class="result"></div><h3>ประวัติการทำงาน</h3><div id="detail-events" class="events"></div><button id="events-more" class="subtle" hidden>เหตุการณ์ก่อนหน้า</button></dialog>
+</body>
+</html>
