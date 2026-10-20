@@ -1,4 +1,12 @@
-# Active patch: VSMS move to next recipient one minute after confirmed failed SMS
+# Active patch: VSMS running/stopped status icon
+
+- Status: PATCH_READY (2026-10-20): user specified green icon for running and red icon for stopped. Source, independent verification, and signed local APK pass; scoped commit/push still pending.
+- Outcome: prominent icon and label in Android current-work section accurately reflect persisted `running` state on launch and each refresh, including waiting/error, while keeping existing detail and send behavior.
+- Scope: MainActivity status presentation, focused UI tests, version 0.5.15/code22, commercial signed APK. No SMS send/backend/web release.
+- Verification: focused UI 4/4 and full offline Android 145/145, Mark independent rerun PASS; release assemble/signature/version/hash PASS. APK `C:/Users/User/Downloads/VSMS-v0.5.15-release.apk` SHA-256 `18B46715D274BC13F0327B06B09D63B76CE43CE68FA13A0F74FC217BDB479EF2`, commercial signer unchanged. No live handset/SMS or website upload.
+- Next: scoped commit/push `origin main` and verify clean worktree.
+
+# Previous active patch: VSMS move to next recipient one minute after confirmed failed SMS
 
 - Status: PATCH_DELIVERED (2026-10-20) — user corrected the earlier interpretation; no same-number retry. Source commit `55bbd14d` pushed non-force to `origin/main`; signed local APK delivered. No web release or real SMS.
 - Outcome: confirmed failed sent callback marks current recipient FAILED, waits 60 seconds, then sends next unsent recipient; never sends failed number again. Existing success cadence and dual-SIM handoff otherwise preserved.

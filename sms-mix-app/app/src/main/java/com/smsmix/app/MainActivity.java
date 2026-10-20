@@ -5,6 +5,8 @@ import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
@@ -23,7 +25,7 @@ public class MainActivity extends Activity {
             EXPORT_SETS = 47, IMPORT_SETS = 48;
     private EditText captions, links, manualOriginal, rangeStart, rangeEnd, drawCount;
     private Spinner recipientMode;
-    private TextView recipientInfo, status;
+    private TextView recipientInfo, status, queueStateBadge;
     private Spinner simSpinner;
     private LinearLayout content;
     private final List<Integer> simIds = new ArrayList<>();
@@ -49,6 +51,7 @@ public class MainActivity extends Activity {
         try { SuccessfulSendOutbox.reconcile(this, Store.load(this)); }
         catch (RuntimeException ignored) { /* Local queue remains available for recovery. */ }
         status = null;
+        queueStateBadge = null;
         simSpinner = null;
         LinearLayout gate = new LinearLayout(this);
         gate.setOrientation(LinearLayout.VERTICAL);
@@ -198,6 +201,16 @@ public class MainActivity extends Activity {
         button("สร้างคิวและพรีวิว", this::prepare);
         label("เบอร์แรกส่งหลังยืนยันทันที ส่งสำเร็จแล้วสุ่มรอ 10–30 นาที; ส่งไม่สำเร็จรอ 1 นาทีก่อนเบอร์ถัดไป ข้อความยาวอาจคิดค่าบริการหลาย SMS");
         heading("คิวปัจจุบัน", 20);
+        queueStateBadge = new TextView(this);
+        queueStateBadge.setTextSize(24);
+        queueStateBadge.setTypeface(null, Typeface.BOLD);
+        queueStateBadge.setGravity(Gravity.CENTER_VERTICAL);
+        queueStateBadge.setMinHeight(dp(60));
+        queueStateBadge.setPadding(dp(18), dp(12), dp(18), dp(12));
+        LinearLayout.LayoutParams badgeLayout = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        badgeLayout.setMargins(0, dp(8), 0, dp(8));
+        content.addView(queueStateBadge, badgeLayout);
         status = label("");
         button("เบอร์ที่สุ่มได้ / พรีวิวและผลส่งทุกเบอร์", this::preview);
         button("ทำงานอีกครั้ง (สุ่มเบอร์ใหม่จากช่วงเดิม)", this::repeatCampaign);
@@ -222,6 +235,7 @@ public class MainActivity extends Activity {
                         .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "smsmix-success.csv"), EXPORT_SUCCESS));
         label(footerText());
         loadSims();
+        updateStatus();
     }
 
     String footerText() {
@@ -466,10 +480,24 @@ public class MainActivity extends Activity {
             default: return s;
         }
     }
+    void showQueueState(boolean running) {
+        if (queueStateBadge == null) return;
+        int foreground = running ? Color.rgb(11, 122, 59) : Color.rgb(180, 35, 24);
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(running ? Color.rgb(226, 246, 233) : Color.rgb(255, 234, 232));
+        background.setCornerRadius(dp(14));
+        background.setStroke(dp(2), foreground);
+        queueStateBadge.setBackground(background);
+        queueStateBadge.setTextColor(foreground);
+        queueStateBadge.setText(running ? "▶ กำลังทำงาน" : "■ หยุด");
+        queueStateBadge.setContentDescription(running ? "กำลังทำงาน" : "หยุด");
+    }
     void updateStatus() {
         if (status == null) return;
         try {
             JSONObject d = Store.load(this); Scheduler.recoverTimeout(this, d);
+            d = Store.load(this);
+            showQueueState(d.optBoolean("running"));
             JSONArray rows = Store.rows(d); Map<String, Integer> counts = new LinkedHashMap<>();
             for (int i = 0; i < rows.length(); i++) {
                 String s = rows.optJSONObject(i).optString("status");
@@ -487,7 +515,7 @@ public class MainActivity extends Activity {
                 if (!Scheduler.exactAllowed(this)) text.append("\nสิทธิ์ตั้งเวลาถูกปิด กรุณาหยุดคิว เปิดสิทธิ์ แล้วทำต่อ");
             }
             status.setText(text);
-        } catch (RuntimeException e) { status.setText("หยุด: " + e.getMessage()); }
+        } catch (RuntimeException e) { showQueueState(false); status.setText("หยุด: " + e.getMessage()); }
     }
 
     void applyLinkBundle(JSONObject entry) {
