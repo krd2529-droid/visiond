@@ -1,9 +1,9 @@
 # Active patch: VSMS archive owner privacy
 
-- Status: PATCH_READY (2026-10-20): API/browser tests and Mark independent gate PASS; source frozen. Scoped commit/push and Production verification remain.
+- Status: PATCH_DELIVERED (2026-10-20): API/browser tests and Mark independent gate PASS. Source commit `11c154a9` pushed to `origin/main`; Cloudflare Pages Production deployment `04751743-cdf3-4c4a-bd01-149eb68fff23` Active. Authenticated archive showed `ไม่แสดง` across 48 rows; served JS v2 contains no owner-PII read; anonymous API 401. No DB mutation or SMS.
 - Outcome: `/vsms-successful-sends` must never show the user's real name in `เจ้าของคีย์`; remove owner name/email from this archive API and display `ไม่แสดง` for all owner rows, including keys under another account.
 - Scope: this archive API/client and focused tests only; preserve other columns, boss auth, keyset paging/index, no-store, and other admin pages. No database mutation or SMS.
-- Next: Jarvis verify branch/remote and Cloudflare target, scoped commit/push origin main, verify Pages Production deployment and owner masking in authenticated UI/API. No data mutation or SMS.
+- Delivery: `https://visiondonline.com/vsms-successful-sends` now masks all owner cells, including keys under another account. Direct authenticated API navigation was blocked by browser; local API test and deployed commit verify no owner fields in source. Final status-only commit/push next.
 
 # Previous active patch: VSMS explicit single-SIM choice and delay
 
