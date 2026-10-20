@@ -22,7 +22,7 @@ function render(item) {
     cell('เบอร์ผู้รับ', item.recipient_phone),
     cell('ส่งสำเร็จเมื่อ', new Date(Number(item.sent_at)).toLocaleString('th-TH')),
     cell('เครื่อง', item.device_name || 'อุปกรณ์ VSMS'),
-    cell('เจ้าของคีย์', item.user_name || item.user_email || ''),
+    cell('เจ้าของคีย์', 'ไม่แสดง'),
     cell('คีย์', item.license_id, true),
   );
   rows.append(tr);

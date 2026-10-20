@@ -8,6 +8,7 @@ import { sha256 } from '../functions/_lib.js';
 
 const sqlite = new DatabaseSync(':memory:');
 let suppressNextInsert=false;
+const archiveQueries=[];
 sqlite.exec(`CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT,email TEXT);
 CREATE TABLE vision7_programs(id INTEGER PRIMARY KEY,code TEXT,platform_type TEXT,active INTEGER);
 CREATE TABLE vision7_licenses(id TEXT PRIMARY KEY,key_hash TEXT UNIQUE,user_id INTEGER,program_id INTEGER,status TEXT,expires_at TEXT,smsmix_first_activated_at TEXT,smsmix_pending_days INTEGER NOT NULL DEFAULT 0);
@@ -18,6 +19,7 @@ INSERT INTO vision7_programs VALUES(1,'sms-mix','android',1);`);
 sqlite.exec(readFileSync(new URL('../migrations/0140_vsms_successful_sends.sql',import.meta.url),'utf8'));
 const DB = {
   prepare(sql) {
+    if(sql.includes('FROM vision7_smsmix_successful_sends s')) archiveQueries.push(sql);
     const statement={sql,args:[]};
     return {
       bind(...args) { statement.args=args; return this; },
@@ -91,17 +93,21 @@ assert.equal(p1.body.items.length,24);assert.equal(p2.body.items.length,3);
 assert.equal(new Set([...p1.body.items,...p2.body.items].map(x=>x.id)).size,27,'keyset has no duplicate/gap');
 const allRows=[...p1.body.items,...p2.body.items];
 assert.equal(allRows.filter(x=>x.license_id==='A').length,26);
-for(const row of allRows.filter(x=>x.license_id==='A')) {
-  assert.equal(row.user_name,'ไม่แสดง','logged-in owner name is masked in API');
-  assert.equal(row.user_email,null,'logged-in owner email is masked in API');
+for(const row of allRows) {
+  assert.equal('user_name' in row,false,'archive API never returns owner name');
+  assert.equal('user_email' in row,false,'archive API never returns owner email');
   assert.equal('user_id' in row,false,'internal comparison ID is not exposed');
 }
 const other=allRows.find(x=>x.license_id==='B');
-assert.equal(other.user_name,'Owner B');
-assert.equal(other.user_email,'b@example.test');
+assert.ok(other,'other-account key remains in archive');
+assert.ok(archiveQueries.length>0);
+for(const query of archiveQueries) assert.doesNotMatch(query,/\bJOIN\s+users\b|\bu\.name\b|\bu\.email\b|\bs\.user_id\b/i,'archive query must not read owner identity');
 assert.equal(p2.body.next_cursor,null);
 assert.equal(p1.response.headers.get('cache-control'),'private, no-store');
-const sql=`SELECT s.id FROM vision7_smsmix_successful_sends s WHERE s.id<? ORDER BY s.id DESC LIMIT 25`;
-assert.match(sqlite.prepare('EXPLAIN QUERY PLAN '+sql).all(100).map(x=>x.detail).join(' '),/SEARCH s USING COVERING INDEX idx_vsms_success_recent/,'cursor uses recency index');
+const cursorQuery=archiveQueries.find(query=>query.includes('WHERE s.id<?'));
+assert.ok(cursorQuery,'actual archive query uses keyset cursor');
+assert.match(sqlite.prepare('EXPLAIN QUERY PLAN '+cursorQuery).all(100).map(x=>x.detail).join(' '),
+  /SEARCH s USING (?:INTEGER PRIMARY KEY|(?:COVERING )?INDEX idx_vsms_success_recent)/,
+  'actual cursor query uses indexed id lookup');
 assert.equal(sqlite.prepare('SELECT user_id FROM vision7_smsmix_successful_sends WHERE license_id=? LIMIT 1').get('B').user_id,2,'owner comes from server license');
 console.log('VSMS successful-send ingest/list PASS');

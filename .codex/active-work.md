@@ -1,4 +1,11 @@
-# Active patch: VSMS explicit single-SIM choice and delay
+# Active patch: VSMS archive owner privacy
+
+- Status: PATCH_READY (2026-10-20): API/browser tests and Mark independent gate PASS; source frozen. Scoped commit/push and Production verification remain.
+- Outcome: `/vsms-successful-sends` must never show the user's real name in `เจ้าของคีย์`; remove owner name/email from this archive API and display `ไม่แสดง` for all owner rows, including keys under another account.
+- Scope: this archive API/client and focused tests only; preserve other columns, boss auth, keyset paging/index, no-store, and other admin pages. No database mutation or SMS.
+- Next: Jarvis verify branch/remote and Cloudflare target, scoped commit/push origin main, verify Pages Production deployment and owner masking in authenticated UI/API. No data mutation or SMS.
+
+# Previous active patch: VSMS explicit single-SIM choice and delay
 
 - Status: PATCH_DELIVERED (2026-10-20): focused independent 18/18 and full Android offline 159/159 PASS; commercial-signed 0.5.17/code24 APK built and hash-verified. Source commit `19635036` pushed non-force to `origin/main`, remote head verified. No web upload, handset install, or real SMS.
 - Outcome: in Step 3 explicitly choose one-SIM SIM 1 or SIM 2, and identify the existing one-SIM cadence (first immediate; success 10–30 minutes; failure 1 minute before next recipient). New queues retain chosen physical slot and stop before handoff if that SIM is moved/replaced; no automatic switch to the other SIM.

@@ -11,9 +11,11 @@ for(const candidate of [process.env.PLAYWRIGHT_PACKAGE,'C:/Users/User/.cache/cod
 }
 if(!chromium) throw new Error('Playwright unavailable');
 const root=path.resolve('public');
+assert.match(readFileSync(path.resolve(root,'vsms-successful-sends.html'),'utf8'),/vsms-successful-sends\.js\?v=2/,'archive client cache token advances');
 let mode='rows',calls=[];
 const rows=Array.from({length:26},(_,i)=>({id:26-i,recipient_phone:`0800000${String(i).padStart(3,'0')}`,sent_at:1700000000000+i*1000,
-  received_at:'2026-10-18 00:00:00',license_id:'license-test',user_name:'Test owner',device_name:'Android test'}));
+  received_at:'2026-10-18 00:00:00',license_id:'license-test',
+  user_name:i%2?'Other owner':'Boss owner',user_email:i%2?'other@example.test':'boss@example.test',device_name:'Android test'}));
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/api/admin/vision7/smsmix-successful-sends') {
@@ -66,6 +68,8 @@ try {
     await page.locator('#vsmsSuccessMore').waitFor({state:'hidden'});
     assert.equal(await page.locator('#vsmsSuccessRows tr').count(),26);
     assert.equal(await page.locator('#vsmsSuccessMore').isVisible(),false);
+    assert.deepEqual(await page.locator('#vsmsSuccessRows tr td:nth-child(4)').allInnerTexts(),Array(26).fill('ไม่แสดง'));
+    assert.equal(await page.locator('#vsmsSuccessRows').getByText(/Boss owner|Other owner|example\.test/).count(),0);
     assert.deepEqual(calls.slice(-2),[null,'3']);
     assert.equal(await page.locator('#vsmsSuccessRows tr').first().locator('td').first().innerText(),'0800000000');
     assert.equal(await page.locator('#vsmsSuccessRows tr').last().locator('td').first().innerText(),'0800000025');
