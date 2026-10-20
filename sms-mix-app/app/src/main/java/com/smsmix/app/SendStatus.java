@@ -19,8 +19,10 @@ final class SendStatus {
     static String time(long value){return value>0?DateFormat.getDateTimeInstance().format(new Date(value)):"—";}
     static String line(JSONObject row){
         String text=row.optString("phone")+" • "+name(row.optString("status"));
-        String simLabel=row.optString("usedSimLabel",row.optString("simLabel"));
-        if(!simLabel.isEmpty())text+=" • "+simLabel;
+        if (row.optLong("sentAt") > 0 || "SENT".equals(row.optString("status"))
+                || "FAILED".equals(row.optString("status")) || "UNKNOWN".equals(row.optString("status")))
+            text+="\n"+SenderIdentity.display(row);
+        else if (!row.optString("simLabel").isEmpty()) text+=" • วางแผนใช้ "+row.optString("simLabel");
         String preview=row.optBoolean("bodyUnavailable") ? "ไม่มีเนื้อหาที่บันทึกไว้ในเวอร์ชันเดิม"
                 : row.optString("body").replace('\n',' ').replace('\r',' ').trim();
         if(preview.length()>80)preview=preview.substring(0,80)+"…";

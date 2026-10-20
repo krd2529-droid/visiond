@@ -181,6 +181,10 @@ final class MessageHistory extends SQLiteOpenHelper {
                 Store.put(row, "sentAt", previous.optLong("sentAt"));
                 Store.put(row, "resultAt", previous.optLong("resultAt"));
                 Store.put(row, "deliveredAt", previous.optLong("deliveredAt"));
+                if (previous.has("usedSim")) Store.put(row, "usedSim", previous.optInt("usedSim"));
+                if (previous.has("usedSimLabel")) Store.put(row, "usedSimLabel", previous.optString("usedSimLabel"));
+                if (previous.has("senderPhone")) Store.put(row, "senderPhone", previous.optString("senderPhone"));
+                if (previous.has("senderPhoneSource")) Store.put(row, "senderPhoneSource", previous.optString("senderPhoneSource"));
                 Store.put(row, "bodyUnavailable", true);
                 upsert(db, campaignId, index, row, eventAt(Store.object(), row));
             }

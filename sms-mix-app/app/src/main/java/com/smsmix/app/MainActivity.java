@@ -22,8 +22,8 @@ import java.util.*;
 
 public class MainActivity extends Activity {
     private static final int IMPORT = 41, EXPORT = 42, PERMISSIONS = 43, SHORT_LINKS = 44, EXPORT_SUCCESS = 46,
-            EXPORT_SETS = 47, IMPORT_SETS = 48;
-    private EditText captions, links, manualOriginal, rangeStart, rangeEnd, drawCount;
+            EXPORT_SETS = 47, IMPORT_SETS = 48, PHONE_NUMBER_PERMISSION = 49;
+    private EditText captions, links, manualOriginal, rangeStart, rangeEnd, drawCount, senderSim1, senderSim2;
     private Spinner recipientMode;
     private TextView recipientInfo, status, queueStateBadge;
     private Spinner simSpinner;
@@ -53,6 +53,8 @@ public class MainActivity extends Activity {
         status = null;
         queueStateBadge = null;
         simSpinner = null;
+        senderSim1 = senderSim2 = null;
+        sim1Id = sim2Id = -1;
         LinearLayout gate = new LinearLayout(this);
         gate.setOrientation(LinearLayout.VERTICAL);
         gate.setPadding(dp(20), dp(30), dp(20), dp(20));
@@ -167,11 +169,13 @@ public class MainActivity extends Activity {
         label("UTF-8 • เบอร์อยู่คอลัมน์แรก • เบอร์ไทย 08… หรือรูปแบบ +รหัสประเทศ • ตัดเบอร์ซ้ำ");
         heading("2  ข้อความและลิงก์", 20);
         captions = editor("แคปชั่น 10–100 รายการ บรรทัดละรายการ");
+        button("ล้างช่องข้อความ", () -> confirmClearDraft(captions, "ล้างช่องข้อความ"));
         button("บันทึกชุดแคปชั่น / ตั้งชื่อ", this::saveCaptionSet);
         button("เลือกชุดแคปชั่นที่บันทึกไว้", this::chooseCaptionSet);
         manualOriginal = singleLine("ลิงก์ต้นฉบับ (ไม่บังคับ)", android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
         manualOriginal.setText(getPreferences(0).getString("manualOriginal", ""));
         links = editor("วางลิงก์ย่อ บรรทัดละลิงก์");
+        button("ล้างช่องลิงก์", () -> confirmClearDraft(links, "ล้างช่องลิงก์"));
         label("เซฟชุดได้ 1–100 ลิงก์ (ตัดซ้ำ) • สร้างคิว SMS ใช้ 10–100 ลิงก์");
         button("เซฟชุดลิงก์ที่วางเอง / ตั้งชื่อ", this::saveManualLinks);
         button("สร้างลิงก์ด้วย Shrinkrl", () -> startActivityForResult(new Intent(this, ShortLinksActivity.class), SHORT_LINKS));
@@ -191,6 +195,15 @@ public class MainActivity extends Activity {
         label("สุ่มแคปชั่น 1 รายการ + ลิงก์ 1 รายการต่อเบอร์ สามารถสุ่มซ้ำได้ จำนวนสองชุดไม่ต้องเท่ากัน");
         heading("3  เลือกซิมและตรวจรายการ", 20);
         button("อนุญาต SMS / โหลดรายการซิม", this::requestPermissionsAndSims);
+        label("เบอร์ผู้ส่งที่ Android รายงานอาจว่างหรือไม่ตรง หากว่างให้ระบุเบอร์สำรองตามช่องซิม (จะแสดงว่า ผู้ใช้ระบุ)");
+        if (Build.VERSION.SDK_INT >= 33)
+            button("อนุญาตอ่านเบอร์ซิม (ไม่บังคับ)", () -> {
+                if (checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED)
+                    requestPermissions(new String[]{Manifest.permission.READ_PHONE_NUMBERS}, PHONE_NUMBER_PERMISSION);
+                else message("อนุญาตอ่านเบอร์ซิมแล้ว แต่เครือข่ายอาจไม่รายงานเบอร์");
+            });
+        senderSim1 = singleLine("เบอร์ผู้ส่งสำรอง SIM 1 (ผู้ใช้ระบุ)", android.text.InputType.TYPE_CLASS_PHONE);
+        senderSim2 = singleLine("เบอร์ผู้ส่งสำรอง SIM 2 (ผู้ใช้ระบุ)", android.text.InputType.TYPE_CLASS_PHONE);
         simSpinner = new Spinner(this);
         content.addView(simSpinner);
         button("เปิดสิทธิ์ตั้งเวลา", () -> {
@@ -235,7 +248,17 @@ public class MainActivity extends Activity {
                         .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "smsmix-success.csv"), EXPORT_SUCCESS));
         label(footerText());
         loadSims();
+        senderSim1.addTextChangedListener(senderDraftWatcher(0));
+        senderSim2.addTextChangedListener(senderDraftWatcher(1));
         updateStatus();
+    }
+
+    android.text.TextWatcher senderDraftWatcher(int slot) {
+        return new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {}
+            public void onTextChanged(CharSequence text, int start, int before, int count) {}
+            public void afterTextChanged(android.text.Editable text) { saveSenderNumber(slot); }
+        };
     }
 
     String footerText() {
@@ -275,6 +298,16 @@ public class MainActivity extends Activity {
         try { action.run(); } catch (Exception e) { message(e.getMessage() == null ? e.toString() : e.getMessage()); }
     }
     void message(String text) { new AlertDialog.Builder(this).setMessage(text).setPositiveButton("ตกลง", null).show(); }
+    void confirmClearDraft(EditText field, String title) {
+        if (field.getText().length() == 0) return;
+        new AlertDialog.Builder(this).setTitle(title)
+                .setMessage("ต้องการ" + title + "หรือไม่? ข้อความในช่องนี้จะถูกล้าง แต่ชุดที่บันทึกไว้และคิวปัจจุบันจะไม่เปลี่ยน")
+                .setNegativeButton("ยกเลิก", null)
+                .setPositiveButton("ล้าง", (dialog, which) -> {
+                    field.setText("");
+                    saveDraft();
+                }).show();
+    }
     void saveCaptionSet() {
         final String text = String.join("\n", CampaignCore.lines(captions.getText().toString(), false));
         EditText nameInput = new EditText(this);
@@ -330,6 +363,18 @@ public class MainActivity extends Activity {
                 .putString("rangeEnd", rangeEnd.getText().toString())
                 .putString("drawCount", drawCount.getText().toString())
                 .putInt("recipientMode", recipientMode.getSelectedItemPosition()).apply();
+        saveSenderNumbers();
+    }
+    void saveSenderNumbers() {
+        saveSenderNumber(0);
+        saveSenderNumber(1);
+    }
+    void saveSenderNumber(int slot) {
+        int subscriptionId = slot == 0 ? sim1Id : sim2Id;
+        EditText field = slot == 0 ? senderSim1 : senderSim2;
+        if (field != null && subscriptionId >= 0)
+            getPreferences(0).edit().putString(SenderIdentity.manualKey(subscriptionId),
+                    field.getText().toString().trim()).apply();
     }
     @Override protected void onResume() {
         super.onResume();
@@ -345,9 +390,11 @@ public class MainActivity extends Activity {
         else loadSims();
     }
     @Override public void onRequestPermissionsResult(int code, String[] permissions, int[] results) {
-        super.onRequestPermissionsResult(code, permissions, results); loadSims();
+        super.onRequestPermissionsResult(code, permissions, results);
+        if (code == PERMISSIONS || code == PHONE_NUMBER_PERMISSION) loadSims();
     }
     void loadSims() {
+        saveSenderNumbers();
         int old = simSpinner.getSelectedItemPosition();
         int selected = old >= 0 && old < simIds.size() ? simIds.get(old) : -1;
         simIds.clear(); List<String> names = new ArrayList<>();
@@ -372,6 +419,14 @@ public class MainActivity extends Activity {
         if (names.isEmpty()) names.add("ยังไม่พบซิม / ยังไม่ได้ให้สิทธิ์");
         simSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
         if (simIds.contains(selected)) simSpinner.setSelection(simIds.indexOf(selected));
+        if (senderSim1 != null) {
+            senderSim1.setVisibility(sim1Id >= 0 ? View.VISIBLE : View.GONE);
+            senderSim1.setText(sim1Id >= 0 ? getPreferences(0).getString(SenderIdentity.manualKey(sim1Id), "") : "");
+        }
+        if (senderSim2 != null) {
+            senderSim2.setVisibility(sim2Id >= 0 ? View.VISIBLE : View.GONE);
+            senderSim2.setText(sim2Id >= 0 ? getPreferences(0).getString(SenderIdentity.manualKey(sim2Id), "") : "");
+        }
     }
 
     void prepare() {
@@ -444,6 +499,7 @@ public class MainActivity extends Activity {
     }
 
     void confirmStart() {
+        saveDraft(); // Include the latest manual sender fallback before the scheduler can hand off a row.
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 45);
             message("อนุญาตการแจ้งเตือนเพื่อแสดงสถานะและปุ่มหยุด แล้วกดเริ่มส่งอีกครั้ง"); return;
@@ -742,19 +798,25 @@ public class MainActivity extends Activity {
             JSONArray rows = Store.rows(Store.load(this));
             try (OutputStream out = getContentResolver().openOutputStream(uri, "wt")) {
                 if (out == null) throw new IOException("เปิดไฟล์ไม่ได้");
-                StringBuilder csv = new StringBuilder("\uFEFFphone,status,message,sent_at,result_at,error\r\n");
-                for (int i = 0; i < rows.length(); i++) {
-                    JSONObject row = rows.optJSONObject(i);
-                    csv.append(quote(row.optString("phone"))).append(',').append(quote(row.optString("status"))).append(',')
-                            .append(quote(row.optString("body"))).append(',')
-                            .append(quote(row.optLong("sentAt") == 0 ? "" : new Date(row.optLong("sentAt")).toString())).append(',')
-                            .append(quote(row.optLong("resultAt") == 0 ? "" : new Date(row.optLong("resultAt")).toString())).append(',')
-                            .append(quote(row.optString("error"))).append("\r\n");
-                }
-                out.write(csv.toString().getBytes(StandardCharsets.UTF_8));
+                out.write(campaignCsv(rows).getBytes(StandardCharsets.UTF_8));
                 message("ส่งออกเรียบร้อย");
             } catch (IOException e) { throw new IllegalStateException("ส่งออกไม่สำเร็จ", e); }
         });
+    }
+    static String campaignCsv(JSONArray rows) {
+        StringBuilder csv = new StringBuilder("\uFEFFphone,status,message,sent_at,result_at,error,sender_sim,sender_phone,sender_source\r\n");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.optJSONObject(i);
+            csv.append(quote(row.optString("phone"))).append(',').append(quote(row.optString("status"))).append(',')
+                    .append(quote(row.optString("body"))).append(',')
+                    .append(quote(row.optLong("sentAt") == 0 ? "" : new Date(row.optLong("sentAt")).toString())).append(',')
+                    .append(quote(row.optLong("resultAt") == 0 ? "" : new Date(row.optLong("resultAt")).toString())).append(',')
+                    .append(quote(row.optString("error"))).append(',')
+                    .append(quote(SenderIdentity.sim(row))).append(',')
+                    .append(quote(SenderIdentity.phone(row))).append(',')
+                    .append(quote(SenderIdentity.source(row))).append("\r\n");
+        }
+        return csv.toString();
     }
     static String quote(String s) {
         // Prevent spreadsheet formulas when a recipient/message begins with =, +, -, @.

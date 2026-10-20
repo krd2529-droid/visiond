@@ -6,8 +6,8 @@ android {
         applicationId 'com.smsmix.app'
         minSdk 26
         targetSdk 35
-        versionCode 22
-        versionName '0.5.15'
+        versionCode 23
+        versionName '0.5.16'
     }
     testOptions { unitTests.includeAndroidResources = true }
     compileOptions {

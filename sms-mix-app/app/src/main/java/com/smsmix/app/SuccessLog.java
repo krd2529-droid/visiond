@@ -33,6 +33,10 @@ final class SuccessLog {
             Store.put(entry,"link",row.optString("link",body.substring(body.lastIndexOf('\n')+1)));
             Store.put(entry,"sentAt",row.optLong("sentAt"));Store.put(entry,"resultAt",row.optLong("resultAt"));
             Store.put(entry,"deliveredAt",row.optLong("deliveredAt"));
+            Store.put(entry,"usedSim",row.optInt("usedSim",-1));
+            Store.put(entry,"usedSimLabel",row.optString("usedSimLabel"));
+            Store.put(entry,"senderPhone",row.optString("senderPhone"));
+            Store.put(entry,"senderPhoneSource",row.optString("senderPhoneSource"));
             if(archive.has(key) && entry.toString().equals(archive.optJSONObject(key).toString()))continue;
             Store.put(archive,key,entry);changed=true;
         }
@@ -43,7 +47,7 @@ final class SuccessLog {
     }
     static synchronized String csv(Context c) {
         record(c,Store.load(c));JSONObject archive=load(c);
-        StringBuilder text=new StringBuilder("\uFEFFphone,link,sent_at,result_at,delivery_status,delivered_at\r\n");
+        StringBuilder text=new StringBuilder("\uFEFFphone,link,sent_at,result_at,delivery_status,delivered_at,sender_sim,sender_phone,sender_source\r\n");
         java.util.Iterator<String> keys=archive.keys();
         while(keys.hasNext()){
             JSONObject row=archive.optJSONObject(keys.next());
@@ -52,7 +56,10 @@ final class SuccessLog {
                 .append(MainActivity.quote(SendStatus.time(row.optLong("sentAt")))).append(',')
                 .append(MainActivity.quote(SendStatus.time(row.optLong("resultAt")))).append(',')
                 .append(MainActivity.quote(row.optLong("deliveredAt")>0 ? "DELIVERED" : "UNCONFIRMED")).append(',')
-                .append(MainActivity.quote(SendStatus.time(row.optLong("deliveredAt")))).append("\r\n");
+                .append(MainActivity.quote(SendStatus.time(row.optLong("deliveredAt")))).append(',')
+                .append(MainActivity.quote(SenderIdentity.sim(row))).append(',')
+                .append(MainActivity.quote(SenderIdentity.phone(row))).append(',')
+                .append(MainActivity.quote(SenderIdentity.source(row))).append("\r\n");
         }
         return text.toString();
     }

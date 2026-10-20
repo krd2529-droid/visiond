@@ -277,10 +277,7 @@ final class Scheduler {
         long now = System.currentTimeMillis();
         Store.put(row, "status", "SENDING");
         Store.put(row, "reportIdentity", LicenseClient.reportIdentity(c));
-        if (alternating(d)) {
-            Store.put(row, "usedSim", selectedSim);
-            Store.put(row, "usedSimLabel", selectedSim == d.optInt("sim") ? "SIM 1" : "SIM 2");
-        }
+        SenderIdentity.snapshot(c, row, selectedSim);
         Store.put(row, "parts", results);
         Store.put(row, "deliveryParts", deliveryParts);
         Store.put(row, "sentAt", now);
