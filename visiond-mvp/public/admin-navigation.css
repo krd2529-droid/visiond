@@ -123,28 +123,26 @@ body:not(.viewer-is-boss) .admin-tabs > .boss-only-danger{display:none!important
 .admin-tabs .admin-pinned-item>.admin-pinned-unpin{box-sizing:border-box;width:100%;min-width:0;min-height:30px;margin:0;padding:5px 7px;border:1px solid #8bbfba;border-radius:9px;background:#fff;color:#075f5b;box-shadow:none;font-family:inherit;font-size:10px;font-weight:800;line-height:1.2;cursor:pointer}
 .admin-tabs .admin-pinned-item>.admin-pinned-unpin:hover{background:#e0f8f5}
 .admin-tabs .admin-pinned-item>button:focus-visible,.admin-tabs .admin-pinned-item>a:focus-visible{outline:3px solid #f1b92b;outline-offset:2px}
-.admin-menu-item{position:relative;min-width:0}
-.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination{appearance:none;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:100%;min-width:0;min-height:104px;margin:0;padding:34px 10px 13px;border:1px solid rgba(7,143,136,.22);border-radius:17px;background:#fff;color:#143f3d;box-shadow:0 7px 18px rgba(6,78,76,.08);text-decoration:none;text-align:center;font:900 14px/1.25 "Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif;cursor:pointer}
+.admin-menu-item{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;align-content:start;min-width:0}
+.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination{grid-column:1/-1;appearance:none;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:100%;min-width:0;min-height:104px;margin:0;padding:13px 10px;border:1px solid rgba(7,143,136,.22);border-radius:17px;background:#fff;color:#143f3d;box-shadow:0 7px 18px rgba(6,78,76,.08);text-decoration:none;text-align:center;font:900 14px/1.25 "Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif;cursor:pointer}
 .admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination:hover{border-color:rgba(7,143,136,.55);background:#f4fffe;box-shadow:0 11px 24px rgba(6,78,76,.14)}
 .admin-menu-board .admin-all-grid>.admin-menu-item>button.active{border-color:#078f88;background:linear-gradient(145deg,#0bc4bd,#07958f);color:#063d3a}
 .admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination>span:first-child{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#e8f9f7;font-size:21px;line-height:1}
 .admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination>span:last-child{font-size:14px;font-weight:900;line-height:1.25}
 .admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination b{display:block;font-size:14px;font-weight:900;line-height:1.25}
 .admin-menu-board .admin-all-grid>.admin-menu-item>.danger-link,.admin-menu-board .admin-all-grid>.admin-menu-item>.boss-only-danger.danger-link{border-color:#dfa3a3;background:#fff7f7;color:#982e2e}
-.admin-menu-item .admin-pin-toggle{position:absolute;top:7px;right:7px;z-index:1;min-height:26px;padding:3px 8px;border:1px solid #8bbfba;border-radius:999px;background:#fff;color:#075f5b;font-family:inherit;font-size:11px;font-weight:800;line-height:1.2;cursor:pointer}
+.admin-menu-item .admin-pin-toggle{box-sizing:border-box;width:100%;min-width:0;min-height:40px;margin:0;padding:5px 3px;border:1px solid #8bbfba;border-radius:9px;background:#fff;color:#075f5b;font-family:inherit;font-size:11px;font-weight:800;line-height:1.2;white-space:normal;cursor:pointer}
 .admin-menu-item .admin-pin-toggle[aria-pressed="true"]{border-color:#087f79;background:#e0f8f5;color:#075f5b}
 .admin-menu-item .admin-pin-toggle:hover{background:#ccf1ec}
-.admin-menu-item>.admin-menu-destination:focus-visible,.admin-menu-item>.admin-pin-toggle:focus-visible{outline:3px solid #f1b92b;outline-offset:2px}
+.admin-menu-item .admin-less-toggle{box-sizing:border-box;width:100%;min-width:0;min-height:40px;margin:0;padding:5px 3px;border:1px solid #8bbfba;border-radius:9px;background:#fff;color:#075f5b;font-family:inherit;font-size:11px;font-weight:800;line-height:1.2;white-space:normal;cursor:pointer}
+.admin-menu-item .admin-less-toggle[aria-pressed="true"]{border-color:#087f79;background:#e0f8f5}
+.admin-menu-item .admin-less-toggle:hover{background:#ccf1ec}
+.admin-menu-item>.admin-menu-destination:focus-visible,.admin-menu-item>.admin-pin-toggle:focus-visible,.admin-menu-item>.admin-less-toggle:focus-visible{outline:3px solid #f1b92b;outline-offset:2px}
+.admin-less-used{margin-top:18px;border:1px solid #b9d9d5;border-radius:14px;background:#f7fffe}
+.admin-less-used>summary{padding:12px 16px;color:#075f5b;font-size:16px;font-weight:900;cursor:pointer}
+.admin-less-used>summary span{display:inline-block;min-width:20px;margin-left:5px;padding:1px 6px;border-radius:999px;background:#e0f8f5;text-align:center;font-size:12px}
+.admin-less-used>.admin-all-grid{padding:0 12px 12px}
 @media(max-width:1040px){.admin-pinned-heading{flex-wrap:wrap}.admin-tabs{margin-bottom:22px!important}.admin-pinned-item{flex:0 0 118px;scroll-snap-align:start}}
-@media(max-width:520px){.admin-pinned-heading span{font-size:11px}.admin-tabs .admin-pinned-item>.admin-pinned-shortcut{min-height:96px;padding:10px 7px}.admin-tabs .admin-pinned-item>.admin-pinned-unpin{font-size:9px}.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination{min-height:96px;padding:33px 7px 10px}.admin-menu-item .admin-pin-toggle{font-size:10px}}
+@media(max-width:520px){.admin-pinned-heading span{font-size:11px}.admin-tabs .admin-pinned-item>.admin-pinned-shortcut{min-height:96px;padding:10px 7px}.admin-tabs .admin-pinned-item>.admin-pinned-unpin{font-size:9px}.admin-menu-board .admin-all-grid>.admin-menu-item>.admin-menu-destination{min-height:96px;padding:10px 7px}.admin-menu-item .admin-pin-toggle,.admin-menu-item .admin-less-toggle{font-size:10px}}
 
 /* Fixed news entry above personal pins; the full-menu item remains pinnable. */
-.admin-news-shortcut{box-sizing:border-box;display:flex;align-items:center;gap:14px;min-width:0;margin:22px 0 0;padding:16px 18px;border:2px solid #078f88;border-radius:18px;background:linear-gradient(120deg,#e4faf6,#f7fffd);color:#075f5b;box-shadow:0 8px 22px rgba(6,78,76,.12);text-decoration:none}
-.admin-news-shortcut:hover{background:#d8f7f1;box-shadow:0 11px 25px rgba(6,78,76,.18)}
-.admin-news-shortcut:focus-visible{outline:3px solid #f1b92b;outline-offset:2px}
-.admin-news-shortcut-icon{display:grid;place-items:center;flex:none;width:50px;height:50px;border-radius:14px;background:#fff;font-size:26px}
-.admin-news-shortcut>span:nth-child(2){display:grid;gap:2px;min-width:0}
-.admin-news-shortcut strong{font-size:19px;line-height:1.3}
-.admin-news-shortcut small{font-size:12px;color:#476e6a}
-.admin-news-shortcut-arrow{margin-left:auto;font-size:24px;font-weight:800}
-@media(max-width:520px){.admin-news-shortcut{gap:11px;padding:12px}.admin-news-shortcut-icon{width:44px;height:44px;font-size:23px}.admin-news-shortcut strong{font-size:17px}.admin-news-shortcut small{font-size:11px}}

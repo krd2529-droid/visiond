@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/admin-categories.css?v=01398" />
     <link rel="stylesheet" href="/vision2.css?v=01333" />
     <link rel="stylesheet" href="/vision3.css?v=01343" />
-    <link rel="stylesheet" href="/admin-navigation.css?v=014480" />
+    <link rel="stylesheet" href="/admin-navigation.css?v=014481" />
     <link rel="stylesheet" href="/admin-mobile.css?v=014129" />
     <style>
       .v3-review-section {
@@ -996,16 +996,6 @@
       </section>
       <div id="accessDenied"></div>
       <section id="adminPanel" hidden>
-        <a class="admin-news-shortcut" href="/news-channel.html" aria-label="เปิดช่องข่าว สมถุ๋ย">
-          <span class="admin-news-shortcut-icon" aria-hidden="true">📰</span>
-          <span><strong>ช่องข่าว สมถุ๋ย</strong><small>สร้างสคริปต์ข่าวและปกแนวตั้ง</small></span>
-          <span class="admin-news-shortcut-arrow" aria-hidden="true">↗</span>
-        </a>
-        <a class="admin-news-shortcut" href="/photo-exposure.html" aria-label="เปิดเครื่องมือปรับแสงรูปชุด">
-          <span class="admin-news-shortcut-icon" aria-hidden="true">☀️</span>
-          <span><strong>ปรับแสงรูปชุด</strong><small>ยกเงามืดบนเครื่อง · ดูก่อน–หลัง · ดาวน์โหลด ZIP</small></span>
-          <span class="admin-news-shortcut-arrow" aria-hidden="true">↗</span>
-        </a>
         <div class="admin-pinned-heading"><h2>เมนูที่ปักหมุด</h2><span>เลือกปักหมุดหรือเอาหมุดออกได้ที่เมนูจัดการทั้งหมด</span></div>
         <nav class="admin-tabs" aria-label="เมนูที่ปักหมุด">
           <button class="active" data-admin-tab="orders">
@@ -1081,6 +1071,10 @@
             <a class="admin-more-link" href="/toy-post-library.html"><span aria-hidden="true">🧸</span><b>คลังโพสต์ขายของ</b></a>
             <button class="danger-link boss-only-danger" data-admin-tab="trash"><span aria-hidden="true">🗑️</span><b>ถังขยะ / ลบถาวร</b><small>BOSS ONLY</small></button>
           </div>
+          <details class="admin-less-used" id="adminLessUsed">
+            <summary>ไม่ค่อยใช้งาน <span id="adminLessUsedCount">0</span></summary>
+            <div class="admin-all-grid" id="adminLessUsedGrid" aria-label="เมนูที่ไม่ค่อยใช้งาน"></div>
+          </details>
         </section>
         <section id="vision3Panel" data-feature="V4-DRAFT-001" hidden>
           <div class="section-head">
@@ -2340,7 +2334,7 @@
       rel="stylesheet"
       href="/vision2-character.css?v=01178"
     /><link rel="stylesheet" href="/cart-catalog.css?v=01442" />
-<script src="/admin.js?v=02072"></script>
+<script src="/admin.js?v=02073"></script>
     <script src="/vision2.js?v=014422"></script>
     <script src="/vendor/pdf-lib.min.js?v=1171"></script>
     <script src="/vision3.js?v=02058"></script>

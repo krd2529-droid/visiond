@@ -398,7 +398,10 @@ function setupAdminMenuPins() {
   const strip = document.querySelector('.admin-tabs');
   const grid = document.querySelector('.admin-all-grid');
   const empty = document.querySelector('#adminPinnedEmpty');
-  if (!strip || !grid || !empty || !viewer?.id) return;
+  const lessGrid = document.querySelector('#adminLessUsedGrid');
+  const lessCount = document.querySelector('#adminLessUsedCount');
+  const lessSection = document.querySelector('#adminLessUsed');
+  if (!strip || !grid || !empty || !lessGrid || !lessCount || !lessSection || !viewer?.id) return;
 
   const topDestinations = [...strip.children].filter(node => node.matches('button[data-admin-tab],a[href]'));
   const destinationId = node => {
@@ -429,7 +432,15 @@ function setupAdminMenuPins() {
   const savedIds = new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string' && knownIds.has(id)) : []);
   const hiddenIds = [...savedIds].filter(id => !destinations.has(id));
   const pinned = new Set(Array.isArray(saved) ? [...savedIds].filter(id => destinations.has(id)) : defaultIds.filter(id => destinations.has(id)));
+  const lessStorageKey = `visiond:admin:less-used:v1:${viewer.id}`;
+  let savedLess = null;
+  try { savedLess = JSON.parse(localStorage.getItem(lessStorageKey)); } catch {}
+  const savedLessIds = new Set(Array.isArray(savedLess) ? savedLess.filter(id => typeof id === 'string' && knownIds.has(id)) : []);
+  const hiddenLessIds = [...savedLessIds].filter(id => !destinations.has(id));
+  const lessUsed = new Set([...savedLessIds].filter(id => destinations.has(id) && !pinned.has(id)));
   const toggles = new Map();
+  const lessToggles = new Map();
+  const wrappers = new Map();
   const shortcutNodes = new Map();
   const labelOf = source => source.textContent.replace(/\s+/g, ' ').trim();
   const syncActive = () => {
@@ -438,13 +449,44 @@ function setupAdminMenuPins() {
     }
   };
   const changePin = (id, shouldPin) => {
-    if (shouldPin) pinned.add(id);
+    if (shouldPin) {
+      pinned.add(id);
+      lessUsed.delete(id);
+    }
     else pinned.delete(id);
     try { localStorage.setItem(storageKey, JSON.stringify([...hiddenIds, ...pinned])); } catch {}
+    try { localStorage.setItem(lessStorageKey, JSON.stringify([...hiddenLessIds, ...lessUsed])); } catch {}
     render();
     toggles.get(id)?.focus();
   };
+  const changeLessUsed = (id, shouldMove) => {
+    if (shouldMove) {
+      lessUsed.add(id);
+      pinned.delete(id);
+    } else lessUsed.delete(id);
+    try { localStorage.setItem(storageKey, JSON.stringify([...hiddenIds, ...pinned])); } catch {}
+    try { localStorage.setItem(lessStorageKey, JSON.stringify([...hiddenLessIds, ...lessUsed])); } catch {}
+    render();
+    if (shouldMove) lessSection.open = true;
+    lessToggles.get(id)?.focus();
+  };
   const render = () => {
+    const mainItems = [];
+    let lessTotal = 0;
+    for (const [id] of destinations) {
+      const wrapper = wrappers.get(id);
+      const isLessUsed = lessUsed.has(id);
+      const toggle = lessToggles.get(id);
+      toggle.setAttribute('aria-pressed', String(isLessUsed));
+      toggle.setAttribute('aria-label', `${isLessUsed ? 'นำกลับเมนูหลัก' : 'ย้ายไปไม่ค่อยใช้งาน'} ${labelOf(destinations.get(id))}`);
+      toggle.textContent = isLessUsed ? '↩ เมนูหลัก' : '↓ ไม่ค่อยใช้งาน';
+      if (isLessUsed) {
+        lessGrid.append(wrapper);
+        lessTotal++;
+      } else mainItems.push(wrapper);
+    }
+    grid.prepend(...mainItems);
+    lessCount.textContent = String(lessTotal);
     strip.replaceChildren();
     shortcutNodes.clear();
     for (const [id, source] of destinations) {
@@ -488,12 +530,19 @@ function setupAdminMenuPins() {
     source.before(wrapper);
     wrapper.append(source);
     source.classList.add('admin-menu-destination');
+    wrappers.set(id, wrapper);
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'admin-pin-toggle';
     toggle.addEventListener('click', () => changePin(id, !pinned.has(id)));
     wrapper.append(toggle);
     toggles.set(id, toggle);
+    const lessToggle = document.createElement('button');
+    lessToggle.type = 'button';
+    lessToggle.className = 'admin-less-toggle';
+    lessToggle.addEventListener('click', () => changeLessUsed(id, !lessUsed.has(id)));
+    wrapper.append(lessToggle);
+    lessToggles.set(id, lessToggle);
     if (source.dataset.adminTab) source.addEventListener('click', syncActive);
   }
   render();
