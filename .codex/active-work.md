@@ -1,9 +1,9 @@
 # Active patch: VSMS clear draft editors and identify sender per SMS
 
-- Status: PATCH_READY (2026-10-20): combined source frozen, focused 7/7 and full offline 153/153 PASS, Mark independent gate PASS, commercial-signed 0.5.16/code23 APK copied/hash-verified. Scoped commit/push remains.
+- Status: PATCH_DELIVERED (2026-10-20): combined source focused 7/7 and full/independent offline 153/153 PASS, commercial-signed 0.5.16/code23 APK copied/hash-verified. Source commit `1de83d0e` pushed non-force to `origin/main`, remote head verified. No web upload, handset install, or real SMS.
 - Outcome: separate clear buttons for Step 2 caption and short-link drafts; each actual SMS row shows chosen SIM plus best-effort sender number from permitted Android API or clearly labeled manual fallback. If unavailable, explicit unknown; never guess. Preserve saved sets, queue, optional original link, and send cadence.
 - Scope: Android Step 2/3 UI, optional number permission/manual fallback, sender snapshot/history/CSV, focused tests/version 0.5.16/code23, signed local APK. No backend/web release or real SMS.
-- Next: Jarvis verify branch/remote, scoped commit and non-force push to `origin main`, then verify remote head and deliver APK path. No website upload or real SMS.
+- Delivery: `C:/Users/User/Downloads/VSMS-v0.5.16-release.apk`, SHA-256 `54E914C28D1305A115D582FA38E26C8AC766D99741F477DF0AECAC42CE822B19`, commercial certificate unchanged. Final status-only commit/push next; physical handset sender-number accuracy unverified.
 
 # Previous active patch: VSMS running/stopped status icon
 
