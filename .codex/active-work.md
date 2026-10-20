@@ -1,9 +1,9 @@
 # Active patch: VSMS explicit single-SIM choice and delay
 
-- Status: PATCH_READY (2026-10-20): focused independent 18/18 and full Android offline 159/159 PASS; commercial-signed 0.5.17/code24 APK built and hash-verified. Scoped commit/push remains.
+- Status: PATCH_DELIVERED (2026-10-20): focused independent 18/18 and full Android offline 159/159 PASS; commercial-signed 0.5.17/code24 APK built and hash-verified. Source commit `19635036` pushed non-force to `origin/main`, remote head verified. No web upload, handset install, or real SMS.
 - Outcome: in Step 3 explicitly choose one-SIM SIM 1 or SIM 2, and identify the existing one-SIM cadence (first immediate; success 10–30 minutes; failure 1 minute before next recipient). New queues retain chosen physical slot and stop before handoff if that SIM is moved/replaced; no automatic switch to the other SIM.
 - Scope: Android selection/queue validation, focused tests/version 0.5.17/code24, commercial signed local APK. Preserve alternate mode, old queues, all send cadence, sender history, and license. No real SMS or website deployment.
-- Next: Jarvis verify branch/remote, scoped commit and non-force push origin main, then verify remote head and deliver local APK. No website upload or real SMS.
+- Delivery: `C:/Users/User/Downloads/VSMS-v0.5.17-release.apk`, SHA-256 `7036BCF2C7654A3BCD3181B2C8CF79A17D90FC604567C2C715015B978A961E1A`, commercial certificate unchanged. Final status-only commit/push next; handset SMS behavior unverified.
 
 # Previous active patch: VSMS clear draft editors and identify sender per SMS
 
