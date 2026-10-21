@@ -1,9 +1,12 @@
 const $=selector=>document.querySelector(selector);
 const access=$('#vaultAccess'),workspace=$('#vaultWorkspace'),form=$('#vaultForm'),list=$('#accountList'),status=$('#vaultStatus'),loadMore=$('#loadMoreAccounts');
+const emailInput=form.elements.email;
 const PAGE_SIZE=24,LIST_TTL=30000,requestInflight=new Map(),listCache=new Map(),secretDetails=new Map(),visibleSecrets=new Set(),revealTimers=new Map();
 let viewerId=null,items=[],editingId=null,nextCursor=null,secretGeneration=0,listGeneration=0,editSecretTimer=null;
 
 function message(text,error=false){status.textContent=text;status.classList.toggle('error',error)}
+emailInput.addEventListener('input',()=>{emailInput.value=emailInput.value.replace(/\p{Cf}/gu,'')});
+emailInput.addEventListener('invalid',()=>message('รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีเมลแล้วลองอีกครั้ง',true));
 async function api(path='',options={}){
   const method=String(options.method||'GET').toUpperCase(),key=method==='GET'?method+':'+path:null;
   if(key&&requestInflight.has(key))return requestInflight.get(key);

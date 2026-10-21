@@ -14,7 +14,7 @@ export function socialAccountValues(body){
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('ข้อมูลบัญชีไม่ถูกต้อง');
   const unknown=Object.keys(body).find(name=>!allowedFields.has(name));
   if(unknown)throw new Error(unknown==='password'||unknown==='login_id'?'ห้ามส่งรหัสผ่านจริงหรือไอดีล็อกอินเข้าคลังคำใบ้':'มีฟิลด์ที่ระบบไม่รองรับ');
-  const platform=field(body,'platform',80),accountName=field(body,'account_name',160),loginUrlInput=field(body,'login_url',1000),phone=field(body,'phone',80),email=field(body,'email',320),machine=field(body,'machine',160),passwordHint=field(body,'password_hint',64),note=field(body,'note',3000);
+  const platform=field(body,'platform',80),accountName=field(body,'account_name',160),loginUrlInput=field(body,'login_url',1000),phone=field(body,'phone',80),email=field({email:String(body.email??'').replace(/\p{Cf}/gu,'')},'email',320),machine=field(body,'machine',160),passwordHint=field(body,'password_hint',64),note=field(body,'note',3000);
   const explicitScheme=/^([a-z][a-z0-9+.-]*):/i.exec(loginUrlInput);
   if(explicitScheme&&!/^https:\/\//i.test(loginUrlInput))throw new Error('ลิงก์เข้าสู่ระบบต้องเป็น HTTPS หรือชื่อโดเมนเท่านั้น');
   if(!explicitScheme&&/^[\\/]/.test(loginUrlInput))throw new Error('ลิงก์เข้าสู่ระบบไม่ถูกต้อง');
