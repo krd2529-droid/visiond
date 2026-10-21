@@ -9,6 +9,7 @@ const invoke = async (name, ...args) => {
 };
 contextBridge.exposeInMainWorld('socialWork', Object.freeze({
   status: () => invoke('app:status'),
+  testOpenAI: () => invoke('app:test-openai'),
   listWorkspaces: cursor => invoke('workspaces:list',cursor),
   createWorkspace: (platform,name) => invoke('workspaces:create',platform,name),
   listJobs: filters => invoke('jobs:list',filters),

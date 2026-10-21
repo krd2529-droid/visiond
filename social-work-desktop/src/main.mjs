@@ -4,14 +4,18 @@ import { fileURLToPath } from 'node:url';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { Store } from './store.mjs';
-import { generateDraft } from './openai.mjs';
+import { generateDraft, testOpenAIConnection } from './openai.mjs';
 import { RequestCache } from './read-cache.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const smoke = process.argv.includes('--smoke');
+// Keep the original portable app's user-data path stable across installer upgrades.
+app.setName('visiond-social-work-desktop');
 if (smoke) app.disableHardwareAcceleration();
-if (smoke) app.setPath('userData',mkdtempSync(join(tmpdir(),'visiond-social-smoke-')));
+if (smoke) app.setPath('userData',process.env.SOCIAL_WORK_SMOKE_USER_DATA || mkdtempSync(join(tmpdir(),'visiond-social-smoke-')));
 let store;
+let apiVerified = false;
+let apiTestInFlight = null;
 const activeGeneration = new Set();
 const readCache = new RequestCache();
 
@@ -90,7 +94,14 @@ function mutateJob(id, fn) {
 
 app.whenReady().then(() => {
   store = new Store(join(app.getPath('userData'),'social-work.db'));
-  handle('app:status', () => ({ apiConfigured: Boolean(process.env.OPENAI_API_KEY), model: process.env.OPENAI_MODEL || 'gpt-5-mini', platformConnected: false, summary: store.summary() }));
+  handle('app:status', () => ({ apiConfigured: Boolean(process.env.OPENAI_API_KEY), apiVerified, model: process.env.OPENAI_MODEL || 'gpt-5-mini', platformConnected: false, summary: store.summary() }));
+  handle('app:test-openai', () => {
+    if (!apiTestInFlight) apiTestInFlight = testOpenAIConnection().then(result => { apiVerified = true; return result; }).catch(error => {
+      apiVerified = false;
+      throw error;
+    }).finally(() => { apiTestInFlight = null; });
+    return apiTestInFlight;
+  });
   handle('workspaces:list', cursor => readCached(`ws:${cursor || ''}`, () => store.listWorkspaces(cursor)));
   handle('workspaces:create', (platform,name) => { const ws = store.createWorkspace(platform,name); invalidateWorkspace(); return ws; });
   handle('jobs:list', filters => readCached(`jobs:${JSON.stringify(filters || {})}`, () => store.listJobs(filters)));

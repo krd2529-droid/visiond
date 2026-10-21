@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Store } from '../src/store.mjs';
 import { RequestCache } from '../src/read-cache.mjs';
-import { generateDraft } from '../src/openai.mjs';
+import { generateDraft, testOpenAIConnection } from '../src/openai.mjs';
 
 function withStore(run) {
   const dir = mkdtempSync(join(tmpdir(),'social-work-test-'));
@@ -94,4 +94,17 @@ test('OpenAI request sends key only in authorization and collects text from mess
   assert.equal(request.headers.Authorization,'Bearer test-secret');
   assert.equal(request.body.includes('test-secret'),false);
   assert.equal(JSON.parse(request.body).store,false);
+});
+
+test('explicit OpenAI connection test uses a bounded real-response-shaped request without persisting work', async () => {
+  let request;
+  const result = await testOpenAIConnection({apiKey:'test-secret',fetchImpl:async (_url,options) => {
+    request = JSON.parse(options.body);
+    return {ok:true,json:async () => ({status:'completed',output:[{type:'message',content:[{type:'output_text',text:'รับทราบ'}]}]})};
+  }});
+  assert.deepEqual(result,{connected:true});
+  assert.equal(request.max_output_tokens,64);
+  assert.equal(request.store,false);
+  assert.equal(JSON.stringify(request).includes('test-secret'),false);
+  await assert.rejects(testOpenAIConnection({apiKey:'bad',fetchImpl:async () => ({ok:false,status:401})}),/HTTP 401/);
 });

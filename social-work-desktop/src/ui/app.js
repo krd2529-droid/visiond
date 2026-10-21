@@ -55,9 +55,9 @@ async function loadWorkspaces(append = false) {
 
 async function loadOverview() {
   const status = await api.status();
-  $('api-pill').textContent = status.apiConfigured ? `OpenAI พร้อมใช้ · ${status.model}` : 'ยังไม่มีคีย์ OpenAI';
-  $('api-pill').className = `pill ${status.apiConfigured ? 'good':'warn'}`;
-  $('api-status').textContent = status.apiConfigured ? `พบคีย์ API ในโปรเซสหลัก · รุ่นโมเดล ${status.model}` : 'ยังไม่มีคีย์ API จึงยังใช้ AI สร้างร่างไม่ได้';
+  $('api-pill').textContent = status.apiVerified ? `OpenAI ตอบสำเร็จ · ${status.model}` : status.apiConfigured ? 'พบคีย์ · ยังไม่ทดสอบ' : 'ยังไม่มีคีย์ OpenAI';
+  $('api-pill').className = `pill ${status.apiVerified ? 'good':'warn'}`;
+  $('api-status').textContent = status.apiVerified ? `ทดสอบการตอบจาก OpenAI สำเร็จในครั้งนี้ · รุ่นโมเดล ${status.model}` : status.apiConfigured ? `พบคีย์ในโปรเซสหลัก แต่ยังไม่ยืนยันว่าใช้ได้ · รุ่นโมเดล ${status.model}` : 'ยังไม่มีคีย์ API จึงยังใช้ AI สร้างร่างไม่ได้';
   const counts = Object.fromEntries(status.summary.map(item => [item.status,item.count]));
   const metrics = [
     ['รออนุมัติ',counts.awaiting_approval || 0],
@@ -166,5 +166,12 @@ $('workspace-more').onclick = () => loadWorkspaces(true).catch(error => notice(e
 $('library-workspace').onchange = $('library-status').onchange = () => loadJobs('library');
 $('close-detail').onclick = () => $('detail').close();
 $('events-more').onclick = async () => { if (eventCursor && selectedJob) { const page = await action(() => api.getJob(selectedJob.id,eventCursor)); if (page?.events) renderEvents(page.events,true); } };
+$('test-openai').onclick = async () => {
+  const button = $('test-openai'); button.disabled = true;
+  $('api-test-result').textContent = 'กำลังทดสอบกับ OpenAI จริง…';
+  try { await api.testOpenAI(); $('api-test-result').textContent = 'ทดสอบสำเร็จ: OpenAI ส่งคำตอบกลับมา ไม่มีงานหรือโพสต์ถูกสร้าง'; notice('ทดสอบ OpenAI สำเร็จ',true); }
+  catch (error) { $('api-test-result').textContent = `ทดสอบไม่สำเร็จ: ${error.message}`; notice(error.message); }
+  finally { button.disabled = false; await loadOverview(); }
+};
 
 (async () => { try { await loadWorkspaces(); await loadOverview(); } catch (error) { notice(error.message); } })();
