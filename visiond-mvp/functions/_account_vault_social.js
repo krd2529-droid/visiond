@@ -1,7 +1,6 @@
 export const SOCIAL_ACCOUNT_KIND='social_password_hint';
 export const SOCIAL_ACCOUNT_PAGE_SIZE=24;
 const allowedFields=new Set(['platform','account_name','login_url','phone','email','machine','password_hint','note']);
-const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const hostnamePattern=/^(?=.{1,253}$)(?=.+\..+)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
 
 const field=(body,name,max)=>{
@@ -14,7 +13,7 @@ export function socialAccountValues(body){
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('ข้อมูลบัญชีไม่ถูกต้อง');
   const unknown=Object.keys(body).find(name=>!allowedFields.has(name));
   if(unknown)throw new Error(unknown==='password'||unknown==='login_id'?'ห้ามส่งรหัสผ่านจริงหรือไอดีล็อกอินเข้าคลังคำใบ้':'มีฟิลด์ที่ระบบไม่รองรับ');
-  const platform=field(body,'platform',80),accountName=field(body,'account_name',160),loginUrlInput=field(body,'login_url',1000),phone=field(body,'phone',80),email=field({email:String(body.email??'').replace(/\p{Cf}/gu,'')},'email',320),machine=field(body,'machine',160),passwordHint=field(body,'password_hint',64),note=field(body,'note',3000);
+  const platform=field(body,'platform',80),accountName=field(body,'account_name',160),loginUrlInput=field(body,'login_url',1000),phone=field(body,'phone',80),email=field(body,'email',320),machine=field(body,'machine',160),passwordHint=field(body,'password_hint',64),note=field(body,'note',3000);
   const explicitScheme=/^([a-z][a-z0-9+.-]*):/i.exec(loginUrlInput);
   if(explicitScheme&&!/^https:\/\//i.test(loginUrlInput))throw new Error('ลิงก์เข้าสู่ระบบต้องเป็น HTTPS หรือชื่อโดเมนเท่านั้น');
   if(!explicitScheme&&/^[\\/]/.test(loginUrlInput))throw new Error('ลิงก์เข้าสู่ระบบไม่ถูกต้อง');
@@ -25,7 +24,6 @@ export function socialAccountValues(body){
   if(url.username||url.password)throw new Error('ลิงก์เข้าสู่ระบบต้องไม่มีชื่อผู้ใช้หรือรหัสผ่าน');
   if(url.href.length>1000)throw new Error('ลิงก์เข้าสู่ระบบยาวเกินกำหนด');
   if(!phone&&!email)throw new Error('กรุณากรอกเบอร์โทรหรืออีเมลอย่างน้อยหนึ่งรายการ');
-  if(email&&!emailPattern.test(email))throw new Error('รูปแบบอีเมลไม่ถูกต้อง');
   return{platform,accountName,loginUrl:url.href,phone,email,machine,passwordHint,note};
 }
 
