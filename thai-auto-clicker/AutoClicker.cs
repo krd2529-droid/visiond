@@ -6,8 +6,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
-[assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.0.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.0.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.0.1.0")]
+[assembly: System.Reflection.AssemblyTitle("V auto")]
+[assembly: System.Reflection.AssemblyProduct("V auto")]
 
 namespace ThaiAutoClicker {
  public sealed class Target { public Target(){X=int.MinValue;Y=int.MinValue;} public int X {get;set;} public int Y {get;set;} public int WaitMs {get;set;} }
@@ -60,7 +62,7 @@ namespace ThaiAutoClicker {
   internal bool TestRunning {get{return sequence.Running;}}
   internal bool TestMarkersHidden {get{foreach(var m in markers)if(m.Visible)return false;return true;}}
   internal void BeginStopTest(Action<Target> capture){if(!hotkey)throw new Exception("Test cannot reserve emergency hotkey");var p=PointToScreen(new Point(50,50));targets.Add(new Target{X=p.X,Y=p.Y,WaitMs=86400000});loops.Value=0;testClick=capture;RefreshTargets();StartRun();}
-  public MainForm(){Text="คลิกอัตโนมัติ ภาษาไทย • 1.0";Font=new Font("Leelawadee UI",10);Size=new Size(760,540);MinimumSize=new Size(620,410);StartPosition=FormStartPosition.CenterScreen;
+  public MainForm(){Text="V auto • 1.0.1";Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);Font=new Font("Leelawadee UI",10);Size=new Size(760,540);MinimumSize=new Size(620,410);StartPosition=FormStartPosition.CenterScreen;
    AddButton(actions,"＋ เพิ่มจุด",AddTarget);AddButton(actions,"ลบจุดที่เลือก",RemoveTarget);AddButton(actions,"↑ ขึ้น",delegate{MoveSelected(-1);});AddButton(actions,"↓ ลง",delegate{MoveSelected(1);});AddButton(actions,"บันทึกชุด",Save);AddButton(actions,"เปิดชุด",LoadProfile);
    var bottom=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=110,Padding=new Padding(10)};bottom.Controls.Add(new Label{Text="จำนวนรอบ (0 = จนกว่าจะหยุด)",AutoSize=true,Padding=new Padding(0,8,0,0)});bottom.Controls.Add(loops);start=AddButton(bottom,"▶ เริ่ม",StartRun);AddButton(bottom,"■ หยุด",StopRun);AddButton(bottom,"แถบลอย",ShowFloating);bottom.SetFlowBreak(bottom.Controls[bottom.Controls.Count-1],true);bottom.Controls.Add(status);
    var hint=new Label{Dock=DockStyle.Top,Height=58,Padding=new Padding(12,4,12,4),Text="ลากวงกลมหมายเลขไปยังตำแหน่งที่ต้องการ • คลิกตามลำดับจากบนลงล่าง\nเวลารอ = หน่วงหลังคลิกจุดนั้น (มิลลิวินาที) • หยุดฉุกเฉิน Ctrl + Shift + F12"};
@@ -86,7 +88,7 @@ namespace ThaiAutoClicker {
   void ClickExternal(Target t){if(testClick!=null){testClick(t);return;}var root=Native.GetAncestor(Native.WindowFromPoint(new Point(t.X,t.Y)),2);if(root==Handle||(floating!=null&&!floating.IsDisposed&&root==floating.Handle))throw new Exception("จุดคลิกทับหน้าต่างควบคุม กรุณาย้ายหน้าต่างควบคุมออกก่อน");Native.Click(t);}
   public void StopRun(){sequence.Stop();if(wasRunning)Finish("หยุดแล้ว • "+sequence.Completed+" รอบ");}
   void Finish(string text){wasRunning=false;grid.Enabled=true;actions.Enabled=true;loops.Enabled=true;start.Enabled=hotkey;status.Text=text;foreach(var m in markers)m.Show(this);}
-  void ShowFloating(){if(floating!=null&&!floating.IsDisposed){floating.Show();return;}floating=new Form{Text="แถบควบคุม • ลากย้ายได้",TopMost=true,ShowInTaskbar=false,FormBorderStyle=FormBorderStyle.FixedToolWindow,ClientSize=new Size(310,90),Font=Font};var p=new FlowLayoutPanel{Dock=DockStyle.Fill};AddButton(p,"＋ จุด",AddTarget);AddButton(p,"▶ เริ่ม",StartRun);AddButton(p,"■ หยุด",StopRun);p.Controls.Add(new Label{Text="หยุดฉุกเฉิน Ctrl + Shift + F12",AutoSize=true});floating.Controls.Add(p);floating.Show();}
+  void ShowFloating(){if(floating!=null&&!floating.IsDisposed){floating.Show();return;}floating=new Form{Text="แถบควบคุม • ลากย้ายได้",Icon=Icon,TopMost=true,ShowInTaskbar=false,FormBorderStyle=FormBorderStyle.FixedToolWindow,ClientSize=new Size(310,90),Font=Font};var p=new FlowLayoutPanel{Dock=DockStyle.Fill};AddButton(p,"＋ จุด",AddTarget);AddButton(p,"▶ เริ่ม",StartRun);AddButton(p,"■ หยุด",StopRun);p.Controls.Add(new Label{Text="หยุดฉุกเฉิน Ctrl + Shift + F12",AutoSize=true});floating.Controls.Add(p);floating.Show();}
  }
  public static class Program {
   [STAThread] public static void Main(string[] args){Native.SetProcessDPIAware();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);if(args.Length>0&&(args[0]=="--self-test"||args[0]=="--interactive-test")){Environment.Exit(Tests.Run(args.Length>1?args[1]:"self-test.txt",args[0]=="--interactive-test"));return;}Application.Run(new MainForm());}
