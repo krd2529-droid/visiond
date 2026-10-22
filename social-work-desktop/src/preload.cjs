@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('socialWork', Object.freeze({
   listJobs: filters => invoke('jobs:list',filters),
   createJob: (workspaceId,instruction) => invoke('jobs:create',workspaceId,instruction),
   getJob: (id,cursor) => invoke('jobs:get',id,cursor),
+  pickMedia: id => invoke('jobs:pick-media',id),
+  clearMedia: id => invoke('jobs:clear-media',id),
   editDraft: (id,text) => invoke('jobs:edit',id,text),
   submit: id => invoke('jobs:submit',id),
   approve: (id,reviewer) => invoke('jobs:approve',id,reviewer),

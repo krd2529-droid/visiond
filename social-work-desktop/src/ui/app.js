@@ -1,7 +1,7 @@
 const api = window.socialWork;
 const $ = id => document.getElementById(id);
 const platformNames = { youtube: 'YouTube', tiktok: 'TikTok', facebook_page: 'Facebook Page' };
-const statusNames = { draft:'ร่าง', generating:'AI กำลังร่าง', awaiting_approval:'รออนุมัติ', approved:'อนุมัติแล้ว', executing:'กำลังเตรียมในเครื่อง', prepared_locally:'เตรียมในเครื่องแล้ว · ยังไม่โพสต์', failed:'ล้มเหลว', cancelled:'ยกเลิก' };
+const statusNames = { draft:'ร่าง', generating:'AI กำลังร่าง', awaiting_approval:'รออนุมัติ', approved:'อนุมัติข้อความแล้ว · ยังไม่โพสต์', executing:'กำลังเตรียมในเครื่อง', prepared_locally:'เตรียมในเครื่องแล้ว · ยังไม่โพสต์', publishing:'กำลังส่งคำขอเผยแพร่', published_verified:'ยืนยันเผยแพร่แล้ว', publication_uncertain:'ผลเผยแพร่ไม่แน่ชัด · ห้ามส่งซ้ำ', failed:'ล้มเหลว', cancelled:'ยกเลิก' };
 const eventNames = {created:'สร้างงานร่าง',generation_started:'เริ่มให้ AI ร่าง',draft_ready:'ร่างพร้อมตรวจ',interrupted:'งานหยุดเมื่อปิดแอป',failed:'งานล้มเหลว',edited_approval_reset:'แก้ร่างและล้างการอนุมัติ',submitted_for_review:'ส่งร่างเข้าคิวอนุมัติ',approved_exact_content:'อนุมัติข้อความฉบับนี้',local_execution_started:'เริ่มเตรียมผลในเครื่อง',local_result_saved:'บันทึกแพ็กงานในเครื่องแล้ว',cancelled:'ยกเลิกงาน'};
 let workspaces = [];
 let workspaceCursor = null;
@@ -122,9 +122,18 @@ async function openJob(id) {
   const meta = $('detail-meta'); clear(meta);
   for (const value of [ws ? `${platformNames[ws.platform]} · ${ws.name}` : 'พื้นที่ช่อง',statusNames[job.status] || job.status,`สร้างเมื่อ ${formatDate(job.created_at)}`,job.approver ? `อนุมัติโดย ${job.approver} · ${formatDate(job.approved_at)}` : '']) if (value) meta.append(el('span','',value));
   $('draft-text').value = job.draft;
-  $('draft-text').disabled = ['generating','executing','prepared_locally','cancelled'].includes(job.status);
+  $('draft-text').disabled = ['generating','executing','prepared_locally','publishing','published_verified','publication_uncertain','cancelled'].includes(job.status);
+  const mediaHost = $('detail-media'); clear(mediaHost);
+  if (!data.media?.length) mediaHost.append(el('div','empty','ยังไม่ได้เลือกไฟล์สื่อ'));
+  for (const file of data.media || []) {
+    const item = el('div','event'); const details = el('span','',`${file.mime_type} · ${(file.bytes / 1048576).toFixed(1)} MB · SHA-256 ${file.sha256}`); details.style.overflowWrap = 'anywhere'; item.append(el('strong','',file.display_name),details); mediaHost.append(item);
+  }
   const actions = $('detail-actions'); clear(actions);
-  if (!['generating','executing','prepared_locally','cancelled'].includes(job.status)) {
+  if (['draft','awaiting_approval','approved','failed'].includes(job.status)) {
+    actions.append(detailButton('เลือกไฟล์สื่อจากเครื่อง',() => api.pickMedia(job.id)));
+    if (data.media?.length) actions.append(detailButton('เอาไฟล์สื่อออก',() => api.clearMedia(job.id)));
+  }
+  if (!['generating','executing','prepared_locally','publishing','published_verified','publication_uncertain','cancelled'].includes(job.status)) {
     if (job.status === 'draft' || job.status === 'failed') actions.append(detailButton('ให้ OpenAI ร่าง',() => api.generate(job.id),true));
     actions.append(detailButton('บันทึกการแก้ไข',() => api.editDraft(job.id,$('draft-text').value)));
   }
