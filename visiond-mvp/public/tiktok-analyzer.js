@@ -295,7 +295,15 @@ marketplacePanel?.insertAdjacentHTML("beforebegin", '<section id="marketplaceSho
 const marketplaceProductButton = $("#marketplaceSearchForm .marketplace-search-main button");
 if (marketplaceProductButton) {
   marketplaceProductButton.classList.add("marketplace-search-button");
-  marketplaceProductButton.textContent = "ค้นหาสินค้า";
+  marketplaceProductButton.textContent = "ค้นหาสินค้าตามช่วงค่าคอม (%)";
+  for (const id of ["marketplaceCommissionMin", "marketplaceCommissionMax"]) {
+    const label = $("#" + id)?.closest("label");
+    if (label) {
+      if (id === "marketplaceCommissionMax") label.firstChild.textContent = "ค่าคอมต่ำกว่า (%)";
+      label.classList.add("marketplace-commission-field");
+      marketplaceProductButton.before(label);
+    }
+  }
 }
 function shopDateQuery(channelId = "") {
   const params = new URLSearchParams({ date_from: state.shopDateFrom, date_to: state.shopDateTo });
