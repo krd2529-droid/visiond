@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>คลังแชท V12 | VisionD</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/v12-chat-library.css?v=1">
+</head>
+<body>
+  <header class="library-header">
+    <div class="library-brand"><span class="library-eyebrow">VISIOND CONTROL · V12</span><h1>คลังแชท</h1><p>ดูบทสนทนา LINE และ Facebook ที่บันทึกไว้ แบบอ่านอย่างเดียว</p></div>
+    <a class="library-back" href="/v12-connect.html">← กลับกล่องข้อความ V12</a>
+  </header>
+  <main class="library-layout">
+    <aside class="library-sidebar" aria-label="รายการบทสนทนา">
+      <div class="library-sidebar-head"><h2>บทสนทนา</h2><button id="libraryRefresh" type="button" title="โหลดรายการล่าสุด">รีเฟรช</button></div>
+      <label class="library-search">ค้นหา<input id="librarySearch" type="search" placeholder="ชื่อลูกค้า ร้าน หรือข้อความ" autocomplete="off"></label>
+      <div class="library-filters" aria-label="กรองช่องทาง">
+        <button type="button" data-platform="" class="selected" aria-pressed="true">ทั้งหมด</button>
+        <button type="button" data-platform="line" aria-pressed="false">LINE</button>
+        <button type="button" data-platform="facebook" aria-pressed="false">Facebook</button>
+      </div>
+      <p id="libraryListState" class="library-state" role="status">กำลังโหลดบทสนทนา…</p>
+      <div id="libraryConversations" class="library-conversations"></div>
+      <div class="library-list-actions"><button id="libraryRetryList" type="button" hidden>ลองโหลดอีกครั้ง</button><button id="libraryLoadMore" type="button" hidden>โหลดบทสนทนาเพิ่ม</button></div>
+    </aside>
+    <section class="library-reader" aria-label="ข้อความในบทสนทนา">
+      <div id="libraryEmpty" class="library-placeholder"><span aria-hidden="true">💬</span><h2>เลือกบทสนทนา</h2><p>เลือกชื่อจากด้านซ้ายเพื่ออ่านข้อความในพื้นที่กว้างนี้</p></div>
+      <div id="libraryActive" class="library-active" hidden>
+        <div class="library-reader-head"><div><span id="libraryChannel" class="library-channel"></span><h2 id="libraryCustomer"></h2><p id="libraryShop"></p></div><span class="library-readonly">อ่านอย่างเดียว</span></div>
+        <div class="library-history"><div class="library-history-actions"><button id="libraryOlder" type="button" hidden>โหลดข้อความเก่ากว่า</button><p id="libraryThreadState" class="library-state" role="status"></p></div><div id="libraryMessages" class="library-messages" aria-live="polite"></div></div>
+      </div>
+      <div id="libraryThreadError" class="library-placeholder" hidden><h2>เปิดบทสนทนาไม่สำเร็จ</h2><p id="libraryThreadErrorText"></p><button id="libraryRetryThread" type="button">ลองใหม่</button></div>
+    </section>
+  </main>
+  <script src="/v12-chat-library.js?v=1" defer></script>
+</body>
+</html>
