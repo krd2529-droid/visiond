@@ -24,6 +24,7 @@ const db=new DatabaseSync(':memory:');
 db.exec(readFileSync(join(root,'migrations/0071_toys_center.sql'),'utf8'));
 for(const migration of ['0104_toys_center_orders.sql','0105_toys_center_product_line_series.sql','0106_toys_center_product_images.sql','0107_toys_center_product_cost.sql','0110_toys_center_shopee_handoff.sql'])db.exec(readFileSync(join(root,'migrations',migration),'utf8'));
 db.exec(readFileSync(join(root,'migrations/0134_stock_stores.sql'),'utf8'));
+for(const migration of ['0135_toys_center_form_drafts.sql','0142_stock_image_zones.sql'])db.exec(readFileSync(join(root,'migrations',migration),'utf8'));
 const insert=db.prepare('INSERT INTO toys_center_products(store_id,meta_id,slug,title,description,brand,image_1_key,image_2_key,status,price_cents) VALUES(?,?,?,?,?,?,?,?,?,?)');
 for(let i=1;i<=26;i++)insert.run('toys-center',`TOY-${i}`,`toy-${i}`,`Toy ${String(i).padStart(2,'0')}`,'Toy description','Toy Brand',`toy-${i}-image`,`toy-${i}-meta`,'published',10000);
 for(let i=1;i<=2;i++)insert.run('zippo',`ZIP-${i}`,`zip-${i}`,`Zippo ${i}`,'Zippo description','Zippo',`zip-${i}-image`,`zip-${i}-meta`,'published',20000);

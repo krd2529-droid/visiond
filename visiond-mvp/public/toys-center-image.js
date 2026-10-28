@@ -5,7 +5,7 @@ export const TOY_IMAGE_MAX_PIXELS=40_000_000;
 export const TOY_IMAGE_MAX_EDGE=2560;
 export const TOY_IMAGE_MAX_CONCURRENCY=2;
 export const TOY_IMAGE_MAX_ATTEMPTS=8;
-export const TOY_IMAGE_FIELDS=['image_1','image_2'];
+export const TOY_IMAGE_FIELDS=['image_1','image_2','image_3'];
 const heicTypes=new Set(['image/heic','image/heif','image/heic-sequence','image/heif-sequence']);
 const heicName=/\.(?:heic|heif)$/i;
 const standardTypes=new Set(['image/jpeg','image/png','image/webp']);
@@ -18,8 +18,8 @@ export const isHeicUpload=file=>file instanceof Blob&&(heicTypes.has(String(file
 export const jpegName=name=>(String(name||'image').replace(/\.[^.]*$/,'')||'image')+'.jpg';
 const normalizedName=(name,type)=>(String(name||'image').replace(/\.[^.]*$/,'')||'image')+'.'+typeExtensions[type];
 const sourceType=file=>{const declared=String(file?.type||'').toLowerCase();if(standardTypes.has(declared))return declared;const extension=/\.([^.]+)$/.exec(String(file?.name||''))?.[1]?.toLowerCase();return extensionTypes[extension]||''};
-const slotLabel=slot=>String(slot).startsWith('image_2')||slot==='Meta'?'Meta':'VisionD';
-const isVisiondSlot=slot=>String(slot).startsWith('image_1')||String(slot).startsWith('VisionD');
+const slotLabel=slot=>String(slot).startsWith('image_3')?'ลูกค้ากลุ่ม':String(slot).startsWith('image_2')||slot==='Meta'?'Meta':'VisionD';
+const isVisiondSlot=slot=>String(slot).startsWith('image_1')||String(slot).startsWith('image_3')||String(slot).startsWith('VisionD');
 const conversionError=slot=>new Error('แปลงรูป '+slotLabel(slot)+' จาก HEIC/HEIF เป็น JPG ไม่สำเร็จ กรุณาเลือกไฟล์ HEIC/HEIF ที่เปิดได้');
 const oversizedError=slot=>new Error('รูป '+slotLabel(slot)+' ที่แปลงแล้วมีขนาดเกิน 5 MB กรุณาเลือกรูปต้นฉบับที่มีรายละเอียดน้อยลง');
 const resourceError=(slot,detail)=>new Error('ประมวลผลรูป '+slotLabel(slot)+' ไม่สำเร็จ: '+detail);
@@ -131,9 +131,9 @@ export function createToyImagePipeline(options={}){
   };
   const appendSelected=async(form,payload,{visiondFiles}={})=>{
     const selected=TOY_IMAGE_FIELDS.map(slot=>{
-      const input=form.elements[slot],getFiles=slot==='image_1'&&typeof visiondFiles==='function'?visiondFiles:()=>slot==='image_1'?[...(input?.files||[])]:[input?.files?.[0]].filter(Boolean);
-      const files=[...getFiles()].slice(0,slot==='image_1'?11:1);
-      if(slot==='image_1'&&files.length>10)throw new Error('รูปสำหรับ VisionD เลือกได้สูงสุด 10 รูป');
+      const input=form.elements[slot],getFiles=slot==='image_1'&&typeof visiondFiles==='function'?visiondFiles:()=>slot==='image_2'?[input?.files?.[0]].filter(Boolean):[...(input?.files||[])];
+      const files=[...getFiles()].slice(0,slot==='image_2'?2:11);
+      if(files.length>(slot==='image_2'?1:10))throw new Error(`รูปสำหรับ ${slotLabel(slot)} มีมากเกินกำหนด`);
       if(files.length&&!sameFiles(slots.get(slot)?.sources||[],files))selectFiles(slot,files);
       return{slot,files,getFiles,entry:files.length?slots.get(slot):null};
     }),normalized=await Promise.all(selected.map(item=>item.entry?item.entry.promise:[]));
