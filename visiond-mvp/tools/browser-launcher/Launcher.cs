@@ -48,6 +48,8 @@ namespace VisionDBrowserLauncher
                 if (args.Length == 1 && args[0] == "--init") return LocalHelper.Initialize();
                 if (args.Length == 1 && args[0] == "--serve") return LocalHelper.Serve();
                 if (args.Length == 1 && (args[0] == "--pair" || IsSetupPairUri(args[0]))) return Setup.PairExplicit();
+                string pairIntent;
+                if (args.Length == 1 && TrySetupPairIntentUri(args[0],out pairIntent)) return Setup.PairExplicit(false,pairIntent);
                 if (args.Length == 1 && args[0] == "--pair-replace") return Setup.PairExplicit(true);
                 bool inspect = args.Length == 2 && args[0] == "--inspect";
                 if ((!inspect && args.Length != 1) || (inspect && args.Length != 2)) return Fail("invalid_arguments");
@@ -100,6 +102,11 @@ namespace VisionDBrowserLauncher
         }
 
         internal static bool IsSetupPairUri(string raw){return raw=="visiond-profile://setup/pair";}
+        internal static bool TrySetupPairIntentUri(string raw,out string intent){
+            intent=null;if(String.IsNullOrEmpty(raw)||raw.Length>100)return false;
+            var match=Regex.Match(raw,@"\Avisiond-profile://setup/pair/?\?intent=([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\z",RegexOptions.CultureInvariant);
+            if(!match.Success)return false;intent=match.Groups[1].Value;return true;
+        }
         internal static bool TryParse(string raw, out LaunchRequest request)
         {
             request = null;
@@ -291,17 +298,33 @@ namespace VisionDBrowserLauncher
             using(var response=(HttpWebResponse)request.GetResponse())
             {if(response.StatusCode!=HttpStatusCode.OK)throw new InvalidDataException();using(var reader=new StreamReader(response.GetResponseStream())){char[] buffer=new char[8193];int n=0,count;while(n<buffer.Length&&(count=reader.Read(buffer,n,buffer.Length-n))>0)n+=count;if(n>8192)throw new InvalidDataException();return Json.Deserialize<Dictionary<string,object>>(new string(buffer,0,n));}}
         }
-        internal static string PairStatus="";
-        internal static int Pair()
-        {
-            Load();return PairLoaded();
+        internal static string PairIntentAccount(string id){
+            Guid parsed;if(!Guid.TryParseExact(id,"D",out parsed)||parsed==Guid.Empty)throw new InvalidDataException();
+            ServicePointManager.SecurityProtocol=SecurityProtocolType.Tls12;
+            var request=(HttpWebRequest)WebRequest.Create(Origin+"/api/launcher/pair-intent-info?id="+id);
+            request.Method="GET";request.AllowAutoRedirect=false;request.Timeout=10000;request.ReadWriteTimeout=10000;request.Proxy=null;
+            using(var response=(HttpWebResponse)request.GetResponse()){
+                if(response.StatusCode!=HttpStatusCode.OK)throw new InvalidDataException();
+                using(var reader=new StreamReader(response.GetResponseStream())){
+                    char[] buffer=new char[1025];int n=0,count;while(n<buffer.Length&&(count=reader.Read(buffer,n,buffer.Length-n))>0)n+=count;if(n>1024)throw new InvalidDataException();
+                    var data=Json.Deserialize<Dictionary<string,object>>(new string(buffer,0,n));string code=Field(data,"account_code");
+                    if(!Regex.IsMatch(code,"\\A[A-F0-9]{8}\\z"))throw new InvalidDataException();return code;
+                }
+            }
         }
-        private static int PairLoaded()
+        internal static string PairStatus="";
+        internal static int Pair(string intentId="")
+        {
+            Load();return PairLoaded(intentId);
+        }
+        private static int PairLoaded(string intentId="")
         {
             string code=RandomHex().Substring(0,12).ToUpperInvariant();var attempt=new Dictionary<string,object>();foreach(string key in new[]{"helper_id","owner_hash","port","secret"})attempt[key]=config[key];attempt["pair_code"]=code;if(config.ContainsKey("replaces_helper_id"))attempt["replaces_helper_id"]=config["replaces_helper_id"];
+            if(intentId!="")attempt["intent_id"]=intentId;
             var stage=Api("pair-stage",attempt);if(Field(stage,"paired")=="True"){PairStatus="ตัวช่วยนี้ผูกบัญชีแล้ว ไม่ต้องผูกซ้ำ กลับหน้า VisionD ที่ใช้อยู่แล้วกดรีเฟรชสถานะ Helper";PairCodeMessage(IntPtr.Zero,PairStatus,"VisionD Helper",0);return 0;}
             string id=Field(stage,"pair_id");if(id!=Field(config,"helper_id"))throw new InvalidDataException("คำตอบผูกเครื่องไม่ตรงกับตัวช่วยนี้");
-            PairCodeMessage(IntPtr.Zero,"รหัสคำขอนี้: "+code+"\nใช้ภายใน 5 นาที กรอกในหน้า VisionD ตั้งค่า Helper ที่คุณเปิดอยู่ แล้วตรวจและยืนยันในเบราว์เซอร์เดิม\nอย่าแจ้งรหัสแก่ผู้อื่น ตัวช่วยจะไม่เปิดเบราว์เซอร์ให้", "VisionD · รหัสผูกเครื่อง",0);PairStatus="แสดงรหัสคำขอแล้ว กรอกและยืนยันในหน้า VisionD เดิม การปิดกล่องนี้ยังไม่ใช่การยืนยัน";return 0;
+            if(intentId!=""&&Field(stage,"pair_code")!=""){string recovered=Field(stage,"pair_code");if(!Regex.IsMatch(recovered,"\\A[A-F0-9]{12}\\z"))throw new InvalidDataException();code=recovered;}
+            PairCodeMessage(IntPtr.Zero,"รหัสคำขอนี้: "+code+(intentId==""?"\nใช้ภายใน 5 นาที กรอกในหน้า VisionD ตั้งค่า Helper ที่คุณเปิดอยู่":"\nใช้ภายใน 5 นาที เทียบกับรหัสในหน้า VisionD เดิม ไม่ต้องกรอก")+" แล้วตรวจและยืนยันในเบราว์เซอร์เดิม\nอย่าแจ้งรหัสแก่ผู้อื่น ตัวช่วยจะไม่เปิดเบราว์เซอร์ให้", "VisionD · รหัสผูกเครื่อง",0);PairStatus="แสดงรหัสคำขอแล้ว ตรวจและยืนยันในหน้า VisionD เดิม การปิดกล่องนี้ยังไม่ใช่การยืนยัน";return 0;
         }
         [System.Runtime.InteropServices.DllImport("user32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode,EntryPoint="MessageBoxW")]
         private static extern int PairCodeMessage(IntPtr owner,string text,string caption,uint type);

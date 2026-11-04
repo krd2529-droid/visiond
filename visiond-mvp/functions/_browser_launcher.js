@@ -62,7 +62,17 @@ async function userContext(ctx){
 export async function launcherRoute(ctx){
  const action=ctx.params.action,request=ctx.request,url=new URL(request.url);
  if(request.method==='GET'){
+  if(action==='pair-intent-info'){
+   const id=url.searchParams.get('id');if(!uuid(id)||[...url.searchParams.keys()].join(',')!=='id')return fail();
+   const row=await ctx.env.DB.prepare("SELECT i.account_code FROM browser_launcher_pair_intents i JOIN sessions s ON s.id=i.session_id AND s.user_id=i.user_id AND s.expires_at>CURRENT_TIMESTAMP WHERE i.id=? AND i.expires_at>CURRENT_TIMESTAMP AND i.consumed_at IS NULL").bind(id).first();
+   return row?reply({account_code:row.account_code}):fail(409);
+  }
   const auth=await requireVxWorkspaceUser(ctx);if(auth.error)return auth.error;const ownerId=vxWorkspaceOwnerId(auth);
+  if(action==='pair-intent-status'){
+   const id=url.searchParams.get('id');if(!uuid(id)||[...url.searchParams.keys()].join(',')!=='id')return fail();
+   const row=await ctx.env.DB.prepare("SELECT i.helper_id,h.status,i.consumed_at,i.account_code FROM browser_launcher_pair_intents i LEFT JOIN browser_launcher_helpers h ON h.id=i.helper_id WHERE i.id=? AND i.user_id=? AND i.session_id=? AND (i.expires_at>CURRENT_TIMESTAMP OR (i.consumed_at IS NOT NULL AND i.created_at>datetime('now','-1 day')))").bind(id,auth.user.id,session(request)).first();
+   if(!row||row.consumed_at&&row.status!=='active')return fail(409);return reply(row.helper_id?{status:row.status==='active'?'paired':'staged',pair_id:row.helper_id,account_code:row.account_code}:{status:'waiting',account_code:row.account_code});
+  }
   if(action==='helpers'){
    const after=url.searchParams.get('after')||'';if(after&&!uuid(after))return fail();
    const rows=await ctx.env.DB.prepare("SELECT id,port,key_version,created_at FROM browser_launcher_helpers WHERE user_id=? AND status='active' AND id>? ORDER BY id LIMIT 25").bind(auth.user.id,after).all(),items=(rows.results||[]).slice(0,24),has_more=(rows.results||[]).length>24;return reply({items,has_more,next_cursor:has_more?items.at(-1).id:null});
@@ -79,6 +89,12 @@ export async function launcherRoute(ctx){
  }
  if(request.method!=='POST'||request.headers.get('content-type')?.split(';')[0]!=='application/json')return fail(405);
  const raw=await request.text();if(raw.length>4096)return fail(413);let body;try{body=JSON.parse(raw)}catch{return fail()}
+ if(action==='pair-intent'){
+  const auth=await userContext(ctx);if(auth.error)return auth.error;if(!exact(body,[]))return fail();
+  const limited=await rateLimit(ctx.env,request,'launcher_pair_intent',5,10,10);if(limited.error)return limited.error;
+  const id=crypto.randomUUID(),accountCode=launcherRandom().slice(0,8).toUpperCase();await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM browser_launcher_pair_intents WHERE id IN (SELECT id FROM browser_launcher_pair_intents WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,id LIMIT 24)"),ctx.env.DB.prepare("INSERT INTO browser_launcher_pair_intents(id,user_id,session_id,account_code,expires_at) VALUES(?,?,?,?,datetime('now','+5 minutes'))").bind(id,auth.user.id,session(request),accountCode)]);
+  return reply({intent_id:id,account_code:accountCode});
+ }
  if(action==='cancel'){
   if(!origin(request))return fail(403);
   const auth=await requireVxWorkspaceUser(ctx);if(auth.error)return auth.error;
@@ -97,26 +113,31 @@ export async function launcherRoute(ctx){
  if(action==='pair-stage'){
   const replaces=body?.replaces_helper_id||'';
   const code=body?.pair_code,modern=typeof code==='string'&&code.length===12&&/^[A-F0-9]{12}$/.test(code);
-  if(request.headers.has('origin')||!exact(body,['helper_id','owner_hash','port','secret','pair_code',...(Object.hasOwn(body||{},'replaces_helper_id')?['replaces_helper_id']:[])])||!uuid(body.helper_id)||!launcherHex(body.owner_hash)||!launcherHex(body.secret)||(!modern&&!(typeof code==='string'&&code.length===8&&/^[A-F0-9]{8}$/.test(code)))||!Number.isInteger(body.port)||body.port<49152||body.port>65535||Object.hasOwn(body||{},'replaces_helper_id')&&(!modern||!uuid(replaces)||replaces===body.helper_id))return fail();
+  const intentId=body?.intent_id||'';
+  if(request.headers.has('origin')||!exact(body,['helper_id','owner_hash','port','secret','pair_code',...(Object.hasOwn(body||{},'replaces_helper_id')?['replaces_helper_id']:[]),...(intentId?['intent_id']:[])])||!uuid(body.helper_id)||!launcherHex(body.owner_hash)||!launcherHex(body.secret)||(!modern&&!(typeof code==='string'&&code.length===8&&/^[A-F0-9]{8}$/.test(code)))||!Number.isInteger(body.port)||body.port<49152||body.port>65535||Object.hasOwn(body||{},'replaces_helper_id')&&(!modern||!uuid(replaces)||replaces===body.helper_id)||intentId&&(!modern||!uuid(intentId)))return fail();
+  const intent=intentId?await ctx.env.DB.prepare("SELECT i.user_id,i.helper_id FROM browser_launcher_pair_intents i JOIN sessions s ON s.id=i.session_id AND s.user_id=i.user_id AND s.expires_at>CURRENT_TIMESTAMP WHERE i.id=? AND i.consumed_at IS NULL AND i.expires_at>CURRENT_TIMESTAMP").bind(intentId).first():null;
+  if(intentId&&(!intent||intent.helper_id&&intent.helper_id!==body.helper_id))return fail(409);
+  const bindIntent=async()=>{if(!intentId)return true;const changed=await ctx.env.DB.prepare("UPDATE browser_launcher_pair_intents SET helper_id=? WHERE id=? AND (helper_id IS NULL OR helper_id=?) AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP AND EXISTS(SELECT 1 FROM sessions s WHERE s.id=browser_launcher_pair_intents.session_id AND s.user_id=browser_launcher_pair_intents.user_id AND s.expires_at>CURRENT_TIMESTAMP)").bind(body.helper_id,intentId,body.helper_id).run();return changed.meta?.changes===1};
   const limited=await rateLimit(ctx.env,request,'launcher_pair',5,10,10);if(limited.error)return limited.error;
   const existing=await ctx.env.DB.prepare('SELECT * FROM browser_launcher_helpers WHERE id=?').bind(body.helper_id).first();
   if(existing){
    if(existing.owner_hash!==body.owner_hash||existing.port!==body.port||!equalLauncherMac(await secretFor(ctx.env,existing),body.secret)||existing.status==='revoked')return fail(409);
-   if(existing.status==='active')return reply({pair_id:existing.id,paired:true});
+   if(existing.status==='active'){if(intentId&&(Number(existing.user_id)!==Number(intent.user_id)||!await bindIntent()))return fail(409);return reply({pair_id:existing.id,paired:true});}
    if((existing.replaces_helper_id||'')!==replaces)return fail(409);
+   if(intentId&&intent.helper_id===existing.id&&Date.parse(existing.expires_at.replace(' ','T')+'Z')>Date.now())return reply({pair_id:existing.id,pair_code:existing.pair_code,paired:false});
    if(existing.pair_code===code){
     if(modern&&Date.parse(existing.expires_at.replace(' ','T')+'Z')<=Date.now())return fail(409);
-    if(modern||Date.parse(existing.expires_at.replace(' ','T')+'Z')>Date.now())return reply({pair_id:existing.id,paired:false});
+    if(modern||Date.parse(existing.expires_at.replace(' ','T')+'Z')>Date.now())return !await bindIntent()?fail(409):reply({pair_id:existing.id,paired:false});
    }else if(!modern)return fail(409);
    const cipher=await sealLauncher(ctx.env,body.secret,helperAAD({id:existing.id,user_id:0,key_version:existing.key_version}));
    const changed=await ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET user_id=NULL,session_id=NULL,confirm_nonce=NULL,secret_cipher=?,pair_code=?,status='staged',expires_at=datetime('now','+5 minutes') WHERE id=? AND status=? AND pair_code=? AND expires_at=? AND COALESCE(user_id,0)=? AND COALESCE(session_id,'')=? AND COALESCE(confirm_nonce,'')=?").bind(cipher,code,existing.id,existing.status,existing.pair_code,existing.expires_at,existing.user_id||0,existing.session_id||'',existing.confirm_nonce||'').run();
-   return changed.meta?.changes===1?reply({pair_id:existing.id,paired:false}):fail(409);
+   return changed.meta?.changes===1&&await bindIntent()?reply({pair_id:existing.id,paired:false}):fail(409);
   }
   if(replaces&&!await ctx.env.DB.prepare("SELECT id FROM browser_launcher_helpers WHERE id=? AND owner_hash=? AND status='active'").bind(replaces,body.owner_hash).first())return fail(409);
   const h={id:body.helper_id,user_id:0,key_version:1},cipher=await sealLauncher(ctx.env,body.secret,helperAAD(h));
   await ctx.env.DB.batch([ctx.env.DB.prepare("DELETE FROM browser_launcher_helpers WHERE id IN (SELECT id FROM browser_launcher_helpers WHERE status IN ('staged','prepared') AND expires_at<=CURRENT_TIMESTAMP ORDER BY status,expires_at,id LIMIT 24)"),
    ctx.env.DB.prepare("INSERT INTO browser_launcher_helpers(id,owner_hash,port,secret_cipher,pair_code,status,expires_at,replaces_helper_id) VALUES(?,?,?,?,?,'staged',datetime('now','+5 minutes'),?)").bind(h.id,body.owner_hash,body.port,cipher,code,replaces||null)]);
-  return reply({pair_id:h.id,paired:false});
+  return await bindIntent()?reply({pair_id:h.id,paired:false}):fail(409);
  }
  if(['pair-prepare','pair-prepare-code','pair-confirm'].includes(action)){
   const auth=await userContext(ctx);if(auth.error)return auth.error;
@@ -132,16 +153,23 @@ export async function launcherRoute(ctx){
   }
   if(action!=='pair-confirm'){
    if(h.replaces_helper_id&&!await ctx.env.DB.prepare("SELECT id FROM browser_launcher_helpers WHERE id=? AND user_id=? AND owner_hash=? AND status='active'").bind(h.replaces_helper_id,auth.user.id,h.owner_hash).first())return fail(409);
-   if(action==='pair-prepare'&&(!exact(body,['pair_id'])||h.pair_code.length!==8))return fail(409);
+   if(action==='pair-prepare'){
+    const intentId=body?.intent_id||'';
+    if(intentId){if(!exact(body,['pair_id','intent_id'])||!uuid(intentId)||h.pair_code.length!==12||!await ctx.env.DB.prepare("SELECT id FROM browser_launcher_pair_intents WHERE id=? AND helper_id=? AND user_id=? AND session_id=? AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP").bind(intentId,h.id,auth.user.id,session(request)).first())return fail(409)}
+    else if(!exact(body,['pair_id'])||h.pair_code.length!==8||await ctx.env.DB.prepare('SELECT id FROM browser_launcher_pair_intents WHERE helper_id=? AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP').bind(h.id).first())return fail(409);
+   }
    if(h.status==='prepared'&&(Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)))return fail(409);
    const nonce=h.confirm_nonce||launcherRandom(),secret=await secretFor(ctx.env,h),bound={...h,user_id:auth.user.id},cipher=await sealLauncher(ctx.env,secret,helperAAD(bound));
    const result=await ctx.env.DB.prepare(`UPDATE browser_launcher_helpers SET user_id=?,session_id=?,confirm_nonce=?,secret_cipher=?,status='prepared' WHERE id=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND COALESCE(confirm_nonce,'')=? AND (status='staged' OR (status='prepared' AND user_id=? AND session_id=?)) AND (replaces_helper_id IS NULL OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=browser_launcher_helpers.replaces_helper_id AND old.user_id=? AND old.owner_hash=browser_launcher_helpers.owner_hash AND old.status='active')) AND ${pairLive}`).bind(auth.user.id,session(request),nonce,cipher,h.id,h.pair_code,h.expires_at,h.confirm_nonce||'',auth.user.id,session(request),auth.user.id,...pairLiveArgs(request,auth)).run();if(result.meta?.changes!==1)return fail(409);
    const prior=await ctx.env.DB.prepare("SELECT id,created_at FROM browser_launcher_helpers WHERE user_id=? AND owner_hash=? AND status='active' ORDER BY id LIMIT 1").bind(auth.user.id,h.owner_hash).first();
    return reply({pair_id:h.id,pair_code:h.pair_code,confirm_nonce:nonce,replace_id:prior?.id||'',port:h.port});
   }
-  if(!exact(body,['pair_id','confirm_nonce','pair_code','replace_id'])||body.confirm_nonce!==h.confirm_nonce||body.pair_code!==h.pair_code||h.status!=='prepared'||Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)||body.replace_id&&!uuid(body.replace_id))return fail(409);
-  const guard=ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT id FROM browser_launcher_helpers WHERE id=? AND status='prepared' AND user_id=? AND session_id=? AND confirm_nonce=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND (replaces_helper_id IS NULL OR replaces_helper_id=?) AND ${pairLive} AND NOT EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.user_id=? AND old.owner_hash=? AND old.status='active' AND old.id<>?) AND (?='' OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=? AND old.user_id=? AND old.owner_hash=? AND old.status='active'))))`).bind(h.id,auth.user.id,session(request),body.confirm_nonce,body.pair_code,h.expires_at,body.replace_id,...pairLiveArgs(request,auth),auth.user.id,h.owner_hash,body.replace_id,body.replace_id,body.replace_id,auth.user.id,h.owner_hash);
-  await ctx.env.DB.batch([guard,ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET status='revoked' WHERE id=? AND user_id=? AND owner_hash=? AND status='active'").bind(body.replace_id,auth.user.id,h.owner_hash),ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET status='active',confirm_nonce=NULL WHERE id=?").bind(h.id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(h.id)]);
+  const intentId=body?.intent_id||'';
+  if(!exact(body,['pair_id','confirm_nonce','pair_code','replace_id',...(intentId?['intent_id']:[])])||body.confirm_nonce!==h.confirm_nonce||body.pair_code!==h.pair_code||h.status!=='prepared'||Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)||body.replace_id&&!uuid(body.replace_id)||intentId&&!uuid(intentId))return fail(409);
+  if(intentId&&!await ctx.env.DB.prepare("SELECT id FROM browser_launcher_pair_intents WHERE id=? AND helper_id=? AND user_id=? AND session_id=? AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP").bind(intentId,h.id,auth.user.id,session(request)).first())return fail(409);
+  if(!intentId&&await ctx.env.DB.prepare('SELECT id FROM browser_launcher_pair_intents WHERE helper_id=? AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP').bind(h.id).first())return fail(409);
+  const guard=ctx.env.DB.prepare(`INSERT INTO browser_launcher_guard(id) VALUES((SELECT id FROM browser_launcher_helpers WHERE id=? AND status='prepared' AND user_id=? AND session_id=? AND confirm_nonce=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND (replaces_helper_id IS NULL OR replaces_helper_id=?) AND ${pairLive} AND NOT EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.user_id=? AND old.owner_hash=? AND old.status='active' AND old.id<>?) AND (?='' OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=? AND old.user_id=? AND old.owner_hash=? AND old.status='active')) AND (?='' OR EXISTS(SELECT 1 FROM browser_launcher_pair_intents i WHERE i.id=? AND i.helper_id=browser_launcher_helpers.id AND i.user_id=browser_launcher_helpers.user_id AND i.session_id=browser_launcher_helpers.session_id AND i.consumed_at IS NULL AND i.expires_at>CURRENT_TIMESTAMP))))`).bind(h.id,auth.user.id,session(request),body.confirm_nonce,body.pair_code,h.expires_at,body.replace_id,...pairLiveArgs(request,auth),auth.user.id,h.owner_hash,body.replace_id,body.replace_id,body.replace_id,auth.user.id,h.owner_hash,intentId,intentId);
+  await ctx.env.DB.batch([guard,...(intentId?[ctx.env.DB.prepare("UPDATE browser_launcher_pair_intents SET consumed_at=CURRENT_TIMESTAMP WHERE id=? AND helper_id=? AND user_id=? AND session_id=? AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP").bind(intentId,h.id,auth.user.id,session(request))]:[]),ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET status='revoked' WHERE id=? AND user_id=? AND owner_hash=? AND status='active'").bind(body.replace_id,auth.user.id,h.owner_hash),ctx.env.DB.prepare("UPDATE browser_launcher_helpers SET status='active',confirm_nonce=NULL WHERE id=?").bind(h.id),ctx.env.DB.prepare('DELETE FROM browser_launcher_guard WHERE id=?').bind(h.id)]);
   return reply({paired:true,helper_id:h.id,port:h.port});
  }
  if(action==='challenge'){

@@ -1,5 +1,11 @@
 # VisionD Browser Launcher
 
+## Same-tab Next pairing (v0.20.79)
+
+The authenticated setup page creates a five-minute, session-bound pair intent and invokes the installed Helper with only its random intent UUID. The Helper reads a short, non-authorizing account comparison code from the fixed VisionD HTTPS origin, asks the Windows user to compare it with the original tab and confirm this device, stages its own random twelve-character code, and displays that code locally. The original browser tab polls only its own intent, prepares the exact helper and shows the code for human comparison. Pair confirmation still needs an explicit checkbox and click, the original live session/VX grant, nonce, owner and exact replacement checks; the intent is consumed in the same transaction. No pairing secret, browser cookie, account email or profile content passes through the custom URI, local HTTP listener or browser storage. A lost stage response may return the same staged code to the same native helper and intent. Existing manual code entry remains available under advanced setup.
+
+Migration `0143_launcher_pair_intents.sql` must be applied before serving the new page or installing this release. The existing local listener still accepts only launch commands; no pairing endpoint was added there. The executable is unsigned, as indicated by the release manifest; Windows and installer approval remain explicit.
+
 ## Compatibility enforcement (v0.20.78)
 
 Every claim now sends the exact HMAC-bound capability launcher/0.20.78;no-first-run=1. Legacy helpers74–77 send an empty claim and receive failed/HELPER_UPDATE_REQUIRED without any ticket or Chrome launch. Install the current downloaded Setup to update the executing service; downloading alone is not installation. Normal owned upgrade preserves DPAPI pairing, port and Profiles. Migration0103 must precede server deployment. Native post-upgrade window-count verification remains necessary.
