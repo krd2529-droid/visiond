@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';import{mkdtempSync,readFileSync,writeFil
 const work=mkdtempSync(join(tmpdir(),'visiond-install-isolated-')),literal='@"'+work.replaceAll('"','""')+'"';
 try{
  let native=readFileSync('tools/browser-launcher/Launcher.cs','utf8').replaceAll('Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)',literal).replace('Local\\\\VisionDLauncher-','Local\\\\VisionDLauncher-Test-'+work.split(/[\\/]/).at(-1)+'-');
- let setup='using Registry=FakeRegistry;\n'+readFileSync('tools/browser-launcher/Setup.cs','utf8').replaceAll('Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)',literal);
+ let setup='using Registry=FakeRegistry;\n'+readFileSync('tools/browser-launcher/Setup.cs','utf8').replace(/\r\n/g,'\n').replaceAll('Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)',literal);
  setup=setup.replace(/private static void NotifyRegistry\(\)\{[^\n]+\}/,'private static void NotifyRegistry(){}');
  setup=setup.replace(/private static bool HasOwnedService\(\)\{[^\n]+\}/,'private static bool HasOwnedService(){return OrphanInstallHarness.HasService();}');
  setup=setup.replace(/private static void StopOwned\(\)\{[\s\S]*?\n  \}\n  private static Process Start/,'private static void StopOwned(){OrphanInstallHarness.StopService();}\n  private static Process Start');

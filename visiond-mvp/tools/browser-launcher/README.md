@@ -1,5 +1,9 @@
 # VisionD Browser Launcher
 
+## Downloaded Setup startup (v0.20.80)
+
+Opening the downloaded Setup executable and approving Windows now runs the existing owned install/update transaction once after the installer window appears. It starts and verifies the owned Helper service and registers the URI handler; no separate Install button click is needed. Opening the already-installed executable does not reinstall it. The Install button remains available for an explicit retry, including when an earlier Setup window holds the installer mutex. Existing exact-owner checks, foreign-process protection, rollback, degraded-port recovery and profile preservation remain in `Install()`. Pairing and port repair still require their separate human approvals. A browser download alone cannot run the executable.
+
 ## Same-tab Next pairing (v0.20.79)
 
 The authenticated setup page creates a five-minute, session-bound pair intent and invokes the installed Helper with only its random intent UUID. The Helper reads a short, non-authorizing account comparison code from the fixed VisionD HTTPS origin, asks the Windows user to compare it with the original tab and confirm this device, stages its own random twelve-character code, and displays that code locally. The original browser tab polls only its own intent, prepares the exact helper and shows the code for human comparison. Pair confirmation still needs an explicit checkbox and click, the original live session/VX grant, nonce, owner and exact replacement checks; the intent is consumed in the same transaction. No pairing secret, browser cookie, account email or profile content passes through the custom URI, local HTTP listener or browser storage. A lost stage response may return the same staged code to the same native helper and intent. Existing manual code entry remains available under advanced setup.
