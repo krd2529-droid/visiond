@@ -422,16 +422,14 @@ async function issueProfileOAuth(mode,control){
   if(profileOAuthPendingKeys.has(key))return reconcileProfileCommand(mode,control,profileHandoffRequests.get(key));
   if(!launcherPageActive)return false;
   if(!pageAuthorized||!commandLauncher||!create&&(!context||String(selectedChannel()?.id)!==channelId)){connectionActionStatus(control,'กรุณารอให้ช่องโหลดเสร็จแล้วลองอีกครั้ง','error');return false}
-  if(launcherReadiness.owner!==owner||!launcherReadiness.helper&&launcherReadiness.expires<=Date.now()){
-    connectionActionStatus(control,'กำลังตรวจ Helper…');
-    try{await prepareLauncherReadiness();if(owner===pageViewerId&&channelOwnership.unchanged(revision))(launcherReadiness.helper?connectionActionStatus(control,launcherRegisteredMessage()):helperRecoveryStatus(control,launcherRegisteredMessage()))}catch(e){if(owner===pageViewerId&&channelOwnership.unchanged(revision))helperRecoveryStatus(control,e.message)}return false;
-  }
-  const helper=launcherReadiness.helper;
-  if(!helper){helperRecoveryStatus(control,launcherRegisteredMessage());return false}
   const attempt={};profileOAuthRequests.add(key);if(control){profileControlAttempts.set(control,attempt);control.setAttribute('aria-busy','true')}
-  connectionActionStatus(control,'กำลังเปิด TikTok ใน Chrome ประจำบัญชี…');
   const current=()=>launcherPageActive&&owner===pageViewerId&&pageAuthorized&&channelOwnership.unchanged(revision)&&(create||channelOwnership.current(context));
   try{
+    connectionActionStatus(control,'กำลังตรวจ Helper…');
+    const helper=await prepareLauncherReadiness(true);
+    if(!current())return false;
+    if(!helper){helperRecoveryStatus(control,launcherRegisteredMessage());return false}
+    connectionActionStatus(control,'กำลังเปิด TikTok ใน Chrome ประจำบัญชี…');
     const commandId=commandLauncher.openCommand({provider,intent:create?'new':mode==='view'?'view':'reconnect',channel_id:channelId});
     const pending={commandId,revision,owner,key,provider,intent:create?'new':mode==='view'?'view':'reconnect'};profileOAuthPendingKeys.add(key);profileOAuthPending=true;profileHandoffRequests.set(key,pending);
     const issued=await launcherFetch('/api/tiktok/handoff',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({helper_id:helper.id,command_id:commandId,provider,intent:create?'new':mode==='view'?'view':'reconnect',channel_id:channelId})}),issueBody=await issued.json();if(!current())return false;

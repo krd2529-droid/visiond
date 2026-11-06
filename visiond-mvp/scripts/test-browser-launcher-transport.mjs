@@ -101,6 +101,16 @@ await test('same-tab intent pairs without typed code and resists wrong session, 
  assert.ok(e.DB.raw.prepare("EXPLAIN QUERY PLAN SELECT helper_id FROM browser_launcher_pair_intents WHERE id=? AND user_id=? AND session_id=?").all(intent_id,1,'main').some(x=>x.detail.includes('SEARCH')));
  assert.ok(e.DB.raw.prepare("EXPLAIN QUERY PLAN SELECT id FROM browser_launcher_pair_intents WHERE expires_at<=CURRENT_TIMESTAMP ORDER BY expires_at,id LIMIT 24").all().some(x=>x.detail.includes('idx_launcher_pair_intent_expiry')));
 });
+await test('existing active helper cannot make a fresh unconfirmed intent appear paired',async()=>{
+ const e=fixture();await pair(e);
+ const {intent_id}=await(await strictRoute(e,'pair-intent',{})).json();
+ const stage=await strictRoute(e,'pair-stage',{helper_id:helper,owner_hash:owner,port:53179,secret,pair_code:'ABCDEF123456',intent_id},'',true);
+ assert.equal(stage.status,200);
+ const state=await launcherRoute({env:e,params:{action:'pair-intent-status'},request:new Request('https://visiondonline.com/api/launcher/pair-intent-status?id='+intent_id,{headers:{cookie:'vd_session=main'}})});
+ assert.equal(state.status,200);
+ assert.equal((await state.json()).status,'unverified','active row without consumed browser confirmation is not a new local pairing');
+ assert.equal(e.DB.raw.prepare('SELECT consumed_at FROM browser_launcher_pair_intents WHERE id=?').get(intent_id).consumed_at,null);
+});
 await test('new intent rejects foreign Origin and concurrent stage/confirm; replacement names exact old helper',async()=>{
  const e=fixture(),foreign=await launcherRoute({env:e,params:{action:'pair-intent'},request:new Request('https://visiondonline.com/api/launcher/pair-intent',{method:'POST',headers:{origin:'https://evil.example',cookie:'vd_session=main','content-type':'application/json'},body:'{}'})});assert.equal(foreign.status,403);
  const intent=(await(await strictRoute(e,'pair-intent',{})).json()).intent_id,second='cccccccc-cccc-4ccc-8ccc-cccccccccccc';

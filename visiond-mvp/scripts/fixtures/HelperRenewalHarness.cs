@@ -21,6 +21,12 @@ public static class HelperRenewalHarness {
    string oldId="cccccccc-cccc-4ccc-8ccc-cccccccccccc",target="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",intent="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
    var original=new Dictionary<string,object>{{"helper_id",oldId},{"owner_hash",LocalHelper.Digest(WindowsIdentity.GetCurrent().User.Value)},{"port",57093},{"secret",new string('a',64)},{"pair_code","12ABCDEF"}};
    Write(active,original);string oldHash=Setup.Hash(active);int staged=0;
+   int attempted=0,renewed=0;
+   Check(Setup.PairAfterConsent(intent,()=>{attempted++;throw new LocalHelper.RevokedHelperException();},id=>{renewed++;Check(id==intent,"wrong renewal intent");return 0;})==0&&attempted==1&&renewed==1,"revoked helper did not enter renewal after account consent");
+   Check(Setup.PairAfterConsent(intent,()=>0,id=>{throw new Exception("healthy helper rotated");})==0,"healthy active helper entered renewal");
+   try{Setup.PairAfterConsent("",()=>{throw new LocalHelper.RevokedHelperException();},id=>{throw new Exception("legacy flow renewed");});throw new Exception("legacy flow accepted revoked helper");}catch(LocalHelper.RevokedHelperException){}
+   try{Setup.PairAfterConsent(intent,()=>{throw new InvalidOperationException("other conflict");},id=>{throw new Exception("other conflict rotated helper");});throw new Exception("other conflict accepted");}catch(InvalidOperationException error){Check(error.Message=="other conflict","other conflict changed");}
+   Check(Setup.PairAfterConsent(intent,()=>2,id=>{throw new Exception("generic failure rotated helper");})==2,"generic failure entered renewal");
    var waiting=new Func<Dictionary<string,object>>(()=>new Dictionary<string,object>{{"paired",false},{"helper_id",""},{"replaces_helper_id",""}});
    Check(LocalHelper.RenewRevokedPairAt(intent,active,candidate,waiting,()=>{staged++;Check(File.Exists(candidate),"candidate absent during stage");},()=>{},2)==2,"unconfirmed renewal advanced");
    Check(staged==1&&Setup.Hash(active)==oldHash&&File.Exists(candidate),"old config changed before confirmation");

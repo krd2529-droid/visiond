@@ -71,7 +71,7 @@ export async function launcherRoute(ctx){
   if(action==='pair-intent-status'){
    const id=url.searchParams.get('id');if(!uuid(id)||[...url.searchParams.keys()].join(',')!=='id')return fail();
    const row=await ctx.env.DB.prepare("SELECT i.helper_id,h.status,i.consumed_at,i.account_code FROM browser_launcher_pair_intents i LEFT JOIN browser_launcher_helpers h ON h.id=i.helper_id WHERE i.id=? AND i.user_id=? AND i.session_id=? AND (i.expires_at>CURRENT_TIMESTAMP OR (i.consumed_at IS NOT NULL AND i.created_at>datetime('now','-1 day')))").bind(id,auth.user.id,session(request)).first();
-   if(!row||row.consumed_at&&row.status!=='active')return fail(409);return reply(row.helper_id?{status:row.status==='active'?'paired':'staged',pair_id:row.helper_id,account_code:row.account_code}:{status:'waiting',account_code:row.account_code});
+   if(!row||row.consumed_at&&row.status!=='active')return fail(409);return reply(row.helper_id?{status:row.status==='active'?(row.consumed_at?'paired':'unverified'):'staged',pair_id:row.helper_id,account_code:row.account_code}:{status:'waiting',account_code:row.account_code});
   }
   if(action==='helpers'){
    const after=url.searchParams.get('after')||'';if(after&&!uuid(after))return fail();

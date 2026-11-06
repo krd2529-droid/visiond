@@ -1,5 +1,9 @@
 # VisionD Browser Launcher
 
+## Revoked local identity recovery (v0.20.82)
+
+After the user confirms the account code in the installed Helper, an exact `LAUNCHER_HELPER_REVOKED` response for its current ID, owner, port, secret, user and intent starts a new encrypted local candidate without a second native dialog. The original identity and profiles stay unchanged until the browser user compares the new code, confirms the exact same-owner helper being replaced, and the native client receives signed confirmation of that replacement. Other errors do not rotate identity. An active helper attached to an unconfirmed intent is reported as unverified to the wizard, so it cannot be presented as a completed new local pairing.
+
 ## Downloaded Setup startup (v0.20.81)
 
 Opening the downloaded Setup executable and approving Windows now runs the existing owned install/update transaction once after the installer window appears. It starts and verifies the owned Helper service and registers the URI handler; no separate Install button click is needed. Opening the already-installed executable does not reinstall it. The Install button remains available for an explicit retry, including when an earlier Setup window holds the installer mutex. Existing exact-owner checks, foreign-process protection, rollback, degraded-port recovery and profile preservation remain in `Install()`. Pairing and port repair still require their separate human approvals. A browser download alone cannot run the executable.
