@@ -37,26 +37,26 @@
    const result=await read(deadline);if(!active)return null;if(settle(result))return {terminal:true};
    if(result.command_id===command_id&&!result.expired&&['pending','claimed'].includes(result.status)){
     const candidate=Number(result.port);if(!Number.isInteger(candidate)||candidate<49152||candidate>65535)throw new Error('ข้อมูลตัวช่วยไม่ถูกต้อง');
-    port=candidate;if(stopOnPending)return {pending:true};
+    port=candidate;if(stopOnPending)return {pending:true,status:result.status};
    }else if(result.status!=='waiting')throw new Error('คำขอสิ้นสุดแล้ว กลับไปตรวจสถานะที่ VisionD');
    if(attempt<7)await wait(Math.min([1000,2000,3000,4000,4000,4000,4000][attempt],Math.max(0,deadline-Date.now())));
   }
   return null;
  };
  const openLocal=()=>{
-  try{window.open('http://127.0.0.1:'+port+'/launch?command_id='+command_id,'_blank','noopener,noreferrer,popup,width=460,height=260');refocus();return true}catch{return false}
+  try{location.replace('http://127.0.0.1:'+port+'/launch?command_id='+command_id);return true}catch{return false}
  };
  const runDispatch=async()=>{
   if(!active||checking||!port)return;
-  if(!openLocal()){message('เบราว์เซอร์ไม่อนุญาตหน้าต่างตรวจ Helper กรุณาอนุญาตป๊อปอัปสำหรับ VisionD แล้วลองคำขอเดิมอีกครั้ง','error');showActions('not-running',true);return}
+  if(!openLocal()){message('เบราว์เซอร์ไม่เปิดหน้า Helper เครื่องนี้ กรุณาลองคำขอเดิมอีกครั้ง','error');showActions('not-running',true);return}
   checking=true;dispatch.disabled=true;dispatch.textContent='กำลังรอ Helper…';message('ส่งรหัสคำขอเดิมไปยัง Helper แล้ว กำลังรอการยืนยันจากเครื่องนี้');
-  try{const result=await poll({stopOnPending:false});if(!active||result?.terminal)return;if(!result){message('Helper ที่ผูกกับบัญชียังไม่ตอบจากเครื่องนี้ อาจยังไม่ได้ติดตั้ง หยุดทำงาน หรืออยู่คนละเครื่อง','error');showActions('not-running',true)}}
+  try{await wait(1500);if(!active)return;const result=await poll({stopOnPending:false});if(!active||result?.terminal)return;if(!result){message('Helper ที่ผูกกับบัญชียังไม่ตอบจากเครื่องนี้ อาจยังไม่ได้ติดตั้ง หยุดทำงาน หรืออยู่คนละเครื่อง','error');showActions('not-running',true)}}
   catch(error){if(active){message(error.message,'error');showActions('not-running',true)}}
   finally{checking=false;refocus()}
  };
  dispatch.addEventListener('click',runDispatch);
  (async()=>{
-  try{const result=await poll({stopOnPending:true});if(!active||result?.terminal)return;if(result?.pending){message('พบคำขอแล้ว กด “เปิด Helper เครื่องนี้” เพื่อเปิด Chrome ประจำช่อง หากเครื่องนี้ยังไม่มีตัวช่วยให้ติดตั้งหรือซ่อมก่อน');showActions('not-running',true,'เปิด Helper เครื่องนี้')}else{message('ไม่พบคำขอจากหน้า Analyzer กรุณากลับไปกดเชื่อมใหม่ หรือเตรียม Helper เครื่องนี้ก่อน','error');showActions('new',false)}}
+  try{const result=await poll({stopOnPending:true});if(!active||result?.terminal)return;if(result?.status==='pending'){message('พบคำขอแล้ว กำลังเปิด Helper เครื่องนี้');runDispatch()}else if(result?.status==='claimed'){message('Helper รับคำขอแล้ว กำลังรอผลจากเครื่องนี้');const outcome=await poll({stopOnPending:false});if(active&&!outcome)showActions('not-running',false)}else{message('ไม่พบคำขอจากหน้า Analyzer กรุณากลับไปกดเชื่อมใหม่ หรือเตรียม Helper เครื่องนี้ก่อน','error');showActions('new',false)}}
   catch(error){if(active){message(error.message,'error');showActions('not-running',false)}}
  })();
 })();

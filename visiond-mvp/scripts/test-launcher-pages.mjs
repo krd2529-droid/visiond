@@ -23,7 +23,7 @@ function bootstrapFixture({hash='#command_id='+id,replies=[],open=true,hung=fals
  let now=0,reads=0,closed=0,focused=0,aborted=0;const tasks=[],topNavigations=[],localNavigations=[],opens=[],events={},nodeMap=new Map();
  const element=name=>{if(!nodeMap.has(name))nodeMap.set(name,{textContent:'',hidden:false,disabled:false,href:'',dataset:{},events:{},addEventListener(type,fn){this.events[type]=fn}});return nodeMap.get(name)};
  const popup={closed:false};
- const ctx={URLSearchParams,AbortController,Date:{now:()=>now},document:{getElementById:element},history:{replaceState(){}},location:{hash,pathname:'/launcher-open.html',replace:url=>topNavigations.push(url)},window:{addEventListener:(type,fn)=>events[type]=fn,open:(...args)=>{opens.push(args);if(open)localNavigations.push(args[0]);return null},close(){closed++},focus(){focused++}},setTimeout:(fn,ms)=>{const task={fn,at:now+ms,ms};tasks.push(task);return task},clearTimeout:task=>{const index=tasks.indexOf(task);if(index>=0)tasks.splice(index,1)},fetch:async(url,{signal})=>{reads++;assert.match(url,/^\/api\/launcher\/status\?command_id=/);signal.addEventListener('abort',()=>aborted++);if(hung)return new Promise(()=>{});const body=replies[Math.min(reads-1,replies.length-1)]||{status:'waiting'};return{ok:true,json:async()=>body}}};
+ const ctx={URLSearchParams,AbortController,Date:{now:()=>now},document:{getElementById:element},history:{replaceState(){}},location:{hash,pathname:'/launcher-open.html',replace:url=>{if(!open)throw Error('navigation blocked');topNavigations.push(url)}},window:{addEventListener:(type,fn)=>events[type]=fn,open:(...args)=>{opens.push(args);return null},close(){closed++},focus(){focused++}},setTimeout:(fn,ms)=>{const task={fn,at:now+ms,ms};tasks.push(task);return task},clearTimeout:task=>{const index=tasks.indexOf(task);if(index>=0)tasks.splice(index,1)},fetch:async(url,{signal})=>{reads++;assert.match(url,/^\/api\/launcher\/status\?command_id=/);signal.addEventListener('abort',()=>aborted++);if(hung)return new Promise(()=>{});const body=replies[Math.min(reads-1,replies.length-1)]||{status:'waiting'};return{ok:true,json:async()=>body}}};
  vm.runInNewContext(bootstrap,ctx);
  return {ctx,tasks,topNavigations,localNavigations,opens,events,popup,element,get reads(){return reads},get closed(){return closed},get focused(){return focused},get aborted(){return aborted},async flush(){await flush();await flush()},async drain(limit=40){for(let i=0;i<limit;i++){await this.flush();tasks.sort((a,b)=>a.at-b.at);const task=tasks.shift();if(!task)break;now=task.at;task.fn()}await this.flush()}};
 }
@@ -32,24 +32,29 @@ function bootstrapFixture({hash='#command_id='+id,replies=[],open=true,hung=fals
 }
 console.log('PASS hostile bootstrap fragments never read status or dispatch localhost');
 {
- const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending,{status:'process_started',command_id:id,port:53179}]});await f.flush();
- assert.equal(f.topNavigations.length,0,'pending must retain the VisionD foreground');assert.equal(f.element('launcher-dispatch').hidden,false);assert.equal(f.element('launcher-dispatch').textContent,'เปิด Helper เครื่องนี้');
- await f.element('launcher-dispatch').events.click();assert.deepEqual(f.opens,[['http://127.0.0.1:53179/launch?command_id='+id,'_blank','noopener,noreferrer,popup,width=460,height=260']]);assert.deepEqual(f.localNavigations,['http://127.0.0.1:53179/launch?command_id='+id]);assert.equal(f.topNavigations.length,0);assert.match(f.element('status').textContent,/เริ่ม Chrome/);assert.ok(f.focused>=1);
+ const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[{status:'waiting'},pending,{status:'process_started',command_id:id,port:53179}]});await f.drain();
+ assert.deepEqual(f.opens,[],'dispatch must not use a blocked popup');assert.deepEqual(f.topNavigations,['http://127.0.0.1:53179/launch?command_id='+id],'pending command automatically navigates launcher tab to loopback');assert.equal(f.localNavigations.length,0);assert.match(f.element('status').textContent,/เริ่ม Chrome/);
 }
-console.log('PASS pending command uses one user-activated command-id-only auxiliary and keeps VisionD foreground');
+console.log('PASS waiting then pending automatically sends command-id-only same-tab navigation without popup');
 {
- const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending]});await f.flush();const run=f.element('launcher-dispatch').events.click();await f.drain();await run;
- assert.ok(f.reads<=9,'initial readiness plus dispatch polling stay bounded');assert.equal(f.localNavigations.length,1);assert.equal(f.topNavigations.length,0);assert.equal(f.element('launcher-dispatch').disabled,false);assert.match(f.element('launcher-dispatch').textContent,/คำขอเดิม/);assert.match(f.element('status').textContent,/ยังไม่ตอบจากเครื่องนี้/);assert.match(f.element('launcher-setup').href,/state=not-running/);
+ const claimed={status:'claimed',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[claimed,{status:'process_started',command_id:id,port:53179}]});await f.flush();assert.equal(f.topNavigations.length,0,'claimed command must not be dispatched again');assert.deepEqual(f.opens,[]);
+ const invalid={status:'pending',command_id:id,port:80,expired:0},bad=bootstrapFixture({replies:[invalid]});await bad.flush();assert.equal(bad.topNavigations.length,0,'invalid port cannot reach loopback');
+ const terminal=bootstrapFixture({replies:[{status:'failed',command_id:id,expired:0}]});await terminal.flush();assert.equal(terminal.topNavigations.length,0,'terminal command cannot reach loopback');
+}
+console.log('PASS claimed, invalid-port and terminal commands never dispatch to loopback');
+{
+ const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending]});await f.drain();
+ assert.ok(f.reads<=9,'initial readiness plus dispatch polling stay bounded');assert.equal(f.topNavigations.length,1);assert.equal(f.element('launcher-dispatch').disabled,false);assert.match(f.element('launcher-dispatch').textContent,/คำขอเดิม/);assert.match(f.element('status').textContent,/ยังไม่ตอบจากเครื่องนี้/);assert.match(f.element('launcher-setup').href,/state=not-running/);
 }
 console.log('PASS absent/stopped/other-machine timeout retains same-command retry and setup recovery');
 {
- const pending={status:'pending',command_id:id,port:53179,expired:0},outdated={status:'failed',command_id:id,error_code:'HELPER_UPDATE_REQUIRED'},f=bootstrapFixture({replies:[pending,outdated]});await f.flush();await f.element('launcher-dispatch').events.click();assert.match(f.element('status').textContent,/รุ่นเก่า.*อัปเดต/);assert.match(f.element('launcher-setup').href,/state=outdated/);assert.equal(f.element('launcher-dispatch').hidden,true);
+ const pending={status:'pending',command_id:id,port:53179,expired:0},outdated={status:'failed',command_id:id,error_code:'HELPER_UPDATE_REQUIRED'},f=bootstrapFixture({replies:[pending,outdated]});await f.drain();assert.match(f.element('status').textContent,/รุ่นเก่า.*อัปเดต/);assert.match(f.element('launcher-setup').href,/state=outdated/);assert.equal(f.element('launcher-dispatch').hidden,true);
 }
 console.log('PASS signed legacy status gives authoritative update guidance without retrying a terminal command');
 {
- const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending],open:false});await f.flush();const run=f.element('launcher-dispatch').events.click();await f.drain();await run;assert.equal(f.localNavigations.length,0);assert.match(f.element('status').textContent,/ยังไม่ตอบจากเครื่องนี้/);assert.match(f.element('launcher-dispatch').textContent,/คำขอเดิม/);
+ const pending={status:'pending',command_id:id,port:53179,expired:0},f=bootstrapFixture({replies:[pending],open:false});await f.flush();assert.equal(f.topNavigations.length,0);assert.match(f.element('status').textContent,/ไม่เปิดหน้า Helper/);assert.equal(f.element('launcher-dispatch').hidden,false);
 }
 for(const bodyHung of [false,true]){
  const f=bootstrapFixture({hung:true});await f.flush();assert.equal(f.tasks[0].ms,5000);f.tasks.shift().fn();await f.flush();assert.equal(f.aborted,1);assert.equal(f.topNavigations.length,0);assert.match(f.element('status').textContent,/หมดเวลา/);
 }
-console.log('PASS blocked auxiliary outcome and hung status remain recoverable without foreground localhost navigation');
+console.log('PASS blocked same-tab navigation and hung status remain recoverable');
