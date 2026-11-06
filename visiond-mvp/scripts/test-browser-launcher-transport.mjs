@@ -108,8 +108,25 @@ await test('existing active helper cannot make a fresh unconfirmed intent appear
  assert.equal(stage.status,200);
  const state=await launcherRoute({env:e,params:{action:'pair-intent-status'},request:new Request('https://visiondonline.com/api/launcher/pair-intent-status?id='+intent_id,{headers:{cookie:'vd_session=main'}})});
  assert.equal(state.status,200);
- assert.equal((await state.json()).status,'unverified','active row without consumed browser confirmation is not a new local pairing');
+ assert.equal((await state.json()).status,'waiting','an already-active helper does not bind or complete a fresh pairing intent');
+ assert.equal(e.DB.raw.prepare('SELECT helper_id FROM browser_launcher_pair_intents WHERE id=?').get(intent_id).helper_id,null);
  assert.equal(e.DB.raw.prepare('SELECT consumed_at FROM browser_launcher_pair_intents WHERE id=?').get(intent_id).consumed_at,null);
+});
+await test('already-active helper cannot monopolize a new intent before revoked local recovery',async()=>{
+ const e=fixture(),revoked='dddddddd-dddd-4ddd-8ddd-dddddddddddd';await pair(e,revoked);await pair(e,helper,revoked);
+ const {intent_id}=await(await strictRoute(e,'pair-intent',{})).json();
+ const active=await strictRoute(e,'pair-stage',{helper_id:helper,owner_hash:owner,port:53179,secret,pair_code:'ABCDEF123456',intent_id},'',true);
+ assert.equal(active.status,200);
+ assert.equal(e.DB.raw.prepare('SELECT helper_id FROM browser_launcher_pair_intents WHERE id=?').get(intent_id).helper_id,null,'existing active identity must not reserve a fresh recovery intent');
+ const local=await strictRoute(e,'pair-stage',{helper_id:revoked,owner_hash:owner,port:53179,secret,pair_code:'ABCDEF123456',intent_id},'',true);
+ assert.equal(local.status,409);assert.equal((await local.json()).error,'LAUNCHER_HELPER_REVOKED','local exact revoked identity must reach renewal path');
+ const candidate='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+ const staged=await strictRoute(e,'pair-stage',{helper_id:candidate,owner_hash:owner,port:53179,secret:'ef'.repeat(32),pair_code:'ABCDEF123456',intent_id},'',true);
+ assert.equal(staged.status,200);assert.equal(e.DB.raw.prepare('SELECT helper_id FROM browser_launcher_pair_intents WHERE id=?').get(intent_id).helper_id,candidate);
+ const prepared=await(await strictRoute(e,'pair-prepare',{pair_id:candidate,intent_id})).json();assert.equal(prepared.replace_id,helper);
+ assert.equal((await strictRoute(e,'pair-confirm',{pair_id:candidate,pair_code:prepared.pair_code,confirm_nonce:prepared.confirm_nonce,replace_id:helper,intent_id})).status,200);
+ assert.equal(e.DB.raw.prepare('SELECT status FROM browser_launcher_helpers WHERE id=?').get(helper).status,'revoked');
+ assert.equal(e.DB.raw.prepare('SELECT status FROM browser_launcher_helpers WHERE id=?').get(candidate).status,'active');
 });
 await test('new intent rejects foreign Origin and concurrent stage/confirm; replacement names exact old helper',async()=>{
  const e=fixture(),foreign=await launcherRoute({env:e,params:{action:'pair-intent'},request:new Request('https://visiondonline.com/api/launcher/pair-intent',{method:'POST',headers:{origin:'https://evil.example',cookie:'vd_session=main','content-type':'application/json'},body:'{}'})});assert.equal(foreign.status,403);

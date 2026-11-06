@@ -123,7 +123,7 @@ export async function launcherRoute(ctx){
   if(existing){
    if(existing.owner_hash!==body.owner_hash||existing.port!==body.port||!equalLauncherMac(await secretFor(ctx.env,existing),body.secret))return fail(409);
    if(existing.status==='revoked')return intentId&&Number(existing.user_id)===Number(intent.user_id)?fail(409,'LAUNCHER_HELPER_REVOKED'):fail(409);
-   if(existing.status==='active'){if(intentId&&(Number(existing.user_id)!==Number(intent.user_id)||!await bindIntent()))return fail(409);return reply({pair_id:existing.id,paired:true});}
+   if(existing.status==='active'){if(intentId&&Number(existing.user_id)!==Number(intent.user_id))return fail(409);return reply({pair_id:existing.id,paired:true});}
    if((existing.replaces_helper_id||'')!==replaces&&!(intentId&&!replaces&&existing.replaces_helper_id&&Number(existing.user_id)===Number(intent.user_id)))return fail(409);
    if(intentId&&intent.helper_id===existing.id&&Date.parse(existing.expires_at.replace(' ','T')+'Z')>Date.now())return reply({pair_id:existing.id,pair_code:existing.pair_code,paired:false});
    if(existing.pair_code===code){
