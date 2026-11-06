@@ -121,9 +121,10 @@ export async function launcherRoute(ctx){
   const limited=await rateLimit(ctx.env,request,'launcher_pair',5,10,10);if(limited.error)return limited.error;
   const existing=await ctx.env.DB.prepare('SELECT * FROM browser_launcher_helpers WHERE id=?').bind(body.helper_id).first();
   if(existing){
-   if(existing.owner_hash!==body.owner_hash||existing.port!==body.port||!equalLauncherMac(await secretFor(ctx.env,existing),body.secret)||existing.status==='revoked')return fail(409);
+   if(existing.owner_hash!==body.owner_hash||existing.port!==body.port||!equalLauncherMac(await secretFor(ctx.env,existing),body.secret))return fail(409);
+   if(existing.status==='revoked')return intentId&&Number(existing.user_id)===Number(intent.user_id)?fail(409,'LAUNCHER_HELPER_REVOKED'):fail(409);
    if(existing.status==='active'){if(intentId&&(Number(existing.user_id)!==Number(intent.user_id)||!await bindIntent()))return fail(409);return reply({pair_id:existing.id,paired:true});}
-   if((existing.replaces_helper_id||'')!==replaces)return fail(409);
+   if((existing.replaces_helper_id||'')!==replaces&&!(intentId&&!replaces&&existing.replaces_helper_id&&Number(existing.user_id)===Number(intent.user_id)))return fail(409);
    if(intentId&&intent.helper_id===existing.id&&Date.parse(existing.expires_at.replace(' ','T')+'Z')>Date.now())return reply({pair_id:existing.id,pair_code:existing.pair_code,paired:false});
    if(existing.pair_code===code){
     if(modern&&Date.parse(existing.expires_at.replace(' ','T')+'Z')<=Date.now())return fail(409);
@@ -159,10 +160,11 @@ export async function launcherRoute(ctx){
     else if(!exact(body,['pair_id'])||h.pair_code.length!==8||await ctx.env.DB.prepare('SELECT id FROM browser_launcher_pair_intents WHERE helper_id=? AND consumed_at IS NULL AND expires_at>CURRENT_TIMESTAMP').bind(h.id).first())return fail(409);
    }
    if(h.status==='prepared'&&(Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)))return fail(409);
-   const nonce=h.confirm_nonce||launcherRandom(),secret=await secretFor(ctx.env,h),bound={...h,user_id:auth.user.id},cipher=await sealLauncher(ctx.env,secret,helperAAD(bound));
-   const result=await ctx.env.DB.prepare(`UPDATE browser_launcher_helpers SET user_id=?,session_id=?,confirm_nonce=?,secret_cipher=?,status='prepared' WHERE id=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND COALESCE(confirm_nonce,'')=? AND (status='staged' OR (status='prepared' AND user_id=? AND session_id=?)) AND (replaces_helper_id IS NULL OR EXISTS(SELECT 1 FROM browser_launcher_helpers old WHERE old.id=browser_launcher_helpers.replaces_helper_id AND old.user_id=? AND old.owner_hash=browser_launcher_helpers.owner_hash AND old.status='active')) AND ${pairLive}`).bind(auth.user.id,session(request),nonce,cipher,h.id,h.pair_code,h.expires_at,h.confirm_nonce||'',auth.user.id,session(request),auth.user.id,...pairLiveArgs(request,auth)).run();if(result.meta?.changes!==1)return fail(409);
-   const prior=await ctx.env.DB.prepare("SELECT id,created_at FROM browser_launcher_helpers WHERE user_id=? AND owner_hash=? AND status='active' ORDER BY id LIMIT 1").bind(auth.user.id,h.owner_hash).first();
-   return reply({pair_id:h.id,pair_code:h.pair_code,confirm_nonce:nonce,replace_id:prior?.id||'',port:h.port});
+   const priorRows=await ctx.env.DB.prepare("SELECT id FROM browser_launcher_helpers WHERE user_id=? AND owner_hash=? AND status='active' ORDER BY id LIMIT 2").bind(auth.user.id,h.owner_hash).all();
+   if(priorRows.results?.length>1||h.replaces_helper_id&&h.replaces_helper_id!==(priorRows.results?.[0]?.id||''))return fail(409);
+   const prior=priorRows.results?.[0]?.id||'',nonce=h.confirm_nonce||launcherRandom(),secret=await secretFor(ctx.env,h),bound={...h,user_id:auth.user.id},cipher=await sealLauncher(ctx.env,secret,helperAAD(bound));
+   const result=await ctx.env.DB.prepare(`UPDATE browser_launcher_helpers SET user_id=?,session_id=?,confirm_nonce=?,secret_cipher=?,status='prepared',replaces_helper_id=? WHERE id=? AND pair_code=? AND expires_at=? AND expires_at>CURRENT_TIMESTAMP AND COALESCE(confirm_nonce,'')=? AND (status='staged' OR (status='prepared' AND user_id=? AND session_id=?)) AND (replaces_helper_id IS NULL OR replaces_helper_id=?) AND ${pairLive}`).bind(auth.user.id,session(request),nonce,cipher,prior||null,h.id,h.pair_code,h.expires_at,h.confirm_nonce||'',auth.user.id,session(request),prior,...pairLiveArgs(request,auth)).run();if(result.meta?.changes!==1)return fail(409);
+   return reply({pair_id:h.id,pair_code:h.pair_code,confirm_nonce:nonce,replace_id:prior,port:h.port});
   }
   const intentId=body?.intent_id||'';
   if(!exact(body,['pair_id','confirm_nonce','pair_code','replace_id',...(intentId?['intent_id']:[])])||body.confirm_nonce!==h.confirm_nonce||body.pair_code!==h.pair_code||h.status!=='prepared'||Number(h.user_id)!==Number(auth.user.id)||h.session_id!==session(request)||body.replace_id&&!uuid(body.replace_id)||intentId&&!uuid(intentId))return fail(409);

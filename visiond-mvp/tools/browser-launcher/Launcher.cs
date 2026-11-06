@@ -280,9 +280,10 @@ namespace VisionDBrowserLauncher
             try{listener.Start();return true;}catch(SocketException e){if(e.SocketErrorCode==SocketError.AddressAlreadyInUse)return false;throw;}finally{listener.Stop();}
         }
         internal static int FreshPort(){var listener=new TcpListener(IPAddress.Loopback,0);listener.ExclusiveAddressUse=true;try{listener.Start();int port=((IPEndPoint)listener.LocalEndpoint).Port;if(port<49152||port>65535)throw new InvalidOperationException("ephemeral_port_outside_range");return port;}finally{listener.Stop();}}
-        private static void Load()
+        private static void Load(){LoadAt(ConfigPath);}
+        private static void LoadAt(string path)
         {
-            byte[] cipher=File.ReadAllBytes(ConfigPath);if(cipher.Length>8192)throw new InvalidDataException();
+            byte[] cipher=File.ReadAllBytes(path);if(cipher.Length>8192)throw new InvalidDataException();
             config=Json.Deserialize<Dictionary<string,object>>(Encoding.UTF8.GetString(ProtectedData.Unprotect(cipher,null,DataProtectionScope.CurrentUser)));
             Guid id;if(!Guid.TryParseExact(Field(config,"helper_id"),"D",out id)||id==Guid.Empty||Field(config,"owner_hash")!=Digest(WindowsIdentity.GetCurrent().User.Value))throw new InvalidDataException();
             Unhex(Field(config,"secret"));int port;if(!Int32.TryParse(Field(config,"port"),out port)||port<49152||port>65535)throw new InvalidDataException();
@@ -295,9 +296,23 @@ namespace VisionDBrowserLauncher
             request.Method="POST";request.ContentType="application/json";request.AllowAutoRedirect=false;request.Timeout=10000;request.ReadWriteTimeout=10000;request.Proxy=null;
             byte[] bytes=Encoding.UTF8.GetBytes(Json.Serialize(payload));request.ContentLength=bytes.Length;
             using(var stream=request.GetRequestStream())stream.Write(bytes,0,bytes.Length);
-            using(var response=(HttpWebResponse)request.GetResponse())
+            HttpWebResponse received;
+            try{received=(HttpWebResponse)request.GetResponse();}
+            catch(WebException error){
+                using(var failed=error.Response as HttpWebResponse){
+                    if(action=="pair-stage"&&failed!=null&&failed.StatusCode==HttpStatusCode.Conflict){
+                        using(var reader=new StreamReader(failed.GetResponseStream())){
+                            char[] buffer=new char[513];int n=0,count;while(n<buffer.Length&&(count=reader.Read(buffer,n,buffer.Length-n))>0)n+=count;
+                            if(n<=512&&Field(Json.Deserialize<Dictionary<string,object>>(new string(buffer,0,n)),"error")=="LAUNCHER_HELPER_REVOKED")throw new RevokedHelperException();
+                        }
+                    }
+                }
+                throw;
+            }
+            using(var response=received)
             {if(response.StatusCode!=HttpStatusCode.OK)throw new InvalidDataException();using(var reader=new StreamReader(response.GetResponseStream())){char[] buffer=new char[8193];int n=0,count;while(n<buffer.Length&&(count=reader.Read(buffer,n,buffer.Length-n))>0)n+=count;if(n>8192)throw new InvalidDataException();return Json.Deserialize<Dictionary<string,object>>(new string(buffer,0,n));}}
         }
+        internal sealed class RevokedHelperException:InvalidOperationException {}
         internal static string PairIntentAccount(string id){
             Guid parsed;if(!Guid.TryParseExact(id,"D",out parsed)||parsed==Guid.Empty)throw new InvalidDataException();
             ServicePointManager.SecurityProtocol=SecurityProtocolType.Tls12;
@@ -328,6 +343,34 @@ namespace VisionDBrowserLauncher
         }
         [System.Runtime.InteropServices.DllImport("user32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode,EntryPoint="MessageBoxW")]
         private static extern int PairCodeMessage(IntPtr owner,string text,string caption,uint type);
+        internal static int RenewRevokedPair(string intentId)
+        {
+            return RenewRevokedPairAt(intentId,ConfigPath,Path.Combine(Root,"helper.renew.dpapi"),()=>Signed("pair-state",Field(config,"helper_id"),""),()=>PairLoaded(intentId),()=>Thread.Sleep(3000),60);
+        }
+        internal static int RenewRevokedPairAt(string intentId,string activePath,string candidate,Func<Dictionary<string,object>> state,Action stage,Action wait,int attempts)
+        {
+            if(intentId==""||attempts<0)throw new InvalidDataException();LoadAt(activePath);
+            string oldId=Field(config,"helper_id"),oldHash=Setup.Hash(activePath),directory=Path.GetDirectoryName(activePath);
+            if(config.ContainsKey("replaces_helper_id")||File.Exists(Path.Combine(directory,"helper.pending.dpapi"))||File.Exists(Path.Combine(directory,"helper.repair.dpapi")))throw new InvalidOperationException("มีคำขอซ่อมเดิมค้างอยู่ ไม่เปลี่ยนข้อมูลตัวช่วย");
+            Dictionary<string,object> renewal;
+            if(File.Exists(candidate)){
+                byte[] staged=File.ReadAllBytes(candidate);if(staged.Length>8192)throw new InvalidDataException();
+                renewal=Json.Deserialize<Dictionary<string,object>>(Encoding.UTF8.GetString(ProtectedData.Unprotect(staged,null,DataProtectionScope.CurrentUser)));
+                Guid candidateId;if(!Guid.TryParseExact(Field(renewal,"helper_id"),"D",out candidateId)||candidateId==Guid.Empty||Field(renewal,"helper_id")==oldId||Field(renewal,"renew_previous_id")!=oldId||Field(renewal,"renew_previous_hash")!=oldHash||Field(renewal,"owner_hash")!=Field(config,"owner_hash")||Field(renewal,"port")!=Field(config,"port")||renewal.ContainsKey("replaces_helper_id"))throw new InvalidDataException("คำขอกู้คืนไม่ตรงกับตัวช่วยเดิม หยุดโดยไม่เปลี่ยนข้อมูล");
+                Unhex(Field(renewal,"secret"));
+            }else{
+                renewal=new Dictionary<string,object>(config);renewal["helper_id"]=Guid.NewGuid().ToString("D");renewal["secret"]=RandomHex();renewal["pair_code"]=RandomHex().Substring(0,8).ToUpperInvariant();renewal["renew_previous_id"]=oldId;renewal["renew_previous_hash"]=oldHash;
+                byte[] data=ProtectedData.Protect(Encoding.UTF8.GetBytes(Json.Serialize(renewal)),null,DataProtectionScope.CurrentUser);
+                using(var file=new FileStream(candidate,FileMode.CreateNew,FileAccess.Write,FileShare.None)){file.Write(data,0,data.Length);file.Flush(true);}
+            }
+            var prior=config;config=renewal;
+            try{
+                Func<bool> confirmed=()=>{var status=state();Guid replaced;return Field(status,"paired")=="True"&&Field(status,"helper_id")==Field(config,"helper_id")&&Guid.TryParseExact(Field(status,"replaces_helper_id"),"D",out replaced)&&replaced!=Guid.Empty&&Field(status,"replaces_helper_id")!=oldId;};
+                bool ready=AwaitRepairConfirmation(confirmed,stage,wait,attempts);
+                if(!ready){PairStatus="ยังไม่มีการยืนยันจาก VisionD ข้อมูลตัวช่วยเดิมคงอยู่ เปิดคำขอเดิมเพื่อลองใหม่";return 2;}
+                PromoteRepair(activePath,candidate,oldHash);LoadAt(activePath);PairStatus="ยืนยันตัวช่วยเครื่องนี้แล้ว กลับหน้า VisionD เพื่อตรวจสถานะช่อง";return 0;
+            }finally{if(File.Exists(candidate))config=prior;}
+        }
         internal static int ReplacePair()
         {
             Load();string candidate=Path.Combine(Root,"helper.pending.dpapi");

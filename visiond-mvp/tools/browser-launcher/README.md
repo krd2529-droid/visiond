@@ -1,6 +1,6 @@
 # VisionD Browser Launcher
 
-## Downloaded Setup startup (v0.20.80)
+## Downloaded Setup startup (v0.20.81)
 
 Opening the downloaded Setup executable and approving Windows now runs the existing owned install/update transaction once after the installer window appears. It starts and verifies the owned Helper service and registers the URI handler; no separate Install button click is needed. Opening the already-installed executable does not reinstall it. The Install button remains available for an explicit retry, including when an earlier Setup window holds the installer mutex. Existing exact-owner checks, foreign-process protection, rollback, degraded-port recovery and profile preservation remain in `Install()`. Pairing and port repair still require their separate human approvals. A browser download alone cannot run the executable.
 

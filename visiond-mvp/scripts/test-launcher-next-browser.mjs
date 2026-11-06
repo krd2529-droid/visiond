@@ -5,8 +5,8 @@ import {resolve,extname} from 'node:path';
 const require=createRequire(import.meta.url);let chromium;
 for(const name of [process.env.PLAYWRIGHT_PACKAGE,'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright','playwright'].filter(Boolean)){try{({chromium}=require(name));break}catch{}}
 if(!chromium)throw Error('Playwright Chrome required');
-const root=resolve('public'),intent='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',helper='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',code='ABCDEF123456',accountCode='A1B2C3D4';
-const manifest=JSON.parse(readFileSync(resolve(root,'downloads/visiond-helper/0.20.80/release.json')));
+const root=resolve('public'),intent='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',helper='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',prior='cccccccc-cccc-4ccc-8ccc-cccccccccccc',code='ABCDEF123456',accountCode='A1B2C3D4';
+const manifest=JSON.parse(readFileSync(resolve(root,'downloads/visiond-helper/0.20.81/release.json')));
 const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL||'chrome'});
 try{
  for(const width of [1280,390]){
@@ -16,7 +16,7 @@ try{
    if(p==='/api/auth/me'){calls.push({p});await route.fulfill({status:200,contentType:'application/json',body:'{"user":{"id":1}}'});return}
    if(p==='/api/launcher/pair-intent'){calls.push({p,body});await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({intent_id:intent,account_code:accountCode})});return}
    if(p==='/api/launcher/pair-intent-status'){calls.push({p});await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(nativeApproved?{status:'staged',pair_id:helper,account_code:accountCode}:{status:'waiting',account_code:accountCode})});return}
-   if(p==='/api/launcher/pair-prepare'){calls.push({p,body});await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({pair_id:helper,pair_code:code,confirm_nonce:'private-test-nonce',replace_id:''})});return}
+   if(p==='/api/launcher/pair-prepare'){calls.push({p,body});await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({pair_id:helper,pair_code:code,confirm_nonce:'private-test-nonce',replace_id:prior})});return}
    if(p==='/api/launcher/pair-confirm'){calls.push({p,body});if(failConfirmOnce){failConfirmOnce=false;await route.fulfill({status:503,contentType:'text/html',body:'<h1>Temporary failure</h1>'});return}await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({paired:true,helper_id:helper})});return}
    if(p==='/tiktok-analyzer'){await route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Analyzer</title>'});return}
    const local=resolve(root,'.'+p);if(!local.startsWith(root)||!existsSync(local)){await route.fulfill({status:404,body:'missing'});return}
@@ -26,15 +26,15 @@ try{
   await page.goto('https://visiondonline.com/launcher-setup?state=not-running');await page.waitForFunction(()=>document.querySelector('#wizard-next')?.disabled===false);assert.equal(calls.filter(x=>x.p==='/api/auth/me').length,1,'one wizard makes one account request');
   for(const selector of ['#setup-details','#setup-state','#setup-guidance','#pair-entry','#pair-prepare','#pair-confirm','#download-status','#signature'])assert.equal(await page.locator(selector).count(),0,selector+' legacy control absent');
   assert.equal(await page.locator('script[src*="launcher-code-pair.js"]').count(),0,'legacy pairing script absent');
-  const downloadPromise=page.waitForEvent('download');await page.click('#wizard-next');const download=await downloadPromise;assert.equal(download.suggestedFilename(),'VisionD-Helper-Setup-0.20.80.exe');
+  const downloadPromise=page.waitForEvent('download');await page.click('#wizard-next');const download=await downloadPromise;assert.equal(download.suggestedFilename(),'VisionD-Helper-Setup-0.20.81.exe');
   assert.match(await page.locator('#wizard-progress').textContent(),/ขั้นที่ 2/);await page.click('#wizard-next');assert.match(await page.locator('#wizard-progress').textContent(),/ขั้นที่ 3/);
   await page.click('#wizard-next');await page.waitForFunction(()=>document.querySelector('#wizard-content')?.textContent.includes('A1B2C3D4'));assert.equal(calls.filter(x=>x.p==='/api/launcher/pair-intent').length,1);assert.equal(calls.some(x=>x.p==='/api/launcher/pair-confirm'),false);
   nativeApproved=true;try{await page.waitForFunction(()=>document.querySelector('.wizard-code')?.textContent==='ABCDEF123456',null,{timeout:7000})}catch(e){console.error('wizard debug',page.url(),await page.locator('#wizard-progress').textContent().catch(()=>''),calls);throw e}
-  assert.equal(await page.locator('#wizard-next').isDisabled(),true);assert.equal(await page.locator('input[type=text]:visible').count(),0);
+  assert.equal(await page.locator('#wizard-next').isDisabled(),true);assert.equal(await page.locator('input[type=text]:visible').count(),0);assert.match(await page.locator('#wizard-content').textContent(),/Helper เดิมรหัสท้าย cccccccc/);
   // Headless Chrome leaves an external-protocol prompt open; the fake native approval below resumes the page through DOM events.
   await page.locator('#wizard-match').evaluate(el=>el.click());assert.equal(await page.locator('#wizard-match').isChecked(),true);await page.locator('#wizard-next').evaluate(el=>el.click());try{await page.waitForFunction(()=>document.querySelector('#wizard-progress')?.textContent.includes('ตรวจ Helper เครื่องนี้แล้ว'),null,{timeout:7000})}catch(e){console.error('confirm debug',await page.locator('#wizard-progress').textContent(),calls);throw e}
   assert.deepEqual(calls.filter(x=>x.p==='/api/launcher/pair-prepare').map(x=>x.body),[{pair_id:helper,intent_id:intent}]);
-  assert.equal(calls.filter(x=>x.p==='/api/launcher/pair-confirm').length,1);assert.equal(calls.at(-1).body.intent_id,intent);
+  assert.equal(calls.filter(x=>x.p==='/api/launcher/pair-confirm').length,1);assert.equal(calls.at(-1).body.intent_id,intent);assert.equal(calls.at(-1).body.replace_id,prior);
   assert.equal(await page.evaluate(()=>localStorage.getItem('visiond_launcher_helper')),helper);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.locator('#wizard-next').evaluate(el=>el.click());await page.waitForURL('https://visiondonline.com/tiktok-analyzer');
@@ -47,7 +47,7 @@ try{
    calls.length=0;nativeApproved=false;await page.goto('https://visiondonline.com/launcher-setup?state=not-running');await page.waitForFunction(()=>document.querySelector('#wizard-next')?.disabled===false);
    const absentDownload=page.waitForEvent('download');await page.locator('#wizard-next').evaluate(el=>el.click());await absentDownload;await page.locator('#wizard-next').evaluate(el=>el.click());await page.locator('#wizard-next').evaluate(el=>el.click());
    assert.equal(await page.locator('#wizard-install').isVisible(),false);assert.equal(await page.locator('#wizard-retry').isVisible(),false);
-   await page.locator('#wizard-install').waitFor({state:'visible',timeout:20000});assert.match(await page.locator('#wizard-progress').textContent(),/ยังไม่พบ Helper/);assert.match(await page.locator('#wizard-content').textContent(),/เปิด.*\.exe.*Windows/);assert.equal(await page.locator('#wizard-retry').isVisible(),true);assert.equal(await page.locator('#wizard-retry').textContent(),'เปิด Helper');assert.match(await page.locator('#wizard-redownload').getAttribute('href'),/\/downloads\/visiond-helper\/0\.20\.80\/VisionD-Helper-Setup\.exe/);
+   await page.locator('#wizard-install').waitFor({state:'visible',timeout:20000});assert.match(await page.locator('#wizard-progress').textContent(),/ยังไม่พบ Helper/);assert.match(await page.locator('#wizard-content').textContent(),/เปิด.*\.exe.*Windows/);assert.equal(await page.locator('#wizard-retry').isVisible(),true);assert.equal(await page.locator('#wizard-retry').textContent(),'เปิด Helper');assert.match(await page.locator('#wizard-redownload').getAttribute('href'),/\/downloads\/visiond-helper\/0\.20\.81\/VisionD-Helper-Setup\.exe/);
    assert.equal(calls.filter(x=>x.p==='/api/launcher/pair-confirm').length,0);nativeApproved=true;await page.waitForFunction(()=>!!document.querySelector('#wizard-match'),null,{timeout:12000});assert.equal(calls.filter(x=>x.p==='/api/launcher/pair-intent').length,1,'late Helper reuses the same intent');assert.ok(calls.filter(x=>x.p==='/api/launcher/pair-intent-status').length<=4,'early polling stays within bounded request budget');assert.equal(calls.filter(x=>x.p==='/api/launcher/pair-confirm').length,0);
    console.log('PASS late Helper stages automatically without manual check or duplicate intent');
    calls.length=0;nativeApproved=false;await page.evaluate(()=>sessionStorage.removeItem('visiond_pair_intent_v1'));await page.goto('https://visiondonline.com/launcher-setup?state=not-running');await page.clock.install();await page.waitForFunction(()=>document.querySelector('#wizard-next')?.disabled===false);
