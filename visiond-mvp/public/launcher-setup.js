@@ -1,20 +1,13 @@
 (()=>{
  const expectedHash='2aa4522c3c9f630da39cf832115a9bee692ea2badebcab924dbd62c0826acc9b';
- const choice=document.getElementById('setup-state'),guidance=document.getElementById('setup-guidance'),download=document.getElementById('download'),status=document.getElementById('download-status');
- const guides={new:'ยังไม่เคยติดตั้ง: ดาวน์โหลดด้วยปุ่มด้านบน เปิดไฟล์จากรายการดาวน์โหลด / Run แล้วยืนยัน Windows ให้ตัวติดตั้งทำงานเอง การดาวน์โหลดไม่ใช่การติดตั้ง จากนั้นอ่านผลในหน้าต่าง Helper',outdated:'มีรุ่นเก่า: ดาวน์โหลด v0.20.80 ด้านบน เปิดไฟล์ ยืนยัน Windows แล้วรอการอัปเดตอัตโนมัติ โปรไฟล์เดิมจะคงอยู่ อย่าสรุปว่ารุ่นใหม่ติดตั้งแล้วจากการดาวน์โหลดเพียงอย่างเดียว', 'not-running':'ผูกแล้วแต่ไม่ตอบรับ: เปิดไฟล์ Setup รุ่นล่าสุด ยืนยัน Windows แล้วรอตรวจการเริ่มทำงาน หากรุ่นต่ำกว่า v0.20.80 ให้ดาวน์โหลดอัปเดตก่อน หาก Helper แจ้งพอร์ตเดิมถูกใช้งานจึงเลือกซ่อม อย่าผูกซ้ำหรือกด Connect ซ้ำโดยยังไม่ตรวจคำขอเดิม',repair:'ใช้ขั้นตอนนี้เฉพาะเมื่อ Helper แจ้งพอร์ตเดิมถูกใช้งาน: กดซ่อมพอร์ต / ยืนยันเครื่องใหม่ใน Helper แล้วกรอกรหัส 12 ตัวในหน้านี้ด้วยบัญชีเดิม เทียบรหัสและยืนยันแทน Helper เดิม รอ Helper ตรวจพอร์ตใหม่ ก่อนยืนยันข้อมูลเดิมจะคงอยู่ ไม่ต้องปิด Chrome',paired:'ผูกและตรวจตัวช่วยพร้อมแล้ว: กลับ Analyzer และรีเฟรชสถานะช่องก่อนดำเนินการต่อ ไม่ต้องผูกซ้ำ หากมีคำขอเปิดค้างอยู่ให้ตรวจสถานะคำขอเดิมก่อน การติดตั้ง Helper ยังไม่ใช่การอนุญาต TikTok API'};
- const requestedState=new URLSearchParams(location.search).get('state');if(choice&&Object.hasOwn(guides,requestedState))choice.value=requestedState;
- const showGuide=()=>{if(guidance&&choice&&Object.hasOwn(guides,choice.value))guidance.textContent=guides[choice.value]};choice?.addEventListener?.('change',showGuide);showGuide();
- download?.addEventListener?.('click',event=>{if(!download.href){event.preventDefault();return}status.textContent='ส่งคำขอดาวน์โหลดให้เบราว์เซอร์แล้ว ตรวจรายการดาวน์โหลดของคุณ จากนั้นเปิดไฟล์ / Run ด้วยตนเอง การดาวน์โหลดยังไม่ใช่การติดตั้ง'});
+ const download=document.getElementById('download');
  const controller=new AbortController();let timer;
  Promise.race([(async()=>{
   const r=await fetch('/downloads/visiond-helper/0.20.80/release.json',{cache:'no-store',signal:controller.signal});
   if(!r.ok)throw Error();const m=await r.json();
   if(m.version!=='0.20.80'||m.signature_status!=='NotSigned'||m.executable?.file!=='VisionD-Helper-Setup.exe'||m.executable.sha256!==expectedHash)throw Error();return m;
- })(),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error())},5000)})]).then(m=>{
-  document.getElementById('hash').textContent='SHA256: '+m.executable.sha256;
-  document.getElementById('signature').textContent='รุ่นนี้ยังไม่มีลายเซ็นดิจิทัลผู้เผยแพร่ Windows อาจเตือนหรือปิดกั้น ตรวจแหล่งดาวน์โหลดและ SHA256 ก่อนเปิด';
-  const link=document.getElementById('download');link.href='/downloads/visiond-helper/0.20.80/VisionD-Helper-Setup.exe';link.removeAttribute('aria-disabled');
-  if(typeof window!=='undefined'){window.visiondHelperDownloadReady=true;window.dispatchEvent(new Event('visiond-helper-download-ready'))}
-  status.textContent='ตรวจข้อมูลไฟล์แล้ว กดดาวน์โหลดเพื่อบันทึกไฟล์ผ่านเบราว์เซอร์นี้';
- }).catch(()=>{document.getElementById('signature').textContent='อ่านข้อมูลยืนยันไฟล์ไม่ได้ กรุณาโหลดหน้านี้ใหม่ก่อนดาวน์โหลด';status.textContent='ยังเปิดดาวน์โหลดไม่ได้ โหลดหน้านี้ใหม่เพื่อตรวจไฟล์อีกครั้ง';const progress=document.getElementById('wizard-progress'),retry=document.getElementById('wizard-retry');if(progress)progress.textContent='ตรวจไฟล์ดาวน์โหลดไม่สำเร็จ โหลดหน้านี้ใหม่เพื่อลองอีกครั้ง';if(retry)retry.hidden=false}).finally(()=>clearTimeout(timer));
+ })(),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error())},5000)})]).then(()=>{
+  download.href='/downloads/visiond-helper/0.20.80/VisionD-Helper-Setup.exe';download.removeAttribute('aria-disabled');
+  window.visiondHelperDownloadReady=true;window.dispatchEvent(new Event('visiond-helper-download-ready'));
+ }).catch(()=>{const progress=document.getElementById('wizard-progress'),retry=document.getElementById('wizard-retry');progress.textContent='ตรวจไฟล์ดาวน์โหลดไม่สำเร็จ โหลดหน้านี้ใหม่เพื่อลองอีกครั้ง';retry.hidden=false}).finally(()=>clearTimeout(timer));
 })();

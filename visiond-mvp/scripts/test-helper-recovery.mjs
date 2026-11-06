@@ -22,9 +22,9 @@ for(const body of [false,true]){
  const f=fixture(async()=>({ok:true,json:async()=>{throw new SyntaxError('raw parse')}}));await flush();assert.match(f.node('status').textContent,/กรุณากดลองใหม่/);assert.doesNotMatch(f.node('status').textContent,/SyntaxError|raw parse/);
 }
 console.log('PASS pair auth-first, login/refresh hint, explicit checkbox, expiry clear and hung headers/body/JSON recovery');
-const setup=readFileSync('public/launcher-setup.js','utf8'),html=readFileSync('public/launcher-setup.html','utf8');assert.doesNotMatch(html.match(/<a id="download"[^>]+>/)[0],/href=/);
+const setup=readFileSync('public/launcher-setup.js','utf8'),html=readFileSync('public/launcher-setup.html','utf8');assert.doesNotMatch(html.match(/<a id="download"[^>]+>/)[0],/href=/);assert.doesNotMatch(html,/id="setup-state"|id="pair-entry"|launcher-code-pair\.js/);
 for(const valid of [false,true]){
- const nodes=new Map(),timers=[];const node=k=>{if(!nodes.has(k))nodes.set(k,{removeAttribute(){}});return nodes.get(k)};
- vm.runInNewContext(setup,{URLSearchParams,AbortController,document:{getElementById:node},location:{search:'?state=outdated'},setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.80':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'2aa4522c3c9f630da39cf832115a9bee692ea2badebcab924dbd62c0826acc9b'}})});await flush();assert.equal(!!node('download').href,valid);assert.equal(node('setup-state').value,'outdated');
+ const nodes=new Map(),timers=[],events=[],browser={dispatchEvent:e=>events.push(e.type)};const node=k=>{if(!nodes.has(k))nodes.set(k,{hidden:true,removeAttribute(){}});return nodes.get(k)};
+ vm.runInNewContext(setup,{AbortController,Event:class{constructor(type){this.type=type}},document:{getElementById:node},window:browser,setTimeout:f=>{timers.push(f);return f},clearTimeout(){},fetch:async()=>response(200,{version:valid?'0.20.80':'evil',signature_status:'NotSigned',executable:{file:'VisionD-Helper-Setup.exe',sha256:'2aa4522c3c9f630da39cf832115a9bee692ea2badebcab924dbd62c0826acc9b'}})});await flush();assert.equal(!!node('download').href,valid);assert.equal(!!browser.visiondHelperDownloadReady,valid);assert.deepEqual(events,valid?['visiond-helper-download-ready']:[]);if(!valid){assert.match(node('wizard-progress').textContent,/ตรวจไฟล์ดาวน์โหลดไม่สำเร็จ/);assert.equal(node('wizard-retry').hidden,false)}
 }
 console.log('PASS download remains unavailable until exact version/file/hash/signature manifest validation');
