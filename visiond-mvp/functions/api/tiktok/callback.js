@@ -43,7 +43,7 @@ export async function onRequestGet(ctx){
   const stateRow=handoff?.stateRow||await consumeTikTokState(ctx.env,state,ownerId);if(!stateRow)return back('invalid_state');
   const profileSlotId=String(stateRow.profile_slot_id||''),done=(status,detail='',targetChannelId=stateRow.channel_id)=>handoff?handoffCompletion(status,targetChannelId,auth.handoff.id):back(status,detail,targetChannelId,profileSlotId);
   if(providerError)return done('denied',providerError);if(!code)return done('invalid_callback');
-  let channelId=stateRow.channel_id;
+  let channelId=stateRow.channel_id,verifiedConnection=false,verifiedContinuation=null;
   try{
     const config=tikTokOAuthConfig(ctx.env);if(!config.configured)return done('not_configured','',channelId);
     const token=await exchangeTikTokCode(config,code),profile=await fetchTikTokProfile(token.access_token,fetch,token.scope);if(!profile.open_id)return done('profile_failed','',channelId);
@@ -75,10 +75,13 @@ export async function onRequestGet(ctx){
     if(plan.statement&&results[0]?.meta?.changes!==1)throw new Error('VX_ACCOUNT_LIMIT');
     if(connectionResult?.meta?.changes!==1)return done('profile_conflict','',channelId);
     const connection=await ctx.env.DB.prepare("SELECT * FROM tiktok_connections WHERE id=? AND user_id=? AND channel_id=? AND open_id=? AND status='active'").bind(prepared.id,ownerId,channelId,prepared.openId).first();if(!connection)return done('channel_unavailable','',channelId);
+    verifiedConnection=true;verifiedContinuation=continuation?.response||null;
     const stillAuthorized=()=>vxWorkspaceAccessStillCurrent(ctx,auth);
     if(handoff){await mirrorTikTokAvatar(ctx.env,connection,profile.avatar_url,fetch,{stillAuthorized});return continuation?.response||done('connected','',channelId)}
     const blocked=await requireD1DataFetchAvailable(ctx,'tiktok_oauth_post_connect_sync');if(blocked)return done('connected','sync_deferred_d1_quota',channelId);await syncTikTokConnection(ctx.env,connection,fetch,{stillAuthorized,profile});return done('connected','',channelId);
   }catch(error){
+    // Optional work after the active connection readback cannot undo the committed OAuth binding.
+    if(handoff&&verifiedConnection){console.error('TIKTOK_OAUTH_POST_COMMIT_OPTIONAL_FAILED');return verifiedContinuation||done('connected','',channelId)}
     if(error?.message==='VX_ACCESS_EXPIRED')return done('access_expired','',stateRow.channel_id);
     if(error?.message==='VX_ACCOUNT_LIMIT')return done('account_limit','บัญชีครบตามแพ็กเกจแล้ว กรุณาลบช่องเดิมหรือเลือกแพ็กเกจใหม่ที่ Vtools',channelId);
     if(String(error?.message||'').includes('TIKTOK_PROFILE_BINDING'))return done('profile_conflict','',channelId);
