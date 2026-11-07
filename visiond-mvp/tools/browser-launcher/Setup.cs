@@ -7,19 +7,20 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Net;
 using Microsoft.Win32;
-[assembly:System.Reflection.AssemblyVersion("0.20.85.0")]
-[assembly:System.Reflection.AssemblyFileVersion("0.20.85.0")]
+[assembly:System.Reflection.AssemblyVersion("0.20.86.0")]
+[assembly:System.Reflection.AssemblyFileVersion("0.20.86.0")]
 [assembly:System.Reflection.AssemblyProduct("VisionD Helper")]
 
 namespace VisionDBrowserLauncher {
  internal static class Setup {
-  internal const string Version="0.20.85";
+  internal const string Version="0.20.86";
   private const string Marker="VisionD Browser Launcher v1";
   private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VisionD","BrowserLauncher");
   private static readonly string Exe=Path.Combine(Root,"VisionDBrowserLauncher-"+Version+".exe");
+  private static readonly string PreviousExe=Path.Combine(Root,"VisionDBrowserLauncher-0.20.85.exe");
   private static readonly string LegacyExe=Path.Combine(Root,"VisionDBrowserLauncher.exe");
   private static readonly string Owner=Path.Combine(Root,"owner.txt");
-  private const string RunKey=@"Software\Microsoft\Windows\CurrentVersion\Run",ProtocolKey=@"Software\Classes\visiond-profile",UninstallKey=@"Software\Microsoft\Windows\CurrentVersion\Uninstall\VisionDHelper";
+  private const string RunKey=@"Software\Microsoft\Windows\CurrentVersion\Run",ProtocolKey=@"Software\Classes\visiond-profile",PairProtocolKey=@"Software\Classes\visiond-helper-pair",UninstallKey=@"Software\Microsoft\Windows\CurrentVersion\Uninstall\VisionDHelper";
   private static void RunExclusive(Action action){
    string sid=System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
    using(var mutex=new System.Threading.Mutex(false,"Global\\VisionDHelperSetup-"+sid)){
@@ -57,16 +58,19 @@ namespace VisionDBrowserLauncher {
    WriteSetting(undo,RunKey,"VisionDBrowserLauncher",ServeCommand);
    WriteSetting(undo,ProtocolKey,"","URL:VisionD isolated Chrome profile");WriteSetting(undo,ProtocolKey,"URL Protocol","");
    WriteSetting(undo,ProtocolKey+@"\shell\open\command","",ProtocolCommand);
+   WriteSetting(undo,PairProtocolKey,"","URL:VisionD Helper device pairing");WriteSetting(undo,PairProtocolKey,"URL Protocol","");
+   WriteSetting(undo,PairProtocolKey+@"\shell\open\command","",ProtocolCommand);
    WriteSetting(undo,UninstallKey,"DisplayName","VisionD Helper");WriteSetting(undo,UninstallKey,"DisplayVersion",Version);WriteSetting(undo,UninstallKey,"UninstallString","\""+Exe+"\"");
   }
   internal static string Hash(string path){using(var input=File.OpenRead(path))using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(input)).Replace("-","");}
   private static string InstalledExe(){
-   bool current=File.Exists(Exe),legacy=File.Exists(LegacyExe),marker=File.Exists(Owner);
-   if(!current&&!legacy&&!marker)return "";
+   bool current=File.Exists(Exe),previous=File.Exists(PreviousExe),legacy=File.Exists(LegacyExe),marker=File.Exists(Owner);
+   if(!current&&!previous&&!legacy&&!marker)return "";
    if(!marker)throw new InvalidOperationException("ข้อมูลเจ้าของตัวช่วยไม่ครบ ยังไม่แก้ไขไฟล์ใด");
    string[] lines=File.ReadAllLines(Owner);
    if(lines.Length!=2||lines[0]!=Marker)throw new InvalidOperationException("ไฟล์ตัวช่วยไม่ตรงกับหลักฐานเจ้าของ หยุดเพื่อป้องกันการเขียนทับ");
    if(current&&lines[1]=="sha256="+Hash(Exe))return Exe;
+   if(previous&&lines[1]=="sha256="+Hash(PreviousExe))return PreviousExe;
    if(legacy&&lines[1]=="sha256="+Hash(LegacyExe))return LegacyExe;
    throw new InvalidOperationException("ไฟล์ตัวช่วยไม่ตรงกับหลักฐานเจ้าของ หยุดเพื่อป้องกันการเขียนทับ");
   }
@@ -84,6 +88,8 @@ namespace VisionDBrowserLauncher {
   private static void CheckRegistry(bool owned){
    string installed=owned?InstalledExe():"",run=RegistryValue(RunKey,"VisionDBrowserLauncher"),protocol=RegistryValue(ProtocolKey+@"\shell\open\command","");
    using(var key=Registry.CurrentUser.OpenSubKey(ProtocolKey)){if(key!=null&&(!owned||protocol!="\""+installed+"\" \"%1\""))throw new InvalidOperationException("ชื่อ protocol มีเจ้าของอื่น ไม่เปลี่ยนการตั้งค่า");}
+   string pairProtocol=RegistryValue(PairProtocolKey+@"\shell\open\command","");
+   using(var key=Registry.CurrentUser.OpenSubKey(PairProtocolKey)){if(key!=null&&(!owned||installed!=Exe||pairProtocol!=ProtocolCommand))throw new InvalidOperationException("ชื่อ protocol ผูกเครื่องมีเจ้าของอื่น ไม่เปลี่ยนการตั้งค่า");}
    if(run!=""&&(!owned||run!="\""+installed+"\" --serve"))throw new InvalidOperationException("รายการเริ่มต้นมีเจ้าของอื่น ไม่เปลี่ยนการตั้งค่า");
    string uninstall=RegistryValue(UninstallKey,"UninstallString");using(var key=Registry.CurrentUser.OpenSubKey(UninstallKey)){if(key!=null&&(!owned||uninstall!="\""+installed+"\""))throw new InvalidOperationException("รายการถอนติดตั้งมีเจ้าของอื่น");}
   }
@@ -162,7 +168,7 @@ namespace VisionDBrowserLauncher {
    catch(Exception e){if(created!=null)StopCreated(created);LocalHelper.PairStatus="ยังเริ่มตัวช่วยไม่ได้ ข้อมูลที่ยืนยันแล้วคงอยู่ กดซ่อมอีกครั้งเพื่อตรวจหรือดำเนินการต่อ: "+e.Message;throw new InvalidOperationException(LocalHelper.PairStatus);}
    finally{if(created!=null)created.Dispose();}
   }
-  private static void Disable(){if(!Owned())return;CheckRegistry(true);if(String.Equals(InstalledExe(),LegacyExe,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("ติดตั้งรุ่นใหม่จากไฟล์ Setup ที่ตรวจสอบแล้วก่อนถอนตัวช่วยเดิม");StopOwned();using(var run=Registry.CurrentUser.OpenSubKey(RunKey,true))if(run!=null&&Convert.ToString(run.GetValue("VisionDBrowserLauncher",""))==ServeCommand)run.DeleteValue("VisionDBrowserLauncher");using(var key=Registry.CurrentUser.OpenSubKey(ProtocolKey))if(key!=null)Registry.CurrentUser.DeleteSubKeyTree(ProtocolKey);if(RegistryValue(UninstallKey,"UninstallString")=="\""+Exe+"\"")Registry.CurrentUser.DeleteSubKeyTree(UninstallKey);if(!String.Equals(Process.GetCurrentProcess().MainModule.FileName,Exe,StringComparison.OrdinalIgnoreCase)){File.Delete(Exe);File.Delete(Owner);}NotifyRegistry();}
+  private static void Disable(){if(!Owned())return;CheckRegistry(true);if(!String.Equals(InstalledExe(),Exe,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("ติดตั้งรุ่นใหม่จากไฟล์ Setup ที่ตรวจสอบแล้วก่อนถอนตัวช่วยเดิม");StopOwned();using(var run=Registry.CurrentUser.OpenSubKey(RunKey,true))if(run!=null&&Convert.ToString(run.GetValue("VisionDBrowserLauncher",""))==ServeCommand)run.DeleteValue("VisionDBrowserLauncher");using(var key=Registry.CurrentUser.OpenSubKey(ProtocolKey))if(key!=null)Registry.CurrentUser.DeleteSubKeyTree(ProtocolKey);using(var pair=Registry.CurrentUser.OpenSubKey(PairProtocolKey))if(pair!=null)Registry.CurrentUser.DeleteSubKeyTree(PairProtocolKey);if(RegistryValue(UninstallKey,"UninstallString")=="\""+Exe+"\"")Registry.CurrentUser.DeleteSubKeyTree(UninstallKey);if(!String.Equals(Process.GetCurrentProcess().MainModule.FileName,Exe,StringComparison.OrdinalIgnoreCase)){File.Delete(Exe);File.Delete(Owner);}NotifyRegistry();}
   [STAThread] internal static int Show(){
    Application.EnableVisualStyles();var form=new Form{Text="VisionD Helper "+Version,Width=560,Height=400,StartPosition=FormStartPosition.CenterScreen,MaximizeBox=false};
    var text=new Label{Left=20,Top=20,Width=500,Height=90,Text="ตัวช่วย Windows สำหรับ Chrome แยกบัญชี TikTok\nติดตั้งเฉพาะผู้ใช้ Windows นี้ ไม่คัดลอกคุกกี้หรือเปลี่ยนโปรไฟล์เดิม\nไฟล์นี้ยังไม่มีลายเซ็นผู้เผยแพร่ ตรวจแหล่งดาวน์โหลดและ SHA256 จาก VisionD ก่อนติดตั้ง"};

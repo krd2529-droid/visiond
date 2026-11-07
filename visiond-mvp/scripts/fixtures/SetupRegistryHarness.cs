@@ -41,10 +41,12 @@ public static class SetupRegistryHarness {
   FakeRegistry.Keys.Clear();changes.Clear();typeof(VisionDBrowserLauncher.Setup).GetMethod("WriteRegistration",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{changes});
   Check(FakeRegistry.Keys.ContainsKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\VisionDHelper"),"repair includes uninstall registration");
   Check(FakeRegistry.Keys.ContainsKey(@"Software\Classes\visiond-profile\shell\open\command"),"repair includes protocol registration");
+  Check(FakeRegistry.Keys.ContainsKey(@"Software\Classes\visiond-helper-pair\shell\open\command"),"repair omits setup-only protocol registration");
   Check(FakeRegistry.Keys[@"Software\Microsoft\Windows\CurrentVersion\Run"].ContainsKey("VisionDBrowserLauncher"),"repair includes startup registration");Undo(changes);
+  Check(!FakeRegistry.Keys.ContainsKey(@"Software\Classes\visiond-helper-pair"),"rollback retained new setup protocol");
   Console.WriteLine("PASS shared installed-image repair restores all owned registration surfaces and remains reversible");
   var setup=typeof(VisionDBrowserLauncher.Setup);var flags=BindingFlags.Static|BindingFlags.NonPublic;
-  string legacy=(string)setup.GetField("LegacyExe",flags).GetValue(null),current=(string)setup.GetField("Exe",flags).GetValue(null),owner=(string)setup.GetField("Owner",flags).GetValue(null);
+  string legacy=(string)setup.GetField("PreviousExe",flags).GetValue(null),current=(string)setup.GetField("Exe",flags).GetValue(null),owner=(string)setup.GetField("Owner",flags).GetValue(null);
   Directory.CreateDirectory(Path.GetDirectoryName(legacy));File.WriteAllText(legacy,"legacy-test-image");
   Func<string,string> hash=path=>(string)setup.GetMethod("Hash",flags|BindingFlags.Public).Invoke(null,new object[]{path});
   File.WriteAllText(owner,"VisionD Browser Launcher v1\nsha256="+hash(legacy));
@@ -53,6 +55,11 @@ public static class SetupRegistryHarness {
   FakeRegistry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\VisionDHelper").SetValue("UninstallString","\""+legacy+"\"");
   Check((string)setup.GetMethod("InstalledExe",flags).Invoke(null,null)==legacy,"legacy owned image not recognized");
   setup.GetMethod("CheckRegistry",flags).Invoke(null,new object[]{true});
+  const string pairKey=@"Software\Classes\visiond-helper-pair";
+  FakeRegistry.CurrentUser.CreateSubKey(pairKey);FakeRegistry.CurrentUser.CreateSubKey(pairKey+@"\shell\open\command").SetValue("","\"C:\\foreign.exe\" \"%1\"");
+  bool foreignPairRejected=false;try{setup.GetMethod("CheckRegistry",flags).Invoke(null,new object[]{true});}catch(TargetInvocationException e){foreignPairRejected=e.InnerException is InvalidOperationException;}
+  Check(foreignPairRejected&&File.Exists(legacy)&&File.Exists(owner),"foreign pairing scheme did not fail closed before image mutation");
+  FakeRegistry.Keys.Remove(pairKey+@"\shell\open\command");FakeRegistry.Keys.Remove(pairKey+@"\shell\open");FakeRegistry.Keys.Remove(pairKey+@"\shell");FakeRegistry.Keys.Remove(pairKey);
   bool legacyDisableRejected=false;try{setup.GetMethod("Disable",flags).Invoke(null,null);}catch(TargetInvocationException e){legacyDisableRejected=e.InnerException is InvalidOperationException;}
   Check(legacyDisableRejected&&File.Exists(legacy)&&File.Exists(owner),"legacy uninstall orphaned owned files");
   string oldMarker=File.ReadAllText(owner),backup=Path.Combine(Path.GetDirectoryName(legacy),"rollback-image.exe");
@@ -63,15 +70,21 @@ public static class SetupRegistryHarness {
   bool restarted=false;setup.GetMethod("RestartRestoredOwned",flags|BindingFlags.Public).Invoke(null,new object[]{legacy,true,true,(Action<string>)(path=>{Check(path==legacy,"rollback restarted wrong image");restarted=true;})});
   Check(restarted&&File.Exists(legacy)&&!File.Exists(current)&&File.ReadAllText(owner)==oldMarker,"legacy rollback lost executable, marker or service restart");
   setup.GetMethod("CheckRegistry",flags).Invoke(null,new object[]{true});
+  Check(!FakeRegistry.Keys.ContainsKey(pairKey),"failed upgrade left new setup scheme");
   File.Delete(legacy);File.WriteAllText(current,"versioned-test-image");File.WriteAllText(owner,"VisionD Browser Launcher v1\nsha256="+hash(current));
   FakeRegistry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run",true).SetValue("VisionDBrowserLauncher","\""+current+"\" --serve");
   FakeRegistry.CurrentUser.OpenSubKey(@"Software\Classes\visiond-profile\shell\open\command",true).SetValue("","\""+current+"\" \"%1\"");
+  FakeRegistry.CurrentUser.CreateSubKey(pairKey);FakeRegistry.CurrentUser.CreateSubKey(pairKey+@"\shell\open\command").SetValue("","\""+current+"\" \"%1\"");
   FakeRegistry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\VisionDHelper",true).SetValue("UninstallString","\""+current+"\"");
   Check((string)setup.GetMethod("InstalledExe",flags).Invoke(null,null)==current,"versioned owned image not recognized");
   setup.GetMethod("CheckRegistry",flags).Invoke(null,new object[]{true});
   FakeRegistry.CurrentUser.OpenSubKey(@"Software\Classes\visiond-profile\shell\open\command",true).SetValue("","\"C:\\foreign.exe\" \"%1\"");
   bool rejected=false;try{setup.GetMethod("CheckRegistry",flags).Invoke(null,new object[]{true});}catch(TargetInvocationException e){rejected=e.InnerException is InvalidOperationException;}
   Check(rejected,"foreign protocol command was accepted");
+  FakeRegistry.CurrentUser.OpenSubKey(@"Software\Classes\visiond-profile\shell\open\command",true).SetValue("","\""+current+"\" \"%1\"");
+  FakeRegistry.CurrentUser.OpenSubKey(pairKey+@"\shell\open\command",true).SetValue("","\"C:\\foreign.exe\" \"%1\"");
+  rejected=false;try{setup.GetMethod("CheckRegistry",flags).Invoke(null,new object[]{true});}catch(TargetInvocationException e){rejected=e.InnerException is InvalidOperationException;}
+  Check(rejected,"foreign setup-only protocol command was accepted");
   Console.WriteLine("PASS versioned image accepts exact owned legacy migration and rejects foreign registry");
  }
 }

@@ -1,10 +1,14 @@
 # VisionD Browser Launcher
 
+## Separate device-pairing protocol (v0.20.86)
+
+The verified downloaded Setup registers `visiond-helper-pair` only for the same-browser device-pairing intent. Its URI carries one exact version-4 intent UUID; the native Helper still displays the account comparison and requires the Windows user to approve before staging. The existing `visiond-profile` association remains registered to the same owned versioned executable for channel launches. The installer rejects a pre-existing foreign pairing association before changing files or registry, and rollback restores the previous owned image, service and registration. Removing the installed v0.20.86 Helper removes only its verified associations. A new scheme avoids the old association state observed on this Windows machine; actual browser dispatch still requires a user-approved live check.
+
 ## Versioned installed image (v0.20.85)
 
 The owned installer now places the executing Helper at `VisionDBrowserLauncher-0.20.85.exe` and registers that exact path for the local service and browser protocol. A verified legacy `VisionDBrowserLauncher.exe` is stopped and moved aside during installation, with its file, owner marker, and registry values restored if installation fails. The encrypted Transport identity and Chrome Profiles are not moved. This avoids a new protocol process mapping the old executable image from the reused path; the local user still confirms the browser account code and replacement in the existing flow.
 
-Use the verified downloaded `VisionD-Helper-Setup.exe` for this upgrade. The bundled historical PowerShell install/uninstall scripts still target the old unversioned path and are not the v0.20.85 upgrade path.
+Use the verified downloaded `VisionD-Helper-Setup.exe` for this upgrade. The bundled historical PowerShell install/uninstall scripts still target the old unversioned path and are not the upgrade path for v0.20.85 or later.
 
 ## On-screen pairing diagnostic (v0.20.84)
 
@@ -103,6 +107,6 @@ Windows/browser protocol prompts do not reliably prove which website initiated a
 
 ## Same-browser pairing (v0.20.75)
 
-The authenticated setup page exposes only `visiond-profile://setup/pair`. This literal verb cannot launch a profile or carry fields. Native requires local approval, stages a fresh 48-bit CSPRNG code through fixed TLS, and displays it without opening HTTP(S), Edge, or any browser. If Windows does not discover the scheme, manually open the verified installed Helper and choose Pair. New pairing requires v75; already-active v74 recovers through owner-list refresh without re-pairing or updating. Scheme dispatch is not guaranteed or treated as a receipt.
+The current authenticated setup page uses `visiond-helper-pair://setup/pair?intent=<uuid>` with an exact short-lived intent UUID. The historical `visiond-profile://setup/pair` verb remains native-compatible; neither setup form can launch a profile. Native requires local approval, stages a fresh 48-bit CSPRNG code through fixed TLS, and displays it without opening HTTP(S), Edge, or any browser. If Windows does not discover the scheme, manually open the verified installed Helper and choose Pair. Scheme dispatch is not guaranteed or treated as a receipt.
 
 Enter the code in the original Chrome page, compare, and explicitly confirm. Exact indexed LIMIT2 lookup rejects collisions; IP/account limits bound guesses; prepare/final CAS bind code, expiry, original session, nonce and current VX rights. Rotation clears prior prepared ownership and nonce atomically; same-attempt retry does not extend expiry; active helpers are never demoted. Replacement retains the existing DPAPI candidate/promotion and exact prior-helper revocation safeguards. No native caller-origin identity is assumed.

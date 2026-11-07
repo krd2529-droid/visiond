@@ -42,7 +42,7 @@ namespace VisionDBrowserLauncher
 
         [STAThread] private static int Main(string[] args)
         {
-            if(args.Length==1&&args[0]!=null&&args[0].StartsWith("visiond-profile://setup",StringComparison.OrdinalIgnoreCase))Setup.TracePair(Setup.PairPhase.ProtocolInvoked);
+            if(args.Length==1&&args[0]!=null&&(args[0].StartsWith("visiond-profile://setup",StringComparison.OrdinalIgnoreCase)||args[0].StartsWith("visiond-helper-pair://setup",StringComparison.OrdinalIgnoreCase)))Setup.TracePair(Setup.PairPhase.ProtocolInvoked);
             try
             {
                 if (args.Length == 0) return Setup.Show();
@@ -105,7 +105,7 @@ namespace VisionDBrowserLauncher
         internal static bool IsSetupPairUri(string raw){return raw=="visiond-profile://setup/pair";}
         internal static bool TrySetupPairIntentUri(string raw,out string intent){
             intent=null;if(String.IsNullOrEmpty(raw)||raw.Length>100)return false;
-            var match=Regex.Match(raw,@"\Avisiond-profile://setup/pair/?\?intent=([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\z",RegexOptions.CultureInvariant);
+            var match=Regex.Match(raw,@"\A(?:visiond-profile|visiond-helper-pair)://setup/pair/?\?intent=([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\z",RegexOptions.CultureInvariant);
             if(!match.Success)return false;intent=match.Groups[1].Value;return true;
         }
         internal static bool TryParse(string raw, out LaunchRequest request)
