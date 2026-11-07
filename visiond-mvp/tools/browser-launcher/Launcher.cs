@@ -42,6 +42,7 @@ namespace VisionDBrowserLauncher
 
         [STAThread] private static int Main(string[] args)
         {
+            if(args.Length==1&&args[0]!=null&&args[0].StartsWith("visiond-profile://setup",StringComparison.OrdinalIgnoreCase))Setup.TracePair(Setup.PairPhase.ProtocolInvoked);
             try
             {
                 if (args.Length == 0) return Setup.Show();

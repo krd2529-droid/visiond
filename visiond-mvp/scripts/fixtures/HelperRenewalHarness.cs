@@ -25,6 +25,14 @@ public static class HelperRenewalHarness {
    Check(Path.GetFileName(Path.GetDirectoryName(LocalHelper.PairDiagnosticPath))=="Transport","diagnostic path is outside restricted Transport");
    Setup.TracePairAt(diagnostic,Setup.PairPhase.Start);Setup.TracePairAt(diagnostic,Setup.PairPhase.AccountVerified);Setup.TracePairAt(diagnostic,Setup.PairPhase.ConsentAccepted);Setup.TracePairAt(diagnostic,Setup.PairPhase.ConfigLoaded);Setup.TracePairAt(diagnostic,Setup.PairPhase.StageStart);Setup.TracePairAt(diagnostic,Setup.PairPhase.StageHttp,429);Setup.TracePairAt(diagnostic,Setup.PairPhase.Failed);
    string trace=File.ReadAllText(diagnostic);Check(trace.Contains("StageHttp HTTP 429")&&trace.Contains("ConfigLoaded")&&trace.Contains("Failed"),"pair diagnostic lost failure phase/status");Check(!trace.Contains(oldId)&&!trace.Contains(Convert.ToString(original["secret"]))&&!trace.Contains(intent),"pair diagnostic disclosed identity/secret/intent");
+   string blockedPath=Path.Combine(root,"missing","pair-diagnostic.txt"),privateMessage="private-test-secret";
+   Setup.TracePairAt(blockedPath,Setup.PairPhase.Start);Setup.TracePairAt(blockedPath,Setup.PairPhase.StageStart);
+   Check(Setup.LastPairPhase==Setup.PairPhase.StageStart,"phase lost when diagnostic file cannot be written");
+   string access=Setup.PairFailureLabel(Setup.LastPairPhase,new UnauthorizedAccessException(privateMessage),0);
+   Check(access.Contains("StageStart")&&access.Contains("access")&&!access.Contains(privateMessage),"safe access diagnostic missing or leaked exception message");
+   Setup.TracePairAt(blockedPath,Setup.PairPhase.StageHttp,429);
+   string http=Setup.PairFailureLabel(Setup.LastPairPhase,new System.Net.WebException(privateMessage),Setup.LastPairHttpStatus);
+   Check(http.Contains("StageHttp")&&http.Contains("http")&&http.Contains("HTTP 429")&&!http.Contains(privateMessage),"safe HTTP diagnostic missing or leaked response detail");
    int attempted=0,renewed=0;
    Check(Setup.PairAfterConsent(intent,()=>{attempted++;throw new LocalHelper.RevokedHelperException();},id=>{renewed++;Check(id==intent,"wrong renewal intent");return 0;})==0&&attempted==1&&renewed==1,"revoked helper did not enter renewal after account consent");
    Check(Setup.PairAfterConsent(intent,()=>0,id=>{throw new Exception("healthy helper rotated");})==0,"healthy active helper entered renewal");

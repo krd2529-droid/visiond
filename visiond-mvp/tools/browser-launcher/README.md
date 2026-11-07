@@ -1,5 +1,9 @@
 # VisionD Browser Launcher
 
+## On-screen pairing diagnostic (v0.20.84)
+
+If pairing fails, the installed Helper displays only the last fixed phase, a fixed error category and, if available, a numeric HTTP status. This remains visible when its private diagnostic file cannot be written. The window never includes an exception message, account code, intent, Helper ID, URL, response body or secret. A single user-approved attempt is still needed to identify the live failure; this version does not alter pairing authorization.
+
 ## Local pairing diagnostic (v0.20.83)
 
 The installed Helper records only fixed pairing phase names and a numeric HTTP status in its ACL-protected `pair-diagnostic.txt` beside `helper.dpapi`. It overwrites the previous attempt and records no account code, intent, Helper ID, URL, request body, secret, or profile data. This identifies whether a failed pairing stopped before config load, before the stage request, at a stage HTTP response, or after an accepted stage. A failure does not alter the Helper identity or pairing rules.
