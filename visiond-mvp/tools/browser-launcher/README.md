@@ -1,5 +1,11 @@
 # VisionD Browser Launcher
 
+## Versioned installed image (v0.20.85)
+
+The owned installer now places the executing Helper at `VisionDBrowserLauncher-0.20.85.exe` and registers that exact path for the local service and browser protocol. A verified legacy `VisionDBrowserLauncher.exe` is stopped and moved aside during installation, with its file, owner marker, and registry values restored if installation fails. The encrypted Transport identity and Chrome Profiles are not moved. This avoids a new protocol process mapping the old executable image from the reused path; the local user still confirms the browser account code and replacement in the existing flow.
+
+Use the verified downloaded `VisionD-Helper-Setup.exe` for this upgrade. The bundled historical PowerShell install/uninstall scripts still target the old unversioned path and are not the v0.20.85 upgrade path.
+
 ## On-screen pairing diagnostic (v0.20.84)
 
 If pairing fails, the installed Helper displays only the last fixed phase, a fixed error category and, if available, a numeric HTTP status. This remains visible when its private diagnostic file cannot be written. The window never includes an exception message, account code, intent, Helper ID, URL, response body or secret. A single user-approved attempt is still needed to identify the live failure; this version does not alter pairing authorization.

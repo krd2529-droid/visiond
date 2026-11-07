@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync,writeFileSync,rmSync} from 'node:fs';
-import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
 import {execFileSync,spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
-const root='public/downloads/visiond-helper/0.20.84/',manifest=JSON.parse(readFileSync(root+'release.json')),sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
+const root='public/downloads/visiond-helper/0.20.85/',manifest=JSON.parse(readFileSync(root+'release.json')),sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 for(const entry of [manifest.executable,manifest.source_archive])assert.equal(sha(root+entry.file),entry.sha256);
 for(const entry of manifest.sources)assert.equal(sha(entry.file==='LICENSE'?'LICENSE':'tools/browser-launcher/'+entry.file),entry.sha256,'source archive provenance '+entry.file);
 assert.ok(manifest.sources.some(s=>s.file==='LICENSE'));assert.equal(manifest.signature_status,'NotSigned');
@@ -14,11 +13,14 @@ const setup=readFileSync('tools/browser-launcher/Setup.cs','utf8');assert.match(
 const launcher=readFileSync('tools/browser-launcher/Launcher.cs','utf8');assert.match(launcher,/PairDiagnosticPath = Path\.Combine\(Path\.GetDirectoryName\(ConfigPath\), "pair-diagnostic\.txt"\)/);assert.match(launcher,/Directory\.SetAccessControl\(Root,acl\)/);assert.match(setup,/TracePairAt\(LocalHelper\.PairDiagnosticPath,phase,httpStatus\)/);
 assert.match(setup,/form\.Shown\s*\+=/,'opening the downloaded Setup triggers install after the window is visible');
 const self=setup.slice(setup.indexOf('if(String.Equals(source,Exe'),setup.indexOf('Directory.CreateDirectory(Root)'));assert.doesNotMatch(self,/File\.(Move|Copy|Delete)/,'installed-path branch never overwrites executing image');assert.match(setup,/if\(!String.Equals\(Process.GetCurrentProcess\(\).MainModule.FileName,Exe[\s\S]*File.Delete\(Exe\)/);
-assert.match(self,/created=Start\("--serve"\);try\{Ready\(created\)/);assert.match(self,/finally\{if\(created!=null\)StopCreated\(created\);\}/,'repair failure stops only this attempt process');assert.match(setup,/stopped=HasOwnedService\(\);StopOwned\(\)/,'rollback captures actual prior running state');assert.match(setup,/if\(owned&&stopped&&File.Exists\(Exe\)\)Ready\(Start\("--serve"\)\)/);
-const work=mkdtempSync(join(tmpdir(),'visiond-setup-safe-'));try{
+assert.match(self,/created=Start\("--serve"\);try\{Ready\(created\)/);assert.match(self,/finally\{if\(created!=null\)StopCreated\(created\);\}/,'repair failure stops only this attempt process');assert.match(setup,/stopped=HasOwnedService\(\);StopOwned\(\)/,'rollback captures actual prior running state');assert.match(setup,/RestoreImageAt\(Exe,oldExe,backup,Owner,oldMarker,owned,swapped\)/);assert.match(setup,/RestartRestoredOwned\(oldExe,owned,stopped,path=>Ready\(Start\("--serve",path\)\)\)/);
+const work=mkdtempSync(resolve('..','visiond-setup-safe-'));try{
  const altered=join(work,'Setup.cs'),exe=join(work,'SetupRegistryHarness.exe');
- // Only registry dependency is substituted; installer and GUI are never invoked.
- writeFileSync(altered,'using Registry=FakeRegistry;\n'+setup.replace('Global\\\\VisionDHelperSetup-','Local\\\\VisionDHelperSetup-Test-'+work.split(/[\\/]/).at(-1)+'-'));
+ // Registry and installed path are substituted; installer and GUI are never invoked.
+ const isolatedRoot=join(work,'owned').replaceAll('\\','\\\\');
+ const isolatedSetup=setup.replace('private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VisionD","BrowserLauncher");','private static readonly string Root="'+isolatedRoot+'";').replace('"VisionDBrowserLauncher-"+Version+".exe"','"VisionDBrowserLauncher-"+Version+".bin"').replace('"VisionDBrowserLauncher.exe"','"VisionDBrowserLauncher.bin"');
+ assert.notEqual(isolatedSetup,setup,'test must isolate installed executable path');
+ writeFileSync(altered,'using Registry=FakeRegistry;\n'+isolatedSetup.replace('Global\\\\VisionDHelperSetup-','Local\\\\VisionDHelperSetup-Test-'+work.split(/[\\/]/).at(-1)+'-'));
  execFileSync(join(process.env.WINDIR||'C:\\Windows','Microsoft.NET','Framework64','v4.0.30319','csc.exe'),['/nologo','/target:exe','/main:SetupRegistryHarness','/r:System.Security.dll','/r:System.Web.Extensions.dll','/r:System.Windows.Forms.dll','/r:System.Drawing.dll','/r:System.Management.dll','/out:'+exe,'tools\\browser-launcher\\Launcher.cs',altered,'scripts\\fixtures\\SetupRegistryHarness.cs'],{stdio:'inherit'});
  console.log(execFileSync(exe,[],{encoding:'utf8',timeout:10000}).trim());
  const holding=spawn(exe,['hold'],{windowsHide:true,stdio:['pipe','pipe','pipe']});
