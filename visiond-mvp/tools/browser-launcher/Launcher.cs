@@ -243,6 +243,7 @@ namespace VisionDBrowserLauncher
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8192, RecursionLimit = 8 };
         private static readonly string Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VisionD", "BrowserLauncher", "Transport");
         private static readonly string ConfigPath = Path.Combine(Root, "helper.dpapi");
+        internal static readonly string PairDiagnosticPath = Path.Combine(Path.GetDirectoryName(ConfigPath), "pair-diagnostic.txt");
         private static readonly object WorkLock = new object();
         private static Dictionary<string, object> config;
         internal static string Hex(byte[] value) { return BitConverter.ToString(value).Replace("-", "").ToLowerInvariant(); }
@@ -330,13 +331,19 @@ namespace VisionDBrowserLauncher
         internal static string PairStatus="";
         internal static int Pair(string intentId="")
         {
-            Load();return PairLoaded(intentId);
+            Load();Setup.TracePair(Setup.PairPhase.ConfigLoaded);return PairLoaded(intentId);
         }
         private static int PairLoaded(string intentId="")
         {
             string code=RandomHex().Substring(0,12).ToUpperInvariant();var attempt=new Dictionary<string,object>();foreach(string key in new[]{"helper_id","owner_hash","port","secret"})attempt[key]=config[key];attempt["pair_code"]=code;if(config.ContainsKey("replaces_helper_id"))attempt["replaces_helper_id"]=config["replaces_helper_id"];
             if(intentId!="")attempt["intent_id"]=intentId;
-            var stage=Api("pair-stage",attempt);if(Field(stage,"paired")=="True"){PairStatus="ตัวช่วยนี้ผูกบัญชีแล้ว ไม่ต้องผูกซ้ำ กลับหน้า VisionD ที่ใช้อยู่แล้วกดรีเฟรชสถานะ Helper";PairCodeMessage(IntPtr.Zero,PairStatus,"VisionD Helper",0);return 0;}
+            Setup.TracePair(Setup.PairPhase.StageStart);
+            Dictionary<string,object> stage;
+            try{stage=Api("pair-stage",attempt);}
+            catch(RevokedHelperException){Setup.TracePair(Setup.PairPhase.StageRevoked);throw;}
+            catch(WebException error){var response=error.Response as HttpWebResponse;Setup.TracePair(Setup.PairPhase.StageHttp,response==null?0:(int)response.StatusCode);throw;}
+            catch(Exception){Setup.TracePair(Setup.PairPhase.StageLocal);throw;}
+            Setup.TracePair(Setup.PairPhase.StageAccepted);if(Field(stage,"paired")=="True"){PairStatus="ตัวช่วยนี้ผูกบัญชีแล้ว ไม่ต้องผูกซ้ำ กลับหน้า VisionD ที่ใช้อยู่แล้วกดรีเฟรชสถานะ Helper";PairCodeMessage(IntPtr.Zero,PairStatus,"VisionD Helper",0);return 0;}
             string id=Field(stage,"pair_id");if(id!=Field(config,"helper_id"))throw new InvalidDataException("คำตอบผูกเครื่องไม่ตรงกับตัวช่วยนี้");
             if(intentId!=""&&Field(stage,"pair_code")!=""){string recovered=Field(stage,"pair_code");if(!Regex.IsMatch(recovered,"\\A[A-F0-9]{12}\\z"))throw new InvalidDataException();code=recovered;}
             PairCodeMessage(IntPtr.Zero,"รหัสคำขอนี้: "+code+(intentId==""?"\nใช้ภายใน 5 นาที กรอกในหน้า VisionD ตั้งค่า Helper ที่คุณเปิดอยู่":"\nใช้ภายใน 5 นาที เทียบกับรหัสในหน้า VisionD เดิม ไม่ต้องกรอก")+" แล้วตรวจและยืนยันในเบราว์เซอร์เดิม\nอย่าแจ้งรหัสแก่ผู้อื่น ตัวช่วยจะไม่เปิดเบราว์เซอร์ให้", "VisionD · รหัสผูกเครื่อง",0);PairStatus="แสดงรหัสคำขอแล้ว ตรวจและยืนยันในหน้า VisionD เดิม การปิดกล่องนี้ยังไม่ใช่การยืนยัน";return 0;

@@ -1,0 +1,51 @@
+{
+  "version": "0.20.83",
+  "platform": "Windows x64 / .NET Framework 4.8 / Chrome",
+  "signature_status": "NotSigned",
+  "executable": {
+    "file": "VisionD-Helper-Setup.exe",
+    "sha256": "56b0c7dd0b3ea0c8d57bad6a6688895bf54cc47ef7e71845d8c98ba08f721bb5"
+  },
+  "source_archive": {
+    "file": "VisionD-Helper-Source.zip",
+    "sha256": "f14390a1965ba8c83068a5d45879bc533dfee2c81c7d82ad88a1ad7ca96d0a2d"
+  },
+  "sources": [
+    {
+      "file": "Launcher.cs",
+      "sha256": "fa5725f02398044ac453b728c9ec41583d10f4049cda93078a02e692fcc7314d"
+    },
+    {
+      "file": "Setup.cs",
+      "sha256": "5ef6f72c75cdb06f450e1fb5326a8588093f1a43e32fe89d0bee78373b3f1047"
+    },
+    {
+      "file": "InstallState.ps1",
+      "sha256": "d00f5864a360772e6d279e340967b3adf77c6e8104324a29960074ef8d161ff9"
+    },
+    {
+      "file": "install.ps1",
+      "sha256": "34fb0088a85ad271c363e15bb0c13ba4d037af686242edf6edd301de7b273aa4"
+    },
+    {
+      "file": "uninstall.ps1",
+      "sha256": "8515b166dbcd2f8c3221083f38ed98702f100839612a8d4dd0119ed766af4403"
+    },
+    {
+      "file": "README.md",
+      "sha256": "c9fe8bf90ee28f291cde07c83b06f2e2aa6bbf2eb5b8ebb56bd13248fd54ee5b"
+    },
+    {
+      "file": "build-release.mjs",
+      "sha256": "529e209d022b630636453c65619fbe83a7c4b2c67f4ba41f0a01b34c8ef26d14"
+    },
+    {
+      "file": "single-tab-probe.mjs",
+      "sha256": "a2df7d9566e9a39d7d117b1032075062b6313fe301c8b28c5e2655bab2698a8a"
+    },
+    {
+      "file": "LICENSE",
+      "sha256": "04e17c83269c4562d14241c329bafaec373fdf75b22b23763239105422f51a0b"
+    }
+  ]
+}

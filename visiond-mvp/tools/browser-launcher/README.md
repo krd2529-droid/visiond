@@ -1,5 +1,9 @@
 # VisionD Browser Launcher
 
+## Local pairing diagnostic (v0.20.83)
+
+The installed Helper records only fixed pairing phase names and a numeric HTTP status in its ACL-protected `pair-diagnostic.txt` beside `helper.dpapi`. It overwrites the previous attempt and records no account code, intent, Helper ID, URL, request body, secret, or profile data. This identifies whether a failed pairing stopped before config load, before the stage request, at a stage HTTP response, or after an accepted stage. A failure does not alter the Helper identity or pairing rules.
+
 ## Revoked local identity recovery (v0.20.82)
 
 After the user confirms the account code in the installed Helper, an exact `LAUNCHER_HELPER_REVOKED` response for its current ID, owner, port, secret, user and intent starts a new encrypted local candidate without a second native dialog. The original identity and profiles stay unchanged until the browser user compares the new code, confirms the exact same-owner helper being replaced, and the native client receives signed confirmation of that replacement. Other errors do not rotate identity. An active helper attached to an unconfirmed intent is reported as unverified to the wizard, so it cannot be presented as a completed new local pairing.

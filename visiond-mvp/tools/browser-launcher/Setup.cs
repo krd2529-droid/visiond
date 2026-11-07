@@ -5,14 +5,15 @@ using System.Security.Cryptography;
 using System.Management;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Net;
 using Microsoft.Win32;
-[assembly:System.Reflection.AssemblyVersion("0.20.82.0")]
-[assembly:System.Reflection.AssemblyFileVersion("0.20.82.0")]
+[assembly:System.Reflection.AssemblyVersion("0.20.83.0")]
+[assembly:System.Reflection.AssemblyFileVersion("0.20.83.0")]
 [assembly:System.Reflection.AssemblyProduct("VisionD Helper")]
 
 namespace VisionDBrowserLauncher {
  internal static class Setup {
-  internal const string Version="0.20.82";
+  internal const string Version="0.20.83";
   private const string Marker="VisionD Browser Launcher v1";
   private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VisionD","BrowserLauncher");
   private static readonly string Exe=Path.Combine(Root,"VisionDBrowserLauncher.exe");
@@ -27,7 +28,16 @@ namespace VisionDBrowserLauncher {
   private static string ServeCommand {get{return "\""+Exe+"\" --serve";}}
   internal static bool ShouldAutoInstall(string source,string installed){return !String.Equals(source,installed,StringComparison.OrdinalIgnoreCase);}
   internal static int PairAfterConsent(string intentId,Func<int> pair,Func<string,int> renew){try{return pair();}catch(LocalHelper.RevokedHelperException){if(intentId=="")throw;return renew(intentId);}}
-  internal static int PairExplicit(bool replace=false,string intentId=""){int result=0;try{RunExclusive(()=>{if(!Owned())throw new InvalidOperationException("กรุณาติดตั้งตัวช่วยก่อน");LocalHelper.PairStatus="ยกเลิกการเริ่มผูกเครื่อง ยังไม่มีการยืนยัน";string accountCode=intentId==""?"":LocalHelper.PairIntentAccount(intentId);string prompt=intentId==""?"คุณเพิ่งกดเริ่มผูกเครื่องจากหน้า VisionD ที่เข้าสู่ระบบอยู่ใช่หรือไม่? จะแสดงรหัสให้กรอกในเบราว์เซอร์เดิม ไม่เปิดเว็บไซต์ใหม่":"รหัสยืนยันบัญชีจากหน้า VisionD เดิม: "+accountCode+"\nตรวจว่ารหัสนี้ตรงกับหน้า VisionD ที่คุณเพิ่งกดถัดไปบนเครื่องนี้ก่อนยืนยัน รหัสผูกเครื่องอีกชุดจะปรากฏให้เทียบในเบราว์เซอร์เดิม";if(MessageBox.Show(prompt,"ยืนยันบัญชีและเครื่อง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;result=replace?LocalHelper.ReplacePair():PairAfterConsent(intentId,()=>LocalHelper.Pair(intentId),id=>LocalHelper.RenewRevokedPair(id));});}catch(Exception){LocalHelper.PairStatus="เริ่มผูกเครื่องไม่สำเร็จ กรุณาตรวจบัญชีหรือโหลดหน้า VisionD ใหม่";MessageBox.Show(LocalHelper.PairStatus,"VisionD Helper");result=2;}return result;}
+  internal enum PairPhase { Start, AccountVerified, ConsentAccepted, ConfigLoaded, StageStart, StageHttp, StageLocal, StageRevoked, StageAccepted, Failed }
+  private static string PairSteps="";
+  internal static void TracePairAt(string path,PairPhase phase,int httpStatus=0){
+   if(phase==PairPhase.Start)PairSteps="";
+   string entry=phase.ToString()+(httpStatus>=100&&httpStatus<=599?" HTTP "+httpStatus:"");
+   PairSteps=(PairSteps.Length>400?"":PairSteps)+entry+"\n";
+   try{File.WriteAllText(path,DateTime.UtcNow.ToString("o")+"\n"+PairSteps);}catch{}
+  }
+  internal static void TracePair(PairPhase phase,int httpStatus=0){TracePairAt(LocalHelper.PairDiagnosticPath,phase,httpStatus);}
+  internal static int PairExplicit(bool replace=false,string intentId=""){int result=0;TracePair(PairPhase.Start);try{RunExclusive(()=>{if(!Owned())throw new InvalidOperationException("กรุณาติดตั้งตัวช่วยก่อน");LocalHelper.PairStatus="ยกเลิกการเริ่มผูกเครื่อง ยังไม่มีการยืนยัน";string accountCode=intentId==""?"":LocalHelper.PairIntentAccount(intentId);TracePair(PairPhase.AccountVerified);string prompt=intentId==""?"คุณเพิ่งกดเริ่มผูกเครื่องจากหน้า VisionD ที่เข้าสู่ระบบอยู่ใช่หรือไม่? จะแสดงรหัสให้กรอกในเบราว์เซอร์เดิม ไม่เปิดเว็บไซต์ใหม่":"รหัสยืนยันบัญชีจากหน้า VisionD เดิม: "+accountCode+"\nตรวจว่ารหัสนี้ตรงกับหน้า VisionD ที่คุณเพิ่งกดถัดไปบนเครื่องนี้ก่อนยืนยัน รหัสผูกเครื่องอีกชุดจะปรากฏให้เทียบในเบราว์เซอร์เดิม";if(MessageBox.Show(prompt,"ยืนยันบัญชีและเครื่อง",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;TracePair(PairPhase.ConsentAccepted);result=replace?LocalHelper.ReplacePair():PairAfterConsent(intentId,()=>LocalHelper.Pair(intentId),id=>LocalHelper.RenewRevokedPair(id));});}catch(Exception){TracePair(PairPhase.Failed);LocalHelper.PairStatus="เริ่มผูกเครื่องไม่สำเร็จ กรุณาตรวจบัญชีหรือโหลดหน้า VisionD ใหม่";MessageBox.Show(LocalHelper.PairStatus,"VisionD Helper");result=2;}return result;}
   private static string ProtocolCommand {get{return "\""+Exe+"\" \"%1\"";}}
   [System.Runtime.InteropServices.DllImport("shell32.dll")] private static extern void SHChangeNotify(uint eventId,uint flags,IntPtr item1,IntPtr item2);
   private static void NotifyRegistry(){SHChangeNotify(0x08000000,0,IntPtr.Zero,IntPtr.Zero);}
