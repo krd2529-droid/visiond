@@ -95,7 +95,7 @@ export async function prepareHandoffContinuation(env,auth,channelId){
 }
 export function handoffCompletion(status,channelId='',id=''){
  const ok=['connected','permissions_required'].includes(status);
- const text=ok?'บันทึกการอนุญาตแล้วสำหรับการเชื่อมต่อ TikTok ขั้นพื้นฐาน กลับไปหน้าหลัก VisionD แล้วกดรีเฟรชช่องเพื่อตรวจสิทธิ์ API':'หน้านี้ยังยืนยันการอนุญาต TikTok API ไม่ได้ กลับไปหน้าหลัก VisionD เพื่อตรวจสถานะช่องก่อนเริ่มเชื่อมต่ออีกครั้ง';
+ const text=ok?'บันทึกการอนุญาตแล้วสำหรับการเชื่อมต่อ TikTok ขั้นพื้นฐาน กลับไปหน้าหลัก VisionD แล้วกดรีเฟรชช่องเพื่อตรวจสิทธิ์ API':status==='invalid_state'?'ยังสรุปผลการอนุญาตจากหน้านี้ไม่ได้ กลับไปหน้าหลัก VisionD แล้วรีเฟรชช่องเพื่อตรวจสถานะล่าสุด':status==='denied'?'ไม่ได้รับการอนุญาต TikTok สำหรับคำขอนี้ กลับไปหน้าหลัก VisionD แล้วตรวจสถานะช่อง':'คำขอเชื่อม TikTok ครั้งนี้ไม่สำเร็จ กลับไปหน้าหลัก VisionD แล้วตรวจสถานะช่อง';
  const detail=ok?'การเปิดโปรไฟล์และสิทธิ์ API เป็นคนละขั้น สิทธิ์สถิติอาจยังไม่ครบ':'การเปิดหรือสลับโปรไฟล์ TikTok เป็นคนละขั้นกับการอนุญาต API โปรไฟล์เดิมยังคงอยู่';
  return new Response(`<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>VisionD · TikTok</title><body><h1>${text}</h1><p>${detail}</p><p>คุณสามารถปิดแท็บนี้ได้</p></body></html>`,{headers:{...privateHeaders,'content-type':'text/html; charset=utf-8','content-security-policy':"default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",...(id?{'set-cookie':`${nonceName(id)}=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0`}:{})}});
 }
