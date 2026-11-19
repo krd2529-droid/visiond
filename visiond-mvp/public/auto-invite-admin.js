@@ -18,8 +18,8 @@ const setup=document.querySelector('#autoInviteSetupForm'),setupState=document.q
 setup.onsubmit=async event=>{
   event.preventDefault();
   const file=setup.elements.installer.files[0],submit=setup.querySelector('button[type=submit]');
-  if(!file||file.name!=='FollowMe-Setup-1.7.4.exe'||file.size!==45255055){setupState.textContent='กรุณาเลือกตัวติดตั้งลูกค้า FollowMe-Setup-1.7.4.exe ที่ถูกต้อง';return}
-  const body=new FormData();body.set('code','auto-invite');body.set('name','Follow me');body.set('description',setup.elements.description.value);body.set('platform_type','windows');body.set('current_version','1.7.4');body.set('minimum_version','1.7.4');body.set('plans',JSON.stringify([{plan_code:'monthly',name:'คีย์ 30 วัน · Windows 1 เครื่อง',price:590},{plan_code:'lifetime',name:'คีย์ตลอดชีพ · Windows 1 เครื่อง',price:1590}]));body.set('installer',file);
+  if(!file||file.name!=='FollowMe-Setup-1.7.6.exe'||file.size!==45258047){setupState.textContent='กรุณาเลือกตัวติดตั้งลูกค้า FollowMe-Setup-1.7.6.exe ที่ถูกต้อง';return}
+  const body=new FormData();body.set('code','auto-invite');body.set('name','Follow me');body.set('description',setup.elements.description.value);body.set('platform_type','windows');body.set('current_version','1.7.6');body.set('minimum_version','1.7.6');body.set('plans',JSON.stringify([{plan_code:'monthly',name:'คีย์ 30 วัน · Windows 1 เครื่อง',price:590},{plan_code:'lifetime',name:'คีย์ตลอดชีพ · Windows 1 เครื่อง',price:1590}]));body.set('installer',file);
   submit.disabled=true;setupState.textContent='กำลังตรวจและอัปโหลดตัวติดตั้ง…';
   try{const r=await fetch('/api/admin/vision7/programs',{method:'POST',body}),d=await r.json();if(!r.ok)throw new Error(d.error||'เพิ่มโปรแกรมไม่สำเร็จ');setupState.textContent='เพิ่ม Follow me พร้อมแพ็กเกจ 590 และ 1,590 บาทแล้ว';setup.reset();window.location.reload()}
   catch(error){setupState.textContent=error.message}finally{submit.disabled=false}
