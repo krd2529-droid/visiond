@@ -2,7 +2,7 @@
 -- Keep both offers draft until the verified 1.7.4 release and Worker are active.
 UPDATE vision7_plans SET name='คีย์ตลอดชีพ · Windows 1 เครื่อง',price=1590,offer_price=159000,duration_days=NULL,updated_at=CURRENT_TIMESTAMP
   WHERE id=8 AND program_id=4 AND product_id=5497 AND plan_code='lifetime' AND price=690 AND offer_price=69000;
-UPDATE products SET title='Follow me · คีย์ตลอดชีพ · Windows 1 เครื่อง',price=159000,status='draft',promotion_percent=0,updated_at=CURRENT_TIMESTAMP
+UPDATE products SET title='Follow me · คีย์ตลอดชีพ · Windows 1 เครื่อง',price=159000,status='draft',updated_at=CURRENT_TIMESTAMP
   WHERE id=5497 AND slug='vbot-key-auto-invite-lifetime' AND source='vision7' AND product_kind='vision7-key' AND price=69000;
 INSERT INTO products(slug,title,short_description,description,price,cover_url,preview_urls,category,file_type,pages,status,source,product_kind)
   SELECT 'vbot-key-auto-invite-monthly','Follow me · คีย์ 30 วัน · Windows 1 เครื่อง',
