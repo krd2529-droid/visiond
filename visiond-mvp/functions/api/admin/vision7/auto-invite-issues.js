@@ -4,12 +4,13 @@ import { ensureVision7Schema } from '../../../_vision7_schema.js';
 import { ensureAutoInviteSchema } from '../../../_auto_invite.js';
 
 export const autoInviteAdminPageSql = `SELECT oi.id order_item_id,o.id order_id,o.order_no,o.user_id,o.status order_status,
-    u.name user_name,u.email,oi.price,i.machine_id,i.key_last4,i.issued_at
-    FROM vision7_programs p JOIN vision7_plans q ON q.program_id=p.id AND q.plan_code='lifetime'
+    u.name user_name,u.email,oi.price,q.plan_code,i.machine_id,i.key_last4,i.issued_at,i.expires_at
+    FROM vision7_programs p JOIN vision7_plans q ON q.program_id=p.id AND q.plan_code IN ('monthly','lifetime')
     CROSS JOIN order_items oi INDEXED BY idx_auto_invite_order_items_product
     JOIN orders o ON o.id=oi.order_id JOIN users u ON u.id=o.user_id
     LEFT JOIN auto_invite_issues i ON i.order_item_id=oi.id
-    WHERE p.code='auto-invite' AND oi.product_id=q.product_id AND oi.price=69000
+    WHERE p.code='auto-invite' AND oi.product_id=q.product_id
+      AND ((q.plan_code='monthly' AND oi.price=59000) OR (q.plan_code='lifetime' AND oi.price IN (69000,159000)))
       AND (o.status='paid' OR i.order_item_id IS NOT NULL) AND (? IS NULL OR oi.id<?)
     ORDER BY oi.id DESC LIMIT 25`;
 

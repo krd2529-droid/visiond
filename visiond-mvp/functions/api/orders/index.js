@@ -68,6 +68,7 @@ export async function onRequestPost(ctx) {
     `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,p.member_category,p.member_duration_months,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
       (SELECT q.id FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code NOT IN ('sms-mix','auto-invite') OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
       (SELECT v.code FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 LIMIT 1) vision7_program_code,
+      (SELECT q.plan_code FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 LIMIT 1) vision7_plan_code,
       (SELECT q.offer_price FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code<>'sms-mix' OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.course_type='online_course'
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
@@ -94,7 +95,7 @@ export async function onRequestPost(ctx) {
   if(vpageItems.length&&!vpagePayment)return json({error:'ยังไม่ได้ตั้งค่าบัญชีรับโอน Vpage Credit กรุณาติดต่อผู้ดูแลระบบ',code:'VPAGE_PAYMENT_ACCOUNT_NOT_CONFIGURED'},503,{'cache-control':'private, no-store'});
   if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
   if(orderedResults.some(product=>product.vision7_program_code==='auto-invite')){
-    if(orderedResults.some(product=>product.vision7_program_code==='auto-invite'&&(product.price!==69000||product.slug!=='vbot-key-auto-invite-lifetime')))
+    if(orderedResults.some(product=>product.vision7_program_code==='auto-invite'&&!((product.vision7_plan_code==='monthly'&&product.price===59000&&product.slug==='vbot-key-auto-invite-monthly')||(product.vision7_plan_code==='lifetime'&&product.price===159000&&product.slug==='vbot-key-auto-invite-lifetime'))))
       return json({error:'แพ็กเกจ Follow me ยังไม่พร้อมขาย',code:'AUTO_INVITE_OFFER_INVALID'},409);
     try{await autoInviteSigner(ctx.env)}catch{return json({error:'ระบบออกคีย์ Follow me ยังไม่พร้อม กรุณาลองใหม่ภายหลัง',code:'AUTO_INVITE_SIGNER_UNAVAILABLE'},503)}
   }

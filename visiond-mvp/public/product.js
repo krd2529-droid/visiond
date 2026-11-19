@@ -64,9 +64,6 @@ function renderProduct(product){
     const row=productPage.querySelector('.product-price-row'),priceBox=row?.firstElementChild,badge=row?.querySelector('.instant-badge');
     if(priceBox)priceBox.innerHTML=`<small>ราคาโปรโมชั่น</small><div class="product-promo-prices"><del>${money(product.original_price||product.price)}</del><div class="price">${money(product.sale_price)}</div></div>`;
     if(badge)badge.innerHTML=`โปรโมชั่น <b class="product-promo-pill">ลด ${Number(product.promotion_percent)}%</b>`;
-  }else if(product.slug==='vbot-key-auto-invite-lifetime'&&Number(product.price)===69000){
-    const priceBox=productPage.querySelector('.product-price-row')?.firstElementChild;
-    if(priceBox)priceBox.innerHTML=`<small>ราคาโปรโมชั่น</small><div class="product-promo-prices"><del>990 บาท</del><div class="price">${money(product.price)}</div></div>`;
   }
   document.dispatchEvent(new CustomEvent('visiond:product-rendered'));
   document.querySelectorAll('[data-preview]').forEach((button,index)=>{button.setAttribute('aria-pressed',index===0?'true':'false');button.addEventListener('click',()=>{document.querySelector('#mainProductImage').src=button.dataset.preview;document.querySelectorAll('.product-thumb').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',active?'true':'false')});})});

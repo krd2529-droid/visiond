@@ -10,7 +10,7 @@ const root=path.resolve('public'),evidence=path.resolve('../.agents/reports');fs
 const offer={id:91,product_id:191,product_slug:'demo-monthly',code:'monthly',duration_days:30,price:9900};
 const app=(id,platform,name)=>({id,code:`tool-${id}`,app_name:name,app_description:`คำอธิบาย ${name}`,platform_type:platform,current_version:'1.0.0',offers:[offer]});
 const catalog=[...Array.from({length:26},(_,index)=>app(index+1,index%2?'mac':'windows',index===25?'โปรแกรมกลางชื่อทดสอบ':`โปรแกรมคอม ${index+1}`)),app(27,'web','เว็บเครื่องมือ'),app(28,'android','แอปมือถือ'),app(29,'veasy','V Easy'),app(30,'cross-platform','โปรแกรมหลายระบบ')];
-catalog.unshift({...app(40,'windows','Follow me'),code:'auto-invite',current_version:'1.7.3',offers:[{id:8,product_id:5497,product_slug:'vbot-key-auto-invite-lifetime',code:'lifetime',duration_days:null,offer_price:69000}]});
+catalog.unshift({...app(40,'windows','Follow me'),code:'auto-invite',current_version:'1.7.4',offers:[{id:9,product_id:5498,product_slug:'vbot-key-auto-invite-monthly',code:'monthly',duration_days:30,offer_price:59000},{id:8,product_id:5497,product_slug:'vbot-key-auto-invite-lifetime',code:'lifetime',duration_days:null,offer_price:159000}]});
 let empty=false,delayDesktop=false,releaseDesktop,desktopStarted,listRequests=[],detailRequests=[],trialRequests=0,vxRequests=0;
 const server=http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/vtools'){vxRequests++;const response=await plansCatalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
   if(url.pathname==='/api/vision7/trial'&&req.method==='POST'){trialRequests++;let body='';for await(const chunk of req)body+=chunk;assert.equal(JSON.parse(body).program_id,99);res.setHeader('content-type','application/json');res.end(JSON.stringify({ok:true,key:'VD7-SYNTHETIC'}));return}
@@ -29,9 +29,10 @@ try{
   assert.equal(vxRequests,0,'public Vtools no longer fetches VX plans');
   const follow=page.locator('#programs .vbot-card').filter({hasText:'Follow me'});
   assert.equal(await follow.count(),1,'Follow me appears in computer group');
-  assert.match(await follow.innerText(),/1.7.3/);
-  assert.match(await follow.locator('del').innerText(),/990 (บาท|THB)/);
-  assert.match(await follow.locator('.vbot-sale-price strong').innerText(),/690 (บาท|THB)/);
+  assert.match(await follow.innerText(),/1.7.4/);
+  assert.match(await follow.innerText(),/590 (บาท|THB)/);
+  assert.match(await follow.innerText(),/1,590 (บาท|THB)/);
+  assert.equal(await follow.locator('del').count(),0,'old comparison price is gone');
   await page.locator('#vbotMore').click();
   await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===24+3);
   assert.equal(new Set(await page.locator('#programs .vbot-card h3').allInnerTexts()).size,27,'keyset pages do not duplicate');
@@ -52,14 +53,19 @@ try{
   await page.goto(base+'/vtools?app=auto-invite');
   await page.locator('.vbot-detail').waitFor();
   assert.match(await page.locator('.vbot-detail').innerText(),/Follow me/);
-  assert.match(await page.locator('.vbot-detail .vbot-sale-price del').innerText(),/990 (บาท|THB)/);
-  assert.match(await page.locator('.vbot-detail .vbot-sale-price strong').innerText(),/690 (บาท|THB)/);
-  await page.locator('[data-offer]').click();
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),69000,'cart retains 690-baht offer');
+  assert.equal(await page.locator('[data-offer]').count(),2);
+  assert.match(await page.locator('.vbot-detail').innerText(),/590 (บาท|THB)/);
+  assert.match(await page.locator('.vbot-detail').innerText(),/1,590 (บาท|THB)/);
+  assert.equal(await page.locator('.vbot-detail del').count(),0);
+  await page.locator('[data-offer]').nth(0).click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),59000,'monthly cart is 590 baht');
+  await page.locator('[data-offer]').nth(1).click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),159000,'lifetime cart is 1,590 baht');
   await page.goto(base+'/');
-  assert.equal(await page.locator('#homeFollowMeTitle').innerText(),'Follow me 1.7.3');
-  assert.match(await page.locator('.home-followme-offer del').innerText(),/990 (บาท|THB)/);
-  assert.match(await page.locator('.home-followme-offer').innerText(),/690 (บาท|THB)/);
+  assert.equal(await page.locator('#homeFollowMeTitle').innerText(),'Follow me');
+  assert.equal(await page.locator('.home-followme-offer del').count(),0);
+  assert.match(await page.locator('.home-followme-offer').innerText(),/590 (บาท|THB)/);
+  assert.match(await page.locator('.home-followme-offer').innerText(),/1,590 (บาท|THB)/);
   assert.equal(new URL(await page.locator('.home-followme-offer a').first().getAttribute('href'),'http://localhost').pathname,'/vtools');
   const mobile=await browser.newPage({viewport:{width:390,height:844}});
   await mobile.goto(base+'/vtools');
@@ -67,5 +73,5 @@ try{
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'mobile Vtools has no horizontal overflow');
   await mobile.goto(base+'/');
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'mobile homepage has no horizontal overflow');
-  console.log('PASS Vtools browser: VX hidden, Follow me desktop/home/detail sale price, cart 690, keyset, mobile');
+  console.log('PASS Vtools browser: VX hidden, Follow me desktop/home/detail two prices, exact carts, keyset, mobile');
 }finally{await browser.close();server.close()}

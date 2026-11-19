@@ -1,6 +1,6 @@
 /* VisionD Storefront Home adoption — v0.14.90 */
 body{color:var(--vd-text)}
-.home-followme-offer{margin-top:24px;background:linear-gradient(135deg,#073f59,#087777 58%,#109b91)}.home-followme-offer .home-member-price del{font-size:20px;color:#dceae6}.home-followme-offer .home-member-price>strong{font-size:clamp(30px,4vw,42px)}
+.home-followme-offer{margin-top:24px;background:linear-gradient(135deg,#073f59,#087777 58%,#109b91)}.home-followme-offer .home-member-price>strong{font-size:clamp(23px,3vw,34px)}
 .home-ai-hero{display:block;max-width:1180px;margin:32px auto 24px;min-height:0;padding:0!important;overflow:hidden;background:#001d1b!important}.home-vlearning-preview>img{display:block;width:100%;height:auto;aspect-ratio:1729/910;object-fit:cover}.home-vlearning-preview-action{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:18px 24px;background:#fff;color:var(--vd-ai-midnight)}.home-vlearning-preview-action div{display:grid;gap:3px}.home-vlearning-preview-action strong{font-size:20px}.home-vlearning-preview-action span{color:var(--vd-text-secondary)}.home-vlearning-preview-action .vds-btn{flex:0 0 auto;min-height:48px}
 .home-hero-secondary{border-color:rgba(255,255,255,.65);background:rgba(255,255,255,.08);color:#fff}
 .home-hero-secondary:hover{background:#fff;color:var(--vd-ai-midnight)}

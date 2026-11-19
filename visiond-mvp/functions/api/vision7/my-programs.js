@@ -6,15 +6,17 @@ import { maskedLicense, refreshLicenseExpiry } from '../../_vision7.js';
 import { decryptVision7Key, vision7LicenseEncryptionConfigured } from '../../_vision7_license_crypto.js';
 import { ensureAutoInviteSchema } from '../../_auto_invite.js';
 
-export const autoInviteCustomerPageSql = `SELECT oi.id order_item_id,oi.order_id,oi.product_title,p.current_version,
-    i.machine_id,i.key_ciphertext,i.issued_at,r.id release_id,r.version release_version,r.file_name,r.file_size,r.sha256
+export const autoInviteCustomerPageSql = `SELECT oi.id order_item_id,oi.order_id,oi.product_title,p.current_version,q.plan_code,
+    i.machine_id,i.key_ciphertext,i.issued_at,i.expires_at,r.id release_id,r.version release_version,r.file_name,r.file_size,r.sha256
     FROM orders o INDEXED BY idx_orders_user_id
     CROSS JOIN order_items oi INDEXED BY idx_order_items_order_product
-    JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code='lifetime'
+    JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code IN ('monthly','lifetime')
     JOIN vision7_programs p ON p.id=q.program_id AND p.code='auto-invite'
     LEFT JOIN auto_invite_issues i ON i.order_item_id=oi.id
     LEFT JOIN vision7_releases r ON r.id=(SELECT id FROM vision7_releases WHERE program_id=p.id AND status='published' ORDER BY published_at DESC,id DESC LIMIT 1)
-    WHERE o.user_id=? AND o.status='paid' AND oi.order_id=o.id AND oi.price=69000 AND (? IS NULL OR oi.id<?)
+    WHERE o.user_id=? AND o.status='paid' AND oi.order_id=o.id
+      AND ((q.plan_code='monthly' AND oi.price=59000) OR (q.plan_code='lifetime' AND oi.price IN (69000,159000)))
+      AND (? IS NULL OR oi.id<?)
     ORDER BY oi.id DESC LIMIT 25`;
 
 export async function onRequestGet(ctx) {
@@ -64,7 +66,7 @@ export async function onRequestGet(ctx) {
       try { key = await decryptVision7Key(ctx.env,row.key_ciphertext); } catch {}
     }
     autoInviteItems.push({ order_item_id:row.order_item_id,order_id:row.order_id,title:row.product_title,
-      current_version:row.current_version,machine_id:row.machine_id,issued_at:row.issued_at,key,
+      current_version:row.current_version,plan_code:row.plan_code,machine_id:row.machine_id,issued_at:row.issued_at,expires_at:row.expires_at,key,
       release:row.release_id?{id:row.release_id,version:row.release_version,file_name:row.file_name,
         file_size:row.file_size,sha256:row.sha256,download_url:`/api/vision7/releases/${row.release_id}/download`}:null });
   }

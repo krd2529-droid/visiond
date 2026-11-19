@@ -4,7 +4,7 @@ import { ensureVision7Schema } from "../../../_vision7_schema.js";
 import { safeVersion, validPlanCode } from "../../../_vision7.js";
 import { rollbackVision7KeyProducts, syncVision7KeyProducts } from "../../../_vision7_key_storefront.js";
 import { autoInviteSigner } from "../../../_auto_invite.js";
-const autoInviteInstallerSha256 = '299eea7a2137cbd4395af9957146c390525da284b4500ab7b4b73c36b4998287';
+const autoInviteInstallerSha256 = 'a663303c3415ed852aa24f7bd21da71a9b584a5e8793b675b6c11a13263289c9';
 const text = (v, n = 120) =>
   String(v || "")
     .trim()
@@ -101,10 +101,11 @@ export async function onRequestPost(ctx) {
     productIds = [productId, ...plans.map((p) => p.product_id)].filter(Boolean);
   let autoInstallerBytes = null;
   if (code === 'auto-invite') {
-    if (!multipart || appName !== 'Follow me' || platform !== 'windows' || version !== '1.7.3' || b.active === 'false' || productId ||
-      !(installer instanceof File) || installer.name !== 'FollowMe-Setup-1.7.3.exe' || installer.size !== 45250333 ||
-      plans.length !== 1 || plans[0].plan_code !== 'lifetime' || Number(plans[0].price) !== 690 || plans[0].product_id)
-      return json({ error:'Follow me ต้องเป็น Windows 1.7.3 คีย์ตลอดชีพ 690 บาท พร้อมตัวติดตั้งลูกค้าที่ตรวจสอบแล้ว' },400);
+    if (!multipart || appName !== 'Follow me' || platform !== 'windows' || version !== '1.7.4' || b.active === 'false' || productId ||
+      !(installer instanceof File) || installer.name !== 'FollowMe-Setup-1.7.4.exe' || installer.size !== 45255055 ||
+      plans.length !== 2 || !plans.some(plan=>plan.plan_code==='monthly'&&Number(plan.price)===590&&!plan.product_id) ||
+      !plans.some(plan=>plan.plan_code==='lifetime'&&Number(plan.price)===1590&&!plan.product_id))
+      return json({ error:'Follow me ต้องเป็น Windows 1.7.4 คีย์ 30 วัน 590 บาท และตลอดชีพ 1,590 บาท พร้อมตัวติดตั้งลูกค้าที่ตรวจสอบแล้ว' },400);
     try { await autoInviteSigner(ctx.env); }
     catch { return json({ error:'ยังไม่ได้ตั้งค่า Secret ออกคีย์ Follow me ให้ตรงกับโปรแกรม',code:'AUTO_INVITE_SIGNER_UNAVAILABLE' },503); }
     autoInstallerBytes = await installer.arrayBuffer();

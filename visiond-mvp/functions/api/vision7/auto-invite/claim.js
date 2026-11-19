@@ -23,7 +23,7 @@ export async function onRequestPost(ctx) {
   if (purchase.machine_id && purchase.machine_id !== machineId)
     return json({ error: 'คีย์นี้ผูกกับเครื่องอื่นแล้ว ไม่สามารถเปลี่ยนเครื่องได้' }, 409, { 'cache-control': 'private, no-store' });
   let signer = null;
-  if (!purchase.machine_id) {
+  if (!purchase.key_ciphertext) {
     try { signer = await autoInviteSigner(ctx.env); }
     catch { return json({ error: 'ระบบออกคีย์ยังไม่พร้อม กรุณาลองใหม่ภายหลัง', code: 'AUTO_INVITE_SIGNER_UNAVAILABLE' }, 503, { 'cache-control': 'private, no-store' }); }
   }
