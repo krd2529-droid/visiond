@@ -10,7 +10,7 @@ const root=path.resolve('public'),evidence=path.resolve('../.agents/reports');fs
 const offer={id:91,product_id:191,product_slug:'demo-monthly',code:'monthly',duration_days:30,price:9900};
 const app=(id,platform,name)=>({id,code:`tool-${id}`,app_name:name,app_description:`คำอธิบาย ${name}`,platform_type:platform,current_version:'1.0.0',offers:[offer]});
 const catalog=[...Array.from({length:26},(_,index)=>app(index+1,index%2?'mac':'windows',index===25?'โปรแกรมกลางชื่อทดสอบ':`โปรแกรมคอม ${index+1}`)),app(27,'web','เว็บเครื่องมือ'),app(28,'android','แอปมือถือ'),app(29,'veasy','V Easy'),app(30,'cross-platform','โปรแกรมหลายระบบ')];
-catalog.unshift({...app(40,'windows','Follow me'),code:'auto-invite',current_version:'1.7.4',offers:[{id:9,product_id:5498,product_slug:'vbot-key-auto-invite-monthly',code:'monthly',duration_days:30,offer_price:59000},{id:8,product_id:5497,product_slug:'vbot-key-auto-invite-lifetime',code:'lifetime',duration_days:null,offer_price:159000}]});
+catalog.unshift({...app(40,'windows','Follow me'),name:'Follow me',code:'auto-invite',current_version:'1.7.4',offers:[{id:9,product_id:5498,product_slug:'vbot-key-auto-invite-monthly',code:'monthly',name:'คีย์ 30 วัน · Windows 1 เครื่อง',duration_days:30,price:59000,offer_price:59000},{id:8,product_id:5497,product_slug:'vbot-key-auto-invite-lifetime',code:'lifetime',name:'คีย์ตลอดชีพ · Windows 1 เครื่อง',duration_days:null,price:159000,offer_price:159000}]});
 let empty=false,delayDesktop=false,releaseDesktop,desktopStarted,listRequests=[],detailRequests=[],trialRequests=0,vxRequests=0;
 const server=http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/vtools'){vxRequests++;const response=await plansCatalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
   if(url.pathname==='/api/vision7/trial'&&req.method==='POST'){trialRequests++;let body='';for await(const chunk of req)body+=chunk;assert.equal(JSON.parse(body).program_id,99);res.setHeader('content-type','application/json');res.end(JSON.stringify({ok:true,key:'VD7-SYNTHETIC'}));return}
@@ -61,6 +61,20 @@ try{
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),59000,'monthly cart is 590 baht');
   await page.locator('[data-offer]').nth(1).click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].price),159000,'lifetime cart is 1,590 baht');
+  await page.goto(base+'/cart');
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('vd_cart')||'[]')[0]?.vbot_offers?.length===2);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].title),'Follow me · คีย์ตลอดชีพ · Windows 1 เครื่อง','cart refresh does not duplicate key prefix');
+  assert.doesNotMatch(await page.locator('#cartItems .cart-product h2').textContent(),/คีย์\s*คีย์/u,'rendered title has one key prefix');
+  assert.match(await page.locator('#cartTotal').textContent(),/1,590/);
+  await page.locator('[data-vbot-plan]').selectOption('9');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].title),'Follow me · คีย์ 30 วัน · Windows 1 เครื่อง','switching to monthly keeps one key prefix');
+  assert.doesNotMatch(await page.locator('#cartItems .cart-product h2').textContent(),/คีย์\s*คีย์/u);
+  assert.match(await page.locator('#cartTotal').textContent(),/590/);
+  await page.locator('[data-vbot-plan]').selectOption('8');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].title),'Follow me · คีย์ตลอดชีพ · Windows 1 เครื่อง','switching back to lifetime keeps one key prefix');
+  assert.doesNotMatch(await page.locator('#cartItems .cart-product h2').textContent(),/คีย์\s*คีย์/u);
+  assert.match(await page.locator('#cartTotal').textContent(),/1,590/);
+
   await page.goto(base+'/');
   assert.equal(await page.locator('#homeFollowMeTitle').innerText(),'Follow me');
   assert.equal(await page.locator('.home-followme-offer del').count(),0);

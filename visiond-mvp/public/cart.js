@@ -45,6 +45,7 @@ const saveCart = (items) => {
   localStorage.setItem("vd_cart", JSON.stringify(normalizeCart(items)));
   render();
 };
+const keyPlanTitle=name=>{const label=String(name||'').trim();return label.startsWith('คีย์')?label:`คีย์ ${label}`};
 async function refreshCartPrices(){
   const before=getCart();if(!before.length)return;
   try{
@@ -53,7 +54,7 @@ async function refreshCartPrices(){
     const [products,courses,vbot,vtools]=await Promise.all([productsResponse.json(),coursesResponse.json(),vbotResponse.json(),vtoolsResponse.json()]);
     digitalStorefrontPaused=products.storefront_closed===true;
     const publicPlans=new Set(['monthly','yearly','lifetime']),vbotOffers=[];
-    for(const app of vbot.items||[]){let offers=app.offers||[];if(typeof offers==='string'){try{offers=JSON.parse(offers)}catch{offers=[]}}offers=(Array.isArray(offers)?offers:[]).filter(offer=>publicPlans.has(String(offer.code||offer.plan_code))&&Number(offer.price)>0&&offer.product_slug&&Number(offer.product_id)>0).map(offer=>({id:Number(offer.product_id),slug:offer.product_slug,title:`${app.name||app.code} · คีย์ ${offer.name||''}`,price:Number(offer.price),cover_url:app.cover_url,category:'vbot-key',category_label:'โปรแกรม VBot พร้อมคีย์',product_kind:'vision7-key',vision7_plan_id:Number(offer.id),vbot_plan_code:String(offer.code||offer.plan_code),vbot_duration_days:offer.duration_days,vbot_app_code:app.code,vbot_platform_type:app.platform_type}));for(const offer of offers)vbotOffers.push({...offer,vbot_offers:offers})}
+    for(const app of vbot.items||[]){let offers=app.offers||[];if(typeof offers==='string'){try{offers=JSON.parse(offers)}catch{offers=[]}}offers=(Array.isArray(offers)?offers:[]).filter(offer=>publicPlans.has(String(offer.code||offer.plan_code))&&Number(offer.price)>0&&offer.product_slug&&Number(offer.product_id)>0).map(offer=>({id:Number(offer.product_id),slug:offer.product_slug,title:`${app.name||app.code} · ${keyPlanTitle(offer.name)}`,price:Number(offer.price),cover_url:app.cover_url,category:'vbot-key',category_label:'โปรแกรม VBot พร้อมคีย์',product_kind:'vision7-key',vision7_plan_id:Number(offer.id),vbot_plan_code:String(offer.code||offer.plan_code),vbot_duration_days:offer.duration_days,vbot_app_code:app.code,vbot_platform_type:app.platform_type}));for(const offer of offers)vbotOffers.push({...offer,vbot_offers:offers})}
     const available=[...(products.items||[]),...(courses.items||[]).map(course=>({...course,id:course.product_id,course_id:course.id,product_kind:'course',category:'online-course'})),...vbotOffers,...(vtools.items||[])],bySlug=new Map(available.map(item=>[item.slug,item])),fresh=before.flatMap(item=>{const product=bySlug.get(item.slug);if(!product)return digitalStorefrontPaused&&String(item.product_kind||'product')==='product'?[item]:[];return [{...item,...product,id:product.id,course_id:product.course_id||item.course_id,price:Number(product.sale_price??product.price),original_price:Number(product.original_price??product.price),promotion_percent:Number(product.promotion_percent)||0,cover_url:product.cover_url||item.cover_url}]});
     if(fresh.length!==before.length)resetActiveOrder();
     localStorage.setItem('vd_cart',JSON.stringify(fresh));render();
