@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { generateKeyPairSync, webcrypto } from 'node:crypto';
+import { createHash, generateKeyPairSync, webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { autoInvitePurchase, autoInviteSigner, claimAutoInvite, ensureAutoInviteSchema, normalizeAutoInviteMachineId, signAutoInviteKey, AUTO_INVITE_PUBLIC_KEY_B64 } from '../functions/_auto_invite.js';
@@ -59,7 +59,7 @@ ALTER TABLE order_items ADD COLUMN product_title TEXT;
 ALTER TABLE vision7_programs ADD COLUMN current_version TEXT;
 CREATE TABLE vision7_releases(id INTEGER PRIMARY KEY,program_id INTEGER,status TEXT,published_at TEXT,version TEXT,file_name TEXT,file_size INTEGER,sha256 TEXT);
 CREATE INDEX idx_v7_release_program ON vision7_releases(program_id,status,published_at DESC);
-INSERT INTO vision7_releases VALUES(1,7,'published','2026-01-01','1.0.0','AutoInvite-Setup-1.0.0.exe',43741818,'sha');`);
+INSERT INTO vision7_releases VALUES(1,7,'published','2026-01-01','1.7.0','FollowMe-Setup-1.7.0.exe',45244334,'sha');`);
 for(let n=21;n<=72;n++){
   sqlite.prepare("INSERT INTO orders(id,user_id,status,order_no) VALUES(?,1,'paid',?)").run(n,`ORDER-${n}`);
   sqlite.prepare("INSERT INTO order_items(id,order_id,product_id,price,product_title) VALUES(?,?,10,69000,'AutoInvite')").run(n,n);
@@ -86,6 +86,13 @@ assert.match(claimPlan,/SEARCH oi USING INTEGER PRIMARY KEY/,'claim lookup uses 
 assert.match(claimPlan,/SEARCH o USING INTEGER PRIMARY KEY/,'claim lookup uses order primary key');
 const adminPlan=explain(autoInviteAdminPageSql,[null,null]);
 assert.match(adminPlan,/idx_auto_invite_order_items_product/,'admin list uses AutoInvite product index');
+if (process.env.FOLLOWME_CUSTOMER_SETUP) {
+  const file=readFileSync(process.env.FOLLOWME_CUSTOMER_SETUP);
+  assert.equal(file.length,45244334,'customer installer has approved byte count');
+  assert.equal(createHash('sha256').update(file).digest('hex'),'2c3292e8d05a7d43ebc40f2e186d596685b0081e3daa639e3fea8db458372288','customer installer matches approved SHA-256');
+  const setupSource=readFileSync(new URL('../functions/api/admin/vision7/programs.js',import.meta.url),'utf8');
+  assert.ok(setupSource.includes('FollowMe-Setup-1.7.0.exe') && setupSource.includes('2c3292e8d05a7d43ebc40f2e186d596685b0081e3daa639e3fea8db458372288'));
+}
 assert.equal((await signAutoInviteKey(signer,machine,'Customer')).split('.').length,2);
 if (process.env.AUTO_INVITE_TEST_SEED_FILE) {
   const productionSigner = await autoInviteSigner({AUTO_INVITE_SIGNING_SEED:readFileSync(process.env.AUTO_INVITE_TEST_SEED_FILE,'utf8')});

@@ -1,9 +1,9 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const size=n=>`${Math.max(1,Math.ceil(Number(n||0)/1024/1024))} MB`;
-const autoCard=x=>`<article class="card" data-auto-order-item="${Number(x.order_item_id)}"><h2>${esc(x.title||'AutoInvite')}</h2><p><span class="status">ชำระเงินแล้ว</span> · คีย์ตลอดชีพ · Windows 1 เครื่อง</p>
-  ${x.release?`<section class="release"><b>ดาวน์โหลด AutoInvite · v${esc(x.release.version)}</b><p><small>${esc(x.release.file_name)} · ${size(x.release.file_size)}<br>SHA-256: <code>${esc(x.release.sha256)}</code></small></p><a class="download-button" href="${esc(x.release.download_url)}">⬇ ดาวน์โหลดตัวติดตั้ง</a></section>`:'<p class="notice">กำลังเตรียมตัวติดตั้ง กรุณาติดต่อ VisionD</p>'}
+const autoCard=x=>`<article class="card" data-auto-order-item="${Number(x.order_item_id)}"><h2>${esc(x.title||'Follow me')}</h2><p><span class="status">ชำระเงินแล้ว</span> · คีย์ตลอดชีพ · Windows 1 เครื่อง</p>
+  ${x.release?`<section class="release"><b>ดาวน์โหลด Follow me · v${esc(x.release.version)}</b><p><small>${esc(x.release.file_name)} · ${size(x.release.file_size)}<br>SHA-256: <code>${esc(x.release.sha256)}</code></small></p><a class="download-button" href="${esc(x.release.download_url)}">⬇ ดาวน์โหลดตัวติดตั้ง</a></section>`:'<p class="notice">กำลังเตรียมตัวติดตั้ง กรุณาติดต่อ VisionD</p>'}
   ${x.machine_id?`<p>ผูกกับรหัสเครื่อง <code>${esc(x.machine_id)}</code><br>หมดอายุ ไม่หมดอายุ</p><p>คีย์ <code>${esc(x.key||'กรุณาติดต่อ VisionD เพื่อกู้คีย์')}</code>${x.key?` <button class="copy" data-key="${esc(x.key)}">คัดลอก</button>`:''}</p>`:
-    `<p>ติดตั้งและเปิด AutoInvite เพื่อดู “รหัสเครื่องของคุณ” บนหน้าใส่คีย์ แล้วคัดลอกรหัสเครื่องมากรอกด้านล่าง รหัสนี้ผูกคีย์ถาวรกับ Windows เครื่องเดียว</p><form class="auto-claim"><label>รหัสเครื่อง <input name="machine_id" required maxlength="19" pattern="[0-9A-Fa-f]{4}(-[0-9A-Fa-f]{4}){3}" placeholder="1A2B-3C4D-5E6F-7A8B" autocomplete="off"></label><button type="submit">รับคีย์สำหรับเครื่องนี้</button><p class="auto-error" role="alert"></p></form>`}</article>`;
+    `<p>ติดตั้งและเปิด Follow me เพื่อดู “รหัสเครื่องของคุณ” บนหน้าใส่คีย์ แล้วคัดลอกรหัสเครื่องมากรอกด้านล่าง รหัสนี้ผูกคีย์ถาวรกับ Windows เครื่องเดียว</p><form class="auto-claim"><label>รหัสเครื่อง <input name="machine_id" required maxlength="19" pattern="[0-9A-Fa-f]{4}(-[0-9A-Fa-f]{4}){3}" placeholder="1A2B-3C4D-5E6F-7A8B" autocomplete="off"></label><button type="submit">รับคีย์สำหรับเครื่องนี้</button><p class="auto-error" role="alert"></p></form>`}</article>`;
 function bindAuto(){
   document.querySelectorAll('.auto-claim').forEach(form=>form.onsubmit=async event=>{
     event.preventDefault();const card=form.closest('[data-auto-order-item]'),button=form.querySelector('button'),error=form.querySelector('.auto-error');
@@ -15,7 +15,7 @@ function bindAuto(){
 }
 function addAutoMore(cursor){
   if(!cursor)return;
-  const more=document.createElement('button');more.textContent='ดูรายการ AutoInvite เพิ่ม';
+  const more=document.createElement('button');more.textContent='ดูรายการ Follow me เพิ่ม';
   more.onclick=async()=>{
     more.disabled=true;
     try{const r=await fetch(`/api/vision7/my-programs?auto_invite_cursor=${encodeURIComponent(cursor)}`),next=await r.json();

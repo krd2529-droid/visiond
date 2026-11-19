@@ -19,7 +19,7 @@ export async function onRequestPost(ctx) {
     return json({ error: 'กรุณากรอกรหัสเครื่องรูปแบบ XXXX-XXXX-XXXX-XXXX' }, 400, { 'cache-control': 'private, no-store' });
   await ensureAutoInviteSchema(ctx.env);
   const purchase = await autoInvitePurchase(ctx.env, orderItemId, auth.user.id);
-  if (!purchase) return json({ error: 'ยังไม่พบออเดอร์ AutoInvite ที่ชำระเงินแล้ว' }, 403, { 'cache-control': 'private, no-store' });
+  if (!purchase) return json({ error: 'ยังไม่พบออเดอร์ Follow me ที่ชำระเงินแล้ว' }, 403, { 'cache-control': 'private, no-store' });
   if (purchase.machine_id && purchase.machine_id !== machineId)
     return json({ error: 'คีย์นี้ผูกกับเครื่องอื่นแล้ว ไม่สามารถเปลี่ยนเครื่องได้' }, 409, { 'cache-control': 'private, no-store' });
   let signer = null;

@@ -95,8 +95,8 @@ export async function onRequestPost(ctx) {
   if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
   if(orderedResults.some(product=>product.vision7_program_code==='auto-invite')){
     if(orderedResults.some(product=>product.vision7_program_code==='auto-invite'&&(product.price!==69000||product.slug!=='vbot-key-auto-invite-lifetime')))
-      return json({error:'แพ็กเกจ AutoInvite ยังไม่พร้อมขาย',code:'AUTO_INVITE_OFFER_INVALID'},409);
-    try{await autoInviteSigner(ctx.env)}catch{return json({error:'ระบบออกคีย์ AutoInvite ยังไม่พร้อม กรุณาลองใหม่ภายหลัง',code:'AUTO_INVITE_SIGNER_UNAVAILABLE'},503)}
+      return json({error:'แพ็กเกจ Follow me ยังไม่พร้อมขาย',code:'AUTO_INVITE_OFFER_INVALID'},409);
+    try{await autoInviteSigner(ctx.env)}catch{return json({error:'ระบบออกคีย์ Follow me ยังไม่พร้อม กรุณาลองใหม่ภายหลัง',code:'AUTO_INVITE_SIGNER_UNAVAILABLE'},503)}
   }
   const vxItems=orderedResults.filter(p=>p.product_kind==='vx-access');
   if(vxItems.length && (orderedResults.length!==1||!VX_PLANS.some(p=>p.slug===vxItems[0].slug&&p.price===Number(vxItems[0].price))))return json({error:'สิทธิ์ VX ต้องชำระแยกครั้งละ 1 แพ็กเกจ กรุณาตรวจสอบตะกร้า'},400);
