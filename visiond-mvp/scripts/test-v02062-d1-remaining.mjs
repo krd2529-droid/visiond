@@ -79,13 +79,13 @@ sqlite.prepare("INSERT INTO users(id,email,name,password_hash,role) VALUES(6201,
 sqlite.prepare("INSERT INTO sessions(id,user_id,expires_at) VALUES('admin62',6201,datetime('now','+1 day')),('owner62',6202,datetime('now','+1 day')),('member62',6203,datetime('now','+1 day'))").run();
 sqlite.prepare("INSERT INTO settings(key,value) VALUES('visiond_digital_storefront_paused','0') ON CONFLICT(key) DO UPDATE SET value='0'").run();
 
-// Count cache is canonical across group/cursor pages. A delayed Cache API put
-// keeps the in-flight aggregate joinable until it is durable.
+// Count cache is canonical across group/cursor pages. Concurrent requests
+// cannot share an unresolved Promise across Cloudflare request contexts.
 const cacheRows=new Map();let holdPut=true,releasePut;const heldPut=new Promise(resolve=>{releasePut=resolve});
 globalThis.caches={default:{async match(key){const value=cacheRows.get(key.url);return value?.clone()||null},async put(key,response){if(holdPut)await heldPut;cacheRows.set(key.url,response.clone())}}};
 const request=path=>new Request(`https://visiondonline.com${path}`);
 seen.length=0;const pageOne=listProducts({env,request:request('/api/products?limit=24')}),groupPage=listProducts({env,request:request('/api/products?limit=24&group=worksheet')});
-await new Promise(resolve=>setTimeout(resolve,0));assert.equal(seen.filter(x=>x.sql.includes('GROUP BY p.storefront_group')).length,1,'concurrent pages must join one count query');
+await new Promise(resolve=>setTimeout(resolve,0));assert.equal(seen.filter(x=>x.sql.includes('GROUP BY p.storefront_group')).length,2,'cold concurrent requests must use their own count Promise');
 holdPut=false;releasePut();const [pageOneResponse,groupResponse]=await Promise.all([pageOne,groupPage]),pageOneData=await pageOneResponse.json(),groupData=await groupResponse.json();
 assert.equal(groupData.pagination.total,groupData.category_counts.worksheet);
 seen.length=0;const pageTwoData=await (await listProducts({env,request:request(`/api/products?limit=24&cursor=${encodeURIComponent(pageOneData.pagination.next_cursor)}`)})).json(),pageTwoQueries=[...seen];assert.equal(seen.filter(x=>x.sql.includes('GROUP BY p.storefront_group')).length,0,'next cursor page must reuse canonical count cache');assert.equal(pageTwoData.pagination.total,pageOneData.pagination.total);
@@ -156,7 +156,7 @@ const elonPlan=(sql,...args)=>elonSqlite.prepare(`EXPLAIN QUERY PLAN ${sql}`).al
 const unconfigured=await runElonRetention({env:{FILES:{get:async()=>null},ELON_CLEANUP_TOKEN:'x'.repeat(32)},request:new Request('https://visiondonline.com/api/internal/elon-retention',{method:'POST',headers:{authorization:`Bearer ${'x'.repeat(32)}`}})});assert.equal(unconfigured.status,503);assert.equal((await unconfigured.json()).error,'ELON_WEB_DB_BINDING_REQUIRED');
 
 const [adminSource,trashSource,elonSource,version]=await Promise.all(['public/admin.js','functions/_trash.js','functions/_elon.js','VERSION.txt'].map(read));
-assert.match(adminSource,/productCategoryOptions\(p\.category \|\| ""\)/);assert.match(adminSource,/categoryCountsGeneration/);assert.doesNotMatch(elonSource,/Math\.random\(\)<0\.02/);assert.match(trashSource,/product_bundle_items b/);assert.equal(version.trim(),'v0.20.71');
+assert.match(adminSource,/productCategoryOptions\(p\.category \|\| ""\)/);assert.match(adminSource,/categoryCountsGeneration/);assert.doesNotMatch(elonSource,/Math\.random\(\)<0\.02/);assert.match(trashSource,/product_bundle_items b/);assert.equal(version.trim(),'v0.20.158');
 
 // Browser-side dictionary/count cache behavior: sequential tab opens reuse the
 // same options/count snapshots; invalidation prevents an older response from

@@ -4,7 +4,6 @@ export const D1_QUOTA_REOPEN_PERCENT=60;
 export const D1_QUOTA_STALE_MS=15*60*1000;
 
 const cachedByBucket=new WeakMap();
-const inflightByBucket=new WeakMap();
 const generationByBucket=new WeakMap();
 const text=value=>String(value??'').trim();
 const finite=value=>value!==null&&value!==undefined&&value!==''&&typeof value!=='boolean'&&Number.isFinite(Number(value))?Number(value):null;
@@ -48,9 +47,8 @@ export async function loadD1QuotaBreakerState(env,{fresh=false,now=Date.now}={})
   const currentTime=Number(now()),cached=cachedByBucket.get(bucket);
   if(!fresh&&cached&&currentTime-cached.loadedAt<30000)return decorate(cached.state,currentTime);
   if(fresh)generationByBucket.set(bucket,(generationByBucket.get(bucket)||0)+1);
-  const generation=generationByBucket.get(bucket)||0,inflight=inflightByBucket.get(bucket);if(!fresh&&inflight&&inflight.generation===generation)return decorate(await inflight.promise,currentTime);
-  const task=readObject(bucket).then(result=>{if(!result.valid&&cached)return {...cached.state,control_available:true,status:'error',reason:cached.state.auto_closed?'state_read_error_latched':'state_read_error_last_known_open',last_error:result.state.last_error};const state={...result.state,control_available:result.valid};if(result.valid&&(generationByBucket.get(bucket)||0)===generation)cachedByBucket.set(bucket,{state,loadedAt:Number(now())});return state}).catch(error=>{const prior=cached?.state||initialState('error');return {...prior,control_available:Boolean(cached),status:'error',reason:prior.auto_closed?'state_read_error_latched':'state_read_error_last_known_open',last_error:text(error?.message||'BREAKER_STATE_READ_FAILED').slice(0,300)}}).finally(()=>{if(inflightByBucket.get(bucket)?.promise===task)inflightByBucket.delete(bucket)});
-  inflightByBucket.set(bucket,{promise:task,generation});
+  const generation=generationByBucket.get(bucket)||0;
+  const task=readObject(bucket).then(result=>{if(!result.valid&&cached)return {...cached.state,control_available:true,status:'error',reason:cached.state.auto_closed?'state_read_error_latched':'state_read_error_last_known_open',last_error:result.state.last_error};const state={...result.state,control_available:result.valid},latest=cachedByBucket.get(bucket)?.state;if(result.valid&&(generationByBucket.get(bucket)||0)===generation&&Number(latest?.revision||0)<=Number(state.revision||0))cachedByBucket.set(bucket,{state,loadedAt:Number(now())});return state}).catch(error=>{const prior=cached?.state||initialState('error');return {...prior,control_available:Boolean(cached),status:'error',reason:prior.auto_closed?'state_read_error_latched':'state_read_error_last_known_open',last_error:text(error?.message||'BREAKER_STATE_READ_FAILED').slice(0,300)}});
   return decorate(await task,currentTime);
 }
 
@@ -118,4 +116,4 @@ export async function requireD1DataFetchAvailable(ctx,scope){
   return new Response(JSON.stringify({error:'ระบบพักงานดึงข้อมูลชั่วคราวเพื่อควบคุมโควตา Cloudflare D1',code:'D1_QUOTA_BREAKER_OPEN',scope:text(scope).slice(0,80),quota_breaker:{auto_closed:true,reason:state.reason,sample_day:state.sample_day,sampled_at:state.sampled_at,usage_percent:state.usage_percent}}),{status:503,headers:{'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','retry-after':'1800','x-visiond-control':'d1-quota-breaker'}});
 }
 
-export function clearD1QuotaBreakerMemoryCache(env){if(env?.FILES){cachedByBucket.delete(env.FILES);inflightByBucket.delete(env.FILES);generationByBucket.delete(env.FILES)}}
+export function clearD1QuotaBreakerMemoryCache(env){if(env?.FILES){cachedByBucket.delete(env.FILES);generationByBucket.delete(env.FILES)}}

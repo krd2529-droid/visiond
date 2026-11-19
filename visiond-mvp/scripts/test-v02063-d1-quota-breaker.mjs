@@ -20,6 +20,20 @@ async function submit(env,at,payload,suffix='a'){const owner=`monitor:${interval
 
 // Exact rational thresholds: display rounding must never close one row early.
 const bucket=new FakeR2(),env={FILES:bucket};
+// A Worker isolate may serve the next request while the previous R2 read is
+// pending. Each request must own its Promise; only settled state may be shared.
+let releaseRead;const readGate=new Promise(resolve=>{releaseRead=resolve});let pendingReads=0;
+const sharedReadBucket={async get(){pendingReads++;await readGate;return null}};
+const firstRequest=loadD1QuotaBreakerState({FILES:sharedReadBucket}),secondRequest=loadD1QuotaBreakerState({FILES:sharedReadBucket});
+assert.equal(pendingReads,2,'separate requests must not await one pending R2 Promise');
+releaseRead();await Promise.all([firstRequest,secondRequest]);
+await loadD1QuotaBreakerState({FILES:sharedReadBucket});assert.equal(pendingReads,2,'settled state remains cached for its TTL');
+const raceBucket=new FakeR2(),raceEnv={FILES:raceBucket};await submit(raceEnv,'2026-09-08T01:00:00.000Z',sample('2026-09-08','2026-09-08T01:00:00.000Z',10));const oldValue=raceBucket.value;
+await submit(raceEnv,'2026-09-08T01:05:00.000Z',sample('2026-09-08','2026-09-08T01:05:00.000Z',3_500_000),'race');const newValue=raceBucket.value;
+let releaseOlder;const olderGate=new Promise(resolve=>{releaseOlder=resolve});let raceReads=0;
+const raceProxy={async get(){const value=++raceReads===1?oldValue:newValue;if(raceReads===1)await olderGate;return{etag:'race',text:async()=>value}}};
+const olderRequest=loadD1QuotaBreakerState({FILES:raceProxy});const newerRequest=await loadD1QuotaBreakerState({FILES:raceProxy});assert.equal(newerRequest.auto_closed,true);
+releaseOlder();assert.equal((await olderRequest).auto_closed,false);assert.equal((await loadD1QuotaBreakerState({FILES:raceProxy})).auto_closed,true,'late older read cannot replace newer settled control state');
 let state=await submit(env,'2026-09-08T01:00:00.000Z',sample('2026-09-08','2026-09-08T01:00:00.000Z',3_499_999));assert.equal(state.auto_closed,false);assert.equal(state.usage_percent,70);
 state=await submit(env,'2026-09-08T01:05:00.000Z',sample('2026-09-08','2026-09-08T01:05:00.000Z',3_500_000),'b');assert.equal(state.auto_closed,true);assert.equal(state.reason,'read_threshold_reached');
 state=await submit(env,'2026-09-08T01:10:00.000Z',sample('2026-09-08','2026-09-08T01:10:00.000Z',10),'c');assert.equal(state.auto_closed,true,'same UTC day remains latched');

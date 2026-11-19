@@ -4,7 +4,6 @@ import {ensureDatabase,ensureStorefrontCatalogSchema} from '../../_schema.js';
 import {loadBasketVisibility,loadDigitalStorefrontPaused} from '../../_basket_visibility.js';
 
 const CACHE_SECONDS=60,MAX_PAGE=24,MAX_LOOKUP=30;
-const countInflightByDatabase=new WeakMap();
 const escapeLike=value=>String(value||'').replace(/[\\%_]/g,'\\$&');
 const cacheKey=(request,revision)=>{const url=new URL(request.url),sorted=new URLSearchParams();for(const key of [...new Set(url.searchParams.keys())].filter(key=>key!=='__catalog_revision').sort())for(const value of url.searchParams.getAll(key))sorted.append(key,value);sorted.set('__catalog_revision',String(revision||'0'));return new Request(`${url.origin}${url.pathname}?${sorted}`,{method:'GET'})};
 const countKey=(request,{revision,visibility,query,lookupSlugs})=>{const url=new URL(request.url),params=new URLSearchParams({__catalog_counts:'1',revision:String(revision||'0'),access:'public-storefront',visibility:JSON.stringify(visibility),q:query});if(lookupSlugs.length)params.set('slugs',[...lookupSlugs].sort().join(','));return new Request(`${url.origin}/api/products/__counts?${params}`,{method:'GET'})};
@@ -12,14 +11,10 @@ const parseCursor=value=>{if(!value)return null;const match=String(value).match(
 const emptyCounts=()=>({all:0,tattoo:0,coloring:0,worksheet:0,'development-game':0,'paper-doll':0,'resale-rights':0});
 async function authoritativeCounts(ctx,{sql,bindings,key}){
   const cache=globalThis.caches?.default,cached=cache?await cache.match(key):null;if(cached)return cached.json();
-  let inflight=countInflightByDatabase.get(ctx.env.DB);if(!inflight){inflight=new Map();countInflightByDatabase.set(ctx.env.DB,inflight)}
-  let task=inflight.get(key.url);if(!task){task=(async()=>{
-    const rows=(await ctx.env.DB.prepare(sql).bind(...bindings).all()).results||[],counts=emptyCounts();
-    for(const row of rows){const count=Number(row.total)||0;counts.all+=count;if(Object.hasOwn(counts,row.storefront_group))counts[row.storefront_group]=count}
-    if(cache){const response=json(counts,200,{'cache-control':`public, max-age=0, s-maxage=${CACHE_SECONDS}`});await cache.put(key,response).catch(()=>{})}
-    return counts;
-  })().finally(()=>inflight.delete(key.url));inflight.set(key.url,task)}
-  return task;
+  const rows=(await ctx.env.DB.prepare(sql).bind(...bindings).all()).results||[],counts=emptyCounts();
+  for(const row of rows){const count=Number(row.total)||0;counts.all+=count;if(Object.hasOwn(counts,row.storefront_group))counts[row.storefront_group]=count}
+  if(cache){const response=json(counts,200,{'cache-control':`public, max-age=0, s-maxage=${CACHE_SECONDS}`});await cache.put(key,response).catch(()=>{})}
+  return counts;
 }
 
 export async function onRequestGet(ctx){

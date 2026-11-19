@@ -11,11 +11,12 @@ const offer={id:91,product_id:191,product_slug:'demo-monthly',code:'monthly',dur
 const app=(id,platform,name)=>({id,code:`tool-${id}`,app_name:name,app_description:`คำอธิบาย ${name}`,platform_type:platform,current_version:'1.0.0',offers:[offer]});
 const catalog=[...Array.from({length:26},(_,index)=>app(index+1,index%2?'mac':'windows',index===25?'โปรแกรมกลางชื่อทดสอบ':`โปรแกรมคอม ${index+1}`)),app(27,'web','เว็บเครื่องมือ'),app(28,'android','แอปมือถือ'),app(29,'veasy','V Easy'),app(30,'cross-platform','โปรแกรมหลายระบบ')];
 catalog.unshift({...app(40,'windows','Follow me'),name:'Follow me',code:'auto-invite',current_version:'1.7.4',offers:[{id:9,product_id:5498,product_slug:'vbot-key-auto-invite-monthly',code:'monthly',name:'คีย์ 30 วัน · Windows 1 เครื่อง',duration_days:30,price:59000,offer_price:59000},{id:8,product_id:5497,product_slug:'vbot-key-auto-invite-lifetime',code:'lifetime',name:'คีย์ตลอดชีพ · Windows 1 เครื่อง',duration_days:null,price:159000,offer_price:159000}]});
-let empty=false,delayDesktop=false,releaseDesktop,desktopStarted,listRequests=[],detailRequests=[],trialRequests=0,vxRequests=0;
+let empty=false,delayDesktop=false,releaseDesktop,desktopStarted,listRequests=[],detailRequests=[],trialRequests=0,vxRequests=0,productsFail=false;
 const server=http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/vtools'){vxRequests++;const response=await plansCatalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
   if(url.pathname==='/api/vision7/trial'&&req.method==='POST'){trialRequests++;let body='';for await(const chunk of req)body+=chunk;assert.equal(JSON.parse(body).program_id,99);res.setHeader('content-type','application/json');res.end(JSON.stringify({ok:true,key:'VD7-SYNTHETIC'}));return}
   if(url.pathname==='/api/vision7/apps'){listRequests.push(url.search);const category=url.searchParams.get('category')||'all',q=(url.searchParams.get('q')||'').toLowerCase(),offset=Number(url.searchParams.get('cursor')||0),group=value=>['windows','mac'].includes(value)?'desktop':value==='web'?'web':['android','veasy'].includes(value)?'mobile':'other',rows=(empty?[]:catalog).filter(item=>(category==='all'||group(item.platform_type)===category)&&(!q||`${item.app_name} ${item.app_description} ${item.code}`.toLowerCase().includes(q))),items=rows.slice(offset,offset+24);if(delayDesktop&&category==='desktop'&&!offset){delayDesktop=false;desktopStarted?.();await new Promise(resolve=>releaseDesktop=resolve)}res.setHeader('content-type','application/json');res.end(JSON.stringify({items,has_more:offset+24<rows.length,next_cursor:offset+24<rows.length?String(offset+24):null,has_other:!empty}));return}
   const detail=url.pathname.match(/^\/api\/vision7\/apps\/([^/]+)$/);if(detail){detailRequests.push(detail[1]);const item=(empty?[]:catalog).find(row=>row.code===decodeURIComponent(detail[1]));res.statusCode=item?200:404;res.setHeader('content-type','application/json');res.end(JSON.stringify(item?{item}:{error:'ไม่พบแอป'}));return}
+  if(url.pathname==='/api/products'&&productsFail){res.statusCode=500;res.setHeader('content-type','application/json');res.end(JSON.stringify({error:'catalog unavailable'}));return}
   if(url.pathname.startsWith('/api/')){res.setHeader('content-type','application/json');res.end(JSON.stringify({items:[],user:null}));return}
   let file=path.resolve(root,'.'+(url.pathname==='/'?'/index.html':url.pathname));if(!file.startsWith(root+path.sep)){res.writeHead(404).end();return}if(!path.extname(file))file+='.html';try{const body=fs.readFileSync(file);res.setHeader('content-type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');res.end(body)}catch{res.writeHead(404).end()}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
@@ -74,6 +75,14 @@ try{
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart'))[0].title),'Follow me · คีย์ตลอดชีพ · Windows 1 เครื่อง','switching back to lifetime keeps one key prefix');
   assert.doesNotMatch(await page.locator('#cartItems .cart-product h2').textContent(),/คีย์\s*คีย์/u);
   assert.match(await page.locator('#cartTotal').textContent(),/1,590/);
+
+  productsFail=true;
+  await page.evaluate(()=>{const cart=JSON.parse(localStorage.getItem('vd_cart'));cart[0].title='Follow me · คีย์ คีย์ตลอดชีพ · Windows 1 เครื่อง';cart.push({id:901,slug:'saved-digital-product',title:'Saved digital product',price:10000,product_kind:'product',category:'worksheet',quantity:1});localStorage.setItem('vd_cart',JSON.stringify(cart))});
+  await page.reload();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('vd_cart')||'[]')[0]?.title==='Follow me · คีย์ตลอดชีพ · Windows 1 เครื่อง');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vd_cart')).length),2,'catalog outage preserves an unrelated saved product');
+  assert.match(await page.locator('#cartTotal').textContent(),/1,690/,'Vision7 price refresh continues while products API fails');
+  productsFail=false;
 
   await page.goto(base+'/');
   assert.equal(await page.locator('#homeFollowMeTitle').innerText(),'Follow me');
