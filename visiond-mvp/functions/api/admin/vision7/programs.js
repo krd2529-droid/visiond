@@ -3,6 +3,8 @@ import { ensureDatabase } from "../../../_schema.js";
 import { ensureVision7Schema } from "../../../_vision7_schema.js";
 import { safeVersion, validPlanCode } from "../../../_vision7.js";
 import { rollbackVision7KeyProducts, syncVision7KeyProducts } from "../../../_vision7_key_storefront.js";
+import { autoInviteSigner } from "../../../_auto_invite.js";
+const autoInviteInstallerSha256 = '54d2c52b539732cf2ca9454a1c86fbd32aaf1259df5dea912c138cbad5d98085';
 const text = (v, n = 120) =>
   String(v || "")
     .trim()
@@ -89,7 +91,7 @@ export async function onRequestPost(ctx) {
     if (boss.error) return boss.error;
   }
   if (multipart && (!appName || !appDescription)) return json({ error: "กรุณากรอกชื่อและรายละเอียดแอป" }, 400);
-  if (multipart && (!(cover instanceof File) || !cover.size || !(installer instanceof File) || !installer.size)) return json({ error: "กรุณาแนบรูปปกและไฟล์ติดตั้ง" }, 400);
+  if (multipart && (code !== 'auto-invite' && (!(cover instanceof File) || !cover.size) || !(installer instanceof File) || !installer.size)) return json({ error: "กรุณาแนบรูปปกและไฟล์ติดตั้ง" }, 400);
   if (cover instanceof File && cover.size && (cover.size > 5 * 1024 * 1024 || !imageTypes.has(cover.type))) return json({ error: "รูปปกต้องเป็น JPG, PNG หรือ WEBP ไม่เกิน 5 MB" }, 413);
   if (installer instanceof File && installer.size && (installer.size > 95 * 1024 * 1024 || !installerTypes.has(installer.type || "application/octet-stream"))) return json({ error: "ไฟล์ติดตั้งชนิดไม่รองรับหรือเกิน 95 MB" }, 413);
   const plans = (Array.isArray(bPlans) ? bPlans : [])
@@ -97,6 +99,18 @@ export async function onRequestPost(ctx) {
       .filter((p) => p.plan_code),
     productId = optionalProductId(b.product_id),
     productIds = [productId, ...plans.map((p) => p.product_id)].filter(Boolean);
+  let autoInstallerBytes = null;
+  if (code === 'auto-invite') {
+    if (!multipart || appName !== 'AutoInvite' || platform !== 'windows' || version !== '1.0.0' || b.active === 'false' || productId ||
+      !(installer instanceof File) || installer.name !== 'AutoInvite-Setup-1.0.0.exe' || installer.size !== 43741818 ||
+      plans.length !== 1 || plans[0].plan_code !== 'lifetime' || Number(plans[0].price) !== 690 || plans[0].product_id)
+      return json({ error:'AutoInvite ต้องเป็น Windows 1.0.0 คีย์ตลอดชีพ 690 บาท พร้อมตัวติดตั้งที่ตรวจสอบแล้ว' },400);
+    try { await autoInviteSigner(ctx.env); }
+    catch { return json({ error:'ยังไม่ได้ตั้งค่า Secret ออกคีย์ AutoInvite ให้ตรงกับโปรแกรม',code:'AUTO_INVITE_SIGNER_UNAVAILABLE' },503); }
+    autoInstallerBytes = await installer.arrayBuffer();
+    if (hex(await crypto.subtle.digest('SHA-256',autoInstallerBytes)) !== autoInviteInstallerSha256)
+      return json({ error:'ตัวติดตั้ง AutoInvite ไม่ตรงกับไฟล์ที่ตรวจสอบแล้ว' },409);
+  }
   if (code === "v-record" && !validVRecordDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
     return json({ error: "V-Record ต้องมีรูปปกและไฟล์ติดตั้ง พร้อม Windows 0.6.0 แบบไม่เปิดขายและแพ็กเกจ 30 วัน 199 บาท / 1 ปี 999 บาทเท่านั้น" }, 400);
   if (code === "sms-mix" && !validSmsMixDraft({ name: appName, platform, version, minimumVersion: safeVersion(b.minimum_version || version), active: b.active, rawPlans: bPlans, plans, productId, multipart, hasCover: cover instanceof File && cover.size > 0, hasInstaller: installer instanceof File && installer.size > 0 }))
@@ -130,7 +144,7 @@ export async function onRequestPost(ctx) {
     }
     const r = await ctx.env.DB.prepare(
       `INSERT INTO vision7_programs(product_id,code,app_name,app_description,cover_url,platform_type,current_version,minimum_version,requires_online,force_update,max_devices,trial_hours,active) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : "",platform,version,safeVersion(b.minimum_version || version) || version,code === 'sms-mix' ? 1 : b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,['v-record','sms-mix'].includes(code) ? 1 : 3,code === 'v-record' ? 168 : code === 'sms-mix' ? 0 : 24,b.active === false || (['v-record','sms-mix'].includes(code) && b.active === 'false') ? 0 : 1).run();
+    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : code === 'auto-invite' ? '/auto-invite-cover.svg' : "",platform,version,safeVersion(b.minimum_version || version) || version,code === 'sms-mix' ? 1 : code === 'auto-invite' || b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,['v-record','sms-mix','auto-invite'].includes(code) ? 1 : 3,code === 'v-record' ? 168 : ['sms-mix','auto-invite'].includes(code) ? 0 : 24,b.active === false || (['v-record','sms-mix'].includes(code) && b.active === 'false') ? 0 : 1).run();
     id = Number(r.meta.last_row_id);
     for (const p of plans) {
       await ctx.env.DB.prepare(
@@ -145,11 +159,15 @@ export async function onRequestPost(ctx) {
     }
     ({ createdProductIds: createdKeyProductIds } = await syncVision7KeyProducts(ctx.env, id));
     if (installer instanceof File && installer.size) {
-      const bytes = await installer.arrayBuffer();
+      const bytes = autoInstallerBytes || await installer.arrayBuffer();
       const sha256 = hex(await crypto.subtle.digest("SHA-256", bytes));
       installerKey = `vision7/releases/${id}/${version}-${crypto.randomUUID()}`;
       const installerMime = code === 'sms-mix' ? 'application/vnd.android.package-archive' : installer.type || 'application/octet-stream';
       await ctx.env.FILES.put(installerKey, bytes, { httpMetadata: { contentType: installerMime }, customMetadata: { sha256, version } });
+      if (code === 'auto-invite') {
+        const uploaded = await ctx.env.FILES.head(installerKey);
+        if (!uploaded || Number(uploaded.size) !== installer.size || uploaded.customMetadata?.sha256 !== sha256) throw new Error('AUTO_INVITE_UPLOAD_VERIFY_FAILED');
+      }
       await ctx.env.DB.prepare(`INSERT INTO vision7_releases(program_id,version,minimum_version,mandatory,object_key,file_name,mime_type,file_size,sha256,release_notes,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(id,version,safeVersion(b.minimum_version || version) || version,0,installerKey,safeFileName(installer.name,`${code}-${version}.bin`),installerMime,installer.size,sha256,text(b.release_notes || appDescription,2000),a.user.id).run();
     }
     return json({ ok: true, id }, 201);

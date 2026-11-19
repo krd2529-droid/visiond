@@ -80,6 +80,7 @@ export async function onRequestPost(ctx) {
       .bind(programId)
       .first();
   if (!user || !program) return json({ error: "ไม่พบผู้ใช้หรือโปรแกรม" }, 404);
+  if (program.code === 'auto-invite') return json({ error: "AutoInvite ออกคีย์ได้จากออเดอร์ที่ชำระเงินและระบุรหัสเครื่องแล้วเท่านั้น" }, 403);
   if (program.code === 'sms-mix' && issuanceType !== "admin_manual") return json({ error: "VSMS ต้องเลือกการออกคีย์แอดมินพร้อมแพ็กเกจ 30 วันหรือ 1 ปี" }, 403);
   if (program.code !== 'sms-mix' && issuanceType === "admin_manual") return json({ error: "โหมดออกคีย์นี้ใช้กับ VSMS เท่านั้น" }, 400);
   if (issuanceType === "admin_manual" && (!Number.isSafeInteger(Number(b.user_id)) || Number(b.user_id) <= 0 || !planId || b.test_duration || b.order_id))

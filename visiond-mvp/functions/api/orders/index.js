@@ -4,6 +4,7 @@ import { loadPaymentSettings, loadVpagePaymentSettings, publicPaymentSettings } 
 import { ensureDatabase } from "../../_schema.js";
 import { ensureVision7Schema } from "../../_vision7_schema.js";
 import { vision7LicenseEncryptionConfigured } from "../../_vision7_license_crypto.js";
+import { autoInviteSigner } from "../../_auto_invite.js";
 import { rateLimit } from "../../_security.js";
 import {applyPromotion,loadPromotion} from '../../_promotion.js';
 import {loadSellerToken} from '../../_seller_token.js';
@@ -65,7 +66,8 @@ export async function onRequestPost(ctx) {
   const qs = slugs.map(() => "?").join(",");
   const { results } = await ctx.env.DB.prepare(
     `SELECT p.id,p.slug,p.title,p.price,p.product_kind,p.category,p.member_category,p.member_duration_months,c.id seller_course_id,c.owner_user_id course_owner_user_id,c.course_plan,c.payment_bank_name,c.payment_account_name,c.payment_account_number,c.payment_qr_url,
-      (SELECT q.id FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code<>'sms-mix' OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
+      (SELECT q.id FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code NOT IN ('sms-mix','auto-invite') OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_plan_id,
+      (SELECT v.code FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 LIMIT 1) vision7_program_code,
       (SELECT q.offer_price FROM vision7_plans q JOIN vision7_programs v ON v.id=q.program_id WHERE q.product_id=p.id AND q.active=1 AND (v.code<>'sms-mix' OR v.active=1) AND q.plan_code IN ('monthly','yearly','lifetime') LIMIT 1) vision7_offer_price
      FROM products p LEFT JOIN courses c ON c.product_id=p.id AND c.course_type='online_course'
      WHERE p.slug IN (${qs}) AND p.status='published' AND p.deleted_at IS NULL`,
@@ -91,6 +93,11 @@ export async function onRequestPost(ctx) {
   const vpagePayment=vpageItems.length?await loadVpagePaymentSettings(ctx.env):null;
   if(vpageItems.length&&!vpagePayment)return json({error:'ยังไม่ได้ตั้งค่าบัญชีรับโอน Vpage Credit กรุณาติดต่อผู้ดูแลระบบ',code:'VPAGE_PAYMENT_ACCOUNT_NOT_CONFIGURED'},503,{'cache-control':'private, no-store'});
   if(orderedResults.some(product=>product.product_kind==='vision7-key'&&(!product.vision7_plan_id||!Number.isSafeInteger(Number(product.vision7_offer_price))||Number(product.vision7_offer_price)<=0||Number(product.price)!==Number(product.vision7_offer_price))))return json({error:'ราคาตะกร้าคีย์มีการเปลี่ยนแปลงหรือยังไม่พร้อมขาย กรุณาโหลดรายการใหม่',code:'VISION7_KEY_OFFER_PRICE_MISMATCH'},409);
+  if(orderedResults.some(product=>product.vision7_program_code==='auto-invite')){
+    if(orderedResults.some(product=>product.vision7_program_code==='auto-invite'&&(product.price!==69000||product.slug!=='vbot-key-auto-invite-lifetime')))
+      return json({error:'แพ็กเกจ AutoInvite ยังไม่พร้อมขาย',code:'AUTO_INVITE_OFFER_INVALID'},409);
+    try{await autoInviteSigner(ctx.env)}catch{return json({error:'ระบบออกคีย์ AutoInvite ยังไม่พร้อม กรุณาลองใหม่ภายหลัง',code:'AUTO_INVITE_SIGNER_UNAVAILABLE'},503)}
+  }
   const vxItems=orderedResults.filter(p=>p.product_kind==='vx-access');
   if(vxItems.length && (orderedResults.length!==1||!VX_PLANS.some(p=>p.slug===vxItems[0].slug&&p.price===Number(vxItems[0].price))))return json({error:'สิทธิ์ VX ต้องชำระแยกครั้งละ 1 แพ็กเกจ กรุณาตรวจสอบตะกร้า'},400);
   const hasVision7=orderedResults.some(product=>product.vision7_plan_id);

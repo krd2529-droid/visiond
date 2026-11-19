@@ -4,10 +4,23 @@ import { ensureVision7Schema } from '../../_vision7_schema.js';
 import { requireVision7User as requireUser } from '../../_vision7_auth.js';
 import { maskedLicense, refreshLicenseExpiry } from '../../_vision7.js';
 import { decryptVision7Key, vision7LicenseEncryptionConfigured } from '../../_vision7_license_crypto.js';
+import { ensureAutoInviteSchema } from '../../_auto_invite.js';
+
+export const autoInviteCustomerPageSql = `SELECT oi.id order_item_id,oi.order_id,oi.product_title,p.current_version,
+    i.machine_id,i.key_ciphertext,i.issued_at,r.id release_id,r.version release_version,r.file_name,r.file_size,r.sha256
+    FROM orders o INDEXED BY idx_orders_user_id
+    CROSS JOIN order_items oi INDEXED BY idx_order_items_order_product
+    JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code='lifetime'
+    JOIN vision7_programs p ON p.id=q.program_id AND p.code='auto-invite'
+    LEFT JOIN auto_invite_issues i ON i.order_item_id=oi.id
+    LEFT JOIN vision7_releases r ON r.id=(SELECT id FROM vision7_releases WHERE program_id=p.id AND status='published' ORDER BY published_at DESC,id DESC LIMIT 1)
+    WHERE o.user_id=? AND o.status='paid' AND oi.order_id=o.id AND oi.price=69000 AND (? IS NULL OR oi.id<?)
+    ORDER BY oi.id DESC LIMIT 25`;
 
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
   await ensureVision7Schema(ctx.env);
+  await ensureAutoInviteSchema(ctx.env);
   const a = await requireUser(ctx);
   if (a.error) return a.error;
   const rows = await ctx.env.DB.prepare(`SELECT l.*,p.code,p.platform_type,p.current_version,p.minimum_version,p.force_update,p.requires_online,
@@ -39,5 +52,23 @@ export async function onRequestGet(ctx) {
         ...release, download_url: `/api/vision7/releases/${release.id}/download`
       } : null });
   }
-  return json({ items, encryption_ready: vision7LicenseEncryptionConfigured(ctx.env) });
+  const rawCursor = new URL(ctx.request.url).searchParams.get('auto_invite_cursor');
+  const cursor = rawCursor && /^[1-9]\d*$/.test(rawCursor) ? Number(rawCursor) : null;
+  if (rawCursor !== null && (cursor === null || !Number.isSafeInteger(cursor)))
+    return json({ error:'cursor ไม่ถูกต้อง' },400,{'cache-control':'private, no-store'});
+  const autoRows = (await ctx.env.DB.prepare(autoInviteCustomerPageSql).bind(a.user.id,cursor,cursor).all()).results || [];
+  const autoInviteItems = [];
+  for (const row of autoRows.slice(0,24)) {
+    let key = null;
+    if (row.key_ciphertext && vision7LicenseEncryptionConfigured(ctx.env)) {
+      try { key = await decryptVision7Key(ctx.env,row.key_ciphertext); } catch {}
+    }
+    autoInviteItems.push({ order_item_id:row.order_item_id,order_id:row.order_id,title:row.product_title,
+      current_version:row.current_version,machine_id:row.machine_id,issued_at:row.issued_at,key,
+      release:row.release_id?{id:row.release_id,version:row.release_version,file_name:row.file_name,
+        file_size:row.file_size,sha256:row.sha256,download_url:`/api/vision7/releases/${row.release_id}/download`}:null });
+  }
+  return json({ items, auto_invite_items:autoInviteItems,
+    auto_invite_next_cursor:autoRows.length>24?autoRows[23].order_item_id:null,
+    encryption_ready: vision7LicenseEncryptionConfigured(ctx.env) },200,{'cache-control':'private, no-store'});
 }

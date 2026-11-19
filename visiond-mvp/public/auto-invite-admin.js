@@ -1,0 +1,26 @@
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const list=document.querySelector('#autoInviteIssues'),more=document.querySelector('#autoInviteMore');
+let cursor=null;
+async function load(){
+  more.disabled=true;
+  try{
+    const r=await fetch(`/api/admin/vision7/auto-invite-issues${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`),d=await r.json();
+    if(!r.ok)throw new Error(d.error||'โหลดรายการไม่สำเร็จ');
+    const html=(d.items||[]).map(x=>`<section class="license-row"><div><b>${esc(x.user_name||x.email||`#${x.user_id}`)}</b> · ออเดอร์ ${esc(x.order_no||x.order_id)}<br><small>${Number(x.price)/100} บาท · สถานะออเดอร์ ${esc(x.order_status)} · ${x.machine_id?`เครื่อง ${esc(x.machine_id)} · คีย์ลงท้าย ${esc(x.key_last4)} · ออกเมื่อ ${esc(x.issued_at)}`:'รอลูกค้าระบุรหัสเครื่อง'}</small></div></section>`).join('');
+    if(cursor)list.insertAdjacentHTML('beforeend',html);
+    else list.innerHTML=html||'<p class="muted">ยังไม่มีออเดอร์ AutoInvite ที่ชำระเงิน</p>';
+    cursor=d.next_cursor;more.hidden=!cursor;
+  }catch(error){if(!cursor)list.textContent=error.message;more.textContent='โหลดไม่สำเร็จ · กดเพื่อลองใหม่';more.hidden=false}
+  finally{more.disabled=false}
+}
+more.onclick=load;load();
+const setup=document.querySelector('#autoInviteSetupForm'),setupState=document.querySelector('#autoInviteSetupState');
+setup.onsubmit=async event=>{
+  event.preventDefault();
+  const file=setup.elements.installer.files[0],submit=setup.querySelector('button[type=submit]');
+  if(!file||file.name!=='AutoInvite-Setup-1.0.0.exe'||file.size!==43741818){setupState.textContent='กรุณาเลือกตัวติดตั้ง AutoInvite-Setup-1.0.0.exe ที่ถูกต้อง';return}
+  const body=new FormData();body.set('code','auto-invite');body.set('name','AutoInvite');body.set('description',setup.elements.description.value);body.set('platform_type','windows');body.set('current_version','1.0.0');body.set('minimum_version','1.0.0');body.set('plans',JSON.stringify([{plan_code:'lifetime',name:'คีย์ตลอดชีพ · Windows 1 เครื่อง',price:690}]));body.set('installer',file);
+  submit.disabled=true;setupState.textContent='กำลังตรวจและอัปโหลดตัวติดตั้ง…';
+  try{const r=await fetch('/api/admin/vision7/programs',{method:'POST',body}),d=await r.json();if(!r.ok)throw new Error(d.error||'เพิ่มโปรแกรมไม่สำเร็จ');setupState.textContent='เพิ่ม AutoInvite พร้อมแพ็กเกจ 690 บาทแล้ว';setup.reset();window.location.reload()}
+  catch(error){setupState.textContent=error.message}finally{submit.disabled=false}
+};

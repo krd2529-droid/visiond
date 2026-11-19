@@ -38,6 +38,13 @@
         <article id="programWorkspace" class="card program-panel">
           <header class="card-heading"><div><small>STEP 1</small><h2>โปรแกรม</h2></div><button type="button" class="compact-action" data-open-program>＋ เพิ่ม</button></header>
           <div id="programs"></div>
+          <details class="release" id="autoInviteSetup"><summary>เพิ่ม AutoInvite · Windows คีย์ตลอดชีพ 690 บาท</summary>
+            <form id="autoInviteSetupForm"><p>ใช้ไฟล์ AutoInvite-Setup-1.0.0.exe ที่ตรวจ SHA-256 แล้ว ระบบสร้างแพ็กเกจขายและรีลีสพร้อมกัน</p>
+              <label>รายละเอียดสำหรับลูกค้า<textarea name="description" required>โปรแกรมช่วยเชิญผู้ที่มีส่วนร่วมกับโพสต์ให้ติดตามเพจ Facebook บน Windows ซื้อครั้งเดียว ใช้กับคอมพิวเตอร์หนึ่งเครื่อง</textarea></label>
+              <label>ตัวติดตั้ง <input type="file" name="installer" accept=".exe" required></label>
+              <button type="submit">เพิ่มโปรแกรม AutoInvite</button><p id="autoInviteSetupState" role="status"></p>
+            </form>
+          </details>
         </article>
         <article id="licenseWorkspace" class="card license-panel">
           <header class="card-heading"><div><small>STEP 2</small><h2>ทุกคีย์ในระบบ</h2><p class="muted">เรียงจากคีย์ที่ออกล่าสุด</p></div></header>
@@ -47,6 +54,11 @@
             placeholder="ค้นหาชื่อ อีเมล โปรแกรม หรือท้ายคีย์"
           />
           <div id="licenses"></div>
+        </article>
+        <article class="card license-panel">
+          <header class="card-heading"><div><h2>AutoInvite · ประวัติออเดอร์และผูกเครื่อง</h2><p class="muted">แสดงออเดอร์ที่ชำระเงิน และคีย์ที่เคยออกแม้ออเดอร์ถูกคืนเงิน</p></div></header>
+          <div id="autoInviteIssues">กำลังโหลดรายการ</div>
+          <button id="autoInviteMore" type="button" hidden>ดูรายการเพิ่ม</button>
         </article>
         <details id="releaseDetails" class="card release-panel">
           <summary><span><small>STEP 3</small><b>เผยแพร่ APK/ตัวติดตั้ง</b><em>แยกจากการออกคีย์ · เปิดเมื่อต้องการลงเวอร์ชันใหม่</em></span><strong>เปิดแบบฟอร์ม</strong></summary>
@@ -90,6 +102,7 @@
         </details>
       </section>
     </main>
+    <script src="/auto-invite-admin.js" type="module"></script>
     <dialog id="programDialog" class="app-builder-dialog" aria-labelledby="programDialogTitle" aria-describedby="programDialogIntro">
       <form id="programForm" enctype="multipart/form-data">
         <header class="app-builder-heading"><div><small>VBOT APP BUILDER · สร้างฟรี</small><h2 id="programDialogTitle">สร้างแอปพร้อมขาย</h2><p id="programDialogIntro">สร้างแอปได้ฟรี ใส่ข้อมูลครั้งเดียว ระบบจะเตรียมแพ็กเกจคีย์และไฟล์ให้พร้อมใช้งาน</p></div><button type="button" class="dialog-close" data-close="programDialog" aria-label="ปิด">×</button></header>

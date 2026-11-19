@@ -15,6 +15,15 @@ export async function onRequestGet(ctx) {
   if (!validCode(code)) return json({ error: "ไม่พบแอป" }, 404, { "cache-control": "no-store" });
   const program = await ctx.env.DB.prepare("SELECT id FROM vision7_programs WHERE code=? AND active=1").bind(code).first();
   if (!program) return json({ error: "ไม่พบแอป" }, 404, { "cache-control": "no-store" });
+  if (code === 'auto-invite') {
+    const paid = await ctx.env.DB.prepare(`SELECT oi.id FROM order_items oi JOIN orders o ON o.id=oi.order_id AND o.status='paid'
+      JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code='lifetime'
+      WHERE q.program_id=? AND o.user_id=? AND oi.price=69000 LIMIT 1`).bind(program.id,auth.user.id).first();
+    if (!paid) return json({ error:'ต้องซื้อคีย์และชำระเงินก่อนดาวน์โหลด',code:'VISION7_LICENSE_REQUIRED' },403,{ 'cache-control':'private, no-store' });
+    const release = await ctx.env.DB.prepare("SELECT id FROM vision7_releases WHERE program_id=? AND status='published' ORDER BY published_at DESC,id DESC LIMIT 1").bind(program.id).first();
+    if (!release) return json({ error:'ยังไม่มีไฟล์ติดตั้งสำหรับแอปนี้' },404,{ 'cache-control':'private, no-store' });
+    return new Response(null,{status:302,headers:{location:`/api/vision7/releases/${release.id}/download`,'cache-control':'private, no-store'}});
+  }
   let license = await ctx.env.DB.prepare("SELECT id,status,expires_at FROM vision7_licenses WHERE program_id=? AND user_id=? AND status IN ('active','trial') AND (expires_at IS NULL OR expires_at>CURRENT_TIMESTAMP) ORDER BY created_at DESC LIMIT 1").bind(program.id,auth.user.id).first();
   if (!license) {
     const owned = await ctx.env.DB.prepare("SELECT 1 owned FROM vision7_licenses WHERE program_id=? AND user_id=? LIMIT 1").bind(program.id,auth.user.id).first();

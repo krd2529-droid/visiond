@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">AutoInvite</title><desc id="desc">โปรแกรมช่วยเชิญผู้ติดตามเพจ</desc>
+  <rect width="800" height="500" rx="36" fill="#0b4b49"/>
+  <circle cx="170" cy="210" r="68" fill="#8de7dd"/>
+  <path d="M61 360c0-74 49-117 109-117s109 43 109 117" fill="#8de7dd"/>
+  <path d="M335 170h280a30 30 0 0 1 30 30v115a30 30 0 0 1-30 30H455l-66 49v-49h-54a30 30 0 0 1-30-30V200a30 30 0 0 1 30-30z" fill="#fff"/>
+  <path d="M396 255h150m-56-56 56 56-56 56" stroke="#0b8b82" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="65" y="455" fill="#fff" font-family="Arial,sans-serif" font-size="52" font-weight="700">AutoInvite</text>
+</svg>

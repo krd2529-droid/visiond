@@ -9,6 +9,8 @@ export async function fulfillVision7Order(env,order,actor={},programCode=''){
   const items=(await env.DB.prepare(`SELECT oi.id order_item_id,oi.vision7_renew_license_id,q.id plan_id,q.program_id,q.plan_code,q.duration_days,p.max_devices,p.platform_type,p.code program_code FROM order_items oi JOIN vision7_plans q ON q.product_id=oi.product_id JOIN vision7_programs p ON p.id=q.program_id WHERE oi.order_id=? ${programCode?'AND p.code=?':''} ORDER BY oi.id`).bind(...(programCode?[order.id,programCode]:[order.id])).all()).results||[];
   const output=[];
   for(const item of items){
+    // AutoInvite issues its offline key only after the paid customer supplies a Windows machine ID.
+    if(item.program_code==='auto-invite')continue;
     const done=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();
     if(done){output.push({...done,existing:true});continue}
     if(item.vision7_renew_license_id){
