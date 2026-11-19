@@ -39,7 +39,7 @@
           <header class="card-heading"><div><small>STEP 1</small><h2>โปรแกรม</h2></div><button type="button" class="compact-action" data-open-program>＋ เพิ่ม</button></header>
           <div id="programs"></div>
           <details class="release" id="autoInviteSetup"><summary>เพิ่ม Follow me · Windows คีย์ 30 วัน 590 บาท / ตลอดชีพ 1,590 บาท</summary>
-            <form id="autoInviteSetupForm"><p>ใช้ไฟล์ลูกค้า FollowMe-Setup-1.7.6.exe ที่ตรวจ SHA-256 แล้ว ระบบสร้างแพ็กเกจขายและรีลีสพร้อมกัน</p>
+            <form id="autoInviteSetupForm"><p>ใช้ไฟล์ลูกค้า FollowMe-Setup-1.7.7.exe ที่ตรวจ SHA-256 แล้ว ระบบสร้างแพ็กเกจขายและรีลีสพร้อมกัน</p>
               <label>รายละเอียดสำหรับลูกค้า<textarea name="description" required>โปรแกรมช่วยเชิญผู้ที่มีส่วนร่วมกับโพสต์ให้ติดตามเพจ Facebook บน Windows ซื้อครั้งเดียว ใช้กับคอมพิวเตอร์หนึ่งเครื่อง</textarea></label>
               <label>ตัวติดตั้ง <input type="file" name="installer" accept=".exe" required></label>
               <button type="submit">เพิ่มโปรแกรม Follow me</button><p id="autoInviteSetupState" role="status"></p>
@@ -59,6 +59,19 @@
           <header class="card-heading"><div><h2>Follow me · ประวัติออเดอร์และผูกเครื่อง</h2><p class="muted">แสดงออเดอร์ที่ชำระเงิน และคีย์ที่เคยออกแม้ออเดอร์ถูกคืนเงิน</p></div></header>
           <div id="autoInviteIssues">กำลังโหลดรายการ</div>
           <button id="autoInviteMore" type="button" hidden>ดูรายการเพิ่ม</button>
+        </article>
+        <article class="card license-panel">
+          <header class="card-heading"><div><h2>Follow me · ออกคีย์ฟรี</h2><p class="muted">สำหรับบัญชี VisionD ที่ลงทะเบียนแล้ว · ผูกกับ Windows เครื่องเดียว · ไม่ต้องมีออเดอร์</p></div></header>
+          <form id="autoInviteGrantForm">
+            <label>อีเมลบัญชีผู้รับ <input name="email" type="email" required autocomplete="off" placeholder="customer@example.com"></label>
+            <label>รหัสเครื่อง <input name="machine_id" required maxlength="19" pattern="[0-9A-Fa-f]{4}(-[0-9A-Fa-f]{4}){3}" placeholder="1A2B-3C4D-5E6F-7A8B" autocomplete="off"></label>
+            <label>ระยะเวลา <select name="term"><option value="days">กำหนดจำนวนวัน</option><option value="lifetime">ตลอดชีพ</option></select></label>
+            <label>จำนวนวัน (1–3650) <input name="duration_days" type="number" min="1" max="3650" step="1" value="7" required></label>
+            <button type="submit">ออกคีย์ฟรี</button><p id="autoInviteGrantState" role="status"></p>
+            <p id="autoInviteGrantKey" hidden>คีย์: <code></code> <button type="button">คัดลอก</button></p>
+          </form>
+          <h3>ประวัติคีย์ฟรี</h3><div id="autoInviteGrants">กำลังโหลดรายการ</div>
+          <button id="autoInviteGrantsMore" type="button" hidden>ดูรายการเพิ่ม</button>
         </article>
         <details id="releaseDetails" class="card release-panel">
           <summary><span><small>STEP 3</small><b>เผยแพร่ APK/ตัวติดตั้ง</b><em>แยกจากการออกคีย์ · เปิดเมื่อต้องการลงเวอร์ชันใหม่</em></span><strong>เปิดแบบฟอร์ม</strong></summary>
@@ -102,7 +115,7 @@
         </details>
       </section>
     </main>
-    <script src="/auto-invite-admin.js?v=0176" type="module"></script>
+    <script src="/auto-invite-admin.js?v=0177" type="module"></script>
     <dialog id="programDialog" class="app-builder-dialog" aria-labelledby="programDialogTitle" aria-describedby="programDialogIntro">
       <form id="programForm" enctype="multipart/form-data">
         <header class="app-builder-heading"><div><small>VBOT APP BUILDER · สร้างฟรี</small><h2 id="programDialogTitle">สร้างแอปพร้อมขาย</h2><p id="programDialogIntro">สร้างแอปได้ฟรี ใส่ข้อมูลครั้งเดียว ระบบจะเตรียมแพ็กเกจคีย์และไฟล์ให้พร้อมใช้งาน</p></div><button type="button" class="dialog-close" data-close="programDialog" aria-label="ปิด">×</button></header>

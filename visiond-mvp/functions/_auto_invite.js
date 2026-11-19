@@ -51,6 +51,54 @@ export async function ensureAutoInviteSchema(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_auto_invite_order_items_product ON order_items(product_id,id DESC)').run();
 }
 
+export async function ensureAutoInviteGrantSchema(env) {
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS auto_invite_grants (
+    id INTEGER PRIMARY KEY, request_id TEXT NOT NULL UNIQUE, program_id INTEGER NOT NULL,
+    recipient_id INTEGER NOT NULL, issuer_id INTEGER NOT NULL, machine_id TEXT NOT NULL,
+    duration_days INTEGER, expires_at TEXT, key_ciphertext TEXT NOT NULL DEFAULT '',
+    key_last4 TEXT NOT NULL DEFAULT '', issued_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(program_id) REFERENCES vision7_programs(id),
+    FOREIGN KEY(recipient_id) REFERENCES users(id), FOREIGN KEY(issuer_id) REFERENCES users(id)
+  )`).run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_auto_invite_grants_recipient ON auto_invite_grants(program_id,recipient_id,expires_at,id DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_auto_invite_grants_recent ON auto_invite_grants(id DESC)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_auto_invite_grants_user ON auto_invite_grants(recipient_id,id DESC)').run();
+}
+
+export const activeAutoInviteGrantSql = `SELECT id FROM auto_invite_grants
+    WHERE program_id=? AND recipient_id=? AND key_ciphertext<>''
+      AND (expires_at IS NULL OR expires_at>strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    LIMIT 1`;
+export async function activeAutoInviteGrant(env, programId, recipientId) {
+  const row = await env.DB.prepare(activeAutoInviteGrantSql).bind(programId,recipientId).first();
+  return Boolean(row);
+}
+
+export async function grantAutoInvite(env, { requestId, recipient, issuerId, machineId, durationDays, privateKey }) {
+  const program = await env.DB.prepare("SELECT id FROM vision7_programs WHERE code='auto-invite' LIMIT 1").first();
+  if (!program) throw new Error('AUTO_INVITE_PROGRAM_MISSING');
+  await env.DB.prepare(`INSERT OR IGNORE INTO auto_invite_grants
+    (request_id,program_id,recipient_id,issuer_id,machine_id,duration_days,expires_at,issued_at)
+    SELECT ?,p.id,?,?,?,?,CASE WHEN ? IS NULL THEN NULL ELSE strftime('%Y-%m-%dT%H:%M:%SZ',unixepoch(stamp.issued_at)+?*86400,'unixepoch') END,stamp.issued_at
+    FROM vision7_programs p CROSS JOIN (SELECT strftime('%Y-%m-%dT%H:%M:%SZ','now') issued_at) stamp WHERE p.id=?`)
+    .bind(requestId,recipient.id,issuerId,machineId,durationDays,durationDays,durationDays,program.id).run();
+  const row = await env.DB.prepare('SELECT * FROM auto_invite_grants WHERE request_id=?').bind(requestId).first();
+  if (!row || row.program_id!==program.id || row.recipient_id!==recipient.id || row.issuer_id!==issuerId ||
+      row.machine_id!==machineId || row.duration_days!==durationDays) return { conflict:true };
+  if (!row.key_ciphertext) {
+    if (!privateKey) throw new Error('AUTO_INVITE_SIGNER_UNAVAILABLE');
+    const issuedAt = String(row.issued_at);
+    const key = await signAutoInviteKey(privateKey,machineId,recipient.name||recipient.email,row.expires_at||'',issuedAt);
+    const ciphertext = await encryptVision7Key(env,key);
+    await env.DB.prepare("UPDATE auto_invite_grants SET key_ciphertext=?,key_last4=? WHERE id=? AND key_ciphertext=''")
+      .bind(ciphertext,key.slice(-4),row.id).run();
+  }
+  const winner = await env.DB.prepare('SELECT * FROM auto_invite_grants WHERE id=?').bind(row.id).first();
+  if (!winner?.key_ciphertext) throw new Error('AUTO_INVITE_GRANT_NOT_SAVED');
+  return { id:winner.id, key:await decryptVision7Key(env,winner.key_ciphertext), expires_at:winner.expires_at,
+    machine_id:winner.machine_id, existing:Boolean(row.key_ciphertext) };
+}
+
 export async function autoInvitePurchase(env, orderItemId, userId) {
   return env.DB.prepare(`SELECT oi.id order_item_id,oi.order_id,o.user_id,p.id program_id,q.plan_code,oi.price,u.name,u.username,u.email,
     i.machine_id,i.key_ciphertext,i.key_last4,i.issued_at,i.expires_at

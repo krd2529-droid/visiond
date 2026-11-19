@@ -3,6 +3,7 @@ import { ensureDatabase } from "../../../../_schema.js";
 import { ensureVision7Schema } from "../../../../_vision7_schema.js";
 import { requireVision7User } from "../../../../_vision7_auth.js";
 import { refreshLicenseExpiry } from "../../../../_vision7.js";
+import { activeAutoInviteGrant } from "../../../../_auto_invite.js";
 
 const validCode = (value) => /^[a-z0-9_-]{1,50}$/.test(String(value || ""));
 
@@ -19,7 +20,10 @@ export async function onRequestGet(ctx) {
     const paid = await ctx.env.DB.prepare(`SELECT oi.id FROM order_items oi JOIN orders o ON o.id=oi.order_id AND o.status='paid'
       JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code IN ('monthly','lifetime')
       WHERE q.program_id=? AND o.user_id=? AND ((q.plan_code='monthly' AND oi.price=59000) OR (q.plan_code='lifetime' AND oi.price IN (69000,159000))) LIMIT 1`).bind(program.id,auth.user.id).first();
-    if (!paid) return json({ error:'ต้องซื้อคีย์และชำระเงินก่อนดาวน์โหลด',code:'VISION7_LICENSE_REQUIRED' },403,{ 'cache-control':'private, no-store' });
+    if (!paid) {
+      if (!await activeAutoInviteGrant(ctx.env,program.id,auth.user.id))
+        return json({ error:'ต้องซื้อคีย์และชำระเงินก่อนดาวน์โหลด',code:'VISION7_LICENSE_REQUIRED' },403,{ 'cache-control':'private, no-store' });
+    }
     const release = await ctx.env.DB.prepare("SELECT id FROM vision7_releases WHERE program_id=? AND status='published' ORDER BY published_at DESC,id DESC LIMIT 1").bind(program.id).first();
     if (!release) return json({ error:'ยังไม่มีไฟล์ติดตั้งสำหรับแอปนี้' },404,{ 'cache-control':'private, no-store' });
     return new Response(null,{status:302,headers:{location:`/api/vision7/releases/${release.id}/download`,'cache-control':'private, no-store'}});

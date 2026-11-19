@@ -19,12 +19,40 @@ export const autoInviteCustomerPageSql = `SELECT oi.id order_item_id,oi.order_id
       AND (? IS NULL OR oi.id<?)
     ORDER BY oi.id DESC LIMIT 25`;
 
+export const freeInviteCustomerPageSql = `SELECT g.id,g.machine_id,g.duration_days,g.expires_at,g.issued_at,g.key_ciphertext,
+    p.current_version,r.id release_id,r.version release_version,r.file_name,r.file_size,r.sha256
+    FROM auto_invite_grants g INDEXED BY idx_auto_invite_grants_user
+    JOIN vision7_programs p ON p.id=g.program_id AND p.code='auto-invite'
+    LEFT JOIN vision7_releases r ON r.id=(SELECT id FROM vision7_releases WHERE program_id=p.id AND status='published' ORDER BY published_at DESC,id DESC LIMIT 1)
+    WHERE g.recipient_id=? AND (? IS NULL OR g.id<?) ORDER BY g.id DESC LIMIT 25`;
+
+async function freeInvitePage(env,userId,cursor) {
+  const grantRows = (await env.DB.prepare(freeInviteCustomerPageSql).bind(userId,cursor,cursor).all()).results||[];
+  const freeInviteItems = [];
+  for (const row of grantRows.slice(0,24)) {
+    let key = null;
+    if (row.key_ciphertext && vision7LicenseEncryptionConfigured(env)) {
+      try { key = await decryptVision7Key(env,row.key_ciphertext); } catch {}
+    }
+    freeInviteItems.push({id:row.id,machine_id:row.machine_id,duration_days:row.duration_days,
+      expires_at:row.expires_at,issued_at:row.issued_at,key,current_version:row.current_version,
+      release:row.release_id?{id:row.release_id,version:row.release_version,file_name:row.file_name,
+        file_size:row.file_size,sha256:row.sha256,download_url:`/api/vision7/releases/${row.release_id}/download`}:null});
+  }
+  return {free_invite_items:freeInviteItems,free_invite_next_cursor:grantRows.length>24?grantRows[23].id:null};
+}
+
 export async function onRequestGet(ctx) {
   await ensureDatabase(ctx.env);
   await ensureVision7Schema(ctx.env);
-  await ensureAutoInviteSchema(ctx.env);
   const a = await requireUser(ctx);
   if (a.error) return a.error;
+  const rawGrantCursor = new URL(ctx.request.url).searchParams.get('free_invite_cursor');
+  const grantCursor = rawGrantCursor && /^[1-9]\d*$/.test(rawGrantCursor) ? Number(rawGrantCursor) : null;
+  if (rawGrantCursor!==null && (!Number.isSafeInteger(grantCursor) || grantCursor<=0))
+    return json({error:'cursor ไม่ถูกต้อง'},400,{'cache-control':'private, no-store'});
+  if (grantCursor!==null) return json(await freeInvitePage(ctx.env,a.user.id,grantCursor),200,{'cache-control':'private, no-store'});
+  await ensureAutoInviteSchema(ctx.env);
   const rows = await ctx.env.DB.prepare(`SELECT l.*,p.code,p.platform_type,p.current_version,p.minimum_version,p.force_update,p.requires_online,
     COALESCE(x.title,px.title) title,COALESCE(x.cover_url,px.cover_url) cover_url,q.name plan_name,
     b.device_name smsmix_device_name,substr(b.device_hash,-8) smsmix_hash_suffix,
@@ -70,7 +98,7 @@ export async function onRequestGet(ctx) {
       release:row.release_id?{id:row.release_id,version:row.release_version,file_name:row.file_name,
         file_size:row.file_size,sha256:row.sha256,download_url:`/api/vision7/releases/${row.release_id}/download`}:null });
   }
-  return json({ items, auto_invite_items:autoInviteItems,
+  return json({ items, auto_invite_items:autoInviteItems,...await freeInvitePage(ctx.env,a.user.id,null),
     auto_invite_next_cursor:autoRows.length>24?autoRows[23].order_item_id:null,
     encryption_ready: vision7LicenseEncryptionConfigured(ctx.env) },200,{'cache-control':'private, no-store'});
 }
