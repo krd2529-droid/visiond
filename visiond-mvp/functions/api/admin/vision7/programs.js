@@ -145,7 +145,7 @@ export async function onRequestPost(ctx) {
     }
     const r = await ctx.env.DB.prepare(
       `INSERT INTO vision7_programs(product_id,code,app_name,app_description,cover_url,platform_type,current_version,minimum_version,requires_online,force_update,max_devices,trial_hours,active) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : code === 'auto-invite' ? '/auto-invite-cover.svg' : "",platform,version,safeVersion(b.minimum_version || version) || version,code === 'sms-mix' ? 1 : code === 'auto-invite' || b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,['v-record','sms-mix','auto-invite'].includes(code) ? 1 : 3,code === 'v-record' ? 168 : ['sms-mix','auto-invite'].includes(code) ? 0 : 24,b.active === false || (['v-record','sms-mix'].includes(code) && b.active === 'false') ? 0 : 1).run();
+    ).bind(productId,code,appName,appDescription,coverKey ? `/api/media/${coverKey}` : code === 'auto-invite' ? '/assets/follow-me-logo.png' : "",platform,version,safeVersion(b.minimum_version || version) || version,code === 'sms-mix' ? 1 : code === 'auto-invite' || b.requires_online === false ? 0 : 1,b.force_update ? 1 : 0,['v-record','sms-mix','auto-invite'].includes(code) ? 1 : 3,code === 'v-record' ? 168 : ['sms-mix','auto-invite'].includes(code) ? 0 : 24,b.active === false || (['v-record','sms-mix'].includes(code) && b.active === 'false') ? 0 : 1).run();
     id = Number(r.meta.last_row_id);
     for (const p of plans) {
       await ctx.env.DB.prepare(
