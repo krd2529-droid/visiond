@@ -4,7 +4,7 @@ import { ensureVision7Schema } from "../../../_vision7_schema.js";
 import { safeVersion, validPlanCode } from "../../../_vision7.js";
 import { rollbackVision7KeyProducts, syncVision7KeyProducts } from "../../../_vision7_key_storefront.js";
 import { autoInviteSigner } from "../../../_auto_invite.js";
-const autoInviteInstallerSha256 = '3d44399d20685d227a3f75caed2e31f04136914f6efd0dcda2a833891ce8745b';
+const autoInviteInstallerSha256 = '7f43aa1bdff1f12d534ee5dec6452505e6ff3e150a486489c7d2c82e667b4953';
 const text = (v, n = 120) =>
   String(v || "")
     .trim()
@@ -101,11 +101,11 @@ export async function onRequestPost(ctx) {
     productIds = [productId, ...plans.map((p) => p.product_id)].filter(Boolean);
   let autoInstallerBytes = null;
   if (code === 'auto-invite') {
-    if (!multipart || appName !== 'Follow me' || platform !== 'windows' || version !== '1.7.9' || b.active === 'false' || productId ||
-      !(installer instanceof File) || installer.name !== 'FollowMe-Setup-1.7.9.exe' || installer.size !== 45260813 ||
+    if (!multipart || appName !== 'Follow me' || platform !== 'windows' || version !== '1.9.3' || b.active === 'false' || productId ||
+      !(installer instanceof File) || installer.name !== 'FollowMe-Setup-1.9.3.exe' || installer.size !== 45275076 ||
       plans.length !== 2 || !plans.some(plan=>plan.plan_code==='monthly'&&Number(plan.price)===590&&!plan.product_id) ||
       !plans.some(plan=>plan.plan_code==='lifetime'&&Number(plan.price)===1590&&!plan.product_id))
-      return json({ error:'Follow me ต้องเป็น Windows 1.7.9 คีย์ 30 วัน 590 บาท และตลอดชีพ 1,590 บาท พร้อมตัวติดตั้งลูกค้าที่ตรวจสอบแล้ว' },400);
+      return json({ error:'Follow me ต้องเป็น Windows 1.9.3 คีย์ 30 วัน 590 บาท และตลอดชีพ 1,590 บาท พร้อมตัวติดตั้งลูกค้าที่ตรวจสอบแล้ว' },400);
     try { await autoInviteSigner(ctx.env); }
     catch { return json({ error:'ยังไม่ได้ตั้งค่า Secret ออกคีย์ Follow me ให้ตรงกับโปรแกรม',code:'AUTO_INVITE_SIGNER_UNAVAILABLE' },503); }
     autoInstallerBytes = await installer.arrayBuffer();
