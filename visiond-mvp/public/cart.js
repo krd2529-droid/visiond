@@ -89,7 +89,7 @@ copyAccountButton.onclick = async () => {
   setTimeout(() => (copyAccountButton.textContent = "คัดลอกเลขบัญชี"), 1800);
 };
 const vbotDuration=(offer)=>/^accounts(30|50|100)$/.test(offer.vbot_plan_code)?`ตลอดชีพ · ${offer.vbot_plan_code.slice(8)} บัญชี`:offer.vbot_plan_code==='monthly'||Number(offer.vbot_duration_days)===30?'30 วัน':offer.vbot_plan_code==='yearly'||Number(offer.vbot_duration_days)===365?'1 ปี':offer.vbot_plan_code==='lifetime'||offer.vbot_duration_days==null?'ตลอดชีพ':offer.title?.split('· คีย์ ')[1]||'แพ็กเกจคีย์';
-const vbotSubtitle=item=>item.vbot_app_code==='splus'?'โปรแกรม S+ พร้อมคีย์ตลอดชีพตามจำนวนบัญชีที่เลือก':'โปรแกรม VBot พร้อมคีย์ตามอายุที่เลือก';
+const vbotSubtitle=item=>item.vbot_app_code==='splus'?'โปรแกรม SP+ พร้อมคีย์ตลอดชีพตามจำนวนบัญชีที่เลือก':'โปรแกรม VBot พร้อมคีย์ตามอายุที่เลือก';
 const vbotControls=(item,index)=>item.product_kind==='vision7-key'?`<label class="vbot-key-choice">${item.vbot_app_code==='splus'?'เลือกแพ็กเกจ':'เลือกอายุคีย์'}<select data-vbot-plan="${index}">${(item.vbot_offers||[item]).map(offer=>`<option value="${Number(offer.vision7_plan_id)}" ${Number(offer.vision7_plan_id)===Number(item.vision7_plan_id)?'selected':''}>${esc(vbotDuration(offer))} · ${money(offer.price)}</option>`).join('')}</select></label>${item.vbot_platform_type==='veasy'?'<small class="cart-no-promo-note">V Easy · 1 คีย์ = 1 ร้าน</small>':''}<strong class="cart-no-promo-note">รับไฟล์ติดตั้งและคีย์หลังอนุมัติการชำระเงิน · ไม่ร่วมส่วนลดหลายตะกร้า</strong>`:'';
 function render() {
   const items = getCart(),

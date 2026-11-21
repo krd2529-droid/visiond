@@ -2,15 +2,15 @@ const target=document.querySelector('#splusItems');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tier={accounts30:30,accounts50:50,accounts100:100};
 let release=null,nextCursor=null;
-const download=()=>release?`<p><a class="download-button" href="${esc(release.download_url)}">⬇ ดาวน์โหลด S+ v${esc(release.version)}</a><br><small>${esc(release.file_name)} · SHA-256: <code>${esc(release.sha256)}</code></small></p>`:'';
+const download=()=>release?`<p><a class="download-button" href="${esc(release.download_url)}">⬇ ดาวน์โหลด SP+ v${esc(release.version)}</a><br><small>${esc(release.file_name)} · SHA-256: <code>${esc(release.sha256)}</code></small></p>`:'';
 const keyView=(key,machine)=>key?`<p>รหัสเครื่อง <code>${esc(machine)}</code><br>คีย์ <code>${esc(key)}</code> <button type="button" class="splus-copy" data-key="${esc(key)}">คัดลอก</button></p>`:'';
 const claimForm=(kind,id)=>`<form class="splus-claim" data-kind="${kind}" ${id?`data-id="${Number(id)}"`:''}>
-  <p>ติดตั้งและเปิด S+ เพื่อดูรหัสเครื่อง แล้วกรอกเพื่อรับคีย์สำหรับ Windows เครื่องนี้</p>
+  <p>ติดตั้งและเปิด SP+ เพื่อดูรหัสเครื่อง แล้วกรอกเพื่อรับคีย์สำหรับ Windows เครื่องนี้</p>
   <label>รหัสเครื่อง <input name="machine_id" required maxlength="19" pattern="[0-9A-Fa-f]{4}(-[0-9A-Fa-f]{4}){3}" placeholder="1A2B-3C4D-5E6F-7A8B" autocomplete="off"></label>
   <button type="submit">${kind==='trial'?'เริ่มทดลองใช้ 3 วัน':'รับคีย์'}</button><p class="splus-error" role="alert"></p></form>`;
-const paidCard=x=>`<article class="card"><h2>S+ · ${tier[x.plan_code]} บัญชี</h2><p>ตลอดชีพ · จัดการบัญชีพร้อมกันสูงสุด ${tier[x.plan_code]} บัญชี · Windows 1 เครื่อง</p>${download()}
+const paidCard=x=>`<article class="card"><h2>SP+ · ${tier[x.plan_code]} บัญชี</h2><p>ตลอดชีพ · จัดการบัญชีพร้อมกันสูงสุด ${tier[x.plan_code]} บัญชี · Windows 1 เครื่อง</p>${download()}
   ${x.key?keyView(x.key,x.machine_id):claimForm('paid',x.order_item_id)}</article>`;
-const ownerCard=x=>`<article class="card"><h2>S+ OWNER</h2><p>ตลอดชีพ · ไม่จำกัดบัญชี · Windows 1 เครื่อง</p>${download()}${keyView(x.key,x.machine_id)}</article>`;
+const ownerCard=x=>`<article class="card"><h2>SP+ OWNER</h2><p>ตลอดชีพ · ไม่จำกัดบัญชี · Windows 1 เครื่อง</p>${download()}${keyView(x.key,x.machine_id)}</article>`;
 function addOwnerMore(cursor){
   target.querySelector('#splusOwnerMore')?.remove();if(!cursor)return;
   const more=document.createElement('button');more.id='splusOwnerMore';more.textContent='ดูคีย์ OWNER เพิ่ม';
@@ -34,12 +34,12 @@ function bind(){
 async function load(cursor){
   const url='/api/vision7/splus/entitlements'+(cursor?`?cursor=${encodeURIComponent(cursor)}`:'');
   const response=await fetch(url,{cache:'no-store'});if(response.status===401)return;
-  const data=await response.json();if(!response.ok)throw new Error(data.error||'โหลดสิทธิ์ S+ ไม่สำเร็จ');
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'โหลดสิทธิ์ SP+ ไม่สำเร็จ');
   if(!cursor){release=data.release;target.innerHTML='';if(!data.ready&&!data.paid?.length&&!data.owner?.length&&!data.trial)return;
-    target.insertAdjacentHTML('beforeend','<h2>S+ · คีย์และตัวติดตั้ง</h2>');
+    target.insertAdjacentHTML('beforeend','<h2>SP+ · คีย์และตัวติดตั้ง</h2>');
     if(data.ready){
       const trial=data.trial;
-      target.insertAdjacentHTML('beforeend',`<article class="card"><h2>ทดลอง S+ ฟรี</h2><p>3 วัน · จัดการบัญชีพร้อมกันสูงสุด 10 บัญชี · Windows 1 เครื่อง</p>${download()}
+      target.insertAdjacentHTML('beforeend',`<article class="card"><h2>ทดลอง SP+ ฟรี</h2><p>3 วัน · จัดการบัญชีพร้อมกันสูงสุด 10 บัญชี · Windows 1 เครื่อง</p>${download()}
         ${trial?`<p>สิทธิ์ทดลอง${Date.parse(trial.expires_at)>Date.now()?'':'หมดอายุ'} · ถึง ${esc(trial.expires_at)}</p>${keyView(trial.key,trial.machine_id)}`:claimForm('trial')}</article>`);
     }
     for(const owner of data.owner||[])target.insertAdjacentHTML('beforeend',ownerCard(owner));
@@ -47,8 +47,8 @@ async function load(cursor){
   for(const paid of data.paid||[])target.insertAdjacentHTML('beforeend',paidCard(paid));
   nextCursor=data.next_cursor;
   target.querySelector('#splusMore')?.remove();
-  if(nextCursor){const more=document.createElement('button');more.id='splusMore';more.textContent='ดูออเดอร์ S+ เพิ่ม';more.onclick=async()=>{more.disabled=true;try{await load(nextCursor)}catch{more.disabled=false;more.textContent='โหลดออเดอร์ไม่สำเร็จ · กดเพื่อลองใหม่'}};target.append(more)}
+  if(nextCursor){const more=document.createElement('button');more.id='splusMore';more.textContent='ดูออเดอร์ SP+ เพิ่ม';more.onclick=async()=>{more.disabled=true;try{await load(nextCursor)}catch{more.disabled=false;more.textContent='โหลดออเดอร์ไม่สำเร็จ · กดเพื่อลองใหม่'}};target.append(more)}
   if(!cursor)addOwnerMore(data.owner_next_cursor);
   bind();
 }
-load().catch(error=>{target.innerHTML=`<article class="card"><p role="alert">${esc(error.message||'โหลดสิทธิ์ S+ ไม่สำเร็จ')}</p><button type="button" id="splusRetry">ลองใหม่</button></article>`;target.querySelector('#splusRetry').onclick=()=>load().catch(()=>{});});
+load().catch(error=>{target.innerHTML=`<article class="card"><p role="alert">${esc(error.message||'โหลดสิทธิ์ SP+ ไม่สำเร็จ')}</p><button type="button" id="splusRetry">ลองใหม่</button></article>`;target.querySelector('#splusRetry').onclick=()=>load().catch(()=>{});});

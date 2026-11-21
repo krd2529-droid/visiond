@@ -33,7 +33,7 @@ const cartSubtitle=runInNewContext(`${cartSource.match(/^const vbotSubtitle=.*$/
 const cartItem={product_kind:'vision7-key',vbot_offers:[],vision7_plan_id:1};
 assert.match(cartControls({...cartItem,vbot_app_code:'splus'},0),/เลือกแพ็กเกจ<select/);
 assert.match(cartControls({...cartItem,vbot_app_code:'auto-invite'},0),/เลือกอายุคีย์<select/);
-assert.equal(cartSubtitle({...cartItem,vbot_app_code:'splus'}),'โปรแกรม S+ พร้อมคีย์ตลอดชีพตามจำนวนบัญชีที่เลือก');
+assert.equal(cartSubtitle({...cartItem,vbot_app_code:'splus'}),'โปรแกรม SP+ พร้อมคีย์ตลอดชีพตามจำนวนบัญชีที่เลือก');
 assert.equal(cartSubtitle({...cartItem,vbot_app_code:'auto-invite'}),'โปรแกรม VBot พร้อมคีย์ตามอายุที่เลือก');
 const storefront=readFileSync(new URL('../public/bots-storefront.js',import.meta.url),'utf8');
 const appDescription=runInNewContext(`${storefront.match(/^function appDescription\(app\).*$/m)?.[0]};appDescription`);

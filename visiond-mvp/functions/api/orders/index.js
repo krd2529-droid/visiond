@@ -102,8 +102,8 @@ export async function onRequestPost(ctx) {
   }
   if(orderedResults.some(product=>product.vision7_program_code==='splus')){
     if(orderedResults.some(product=>product.vision7_program_code==='splus'&&!((product.vision7_plan_code==='accounts30'&&product.price===99000&&product.slug==='vbot-key-splus-accounts30')||(product.vision7_plan_code==='accounts50'&&product.price===149000&&product.slug==='vbot-key-splus-accounts50')||(product.vision7_plan_code==='accounts100'&&product.price===249000&&product.slug==='vbot-key-splus-accounts100'))))
-      return json({error:'แพ็กเกจ S+ ยังไม่พร้อมขาย',code:'SPLUS_OFFER_INVALID'},409);
-    try{await splusSigner(ctx.env)}catch{return json({error:'ระบบออกคีย์ S+ ยังไม่พร้อม กรุณาลองใหม่ภายหลัง',code:'SPLUS_SIGNER_UNAVAILABLE'},503)}
+      return json({error:'แพ็กเกจ SP+ ยังไม่พร้อมขาย',code:'SPLUS_OFFER_INVALID'},409);
+    try{await splusSigner(ctx.env)}catch{return json({error:'ระบบออกคีย์ SP+ ยังไม่พร้อม กรุณาลองใหม่ภายหลัง',code:'SPLUS_SIGNER_UNAVAILABLE'},503)}
   }
   const vxItems=orderedResults.filter(p=>p.product_kind==='vx-access');
   if(vxItems.length && (orderedResults.length!==1||!VX_PLANS.some(p=>p.slug===vxItems[0].slug&&p.price===Number(vxItems[0].price))))return json({error:'สิทธิ์ VX ต้องชำระแยกครั้งละ 1 แพ็กเกจ กรุณาตรวจสอบตะกร้า'},400);
