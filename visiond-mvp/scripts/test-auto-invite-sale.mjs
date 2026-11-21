@@ -116,10 +116,10 @@ assert.equal(JSON.parse(Buffer.from(recovered.key.split('.')[0],'base64url')).e,
 assert.match(explain(`SELECT expires_at FROM auto_invite_issues WHERE user_id=? AND machine_id=? AND plan_code='monthly' ORDER BY expires_at DESC LIMIT 1`,[1,machine]),/idx_auto_invite_issues_renewal/,'monthly renewal uses compound index');
 if (process.env.FOLLOWME_CUSTOMER_SETUP) {
   const file=readFileSync(process.env.FOLLOWME_CUSTOMER_SETUP);
-  assert.equal(file.length,45275076,'customer installer has approved byte count');
-  assert.equal(createHash('sha256').update(file).digest('hex'),'7f43aa1bdff1f12d534ee5dec6452505e6ff3e150a486489c7d2c82e667b4953','customer installer matches approved SHA-256');
+  assert.equal(file.length,45270185,'customer installer has approved byte count');
+  assert.equal(createHash('sha256').update(file).digest('hex'),'e0d7b3dcfb6db00acae698898c6203efb75b45e6fb0bd86aac28f2d9b7627fda','customer installer matches approved SHA-256');
   const setupSource=readFileSync(new URL('../functions/api/admin/vision7/programs.js',import.meta.url),'utf8');
-  assert.ok(setupSource.includes('FollowMe-Setup-1.9.3.exe') && setupSource.includes('7f43aa1bdff1f12d534ee5dec6452505e6ff3e150a486489c7d2c82e667b4953'));
+  assert.ok(setupSource.includes('FollowMe-Setup-1.9.4.exe') && setupSource.includes('e0d7b3dcfb6db00acae698898c6203efb75b45e6fb0bd86aac28f2d9b7627fda'));
 }
 assert.equal((await signAutoInviteKey(signer,machine,'Customer')).split('.').length,2);
 if (process.env.AUTO_INVITE_TEST_SEED_FILE) {
