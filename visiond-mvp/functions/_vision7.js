@@ -1,7 +1,7 @@
 import {sha256} from './_lib.js';
 import {encryptVision7Key} from './_vision7_license_crypto.js';
 
-const PLAN_CODES=new Set(['lifetime','monthly','yearly']);
+const PLAN_CODES=new Set(['lifetime','monthly','yearly','accounts30','accounts50','accounts100']);
 const LICENSE_STATES=new Set(['active','trial','expired','suspended','revoked','refunded']);
 const clean=(value,max=120)=>String(value||'').trim().slice(0,max);
 const b64url=bytes=>{let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};

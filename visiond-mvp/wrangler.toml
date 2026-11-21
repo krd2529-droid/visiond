@@ -5,6 +5,7 @@ compatibility_date = "2026-08-02"
 
 [env.production.vars]
 TURNSTILE_SITE_KEY = "0x4AAAAAAELe1Fkp12UGY4Ex"
+SPLUS_PUBLIC_KEY_B64 = "I-cFHcUZZKqcRdwthiZIsXPc6B-R3xicWOPwwo1J4ac"
 
 [[env.production.d1_databases]]
 database_id = "fe58e1cd-c31b-4c7c-8f22-11e5e69593f0"

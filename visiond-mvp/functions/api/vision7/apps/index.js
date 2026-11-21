@@ -4,7 +4,7 @@ import {ensureVision7Schema} from '../../../_vision7_schema.js';
 
 // Keep this expression identical to migration 0139 so SQLite can use its indexed keyset.
 export const catalogGroupSql="CASE WHEN p.platform_type IN ('windows','mac') THEN 'desktop' WHEN p.platform_type='web' THEN 'web' WHEN p.platform_type IN ('android','veasy') THEN 'mobile' ELSE 'other' END";
-const offersSql=`(SELECT json_group_array(json_object('id',q.id,'code',q.plan_code,'name',q.name,'duration_days',q.duration_days,'price',q.offer_price,'product_id',q.product_id,'product_slug',x.slug)) FROM vision7_plans q JOIN products x ON x.id=q.product_id WHERE q.program_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime') AND q.offer_price>0 AND x.status='published' AND x.product_kind='vision7-key') offers`;
+const offersSql=`(SELECT json_group_array(json_object('id',q.id,'code',q.plan_code,'name',q.name,'duration_days',q.duration_days,'price',q.offer_price,'product_id',q.product_id,'product_slug',x.slug)) FROM vision7_plans q JOIN products x ON x.id=q.product_id WHERE q.program_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime','accounts30','accounts50','accounts100') AND q.offer_price>0 AND x.status='published' AND x.product_kind='vision7-key') offers`;
 const released="EXISTS(SELECT 1 FROM vision7_releases r WHERE r.program_id=p.id AND r.status='published')";
 const integer=value=>/^\d{1,12}$/.test(String(value||''))?Number(value):null;
 const cursorEncode=value=>btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(value)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');

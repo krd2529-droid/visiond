@@ -73,6 +73,15 @@
           <h3>ประวัติคีย์ฟรี</h3><div id="autoInviteGrants">กำลังโหลดรายการ</div>
           <button id="autoInviteGrantsMore" type="button" hidden>ดูรายการเพิ่ม</button>
         </article>
+        <article class="card license-panel">
+          <header class="card-heading"><div><h2>S+ · คีย์ OWNER</h2><p class="muted">ออกให้บัญชี VisionD ที่ลงทะเบียนแล้วเท่านั้น · ใช้ได้ตลอดชีพและไม่จำกัดบัญชีบน Windows เครื่องที่ผูก</p></div></header>
+          <form id="splusOwnerForm">
+            <label>อีเมลผู้รับ <input name="email" type="email" required autocomplete="off" placeholder="customer@example.com"></label>
+            <label>รหัสเครื่อง S+ <input name="machine_id" required maxlength="19" pattern="[0-9A-Fa-f]{4}(-[0-9A-Fa-f]{4}){3}" placeholder="1A2B-3C4D-5E6F-7A8B" autocomplete="off"></label>
+            <button type="submit">ออกคีย์ OWNER</button><p id="splusOwnerState" role="status"></p>
+            <p id="splusOwnerKey" hidden>คีย์: <code></code> <button type="button">คัดลอก</button></p>
+          </form>
+        </article>
         <details id="releaseDetails" class="card release-panel">
           <summary><span><small>STEP 3</small><b>เผยแพร่ APK/ตัวติดตั้ง</b><em>แยกจากการออกคีย์ · เปิดเมื่อต้องการลงเวอร์ชันใหม่</em></span><strong>เปิดแบบฟอร์ม</strong></summary>
           <div class="release-content"><p class="muted">ใช้ไฟล์กลางสำหรับลูกค้าทุกคน การอัปเดตไม่ต้องออกคีย์ใหม่</p>
@@ -116,6 +125,7 @@
       </section>
     </main>
     <script src="/auto-invite-admin.js?v=0179" type="module"></script>
+    <script src="/splus-admin.js?v=1" type="module"></script>
     <dialog id="programDialog" class="app-builder-dialog" aria-labelledby="programDialogTitle" aria-describedby="programDialogIntro">
       <form id="programForm" enctype="multipart/form-data">
         <header class="app-builder-heading"><div><small>VBOT APP BUILDER · สร้างฟรี</small><h2 id="programDialogTitle">สร้างแอปพร้อมขาย</h2><p id="programDialogIntro">สร้างแอปได้ฟรี ใส่ข้อมูลครั้งเดียว ระบบจะเตรียมแพ็กเกจคีย์และไฟล์ให้พร้อมใช้งาน</p></div><button type="button" class="dialog-close" data-close="programDialog" aria-label="ปิด">×</button></header>

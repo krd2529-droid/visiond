@@ -10,7 +10,7 @@ export async function fulfillVision7Order(env,order,actor={},programCode=''){
   const output=[];
   for(const item of items){
     // AutoInvite issues its offline key only after the paid customer supplies a Windows machine ID.
-    if(item.program_code==='auto-invite')continue;
+    if(item.program_code==='auto-invite'||item.program_code==='splus')continue;
     const done=await env.DB.prepare('SELECT license_id,action FROM vision7_order_fulfillments WHERE order_item_id=?').bind(item.order_item_id).first();
     if(done){output.push({...done,existing:true});continue}
     if(item.vision7_renew_license_id){

@@ -1,6 +1,6 @@
 const clean = (value, max = 180) => String(value || "").trim().replace(/\s+/g, " ").slice(0, max);
 const slugPart = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-const storefrontPlanCodes = new Set(["monthly", "yearly", "lifetime"]);
+const storefrontPlanCodes = new Set(["monthly", "yearly", "lifetime", "accounts30", "accounts50", "accounts100"]);
 
 export async function syncVision7KeyProducts(env, programId) {
   const program = await env.DB.prepare("SELECT id,code,app_name,app_description,cover_url,active FROM vision7_programs WHERE id=?").bind(programId).first();

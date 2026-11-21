@@ -15,7 +15,10 @@ export async function onRequestGet(ctx) {
   const row = await ctx.env.DB.prepare(`SELECT r.*,p.code program_code FROM vision7_releases r
     JOIN vision7_programs p ON p.id=r.program_id WHERE r.id=? AND r.status='published'`).bind(releaseId).first();
   if (!row) return json({ error:'ไม่พบไฟล์หรือไม่มีสิทธิ์ดาวน์โหลด' },404,{'cache-control':'private, no-store'});
-  if (row.program_code === 'auto-invite') {
+  if (row.program_code === 'splus') {
+    const active=await ctx.env.DB.prepare("SELECT id FROM vision7_programs WHERE id=? AND code='splus' AND active=1 LIMIT 1").bind(row.program_id).first();
+    if(!active)return json({error:'ไม่พบไฟล์หรือไม่มีสิทธิ์ดาวน์โหลด'},404,{'cache-control':'private, no-store'});
+  } else if (row.program_code === 'auto-invite') {
     const paid = await ctx.env.DB.prepare(`SELECT oi.id FROM order_items oi JOIN orders o ON o.id=oi.order_id AND o.status='paid'
       JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code IN ('monthly','lifetime')
       WHERE q.program_id=? AND o.user_id=? AND ((q.plan_code='monthly' AND oi.price=59000) OR (q.plan_code='lifetime' AND oi.price IN (69000,159000))) LIMIT 1`).bind(row.program_id,auth.user.id).first();

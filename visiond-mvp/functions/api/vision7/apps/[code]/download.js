@@ -16,6 +16,11 @@ export async function onRequestGet(ctx) {
   if (!validCode(code)) return json({ error: "ไม่พบแอป" }, 404, { "cache-control": "no-store" });
   const program = await ctx.env.DB.prepare("SELECT id FROM vision7_programs WHERE code=? AND active=1").bind(code).first();
   if (!program) return json({ error: "ไม่พบแอป" }, 404, { "cache-control": "no-store" });
+  if (code === 'splus') {
+    const release = await ctx.env.DB.prepare("SELECT id FROM vision7_releases WHERE program_id=? AND status='published' ORDER BY published_at DESC,id DESC LIMIT 1").bind(program.id).first();
+    if (!release) return json({ error:'ยังไม่มีไฟล์ติดตั้งสำหรับแอปนี้' },404,{'cache-control':'private, no-store'});
+    return new Response(null,{status:302,headers:{location:`/api/vision7/releases/${release.id}/download`,'cache-control':'private, no-store'}});
+  }
   if (code === 'auto-invite') {
     const paid = await ctx.env.DB.prepare(`SELECT oi.id FROM order_items oi JOIN orders o ON o.id=oi.order_id AND o.status='paid'
       JOIN vision7_plans q ON q.product_id=oi.product_id AND q.plan_code IN ('monthly','lifetime')
