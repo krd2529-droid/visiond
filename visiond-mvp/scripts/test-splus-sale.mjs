@@ -38,6 +38,22 @@ assert.equal(cartSubtitle({...cartItem,vbot_app_code:'auto-invite'}),'โปร�
 const storefront=readFileSync(new URL('../public/bots-storefront.js',import.meta.url),'utf8');
 const appDescription=runInNewContext(`${storefront.match(/^function appDescription\(app\).*$/m)?.[0]};appDescription`);
 assert.match(appDescription({code:'splus'}),/Shopee Affiliate.*ค่าคอมมิชชั่น/);
+const cardFunctions=['normalizedOffers','durationLabel','offerPrice','appPriceSummary','appCard'].map(name=>{
+  const source=storefront.match(new RegExp(`^function ${name}\\(.*$`,'m'))?.[0];
+  assert.ok(source,`missing storefront ${name}`);return source;
+}).join('\n');
+const appCard=runInNewContext(`${cardFunctions};appCard`,{
+  esc:value=>String(value),money:cents=>`${Number(cents)/100} บาท`,storePath:'/vtools',placeholder:'/placeholder',
+  platformLabel:value=>value,appTitle:app=>app.app_name,appDescription:app=>app.app_description,
+});
+const splusCard=appCard({code:'splus',app_name:'S+',app_description:'Shopee Affiliate',platform_type:'windows',current_version:'1.0.0',offers:[
+  {code:'accounts100',offer_price:249000,product_slug:'splus-100',product_id:3},
+  {code:'accounts30',offer_price:99000,product_slug:'splus-30',product_id:1},
+  {code:'accounts50',offer_price:149000,product_slug:'splus-50',product_id:2},
+]});
+assert.match(splusCard,/990 บาท/);
+assert.match(splusCard,/สิทธิ์ ตลอดชีพ · 30 บัญชี/,'S+ card entitlement follows its lowest price despite API order');
+assert.doesNotMatch(splusCard,/สิทธิ์ ตลอดชีพ · 100 บัญชี/);
 const prepare=(sql,args=[])=>({bind(...values){return prepare(sql,values)},async first(){return db.prepare(sql).get(...args)||null},async all(){return {results:db.prepare(sql).all(...args)}},async run(){const result=db.prepare(sql).run(...args);return {meta:{changes:result.changes,last_row_id:result.lastInsertRowid}}}});
 const pair=generateKeyPairSync('ed25519');
 const seed=pair.privateKey.export({format:'der',type:'pkcs8'}).subarray(-32);
