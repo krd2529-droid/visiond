@@ -10,6 +10,8 @@ const root=path.resolve('public'),evidence=path.resolve('../.agents/reports');fs
 const offer={id:91,product_id:191,product_slug:'demo-monthly',code:'monthly',duration_days:30,price:9900};
 const app=(id,platform,name)=>({id,code:`tool-${id}`,app_name:name,app_description:`คำอธิบาย ${name}`,platform_type:platform,current_version:'1.0.0',offers:[offer]});
 const catalog=[...Array.from({length:26},(_,index)=>app(index+1,index%2?'mac':'windows',index===25?'โปรแกรมกลางชื่อทดสอบ':`โปรแกรมคอม ${index+1}`)),app(27,'web','เว็บเครื่องมือ'),app(28,'android','แอปมือถือ'),app(29,'veasy','V Easy'),app(30,'cross-platform','โปรแกรมหลายระบบ')];
+catalog[0]={...catalog[0],code:'splus',app_name:'SP+',offers:[{code:'accounts30',duration_days:null,price:99000},{code:'accounts50',duration_days:null,price:149000},{code:'accounts100',duration_days:null,price:249000}]};
+catalog[1]={...catalog[1],code:'v-record',app_name:'V-Record',offers:[{code:'monthly',duration_days:30,price:49000},{code:'lifetime',duration_days:null,price:99000}]};
 catalog.unshift({...app(40,'windows','Follow me'),name:'Follow me',code:'auto-invite',current_version:'1.7.4',offers:[{id:9,product_id:5498,product_slug:'vbot-key-auto-invite-monthly',code:'monthly',name:'คีย์ 30 วัน · Windows 1 เครื่อง',duration_days:30,price:59000,offer_price:59000},{id:8,product_id:5497,product_slug:'vbot-key-auto-invite-lifetime',code:'lifetime',name:'คีย์ตลอดชีพ · Windows 1 เครื่อง',duration_days:null,price:159000,offer_price:159000}]});
 let empty=false,delayDesktop=false,releaseDesktop,desktopStarted,listRequests=[],detailRequests=[],legacyRequests=[],trialRequests=0,vxRequests=0,productsFail=false;
 const server=http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/vtools'){vxRequests++;const response=await plansCatalog({env,request:new Request(url)});res.setHeader('content-type','application/json');res.end(await response.text());return}
@@ -25,12 +27,14 @@ try{
   const base=`http://127.0.0.1:${server.address().port}`,page=await browser.newPage({viewport:{width:1365,height:900}});
   await page.goto(base+'/vtools');
   await page.waitForFunction(()=>document.querySelectorAll('#programs .vbot-card').length===24);
+  assert.equal(await page.locator('script[src^="/bots-storefront.js"]').getAttribute('src'),'/bots-storefront.js?v=015102','Vtools invalidates the pre-summary storefront script cache');
   assert.match(listRequests[0],/category=desktop.*limit=24/,'computer group loads first');
   assert.equal(await page.locator('[data-platform="desktop"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('.vtools-vx-card,#vxPlans,#vxAccess').count(),0,'VX public sales panels are absent');
   assert.equal(vxRequests,0,'public Vtools no longer fetches VX plans');
   const follow=page.locator('#programs .vbot-card').filter({hasText:'Follow me'});
   assert.equal(await follow.count(),1,'Follow me appears in computer group');
+  for(const [name,count,price] of [['SP+',3,'990'],['Follow me',2,'590'],['V-Record',2,'490']]){const card=page.locator('#programs .vbot-card').filter({has:page.locator('h3').filter({hasText:name})});assert.equal(await card.count(),1,`${name} appears in the list`);assert.match(await card.innerText(),new RegExp(`${count} ตัวเลือก`),`${name} shows summary offer count`);assert.match(await card.innerText(),new RegExp(`${price} (บาท|THB)`),`${name} shows a public summary price`);assert.doesNotMatch(await card.innerText(),/ยังไม่เปิดขาย|กำลังเตรียมแพ็กเกจ/,`${name} does not show a false closed status`)}
   assert.match(await follow.innerText(),/1.7.4/);
   assert.match(await follow.innerText(),/590 (บาท|THB)/);
   assert.match(await follow.innerText(),/1,590 (บาท|THB)/);
