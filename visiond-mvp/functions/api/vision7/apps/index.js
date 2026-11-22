@@ -1,10 +1,10 @@
 import {json} from '../../../_lib.js';
 import {ensureDatabase} from '../../../_schema.js';
-import {ensureVision7Schema} from '../../../_vision7_schema.js';
 
 // Keep this expression identical to migration 0139 so SQLite can use its indexed keyset.
 export const catalogGroupSql="CASE WHEN p.platform_type IN ('windows','mac') THEN 'desktop' WHEN p.platform_type='web' THEN 'web' WHEN p.platform_type IN ('android','veasy') THEN 'mobile' ELSE 'other' END";
-const offersSql=`(SELECT json_group_array(json_object('id',q.id,'code',q.plan_code,'name',q.name,'duration_days',q.duration_days,'price',q.offer_price,'product_id',q.product_id,'product_slug',x.slug)) FROM vision7_plans q JOIN products x ON x.id=q.product_id WHERE q.program_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime','accounts30','accounts50','accounts100') AND q.offer_price>0 AND x.status='published' AND x.product_kind='vision7-key') offers`;
+// Cards only need a price/term summary. Cart identifiers and license data load on detail.
+const offersSql=`(SELECT json_group_array(json_object('code',q.plan_code,'duration_days',q.duration_days,'price',q.offer_price)) FROM vision7_plans q JOIN products x ON x.id=q.product_id WHERE q.program_id=p.id AND q.active=1 AND q.plan_code IN ('monthly','yearly','lifetime','accounts30','accounts50','accounts100') AND q.offer_price>0 AND x.status='published' AND x.product_kind='vision7-key') offer_summary`;
 const released="EXISTS(SELECT 1 FROM vision7_releases r WHERE r.program_id=p.id AND r.status='published')";
 const integer=value=>/^\d{1,12}$/.test(String(value||''))?Number(value):null;
 const cursorEncode=value=>btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(value)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -28,7 +28,7 @@ export function catalogPageQuery({category='all',q='',cursorId=null,cursorName='
 export async function onRequestGet(ctx){
   const params=new URL(ctx.request.url).searchParams,category=params.get('category')||'all',q=(params.get('q')||'').trim().replace(/\s+/gu,' '),limit=params.has('limit')?integer(params.get('limit')):24,cursor=params.has('cursor')?cursorDecode(params.get('cursor')):null,cursorId=cursor?.id??null,cursorName=cursor?.name||'';
   if(!['all','desktop','web','mobile','other'].includes(category)||q.length>80||/[\u0000-\u001f\u007f]/u.test(q)||!limit||limit>24||(params.has('cursor')&&(!cursor||cursor.category!==category||cursor.q!==q||!integer(cursorId)||Boolean(q)&&[...q].length<3&&(!cursorName||cursorName.length>200))))return json({error:'ตัวกรองรายการไม่ถูกต้อง'},400,{'cache-control':'no-store'});
-  await ensureDatabase(ctx.env);await ensureVision7Schema(ctx.env);
+  await ensureDatabase(ctx.env);
   const {sql,args}=catalogPageQuery({category,q,cursorId,cursorName,limit}),rows=await ctx.env.DB.prepare(sql).bind(...args).all(),results=rows.results||[],items=results.slice(0,limit),last=items.at(-1),hasMore=results.length>limit;
   const other=cursorId===null?await ctx.env.DB.prepare(`SELECT 1 found FROM vision7_programs p WHERE p.active=1 AND ${catalogGroupSql}='other' AND ${released} LIMIT 1`).first():null;
   return json({items,has_more:hasMore,next_cursor:hasMore?cursorEncode({category,q,id:last.id,...(q&&[...q].length<3?{name:last.name||''}:{})}):null,has_other:cursorId===null?Boolean(other):undefined,search_note:q&&[...q].length<3?'คำค้นหา 1–2 ตัวอักษรค้นเฉพาะต้นชื่อเครื่องมือ':null},200,{'cache-control':'public, max-age=30'});

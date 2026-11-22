@@ -1,9 +1,8 @@
 import { json } from "../../../../_lib.js";
 import { ensureDatabase } from "../../../../_schema.js";
-import { ensureVision7Schema } from "../../../../_vision7_schema.js";
 
 export async function onRequestGet(ctx) {
-  await ensureDatabase(ctx.env); await ensureVision7Schema(ctx.env);
+  await ensureDatabase(ctx.env);
   const code=String(ctx.params.code||"").toLowerCase();
   if(!/^[a-z0-9_-]{1,50}$/.test(code))return json({error:"ไม่พบแอป"},404);
   const item=await ctx.env.DB.prepare(`SELECT p.id,p.code,p.app_name name,p.app_description description,p.cover_url,p.platform_type,p.current_version,
